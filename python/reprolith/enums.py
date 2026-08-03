@@ -38,3 +38,38 @@ class ReproductionLevel(str, Enum):
 
     SIMULATION = "simulation"
     ESTIMATION = "estimation"
+
+
+class ModelClass(str, Enum):
+    """The reproduction pathway an entry is routed to (spec: ``model-catalog`` —
+    "Difficulty and class tagging").
+
+    An entry whose class Reprolith does not yet support is retained as ``UNASSIGNED``
+    backlog rather than discarded. The MVP only builds the ``ODE_PKPD`` pathway.
+    """
+
+    ODE_PKPD = "ode-pkpd"
+    KINETIC = "kinetic"
+    CONSTRAINT_BASED = "constraint-based"
+    UNASSIGNED = "unassigned"
+
+
+class LifecycleState(str, Enum):
+    """The explicit, ordered lifecycle states a catalog entry moves through (spec:
+    ``model-catalog`` — "Catalog entry lifecycle").
+
+    ``CERTIFIED`` and ``FAILED`` are terminal only for a given engine-version pin; a
+    new pin may re-open the entry. ``BLOCKED`` (a required input is missing) is kept
+    distinct from ``FAILED`` (the attempt ran to completion but did not reproduce).
+    """
+
+    QUEUED = "queued"
+    INGESTING = "ingesting"
+    INGESTED = "ingested"
+    RECONSTRUCTING = "reconstructing"
+    RECONSTRUCTED = "reconstructed"
+    VERIFYING = "verifying"
+    CERTIFIED = "certified"
+    FAILED = "failed"
+    BLOCKED = "blocked"
+    QUARANTINED = "quarantined"

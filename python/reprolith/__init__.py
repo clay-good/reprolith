@@ -9,9 +9,24 @@ simulation-oracle stages described in ``openspec/`` build on top of these shapes
 from __future__ import annotations
 
 from .canonical import canonical_bytes, canonical_json, content_hash
+from .catalog import (
+    BlindEntry,
+    Catalog,
+    CatalogEntry,
+    GroundTruth,
+    Identifiers,
+    IllegalTransition,
+    Transition,
+)
 from .certificate import build_certificate, derive_overall
 from .determinism import certificate_digest, same_modulo_run_metadata
-from .enums import OverallVerdict, ReproductionLevel, Verdict
+from .enums import (
+    LifecycleState,
+    ModelClass,
+    OverallVerdict,
+    ReproductionLevel,
+    Verdict,
+)
 from .model import (
     Assumption,
     Certificate,
@@ -26,14 +41,23 @@ __version__ = "0.0.1"
 
 __all__ = [
     "Assumption",
+    "BlindEntry",
+    "Catalog",
+    "CatalogEntry",
     "Certificate",
     "ClaimAssessment",
     "EnginePin",
+    "GroundTruth",
+    "Identifiers",
+    "IllegalTransition",
+    "LifecycleState",
+    "ModelClass",
     "OverallVerdict",
     "PaperIdentity",
     "ReproductionLevel",
     "RunMetadata",
     "Scope",
+    "Transition",
     "Verdict",
     "build_certificate",
     "canonical_bytes",
