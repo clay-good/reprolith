@@ -1,0 +1,92 @@
+# paper-ingestion Specification
+
+## Purpose
+
+Ingestion turns a modeling paper and its artifacts into a **dossier**: a normalized,
+provenance-tagged extraction of the model's structure, parameters, protocol, and — most
+importantly — the specific published **claims** a reproduction must target. The dossier is
+the sole input to reconstruction; ingestion never runs a model.
+
+## Requirements
+
+### Requirement: Dossier as the ingestion contract
+
+Ingestion SHALL produce a single structured dossier per catalog entry that downstream
+stages depend on, and SHALL never silently invent content.
+
+#### Scenario: Dossier contents
+
+- **WHEN** ingestion completes for an entry
+- **THEN** the dossier contains: the model's state variables and equations (as extracted),
+  parameters with values and units, initial conditions, the simulation/experimental
+  protocol, and the list of claims
+- **AND** every element records where in the source it came from (section, equation number,
+  table cell, figure panel, supplement location)
+
+#### Scenario: Extracted versus assumed
+
+- **WHEN** a required element is not stated in the source
+- **THEN** it is recorded as an explicit gap with a description of what is missing
+- **AND** ingestion never fills the gap with a guessed value; guessing is reserved for
+  reconstruction, where it is separately recorded as an assumption
+
+### Requirement: Claims are first-class and enumerable
+
+The dossier SHALL enumerate the concrete published results the paper stakes, because these
+are exactly what the oracle will check.
+
+#### Scenario: Claim identification
+
+- **WHEN** a paper presents a reproducible result (a plotted curve, a table of predicted
+  values, a reported summary metric such as a peak, area, or steady-state)
+- **THEN** ingestion records it as a claim with a stable identifier, the quantity it
+  asserts, the conditions under which it holds, and the source location
+- **AND** results that cannot serve as a reproduction target (purely schematic figures,
+  cartoons) are marked as non-targetable rather than dropped
+
+#### Scenario: Reference data for a claim
+
+- **WHEN** the paper provides the numeric values behind a claim (a data table, digitized
+  points, supplementary data)
+- **THEN** the claim links to that reference data
+- **WHEN** only a rendered figure is available
+- **THEN** the claim records that its reference is a figure image, so the oracle knows it
+  must compare against digitized or reported summary values rather than raw data
+
+### Requirement: Artifact intake and typing
+
+Ingestion SHALL accept whatever the paper ships and classify it, so reconstruction knows
+what it has to work with.
+
+#### Scenario: Recognizing an existing model artifact
+
+- **WHEN** the paper or its entry ships a model file in a known format (SBML, CellML, a
+  simulation recipe, source code)
+- **THEN** ingestion records the artifact, its detected format, and whether it validates
+  against that format's schema
+- **AND** an existing valid model artifact is preserved as a candidate starting point for
+  reconstruction, not overwritten
+
+#### Scenario: Unit normalization
+
+- **WHEN** parameters and variables carry units
+- **THEN** ingestion records both the original stated unit and a normalized canonical unit,
+  keeping the original for provenance
+- **AND** an unstated or ambiguous unit is recorded as a gap, never coerced silently
+
+### Requirement: Ingestion is inspectable and revisable
+
+A dossier SHALL be reviewable and correctable without re-deriving it from scratch.
+
+#### Scenario: Human or agent correction
+
+- **WHEN** a reviewer identifies a mis-extracted equation, parameter, or claim
+- **THEN** the correction is applied as a tracked revision to the dossier with the corrector
+  and rationale recorded
+- **AND** the original extraction remains retrievable
+
+#### Scenario: Confidence on extractions
+
+- **WHEN** an element is extracted
+- **THEN** it carries an extraction-confidence signal distinguishing directly quoted values
+  from interpreted ones, so reconstruction and reviewers can prioritize scrutiny

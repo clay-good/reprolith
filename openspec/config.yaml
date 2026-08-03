@@ -1,0 +1,34 @@
+schema: spec-driven
+
+context: |
+  Product: Reprolith — auto-reproduction & certification engine for the
+  computational biomedical modeling literature.
+
+  Spec language:
+  - Write requirements as observable behavior and contracts, not implementation.
+  - Put mechanism (libraries, engines, file layouts, algorithms) in design.md / tasks.md.
+  - Prefer positive, verifiable SHALL statements tied to a certificate field or a
+    catalog state transition.
+
+  Load-bearing invariants (assume these in every spec):
+  - Determinism: same inputs + pinned engine versions => byte-reproducible certificate.
+  - Provenance: every claim, parameter, assumption cites a source location; every gap
+    Reprolith fills is an explicit recorded field.
+  - Honest scoping: reproducible != correct != clinically valid; every certificate says so.
+
+  Domain vocabulary (use consistently):
+  - Claim: a specific published result (a figure panel, a table cell, a reported scalar)
+    that a reproduction attempt targets.
+  - Dossier: the normalized, provenance-tagged extraction of a paper's model, parameters,
+    protocol, and claims produced by ingestion.
+  - Reconstruction: a runnable model in open standard formats built from a dossier.
+  - Oracle comparison: the deterministic pass/partial/fail check of a reconstruction's
+    output against a claim, within a declared tolerance.
+  - Certificate: the signed, machine-readable per-claim verdict record.
+  - Catalog entry: one candidate paper/model tracked through the reproduction lifecycle.
+
+  Standards ecosystem (build on, do not reinvent):
+  - Model: SBML, CellML. Simulation recipe: SED-ML. Bundle: OMEX / COMBINE archive.
+    Ontologies: KiSAO (algorithms), SBO (semantics).
+  - Engines: the BioSimulators containerized registry.
+  - Self-validation ground truth: BioModels curation labels and reproduced figures.
