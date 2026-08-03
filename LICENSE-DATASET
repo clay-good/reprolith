@@ -1,0 +1,32 @@
+Reprolith produced data — Creative Commons Attribution 4.0 International (CC BY 4.0)
+====================================================================================
+
+This license covers the DATA Reprolith produces and stores: reproduction
+certificates, catalog entries, dossiers, reconstruction bundles, and the public
+certificate registry. The Reprolith source code is licensed separately under the
+MIT License (see LICENSE).
+
+You are free to:
+
+  - Share  — copy and redistribute the material in any medium or format.
+  - Adapt  — remix, transform, and build upon the material for any purpose,
+             even commercially.
+
+Under the following terms:
+
+  - Attribution — You must give appropriate credit, provide a link to this
+    license, and indicate if changes were made. You may do so in any reasonable
+    manner, but not in any way that suggests the licensor endorses you or your
+    use.
+
+No additional restrictions — You may not apply legal terms or technological
+measures that legally restrict others from doing anything the license permits.
+
+Scope note (important): a reproduction certificate attests ONLY to the
+computational reproducibility of a paper's own results. It makes no claim about
+biological correctness, model appropriateness, or fitness for any clinical or
+therapeutic decision. Redistributing a certificate does not change this scope,
+which travels with every certificate.
+
+The full legal text of CC BY 4.0 is available at:
+https://creativecommons.org/licenses/by/4.0/legalcode

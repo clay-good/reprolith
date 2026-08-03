@@ -1,0 +1,49 @@
+name: Candidate paper
+description: Nominate a published model worth reproducing and adding to the catalog.
+title: "[candidate] <paper title or model>"
+labels: ["candidate", "triage"]
+body:
+  - type: input
+    id: paper
+    attributes:
+      label: Paper
+      description: DOI, PubMed ID, or citation.
+    validations:
+      required: true
+  - type: dropdown
+    id: model_class
+    attributes:
+      label: Model class (best guess)
+      options:
+        - ode-pkpd
+        - constraint-based
+        - kinetic
+        - logical
+        - other / unassigned
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this one
+      description: Why it is worth reproducing (impact, contested result, widely reused, etc.).
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Available artifacts
+      description: >-
+        Links to any model file, simulation recipe, code, or dataset the paper ships (SBML,
+        CellML, SED-ML, OMEX, source). Note if it is already in a curated repository.
+    validations:
+      required: false
+  - type: input
+    id: ground_truth
+    attributes:
+      label: Known reproducibility (optional)
+      description: >-
+        If its reproducibility is independently known (e.g. a curation status or a reproduction
+        study), link it — this makes it valuable for self-validation.
+    validations:
+      required: false

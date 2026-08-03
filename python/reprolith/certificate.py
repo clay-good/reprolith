@@ -1,0 +1,80 @@
+"""Deriving the overall verdict, and enforcing the honesty invariants.
+
+This is the one place the certificate-level verdict is decided, by an explicit rule
+(spec: ``reproduction-certificate`` — "Per-claim, qualified verdicts"). Two invariants
+are enforced here so no other code path can bypass them:
+
+* a mixed result is never rounded up to a clean pass, and
+* a full reproduction that rests on a load-bearing assumption is downgraded to
+  *partially reproduced* — Reprolith never takes unqualified credit for its own guesses.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
+
+from .enums import OverallVerdict, Verdict
+from .model import (
+    Assumption,
+    Certificate,
+    ClaimAssessment,
+    EnginePin,
+    PaperIdentity,
+)
+from .scope import Scope
+
+
+def derive_overall(assessments: Sequence[ClaimAssessment]) -> OverallVerdict:
+    """Derive the certificate-level verdict from per-claim assessments.
+
+    The rule, stated plainly:
+
+    * nothing evaluable (empty, or every claim ``not-evaluable``) -> ``blocked``;
+    * every evaluable claim ``reproduced`` and none assumption-qualified -> ``reproduced``;
+    * every evaluable claim ``reproduced`` but at least one assumption-qualified ->
+      ``partially-reproduced`` (the qualification forbids a clean pass);
+    * some but not all evaluable claims ``reproduced`` -> ``partially-reproduced``;
+    * no evaluable claim ``reproduced`` -> ``not-reproduced``.
+    """
+    evaluable = [a for a in assessments if a.verdict is not Verdict.NOT_EVALUABLE]
+    if not evaluable:
+        return OverallVerdict.BLOCKED
+
+    reproduced = [a for a in evaluable if a.verdict is Verdict.REPRODUCED]
+
+    if len(reproduced) == len(evaluable):
+        if any(a.assumption_qualified for a in reproduced):
+            return OverallVerdict.PARTIALLY_REPRODUCED
+        return OverallVerdict.REPRODUCED
+
+    if reproduced:
+        return OverallVerdict.PARTIALLY_REPRODUCED
+
+    return OverallVerdict.NOT_REPRODUCED
+
+
+def build_certificate(
+    *,
+    paper: PaperIdentity,
+    engine_pin: EnginePin,
+    assessments: Iterable[ClaimAssessment],
+    assumptions: Iterable[Assumption] = (),
+    gap_report: Iterable[str] = (),
+    scope: Scope | None = None,
+) -> Certificate:
+    """Construct a certificate with its overall verdict derived and scope attached.
+
+    The overall verdict is always computed here, never passed in, so the honesty
+    invariants cannot be sidestepped by a caller. The scope statement is always
+    present.
+    """
+    frozen_assessments = tuple(assessments)
+    return Certificate(
+        paper=paper,
+        engine_pin=engine_pin,
+        overall=derive_overall(frozen_assessments),
+        scope=scope if scope is not None else Scope(),
+        assessments=frozen_assessments,
+        assumptions=tuple(assumptions),
+        gap_report=tuple(gap_report),
+    )

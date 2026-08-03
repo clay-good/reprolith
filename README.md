@@ -52,3 +52,19 @@ runnable.*
 
 > Status: pre-alpha. Building the first model class in the open. See
 > [`openspec/`](openspec/) for the full specification.
+
+## Build and contribute
+
+The engine skeleton is dependency-free (standard library only). The honesty invariants —
+determinism, the inescapable scope statement, and assumption-qualification — are enforced in
+code and checked in CI.
+
+```bash
+pip install -e ".[dev]"
+ruff check . && mypy && pytest -q
+```
+
+Reprolith gets better when people who know the science validate its judgment. When it isn't sure
+about a load-bearing value, it opens a **verification issue** with its best estimate — confirming
+or correcting one is the most valuable thing you can do here. See
+[CONTRIBUTING.md](CONTRIBUTING.md).

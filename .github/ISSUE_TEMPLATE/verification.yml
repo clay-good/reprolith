@@ -1,0 +1,62 @@
+name: Verification request
+description: >-
+  A load-bearing value Reprolith is not confident about. Confirm, correct, or reject it.
+  (Reprolith opens most of these automatically; you can also open one by hand.)
+title: "[verify] <short description of the value in question>"
+labels: ["verification", "pending-verification"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        You do not need to know Reprolith's internals to answer this. Everything you need is
+        below. **Confirm**, **correct** (give the right value and a source), or **reject** (say
+        why) in a comment. Your decision, name, and rationale become the record.
+  - type: input
+    id: paper
+    attributes:
+      label: Paper
+      description: DOI, PubMed ID, or citation of the source paper.
+      placeholder: "10.xxxx/xxxxx"
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: The specific question
+      description: The single value or judgment in question.
+      placeholder: "Is the central volume of distribution V1 = 12.3 L, as inferred?"
+    validations:
+      required: true
+  - type: textarea
+    id: source_context
+    attributes:
+      label: Source context
+      description: Where in the paper this comes from (section, equation, table, or figure).
+    validations:
+      required: true
+  - type: textarea
+    id: best_estimate
+    attributes:
+      label: Reprolith's best estimate and reasoning
+      description: The current best guess, the alternatives considered, and the basis for it.
+    validations:
+      required: true
+  - type: textarea
+    id: stakes
+    attributes:
+      label: What depends on this
+      description: Which claims or certificates hinge on the value (its impact).
+    validations:
+      required: true
+  - type: dropdown
+    id: model_class
+    attributes:
+      label: Model class
+      options:
+        - ode-pkpd
+        - constraint-based
+        - kinetic
+        - logical
+        - other / unassigned
+    validations:
+      required: true
