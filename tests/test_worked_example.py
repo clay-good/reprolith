@@ -24,16 +24,21 @@ import libsbml  # noqa: E402
 from reprolith import (  # noqa: E402
     Assumption,
     Attribution,
+    Claim,
     EnginePin,
     FailureMode,
     Fault,
     OverallVerdict,
     PaperIdentity,
     Verdict,
-    build_certificate,
+    certify_model,
     judge_scalar,
     simulate,
 )
+
+_PIN = EnginePin(engine="copasi", version="4.46", algorithm="deterministic-lsoda")
+_PAPER = PaperIdentity(title="Zake2021 - PBPK model of metformin in humans, single PO dose",
+                       doi="10.1371/journal.pone.0249594")
 
 _MODEL = Path(__file__).parent.parent / "datasets" / "worked_examples" / "Zake2021_metformin_human_single_PO.xml"
 
@@ -95,23 +100,24 @@ def test_reproduces_only_with_the_salt_form_assumption() -> None:
     assert qualified.assumption_qualified
 
 
-def test_two_claim_certificate_is_partially_reproduced() -> None:
-    # Both claims reproduce, but the 1000 mg claim rests on a load-bearing assumption, so the
-    # overall verdict is downgraded from a clean pass.
+def test_two_claim_certificate_via_certify_model() -> None:
+    # The reusable certify_model runs both claims and assembles the certificate. Both claims
+    # reproduce, but the 1000 mg claim rests on a load-bearing assumption, so the overall
+    # verdict is downgraded from a clean pass.
     free_base = 1000.0 * _MW_FREE_BASE / _MW_HCL
-    assessments = [
-        judge_scalar(claim_id="Cmax-500mg", quantity="plasma Cmax (500 mg PO)",
-                     source_location="Table 4, Zaharenko dataset",
-                     reported=_REPORTED_CMAX_500, predicted=_cmax_shipped()),
-        judge_scalar(claim_id="Cmax-1000mg", quantity="plasma Cmax (1000 mg PO)",
-                     source_location="Chung dataset", reported=_REPORTED_CMAX_1000,
-                     predicted=_cmax_at_dose(free_base), assumption_qualified=True),
-    ]
-    cert = build_certificate(
-        paper=PaperIdentity(title="Zake2021 - PBPK model of metformin in humans, single PO dose",
-                            doi="10.1371/journal.pone.0249594"),
-        engine_pin=EnginePin(engine="copasi", version="4.46", algorithm="deterministic-lsoda"),
-        assessments=assessments,
+    cert = certify_model(
+        _MODEL.read_text(),
+        paper=_PAPER,
+        engine_pin=_PIN,
+        duration=24.0,
+        claims=[
+            Claim(claim_id="Cmax-500mg", quantity="plasma Cmax (500 mg PO)", species="mPlasmaVenous",
+                  reported=_REPORTED_CMAX_500, source_location="Table 4, Zaharenko dataset"),
+            Claim(claim_id="Cmax-1000mg", quantity="plasma Cmax (1000 mg PO)", species="mPlasmaVenous",
+                  reported=_REPORTED_CMAX_1000, source_location="Chung dataset",
+                  parameter_overrides=(("Metformin_Dose_in_Lumen_in_mg", free_base),),
+                  assumption_qualified=True),
+        ],
         assumptions=[Assumption(
             id="dose-salt-form",
             description="stated 1000 mg oral dose is metformin HCl; the model's dose input is free base",

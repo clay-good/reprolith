@@ -20,6 +20,7 @@ from .catalog import (
     Transition,
 )
 from .certificate import build_certificate, derive_overall
+from .certify import Claim, certify_model
 from .determinism import certificate_digest, same_modulo_run_metadata
 from .dossier import (
     Dossier,
@@ -92,6 +93,7 @@ __all__ = [
     "CatalogEntry",
     "CertificateLedger",
     "Certificate",
+    "Claim",
     "ClaimAssessment",
     "ComparisonMethod",
     "Dossier",
@@ -135,6 +137,7 @@ __all__ = [
     "canonical_bytes",
     "canonical_json",
     "certificate_digest",
+    "certify_model",
     "claim_counts",
     "close_gap",
     "compare_sbml_to_dossier",
