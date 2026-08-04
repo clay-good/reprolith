@@ -92,6 +92,8 @@ class ClaimAssessment:
     tolerance_source: str | None = None
     discrepancy: str | None = None
     root_cause: str | None = None
+    implicated: str | None = None
+    fault_hypothesis: str | None = None
     reference_kind: str | None = None
     assumption_qualified: bool = False
 
@@ -107,6 +109,8 @@ class ClaimAssessment:
             "tolerance_source": self.tolerance_source,
             "discrepancy": self.discrepancy,
             "root_cause": self.root_cause,
+            "implicated": self.implicated,
+            "fault_hypothesis": self.fault_hypothesis,
             "reference_kind": self.reference_kind,
             "assumption_qualified": self.assumption_qualified,
         }

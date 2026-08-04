@@ -32,11 +32,11 @@ a phase done until its verification holds.
 
 ## 4. Oracle (PK/PD)
 
-- [ ] 4.1 Implement curve comparison and derived-metric comparison with declared tolerances → verify: a known-good reconstruction reproduces; a perturbed one fails
-- [ ] 4.2 Implement class-default tolerances and principled overrides → verify: default is recorded when unset; override without rationale is rejected
-- [ ] 4.3 Implement `not-evaluable` abstention → verify: a figure-only claim with no digitizable data abstains rather than guesses
-- [ ] 4.4 Implement root-cause attribution from the PK/PD failure-mode set, with paper-vs-reconstruction hypothesis → verify: each non-pass carries a category and an implicated element
-- [ ] 4.5 Guarantee determinism of the verdict and discrepancy → verify: repeated evaluation is identical
+- [x] 4.1 Implement curve comparison and derived-metric comparison with declared tolerances → verify: a known-good reconstruction reproduces; a perturbed one fails
+- [x] 4.2 Implement class-default tolerances and principled overrides → verify: default is recorded when unset; override without rationale is rejected
+- [x] 4.3 Implement `not-evaluable` abstention → verify: a figure-only claim with no digitizable data abstains rather than guesses
+- [x] 4.4 Implement root-cause attribution from the PK/PD failure-mode set, with paper-vs-reconstruction hypothesis → verify: each non-pass carries a category and an implicated element
+- [x] 4.5 Guarantee determinism of the verdict and discrepancy → verify: repeated evaluation is identical
 
 ## 5. Certificate
 
