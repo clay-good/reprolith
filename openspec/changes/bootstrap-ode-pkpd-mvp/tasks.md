@@ -6,7 +6,7 @@ a phase done until its verification holds.
 ## 0. Foundations
 
 - [ ] 0.1 Confirm the open-standard targets and one pinned registered engine the MVP will use → verify: a trivial hand-built model runs under the pin and returns a known output
-- [ ] 0.2 Define the on-disk shapes for entry, dossier, reconstruction bundle, and certificate → verify: an empty example of each validates against its shape
+- [x] 0.2 Define the on-disk shapes for entry, dossier, reconstruction bundle, and certificate → verify: an empty example of each validates against its shape
 - [ ] 0.3 Establish the determinism harness (same inputs + pin ⇒ same certificate) → verify: two runs of the trivial model produce byte-identical certificates modulo run metadata
 
 ## 1. Catalog (MVP slice)
@@ -26,8 +26,8 @@ a phase done until its verification holds.
 ## 3. Reconstruction (PK/PD)
 
 - [ ] 3.1 Build a standard-format model + simulation recipe from a dossier for the in-scope PK/PD structures → verify: the bundle validates and runs under the pin
-- [ ] 3.2 Record every gap-closure as an attributed assumption with alternatives and basis → verify: each assumption is present and attributed to Reprolith, not the paper
-- [ ] 3.3 Flag load-bearing assumptions → verify: an assumption that changes a claim's outcome is flagged
+- [x] 3.2 Record every gap-closure as an attributed assumption with alternatives and basis → verify: each assumption is present and attributed to Reprolith, not the paper
+- [x] 3.3 Flag load-bearing assumptions → verify: an assumption that changes a claim's outcome is flagged
 - [ ] 3.4 Adopt-and-verify a shipped model when present; surface mismatches with the dossier → verify: an author-supplied model is labelled as such; an injected mismatch is reported
 
 ## 4. Oracle (PK/PD)

@@ -62,6 +62,13 @@ from .oracle import (
     relative_error,
 )
 from .query import ReprolithQuery
+from .reconstruction import (
+    ModelOrigin,
+    NonReconstructable,
+    RecipeStep,
+    ReconstructionBundle,
+    close_gap,
+)
 from .render import claim_counts, gap_items, render_human, render_machine
 from .scope import Scope
 from .supersession import CertificateLedger, describe_changes
@@ -95,9 +102,13 @@ __all__ = [
     "LifecycleState",
     "ModelArtifact",
     "ModelClass",
+    "ModelOrigin",
+    "NonReconstructable",
     "OverallVerdict",
     "Parameter",
     "PaperIdentity",
+    "RecipeStep",
+    "ReconstructionBundle",
     "ReferenceKind",
     "ReproductionLevel",
     "ReprolithQuery",
@@ -113,6 +124,7 @@ __all__ = [
     "canonical_json",
     "certificate_digest",
     "claim_counts",
+    "close_gap",
     "content_hash",
     "default_tolerance",
     "derive_overall",
