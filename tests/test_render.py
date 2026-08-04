@@ -142,3 +142,33 @@ def test_unverified_assumption_names_its_queue_item() -> None:
     text = render_human(cert, run)
     # The certificate names the pending queue item it rests on (spec: verification-queue).
     assert "unverified" in text and "VQ-7" in text
+
+
+# --- status badge (spec: certificate-publication, "No silent green") ----------------
+
+
+def test_badge_reflects_verdict_and_carries_scope() -> None:
+    from reprolith import render_badge
+    cert = _cert([_claim(Verdict.REPRODUCED, cid="a")])
+    svg = render_badge(cert)
+    assert "<svg" in svg and "</svg>" in svg
+    assert "reproduced" in svg
+    assert "#4c1" in svg  # a clean reproduction is green
+    # The scope statement travels in the badge and cannot be emptied.
+    assert "reproducible-not-correct-not-clinical" in svg
+
+
+def test_badge_never_shows_silent_green_for_qualified_results() -> None:
+    from reprolith import render_badge
+    # A qualified result (partially-reproduced) must not render green.
+    qualified = _cert([_claim(Verdict.REPRODUCED, cid="a"), _claim(Verdict.FAILED, cid="b")])
+    svg = render_badge(qualified)
+    assert "partially-reproduced" in svg
+    assert "#4c1" not in svg  # not green
+    assert "#dfb317" in svg  # amber — visibly distinct from a clean pass
+
+
+def test_badge_colors_for_not_reproduced_and_blocked() -> None:
+    from reprolith import render_badge
+    assert "#e05d44" in render_badge(_cert([_claim(Verdict.FAILED, cid="a")]))  # not-reproduced red
+    assert "#9f9f9f" in render_badge(_cert([_claim(Verdict.NOT_EVALUABLE, cid="a")]))  # blocked grey

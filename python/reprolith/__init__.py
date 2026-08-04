@@ -87,7 +87,7 @@ from .reconstruction import (
     ReconstructionBundle,
     close_gap,
 )
-from .render import claim_counts, gap_items, render_human, render_machine
+from .render import claim_counts, gap_items, render_badge, render_human, render_machine
 from .revision import DossierHistory, DossierRevision, dossier_digest, revise
 from .run import (
     advance_to_outcome,
@@ -198,6 +198,7 @@ __all__ = [
     "normalized_curve_distance",
     "not_evaluable",
     "relative_error",
+    "render_badge",
     "render_human",
     "render_machine",
     "reverify_dependents",

@@ -76,6 +76,44 @@ def render_machine(cert: Certificate, run: RunMetadata) -> dict[str, Any]:
     }
 
 
+# Badge colors. Only a clean reproduction is green: a qualified or partial result must look
+# visibly distinct, because a silent green would overstate reproducibility (spec:
+# certificate-publication — "No silent green").
+_BADGE_COLOR = {
+    "reproduced": "#4c1",  # green — reserved for an unqualified full reproduction
+    "partially-reproduced": "#dfb317",  # amber — never green
+    "not-reproduced": "#e05d44",  # red
+    "blocked": "#9f9f9f",  # grey
+}
+
+
+def render_badge(cert: Certificate) -> str:
+    """A self-contained SVG status badge for a certificate (spec: certificate-publication).
+
+    The colour reflects the overall verdict and reserves green for an unqualified reproduction,
+    so a qualified or partial result can never render as a clean success. The scope statement
+    travels in the badge's title and cannot be emptied.
+    """
+    verdict = cert.overall.value
+    color = _BADGE_COLOR[verdict]
+    label = "reprolith"
+    label_w = len(label) * 7 + 10
+    value_w = len(verdict) * 7 + 10
+    total = label_w + value_w
+    scope = cert.scope.machine
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{total}" height="20" role="img" '
+        f'aria-label="{label}: {verdict}">'
+        f"<title>{label}: {verdict} ({scope})</title>"
+        f'<rect width="{label_w}" height="20" fill="#555"/>'
+        f'<rect x="{label_w}" width="{value_w}" height="20" fill="{color}"/>'
+        f'<g fill="#fff" font-family="Verdana,Geneva,sans-serif" font-size="11" text-anchor="middle">'
+        f'<text x="{label_w / 2:.0f}" y="14">{label}</text>'
+        f'<text x="{label_w + value_w / 2:.0f}" y="14">{verdict}</text>'
+        f"</g></svg>"
+    )
+
+
 def render_human(cert: Certificate, run: RunMetadata) -> str:
     """A self-contained, plain-text certificate a stranger can follow.
 
@@ -141,4 +179,4 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
     return "\n".join(lines)
 
 
-__all__ = ["claim_counts", "gap_items", "render_human", "render_machine"]
+__all__ = ["claim_counts", "gap_items", "render_badge", "render_human", "render_machine"]
