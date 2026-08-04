@@ -7,7 +7,8 @@
       "chosen": "779.9 mg free base (1000 mg HCl x 129.16/165.62)",
       "description": "the stated 1000 mg oral dose is metformin HCl; the model's dose input is free base",
       "id": "dose-salt-form",
-      "load_bearing": true
+      "load_bearing": true,
+      "verification_item": null
     }
   ],
   "engine_pin": {
