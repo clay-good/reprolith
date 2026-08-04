@@ -44,6 +44,15 @@ def main() -> None:
     out = DATASETS / "milestone" / "agreement_report.json"
     out.write_text(json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n")
 
+    # Store each certified certificate's content as JSON so it can be re-opened and served
+    # (design goal 3) without recomputing it — e.g. loaded into the MCP server's ledger.
+    cert_dir = DATASETS / "milestone" / "certificates"
+    cert_dir.mkdir(exist_ok=True)
+    for accession, cert in certified.items():
+        (cert_dir / f"{accession}.json").write_text(
+            json.dumps(cert.content(), indent=2, sort_keys=True) + "\n"
+        )
+
     counts = Counter(cert.overall.value for cert in certificates)
     print(f"entries: {len(certificates)} | verdicts: {dict(counts)}")
     print(f"agreement: {report.agreements}/{report.total}")

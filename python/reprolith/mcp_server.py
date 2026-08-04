@@ -17,9 +17,11 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
 from typing import IO, Any
 
 from .query import ReprolithQuery
+from .supersession import CertificateLedger
 
 PROTOCOL_VERSION = "2024-11-05"
 
@@ -206,15 +208,33 @@ def _version() -> str:
     return __version__
 
 
+def load_certificates(ledger: CertificateLedger, directory: Path | str) -> int:
+    """Load every stored certificate JSON in ``directory`` into ``ledger``; return the count.
+
+    Each file is a certificate's ``content`` dict; reloading is dependency-free (no engine),
+    so the server can serve real certificates produced earlier by the milestone run.
+    """
+    from .persistence import certificate_from_content
+
+    path = Path(directory)
+    loaded = 0
+    if path.is_dir():
+        for file in sorted(path.glob("*.json")):
+            ledger.issue(certificate_from_content(json.loads(file.read_text())))
+            loaded += 1
+    return loaded
+
+
 def main() -> None:  # pragma: no cover - stdio entry point
-    """Run the server over stdio with a catalog seeded from the labelled test set."""
+    """Run the server over stdio, seeding the catalog and loading stored certificates."""
     from .catalog import Catalog
     from .seed import seed_catalog
-    from .supersession import CertificateLedger
 
     catalog = Catalog()
     seed_catalog(catalog)
-    serve_stdio(ReprolithQuery(catalog, CertificateLedger()))
+    ledger = CertificateLedger()
+    load_certificates(ledger, Path(__file__).resolve().parents[2] / "datasets" / "milestone" / "certificates")
+    serve_stdio(ReprolithQuery(catalog, ledger))
 
 
 if __name__ == "__main__":  # pragma: no cover
@@ -226,5 +246,6 @@ __all__ = [
     "TOOL_DEFINITIONS",
     "dispatch_tool",
     "handle_request",
+    "load_certificates",
     "serve_stdio",
 ]

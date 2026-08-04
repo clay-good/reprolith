@@ -1,0 +1,64 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": false,
+      "claim_id": "Cmax-500mg",
+      "discrepancy": "relative error 0.0216",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "quantity": "plasma Cmax after 500 mg single oral dose",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "Table 4, Zaharenko dataset (reported 6.2 nmol/mL)",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": true,
+      "claim_id": "Cmax-1000mg",
+      "discrepancy": "relative error 0.0045",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "quantity": "plasma Cmax after 1000 mg single oral dose",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "Chung dataset (reported 11.2 nmol/mL)",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [
+    {
+      "alternatives": [],
+      "attributed_to": "reprolith",
+      "basis": "model default 389.92 mg equals 500 mg HCl expressed as free base; clinical doses are the HCl salt",
+      "chosen": "779.9 mg free base (1000 mg HCl x 129.16/165.62)",
+      "description": "the stated 1000 mg oral dose is metformin HCl; the model's dose input is free base",
+      "id": "dose-salt-form",
+      "load_bearing": true
+    }
+  ],
+  "engine_pin": {
+    "algorithm": "deterministic-lsoda",
+    "engine": "copasi",
+    "version": "4.46.300 (Source)"
+  },
+  "gap_report": [],
+  "overall": "partially-reproduced",
+  "paper": {
+    "doi": "10.1371/journal.pone.0249594",
+    "pubmed_id": null,
+    "title": "Zake2021 - PBPK model of metformin in humans, single PO dose"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

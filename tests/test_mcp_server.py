@@ -21,7 +21,8 @@ from reprolith import (
     handle_request,
     serve_stdio,
 )
-from reprolith.mcp_server import TOOL_DEFINITIONS
+from reprolith.mcp_server import TOOL_DEFINITIONS, load_certificates
+from reprolith.seed import seed_catalog
 
 
 def _fixture() -> tuple[ReprolithQuery, str]:
@@ -89,6 +90,29 @@ def test_unknown_tool_is_a_tool_error_not_a_crash() -> None:
 
 def test_lint_tool_is_registered() -> None:
     assert "lint" in {t["name"] for t in TOOL_DEFINITIONS}
+
+
+def test_server_serves_the_stored_milestone_certificate() -> None:
+    # End to end, no engine: the metformin certificate the milestone run stored as JSON is
+    # loaded into the ledger and served through the MCP tools.
+    from pathlib import Path
+
+    catalog = Catalog()
+    seed_catalog(catalog)
+    ledger = CertificateLedger()
+    cert_dir = Path(__file__).parent.parent / "datasets" / "milestone" / "certificates"
+    assert load_certificates(ledger, cert_dir) >= 1
+    query = ReprolithQuery(catalog, ledger)
+
+    # The certificate's paper carries the title (shared with the catalog entry), so it is
+    # discoverable by title.
+    digests, _ = _call(query, "certificates_for",
+                       {"title": "Zake2021 - PBPK model of metformin in humans, single PO dose"})
+    assert digests
+    verdict, is_error = _call(query, "verdict", {"digest": digests[0]})
+    assert not is_error
+    assert verdict["overall"] == OverallVerdict.PARTIALLY_REPRODUCED.value
+    assert verdict["scope"]["machine"] == "reproducible-not-correct-not-clinical"
 
 
 def test_lint_tool_reports_missing_engine_as_a_tool_error() -> None:
