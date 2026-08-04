@@ -14,13 +14,16 @@ from reprolith import (  # noqa: E402
     EnginePin,
     FailureMode,
     Fault,
+    FbaModel,
     InfeasibleFba,
     OverallVerdict,
     PaperIdentity,
     Verdict,
     build_certificate,
+    compare_frog,
     essentiality_agreement,
     flux_variability,
+    frog_fingerprint,
     judge_flux,
     judge_objective,
     reaction_essentiality,
@@ -153,3 +156,45 @@ def test_judge_flux_fails_when_outside_the_feasible_range() -> None:
                                 fault=Fault.MANUSCRIPT),
     )
     assert a.verdict is Verdict.FAILED
+
+
+_MODEL = FbaModel(
+    species_ids=("A",),
+    reaction_ids=("v_in", "v_out"),
+    stoichiometry=((1.0, -1.0),),
+    objective=(0.0, 1.0),
+    lower=(0.0, 0.0),
+    upper=(8.0, None),
+)
+
+
+def test_frog_fingerprint_bundles_the_three_components() -> None:
+    fp = frog_fingerprint(_MODEL)
+    assert fp.objective_value == pytest.approx(8.0)
+    assert fp.variability == ((8.0, 8.0), (8.0, 8.0))  # both fluxes forced at the optimum
+    # Deleting either reaction starves the objective, so each deletion optimum is 0.
+    assert fp.deletion_objectives == pytest.approx((0.0, 0.0))
+
+
+def test_frog_comparison_agrees_with_itself() -> None:
+    fp = frog_fingerprint(_MODEL)
+    result = compare_frog(fp, fp)
+    assert result.agrees
+    assert result.disagreements == ()
+
+
+def test_frog_comparison_names_a_perturbed_objective() -> None:
+    computed = frog_fingerprint(_MODEL)
+    # A curated fingerprint reporting a different objective value must fail on that component,
+    # with the disagreement named, not hidden behind an overall pass.
+    reported = frog_fingerprint(
+        FbaModel(
+            species_ids=("A",), reaction_ids=("v_in", "v_out"),
+            stoichiometry=((1.0, -1.0),), objective=(0.0, 1.0),
+            lower=(0.0, 0.0), upper=(5.0, None),  # tighter inflow -> optimum 5, not 8
+        )
+    )
+    result = compare_frog(computed, reported)
+    assert not result.agrees
+    assert not result.objective_agrees
+    assert any("objective" in d for d in result.disagreements)

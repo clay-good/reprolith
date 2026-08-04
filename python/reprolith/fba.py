@@ -265,6 +265,134 @@ def judge_flux(
     )
 
 
+@dataclass(frozen=True)
+class FrogFingerprint:
+    """A standardized, solver-independent reproducibility fingerprint for a constraint-based model.
+
+    Named for the FROG analysis the field uses (Flux optimum, Reaction variability, Objective,
+    Gene/reaction deletion). It bundles the three reaction-level results the constraint-based-class
+    spec names — the optimal objective value, each reaction's flux-variability interval, and the
+    objective remaining after each reaction is deleted — so a verdict can be the comparison of two
+    fingerprints rather than of a single number. (Gene-level deletion is a further extension that
+    needs gene–reaction associations the fbc ingest does not yet capture.)
+    """
+
+    reaction_ids: tuple[str, ...]
+    objective_value: float
+    variability: tuple[tuple[float, float], ...]
+    deletion_objectives: tuple[float, ...]
+
+
+@dataclass(frozen=True)
+class FrogComparison:
+    """The component-wise agreement of two FROG fingerprints, with the disagreements named."""
+
+    objective_agrees: bool
+    variability_agrees: bool
+    deletion_agrees: bool
+    disagreements: tuple[str, ...]
+
+    @property
+    def agrees(self) -> bool:
+        return self.objective_agrees and self.variability_agrees and self.deletion_agrees
+
+
+def frog_fingerprint(model: FbaModel, *, fraction_of_optimum: float = 1.0) -> FrogFingerprint:
+    """Compute the FROG fingerprint of a constraint-based model (spec: constraint-based-class).
+
+    The objective value and each reaction's variability interval come from :func:`solve_objective`
+    and :func:`flux_variability`; the deletion objective for a reaction is the optimum with that
+    reaction's flux constrained to zero (0.0 if the knockout makes the model infeasible). Every
+    component is well-defined regardless of alternate optima, so the fingerprint is portable.
+    """
+    objective_value = solve_objective(
+        model.stoichiometry, model.objective, model.lower, model.upper
+    )
+    variability = flux_variability(
+        model.stoichiometry,
+        model.objective,
+        model.lower,
+        model.upper,
+        fraction_of_optimum=fraction_of_optimum,
+    )
+    deletion: list[float] = []
+    for i in range(len(model.reaction_ids)):
+        knocked_lower = [0.0 if j == i else lo for j, lo in enumerate(model.lower)]
+        knocked_upper: list[float | None] = [
+            0.0 if j == i else up for j, up in enumerate(model.upper)
+        ]
+        try:
+            deletion.append(
+                solve_objective(model.stoichiometry, model.objective, knocked_lower, knocked_upper)
+            )
+        except InfeasibleFba:
+            deletion.append(0.0)
+    return FrogFingerprint(
+        reaction_ids=model.reaction_ids,
+        objective_value=objective_value,
+        variability=tuple(variability),
+        deletion_objectives=tuple(deletion),
+    )
+
+
+def _close(a: float, b: float, rel_tol: float) -> bool:
+    return abs(a - b) <= rel_tol * max(1.0, abs(a), abs(b))
+
+
+def compare_frog(
+    computed: FrogFingerprint, reported: FrogFingerprint, *, rel_tol: float = 1e-6
+) -> FrogComparison:
+    """Compare two FROG fingerprints component-wise, aligning reactions by id.
+
+    The objective values, each shared reaction's variability bounds, and each shared reaction's
+    deletion objective must agree within ``rel_tol``. Reactions present in only one fingerprint are
+    recorded as disagreements, so a structural mismatch is never hidden by a numeric pass.
+    """
+    disagreements: list[str] = []
+
+    objective_agrees = _close(computed.objective_value, reported.objective_value, rel_tol)
+    if not objective_agrees:
+        disagreements.append(
+            f"objective {computed.objective_value:.6g} != {reported.objective_value:.6g}"
+        )
+
+    reported_index = {rid: i for i, rid in enumerate(reported.reaction_ids)}
+    only_computed = [r for r in computed.reaction_ids if r not in reported_index]
+    only_reported = [r for r in reported.reaction_ids if r not in set(computed.reaction_ids)]
+    for rid in only_computed + only_reported:
+        disagreements.append(f"reaction {rid} present in only one fingerprint")
+
+    variability_agrees = True
+    deletion_agrees = True
+    for i, rid in enumerate(computed.reaction_ids):
+        if rid not in reported_index:
+            variability_agrees = deletion_agrees = False
+            continue
+        j = reported_index[rid]
+        (clo, chi), (rlo, rhi) = computed.variability[i], reported.variability[j]
+        if not (_close(clo, rlo, rel_tol) and _close(chi, rhi, rel_tol)):
+            variability_agrees = False
+            disagreements.append(
+                f"variability {rid}: [{clo:.6g}, {chi:.6g}] != [{rlo:.6g}, {rhi:.6g}]"
+            )
+        if not _close(computed.deletion_objectives[i], reported.deletion_objectives[j], rel_tol):
+            deletion_agrees = False
+            disagreements.append(
+                f"deletion {rid}: {computed.deletion_objectives[i]:.6g} != "
+                f"{reported.deletion_objectives[j]:.6g}"
+            )
+
+    if only_computed or only_reported:
+        variability_agrees = deletion_agrees = False
+
+    return FrogComparison(
+        objective_agrees=objective_agrees,
+        variability_agrees=variability_agrees,
+        deletion_agrees=deletion_agrees,
+        disagreements=tuple(disagreements),
+    )
+
+
 def essentiality_agreement(computed: frozenset[int], reported: frozenset[int]) -> float:
     """Fraction of reactions the computed and reported essential sets agree on, over their union.
 
@@ -280,9 +408,13 @@ def essentiality_agreement(computed: frozenset[int], reported: frozenset[int]) -
 __all__ = [
     "FbaModel",
     "FbaUnavailable",
+    "FrogComparison",
+    "FrogFingerprint",
     "InfeasibleFba",
+    "compare_frog",
     "essentiality_agreement",
     "flux_variability",
+    "frog_fingerprint",
     "judge_flux",
     "judge_objective",
     "reaction_essentiality",

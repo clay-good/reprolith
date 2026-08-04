@@ -44,6 +44,29 @@ Given a reported flux and its variability interval `(min, max)` (from `flux_vari
   against the nearest feasible flux, so it lands `partial`/`failed` and — like any non-pass —
   requires a root-cause attribution.
 
+## The FROG fingerprint
+
+The spec makes the verdict for a curated model a *fingerprint comparison*, not a single number.
+`frog_fingerprint` bundles the three reaction-level results into one standardized, solver-independent
+artifact — named for the field's FROG analysis (Flux optimum, Reaction variability, Objective,
+Gene/reaction deletion):
+
+- the optimal **objective value**,
+- each reaction's **flux-variability interval**, and
+- the **deletion objective** for each reaction (the optimum with that reaction knocked out).
+
+`compare_frog` then checks two fingerprints component-wise, aligning reactions by id and naming
+every disagreement — a reaction present in only one fingerprint is a disagreement, so a structural
+mismatch is never hidden behind a numeric pass. (Gene-level deletion is a further extension that
+needs the gene–reaction associations the fbc ingest does not yet capture.)
+
+```python
+from reprolith import frog_fingerprint, compare_frog, ingest_fbc_sbml
+
+fp = frog_fingerprint(ingest_fbc_sbml(model_sbml))
+verdict = compare_frog(fp, curated_fingerprint)   # verdict.agrees, verdict.disagreements
+```
+
 ## Example
 
 ```python
