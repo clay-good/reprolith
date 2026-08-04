@@ -1,0 +1,50 @@
+{
+  "BIOMD0000000005": {
+    "distance": 2.3824e-05,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ]
+  },
+  "BIOMD0000000010": {
+    "distance": 2.78e-07,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ]
+  },
+  "BIOMD0000000012": {
+    "distance": 0.000320142,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ]
+  },
+  "BIOMD0000000021": {
+    "distance": 8.763e-06,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ]
+  },
+  "BIOMD0000000051": {
+    "distance": 2.19e-06,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ]
+  },
+  "BIOMD0000000058": {
+    "distance": 1.2616e-05,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ]
+  }
+}

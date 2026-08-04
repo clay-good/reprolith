@@ -9,8 +9,10 @@ classes use, and writes the walkable result.
 
 Each entry's label is `reproduced`, its ground truth the species time-course an independent simulator
 (libRoadRunner) computes for the model; certifying reproduces that curve under Reprolith's COPASI
-engine. Reproducible from the repository alone — no network — but needs the ``engine`` extra
-(python-copasi). Run from the repo root:
+engine. It also records, per entry, whether the verdict is engine-independent — the same trajectory under
+both COPASI and libRoadRunner — so the walkable result shows engine stability alongside blind
+agreement. Reproducible from the repository alone — no network — but needs the ``engine`` extra
+(python-copasi) and the ``corroborate`` extra (libRoadRunner). Run from the repo root:
 
     python scripts/run_kinetic_milestone.py
 """
@@ -31,6 +33,7 @@ from reprolith import (
     OverallVerdict,
     PaperIdentity,
     certify_curves,
+    corroborate_curve,
     engine_pin,
     run_test_set,
 )
@@ -89,6 +92,26 @@ def main() -> None:
         json.dumps(catalog.to_dict(), indent=2, sort_keys=True) + "\n"
     )
 
+    # Engine independence: the same curve under both COPASI and libRoadRunner (spec:
+    # simulation-oracle). Recorded alongside the blind agreement so the walkable result shows no
+    # verdict here rests on a single solver.
+    corroboration = {}
+    for spec in models:
+        result = corroborate_curve(
+            (KIN / f"{spec['id']}.xml").read_text(encoding="utf-8"),
+            spec["species"], duration=spec["duration"], steps=spec["steps"],
+        )
+        corroboration[spec["id"]] = {
+            "engines": list(result.engines),
+            "distance": round(result.distance, 9),
+            "engine_independent": result.stable,
+        }
+    (milestone / "corroboration.json").write_text(
+        json.dumps(corroboration, indent=2, sort_keys=True) + "\n"
+    )
+
+    stable = sum(1 for c in corroboration.values() if c["engine_independent"])
+    print(f"engine-independent: {stable}/{len(corroboration)}")
     counts = Counter(cert.overall.value for cert in certificates)
     print(f"entries: {len(certificates)} | verdicts: {dict(counts)}")
     print(f"agreement: {report.agreements}/{report.total}")

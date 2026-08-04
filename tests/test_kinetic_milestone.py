@@ -41,6 +41,14 @@ def test_every_committed_certificate_is_a_reproduced_curve_verdict() -> None:
         assert content["assessments"][0]["method"] == "curve-normalized-distance"
 
 
+def test_every_entry_is_recorded_engine_independent() -> None:
+    corroboration = json.loads((_MILESTONE / "corroboration.json").read_text(encoding="utf-8"))
+    assert set(corroboration) == _EXPECTED
+    for entry in corroboration.values():
+        assert entry["engines"] == ["copasi", "roadrunner"]
+        assert entry["engine_independent"] is True
+
+
 def test_the_catalog_recorded_every_entry_as_a_certified_kinetic_model() -> None:
     catalog = json.loads((_MILESTONE / "catalog.json").read_text(encoding="utf-8"))
     entries = catalog["entries"]

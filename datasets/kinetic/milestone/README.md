@@ -39,11 +39,16 @@ the reference comes from an independent simulator, not from COPASI.
 
 ## Files
 
+Every entry is additionally **engine-independent**: the same trajectory under both COPASI and
+libRoadRunner (6/6), so no verdict here rests on a single solver's quirk — see
+[`corroboration.json`](corroboration.json).
+
 | File | What it is |
 |---|---|
 | [`agreement_report.json`](agreement_report.json) | Per-entry and aggregate agreement with ground truth. |
 | [`certificates/`](certificates/) | Each blind certificate's full content (verdict, scope, curve distance). |
 | [`catalog.json`](catalog.json) | The catalog after the run, entries advanced to `certified`. |
+| [`corroboration.json`](corroboration.json) | Per-entry cross-engine agreement (COPASI vs libRoadRunner). |
 
 See also the [cross-validation set](../cross_validation.json) and
 [`docs/kinetic-class.md`](../../../docs/kinetic-class.md).
