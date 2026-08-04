@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from reprolith import Claim, ReferenceKind, load_claims_dataset
+from reprolith.certify import _metric
 from reprolith.engine import NonFiniteSimulation, require_finite
 
 _CLAIMS = Path(__file__).parent.parent / "datasets" / "pkpd_claims.json"
@@ -26,6 +27,17 @@ def test_load_claims_dataset_reads_the_shipped_dataset() -> None:
     data = load_claims_dataset(_CLAIMS)
     assert "BIOMD0000001028" in data["entries"]  # metformin, the one verified entry
     assert data["entries"]["BIOMD0000001028"]["claims"]
+
+
+def test_metric_derives_cmax_auc_and_final() -> None:
+    times = (0.0, 1.0, 2.0, 3.0)
+    values = (0.0, 4.0, 2.0, 1.0)
+    assert _metric(times, values, "cmax") == 4.0
+    assert _metric(times, values, "final") == 1.0
+    # trapezoidal area: (0+4)/2 + (4+2)/2 + (2+1)/2 = 2 + 3 + 1.5 = 6.5
+    assert _metric(times, values, "auc") == pytest.approx(6.5)
+    with pytest.raises(ValueError):
+        _metric(times, values, "nonsense")
 
 
 def test_claim_from_record_parses_overrides_and_flags() -> None:
