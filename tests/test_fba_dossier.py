@@ -215,3 +215,23 @@ def test_certifies_an_honest_not_reproduced_verdict_with_a_root_cause() -> None:
     (assessment,) = cert.assessments
     assert assessment.verdict is Verdict.FAILED
     assert assessment.root_cause == "ambiguous-biomass-or-objective-definition"
+
+
+@pytestmark_engine
+def test_a_medium_naming_an_unknown_reaction_is_surfaced_not_ignored() -> None:
+    # Adopt-and-verify: a recorded medium that names an exchange the adopted model does not contain
+    # is a real mismatch (a typo, or the wrong model), and must raise rather than be silently
+    # dropped — otherwise the certificate would be solved under bounds nobody recorded.
+    from reprolith import EnginePin, PaperIdentity, certify_constraint_based
+
+    dossier = constraint_based_dossier(
+        "mismatch", model=_adopted_model(), objective_claims=[_growth_claim()],
+        medium=[Parameter(name="R_EX_not_in_model_e", value=5.0, unit=FLUX_UNIT,
+                          source_location="typo")],
+    )
+    with pytest.raises(ValueError, match="does not contain"):
+        certify_constraint_based(
+            dossier, sbml=_MODEL_PATH.read_text(encoding="utf-8"),
+            paper=PaperIdentity(title="E. coli core", doi=""),
+            engine_pin=EnginePin(engine="scipy-highs", version="1.13", algorithm="linprog-highs"),
+        )
