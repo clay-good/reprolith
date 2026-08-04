@@ -3,10 +3,11 @@ REPRODUCTION CERTIFICATE — Zake2021 - PBPK model of metformin in humans, singl
 Engine pin: copasi 4.46.300 / deterministic-lsoda
 
 OVERALL: partially-reproduced
-  claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
+  claims by verdict: reproduced=2, partial=0, failed=0, not-evaluable=0
   assumption-qualified claims: Cmax-1000mg
 
 CLAIMS
+  [Cmax-500mg] plasma Cmax after 500 mg single oral dose: reproduced (source Table 4, Zaharenko dataset (reported 6.2 nmol/mL) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
   [Cmax-1000mg] plasma Cmax after 1000 mg single oral dose: reproduced [assumption-qualified] (source Chung dataset (reported 11.2 nmol/mL) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
 
 ASSUMPTIONS (supplied by Reprolith, not the paper)

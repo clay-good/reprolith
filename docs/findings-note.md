@@ -22,12 +22,15 @@ scope-flagged certificate. The blind PK/PD test set (31 real BioModels models, 2
 
 ## What reproduced
 
-**Zake2021 metformin PBPK model** (PLOS ONE 2021), plasma Cmax after a 1000 mg oral dose:
-reported 11.2 nmol/mL, simulated 11.25 nmol/mL — **0.4 %**, `reproduced`. See
-[`datasets/worked_examples/`](../datasets/worked_examples/).
+**Zake2021 metformin PBPK model** (PLOS ONE 2021), two plasma-Cmax claims from the paper (see
+[`datasets/worked_examples/`](../datasets/worked_examples/)):
 
-But it reproduced **only under a load-bearing assumption**, so the certificate reports it as
-assumption-qualified and the overall verdict as `partially-reproduced`.
+- **500 mg** dose — reported 6.2, simulated 6.07 nmol/mL (**2.2 %**), `reproduced` cleanly, no
+  assumption.
+- **1000 mg** dose — reported 11.2, simulated 11.25 nmol/mL (**0.4 %**), but `reproduced` **only
+  under a load-bearing assumption**, so reported as assumption-qualified.
+
+Overall verdict: `partially-reproduced` — a clean claim and a qualified one, never rounded up.
 
 ## What the field under-specifies most
 
