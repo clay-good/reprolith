@@ -451,6 +451,20 @@ class Catalog:
         pool.sort(key=lambda entry: entry.ground_truth is None)
         return pool
 
+    def priority_signals(self, entry: CatalogEntry) -> dict[str, Any]:
+        """The signals that place an entry in the queue — so its rank is never a black box.
+
+        Ranking is ground-truth-first (labelled work keeps self-validation possible) then
+        submission order; the tractability signal (difficulty) and class are advisory context
+        (spec: model-catalog / catalog-seeding — "Prioritization is explainable").
+        """
+        return {
+            "ground_truth_labelled": entry.ground_truth is not None,
+            "difficulty": entry.difficulty,
+            "model_class": entry.model_class.value,
+            "ranking": "ground-truth-labelled work first, then submission order",
+        }
+
     def claim_next(
         self,
         requester: str,

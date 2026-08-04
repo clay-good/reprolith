@@ -304,3 +304,14 @@ def test_seed_records_the_dataset_source() -> None:
     catalog = Catalog()
     entries = seed_catalog(catalog)
     assert all("biomodels" in s.lower() for e in entries for s in e.sources)
+
+
+def test_priority_is_explainable() -> None:
+    catalog = Catalog()
+    labelled = catalog.add(Identifiers(title="L", accession="L"), ModelClass.ODE_PKPD,
+                           difficulty="low",
+                           ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source="c"))
+    signals = catalog.priority_signals(labelled)
+    assert signals["ground_truth_labelled"] is True
+    assert signals["difficulty"] == "low"
+    assert "ground-truth" in signals["ranking"]

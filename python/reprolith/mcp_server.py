@@ -198,7 +198,12 @@ def claim_work(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dic
     )
     if entry is None:
         return {"claimed": False, "reason": "no eligible work"}
-    return {"claimed": True, "entry": entry.blind().to_dict(), "lease_expires": entry.lease_expires}
+    return {
+        "claimed": True,
+        "entry": entry.blind().to_dict(),
+        "lease_expires": entry.lease_expires,
+        "priority": catalog.priority_signals(entry),  # why this entry was offered
+    }
 
 
 def release_work(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
