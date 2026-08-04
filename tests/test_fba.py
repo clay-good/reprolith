@@ -20,6 +20,7 @@ from reprolith import (  # noqa: E402
     Verdict,
     build_certificate,
     essentiality_agreement,
+    flux_variability,
     judge_objective,
     reaction_essentiality,
     solve_objective,
@@ -92,3 +93,30 @@ def test_essentiality_agreement_scores_overlap() -> None:
     assert essentiality_agreement(frozenset({0, 1}), frozenset({0, 1})) == pytest.approx(1.0)
     assert essentiality_agreement(frozenset({0, 1}), frozenset({0, 2})) == pytest.approx(1 / 3)
     assert essentiality_agreement(frozenset(), frozenset()) == pytest.approx(1.0)
+
+
+def test_fva_pins_a_forced_flux() -> None:
+    # In the linear chain, steady state forces v_in = v_out = 8 at the optimum, so FVA reports
+    # each as a single pinned value — a claim on either flux could be certified exactly.
+    ranges = flux_variability(_S, _OBJECTIVE, _LOWER, _UPPER)
+    assert ranges[0] == pytest.approx((8.0, 8.0))
+    assert ranges[1] == pytest.approx((8.0, 8.0))
+
+
+def test_fva_reports_the_alternate_optima_range() -> None:
+    # v_in -> A, then two parallel routes A -> B (r1, r2), then B -> v_out (objective). The
+    # optimum (10) is achieved by any split r1 + r2 = 10, so FVA honestly reports each parallel
+    # flux as the whole interval [0, 10] rather than committing to one ambiguous value.
+    stoich = [
+        [1.0, -1.0, -1.0, 0.0],  # A: v_in - r1 - r2
+        [0.0, 1.0, 1.0, -1.0],  # B: r1 + r2 - v_out
+    ]
+    objective = [0.0, 0.0, 0.0, 1.0]
+    lower = [0.0, 0.0, 0.0, 0.0]
+    upper: list[float | None] = [10.0, None, None, None]
+
+    ranges = flux_variability(stoich, objective, lower, upper)
+    assert ranges[0] == pytest.approx((10.0, 10.0))  # inflow forced
+    assert ranges[1] == pytest.approx((0.0, 10.0))  # parallel route — free within the optimum
+    assert ranges[2] == pytest.approx((0.0, 10.0))
+    assert ranges[3] == pytest.approx((10.0, 10.0))  # objective outflow forced

@@ -131,6 +131,47 @@ def reaction_essentiality(
     return frozenset(essential)
 
 
+def flux_variability(
+    stoichiometry: Sequence[Sequence[float]],
+    objective: Sequence[float],
+    lower: Sequence[float],
+    upper: Sequence[float | None],
+    *,
+    fraction_of_optimum: float = 1.0,
+) -> list[tuple[float, float]]:
+    """The min and max each reaction's flux can take while the objective stays optimal.
+
+    This is the honest answer to the alternate-optima problem the spec names (spec:
+    constraint-based-class): a single optimal flux vector is ambiguous when many achieve the
+    same objective, so instead of picking one, FVA reports the whole feasible interval per
+    reaction at (a ``fraction_of_optimum`` of) the optimum. A reaction pinned to a single value
+    reproduces exactly; one with a wide interval cannot be certified to a single reported flux.
+
+    Returns one ``(min, max)`` tuple per reaction, in reaction order.
+    """
+    linprog = _linprog()
+    optimum = solve_objective(stoichiometry, objective, lower, upper)
+    floor = fraction_of_optimum * optimum
+    a_eq = [list(row) for row in stoichiometry]
+    b_eq = [0.0] * len(stoichiometry)
+    # Hold the objective at (a fraction of) its optimum: objective . v >= floor, written for a
+    # <=-form solver as -objective . v <= -floor.
+    a_ub = [[-x for x in objective]]
+    b_ub = [-floor]
+    bounds = list(zip(lower, upper))
+    ranges: list[tuple[float, float]] = []
+    for i in range(len(objective)):
+        select = [1.0 if j == i else 0.0 for j in range(len(objective))]
+        lo = linprog(c=select, A_ub=a_ub, b_ub=b_ub, A_eq=a_eq, b_eq=b_eq, bounds=bounds, method="highs")
+        hi = linprog(
+            c=[-x for x in select], A_ub=a_ub, b_ub=b_ub, A_eq=a_eq, b_eq=b_eq, bounds=bounds, method="highs"
+        )
+        if not lo.success or not hi.success:
+            raise InfeasibleFba(f"flux-variability problem is not solvable for reaction {i}")
+        ranges.append((float(lo.fun), float(-hi.fun)))
+    return ranges
+
+
 def essentiality_agreement(computed: frozenset[int], reported: frozenset[int]) -> float:
     """Fraction of reactions the computed and reported essential sets agree on, over their union.
 
@@ -147,6 +188,7 @@ __all__ = [
     "FbaUnavailable",
     "InfeasibleFba",
     "essentiality_agreement",
+    "flux_variability",
     "judge_objective",
     "reaction_essentiality",
     "solve_objective",
