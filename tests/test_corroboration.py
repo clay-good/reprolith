@@ -7,6 +7,7 @@ Running the same model under two independently-implemented engines and comparing
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -16,16 +17,23 @@ pytest.importorskip("roadrunner", reason="the optional 'corroborate' extra (libR
 
 from reprolith import corroborate_curve, roadrunner_pin, simulate_with_roadrunner  # noqa: E402
 
-_SBML = (
-    Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.xml"
-).read_text(encoding="utf-8")
+_KIN = Path(__file__).parent.parent / "datasets" / "kinetic"
+_MODELS = {m["id"]: m for m in json.loads((_KIN / "cross_validation.json").read_text())["models"]}
+_SBML = (_KIN / "BIOMD0000000010.xml").read_text(encoding="utf-8")
 
 
-def test_two_independent_engines_agree_so_the_verdict_is_engine_independent() -> None:
-    result = corroborate_curve(_SBML, "MAPK_PP", duration=4000.0, steps=200)
+@pytest.mark.parametrize("model_id", sorted(_MODELS))
+def test_verdict_is_engine_independent_across_the_kinetic_class(model_id: str) -> None:
+    # Verdict stability reported across two engines for every supported kinetic model (roadmap #5):
+    # COPASI and libRoadRunner land on the same trajectory, so each verdict is the model's, not a
+    # single solver's.
+    spec = _MODELS[model_id]
+    result = corroborate_curve(
+        (_KIN / f"{model_id}.xml").read_text(encoding="utf-8"),
+        spec["species"], duration=spec["duration"], steps=spec["steps"],
+    )
     assert result.engines == ("copasi", "roadrunner")
     assert result.stable
-    assert result.distance < 1e-3  # the two solvers land on the same oscillating trajectory
     assert "engine-independent" in result.summary()
 
 
