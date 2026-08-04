@@ -75,6 +75,12 @@ def _normalize(value: str) -> str:
     return " ".join(value.strip().lower().split())
 
 
+def _record_source(entry: CatalogEntry, source: str | None) -> None:
+    """Add ``source`` to the entry's provenance if new (provenance survives de-duplication)."""
+    if source and source not in entry.sources:
+        entry.sources.append(source)
+
+
 @dataclass(frozen=True)
 class Identifiers:
     """The identifiers a paper may be known by.
@@ -231,6 +237,7 @@ class CatalogEntry:
         self._history: list[Transition] = []
         self.leased_to: str | None = None
         self.lease_expires: float | None = None
+        self.sources: list[str] = []
 
     @property
     def state(self) -> LifecycleState:
@@ -323,6 +330,7 @@ class CatalogEntry:
             "ground_truth": self.ground_truth.to_dict() if self.ground_truth else None,
             "leased_to": self.leased_to,
             "lease_expires": self.lease_expires,
+            "sources": list(self.sources),
         }
 
     @classmethod
@@ -343,6 +351,7 @@ class CatalogEntry:
         entry._history = [Transition.from_dict(t) for t in record.get("history", [])]
         entry.leased_to = record.get("leased_to")
         entry.lease_expires = record.get("lease_expires")
+        entry.sources = list(record.get("sources", []))
         return entry
 
 
@@ -389,12 +398,15 @@ class Catalog:
         *,
         difficulty: str | None = None,
         ground_truth: GroundTruth | None = None,
+        source: str | None = None,
     ) -> CatalogEntry:
         """Add a candidate, or resolve it to the existing entry it duplicates.
 
         Returns the entry the candidate now belongs to. On a match, the existing entry's
         identifiers absorb any new ones; class, difficulty, and label are filled in only
         where the existing entry left them unset, so a re-seed never overwrites known data.
+        A ``source`` is recorded as provenance and survives de-duplication: a paper seeded from
+        more than one source keeps every source that contributed it (spec: catalog-seeding).
         """
         existing = self._match(identifiers)
         if existing is not None:
@@ -405,6 +417,7 @@ class Catalog:
                 existing.difficulty = difficulty
             if existing.ground_truth is None:
                 existing.ground_truth = ground_truth
+            _record_source(existing, source)
             self._reindex(existing)
             return existing
 
@@ -414,6 +427,7 @@ class Catalog:
             difficulty=difficulty,
             ground_truth=ground_truth,
         )
+        _record_source(entry, source)
         self._entries.append(entry)
         self._reindex(entry)
         return entry

@@ -276,3 +276,31 @@ def test_lease_survives_catalog_persistence() -> None:
     assert entry is not None and entry.leased_to == "agent-1" and entry.lease_expires == 105.0
     # The reloaded lease is still honored: not claimable inside the window.
     assert reloaded.claim_next("agent-2", at=50.0, seconds=10.0) is None
+
+
+# --- source registration and provenance (spec: catalog-seeding) ----------------------
+
+
+def test_source_provenance_survives_dedup_and_persistence() -> None:
+    import json
+
+    catalog = Catalog()
+    entry = catalog.add(Identifiers(title="Model A", doi="10.1/a"), ModelClass.ODE_PKPD,
+                        source="BioModels")
+    # The same paper seeded from a second source keeps both, not just the first.
+    catalog.add(Identifiers(title="Model A (preprint)", doi="10.1/a"), source="preprint-feed")
+    assert entry.sources == ["BioModels", "preprint-feed"]
+    # Re-recording the same source does not duplicate it.
+    catalog.add(Identifiers(title="Model A", doi="10.1/a"), source="BioModels")
+    assert entry.sources == ["BioModels", "preprint-feed"]
+    # Provenance survives a persistence round trip.
+    reloaded = Catalog.from_dict(json.loads(json.dumps(catalog.to_dict())))
+    assert reloaded.find(Identifiers(title="x", doi="10.1/a")).sources == ["BioModels", "preprint-feed"]
+
+
+def test_seed_records_the_dataset_source() -> None:
+    from reprolith import seed_catalog
+
+    catalog = Catalog()
+    entries = seed_catalog(catalog)
+    assert all("biomodels" in s.lower() for e in entries for s in e.sources)

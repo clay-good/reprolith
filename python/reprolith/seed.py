@@ -45,6 +45,7 @@ def seed_catalog(
 
     basis = dataset.get("label_basis", "")
     model_class = ModelClass(dataset.get("model_class", "ode-pkpd"))
+    source = dataset.get("source")
     entries: list[CatalogEntry] = []
     for record in dataset["entries"]:
         label = GroundTruth(
@@ -55,6 +56,7 @@ def seed_catalog(
             Identifiers(title=record["title"], accession=record["accession"]),
             model_class,
             ground_truth=label,
+            source=source,
         )
         entries.append(entry)
     return entries
