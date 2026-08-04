@@ -88,6 +88,16 @@ scope-flagged certificate. The blind PK/PD self-validation set lives in
 [`datasets/pkpd_test_set.json`](datasets/pkpd_test_set.json), labelled from BioModels'
 curation status.
 
+Constraint-based (FBA) models reproduce a different kind of claim — an optimization outcome, not
+a time course — so they get their own oracle behind the optional **`fba`** extra (scipy's linear
+solver). It reports the fingerprints the constraint-based-class spec names, each preserving the
+"abstain when unsure" rule under alternate optima; see
+[docs/fba-oracle.md](docs/fba-oracle.md).
+
+```bash
+pip install -e ".[dev,fba]"   # then pytest -q runs the FBA oracle tests too
+```
+
 Reprolith gets better when people who know the science validate its judgment. When it isn't sure
 about a load-bearing value, it opens a **verification issue** with its best estimate — confirming
 or correcting one is the most valuable thing you can do here. See
