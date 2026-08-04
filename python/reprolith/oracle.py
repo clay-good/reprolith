@@ -168,7 +168,13 @@ def normalized_curve_distance(reference: Sequence[float], predicted: Sequence[fl
     return rmse / span
 
 
-def _verdict_for(measure: float, tol: Tolerance) -> Verdict:
+def verdict_for(measure: float, tol: Tolerance) -> Verdict:
+    """Classify a measured discrepancy against a tolerance into a per-claim verdict.
+
+    At or below ``reproduced_within`` is ``reproduced``; at or below ``partial_within`` is
+    ``partial``; above it is ``failed``. This is the raw classification the inline linter uses;
+    the full judge functions wrap it with method, tolerance provenance, and attribution.
+    """
     if measure <= tol.reproduced_within:
         return Verdict.REPRODUCED
     if measure <= tol.partial_within:
@@ -189,7 +195,7 @@ def _assemble(
     attribution: Attribution | None,
     assumption_qualified: bool,
 ) -> ClaimAssessment:
-    verdict = _verdict_for(measure, tol)
+    verdict = verdict_for(measure, tol)
     if verdict in (Verdict.PARTIAL, Verdict.FAILED):
         if attribution is None:
             raise ValueError("a partial or failed verdict must carry a root-cause attribution")
@@ -321,4 +327,5 @@ __all__ = [
     "normalized_curve_distance",
     "not_evaluable",
     "relative_error",
+    "verdict_for",
 ]

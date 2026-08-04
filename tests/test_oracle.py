@@ -16,6 +16,7 @@ from reprolith import (
     normalized_curve_distance,
     not_evaluable,
     relative_error,
+    verdict_for,
 )
 
 _SHORTFALL = Attribution(
@@ -69,6 +70,13 @@ def test_comparison_helpers_are_correct() -> None:
     assert relative_error(0.0, 3.0) == 3.0  # zero reference falls back to absolute
     assert normalized_curve_distance([0.0, 10.0], [0.0, 10.0]) == 0.0
     assert normalized_curve_distance([0.0, 10.0], [1.0, 11.0]) == pytest.approx(0.1)
+
+
+def test_verdict_for_classifies_against_tolerance() -> None:
+    tol = Tolerance(0.10, 0.25, ToleranceSource.CLASS_DEFAULT)
+    assert verdict_for(0.05, tol) is Verdict.REPRODUCED
+    assert verdict_for(0.20, tol) is Verdict.PARTIAL
+    assert verdict_for(0.40, tol) is Verdict.FAILED
 
 
 # --- 4.2 class-default tolerances and principled overrides -------------------------

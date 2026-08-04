@@ -39,6 +39,7 @@ from .enums import (
     ReproductionLevel,
     Verdict,
 )
+from .linter import LintResult, lint_curve
 from .model import (
     Assumption,
     Certificate,
@@ -61,6 +62,7 @@ from .oracle import (
     normalized_curve_distance,
     not_evaluable,
     relative_error,
+    verdict_for,
 )
 from .query import ReprolithQuery
 from .reconstruction import (
@@ -105,6 +107,7 @@ __all__ = [
     "Identifiers",
     "IllegalTransition",
     "LifecycleState",
+    "LintResult",
     "ModelArtifact",
     "ModelClass",
     "ModelOrigin",
@@ -140,6 +143,7 @@ __all__ = [
     "gap_items",
     "judge_curve",
     "judge_scalar",
+    "lint_curve",
     "normalized_curve_distance",
     "not_evaluable",
     "relative_error",
@@ -148,5 +152,6 @@ __all__ = [
     "revise",
     "same_modulo_run_metadata",
     "simulate",
+    "verdict_for",
     "__version__",
 ]
