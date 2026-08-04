@@ -37,6 +37,7 @@ from .model import (
 )
 from .render import claim_counts, gap_items, render_human, render_machine
 from .scope import Scope
+from .supersession import CertificateLedger, describe_changes
 
 __version__ = "0.0.1"
 
@@ -45,6 +46,7 @@ __all__ = [
     "BlindEntry",
     "Catalog",
     "CatalogEntry",
+    "CertificateLedger",
     "Certificate",
     "ClaimAssessment",
     "EnginePin",
@@ -67,6 +69,7 @@ __all__ = [
     "claim_counts",
     "content_hash",
     "derive_overall",
+    "describe_changes",
     "gap_items",
     "render_human",
     "render_machine",

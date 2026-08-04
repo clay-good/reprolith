@@ -44,7 +44,7 @@ a phase done until its verification holds.
 - [x] 5.2 Derive the overall verdict by the stated rule; show per-verdict claim counts → verify: a mixed result reports `partially-reproduced`, never `reproduced`
 - [x] 5.3 Enforce assumption-qualification and the inescapable scope flag → verify: an assumption-qualified pass cannot render as unqualified `reproduced`; the scope flag cannot be emptied
 - [x] 5.4 Emit the structured "what was missing" gap report for anything short of full reproduction → verify: a blocked entry lists precise missing inputs tied to claims
-- [ ] 5.5 Implement supersession/versioning → verify: re-certifying under a new pin links and preserves the prior certificate
+- [x] 5.5 Implement supersession/versioning → verify: re-certifying under a new pin links and preserves the prior certificate
 
 ## 6. MCP surface (minimal)
 

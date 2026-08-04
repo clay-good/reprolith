@@ -149,9 +149,16 @@ class Certificate:
     assessments: tuple[ClaimAssessment, ...] = ()
     assumptions: tuple[Assumption, ...] = ()
     gap_report: tuple[str, ...] = field(default=())
+    supersedes: str | None = None
 
     def content(self) -> dict[str, Any]:
-        """The deterministic content of the certificate (no run metadata)."""
+        """The deterministic content of the certificate (no run metadata).
+
+        ``supersedes`` is the content digest of the prior certificate this one replaces
+        (``None`` for a first certification); it is part of the content because a
+        re-certification that links to a different predecessor is a genuinely different
+        record.
+        """
         return {
             "paper": self.paper.to_dict(),
             "engine_pin": self.engine_pin.to_dict(),
@@ -160,6 +167,7 @@ class Certificate:
             "assessments": [a.to_dict() for a in self.assessments],
             "assumptions": [a.to_dict() for a in self.assumptions],
             "gap_report": list(self.gap_report),
+            "supersedes": self.supersedes,
         }
 
     def to_dict(self, run: RunMetadata) -> dict[str, Any]:

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 
+from .canonical import content_hash
 from .enums import OverallVerdict, Verdict
 from .model import (
     Assumption,
@@ -61,12 +62,15 @@ def build_certificate(
     assumptions: Iterable[Assumption] = (),
     gap_report: Iterable[str] = (),
     scope: Scope | None = None,
+    supersedes: Certificate | None = None,
 ) -> Certificate:
     """Construct a certificate with its overall verdict derived and scope attached.
 
     The overall verdict is always computed here, never passed in, so the honesty
     invariants cannot be sidestepped by a caller. The scope statement is always
-    present.
+    present. When ``supersedes`` is given, the new certificate links to that prior one
+    by its content digest; the prior certificate is not modified and remains a distinct,
+    retrievable record.
     """
     frozen_assessments = tuple(assessments)
     return Certificate(
@@ -77,4 +81,5 @@ def build_certificate(
         assessments=frozen_assessments,
         assumptions=tuple(assumptions),
         gap_report=tuple(gap_report),
+        supersedes=content_hash(supersedes.content()) if supersedes is not None else None,
     )
