@@ -15,6 +15,7 @@ the package. Install it with the ``engine`` extra.
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from .model import EnginePin
@@ -25,6 +26,10 @@ ALGORITHM = "deterministic-lsoda"
 
 class EngineUnavailable(RuntimeError):
     """Raised when a simulation is requested but the optional engine is not installed."""
+
+
+class NonFiniteSimulation(RuntimeError):
+    """Raised when a model diverges under the pin (inf/nan) — intractable, so blocked not failed."""
 
 
 def _copasi() -> Any:
@@ -88,9 +93,23 @@ def simulate(
         # exactly; taking them from the grid avoids depending on the engine's time column.
         times = tuple(float(duration) * i / int(steps) for i in range(recorded))
         values = tuple(float(series.getConcentrationData(i, column)) for i in range(recorded))
-        return times, values
+        return times, require_finite(values, species)
     finally:
         copasi.CRootContainer.removeDatamodel(datamodel)
+
+
+def require_finite(values: tuple[float, ...], species: str) -> tuple[float, ...]:
+    """Return ``values`` unless any is non-finite (inf/nan), in which case raise.
+
+    A diverging or too-stiff model produces inf/nan; signalling it lets the caller record the
+    entry as blocked (intractable), not failed, rather than pass garbage numbers downstream.
+    """
+    if not all(math.isfinite(v) for v in values):
+        raise NonFiniteSimulation(
+            f"the model did not produce a finite result for {species!r} under the pin "
+            "(diverged or too stiff)"
+        )
+    return values
 
 
 def _species_column(series: Any, name: str, datamodel: Any) -> int:
@@ -105,4 +124,12 @@ def _species_column(series: Any, name: str, datamodel: Any) -> int:
     raise ValueError(f"species {name!r} is not an output of the model")
 
 
-__all__ = ["ALGORITHM", "ENGINE", "EngineUnavailable", "engine_pin", "engine_version", "simulate"]
+__all__ = [
+    "ALGORITHM",
+    "ENGINE",
+    "EngineUnavailable",
+    "NonFiniteSimulation",
+    "engine_pin",
+    "engine_version",
+    "simulate",
+]

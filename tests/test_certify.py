@@ -5,9 +5,21 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from reprolith import Claim, ReferenceKind, load_claims_dataset
+from reprolith.engine import NonFiniteSimulation, require_finite
 
 _CLAIMS = Path(__file__).parent.parent / "datasets" / "pkpd_claims.json"
+
+
+def test_require_finite_passes_finite_and_rejects_inf_nan() -> None:
+    # A diverging/too-stiff model yields inf/nan; require_finite signals that so the entry can
+    # be recorded as blocked rather than pass garbage numbers downstream.
+    assert require_finite((1.0, 2.0, 3.0), "A") == (1.0, 2.0, 3.0)
+    with pytest.raises(NonFiniteSimulation):
+        require_finite((1.0, float("inf")), "A")
+    with pytest.raises(NonFiniteSimulation):
+        require_finite((1.0, float("nan")), "A")
 
 
 def test_load_claims_dataset_reads_the_shipped_dataset() -> None:

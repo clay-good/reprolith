@@ -32,7 +32,13 @@ from .dossier import (
     ModelArtifact,
     Parameter,
 )
-from .engine import EngineUnavailable, engine_pin, engine_version, simulate
+from .engine import (
+    EngineUnavailable,
+    NonFiniteSimulation,
+    engine_pin,
+    engine_version,
+    simulate,
+)
 from .enums import (
     LifecycleState,
     ModelClass,
@@ -122,6 +128,7 @@ __all__ = [
     "ModelArtifact",
     "ModelClass",
     "ModelOrigin",
+    "NonFiniteSimulation",
     "NonReconstructable",
     "OverallVerdict",
     "Parameter",
