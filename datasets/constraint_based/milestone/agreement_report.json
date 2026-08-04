@@ -1,0 +1,18 @@
+{
+  "agreement_rate": 1.0,
+  "agreements": 1,
+  "confusion": {
+    "reproduced->reproduced": 1
+  },
+  "disagreements": 0,
+  "per_entry": [
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "e_coli_core",
+      "expected": "reproduced",
+      "source": "BiGG / Orth, Fleming & Palsson (2010): known maximal growth rate 0.873922"
+    }
+  ],
+  "total": 1
+}

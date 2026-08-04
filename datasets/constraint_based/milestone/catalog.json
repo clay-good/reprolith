@@ -1,0 +1,73 @@
+{
+  "entries": [
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BiGG / Orth, Fleming & Palsson (2010): known maximal growth rate 0.873922"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "e_coli_core",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "E. coli core metabolic model (Orth, Fleming & Palsson 2010)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "constraint-based",
+      "sources": [],
+      "state": "certified"
+    }
+  ]
+}

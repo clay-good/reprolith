@@ -1,0 +1,38 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": false,
+      "claim_id": "growth-glucose-aerobic",
+      "discrepancy": "relative error 0.0000",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "quantity": "maximal aerobic growth rate, glucose minimal medium (R_BIOMASS_Ecoli_core_w_GAM, maximize)",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "Orth, Fleming & Palsson (2010), EcoSal Plus; BiGG e_coli_core",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": "simplex",
+    "engine": "scipy-highs",
+    "version": "linprog-highs"
+  },
+  "gap_report": [],
+  "overall": "reproduced",
+  "paper": {
+    "doi": "10.1128/ecosalplus.10.2.1",
+    "pubmed_id": null,
+    "title": "E. coli core metabolic model (Orth, Fleming & Palsson 2010)"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}
