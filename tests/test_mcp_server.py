@@ -87,6 +87,56 @@ def test_unknown_tool_is_a_tool_error_not_a_crash() -> None:
     assert is_error
 
 
+def test_lint_tool_is_registered() -> None:
+    assert "lint" in {t["name"] for t in TOOL_DEFINITIONS}
+
+
+def test_lint_tool_reports_missing_engine_as_a_tool_error() -> None:
+    import pytest
+
+    if _copasi_installed():
+        pytest.skip("engine installed; the missing-engine path is not exercised")
+    query, _ = _fixture()
+    text, is_error = _call(query, "lint", {
+        "sbml": "<sbml/>", "species": "A", "reference": [1.0], "duration": 1.0, "steps": 0,
+    })
+    # Without the engine extra the tool errors cleanly rather than crashing the server.
+    assert is_error and "engine" in text.lower()
+
+
+def _copasi_installed() -> bool:
+    import importlib.util
+
+    return importlib.util.find_spec("COPASI") is not None
+
+
+def test_lint_tool_returns_a_scope_qualified_verdict_with_the_engine() -> None:
+    import math
+
+    import pytest
+
+    pytest.importorskip("COPASI", reason="the engine extra is not installed")
+    query, _ = _fixture()
+    sbml = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="onecomp">
+    <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+    <listOfSpecies><species id="A" compartment="c" initialAmount="100"
+      hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false"/></listOfSpecies>
+    <listOfParameters><parameter id="k" value="0.5" constant="true"/></listOfParameters>
+    <listOfRules><rateRule variable="A"><math xmlns="http://www.w3.org/1998/Math/MathML">
+      <apply><minus/><apply><times/><ci>k</ci><ci>A</ci></apply></apply></math></rateRule></listOfRules>
+  </model>
+</sbml>"""
+    reference = [100.0 * math.exp(-0.5 * t) for t in range(11)]
+    result, is_error = _call(query, "lint", {
+        "sbml": sbml, "species": "A", "reference": reference, "duration": 10.0, "steps": 10,
+    })
+    assert not is_error
+    assert result["verdict"] == "reproduced"
+    assert result["scope"]["machine"] == "reproducible-not-correct-not-clinical"
+
+
 def test_unknown_method_returns_jsonrpc_error() -> None:
     query, _ = _fixture()
     resp = handle_request(query, {"jsonrpc": "2.0", "id": 5, "method": "bogus/method"})

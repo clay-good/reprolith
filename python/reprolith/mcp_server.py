@@ -69,6 +69,28 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "description": "Digests of every certificate issued for a paper, newest first.",
         "inputSchema": _IDENTIFIER,
     },
+    {
+        "name": "lint",
+        "description": (
+            "Deterministic linter: run a supplied SBML model under the pinned engine and judge "
+            "a species curve against a claim's reference points. Needs the engine extra."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "sbml": {"type": "string", "description": "the SBML model to run"},
+                "species": {"type": "string", "description": "the output species to read"},
+                "reference": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "description": "reference values at the same steps+1 sample points",
+                },
+                "duration": {"type": "number"},
+                "steps": {"type": "integer"},
+            },
+            "required": ["sbml", "species", "reference", "duration", "steps"],
+        },
+    },
 ]
 
 
@@ -86,6 +108,17 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return query.gaps(arguments["digest"])
     if name == "certificates_for":
         return query.certificates_for(**_identifier_kwargs(arguments))
+    if name == "lint":
+        from .linter import lint_curve
+
+        result = lint_curve(
+            arguments["sbml"],
+            arguments["species"],
+            reference=tuple(arguments["reference"]),
+            duration=arguments["duration"],
+            steps=arguments["steps"],
+        )
+        return result.to_dict()
     raise KeyError(f"unknown tool: {name}")
 
 
@@ -129,7 +162,10 @@ def handle_request(query: ReprolithQuery, request: dict[str, Any]) -> dict[str, 
         arguments = params.get("arguments") or {}
         try:
             data = dispatch_tool(query, name, arguments)
-        except (KeyError, TypeError) as exc:
+        except (KeyError, TypeError, ValueError, RuntimeError) as exc:
+            # Unknown tool / bad args, a length mismatch, or the engine being absent or diverging
+            # (EngineUnavailable and NonFiniteSimulation are RuntimeErrors) are tool-level errors:
+            # report them to the caller rather than crash the server.
             return _result(
                 request_id,
                 {"content": [{"type": "text", "text": f"error: {exc}"}], "isError": True},
