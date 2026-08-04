@@ -70,6 +70,24 @@ def test_describe_changes_states_what_changed() -> None:
     assert "overall verdict: not-reproduced -> reproduced" in changes
 
 
+def test_ledger_round_trips_with_its_supersession_chain() -> None:
+    import json
+
+    ledger = CertificateLedger()
+    v1 = _cert("4.42")
+    ledger.issue(v1)
+    v2 = _cert("4.43", supersedes=v1)
+    ledger.issue(v2)
+
+    reloaded = CertificateLedger.from_dict(json.loads(json.dumps(ledger.to_dict())))
+    assert len(reloaded) == 2
+    # Every certificate is retrievable by its digest, and the chain still resolves.
+    got_v2 = reloaded.get(certificate_digest(v2))
+    assert got_v2 is not None
+    chain = reloaded.chain(got_v2)
+    assert [certificate_digest(c) for c in chain] == [certificate_digest(v2), certificate_digest(v1)]
+
+
 def test_same_pin_recertification_is_deterministic() -> None:
     # Two re-certifications of the same content superseding the same prior are
     # byte-identical: the supersession link does not introduce nondeterminism.

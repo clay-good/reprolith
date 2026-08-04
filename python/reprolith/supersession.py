@@ -13,6 +13,8 @@ supersession chain back to its root.
 
 from __future__ import annotations
 
+from typing import Any
+
 from .determinism import certificate_digest
 from .model import Certificate
 
@@ -79,6 +81,20 @@ class CertificateLedger:
             lineage.append(prior)
             current = prior
         return tuple(lineage)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize the ledger as the list of its certificates' content (design goal 3)."""
+        return {"certificates": [cert.content() for cert in self._by_digest.values()]}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> CertificateLedger:
+        """Reload a ledger saved with :meth:`to_dict`; digests are recomputed on issue."""
+        from .persistence import certificate_from_content
+
+        ledger = cls()
+        for content in data["certificates"]:
+            ledger.issue(certificate_from_content(content))
+        return ledger
 
 
 __all__ = ["CertificateLedger", "describe_changes"]
