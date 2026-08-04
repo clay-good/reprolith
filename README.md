@@ -114,6 +114,9 @@ calcium) reproduce, and the [milestone blind run](datasets/kinetic/milestone/) s
 same catalog and agreement machinery as the other classes. See
 [docs/kinetic-class.md](docs/kinetic-class.md).
 
+All three classes are measured blind against independently-established ground truth on the same
+machinery — [docs/self-validation.md](docs/self-validation.md) is the one-look evidence summary.
+
 Reprolith gets better when people who know the science validate its judgment. When it isn't sure
 about a load-bearing value, it opens a **verification issue** with its best estimate — confirming
 or correcting one is the most valuable thing you can do here. See
