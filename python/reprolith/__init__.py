@@ -47,6 +47,7 @@ from .enums import (
     ReproductionLevel,
     Verdict,
 )
+from .fba import FbaUnavailable, InfeasibleFba, judge_objective, solve_objective
 from .ingest import ingest_sbml
 from .linter import LintResult, lint_curve
 from .mcp_server import handle_request, serve_stdio
@@ -132,6 +133,8 @@ __all__ = [
     "Equation",
     "ExtractionConfidence",
     "Fault",
+    "FbaUnavailable",
+    "InfeasibleFba",
     "FailureMode",
     "Gap",
     "GapKind",
@@ -191,6 +194,7 @@ __all__ = [
     "handle_request",
     "ingest_sbml",
     "judge_curve",
+    "judge_objective",
     "judge_scalar",
     "lint_curve",
     "load_claims_dataset",
@@ -208,6 +212,7 @@ __all__ = [
     "serve_stdio",
     "seed_catalog",
     "simulate",
+    "solve_objective",
     "verdict_for",
     "__version__",
 ]

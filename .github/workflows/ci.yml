@@ -38,9 +38,9 @@ jobs:
       - name: Tests (pytest)
         run: pytest -q
 
-  # The dependency-free core gate (job `python`) never installs the engine, so the
-  # engine-backed tests (real simulation, ingestion, the linter, the MCP lint tool) skip there.
-  # This job installs the optional engine extra and runs them, so that path has CI coverage.
+  # The dependency-free core gate (job `python`) never installs the optional extras, so the
+  # extra-backed tests (real simulation, ingestion, the linter, the FBA oracle) skip there. This
+  # job installs the engine and fba extras and runs them, so those paths have CI coverage.
   engine:
     runs-on: ubuntu-latest
     strategy:
@@ -52,11 +52,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install with the engine extra
+      - name: Install with the engine and fba extras
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,engine]"
-      - name: Tests (pytest, engine-backed included)
+          pip install -e ".[dev,engine,fba]"
+      - name: Tests (pytest, extra-backed included)
         run: pytest -q
 
   specs:

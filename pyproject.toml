@@ -41,6 +41,8 @@ dev = ["pytest>=7.0", "ruff>=0.4", "mypy>=1.8"]
 # need it. Install with `pip install -e ".[engine]"` to build SBML from a dossier and run
 # the simulation-backed tests and reconstructions.
 engine = ["python-copasi>=4.42", "python-libsbml>=5.20"]
+# The constraint-based (FBA) oracle's linear-programming solver. Optional, like the engine.
+fba = ["scipy>=1.7"]
 
 [project.scripts]
 # The agent-facing MCP server over the read-only query surface (JSON-RPC over stdio,
@@ -82,6 +84,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "libsbml"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "scipy.*"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
