@@ -76,6 +76,14 @@ def _normalize(value: str) -> str:
     return " ".join(value.strip().lower().split())
 
 
+_DIFFICULTY_RANK = {"low": 0, "medium": 1, "high": 2}
+
+
+def _difficulty_rank(difficulty: str | None) -> int:
+    """Queue-ordering rank for a difficulty: lower is readier (surfaces earlier); unassessed is neutral."""
+    return _DIFFICULTY_RANK.get(difficulty or "", 1)
+
+
 def _record_source(entry: CatalogEntry, source: str | None) -> None:
     """Add ``source`` to the entry's provenance if new (provenance survives de-duplication)."""
     if source and source not in entry.sources:
@@ -441,15 +449,18 @@ class Catalog:
         """The entries claimable as work at time ``at``, in priority order.
 
         Ranking is explainable and stable: ground-truth-labelled entries first (they keep
-        self-validation possible), then insertion order. Filtered to ``model_class`` when given.
+        self-validation possible), then by readiness — a lower-difficulty entry, which ships a
+        runnable model with no gaps to close, yields a certificate at lower cost, so it surfaces
+        earlier (spec: catalog-seeding — "Readiness boosts tractable wins") — then insertion order.
+        Filtered to ``model_class`` when given.
         """
         pool = [
             entry
             for entry in self._entries
             if entry.is_claimable(at) and (model_class is None or entry.model_class is model_class)
         ]
-        # Stable sort: labelled (ground-truth) entries sort before unlabelled; ties keep order.
-        pool.sort(key=lambda entry: entry.ground_truth is None)
+        # Stable sort: labelled first, then low difficulty (high readiness) first; ties keep order.
+        pool.sort(key=lambda entry: (entry.ground_truth is None, _difficulty_rank(entry.difficulty)))
         return pool
 
     def backlog_health(self) -> dict[str, Any]:
@@ -480,7 +491,8 @@ class Catalog:
             "ground_truth_labelled": entry.ground_truth is not None,
             "difficulty": entry.difficulty,
             "model_class": entry.model_class.value,
-            "ranking": "ground-truth-labelled work first, then submission order",
+            "ranking": "ground-truth-labelled work first, then readiness (lower difficulty), "
+            "then submission order",
         }
 
     def claim_next(

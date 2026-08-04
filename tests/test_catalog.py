@@ -315,3 +315,20 @@ def test_priority_is_explainable() -> None:
     assert signals["ground_truth_labelled"] is True
     assert signals["difficulty"] == "low"
     assert "ground-truth" in signals["ranking"]
+
+
+def test_readiness_boosts_tractable_wins_within_a_tier() -> None:
+    # Among unlabelled work, a low-difficulty entry (a shipped model, no gaps) is claimed before a
+    # high-difficulty one, even when it was submitted later — readiness surfaces tractable wins.
+    catalog = Catalog()
+    catalog.add(Identifiers(title="hard", accession="H"), ModelClass.ODE_PKPD, difficulty="high")
+    catalog.add(Identifiers(title="ready", accession="R"), ModelClass.ODE_PKPD, difficulty="low")
+
+    order = [e.identifiers.accession for e in catalog.claimable(0.0)]
+    assert order == ["R", "H"]
+
+    # A ground-truth-labelled entry still outranks readiness (self-validation comes first).
+    catalog.add(Identifiers(title="labelled-hard", accession="LH"), ModelClass.ODE_PKPD,
+                difficulty="high",
+                ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source="c"))
+    assert catalog.claimable(0.0)[0].identifiers.accession == "LH"
