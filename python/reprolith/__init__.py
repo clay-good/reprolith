@@ -21,6 +21,16 @@ from .catalog import (
 )
 from .certificate import build_certificate, derive_overall
 from .determinism import certificate_digest, same_modulo_run_metadata
+from .dossier import (
+    Dossier,
+    DossierClaim,
+    Equation,
+    ExtractionConfidence,
+    Gap,
+    GapKind,
+    ModelArtifact,
+    Parameter,
+)
 from .enums import (
     LifecycleState,
     ModelClass,
@@ -70,15 +80,23 @@ __all__ = [
     "Certificate",
     "ClaimAssessment",
     "ComparisonMethod",
+    "Dossier",
+    "DossierClaim",
     "EnginePin",
+    "Equation",
+    "ExtractionConfidence",
     "Fault",
     "FailureMode",
+    "Gap",
+    "GapKind",
     "GroundTruth",
     "Identifiers",
     "IllegalTransition",
     "LifecycleState",
+    "ModelArtifact",
     "ModelClass",
     "OverallVerdict",
+    "Parameter",
     "PaperIdentity",
     "ReferenceKind",
     "ReproductionLevel",
