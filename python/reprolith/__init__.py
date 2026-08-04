@@ -39,6 +39,7 @@ from .enums import (
     ReproductionLevel,
     Verdict,
 )
+from .ingest import ingest_sbml
 from .linter import LintResult, lint_curve
 from .model import (
     Assumption,
@@ -145,6 +146,7 @@ __all__ = [
     "engine_pin",
     "engine_version",
     "gap_items",
+    "ingest_sbml",
     "judge_curve",
     "judge_scalar",
     "lint_curve",
