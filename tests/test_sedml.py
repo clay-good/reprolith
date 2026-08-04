@@ -34,6 +34,23 @@ def test_extracts_the_uniform_time_course_recipes() -> None:
     assert b.observables == ("MAPK_PP", "MAPK")
 
 
+def test_reads_a_pk_pd_recipe_with_repeated_task_and_parameter_observables() -> None:
+    # The fast-path is cross-class: the metformin PK/PD SED-ML observes amount *parameters* (not
+    # species) and wraps its time course in a repeatedTask. The parser resolves the repeatedTask to
+    # its base task and reads the parameter observables — real-world SED-ML variety, not the simple case.
+    metformin = (
+        Path(__file__).parent.parent / "datasets" / "worked_examples"
+        / "Zake2021_metformin_human_single_PO.sedml"
+    ).read_text(encoding="utf-8")
+    recipes = parse_sedml_recipes(metformin)
+    assert len(recipes) == 1
+    recipe = recipes[0]
+    assert recipe.duration == 30.0 and recipe.steps == 1000
+    # Observables are amount parameters resolved from the repeatedTask onto the runnable base task.
+    assert "mgArterialPlasma" in recipe.observables
+    assert len(recipe.observables) > 100
+
+
 def test_ill_formed_sedml_is_a_clear_error() -> None:
     with pytest.raises(ValueError, match="not parseable SED-ML"):
         parse_sedml_recipes("<sedML><unclosed>")

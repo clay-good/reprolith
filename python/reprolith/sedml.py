@@ -17,8 +17,9 @@ import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 
-# A SED-ML variable targets a species by an XPath ending in ``species[@id='X']``; pull out the id.
-_SPECIES_ID = re.compile(r"species\[@id=['\"]([^'\"]+)['\"]\]")
+# A SED-ML variable targets a model element by an XPath ending in ``...[@id='X']`` — a species, but
+# also an amount parameter, a compartment, etc. Pull out the leaf element's id.
+_ELEMENT_ID = re.compile(r"\[@id=['\"]([^'\"]+)['\"]\]")
 
 
 @dataclass(frozen=True)
@@ -40,9 +41,11 @@ def _localname(tag: str) -> str:
 def parse_sedml_recipes(sedml: str) -> list[SimulationRecipe]:
     """Extract the uniform-time-course simulation recipes from a SED-ML document.
 
-    Returns one :class:`SimulationRecipe` per task that references a ``uniformTimeCourse``
-    simulation, in document order. A task whose simulation is not a uniform time course (a steady
-    state, a repeated task, or a one-step simulation) is skipped: there is no single runnable
+    Returns one :class:`SimulationRecipe` per task that resolves to a ``uniformTimeCourse``
+    simulation, in document order. Observables are the model elements the SED-ML plots — species or
+    amount parameters. A ``repeatedTask`` is resolved to the uniform-time-course subtask it wraps, so
+    observables hung on the repeated task attach to the runnable recipe. A task whose simulation is
+    not a uniform time course (a plain steady state) is skipped: there is no single runnable
     time-course recipe to adopt, and inventing one would be a guess. Raises ``ValueError`` if the
     text is not parseable SED-ML.
     """
@@ -54,6 +57,7 @@ def parse_sedml_recipes(sedml: str) -> list[SimulationRecipe]:
     simulations: dict[str, tuple[float, int, float]] = {}
     observables: dict[str, list[str]] = {}
     tasks: list[tuple[str, str, str]] = []
+    repeated: dict[str, str] = {}  # repeatedTask id -> the base task it wraps
 
     for element in root.iter():
         name = _localname(element.tag)
@@ -67,22 +71,33 @@ def parse_sedml_recipes(sedml: str) -> list[SimulationRecipe]:
         elif name == "variable":
             task_ref, target = element.get("taskReference"), element.get("target")
             if task_ref and target:
-                match = _SPECIES_ID.search(target)
-                if match:
-                    observables.setdefault(task_ref, []).append(match.group(1))
+                ids = _ELEMENT_ID.findall(target)
+                if ids:
+                    observables.setdefault(task_ref, []).append(ids[-1])  # the leaf element
         elif name == "task":
             task_id, model_ref, sim_ref = (
                 element.get("id"), element.get("modelReference"), element.get("simulationReference"),
             )
             if task_id and model_ref and sim_ref:
                 tasks.append((task_id, model_ref, sim_ref))
+        elif name == "repeatedTask":
+            repeated_id = element.get("id")
+            subtask = next((c for c in element.iter() if _localname(c.tag) == "subTask"), None)
+            base_task = subtask.get("task") if subtask is not None else None
+            if repeated_id and base_task:
+                repeated[repeated_id] = base_task
+
+    # Observables tagged on a repeatedTask belong to the base task it wraps.
+    resolved: dict[str, list[str]] = {}
+    for task_ref, ids in observables.items():
+        resolved.setdefault(repeated.get(task_ref, task_ref), []).extend(ids)
 
     recipes: list[SimulationRecipe] = []
     for task_id, model_ref, sim_ref in tasks:
         if sim_ref not in simulations:
             continue  # not a uniform time course — nothing single-runnable to adopt
         duration, steps, output_start = simulations[sim_ref]
-        species = tuple(dict.fromkeys(observables.get(task_id, [])))  # unique, document order
+        species = tuple(dict.fromkeys(resolved.get(task_id, [])))  # unique, document order
         recipes.append(SimulationRecipe(
             task_id=task_id, model_ref=model_ref, duration=duration, steps=steps,
             observables=species, output_start=output_start,
