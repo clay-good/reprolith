@@ -13,8 +13,13 @@ judgments are preserved, never silently resolved to one.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:  # avoid a runtime import cycle; only needed for type hints
+    from .model import Certificate
+    from .supersession import CertificateLedger
 
 
 @dataclass(frozen=True)
@@ -118,4 +123,35 @@ class VerificationQueue:
         return undecided
 
 
-__all__ = ["VerificationDecision", "VerificationItem", "VerificationQueue"]
+def reverify_dependents(
+    item: VerificationItem,
+    ledger: CertificateLedger,
+    *,
+    recertify: Callable[[Certificate], Certificate],
+) -> list[Certificate]:
+    """Re-verify the certificates that depend on a decided queue item (spec: verification-queue).
+
+    For each dependent certificate (by digest in ``item.depends_on``) still in the ledger,
+    ``recertify`` produces its replacement — the caller decides how, based on the expert's
+    decision: re-run with a corrected value, or re-issue with the unverified qualification lifted
+    once confirmed. The replacement should link to the one it supersedes (``supersedes``); it is
+    issued into the ledger, and the superseded certificate remains retrievable. Returns the
+    replacements, so nothing is settled by a stale certificate after the value beneath it changed.
+    """
+    replacements: list[Certificate] = []
+    for digest in item.depends_on:
+        old = ledger.get(digest)
+        if old is None:
+            continue
+        new = recertify(old)
+        ledger.issue(new)
+        replacements.append(new)
+    return replacements
+
+
+__all__ = [
+    "VerificationDecision",
+    "VerificationItem",
+    "VerificationQueue",
+    "reverify_dependents",
+]

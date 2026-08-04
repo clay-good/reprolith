@@ -72,3 +72,57 @@ def test_decision_validation() -> None:
         queue.decide("a", VerificationDecision(kind="correct", expert="e", rationale="r"))
     with pytest.raises(ValueError):  # a decision must record a rationale
         queue.decide("a", VerificationDecision(kind="confirm", expert="e", rationale="  "))
+
+
+def test_correction_reverifies_dependents_and_supersedes() -> None:
+    from reprolith import (
+        Assumption,
+        CertificateLedger,
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+        reverify_dependents,
+    )
+
+    pin = EnginePin(engine="copasi", version="4.46")
+
+    def _cert(qualified, verification_item):
+        return build_certificate(
+            paper=PaperIdentity(title="t"), engine_pin=pin,
+            assessments=[ClaimAssessment(claim_id="c", quantity="AUC", verdict=Verdict.REPRODUCED,
+                                         source_location="T1", assumption_qualified=qualified)],
+            assumptions=[Assumption(id="k", description="ka", chosen="1.2", basis="b",
+                                    load_bearing=True, verification_item=verification_item)],
+        )
+
+    ledger = CertificateLedger()
+    # A certificate resting on an unverified queued value.
+    original = _cert(qualified=True, verification_item="VQ-1")
+    original_digest = ledger.issue(original)
+
+    item = VerificationItem(id="VQ-1", question="is ka=1.2?", best_estimate="1.2", basis="b",
+                            depends_on=(original_digest,))
+    queue = VerificationQueue()
+    queue.add(item)
+    queue.decide("VQ-1", VerificationDecision(kind="confirm", expert="e", rationale="confirmed 1.2"))
+
+    # On confirmation, re-issue the dependent with its unverified qualification lifted, linked
+    # to the one it supersedes.
+    def recertify(old):
+        return build_certificate(
+            paper=old.paper, engine_pin=old.engine_pin, assessments=old.assessments,
+            assumptions=[Assumption(id="k", description="ka", chosen="1.2", basis="b",
+                                    load_bearing=True, verification_item=None)],  # qualification lifted
+            supersedes=old,
+        )
+
+    replacements = reverify_dependents(item, ledger, recertify=recertify)
+    assert len(replacements) == 1
+    new = replacements[0]
+    assert new.supersedes == original_digest  # links to what it supersedes
+    assert new.assumptions[0].verification_item is None  # qualification lifted
+    # The superseded certificate remains retrievable.
+    assert ledger.get(original_digest) is original
+    assert len(ledger) == 2

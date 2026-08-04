@@ -100,7 +100,12 @@ from .sbml import build_model_sbml, compare_sbml_to_dossier
 from .scope import Scope
 from .seed import load_test_set, seed_catalog
 from .supersession import CertificateLedger, describe_changes
-from .verification import VerificationDecision, VerificationItem, VerificationQueue
+from .verification import (
+    VerificationDecision,
+    VerificationItem,
+    VerificationQueue,
+    reverify_dependents,
+)
 
 __version__ = "0.0.1"
 
@@ -193,6 +198,7 @@ __all__ = [
     "relative_error",
     "render_human",
     "render_machine",
+    "reverify_dependents",
     "revise",
     "run_test_set",
     "same_modulo_run_metadata",
