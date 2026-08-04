@@ -48,6 +48,7 @@ from .enums import (
     Verdict,
 )
 from .fba import (
+    FbaModel,
     FbaUnavailable,
     InfeasibleFba,
     essentiality_agreement,
@@ -106,7 +107,7 @@ from .run import (
     load_claims_dataset,
     run_test_set,
 )
-from .sbml import build_model_sbml, compare_sbml_to_dossier
+from .sbml import build_model_sbml, compare_sbml_to_dossier, ingest_fbc_sbml
 from .scope import Scope
 from .seed import load_test_set, seed_catalog
 from .supersession import CertificateLedger, describe_changes
@@ -142,6 +143,7 @@ __all__ = [
     "Equation",
     "ExtractionConfidence",
     "Fault",
+    "FbaModel",
     "FbaUnavailable",
     "InfeasibleFba",
     "FailureMode",
@@ -203,6 +205,7 @@ __all__ = [
     "flux_variability",
     "gap_items",
     "handle_request",
+    "ingest_fbc_sbml",
     "ingest_sbml",
     "judge_curve",
     "judge_flux",

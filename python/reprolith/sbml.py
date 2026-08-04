@@ -18,6 +18,7 @@ from typing import Any
 
 from .dossier import Dossier
 from .engine import EngineUnavailable
+from .fba import FbaModel
 
 
 def _libsbml() -> Any:
@@ -134,6 +135,79 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
     return mismatches
 
 
+def ingest_fbc_sbml(sbml: str) -> FbaModel:
+    """Parse an SBML-fbc constraint-based model into the matrices the FBA oracle solves.
+
+    Reads the stoichiometry, the active objective (sign-corrected so a ``minimize`` objective is
+    returned as an equivalent maximization, since the oracle maximizes), and the per-reaction
+    flux bounds from the fbc reaction plugin. Boundary-condition species are excluded from the
+    steady-state balance: they stand for the model's exchange with its surroundings and are not
+    mass-balanced. This is the bridge from a published constraint-based model to
+    :func:`reprolith.solve_objective` and the FBA judges. Needs the ``engine`` extra
+    (python-libsbml with the fbc package).
+    """
+    libsbml = _libsbml()
+    document = libsbml.readSBMLFromString(sbml)
+    model = document.getModel()
+    if model is None:
+        raise ValueError("the artifact is not readable SBML")
+    fbc = model.getPlugin("fbc")
+    if fbc is None:
+        raise ValueError("the model declares no fbc (constraint-based) package")
+
+    species = [
+        model.getSpecies(i).getId()
+        for i in range(model.getNumSpecies())
+        if not model.getSpecies(i).getBoundaryCondition()
+    ]
+    row_of = {sid: i for i, sid in enumerate(species)}
+    reactions = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
+    params = {
+        model.getParameter(i).getId(): model.getParameter(i).getValue()
+        for i in range(model.getNumParameters())
+    }
+
+    stoich = [[0.0] * len(reactions) for _ in species]
+    lower: list[float] = []
+    upper: list[float | None] = []
+    for j in range(model.getNumReactions()):
+        reaction = model.getReaction(j)
+        for k in range(reaction.getNumReactants()):
+            ref = reaction.getReactant(k)
+            if ref.getSpecies() in row_of:
+                stoich[row_of[ref.getSpecies()]][j] -= ref.getStoichiometry()
+        for k in range(reaction.getNumProducts()):
+            ref = reaction.getProduct(k)
+            if ref.getSpecies() in row_of:
+                stoich[row_of[ref.getSpecies()]][j] += ref.getStoichiometry()
+        plugin = reaction.getPlugin("fbc")
+        if plugin is None or not plugin.isSetLowerFluxBound() or not plugin.isSetUpperFluxBound():
+            raise ValueError(f"reaction {reaction.getId()} is missing an fbc flux bound")
+        low_value = params[plugin.getLowerFluxBound()]
+        high_value = params[plugin.getUpperFluxBound()]
+        lower.append(low_value)
+        upper.append(None if high_value == float("inf") else high_value)
+
+    active = fbc.getObjective(fbc.getActiveObjectiveId())
+    if active is None:
+        raise ValueError("the model declares no active fbc objective")
+    coefficients = {
+        active.getFluxObjective(i).getReaction(): active.getFluxObjective(i).getCoefficient()
+        for i in range(active.getNumFluxObjectives())
+    }
+    sign = 1.0 if active.getType() == "maximize" else -1.0
+    objective = [sign * coefficients.get(rid, 0.0) for rid in reactions]
+
+    return FbaModel(
+        species_ids=tuple(species),
+        reaction_ids=tuple(reactions),
+        stoichiometry=tuple(tuple(row) for row in stoich),
+        objective=tuple(objective),
+        lower=tuple(lower),
+        upper=tuple(upper),
+    )
+
+
 def _differs(a: float, b: float, rel_tol: float) -> bool:
     scale = max(abs(a), abs(b), 1.0)
     return abs(a - b) / scale > rel_tol
@@ -157,4 +231,4 @@ def _sid(text: str) -> str:
     return cleaned
 
 
-__all__ = ["build_model_sbml", "compare_sbml_to_dossier"]
+__all__ = ["build_model_sbml", "compare_sbml_to_dossier", "ingest_fbc_sbml"]

@@ -15,10 +15,32 @@ it is imported lazily, so the core stays dependency-free.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Any
 
 from .model import ClaimAssessment
 from .oracle import Attribution, ReferenceKind, Tolerance, judge_scalar, not_evaluable
+
+
+@dataclass(frozen=True)
+class FbaModel:
+    """A constraint-based model in the form the oracle solves: the S matrix, the objective, the
+    per-reaction flux bounds, and the species/reaction ids that give each row and column a name.
+
+    This is what SBML-fbc ingestion produces (:func:`reprolith.ingest_fbc_sbml`), so a published
+    model can be fed straight to :func:`solve_objective`, :func:`flux_variability`, and the judges.
+    """
+
+    species_ids: tuple[str, ...]
+    reaction_ids: tuple[str, ...]
+    stoichiometry: tuple[tuple[float, ...], ...]
+    objective: tuple[float, ...]
+    lower: tuple[float, ...]
+    upper: tuple[float | None, ...]
+
+    def reaction_index(self, reaction_id: str) -> int:
+        """The column index of a reaction id, for judging that reaction's flux by name."""
+        return self.reaction_ids.index(reaction_id)
 
 
 class FbaUnavailable(RuntimeError):
@@ -256,6 +278,7 @@ def essentiality_agreement(computed: frozenset[int], reported: frozenset[int]) -
 
 
 __all__ = [
+    "FbaModel",
     "FbaUnavailable",
     "InfeasibleFba",
     "essentiality_agreement",
