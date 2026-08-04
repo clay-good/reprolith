@@ -25,6 +25,7 @@ pytest.importorskip("libsbml", reason="the 'engine' extra (python-libsbml) is no
 pytest.importorskip("scipy", reason="the 'fba' extra (scipy) is not installed")
 
 from reprolith import (  # noqa: E402
+    flux_variability,
     gene_essentiality,
     ingest_fbc_sbml,
     reaction_essentiality,
@@ -35,6 +36,7 @@ _DIR = Path(__file__).parent.parent / "datasets" / "constraint_based" / "cross_v
 _REFERENCE = json.loads((_DIR / "reference_growth.json").read_text(encoding="utf-8"))["models"]
 _CORE = Path(__file__).parent.parent / "datasets" / "constraint_based" / "e_coli_core.xml"
 _ESSENTIALITY = json.loads((_DIR / "e_coli_core_essentiality.json").read_text(encoding="utf-8"))
+_FVA = json.loads((_DIR / "e_coli_core_fva.json").read_text(encoding="utf-8"))
 
 
 @pytest.mark.parametrize("model_id", sorted(_REFERENCE))
@@ -67,3 +69,19 @@ def test_essentiality_matches_the_cobra_reference_on_e_coli_core() -> None:
         model.reaction_ids[i].removeprefix("R_") for i in essential_indices
     }
     assert essential_reactions == set(_ESSENTIALITY["essential_reactions"])
+
+
+def test_flux_variability_matches_the_cobra_reference_on_e_coli_core() -> None:
+    # The third FROG component: every reaction's flux-variability interval at the optimum must
+    # match COBRApy's independent flux_variability_analysis, so the whole fingerprint (objective,
+    # variability, deletions) is cross-validated against the standard tool, not just the objective.
+    model = ingest_fbc_sbml(_CORE.read_text(encoding="utf-8"))
+    intervals = flux_variability(
+        model.stoichiometry, model.objective, model.lower, model.upper,
+        fraction_of_optimum=_FVA["fraction_of_optimum"],
+    )
+    reference = _FVA["intervals"]
+    for reaction_id, (low, high) in zip(model.reaction_ids, intervals):
+        ref_low, ref_high = reference[reaction_id.removeprefix("R_")]
+        assert low == pytest.approx(ref_low, abs=1e-6)
+        assert high == pytest.approx(ref_high, abs=1e-6)

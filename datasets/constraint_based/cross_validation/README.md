@@ -35,6 +35,12 @@ E. coli core model. Reprolith's `gene_essentiality` (with its GPR AND/OR logic) 
 `reaction_essentiality` reproduce both sets exactly (7 genes, 18 reactions) — an independent
 cross-tool check of the deletion analyses, not a self-asserted count.
 
+[`e_coli_core_fva.json`](e_coli_core_fva.json) does the same for the third FROG component: the
+flux-variability interval of every reaction at the optimum, from COBRApy's
+`flux_variability_analysis`, which Reprolith's `flux_variability` reproduces. Together the two
+files cross-check all three FROG components — objective (growth), variability, and deletion —
+against the standard tool.
+
 ## Provenance and honesty
 
 The reference is an independent tool's computation on the *distributed* model, not a value read
