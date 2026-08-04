@@ -198,6 +198,18 @@ def ingest_fbc_sbml(sbml: str) -> FbaModel:
     sign = 1.0 if active.getType() == "maximize" else -1.0
     objective = [sign * coefficients.get(rid, 0.0) for rid in reactions]
 
+    gene_labels = {
+        fbc.getGeneProduct(i).getId(): fbc.getGeneProduct(i).getLabel()
+        for i in range(fbc.getNumGeneProducts())
+    }
+    gene_associations = []
+    for j in range(model.getNumReactions()):
+        plugin = model.getReaction(j).getPlugin("fbc")
+        gpa = plugin.getGeneProductAssociation() if plugin is not None else None
+        rule = _parse_gpr(gpa.getAssociation(), gene_labels, libsbml) if gpa is not None else None
+        if rule is not None:
+            gene_associations.append((reactions[j], rule))
+
     return FbaModel(
         species_ids=tuple(species),
         reaction_ids=tuple(reactions),
@@ -205,7 +217,31 @@ def ingest_fbc_sbml(sbml: str) -> FbaModel:
         objective=tuple(objective),
         lower=tuple(lower),
         upper=tuple(upper),
+        gene_associations=tuple(gene_associations),
     )
+
+
+def _parse_gpr(association: Any, gene_labels: dict[str, str], libsbml: Any) -> Any:
+    """Convert an SBML-fbc gene-product association into the plain-tuple GPR the oracle evaluates.
+
+    A gene-product reference becomes the gene's label; an ``and``/``or`` node becomes a
+    ``("and"|"or", (child, ...))`` tuple over its converted children. Returns ``None`` for an
+    empty or unrecognized association, so a reaction with no usable rule simply carries none.
+    """
+    if association is None:
+        return None
+    type_code = association.getTypeCode()
+    if type_code == libsbml.SBML_FBC_GENEPRODUCTREF:
+        return gene_labels.get(association.getGeneProduct(), association.getGeneProduct())
+    if type_code in (libsbml.SBML_FBC_AND, libsbml.SBML_FBC_OR):
+        operator = "and" if type_code == libsbml.SBML_FBC_AND else "or"
+        children = tuple(
+            child
+            for i in range(association.getNumAssociations())
+            if (child := _parse_gpr(association.getAssociation(i), gene_labels, libsbml)) is not None
+        )
+        return (operator, children) if children else None
+    return None
 
 
 def _differs(a: float, b: float, rel_tol: float) -> bool:

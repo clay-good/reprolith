@@ -128,6 +128,7 @@ def _apply_medium(model: FbaModel, medium: Sequence[Parameter]) -> FbaModel:
         objective=model.objective,
         lower=tuple(lower),
         upper=model.upper,
+        gene_associations=model.gene_associations,
     )
 
 

@@ -24,6 +24,7 @@ from reprolith import (  # noqa: E402
     essentiality_agreement,
     flux_variability,
     frog_fingerprint,
+    gene_essentiality,
     judge_fingerprint,
     judge_flux,
     judge_objective,
@@ -241,3 +242,50 @@ def test_judge_fingerprint_fails_with_named_disagreements() -> None:
     )
     assert a.verdict is Verdict.FAILED
     assert a.discrepancy and "objective" in a.discrepancy  # the disagreement is recorded, auditable
+
+
+# A gene-annotated version of the tiny network: v_in is run by *isozymes* (either gene suffices),
+# and v_out — the only objective-bearing reaction — needs a two-gene *complex* (both required).
+_GENE_MODEL = FbaModel(
+    species_ids=("A",),
+    reaction_ids=("v_in", "v_out"),
+    stoichiometry=((1.0, -1.0),),
+    objective=(0.0, 1.0),
+    lower=(0.0, 0.0),
+    upper=(8.0, None),
+    gene_associations=(("v_in", ("or", ("g1", "g2"))), ("v_out", ("and", ("g3", "g4")))),
+)
+
+
+def test_model_lists_its_genes_in_a_deterministic_order() -> None:
+    assert _GENE_MODEL.genes() == ("g1", "g2", "g3", "g4")
+
+
+def test_gene_essentiality_respects_and_or_rules() -> None:
+    # The OR on v_in makes each isozyme dispensable; the AND on the objective reaction makes both
+    # subunits of the complex essential — the whole point of reading GPR rules rather than guessing.
+    assert gene_essentiality(_GENE_MODEL) == frozenset({"g3", "g4"})
+
+
+def test_frog_fingerprint_includes_the_gene_deletion_section() -> None:
+    fp = frog_fingerprint(_GENE_MODEL)
+    assert fp.gene_ids == ("g1", "g2", "g3", "g4")
+    # Deleting an isozyme leaves the optimum untouched; deleting a complex subunit collapses it.
+    assert fp.gene_deletion_objectives == pytest.approx((8.0, 8.0, 0.0, 0.0))
+
+
+def test_frog_comparison_names_a_gene_deletion_disagreement() -> None:
+    computed = frog_fingerprint(_GENE_MODEL)
+    # A curation that models v_out as isozymes (OR) instead of a complex (AND): the same genes are
+    # present, but deleting g3 or g4 no longer collapses growth, so the gene section must disagree.
+    reported = frog_fingerprint(
+        FbaModel(
+            species_ids=("A",), reaction_ids=("v_in", "v_out"),
+            stoichiometry=((1.0, -1.0),), objective=(0.0, 1.0), lower=(0.0, 0.0), upper=(8.0, None),
+            gene_associations=(("v_in", ("or", ("g1", "g2"))), ("v_out", ("or", ("g3", "g4")))),
+        )
+    )
+    result = compare_frog(computed, reported)
+    assert not result.agrees
+    assert not result.gene_deletion_agrees
+    assert any("gene-deletion g3" in d for d in result.disagreements)

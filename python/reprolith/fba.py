@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Union
 
 from .model import ClaimAssessment
 from .oracle import (
@@ -29,6 +29,33 @@ from .oracle import (
     not_evaluable,
 )
 
+# A gene–protein–reaction rule: either a single gene label, or a boolean node — a
+# ``("and", (child, ...))`` / ``("or", (child, ...))`` tuple — over sub-rules. This is the exact
+# structure an SBML-fbc ``geneProductAssociation`` encodes, kept as plain hashable tuples so an
+# :class:`FbaModel` stays frozen and comparable.
+GprExpr = Union[str, tuple[str, tuple["GprExpr", ...]]]
+
+
+def _gpr_holds(expr: GprExpr, present: frozenset[str]) -> bool:
+    """Whether a GPR rule is satisfied when only the genes in ``present`` are active."""
+    if isinstance(expr, str):
+        return expr in present
+    operator, children = expr
+    if operator == "and":
+        return all(_gpr_holds(child, present) for child in children)
+    return any(_gpr_holds(child, present) for child in children)
+
+
+def _genes_in(expr: GprExpr) -> set[str]:
+    """Every gene label appearing in a GPR rule."""
+    if isinstance(expr, str):
+        return {expr}
+    _, children = expr
+    genes: set[str] = set()
+    for child in children:
+        genes |= _genes_in(child)
+    return genes
+
 
 @dataclass(frozen=True)
 class FbaModel:
@@ -37,6 +64,9 @@ class FbaModel:
 
     This is what SBML-fbc ingestion produces (:func:`reprolith.ingest_fbc_sbml`), so a published
     model can be fed straight to :func:`solve_objective`, :func:`flux_variability`, and the judges.
+    ``gene_associations`` carries the gene–protein–reaction rule for each reaction that has one
+    (``(reaction_id, rule)`` pairs), which is what makes gene-level deletion possible; a model
+    ingested without gene data simply has none.
     """
 
     species_ids: tuple[str, ...]
@@ -45,10 +75,18 @@ class FbaModel:
     objective: tuple[float, ...]
     lower: tuple[float, ...]
     upper: tuple[float | None, ...]
+    gene_associations: tuple[tuple[str, GprExpr], ...] = ()
 
     def reaction_index(self, reaction_id: str) -> int:
         """The column index of a reaction id, for judging that reaction's flux by name."""
         return self.reaction_ids.index(reaction_id)
+
+    def genes(self) -> tuple[str, ...]:
+        """Every gene the model's GPR rules mention, in a deterministic order."""
+        genes: set[str] = set()
+        for _, rule in self.gene_associations:
+            genes |= _genes_in(rule)
+        return tuple(sorted(genes))
 
 
 class FbaUnavailable(RuntimeError):
@@ -159,6 +197,45 @@ def reaction_essentiality(
         if optimum < threshold * baseline:
             essential.add(i)
     return frozenset(essential)
+
+
+def _objective_without_gene(model: FbaModel, gene: str) -> float:
+    """The optimum after deleting one gene: every reaction whose GPR then fails is forced to zero.
+
+    A reaction with no GPR (a spontaneous or exchange reaction) is never affected by a gene
+    deletion, so only genetically-controlled reactions can be knocked out. Returns 0.0 if the
+    knockout makes the model infeasible.
+    """
+    present = frozenset(g for g in model.genes() if g != gene)
+    rules = dict(model.gene_associations)
+    lower = list(model.lower)
+    upper: list[float | None] = list(model.upper)
+    for j, reaction_id in enumerate(model.reaction_ids):
+        rule = rules.get(reaction_id)
+        if rule is not None and not _gpr_holds(rule, present):
+            lower[j] = 0.0
+            upper[j] = 0.0
+    try:
+        return solve_objective(model.stoichiometry, model.objective, lower, upper)
+    except InfeasibleFba:
+        return 0.0
+
+
+def gene_essentiality(model: FbaModel, *, threshold: float = 1e-6) -> frozenset[str]:
+    """The genes whose deletion collapses the objective — the essential-gene set.
+
+    A gene is essential if deleting it (and forcing to zero every reaction whose gene–protein–
+    reaction rule then fails) drops the optimum below ``threshold`` of the unperturbed optimum, or
+    makes the model infeasible. This is the gene-level counterpart of :func:`reaction_essentiality`
+    and the systematic gene-deletion analysis the spec names (spec: constraint-based-class); it
+    reads the GPR rules :func:`reprolith.ingest_fbc_sbml` captures, so it needs no extra input.
+    """
+    baseline = solve_objective(model.stoichiometry, model.objective, model.lower, model.upper)
+    if baseline <= 0.0:
+        return frozenset()
+    return frozenset(
+        gene for gene in model.genes() if _objective_without_gene(model, gene) < threshold * baseline
+    )
 
 
 def flux_variability(
@@ -278,17 +355,20 @@ class FrogFingerprint:
     """A standardized, solver-independent reproducibility fingerprint for a constraint-based model.
 
     Named for the FROG analysis the field uses (Flux optimum, Reaction variability, Objective,
-    Gene/reaction deletion). It bundles the three reaction-level results the constraint-based-class
-    spec names — the optimal objective value, each reaction's flux-variability interval, and the
-    objective remaining after each reaction is deleted — so a verdict can be the comparison of two
-    fingerprints rather than of a single number. (Gene-level deletion is a further extension that
-    needs gene–reaction associations the fbc ingest does not yet capture.)
+    Gene/reaction deletion). It bundles the results the constraint-based-class spec names — the
+    optimal objective value, each reaction's flux-variability interval, the objective remaining
+    after each reaction is deleted, and the objective remaining after each gene is deleted — so a
+    verdict can be the comparison of two fingerprints rather than of a single number. Gene deletion
+    is populated when the model carries gene–reaction associations
+    (:func:`reprolith.ingest_fbc_sbml`); a model without them simply has an empty gene section.
     """
 
     reaction_ids: tuple[str, ...]
     objective_value: float
     variability: tuple[tuple[float, float], ...]
     deletion_objectives: tuple[float, ...]
+    gene_ids: tuple[str, ...] = ()
+    gene_deletion_objectives: tuple[float, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -299,10 +379,16 @@ class FrogComparison:
     variability_agrees: bool
     deletion_agrees: bool
     disagreements: tuple[str, ...]
+    gene_deletion_agrees: bool = True
 
     @property
     def agrees(self) -> bool:
-        return self.objective_agrees and self.variability_agrees and self.deletion_agrees
+        return (
+            self.objective_agrees
+            and self.variability_agrees
+            and self.deletion_agrees
+            and self.gene_deletion_agrees
+        )
 
 
 def frog_fingerprint(model: FbaModel, *, fraction_of_optimum: float = 1.0) -> FrogFingerprint:
@@ -335,11 +421,15 @@ def frog_fingerprint(model: FbaModel, *, fraction_of_optimum: float = 1.0) -> Fr
             )
         except InfeasibleFba:
             deletion.append(0.0)
+    gene_ids = model.genes()
+    gene_deletion = tuple(_objective_without_gene(model, gene) for gene in gene_ids)
     return FrogFingerprint(
         reaction_ids=model.reaction_ids,
         objective_value=objective_value,
         variability=tuple(variability),
         deletion_objectives=tuple(deletion),
+        gene_ids=gene_ids,
+        gene_deletion_objectives=gene_deletion,
     )
 
 
@@ -393,11 +483,32 @@ def compare_frog(
     if only_computed or only_reported:
         variability_agrees = deletion_agrees = False
 
+    gene_deletion_agrees = True
+    reported_gene = {gid: j for j, gid in enumerate(reported.gene_ids)}
+    only_computed_genes = [g for g in computed.gene_ids if g not in reported_gene]
+    only_reported_genes = [g for g in reported.gene_ids if g not in set(computed.gene_ids)]
+    for gid in only_computed_genes + only_reported_genes:
+        disagreements.append(f"gene {gid} present in only one fingerprint")
+        gene_deletion_agrees = False
+    for i, gid in enumerate(computed.gene_ids):
+        if gid not in reported_gene:
+            continue
+        j = reported_gene[gid]
+        if not _close(
+            computed.gene_deletion_objectives[i], reported.gene_deletion_objectives[j], rel_tol
+        ):
+            gene_deletion_agrees = False
+            disagreements.append(
+                f"gene-deletion {gid}: {computed.gene_deletion_objectives[i]:.6g} != "
+                f"{reported.gene_deletion_objectives[j]:.6g}"
+            )
+
     return FrogComparison(
         objective_agrees=objective_agrees,
         variability_agrees=variability_agrees,
         deletion_agrees=deletion_agrees,
         disagreements=tuple(disagreements),
+        gene_deletion_agrees=gene_deletion_agrees,
     )
 
 
@@ -457,6 +568,7 @@ __all__ = [
     "essentiality_agreement",
     "flux_variability",
     "frog_fingerprint",
+    "gene_essentiality",
     "judge_fingerprint",
     "judge_flux",
     "judge_objective",

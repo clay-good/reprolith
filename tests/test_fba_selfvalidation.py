@@ -18,6 +18,7 @@ pytest.importorskip("scipy", reason="the 'fba' extra (scipy) is not installed")
 from reprolith import (  # noqa: E402
     FbaModel,
     flux_variability,
+    gene_essentiality,
     ingest_fbc_sbml,
     reaction_essentiality,
     solve_objective,
@@ -63,3 +64,21 @@ def test_the_full_oracle_runs_on_a_real_model(model: FbaModel) -> None:
     )
     # The biomass reaction is essential by construction — deleting the objective abolishes it.
     assert model.reaction_index(_BIOMASS) in essential
+
+
+def test_captures_gene_associations(model: FbaModel) -> None:
+    # e_coli_core annotates 69 of its 95 reactions with a gene-protein-reaction rule over 137 genes;
+    # the rest (exchanges, ATP maintenance, biomass) are spontaneous and carry none.
+    assert len(model.gene_associations) == 69
+    assert len(model.genes()) == 137
+
+
+def test_reproduces_gene_essentiality(model: FbaModel) -> None:
+    # Gene deletion via the GPR rules on the real network. Enolase (b2779) is an independently
+    # known essential gene for aerobic growth on glucose — the non-circular anchor; the full set
+    # is a small, deterministic subset of the 137 genes.
+    essential = gene_essentiality(model)
+    assert "b2779" in essential
+    assert essential == frozenset(
+        {"b0720", "b1136", "b1779", "b2415", "b2416", "b2779", "b2926"}
+    )
