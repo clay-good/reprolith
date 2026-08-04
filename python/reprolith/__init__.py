@@ -125,6 +125,7 @@ from .run import (
 )
 from .sbml import build_model_sbml, compare_sbml_to_dossier, ingest_fbc_sbml
 from .scope import Scope
+from .sedml import SimulationRecipe, parse_sedml_recipes
 from .seed import load_test_set, seed_catalog
 from .supersession import CertificateLedger, describe_changes
 from .verification import (
@@ -189,6 +190,7 @@ __all__ = [
     "ReprolithQuery",
     "RunMetadata",
     "Scope",
+    "SimulationRecipe",
     "Tolerance",
     "ToleranceSource",
     "Transition",
@@ -246,6 +248,7 @@ __all__ = [
     "load_test_set",
     "normalized_curve_distance",
     "not_evaluable",
+    "parse_sedml_recipes",
     "relative_error",
     "render_badge",
     "render_human",
