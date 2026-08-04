@@ -116,6 +116,15 @@ class Identifiers:
             "accession": self.accession,
         }
 
+    @classmethod
+    def from_dict(cls, record: dict[str, Any]) -> Identifiers:
+        return cls(
+            title=record["title"],
+            doi=record.get("doi"),
+            pubmed_id=record.get("pubmed_id"),
+            accession=record.get("accession"),
+        )
+
 
 @dataclass(frozen=True)
 class GroundTruth:
@@ -132,6 +141,14 @@ class GroundTruth:
 
     def to_dict(self) -> dict[str, Any]:
         return {"expected": self.expected.value, "source": self.source, "note": self.note}
+
+    @classmethod
+    def from_dict(cls, record: dict[str, Any]) -> GroundTruth:
+        return cls(
+            expected=OverallVerdict(record["expected"]),
+            source=record["source"],
+            note=record.get("note"),
+        )
 
 
 @dataclass(frozen=True)
@@ -154,6 +171,17 @@ class Transition:
             "reason": self.reason,
             "missing_inputs": list(self.missing_inputs),
         }
+
+    @classmethod
+    def from_dict(cls, record: dict[str, Any]) -> Transition:
+        return cls(
+            from_state=LifecycleState(record["from_state"]),
+            to_state=LifecycleState(record["to_state"]),
+            at=record["at"],
+            actor=record["actor"],
+            reason=record["reason"],
+            missing_inputs=tuple(record.get("missing_inputs", ())),
+        )
 
 
 @dataclass(frozen=True)
@@ -273,6 +301,24 @@ class CatalogEntry:
             "ground_truth": self.ground_truth.to_dict() if self.ground_truth else None,
         }
 
+    @classmethod
+    def from_dict(cls, record: dict[str, Any]) -> CatalogEntry:
+        """Reconstruct an entry from its stored dict, restoring its state and history exactly.
+
+        Loading a recorded lifecycle is not a fresh traversal, so the state and history are
+        restored directly rather than replayed through :meth:`transition`.
+        """
+        ground_truth = record.get("ground_truth")
+        entry = cls(
+            Identifiers.from_dict(record["identifiers"]),
+            ModelClass(record["model_class"]),
+            difficulty=record.get("difficulty"),
+            ground_truth=GroundTruth.from_dict(ground_truth) if ground_truth else None,
+        )
+        entry._state = LifecycleState(record["state"])
+        entry._history = [Transition.from_dict(t) for t in record.get("history", [])]
+        return entry
+
 
 class Catalog:
     """A collection of entries with de-duplication across identifiers.
@@ -291,6 +337,24 @@ class Catalog:
     @property
     def entries(self) -> tuple[CatalogEntry, ...]:
         return tuple(self._entries)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize the whole catalog — a durable, re-loadable registry (spec: model-catalog)."""
+        return {"entries": [entry.to_dict() for entry in self._entries]}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Catalog:
+        """Reload a catalog saved with :meth:`to_dict`, restoring each entry and the index.
+
+        The saved catalog is already de-duplicated, so entries are restored directly rather
+        than re-added through :meth:`add`.
+        """
+        catalog = cls()
+        for record in data["entries"]:
+            entry = CatalogEntry.from_dict(record)
+            catalog._entries.append(entry)
+            catalog._reindex(entry)
+        return catalog
 
     def add(
         self,

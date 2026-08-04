@@ -174,3 +174,43 @@ def test_reseed_fills_gaps_without_overwriting_known_data() -> None:
     # A later re-seed that mis-tags the class must not clobber the known assignment.
     catalog.add(Identifiers(title="Model A", doi="10.1/a"), ModelClass.UNASSIGNED)
     assert entry.model_class is ModelClass.ODE_PKPD
+
+
+# --- catalog persistence: durable, resumable registry (spec: model-catalog) ---------
+
+
+def test_catalog_round_trips_with_state_and_history() -> None:
+    import json
+
+    catalog = Catalog()
+    entry = catalog.add(
+        Identifiers(title="A model", doi="10.1/a", accession="BIOMD1"), ModelClass.ODE_PKPD,
+        ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source="curation"),
+    )
+    entry.transition(LifecycleState.INGESTING, at="t1", actor="agent", reason="start")
+    entry.transition(LifecycleState.INGESTED, at="t2", actor="agent", reason="done")
+    catalog.add(Identifiers(title="Other", accession="MODEL2"), ModelClass.UNASSIGNED)
+
+    reloaded = Catalog.from_dict(json.loads(json.dumps(catalog.to_dict())))
+
+    assert len(reloaded) == 2
+    first = reloaded.find(Identifiers(title="ignored", accession="BIOMD1"))
+    assert first is not None
+    assert first.state is LifecycleState.INGESTED  # state restored, not reset to queued
+    assert [t.to_state for t in first.history] == [LifecycleState.INGESTING, LifecycleState.INGESTED]
+    assert first.ground_truth is not None and first.ground_truth.expected is OverallVerdict.REPRODUCED
+    assert first.identifiers.doi == "10.1/a"
+
+
+def test_reloaded_entry_still_advances_from_its_restored_state() -> None:
+    import json
+
+    catalog = Catalog()
+    entry = catalog.add(Identifiers(title="A", accession="X"), ModelClass.ODE_PKPD)
+    entry.transition(LifecycleState.INGESTING, at="t", actor="a", reason="r")
+    reloaded = Catalog.from_dict(json.loads(json.dumps(catalog.to_dict())))
+    e = reloaded.find(Identifiers(title="A", accession="X"))
+    assert e is not None
+    # A legal move from the restored state works; an illegal one is still rejected.
+    e.transition(LifecycleState.INGESTED, at="t2", actor="a", reason="r2")
+    assert e.state is LifecycleState.INGESTED
