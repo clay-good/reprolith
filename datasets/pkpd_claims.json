@@ -1,0 +1,43 @@
+{
+  "description": "Verified targetable claims extracted from the manuscripts of test-set entries, keyed by BioModels accession. Each entry drives certify_model to produce a certificate in the blind run. A claim's reference value comes from the paper (cited in source_location), not from re-running the model. Entries are added only after a claim has been extracted and its reproduction verified by hand; the rest of the test set is honestly blocked until then.",
+  "entries": {
+    "BIOMD0000001028": {
+      "model_file": "worked_examples/Zake2021_metformin_human_single_PO.xml",
+      "paper": {
+        "title": "Zake2021 - PBPK model of metformin in humans, single PO dose",
+        "doi": "10.1371/journal.pone.0249594"
+      },
+      "duration": 24.0,
+      "steps": 480,
+      "claims": [
+        {
+          "claim_id": "Cmax-500mg",
+          "quantity": "plasma Cmax after 500 mg single oral dose",
+          "species": "mPlasmaVenous",
+          "reported": 6.2,
+          "source_location": "Table 4, Zaharenko dataset (reported 6.2 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-1000mg",
+          "quantity": "plasma Cmax after 1000 mg single oral dose",
+          "species": "mPlasmaVenous",
+          "reported": 11.2,
+          "source_location": "Chung dataset (reported 11.2 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {"Metformin_Dose_in_Lumen_in_mg": 779.9},
+          "assumption_qualified": true
+        }
+      ],
+      "assumptions": [
+        {
+          "id": "dose-salt-form",
+          "description": "the stated 1000 mg oral dose is metformin HCl; the model's dose input is free base",
+          "chosen": "779.9 mg free base (1000 mg HCl x 129.16/165.62)",
+          "basis": "model default 389.92 mg equals 500 mg HCl expressed as free base; clinical doses are the HCl salt",
+          "load_bearing": true
+        }
+      ]
+    }
+  }
+}

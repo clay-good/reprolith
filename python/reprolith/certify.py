@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
+from typing import Any
 
 from .certificate import build_certificate
 from .engine import simulate
@@ -46,6 +47,27 @@ class Claim:
     reference_kind: ReferenceKind = ReferenceKind.NUMERIC
     assumption_qualified: bool = False
     shortfall: Attribution | None = field(default=None)
+
+    @classmethod
+    def from_record(cls, record: dict[str, Any]) -> Claim:
+        """Build a claim from a plain dict (a claims-dataset record).
+
+        ``parameter_overrides`` may be given as a ``{name: value}`` mapping; ``reference_kind``
+        as its string value. The engine-facing fields (``tolerance``, ``shortfall``) are not
+        parsed here — dataset claims are the reproducing, default-tolerance case.
+        """
+        overrides = record.get("parameter_overrides", {})
+        return cls(
+            claim_id=record["claim_id"],
+            quantity=record["quantity"],
+            species=record["species"],
+            reported=float(record["reported"]),
+            source_location=record["source_location"],
+            metric=record.get("metric", "cmax"),
+            parameter_overrides=tuple((k, float(v)) for k, v in overrides.items()),
+            reference_kind=ReferenceKind(record.get("reference_kind", "numeric")),
+            assumption_qualified=bool(record.get("assumption_qualified", False)),
+        )
 
 
 def _metric(times: Sequence[float], values: Sequence[float], metric: str) -> float:
