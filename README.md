@@ -90,12 +90,16 @@ curation status.
 
 Constraint-based (FBA) models reproduce a different kind of claim — an optimization outcome, not
 a time course — so they get their own oracle behind the optional **`fba`** extra (scipy's linear
-solver). It reports the fingerprints the constraint-based-class spec names, each preserving the
+solver). It reports the full FROG fingerprint the constraint-based-class spec names — objective
+value, flux variability, and both reaction- and gene-deletion outcomes — each preserving the
 "abstain when unsure" rule under alternate optima; see
-[docs/fba-oracle.md](docs/fba-oracle.md). It self-validates against a real published model:
-[datasets/constraint_based/](datasets/constraint_based/) ships the *E. coli* core model, and the
-`ingest_fbc_sbml` → `solve_objective` pathway reproduces its independently-known maximal growth
-rate (0.873922) to every published digit.
+[docs/fba-oracle.md](docs/fba-oracle.md). The same shared pathway carries it end to end: a
+constraint-based dossier adopts the paper's SBML-fbc model and records its load-bearing medium,
+then certifies to a scope-flagged verdict, reproduced or honestly not. It self-validates against a
+real published model: [datasets/constraint_based/](datasets/constraint_based/) ships the *E. coli*
+core model, and the `ingest_fbc_sbml` → `solve_objective` pathway reproduces its independently-known
+maximal growth rate (0.873922) to every published digit — with a
+[worked example](datasets/constraint_based/worked_example/) walking the whole dossier → certificate.
 
 ```bash
 pip install -e ".[dev,fba]"   # then pytest -q runs the FBA oracle tests too
