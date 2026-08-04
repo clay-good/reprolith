@@ -48,6 +48,7 @@ from .enums import (
 )
 from .ingest import ingest_sbml
 from .linter import LintResult, lint_curve
+from .mcp_server import handle_request, serve_stdio
 from .model import (
     Assumption,
     Certificate,
@@ -164,6 +165,7 @@ __all__ = [
     "engine_pin",
     "engine_version",
     "gap_items",
+    "handle_request",
     "ingest_sbml",
     "judge_curve",
     "judge_scalar",
@@ -178,6 +180,7 @@ __all__ = [
     "revise",
     "run_test_set",
     "same_modulo_run_metadata",
+    "serve_stdio",
     "seed_catalog",
     "simulate",
     "verdict_for",

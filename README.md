@@ -38,6 +38,11 @@ Reprolith runs as an **MCP server**, so an AI agent can call it mid-workflow as 
 reproducibility check — submit a model, get a verdict it can trust and cite. Same engine,
 same answers as the human-facing repository.
 
+The server is dependency-free (JSON-RPC over stdio, no third-party SDK) and exposes read-only
+tools — browse the catalog, get a paper's status, fetch a certificate, read its gaps — each
+delegating to the same query surface the repository uses, so a verdict always travels with its
+scope flag and qualifications. Run it with `reprolith-mcp` (after `pip install -e .`).
+
 ## Where it starts
 
 Narrow and deep first: **ODE pharmacokinetic/pharmacodynamic models** — dose-in,

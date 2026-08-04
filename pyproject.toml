@@ -42,6 +42,11 @@ dev = ["pytest>=7.0", "ruff>=0.4", "mypy>=1.8"]
 # the simulation-backed tests and reconstructions.
 engine = ["python-copasi>=4.42", "python-libsbml>=5.20"]
 
+[project.scripts]
+# The agent-facing MCP server over the read-only query surface (JSON-RPC over stdio,
+# dependency-free). Run `reprolith-mcp` after installing.
+reprolith-mcp = "reprolith.mcp_server:main"
+
 [project.urls]
 Homepage = "https://github.com/clay-good/reprolith"
 Repository = "https://github.com/clay-good/reprolith"
