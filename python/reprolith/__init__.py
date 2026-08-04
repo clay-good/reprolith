@@ -26,6 +26,7 @@ from .constraint_based import (
     constraint_based_dossier,
     validate_constraint_based,
 )
+from .corroboration import EngineCorroboration, corroborate_curve
 from .determinism import certificate_digest, same_modulo_run_metadata
 from .dossier import (
     Dossier,
@@ -38,7 +39,6 @@ from .dossier import (
     Parameter,
     estimate_difficulty,
 )
-from .corroboration import EngineCorroboration, corroborate_curve
 from .engine import (
     EngineUnavailable,
     NonFiniteSimulation,
