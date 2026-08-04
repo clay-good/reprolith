@@ -55,13 +55,13 @@ a phase done until its verification holds.
 
 ## 7. Self-validation and the discipline loop
 
-- [ ] 7.1 Run the full pathway blind over the test set → verify: every entry yields a certificate
+- [x] 7.1 Run the full pathway blind over the test set → verify: every entry yields a certificate
 - [x] 7.2 Produce the agreement report (per-entry and aggregate) vs. ground-truth labels → verify: the report exists and is reproducible
 - [ ] 7.3 For every disagreement, write a defect note, fix the responsible stage, and re-run → verify: no unresolved disagreement remains without a written explanation
 - [ ] 7.4 Freeze the evidence-driven PK/PD failure-mode catalogue and tolerance defaults from what the loop taught us → verify: each default and category traces to a loop note
 
 ## 8. Milestone artifact
 
-- [ ] 8.1 Assemble the walkable result: the labelled set, the certificates, and the agreement report → verify: a stranger can follow it end to end without Reprolith internals
-- [ ] 8.2 Write the short findings note (what reproduced, what didn't, what the field under-specifies most) → verify: claims in the note trace to certificates
+- [x] 8.1 Assemble the walkable result: the labelled set, the certificates, and the agreement report → verify: a stranger can follow it end to end without Reprolith internals
+- [x] 8.2 Write the short findings note (what reproduced, what didn't, what the field under-specifies most) → verify: claims in the note trace to certificates
 - [x] 8.3 Identify the first outreach targets in the reproducible-modeling community → verify: a concrete, named shortlist exists

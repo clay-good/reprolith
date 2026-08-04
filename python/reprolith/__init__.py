@@ -76,6 +76,7 @@ from .reconstruction import (
 )
 from .render import claim_counts, gap_items, render_human, render_machine
 from .revision import DossierHistory, DossierRevision, dossier_digest, revise
+from .run import blocked_certificate, run_test_set
 from .sbml import build_model_sbml, compare_sbml_to_dossier
 from .scope import Scope
 from .seed import load_test_set, seed_catalog
@@ -131,6 +132,7 @@ __all__ = [
     "ToleranceSource",
     "Transition",
     "Verdict",
+    "blocked_certificate",
     "build_agreement_report",
     "build_certificate",
     "build_model_sbml",
@@ -160,6 +162,7 @@ __all__ = [
     "render_human",
     "render_machine",
     "revise",
+    "run_test_set",
     "same_modulo_run_metadata",
     "seed_catalog",
     "simulate",
