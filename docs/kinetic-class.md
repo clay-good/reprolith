@@ -35,6 +35,16 @@ through the shared catalog: 6/6 agreement.
 | `BIOMD0000000021` | circadian | Leloup1999 *Drosophila* PER/TIM clock |
 | `BIOMD0000000058` | calcium | Bindschadler2001 coupled Ca²⁺ oscillators |
 
+## Cross-engine corroboration
+
+Because two independent integrators are already in play, the class also exercises the
+`simulation-oracle` **engine-independence** requirement: `reprolith.corroborate_curve` runs a
+species curve under both the pinned COPASI engine and libRoadRunner (CVODE) and reports whether the
+verdict is *engine-independent* (the trajectories agree within tolerance) or *engine-sensitive*
+(they diverge, which would flag `ENGINE_SENSITIVITY` rather than pass on one solver). All six
+cross-validation models are engine-independent (`tests/test_corroboration.py`), so no kinetic
+verdict here rests on a single solver's quirk. Needs the `engine` and `corroborate` extras.
+
 ## Scope and honesty
 
 The cross-validation attests to **cross-implementation reproduction of the shipped models** — two
