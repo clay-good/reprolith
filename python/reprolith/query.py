@@ -81,6 +81,10 @@ class ReprolithQuery:
         )
         return self._entry_view(entry) if entry is not None else None
 
+    def backlog_health(self) -> dict[str, Any]:
+        """Report backlog depth by state, class, and difficulty, and the labelled mix."""
+        return self._catalog.backlog_health()
+
     def dossier(self, accession: str) -> dict[str, Any] | None:
         """The ingested dossier for an entry accession — its extracted model structure."""
         return self._dossiers.get(accession)

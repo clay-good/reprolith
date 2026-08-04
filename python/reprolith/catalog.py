@@ -15,6 +15,7 @@ splits deterministic content from caller-supplied, non-deterministic transition 
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
@@ -450,6 +451,23 @@ class Catalog:
         # Stable sort: labelled (ground-truth) entries sort before unlabelled; ties keep order.
         pool.sort(key=lambda entry: entry.ground_truth is None)
         return pool
+
+    def backlog_health(self) -> dict[str, Any]:
+        """Report the state of the backlog so the never-runs-out guarantee is observable.
+
+        Counts entries by lifecycle state, model class, and difficulty, and the labelled-versus-
+        unlabelled mix — the signals a seeder watches to decide when to bring a new source online
+        (spec: catalog-seeding — "Backlog health is reportable").
+        """
+        labelled = sum(1 for e in self._entries if e.ground_truth is not None)
+        return {
+            "total": len(self._entries),
+            "by_state": dict(Counter(e.state.value for e in self._entries)),
+            "by_class": dict(Counter(e.model_class.value for e in self._entries)),
+            "by_difficulty": dict(Counter(e.difficulty or "unassessed" for e in self._entries)),
+            "labelled": labelled,
+            "unlabelled": len(self._entries) - labelled,
+        }
 
     def priority_signals(self, entry: CatalogEntry) -> dict[str, Any]:
         """The signals that place an entry in the queue — so its rank is never a black box.

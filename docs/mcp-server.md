@@ -46,6 +46,7 @@ qualifications.
 | `verdict` | `digest` | The scope-qualified verdict (overall + per-claim + counts) |
 | `gaps` | `digest` | The structured "what was missing" report |
 | `certificates_for` | `title`/`doi`/… | Digests of every certificate for a paper, newest first |
+| `backlog_health` | — | Backlog depth by state, class, and difficulty, and the labelled mix |
 | `dossier` | `accession` | The ingested dossier — extracted model structure |
 | `bundle` | `accession` | The reconstruction bundle — model, recipe, assumptions |
 | `lint` | `sbml`, `species`, `reference`, `duration`, `steps` | A deterministic per-claim verdict (needs the engine extra) |

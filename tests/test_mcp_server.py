@@ -315,3 +315,16 @@ def test_stdio_round_trip() -> None:
     assert responses[0]["id"] == 1
     cert = json.loads(responses[1]["result"]["content"][0]["text"])
     assert cert["overall"] == OverallVerdict.REPRODUCED.value
+
+
+def test_backlog_health_tool_reports_the_backlog() -> None:
+    catalog = Catalog()
+    catalog.add(Identifiers(title="A", accession="A1"), ModelClass.ODE_PKPD,
+                ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source="c"))
+    catalog.add(Identifiers(title="B", accession="B2"), ModelClass.KINETIC)
+    query = ReprolithQuery(catalog, CertificateLedger())
+    health, _ = _call(query, "backlog_health", {})
+    assert health["total"] == 2
+    assert health["by_state"]["queued"] == 2
+    assert health["labelled"] == 1 and health["unlabelled"] == 1
+    assert health["by_class"] == {"ode-pkpd": 1, "kinetic": 1}

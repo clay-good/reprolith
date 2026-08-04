@@ -75,6 +75,11 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "inputSchema": _IDENTIFIER,
     },
     {
+        "name": "backlog_health",
+        "description": "Backlog depth by state, class, and difficulty, and the labelled mix.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
         "name": "dossier",
         "description": "The ingested dossier for an entry accession — its extracted model structure.",
         "inputSchema": {
@@ -231,6 +236,8 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return query.gaps(arguments["digest"])
     if name == "certificates_for":
         return query.certificates_for(**_identifier_kwargs(arguments))
+    if name == "backlog_health":
+        return query.backlog_health()
     if name == "dossier":
         return query.dossier(arguments["accession"])
     if name == "bundle":
