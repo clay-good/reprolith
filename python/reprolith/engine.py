@@ -82,7 +82,7 @@ def simulate(
         task.process(True)
 
         series = task.getTimeSeries()
-        column = _species_column(series, species)
+        column = _species_column(series, species, datamodel)
         recorded = series.getRecordedSteps()
         # The output grid is uniform over [0, duration], so the sample times are known
         # exactly; taking them from the grid avoids depending on the engine's time column.
@@ -93,7 +93,12 @@ def simulate(
         copasi.CRootContainer.removeDatamodel(datamodel)
 
 
-def _species_column(series: Any, name: str) -> int:
+def _species_column(series: Any, name: str, datamodel: Any) -> int:
+    # Resolve by SBML id first: real models often reuse the same display name across
+    # several species (the column title is then ambiguous), but the SBML id is unique.
+    for i in range(series.getNumVariables()):
+        if series.getSBMLId(i, datamodel) == name:
+            return i
     for i in range(series.getNumVariables()):
         if series.getTitle(i) == name:
             return i

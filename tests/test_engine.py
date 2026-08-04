@@ -61,3 +61,14 @@ def test_engine_pin_reports_the_pinned_engine() -> None:
 def test_unknown_species_is_rejected() -> None:
     with pytest.raises(ValueError):
         simulate(ONE_COMPARTMENT_SBML, "NotThere", duration=1.0, steps=1)
+
+
+def test_species_resolved_by_sbml_id_when_names_collide() -> None:
+    # The Landberg2009 model names three distinct species "AR"; the ambiguous column title
+    # would not identify one, but the SBML id (AR_Central) does.
+    from pathlib import Path
+
+    sbml = (Path(__file__).parent / "fixtures" / "BIOMD0000000948.xml").read_text()
+    times, values = simulate(sbml, "AR_Central", duration=48.0, steps=240)
+    assert len(values) == 241
+    assert max(values) > 0.0  # the plasma compartment rises after the dose
