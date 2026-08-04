@@ -135,6 +135,26 @@ pytestmark_engine = pytest.mark.skipif(
 
 
 @pytestmark_engine
+def test_the_shipped_worked_example_dossier_reproduces() -> None:
+    # The walkable worked-example artifact is a real, reproducible fixture, not just documentation:
+    # its stored dossier.json loads and certifies to the reproduced verdict its certificate.txt shows.
+    import json
+
+    from reprolith import EnginePin, OverallVerdict, PaperIdentity, certify_constraint_based
+    from reprolith.persistence import dossier_from_dict
+
+    worked_example = _MODEL_PATH.parent / "worked_example"
+    dossier = dossier_from_dict(json.loads((worked_example / "dossier.json").read_text("utf-8")))
+    cert = certify_constraint_based(
+        dossier, sbml=_MODEL_PATH.read_text(encoding="utf-8"),
+        paper=PaperIdentity(title="E. coli core", doi="10.1128/ecosalplus.10.2.1"),
+        engine_pin=EnginePin(engine="scipy-highs", version="1.13", algorithm="linprog-highs"),
+    )
+    assert cert.overall is OverallVerdict.REPRODUCED
+    assert "OVERALL: reproduced" in (worked_example / "certificate.txt").read_text("utf-8")
+
+
+@pytestmark_engine
 def test_certifies_the_known_growth_rate_end_to_end() -> None:
     from reprolith import (
         EnginePin,
