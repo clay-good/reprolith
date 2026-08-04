@@ -210,6 +210,46 @@ def test_unknown_method_returns_jsonrpc_error() -> None:
     assert resp["error"]["code"] == -32601
 
 
+# --- effectful tools: separated from read-only, offered only with a mutable catalog ---
+
+
+def test_read_only_server_hides_and_refuses_submit_paper() -> None:
+    query, _ = _fixture()  # no catalog passed -> read-only
+    tools = handle_request(query, {"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
+    assert "submit_paper" not in {t["name"] for t in tools["result"]["tools"]}
+    resp = handle_request(query, {"jsonrpc": "2.0", "id": 2, "method": "tools/call",
+                                  "params": {"name": "submit_paper", "arguments": {"title": "x"}}})
+    assert resp["result"]["isError"]
+
+
+def test_submit_paper_adds_an_entry_persists_and_dedups() -> None:
+    catalog = Catalog()
+    query = ReprolithQuery(catalog, CertificateLedger())
+    saved: list[int] = []
+
+    def call_submit(args):
+        return handle_request(query, {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                      "params": {"name": "submit_paper", "arguments": args}},
+                              catalog=catalog, on_change=lambda: saved.append(len(catalog)))
+
+    # Effectful tools are listed when a mutable catalog is provided.
+    tools = handle_request(query, {"jsonrpc": "2.0", "id": 0, "method": "tools/list"}, catalog=catalog)
+    assert "submit_paper" in {t["name"] for t in tools["result"]["tools"]}
+
+    first = call_submit({"title": "New PK model", "doi": "10.1/new"})
+    report = json.loads(first["result"]["content"][0]["text"])
+    assert report["created"] and not report["resolved_to_existing"]
+    assert len(catalog) == 1 and saved == [1]  # persisted after the change
+    # The read query reflects the new entry (shared catalog).
+    assert any(e["identifiers"]["doi"] == "10.1/new" for e in query.list_catalog())
+
+    # Submitting the same paper again resolves to the existing entry, no duplicate.
+    again = call_submit({"title": "New PK model (v2)", "doi": "10.1/new"})
+    report2 = json.loads(again["result"]["content"][0]["text"])
+    assert report2["resolved_to_existing"] and not report2["created"]
+    assert len(catalog) == 1
+
+
 def test_stdio_round_trip() -> None:
     query, digest = _fixture()
     requests = "\n".join([

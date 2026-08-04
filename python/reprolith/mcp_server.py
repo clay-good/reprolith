@@ -17,9 +17,12 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from typing import IO, Any
 
+from .catalog import Catalog, Identifiers
+from .enums import ModelClass
 from .query import ReprolithQuery
 from .supersession import CertificateLedger
 
@@ -114,6 +117,48 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
 ]
 
 
+# Effectful tools change state and are kept separate from the read-only set (spec: mcp-server,
+# "Read-only and effectful tools are separated"). They are offered only when the server is run
+# with a mutable catalog.
+EFFECTFUL_TOOLS: list[dict[str, Any]] = [
+    {
+        "name": "submit_paper",
+        "description": (
+            "EFFECTFUL: add a candidate paper to the catalog as a queued ode-pkpd entry. "
+            "Submitting the same paper again resolves to the existing entry, never a duplicate."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "doi": {"type": "string"},
+                "pubmed_id": {"type": "string"},
+                "accession": {"type": "string"},
+                "model_class": {"type": "string", "description": "default 'ode-pkpd'"},
+            },
+            "required": ["title"],
+        },
+    },
+]
+
+
+def submit_paper(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Add a paper to the catalog (de-duplicated) and report exactly what changed."""
+    identifiers = Identifiers(
+        title=arguments["title"],
+        doi=arguments.get("doi"),
+        pubmed_id=arguments.get("pubmed_id"),
+        accession=arguments.get("accession"),
+    )
+    existing = catalog.find(identifiers)
+    entry = catalog.add(identifiers, ModelClass(arguments.get("model_class", "ode-pkpd")))
+    return {
+        "created": existing is None,
+        "resolved_to_existing": existing is not None,
+        "entry": entry.blind().to_dict(),
+    }
+
+
 def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -> Any:
     """Call the named read-only query tool with the given arguments."""
     if name == "list_catalog":
@@ -158,11 +203,19 @@ def _error(request_id: Any, code: int, message: str) -> dict[str, Any]:
     return {"jsonrpc": "2.0", "id": request_id, "error": {"code": code, "message": message}}
 
 
-def handle_request(query: ReprolithQuery, request: dict[str, Any]) -> dict[str, Any] | None:
+def handle_request(
+    query: ReprolithQuery,
+    request: dict[str, Any],
+    *,
+    catalog: Catalog | None = None,
+    on_change: Callable[[], None] | None = None,
+) -> dict[str, Any] | None:
     """Handle one JSON-RPC request; return the response, or ``None`` for a notification.
 
-    Implements the MCP methods a read-only server needs: ``initialize``, ``tools/list``, and
-    ``tools/call`` (plus the ``notifications/initialized`` notification, which has no response).
+    Implements ``initialize``, ``tools/list``, and ``tools/call`` (plus the
+    ``notifications/initialized`` notification). When a mutable ``catalog`` is supplied the
+    effectful tools are offered too; ``on_change`` is called after a mutation so the caller can
+    persist it. Without a catalog the server is read-only and effectful calls are refused.
     """
     method = request.get("method")
     request_id = request.get("id")
@@ -179,13 +232,21 @@ def handle_request(query: ReprolithQuery, request: dict[str, Any]) -> dict[str, 
     if method == "notifications/initialized":
         return None
     if method == "tools/list":
-        return _result(request_id, {"tools": TOOL_DEFINITIONS})
+        tools = TOOL_DEFINITIONS + (EFFECTFUL_TOOLS if catalog is not None else [])
+        return _result(request_id, {"tools": tools})
     if method == "tools/call":
         params = request.get("params") or {}
         name = params.get("name", "")
         arguments = params.get("arguments") or {}
         try:
-            data = dispatch_tool(query, name, arguments)
+            if name == "submit_paper":
+                if catalog is None:
+                    raise KeyError("submit_paper is not enabled on this read-only server")
+                data = submit_paper(catalog, arguments)
+                if on_change is not None:
+                    on_change()
+            else:
+                data = dispatch_tool(query, name, arguments)
         except (KeyError, TypeError, ValueError, RuntimeError) as exc:
             # Unknown tool / bad args, a length mismatch, or the engine being absent or diverging
             # (EngineUnavailable and NonFiniteSimulation are RuntimeErrors) are tool-level errors:
@@ -209,8 +270,10 @@ def serve_stdio(
     *,
     reader: IO[str] | None = None,
     writer: IO[str] | None = None,
+    catalog: Catalog | None = None,
+    on_change: Callable[[], None] | None = None,
 ) -> None:
-    """Serve the read-only surface over newline-delimited JSON-RPC on stdio."""
+    """Serve over newline-delimited JSON-RPC on stdio (effectful tools if ``catalog`` given)."""
     reader = reader or sys.stdin
     writer = writer or sys.stdout
     for line in reader:
@@ -218,7 +281,7 @@ def serve_stdio(
         if not line:
             continue
         request = json.loads(line)
-        response = handle_request(query, request)
+        response = handle_request(query, request, catalog=catalog, on_change=on_change)
         if response is not None:
             writer.write(json.dumps(response) + "\n")
             writer.flush()
@@ -278,7 +341,14 @@ def main() -> None:  # pragma: no cover - stdio entry point
     load_certificates(ledger, milestone / "certificates")
     dossiers = load_dossiers(milestone / "dossiers")
     bundles = load_dossiers(milestone / "bundles")
-    serve_stdio(ReprolithQuery(catalog, ledger, dossiers, bundles))
+
+    def save() -> None:
+        catalog_file.parent.mkdir(parents=True, exist_ok=True)
+        catalog_file.write_text(
+            json.dumps(catalog.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+
+    serve_stdio(ReprolithQuery(catalog, ledger, dossiers, bundles), catalog=catalog, on_change=save)
 
 
 if __name__ == "__main__":  # pragma: no cover
@@ -286,6 +356,7 @@ if __name__ == "__main__":  # pragma: no cover
 
 
 __all__ = [
+    "EFFECTFUL_TOOLS",
     "PROTOCOL_VERSION",
     "TOOL_DEFINITIONS",
     "dispatch_tool",
@@ -293,4 +364,5 @@ __all__ = [
     "load_certificates",
     "load_dossiers",
     "serve_stdio",
+    "submit_paper",
 ]

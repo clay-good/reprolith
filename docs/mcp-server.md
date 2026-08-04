@@ -50,6 +50,15 @@ qualifications.
 | `bundle` | `accession` | The reconstruction bundle — model, recipe, assumptions |
 | `lint` | `sbml`, `species`, `reference`, `duration`, `steps` | A deterministic per-claim verdict (needs the engine extra) |
 
+## Effectful tool
+
+Kept separate from the read-only tools, and offered only when the server runs with a mutable
+catalog (as `reprolith-mcp` does):
+
+| Tool | Arguments | Effect |
+|---|---|---|
+| `submit_paper` | `title` (required), `doi`/`pubmed_id`/`accession`/`model_class` | Adds a candidate paper as a queued `ode-pkpd` entry and reports what changed. Submitting the same paper again resolves to the existing entry — never a duplicate — and the change is persisted. |
+
 ## Example
 
 Find the metformin certificate and read its verdict (JSON-RPC over stdio):
@@ -66,6 +75,7 @@ but only under a load-bearing salt-form assumption, which the certificate flags.
 ## Parity
 
 The server computes no verdict of its own: every tool delegates to the same query surface and
-oracle the repository uses, so it can never disagree with the repository. Effectful work handoff
-(submitting a paper, claiming work, leasing) is deliberately not part of this surface in the
-MVP — the repository is the work surface for that.
+oracle the repository uses, so it can never disagree with the repository. Read-only and
+effectful tools are separated: the effectful `submit_paper` appears only with a mutable catalog.
+Lease-aware work handoff (claiming and progressing work) is not yet part of this surface — the
+repository is the work surface for that.
