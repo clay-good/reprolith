@@ -297,3 +297,38 @@ def test_frog_comparison_names_a_gene_deletion_disagreement() -> None:
     assert not result.agrees
     assert not result.gene_deletion_agrees
     assert any("gene-deletion g3" in d for d in result.disagreements)
+
+
+def test_frog_comparison_names_a_gene_present_in_only_one_fingerprint() -> None:
+    computed = frog_fingerprint(_GENE_MODEL)  # genes g1, g2, g3, g4
+    # A curation whose objective reaction is controlled by a single, different gene: g3 and g4 are
+    # absent from it, so a structural gene mismatch must be named, not hidden behind a numeric pass.
+    reported = frog_fingerprint(
+        FbaModel(
+            species_ids=("A",), reaction_ids=("v_in", "v_out"),
+            stoichiometry=((1.0, -1.0),), objective=(0.0, 1.0), lower=(0.0, 0.0), upper=(8.0, None),
+            gene_associations=(("v_in", ("or", ("g1", "g2"))), ("v_out", "g5")),
+        )
+    )
+    result = compare_frog(computed, reported)
+    assert not result.agrees
+    assert not result.gene_deletion_agrees
+    assert any("gene g3 present in only one fingerprint" in d for d in result.disagreements)
+    assert any("gene g5 present in only one fingerprint" in d for d in result.disagreements)
+
+
+def test_frog_comparison_names_a_reaction_present_in_only_one_fingerprint() -> None:
+    computed = frog_fingerprint(_MODEL)  # reactions v_in, v_out
+    # A curation with an extra drain reaction the computed model lacks: the structural mismatch must
+    # be named and must fail the variability/deletion components, not pass on the shared reactions.
+    reported = frog_fingerprint(
+        FbaModel(
+            species_ids=("A",), reaction_ids=("v_in", "v_out", "v_leak"),
+            stoichiometry=((1.0, -1.0, -1.0),), objective=(0.0, 1.0, 0.0),
+            lower=(0.0, 0.0, 0.0), upper=(8.0, None, None),
+        )
+    )
+    result = compare_frog(computed, reported)
+    assert not result.agrees
+    assert not result.variability_agrees and not result.deletion_agrees
+    assert any("reaction v_leak present in only one fingerprint" in d for d in result.disagreements)
