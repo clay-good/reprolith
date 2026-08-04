@@ -64,4 +64,4 @@ a phase done until its verification holds.
 
 - [ ] 8.1 Assemble the walkable result: the labelled set, the certificates, and the agreement report → verify: a stranger can follow it end to end without Reprolith internals
 - [ ] 8.2 Write the short findings note (what reproduced, what didn't, what the field under-specifies most) → verify: claims in the note trace to certificates
-- [ ] 8.3 Identify the first outreach targets in the reproducible-modeling community → verify: a concrete, named shortlist exists
+- [x] 8.3 Identify the first outreach targets in the reproducible-modeling community → verify: a concrete, named shortlist exists
