@@ -76,6 +76,7 @@ from .render import claim_counts, gap_items, render_human, render_machine
 from .revision import DossierHistory, DossierRevision, dossier_digest, revise
 from .sbml import build_model_sbml, compare_sbml_to_dossier
 from .scope import Scope
+from .seed import load_test_set, seed_catalog
 from .supersession import CertificateLedger, describe_changes
 
 __version__ = "0.0.1"
@@ -147,6 +148,7 @@ __all__ = [
     "judge_curve",
     "judge_scalar",
     "lint_curve",
+    "load_test_set",
     "normalized_curve_distance",
     "not_evaluable",
     "relative_error",
@@ -154,6 +156,7 @@ __all__ = [
     "render_machine",
     "revise",
     "same_modulo_run_metadata",
+    "seed_catalog",
     "simulate",
     "verdict_for",
     "__version__",

@@ -14,7 +14,7 @@ a phase done until its verification holds.
 - [x] 1.1 Implement entry creation, `ode-pkpd` tagging, and the lifecycle state machine → verify: an entry can traverse every state with recorded transitions
 - [x] 1.2 Implement the ground-truth label field with blind withholding from the verdict path → verify: the verdict path provably cannot read the label
 - [x] 1.3 Implement de-duplication across identifiers → verify: the same paper under two IDs resolves to one entry
-- [ ] 1.4 Seed the blind test set: ~20 known-reproducible + ~10 known-hard PK/PD entries → verify: each carries a label, source, and expected verdict
+- [x] 1.4 Seed the blind test set: ~20 known-reproducible + ~10 known-hard PK/PD entries → verify: each carries a label, source, and expected verdict
 
 ## 2. Ingestion (PK/PD dossier)
 
