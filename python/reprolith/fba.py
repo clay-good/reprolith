@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Union
+from typing import Any, TypeVar, Union
 
 from .model import ClaimAssessment
 from .oracle import (
@@ -546,11 +546,18 @@ def judge_fingerprint(
     )
 
 
-def essentiality_agreement(computed: frozenset[int], reported: frozenset[int]) -> float:
-    """Fraction of reactions the computed and reported essential sets agree on, over their union.
+_Element = TypeVar("_Element")
 
-    1.0 is a perfect match; 0.0 is complete disagreement. An empty union (nothing essential
-    either way) counts as full agreement.
+
+def essentiality_agreement(
+    computed: frozenset[_Element], reported: frozenset[_Element]
+) -> float:
+    """Jaccard agreement of a computed and a reported essential set, over their union.
+
+    Serves either essential set the class produces: the reaction indices from
+    :func:`reaction_essentiality` or the gene labels from :func:`gene_essentiality` — the elements
+    need only be hashable. 1.0 is a perfect match; 0.0 is complete disagreement; an empty union
+    (nothing essential either way) counts as full agreement.
     """
     union = computed | reported
     if not union:

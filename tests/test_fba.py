@@ -267,6 +267,14 @@ def test_gene_essentiality_respects_and_or_rules() -> None:
     assert gene_essentiality(_GENE_MODEL) == frozenset({"g3", "g4"})
 
 
+def test_essentiality_agreement_scores_gene_label_sets() -> None:
+    # The same Jaccard agreement serves gene labels (str), not only reaction indices (int), so a
+    # computed gene-essential set can be scored against a reported one.
+    computed = gene_essentiality(_GENE_MODEL)  # {"g3", "g4"}
+    assert essentiality_agreement(computed, frozenset({"g3", "g4"})) == pytest.approx(1.0)
+    assert essentiality_agreement(computed, frozenset({"g3", "g9"})) == pytest.approx(1 / 3)
+
+
 def test_frog_fingerprint_includes_the_gene_deletion_section() -> None:
     fp = frog_fingerprint(_GENE_MODEL)
     assert fp.gene_ids == ("g1", "g2", "g3", "g4")
