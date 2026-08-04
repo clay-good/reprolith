@@ -36,10 +36,11 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "ruff>=0.4", "mypy>=1.8"]
-# The pinned registered simulation engine (bootstrap task 0.1). Optional on purpose:
-# the core stays dependency-free and the required-checks gate does not need it. Install
-# with `pip install -e ".[engine]"` to run the simulation-backed tests and reconstructions.
-engine = ["python-copasi>=4.42"]
+# The SBML tooling and pinned registered simulation engine (bootstrap tasks 0.1, 3.1).
+# Optional on purpose: the core stays dependency-free and the required-checks gate does not
+# need it. Install with `pip install -e ".[engine]"` to build SBML from a dossier and run
+# the simulation-backed tests and reconstructions.
+engine = ["python-copasi>=4.42", "python-libsbml>=5.20"]
 
 [project.urls]
 Homepage = "https://github.com/clay-good/reprolith"
@@ -67,10 +68,15 @@ python_version = "3.9"
 strict = true
 files = ["python/reprolith"]
 
-# The pinned engine (python-copasi) is an optional dependency with no type stubs; it is
-# only touched behind the lazy import in reprolith.engine.
+# The pinned engine and SBML tooling (python-copasi, python-libsbml) are optional
+# dependencies with no type stubs, touched only behind lazy imports in reprolith.engine
+# and reprolith.sbml.
 [[tool.mypy.overrides]]
 module = "COPASI"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "libsbml"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

@@ -25,7 +25,7 @@ a phase done until its verification holds.
 
 ## 3. Reconstruction (PK/PD)
 
-- [ ] 3.1 Build a standard-format model + simulation recipe from a dossier for the in-scope PK/PD structures → verify: the bundle validates and runs under the pin
+- [x] 3.1 Build a standard-format model + simulation recipe from a dossier for the in-scope PK/PD structures → verify: the bundle validates and runs under the pin
 - [x] 3.2 Record every gap-closure as an attributed assumption with alternatives and basis → verify: each assumption is present and attributed to Reprolith, not the paper
 - [x] 3.3 Flag load-bearing assumptions → verify: an assumption that changes a claim's outcome is flagged
 - [ ] 3.4 Adopt-and-verify a shipped model when present; surface mismatches with the dossier → verify: an author-supplied model is labelled as such; an injected mismatch is reported

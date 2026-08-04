@@ -74,6 +74,7 @@ from .reconstruction import (
 )
 from .render import claim_counts, gap_items, render_human, render_machine
 from .revision import DossierHistory, DossierRevision, dossier_digest, revise
+from .sbml import build_model_sbml
 from .scope import Scope
 from .supersession import CertificateLedger, describe_changes
 
@@ -128,6 +129,7 @@ __all__ = [
     "Verdict",
     "build_agreement_report",
     "build_certificate",
+    "build_model_sbml",
     "canonical_bytes",
     "canonical_json",
     "certificate_digest",
