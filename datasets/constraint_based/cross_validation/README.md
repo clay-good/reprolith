@@ -27,6 +27,14 @@ All three are from [BiGG Models](http://bigg.ucsd.edu/) (SBML L3 fbc), stored gz
 reference values were generated once with COBRApy and committed; the test itself needs only the
 `engine` and `fba` extras, not COBRApy.
 
+## Essentiality cross-check
+
+[`e_coli_core_essentiality.json`](e_coli_core_essentiality.json) records the essential-gene and
+essential-reaction sets COBRApy's `single_gene_deletion` / `single_reaction_deletion` find for the
+E. coli core model. Reprolith's `gene_essentiality` (with its GPR AND/OR logic) and
+`reaction_essentiality` reproduce both sets exactly (7 genes, 18 reactions) — an independent
+cross-tool check of the deletion analyses, not a self-asserted count.
+
 ## Provenance and honesty
 
 The reference is an independent tool's computation on the *distributed* model, not a value read

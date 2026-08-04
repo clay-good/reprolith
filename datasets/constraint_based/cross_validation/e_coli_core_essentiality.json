@@ -1,0 +1,33 @@
+{
+  "description": "Independent reference essential sets for e_coli_core, computed by COBRApy single_gene_deletion / single_reaction_deletion on the distributed medium. Reprolith's gene_essentiality and reaction_essentiality must match these \u2014 a non-circular cross-tool check of the deletion analyses (incl. GPR AND/OR logic).",
+  "reference_tool": "COBRApy 0.31.1",
+  "essential_genes": [
+    "b0720",
+    "b1136",
+    "b1779",
+    "b2415",
+    "b2416",
+    "b2779",
+    "b2926"
+  ],
+  "essential_reactions": [
+    "ACONTa",
+    "ACONTb",
+    "BIOMASS_Ecoli_core_w_GAM",
+    "CS",
+    "ENO",
+    "EX_glc__D_e",
+    "EX_h_e",
+    "EX_nh4_e",
+    "EX_pi_e",
+    "GAPD",
+    "GLCpts",
+    "GLNS",
+    "ICDHyr",
+    "NH4t",
+    "PGK",
+    "PGM",
+    "PIt2r",
+    "RPI"
+  ]
+}
