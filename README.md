@@ -109,8 +109,9 @@ Generic **systems-biology kinetic models** (signaling, metabolic, gene-regulator
 third class. They reuse the PK/PD curve oracle unchanged — the reproducible result is a species
 time-course — so adding them is mostly demonstrating the contract generalizes. The class is
 self-validated non-circularly against an independent simulator (libRoadRunner): curated BioModels
-networks spanning three types reproduce, and the [milestone blind run](datasets/kinetic/milestone/)
-scores 3/3 through the same catalog and agreement machinery as the other classes. See
+networks spanning six dynamic regimes (signaling, gene-regulatory, metabolic, cell-cycle, circadian,
+calcium) reproduce, and the [milestone blind run](datasets/kinetic/milestone/) scores 6/6 through the
+same catalog and agreement machinery as the other classes. See
 [docs/kinetic-class.md](docs/kinetic-class.md).
 
 Reprolith gets better when people who know the science validate its judgment. When it isn't sure

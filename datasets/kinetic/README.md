@@ -10,7 +10,7 @@ systems-biology models unchanged, the contract is not PK/PD-specific.
 
 The `simulate` + curve-oracle reuse is validated non-circularly against an **independent
 simulator**. [`cross_validation.json`](cross_validation.json) lists curated BioModels kinetic models
-spanning three network types; for each, it stores the species time-course computed by
+spanning six distinct dynamic regimes; for each, it stores the species time-course computed by
 **libRoadRunner** (CVODE) — a simulator that shares no code with the COPASI engine Reprolith runs.
 
 [`tests/test_kinetic_cross_validation.py`](../../tests/test_kinetic_cross_validation.py) simulates
@@ -19,11 +19,14 @@ returns a `reproduced` verdict against that reference (and a pointwise trajector
 independent ODE integrators agreeing across an oscillating or metabolic trajectory is a genuine
 cross-tool reproduction, not COPASI agreeing with itself.
 
-| Model | Network | Species | Reactions | Dynamics |
-|---|---|---|---|---|
-| `BIOMD0000000010` | signaling | 8 | 10 | Kholodenko2000 MAPK cascade (oscillatory) |
-| `BIOMD0000000012` | gene-regulatory | 6 | 12 | Elowitz2000 repressilator (oscillator) |
-| `BIOMD0000000051` | metabolic | 18 | 48 | Chassagnole2002 *E. coli* carbon metabolism |
+| Model | Network | Dynamics |
+|---|---|---|
+| `BIOMD0000000010` | signaling | Kholodenko2000 MAPK cascade (oscillatory) |
+| `BIOMD0000000012` | gene-regulatory | Elowitz2000 repressilator (oscillator) |
+| `BIOMD0000000051` | metabolic | Chassagnole2002 *E. coli* carbon metabolism |
+| `BIOMD0000000005` | cell-cycle | Tyson1991 cdc2/cyclin oscillator |
+| `BIOMD0000000021` | circadian | Leloup1999 *Drosophila* PER/TIM clock |
+| `BIOMD0000000058` | calcium-signaling | Bindschadler2001 coupled Ca²⁺ oscillators |
 
 ## Provenance
 

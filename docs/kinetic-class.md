@@ -20,17 +20,20 @@ covers. Passing it shows the time-course contract is not PK/PD-specific.
 
 Because a paper's reported curve usually lives in a figure (not text-extractable here), the class is
 validated non-circularly against an **independent simulator**: the
-[cross-validation set](../datasets/kinetic/) holds curated BioModels models spanning three network
-types, each with a reference curve computed by libRoadRunner (CVODE), a simulator sharing no code
-with COPASI. Reprolith reproduces every reference (`tests/test_kinetic_cross_validation.py`), and the
-[milestone blind run](../datasets/kinetic/milestone/) folds them into one agreement report through
-the shared catalog: 3/3 agreement.
+[cross-validation set](../datasets/kinetic/) holds curated BioModels models spanning six distinct
+dynamic regimes, each with a reference curve computed by libRoadRunner (CVODE), a simulator sharing
+no code with COPASI. Reprolith reproduces every reference (`tests/test_kinetic_cross_validation.py`),
+and the [milestone blind run](../datasets/kinetic/milestone/) folds them into one agreement report
+through the shared catalog: 6/6 agreement.
 
 | Model | Network | Dynamics |
 |---|---|---|
 | `BIOMD0000000010` | signaling | Kholodenko2000 MAPK cascade (oscillatory) |
 | `BIOMD0000000012` | gene-regulatory | Elowitz2000 repressilator (oscillator) |
 | `BIOMD0000000051` | metabolic | Chassagnole2002 *E. coli* carbon metabolism |
+| `BIOMD0000000005` | cell-cycle | Tyson1991 cdc2/cyclin oscillator |
+| `BIOMD0000000021` | circadian | Leloup1999 *Drosophila* PER/TIM clock |
+| `BIOMD0000000058` | calcium | Bindschadler2001 coupled Ca²⁺ oscillators |
 
 ## Scope and honesty
 

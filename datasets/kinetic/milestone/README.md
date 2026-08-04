@@ -12,13 +12,16 @@ python scripts/run_kinetic_milestone.py
 
 ## The result in one line
 
-**All three kinetic entries were certified blind and agree with their label: 3/3.**
+**All six kinetic entries were certified blind and agree with their label: 6/6.**
 
 | Entry | Network | Label source | Verdict |
 |---|---|---|---|
 | `BIOMD0000000010` | signaling (MAPK cascade) | libRoadRunner reference curve | `reproduced` |
 | `BIOMD0000000012` | gene-regulatory (repressilator) | libRoadRunner reference curve | `reproduced` |
 | `BIOMD0000000051` | metabolic (E. coli carbon) | libRoadRunner reference curve | `reproduced` |
+| `BIOMD0000000005` | cell-cycle (Tyson) | libRoadRunner reference curve | `reproduced` |
+| `BIOMD0000000021` | circadian (Leloup) | libRoadRunner reference curve | `reproduced` |
+| `BIOMD0000000058` | calcium (Bindschadler) | libRoadRunner reference curve | `reproduced` |
 
 Each label is held on the catalog entry but withheld from the verdict path, which sees only the
 model and the reference curve. The certificate is produced by simulating the model under Reprolith's

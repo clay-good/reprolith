@@ -1,0 +1,38 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": false,
+      "claim_id": "BIOMD0000000021-timecourse",
+      "discrepancy": "normalized distance 0.0000",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "curve-normalized-distance",
+      "quantity": "Cn time-course (circadian)",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "BioModels https://www.ebi.ac.uk/biomodels/BIOMD0000000021 (curated); Leloup1999_CircClock",
+      "tolerance": "reproduced<=0.1, partial<=0.25 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": "deterministic-lsoda",
+    "engine": "copasi",
+    "version": "4.46.300 (Source)"
+  },
+  "gap_report": [],
+  "overall": "reproduced",
+  "paper": {
+    "doi": "",
+    "pubmed_id": null,
+    "title": "Leloup1999 circadian clock (Drosophila PER/TIM)"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

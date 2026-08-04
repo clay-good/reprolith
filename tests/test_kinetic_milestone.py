@@ -13,7 +13,10 @@ import json
 from pathlib import Path
 
 _MILESTONE = Path(__file__).parent.parent / "datasets" / "kinetic" / "milestone"
-_EXPECTED = {"BIOMD0000000010", "BIOMD0000000012", "BIOMD0000000051"}
+_EXPECTED = {
+    "BIOMD0000000010", "BIOMD0000000012", "BIOMD0000000051",
+    "BIOMD0000000005", "BIOMD0000000021", "BIOMD0000000058",
+}
 
 
 def test_agreement_report_shows_a_blind_full_agreement() -> None:

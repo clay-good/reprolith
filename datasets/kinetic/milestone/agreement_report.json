@@ -1,8 +1,8 @@
 {
   "agreement_rate": 1.0,
-  "agreements": 3,
+  "agreements": 6,
   "confusion": {
-    "reproduced->reproduced": 3
+    "reproduced->reproduced": 6
   },
   "disagreements": 0,
   "per_entry": [
@@ -26,7 +26,28 @@
       "entry": "BIOMD0000000051",
       "expected": "reproduced",
       "source": "BioModels https://www.ebi.ac.uk/biomodels/BIOMD0000000051 (curated); Chassagnole et al. (2002) Biotechnol Bioeng, doi:10.1002/bit.10288; reference curve via libRoadRunner 2.7.0 (CVODE)"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "BIOMD0000000005",
+      "expected": "reproduced",
+      "source": "BioModels https://www.ebi.ac.uk/biomodels/BIOMD0000000005 (curated); Tyson1991 - Cell Cycle 6 var; reference curve via libRoadRunner 2.7.0 (CVODE)"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "BIOMD0000000021",
+      "expected": "reproduced",
+      "source": "BioModels https://www.ebi.ac.uk/biomodels/BIOMD0000000021 (curated); Leloup1999_CircClock; reference curve via libRoadRunner 2.7.0 (CVODE)"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "BIOMD0000000058",
+      "expected": "reproduced",
+      "source": "BioModels https://www.ebi.ac.uk/biomodels/BIOMD0000000058 (curated); Bindschadler2001_coupled_Ca_oscillators; reference curve via libRoadRunner 2.7.0 (CVODE)"
     }
   ],
-  "total": 3
+  "total": 6
 }
