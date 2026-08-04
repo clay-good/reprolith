@@ -1,18 +1,18 @@
 {
-  "description": "Independent reference flux-variability intervals for e_coli_core at the optimum, from COBRApy flux_variability_analysis (fraction_of_optimum=1.0). Reprolith's flux_variability must match these \u2014 the third FROG component, cross-checked.",
+  "description": "Independent reference flux-variability intervals for e_coli_core at the optimum, from COBRApy flux_variability_analysis (fraction_of_optimum=1.0). Reprolith's flux_variability must match these \u2014 the third FROG component.",
   "reference_tool": "COBRApy 0.31.1",
   "fraction_of_optimum": 1.0,
   "intervals": {
     "ACALD": [
-      -0.0,
+      0.0,
       0.0
     ],
     "ACALDt": [
-      -0.0,
+      0.0,
       0.0
     ],
     "ACKr": [
-      -0.0,
+      0.0,
       0.0
     ],
     "ACONTa": [
@@ -24,7 +24,7 @@
       6.007249575
     ],
     "ACt2r": [
-      -0.0,
+      0.0,
       0.0
     ],
     "ADK1": [
@@ -36,11 +36,11 @@
       5.064375661
     ],
     "AKGt2r": [
-      -0.0,
+      0.0,
       0.0
     ],
     "ALCD2x": [
-      -0.0,
+      0.0,
       0.0
     ],
     "ATPM": [
@@ -68,7 +68,7 @@
       43.598985312
     ],
     "D_LACt2": [
-      -0.0,
+      0.0,
       0.0
     ],
     "ENO": [
@@ -76,7 +76,7 @@
       14.716139569
     ],
     "ETOHt2r": [
-      -0.0,
+      0.0,
       0.0
     ],
     "EX_ac_e": [
@@ -85,7 +85,7 @@
     ],
     "EX_acald_e": [
       0.0,
-      -0.0
+      0.0
     ],
     "EX_akg_e": [
       0.0,
@@ -153,11 +153,11 @@
     ],
     "EX_pyr_e": [
       0.0,
-      -0.0
+      0.0
     ],
     "EX_succ_e": [
       0.0,
-      -0.0
+      0.0
     ],
     "FBA": [
       7.477381962,
@@ -168,7 +168,7 @@
       0.0
     ],
     "FORt": [
-      -0.0,
+      0.0,
       0.0
     ],
     "FORt2": [
@@ -180,7 +180,7 @@
       994.935624339
     ],
     "FRUpts2": [
-      -0.0,
+      0.0,
       0.0
     ],
     "FUM": [
@@ -188,7 +188,7 @@
       5.064375661
     ],
     "FUMt2_2": [
-      -0.0,
+      0.0,
       0.0
     ],
     "G6PDH2r": [
@@ -208,7 +208,7 @@
       0.223461729
     ],
     "GLNabc": [
-      -0.0,
+      0.0,
       0.0
     ],
     "GLUDy": [
@@ -224,7 +224,7 @@
       0.0
     ],
     "GLUt2r": [
-      -0.0,
+      0.0,
       0.0
     ],
     "GND": [
@@ -244,7 +244,7 @@
       0.0
     ],
     "LDH_D": [
-      -0.0,
+      0.0,
       0.0
     ],
     "MALS": [
@@ -336,7 +336,7 @@
       1.758177444
     ],
     "PYRt2": [
-      -0.0,
+      0.0,
       0.0
     ],
     "RPE": [
@@ -348,7 +348,7 @@
       -2.281503094
     ],
     "SUCCt2_2": [
-      -0.0,
+      0.0,
       0.0
     ],
     "SUCCt3": [
