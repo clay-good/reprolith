@@ -76,7 +76,12 @@ from .reconstruction import (
 )
 from .render import claim_counts, gap_items, render_human, render_machine
 from .revision import DossierHistory, DossierRevision, dossier_digest, revise
-from .run import blocked_certificate, run_test_set
+from .run import (
+    blocked_certificate,
+    certified_from_claims,
+    load_claims_dataset,
+    run_test_set,
+)
 from .sbml import build_model_sbml, compare_sbml_to_dossier
 from .scope import Scope
 from .seed import load_test_set, seed_catalog
@@ -139,6 +144,7 @@ __all__ = [
     "canonical_bytes",
     "canonical_json",
     "certificate_digest",
+    "certified_from_claims",
     "certify_model",
     "claim_counts",
     "close_gap",
@@ -155,6 +161,7 @@ __all__ = [
     "judge_curve",
     "judge_scalar",
     "lint_curve",
+    "load_claims_dataset",
     "load_test_set",
     "normalized_curve_distance",
     "not_evaluable",

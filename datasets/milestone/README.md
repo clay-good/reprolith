@@ -2,7 +2,11 @@
 
 The ODE PK/PD bootstrap's self-validation run over the labelled test set, assembled so a stranger
 can follow it end to end: the labelled set, a certificate for every entry, and the agreement
-report. Reproduce it with `reprolith.run_test_set` over `datasets/pkpd_test_set.json`.
+report. Regenerate it from the repository alone (no network, needs the `engine` extra) with:
+
+```
+python scripts/run_milestone.py
+```
 
 ## The result in one line
 

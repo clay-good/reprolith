@@ -13,13 +13,17 @@ silent gap. Scoring is a pure function of certificates and labels, so the run is
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping, Sequence
+from pathlib import Path
+from typing import Any
 
 from .agreement import AgreementReport, build_agreement_report
 from .catalog import CatalogEntry
 from .certificate import build_certificate
+from .certify import Claim, certify_model
 from .enums import OverallVerdict
-from .model import Certificate, EnginePin, PaperIdentity
+from .model import Assumption, Certificate, EnginePin, PaperIdentity
 
 NO_CLAIMS_REASON = (
     "no machine-checkable claims extracted from the shipped model artifact; "
@@ -45,6 +49,43 @@ def blocked_certificate(
         assessments=(),
         gap_report=(reason,),
     )
+
+
+def certified_from_claims(
+    claims_dataset: dict[str, Any],
+    *,
+    base_dir: Path | str,
+    engine_pin: EnginePin,
+) -> dict[str, Certificate]:
+    """Certify every entry in a claims dataset, keyed by accession.
+
+    Each dataset entry names a model file (resolved under ``base_dir``), the paper, and the
+    verified claims; this runs :func:`certify_model` for each and returns the certificates.
+    Needs the optional engine extra. Entries with no claims dataset stay blocked in the run.
+    """
+    base = Path(base_dir)
+    certificates: dict[str, Certificate] = {}
+    for accession, entry in claims_dataset["entries"].items():
+        sbml = (base / entry["model_file"]).read_text()
+        claims = [Claim.from_record(record) for record in entry["claims"]]
+        assumptions = [Assumption(**record) for record in entry.get("assumptions", [])]
+        certificates[accession] = certify_model(
+            sbml,
+            paper=PaperIdentity(**entry["paper"]),
+            engine_pin=engine_pin,
+            claims=claims,
+            assumptions=assumptions,
+            duration=float(entry["duration"]),
+            steps=int(entry.get("steps", 480)),
+        )
+    return certificates
+
+
+def load_claims_dataset(path: Path | str) -> dict[str, Any]:
+    """Load a claims dataset (the verified extracted claims per entry)."""
+    with open(path, encoding="utf-8") as handle:
+        data: dict[str, Any] = json.load(handle)
+    return data
 
 
 def run_test_set(
@@ -73,4 +114,10 @@ def run_test_set(
     return certificates, build_agreement_report(scored)
 
 
-__all__ = ["NO_CLAIMS_REASON", "blocked_certificate", "run_test_set"]
+__all__ = [
+    "NO_CLAIMS_REASON",
+    "blocked_certificate",
+    "certified_from_claims",
+    "load_claims_dataset",
+    "run_test_set",
+]
