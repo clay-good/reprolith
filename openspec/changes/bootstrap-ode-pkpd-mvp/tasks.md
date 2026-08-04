@@ -56,7 +56,7 @@ a phase done until its verification holds.
 ## 7. Self-validation and the discipline loop
 
 - [ ] 7.1 Run the full pathway blind over the test set → verify: every entry yields a certificate
-- [ ] 7.2 Produce the agreement report (per-entry and aggregate) vs. ground-truth labels → verify: the report exists and is reproducible
+- [x] 7.2 Produce the agreement report (per-entry and aggregate) vs. ground-truth labels → verify: the report exists and is reproducible
 - [ ] 7.3 For every disagreement, write a defect note, fix the responsible stage, and re-run → verify: no unresolved disagreement remains without a written explanation
 - [ ] 7.4 Freeze the evidence-driven PK/PD failure-mode catalogue and tolerance defaults from what the loop taught us → verify: each default and category traces to a loop note
 

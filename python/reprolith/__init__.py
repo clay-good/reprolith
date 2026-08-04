@@ -8,6 +8,7 @@ simulation-oracle stages described in ``openspec/`` build on top of these shapes
 
 from __future__ import annotations
 
+from .agreement import AgreementReport, EntryAgreement, build_agreement_report
 from .canonical import canonical_bytes, canonical_json, content_hash
 from .catalog import (
     BlindEntry,
@@ -58,9 +59,11 @@ from .supersession import CertificateLedger, describe_changes
 __version__ = "0.0.1"
 
 __all__ = [
+    "AgreementReport",
     "Assumption",
     "Attribution",
     "BlindEntry",
+    "EntryAgreement",
     "Catalog",
     "CatalogEntry",
     "CertificateLedger",
@@ -86,6 +89,7 @@ __all__ = [
     "ToleranceSource",
     "Transition",
     "Verdict",
+    "build_agreement_report",
     "build_certificate",
     "canonical_bytes",
     "canonical_json",
