@@ -33,6 +33,7 @@ class ComparisonMethod(str, Enum):
 
     SCALAR_RELATIVE_ERROR = "scalar-relative-error"
     CURVE_NORMALIZED_DISTANCE = "curve-normalized-distance"
+    FINGERPRINT_COMPARISON = "fingerprint-comparison"
 
 
 class ReferenceKind(str, Enum):
@@ -305,6 +306,41 @@ def judge_curve(
     )
 
 
+def assess_match(
+    *,
+    claim_id: str,
+    quantity: str,
+    source_location: str,
+    matched: bool,
+    method: ComparisonMethod,
+    discrepancy: str,
+    reference_kind: ReferenceKind = ReferenceKind.NUMERIC,
+    attribution: Attribution | None = None,
+    assumption_qualified: bool = False,
+) -> ClaimAssessment:
+    """Assemble a pass/fail assessment for a comparison that is a match-or-not, not a scalar error.
+
+    Some reproductions are judged by whether two structured objects agree (a standardized
+    fingerprint, a set of deletion outcomes), not by a numeric distance. This maps that boolean to
+    the shared assessment contract — ``matched`` reproduces, otherwise it fails — so such a verdict
+    carries the same tolerance provenance and attribution invariant as a scalar one. A non-match
+    still requires an ``attribution``.
+    """
+    tol = Tolerance(0.0, 0.0, ToleranceSource.CLASS_DEFAULT)
+    return _assemble(
+        claim_id=claim_id,
+        quantity=quantity,
+        source_location=source_location,
+        method=method,
+        measure=0.0 if matched else 1.0,
+        discrepancy=discrepancy,
+        tol=tol,
+        reference_kind=reference_kind,
+        attribution=attribution,
+        assumption_qualified=assumption_qualified,
+    )
+
+
 def not_evaluable(
     *,
     claim_id: str,
@@ -337,6 +373,7 @@ __all__ = [
     "ReferenceKind",
     "Tolerance",
     "ToleranceSource",
+    "assess_match",
     "default_tolerance",
     "judge_curve",
     "judge_scalar",

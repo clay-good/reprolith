@@ -19,7 +19,15 @@ from dataclasses import dataclass
 from typing import Any
 
 from .model import ClaimAssessment
-from .oracle import Attribution, ReferenceKind, Tolerance, judge_scalar, not_evaluable
+from .oracle import (
+    Attribution,
+    ComparisonMethod,
+    ReferenceKind,
+    Tolerance,
+    assess_match,
+    judge_scalar,
+    not_evaluable,
+)
 
 
 @dataclass(frozen=True)
@@ -393,6 +401,40 @@ def compare_frog(
     )
 
 
+def judge_fingerprint(
+    *,
+    claim_id: str,
+    quantity: str,
+    source_location: str,
+    comparison: FrogComparison,
+    attribution: Attribution | None = None,
+    assumption_qualified: bool = False,
+) -> ClaimAssessment:
+    """Turn a FROG fingerprint comparison into a certificate-ready assessment.
+
+    When a paper or its curation ships a fingerprint, the verdict is the comparison of
+    fingerprints, not of a single number (spec: constraint-based-class). This maps that comparison
+    onto the shared assessment contract: the fingerprints agreeing reproduces; otherwise it fails,
+    with the named component disagreements recorded as the discrepancy so the verdict stays
+    auditable. Like any non-pass, a failure requires an ``attribution``.
+    """
+    discrepancy = (
+        "fingerprints agree"
+        if comparison.agrees
+        else "; ".join(comparison.disagreements)
+    )
+    return assess_match(
+        claim_id=claim_id,
+        quantity=quantity,
+        source_location=source_location,
+        matched=comparison.agrees,
+        method=ComparisonMethod.FINGERPRINT_COMPARISON,
+        discrepancy=discrepancy,
+        attribution=attribution,
+        assumption_qualified=assumption_qualified,
+    )
+
+
 def essentiality_agreement(computed: frozenset[int], reported: frozenset[int]) -> float:
     """Fraction of reactions the computed and reported essential sets agree on, over their union.
 
@@ -415,6 +457,7 @@ __all__ = [
     "essentiality_agreement",
     "flux_variability",
     "frog_fingerprint",
+    "judge_fingerprint",
     "judge_flux",
     "judge_objective",
     "reaction_essentiality",

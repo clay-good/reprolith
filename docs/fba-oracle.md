@@ -61,11 +61,19 @@ mismatch is never hidden behind a numeric pass. (Gene-level deletion is a furthe
 needs the gene–reaction associations the fbc ingest does not yet capture.)
 
 ```python
-from reprolith import frog_fingerprint, compare_frog, ingest_fbc_sbml
+from reprolith import frog_fingerprint, compare_frog, judge_fingerprint, ingest_fbc_sbml
 
 fp = frog_fingerprint(ingest_fbc_sbml(model_sbml))
-verdict = compare_frog(fp, curated_fingerprint)   # verdict.agrees, verdict.disagreements
+comparison = compare_frog(fp, curated_fingerprint)   # comparison.agrees, comparison.disagreements
+assessment = judge_fingerprint(                       # -> a certificate-ready ClaimAssessment
+    claim_id="frog", quantity="FROG fingerprint", source_location="curation",
+    comparison=comparison,
+)
 ```
+
+`judge_fingerprint` maps the comparison onto the shared assessment contract — agreement
+reproduces, otherwise it fails with the named component disagreements recorded as the discrepancy —
+so a fingerprint verdict feeds `build_certificate` exactly like a scalar or curve one.
 
 ## Failure modes
 

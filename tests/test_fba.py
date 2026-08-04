@@ -24,6 +24,7 @@ from reprolith import (  # noqa: E402
     essentiality_agreement,
     flux_variability,
     frog_fingerprint,
+    judge_fingerprint,
     judge_flux,
     judge_objective,
     reaction_essentiality,
@@ -211,3 +212,32 @@ def test_frog_comparison_names_a_perturbed_objective() -> None:
     assert not result.agrees
     assert not result.objective_agrees
     assert any("objective" in d for d in result.disagreements)
+
+
+def test_judge_fingerprint_reproduces_on_agreement() -> None:
+    fp = frog_fingerprint(_MODEL)
+    a = judge_fingerprint(
+        claim_id="frog", quantity="FROG fingerprint", source_location="curation",
+        comparison=compare_frog(fp, fp),
+    )
+    assert a.verdict is Verdict.REPRODUCED
+    assert a.method == "fingerprint-comparison"
+
+
+def test_judge_fingerprint_fails_with_named_disagreements() -> None:
+    computed = frog_fingerprint(_MODEL)
+    reported = frog_fingerprint(
+        FbaModel(
+            species_ids=("A",), reaction_ids=("v_in", "v_out"),
+            stoichiometry=((1.0, -1.0),), objective=(0.0, 1.0),
+            lower=(0.0, 0.0), upper=(5.0, None),
+        )
+    )
+    a = judge_fingerprint(
+        claim_id="frog", quantity="FROG fingerprint", source_location="curation",
+        comparison=compare_frog(computed, reported),
+        attribution=Attribution(mode=FailureMode.AMBIGUOUS_OBJECTIVE,
+                                implicated="objective bound", fault=Fault.RECONSTRUCTION),
+    )
+    assert a.verdict is Verdict.FAILED
+    assert a.discrepancy and "objective" in a.discrepancy  # the disagreement is recorded, auditable
