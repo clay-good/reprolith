@@ -48,6 +48,26 @@ pytest -q
 
 (Spec validation uses the OpenSpec CLI: `npx @fission-ai/openspec validate --strict`.)
 
+## Extending a self-validation set
+
+The constraint-based and generic-kinetic classes validate Reprolith non-circularly against an
+**independent** tool: COBRApy for FBA growth/essentiality/variability, libRoadRunner for kinetic
+time-courses. To add a curated model to a set:
+
+1. Add its file under `datasets/constraint_based/cross_validation/` or `datasets/kinetic/`
+   (with its entry in the manifest, for the kinetic set).
+2. Regenerate the committed reference values from the independent tool:
+   ```bash
+   pip install -e ".[refgen]"
+   python scripts/regenerate_fba_references.py       # or regenerate_kinetic_references.py
+   ```
+3. Run the tests — they read the committed references and need only `.[engine,fba]`, not the
+   reference generators. The milestone scripts (`scripts/run_*_milestone.py`) fold the new model
+   into the blind agreement run automatically.
+
+The reference must come from a tool that shares no implementation with Reprolith's engine, so the
+check stays non-circular. Never hand-write a reference value.
+
 ## The one rule we will not bend
 
 **Reproducible is not correct, and neither is clinically valid.** Reprolith certifies only that a

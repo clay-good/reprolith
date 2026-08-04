@@ -43,6 +43,11 @@ dev = ["pytest>=7.0", "ruff>=0.4", "mypy>=1.8"]
 engine = ["python-copasi>=4.42", "python-libsbml>=5.20"]
 # The constraint-based (FBA) oracle's linear-programming solver. Optional, like the engine.
 fba = ["scipy>=1.7"]
+# Independent reference generators for the cross-validation ground truth (a dev-only task, run by
+# scripts/regenerate_*_references.py). COBRApy re-computes the FBA references and libRoadRunner the
+# kinetic curves; the tests themselves need neither — they read the committed reference data. Not
+# a runtime dependency of Reprolith.
+refgen = ["cobra>=0.29", "libroadrunner>=2.5"]
 
 [project.scripts]
 # The agent-facing MCP server over the read-only query surface (JSON-RPC over stdio,
