@@ -21,7 +21,7 @@ from reprolith import (
     handle_request,
     serve_stdio,
 )
-from reprolith.mcp_server import TOOL_DEFINITIONS, load_certificates
+from reprolith.mcp_server import TOOL_DEFINITIONS, load_certificates, load_dossiers
 from reprolith.seed import seed_catalog
 
 
@@ -90,6 +90,22 @@ def test_unknown_tool_is_a_tool_error_not_a_crash() -> None:
 
 def test_lint_tool_is_registered() -> None:
     assert "lint" in {t["name"] for t in TOOL_DEFINITIONS}
+
+
+def test_dossier_tool_serves_the_stored_ingested_dossier() -> None:
+    # The metformin dossier the milestone run ingested and stored is served for inspection.
+    from pathlib import Path
+
+    dossier_dir = Path(__file__).parent.parent / "datasets" / "milestone" / "dossiers"
+    dossiers = load_dossiers(dossier_dir)
+    query = ReprolithQuery(Catalog(), CertificateLedger(), dossiers)
+    dossier, is_error = _call(query, "dossier", {"accession": "BIOMD0000001028"})
+    assert not is_error
+    assert len(dossier["state_variables"]) == 21  # the real PBPK model structure
+    assert dossier["parameters"]
+    # An unknown accession is served as null, not an error.
+    missing, is_error = _call(query, "dossier", {"accession": "NOPE"})
+    assert not is_error and missing is None
 
 
 def test_status_reflects_persisted_run_progress() -> None:

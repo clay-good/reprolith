@@ -34,9 +34,17 @@ class ReprolithQuery:
     ledger the core engine writes to, so the surface and the repository never disagree.
     """
 
-    def __init__(self, catalog: Catalog, ledger: CertificateLedger) -> None:
+    def __init__(
+        self,
+        catalog: Catalog,
+        ledger: CertificateLedger,
+        dossiers: dict[str, dict[str, Any]] | None = None,
+    ) -> None:
         self._catalog = catalog
         self._ledger = ledger
+        # Ingested dossiers keyed by entry accession, so an agent can inspect the model
+        # structure Reprolith extracted (design goal 3). Empty when none are loaded.
+        self._dossiers = dossiers or {}
 
     # --- catalog / status (blind: no ground-truth label leaves the catalog) --------
 
@@ -69,6 +77,10 @@ class ReprolithQuery:
             Identifiers(title=title or "", doi=doi, pubmed_id=pubmed_id, accession=accession)
         )
         return self._entry_view(entry) if entry is not None else None
+
+    def dossier(self, accession: str) -> dict[str, Any] | None:
+        """The ingested dossier for an entry accession — its extracted model structure."""
+        return self._dossiers.get(accession)
 
     # --- certificates / verdicts (scope always travels) ----------------------------
 

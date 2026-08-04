@@ -72,6 +72,15 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "inputSchema": _IDENTIFIER,
     },
     {
+        "name": "dossier",
+        "description": "The ingested dossier for an entry accession — its extracted model structure.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"accession": {"type": "string"}},
+            "required": ["accession"],
+        },
+    },
+    {
         "name": "lint",
         "description": (
             "Deterministic linter: run a supplied SBML model under the pinned engine and judge "
@@ -110,6 +119,8 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return query.gaps(arguments["digest"])
     if name == "certificates_for":
         return query.certificates_for(**_identifier_kwargs(arguments))
+    if name == "dossier":
+        return query.dossier(arguments["accession"])
     if name == "lint":
         from .linter import lint_curve
 
@@ -225,8 +236,18 @@ def load_certificates(ledger: CertificateLedger, directory: Path | str) -> int:
     return loaded
 
 
+def load_dossiers(directory: Path | str) -> dict[str, Any]:
+    """Load stored dossier JSON files into a dict keyed by their filename stem (the accession)."""
+    path = Path(directory)
+    dossiers: dict[str, Any] = {}
+    if path.is_dir():
+        for file in sorted(path.glob("*.json")):
+            dossiers[file.stem] = json.loads(file.read_text(encoding="utf-8"))
+    return dossiers
+
+
 def main() -> None:  # pragma: no cover - stdio entry point
-    """Run the server over stdio, loading the persisted catalog and certificates if present."""
+    """Run the server over stdio, loading the persisted catalog, certificates, and dossiers."""
     import json
 
     from .catalog import Catalog
@@ -241,7 +262,8 @@ def main() -> None:  # pragma: no cover - stdio entry point
         seed_catalog(catalog)
     ledger = CertificateLedger()
     load_certificates(ledger, milestone / "certificates")
-    serve_stdio(ReprolithQuery(catalog, ledger))
+    dossiers = load_dossiers(milestone / "dossiers")
+    serve_stdio(ReprolithQuery(catalog, ledger, dossiers))
 
 
 if __name__ == "__main__":  # pragma: no cover
@@ -254,5 +276,6 @@ __all__ = [
     "dispatch_tool",
     "handle_request",
     "load_certificates",
+    "load_dossiers",
     "serve_stdio",
 ]
