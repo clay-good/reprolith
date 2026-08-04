@@ -49,6 +49,14 @@ Two findings, both from real data:
    extraction from the manuscript**. Every downstream stage is ready; the missing input is a
    machine-readable statement of what each paper claims.
 
+   This is concrete, not hypothetical. Metformin's Cmax was reproducible because the paper
+   reported it in a **table** (text). A second attempt — the Sluka2016 acetaminophen PBPK model
+   (PLOS ONE 2016) — reached the opposite wall: its validation values live only in **figures**
+   (Figs 7–8), with no numeric Cmax in the text. With no digitized reference, the honest verdict
+   is to abstain, not to guess a number off a plot. Text-reported claims like metformin's are
+   the exception; figure-locked claims are the norm, and the scaling constraint is therefore
+   **figure digitization**, not simulation.
+
 ## Status and what remains
 
 The engine and one real reproduction are done. The full blind run over the 31-entry set (task
