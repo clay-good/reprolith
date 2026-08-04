@@ -40,6 +40,8 @@ _GENOME_SCALE = {
                "reference": "doi:10.1101/gr.234503 (PMID 14718003)"},
     "iNF517": {"organism": "Lactococcus lactis subsp. cremoris MG1363",
                "reference": "doi:10.1128/AEM.00113-13 (PMID 23974059)"},
+    "iJO1366": {"organism": "Escherichia coli str. K-12 substr. MG1655 (genome-scale)",
+                "reference": "doi:10.1038/msb.2011.65 (PMID 21988831)"},
 }
 
 

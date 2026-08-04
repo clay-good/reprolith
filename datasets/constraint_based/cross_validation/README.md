@@ -22,8 +22,11 @@ disagreement that the single core model could not reveal.
 | `iIT341` | *Helicobacter pylori* 26695 | 554 | 485 | 0.692813 |
 | `iLJ478` | *Thermotoga maritima* MSB8 | 652 | 570 | 0.228407 |
 | `iNF517` | *Lactococcus lactis* cremoris MG1363 | 754 | 650 | 0.042635 |
+| `iJO1366` | *E. coli* K-12 MG1655 (genome-scale) | 2583 | 1805 | 0.982372 |
 
-All three are from [BiGG Models](http://bigg.ucsd.edu/) (SBML L3 fbc), stored gzipped. The
+All are from [BiGG Models](http://bigg.ucsd.edu/) (SBML L3 fbc), stored gzipped. `iJO1366` — the
+canonical full *E. coli* reconstruction, 27× the core model — stress-tests the ingester at true
+genome scale. The
 reference values were generated once with COBRApy and committed; the test itself needs only the
 `engine` and `fba` extras, not COBRApy.
 

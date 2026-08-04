@@ -10,6 +10,15 @@
       "reference_tool": "COBRApy 0.31.1 slim_optimize on the model's distributed medium",
       "source": "BiGG Models http://bigg.ucsd.edu/models/iIT341 ; doi:10.1128/JB.187.16.5818-5830.2005 (PMID 16077130)"
     },
+    "iJO1366": {
+      "genes": 1367,
+      "metabolites": 1805,
+      "organism": "Escherichia coli str. K-12 substr. MG1655 (genome-scale)",
+      "reactions": 2583,
+      "reference_growth": 0.9823718127269792,
+      "reference_tool": "COBRApy 0.31.1 slim_optimize on the model's distributed medium",
+      "source": "BiGG Models http://bigg.ucsd.edu/models/iJO1366 ; doi:10.1038/msb.2011.65 (PMID 21988831)"
+    },
     "iLJ478": {
       "genes": 482,
       "metabolites": 570,
