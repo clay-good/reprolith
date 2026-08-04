@@ -93,6 +93,52 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
     return str(libsbml.writeSBMLToString(document))
 
 
+def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-9) -> list[str]:
+    """Report where an adopted SBML model disagrees with the dossier's stated values.
+
+    When reconstruction adopts a shipped model, it must still confirm the model matches the
+    manuscript rather than silently trusting the artifact over the paper (spec:
+    ``model-reconstruction`` — "Shipped model does not match the dossier"). This parses the
+    model's parameters and initial amounts and reports each value that disagrees with the
+    dossier beyond ``rel_tol``. An empty list means no disagreement was found.
+    """
+    libsbml = _libsbml()
+    document = libsbml.readSBMLFromString(sbml)
+    model = document.getModel()
+    if model is None:
+        raise ValueError("the adopted artifact is not readable SBML")
+
+    sbml_params = {
+        model.getParameter(i).getId(): model.getParameter(i).getValue()
+        for i in range(model.getNumParameters())
+    }
+    sbml_ics = {
+        model.getSpecies(i).getId(): model.getSpecies(i).getInitialAmount()
+        for i in range(model.getNumSpecies())
+    }
+
+    mismatches: list[str] = []
+    for parameter in dossier.parameters:
+        if parameter.name in sbml_params and _differs(
+            parameter.value, sbml_params[parameter.name], rel_tol
+        ):
+            mismatches.append(
+                f"parameter {parameter.name}: dossier {parameter.value} != model "
+                f"{sbml_params[parameter.name]}"
+            )
+    for ic in dossier.initial_conditions:
+        if ic.name in sbml_ics and _differs(ic.value, sbml_ics[ic.name], rel_tol):
+            mismatches.append(
+                f"initial condition {ic.name}: dossier {ic.value} != model {sbml_ics[ic.name]}"
+            )
+    return mismatches
+
+
+def _differs(a: float, b: float, rel_tol: float) -> bool:
+    scale = max(abs(a), abs(b), 1.0)
+    return abs(a - b) / scale > rel_tol
+
+
 def _fatal_errors(document: Any, libsbml: Any) -> list[str]:
     document.checkConsistency()
     messages: list[str] = []
@@ -111,4 +157,4 @@ def _sid(text: str) -> str:
     return cleaned
 
 
-__all__ = ["build_model_sbml"]
+__all__ = ["build_model_sbml", "compare_sbml_to_dossier"]

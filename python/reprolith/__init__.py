@@ -74,7 +74,7 @@ from .reconstruction import (
 )
 from .render import claim_counts, gap_items, render_human, render_machine
 from .revision import DossierHistory, DossierRevision, dossier_digest, revise
-from .sbml import build_model_sbml
+from .sbml import build_model_sbml, compare_sbml_to_dossier
 from .scope import Scope
 from .supersession import CertificateLedger, describe_changes
 
@@ -135,6 +135,7 @@ __all__ = [
     "certificate_digest",
     "claim_counts",
     "close_gap",
+    "compare_sbml_to_dossier",
     "content_hash",
     "default_tolerance",
     "derive_overall",

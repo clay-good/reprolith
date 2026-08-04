@@ -18,9 +18,11 @@ from reprolith import (  # noqa: E402
     EnginePin,
     Equation,
     ModelArtifact,
+    ModelOrigin,
     Parameter,
     ReconstructionBundle,
     build_model_sbml,
+    compare_sbml_to_dossier,
     simulate,
 )
 
@@ -77,3 +79,38 @@ def test_unparseable_expression_is_rejected() -> None:
     )
     with pytest.raises(ValueError):
         build_model_sbml(bad)
+
+
+# --- 3.4 adopt-and-verify: label the model and surface dossier mismatches ----------
+
+
+def test_adopted_model_matching_the_dossier_has_no_mismatch() -> None:
+    sbml = build_model_sbml(_ONE_COMPARTMENT)  # a model consistent with the dossier
+    assert compare_sbml_to_dossier(sbml, _ONE_COMPARTMENT) == []
+
+
+def test_injected_mismatch_is_reported_and_model_is_labelled() -> None:
+    # The manuscript's dossier says k=0.5, but the shipped model was built with k=0.12:
+    # adopt-and-verify must surface the discrepancy, not silently trust the artifact.
+    shipped = build_model_sbml(
+        Dossier(
+            entry="10.1/onecomp",
+            state_variables=("A",),
+            equations=(Equation(target="A", expression="-(k * A)", source_location="Eq 1"),),
+            parameters=(Parameter(name="k", value=0.12, unit="1/h", source_location="model file"),),
+            initial_conditions=(Parameter(name="A", value=100.0, unit="mg", source_location="M"),),
+        )
+    )
+    mismatches = compare_sbml_to_dossier(shipped, _ONE_COMPARTMENT)
+    assert any("parameter k" in m and "0.5" in m and "0.12" in m for m in mismatches)
+
+    bundle = ReconstructionBundle(
+        entry="10.1/onecomp",
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        model=ModelArtifact(filename="author.xml", detected_format="sbml", validates=True),
+        origin=ModelOrigin.AUTHOR_SUPPLIED,
+        mismatches=tuple(mismatches),
+    )
+    assert bundle.validate() == []
+    assert bundle.to_dict()["origin"] == "author-supplied"  # labelled as author-supplied
+    assert bundle.mismatches  # and the mismatch travels with the bundle
