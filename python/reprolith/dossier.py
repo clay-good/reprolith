@@ -229,10 +229,14 @@ def estimate_difficulty(dossier: Dossier) -> str:
     * ``high`` — a load-bearing gap, or many gaps, or no usable model structure at all;
     * ``medium`` — otherwise.
 
+    A valid shipped model counts as structure: for an adopt-and-verify entry (spec 3.4), including
+    every constraint-based dossier, the structure lives in the adopted model file rather than in
+    hand-extracted equations, so the estimate must not treat that as "no structure".
+
     Never a gate: the estimate routes and prioritizes, it does not block a requester.
     """
     has_runnable_model = any(a.validates for a in dossier.artifacts)
-    has_structure = bool(dossier.equations or dossier.state_variables)
+    has_structure = bool(dossier.equations or dossier.state_variables) or has_runnable_model
     if dossier.load_bearing_gaps() or len(dossier.gaps) > 3 or not has_structure:
         return "high"
     if has_runnable_model and not dossier.gaps:

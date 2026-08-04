@@ -149,3 +149,24 @@ def test_difficulty_estimate_from_signals() -> None:
 
     # No model structure at all is high.
     assert estimate_difficulty(Dossier(entry="x")) == "high"
+
+
+def test_difficulty_counts_an_adopted_model_as_structure() -> None:
+    # An adopt-and-verify dossier (spec 3.4) — a constraint-based one, for instance — carries no
+    # hand-extracted equations: its structure is the adopted, validating model file. A clean one
+    # with no gaps is low difficulty, not high.
+    from reprolith import estimate_difficulty
+
+    adopt_and_verify = Dossier(
+        entry="fba",
+        artifacts=(ModelArtifact(filename="model.xml", detected_format="sbml-fbc", validates=True),),
+    )
+    assert estimate_difficulty(adopt_and_verify) == "low"
+
+    # A load-bearing gap (an unstated medium) still makes it high, model or no model.
+    blocked = Dossier(
+        entry="fba2",
+        artifacts=(ModelArtifact(filename="model.xml", detected_format="sbml-fbc", validates=True),),
+        gaps=(Gap(element="EX_glc", kind=GapKind.MEDIUM, detail="unstated", load_bearing=True),),
+    )
+    assert estimate_difficulty(blocked) == "high"
