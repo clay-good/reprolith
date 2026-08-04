@@ -126,3 +126,29 @@ def test_correction_reverifies_dependents_and_supersedes() -> None:
     # The superseded certificate remains retrievable.
     assert ledger.get(original_digest) is original
     assert len(ledger) == 2
+
+
+def test_pin_change_flags_certificates_for_review() -> None:
+    from reprolith import (
+        CertificateLedger,
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+        certificates_needing_review,
+    )
+
+    def _cert(version):
+        return build_certificate(
+            paper=PaperIdentity(title=f"m{version}"), engine_pin=EnginePin(engine="copasi", version=version),
+            assessments=[ClaimAssessment(claim_id="c", quantity="AUC", verdict=Verdict.REPRODUCED,
+                                         source_location="T1")],
+        )
+
+    ledger = CertificateLedger()
+    ledger.issue(_cert("4.46"))
+    ledger.issue(_cert("4.47"))
+    # After the pin advances to 4.47, only the 4.46 certificate is stale and needs re-review.
+    stale = certificates_needing_review(ledger, EnginePin(engine="copasi", version="4.47"))
+    assert [c.engine_pin.version for c in stale] == ["4.46"]

@@ -104,6 +104,7 @@ from .verification import (
     VerificationDecision,
     VerificationItem,
     VerificationQueue,
+    certificates_needing_review,
     reverify_dependents,
 )
 
@@ -171,6 +172,7 @@ __all__ = [
     "canonical_json",
     "certificate_digest",
     "certificate_from_content",
+    "certificates_needing_review",
     "certified_from_claims",
     "certify_model",
     "claim_counts",

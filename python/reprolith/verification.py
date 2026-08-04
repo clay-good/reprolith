@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:  # avoid a runtime import cycle; only needed for type hints
-    from .model import Certificate
+    from .model import Certificate, EnginePin
     from .supersession import CertificateLedger
 
 
@@ -149,9 +149,21 @@ def reverify_dependents(
     return replacements
 
 
+def certificates_needing_review(ledger: CertificateLedger, current_pin: EnginePin) -> list[Certificate]:
+    """Certificates pinned to a different engine than ``current_pin`` — flagged for re-review.
+
+    When the pinned engine changes, a value verified under the old pin is no longer settled: its
+    numbers could shift, so its certificate is re-opened for re-validation rather than trusted
+    because it was once confirmed (spec: verification-queue — "Freshness and re-opening"). Newest
+    certificate per paper wins in a real re-run; this returns every stale certificate to flag.
+    """
+    return [cert for _, cert in ledger.items() if cert.engine_pin != current_pin]
+
+
 __all__ = [
     "VerificationDecision",
     "VerificationItem",
     "VerificationQueue",
+    "certificates_needing_review",
     "reverify_dependents",
 ]
