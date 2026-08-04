@@ -70,6 +70,7 @@ from .reconstruction import (
     close_gap,
 )
 from .render import claim_counts, gap_items, render_human, render_machine
+from .revision import DossierHistory, DossierRevision, dossier_digest, revise
 from .scope import Scope
 from .supersession import CertificateLedger, describe_changes
 
@@ -89,6 +90,8 @@ __all__ = [
     "ComparisonMethod",
     "Dossier",
     "DossierClaim",
+    "DossierHistory",
+    "DossierRevision",
     "EnginePin",
     "Equation",
     "ExtractionConfidence",
@@ -129,6 +132,7 @@ __all__ = [
     "default_tolerance",
     "derive_overall",
     "describe_changes",
+    "dossier_digest",
     "gap_items",
     "judge_curve",
     "judge_scalar",
@@ -137,6 +141,7 @@ __all__ = [
     "relative_error",
     "render_human",
     "render_machine",
+    "revise",
     "same_modulo_run_metadata",
     "__version__",
 ]
