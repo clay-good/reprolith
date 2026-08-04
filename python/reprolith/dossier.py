@@ -40,6 +40,7 @@ class GapKind(str, Enum):
     UNIT = "unit"
     EQUATION = "equation"
     DOSING = "dosing"
+    MEDIUM = "medium"  # constraint-based: an unstated exchange/medium bound (load-bearing)
     OTHER = "other"
 
 

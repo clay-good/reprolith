@@ -21,6 +21,11 @@ from .catalog import (
 )
 from .certificate import build_certificate, derive_overall
 from .certify import Claim, certify_model
+from .constraint_based import (
+    certify_constraint_based,
+    constraint_based_dossier,
+    validate_constraint_based,
+)
 from .determinism import certificate_digest, same_modulo_run_metadata
 from .dossier import (
     Dossier,
@@ -196,8 +201,10 @@ __all__ = [
     "certificate_from_content",
     "certificates_needing_review",
     "certified_from_claims",
+    "certify_constraint_based",
     "certify_model",
     "claim_counts",
+    "constraint_based_dossier",
     "close_gap",
     "assess_match",
     "compare_frog",
@@ -241,6 +248,7 @@ __all__ = [
     "simulate",
     "reaction_essentiality",
     "solve_objective",
+    "validate_constraint_based",
     "verdict_for",
     "__version__",
 ]

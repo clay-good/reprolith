@@ -1,0 +1,43 @@
+{
+  "entry": "bigg-e_coli_core",
+  "state_variables": [],
+  "equations": [],
+  "parameters": [
+    {
+      "name": "R_EX_glc__D_e",
+      "value": 10.0,
+      "unit": "mmol/gDW/h",
+      "source_location": "e_coli_core default medium (BiGG); glucose-limited, 10 mmol/gDW/h",
+      "confidence": "quoted"
+    },
+    {
+      "name": "R_EX_o2_e",
+      "value": 1000.0,
+      "unit": "mmol/gDW/h",
+      "source_location": "e_coli_core default medium (BiGG); aerobic, oxygen uptake unlimited",
+      "confidence": "quoted"
+    }
+  ],
+  "initial_conditions": [],
+  "claims": [
+    {
+      "id": "growth-glucose-aerobic",
+      "quantity": "maximal aerobic growth rate, glucose minimal medium (R_BIOMASS_Ecoli_core_w_GAM, maximize)",
+      "conditions": "glucose uptake <= 10 mmol/gDW/h; oxygen unlimited (aerobic)",
+      "source_location": "Orth, Fleming & Palsson (2010), EcoSal Plus; BiGG e_coli_core",
+      "targetable": true,
+      "reference_kind": "numeric",
+      "reference_data": [
+        0.873922
+      ]
+    }
+  ],
+  "gaps": [],
+  "artifacts": [
+    {
+      "filename": "e_coli_core.xml",
+      "detected_format": "sbml-fbc",
+      "validates": true
+    }
+  ]
+}

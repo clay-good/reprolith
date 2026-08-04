@@ -34,3 +34,11 @@ m = ingest_fbc_sbml(Path('datasets/constraint_based/e_coli_core.xml').read_text(
 print(s(m.stoichiometry, m.objective, m.lower, m.upper))"
 # -> 0.8739215069684304
 ```
+
+## Worked example
+
+[`worked_example/`](worked_example/) is the full dossier → certificate walk on this model: the
+constraint-based dossier (adopted model + first-class, load-bearing medium + the objective-value
+claim), the rendered reproduction certificate, and a plain-language account of what reproduced
+and why the medium is load-bearing. It is the constraint-based counterpart of the
+[metformin PK/PD worked example](../worked_examples/README.md).
