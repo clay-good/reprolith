@@ -63,11 +63,11 @@ The engine was hardened against real BioModels, not just synthetic tests. Sweepi
 31-entry test set surfaced three genuine robustness bugs, now fixed: species resolution by SBML
 id (models reuse display names across species), state variables encoded as parameters with rate
 rules (the pharmacometrics "parameter + rateRule" idiom, which ships no species), and divergence
-detection (an intractable model is blocked, not silently returned as inf/nan). A further sweep
-over twelve structurally-diverse classic curated models — glycolysis, cell cycle, signalling —
-ingested and simulated cleanly with no further fixes. Across 43 real models the engine either
-runs to a finite result or honestly blocks, which indicates it already generalises beyond PK/PD
-toward the kinetic (systems-biology ODE) class the roadmap picks up next.
+detection (an intractable model is blocked, not silently returned as inf/nan). Further sweeps
+over 36 more structurally-diverse curated models — glycolysis, cell cycle, signalling, and higher
+BioModels ids — ingested and simulated cleanly with no further fixes. Across 67 real models the
+engine either runs to a finite result or honestly blocks, which indicates it already generalises
+beyond PK/PD toward the kinetic (systems-biology ODE) class the roadmap picks up next.
 
 ## Status and what remains
 
