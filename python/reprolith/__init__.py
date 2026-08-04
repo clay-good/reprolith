@@ -127,7 +127,7 @@ from .sbml import build_model_sbml, compare_sbml_to_dossier, ingest_fbc_sbml
 from .scope import Scope
 from .screening import Candidate, Screening, ScreeningResult, screen_candidate, storable_content
 from .sedml import SimulationRecipe, parse_sedml_recipes
-from .seed import load_test_set, seed_catalog
+from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
 from .supersession import CertificateLedger, describe_changes
 from .verification import (
     VerificationDecision,
@@ -194,6 +194,7 @@ __all__ = [
     "Scope",
     "Screening",
     "ScreeningResult",
+    "SeedingReport",
     "SimulationRecipe",
     "Tolerance",
     "ToleranceSource",
@@ -263,6 +264,7 @@ __all__ = [
     "roadrunner_version",
     "run_test_set",
     "screen_candidate",
+    "seed_candidates",
     "simulate_with_roadrunner",
     "storable_content",
     "same_modulo_run_metadata",
