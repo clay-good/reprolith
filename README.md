@@ -55,14 +55,31 @@ runnable.*
 
 ## Build and contribute
 
-The engine skeleton is dependency-free (standard library only). The honesty invariants —
-determinism, the inescapable scope statement, and assumption-qualification — are enforced in
-code and checked in CI.
+The core engine is dependency-free (standard library only): the catalog, ingestion dossier,
+reconstruction, oracle, certificate, agreement report, and read-only query surface all run
+without third-party packages, so the required-checks gate stays fast and trivially
+reproducible. The honesty invariants — determinism, the inescapable scope statement, and
+assumption-qualification — are enforced in code and checked in CI.
 
 ```bash
 pip install -e ".[dev]"
 ruff check . && mypy && pytest -q
 ```
+
+Actually running a model needs the optional **`engine`** extra, which pins COPASI (a
+BioSimulators-registered engine) and the SBML tooling. It stays out of the core so the fast
+gate does not depend on it; the engine-backed tests skip when it is absent.
+
+```bash
+pip install -e ".[dev,engine]"   # then pytest -q runs the simulation-backed tests too
+```
+
+With the extra installed the full loop runs end to end: a dossier compiles to SBML
+([`reprolith.build_model_sbml`](python/reprolith/sbml.py)), runs under the pin
+([`reprolith.simulate`](python/reprolith/engine.py)), is judged by the oracle, and produces a
+scope-flagged certificate. The blind PK/PD self-validation set lives in
+[`datasets/pkpd_test_set.json`](datasets/pkpd_test_set.json), labelled from BioModels'
+curation status.
 
 Reprolith gets better when people who know the science validate its judgment. When it isn't sure
 about a load-bearing value, it opens a **verification issue** with its best estimate — confirming
