@@ -67,3 +67,22 @@ def test_an_adopted_recipe_runs_under_the_pinned_engine() -> None:
     )
     assert len(times) == len(values) == recipe.steps + 1
     assert max(values) > 0  # MAPK_PP is produced over the adopted time course
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("COPASI") is None or importlib.util.find_spec("roadrunner") is None,
+    reason="needs the 'engine' (COPASI) and 'corroborate' (libRoadRunner) extras",
+)
+def test_an_adopted_recipe_is_engine_independent_end_to_end() -> None:
+    # The full fast-path: read the shipped recipe, then verify it cross-engine — the adopted
+    # duration/steps/observable drive both simulators and they agree.
+    from reprolith import corroborate_curve
+
+    model = (Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.xml").read_text(
+        encoding="utf-8"
+    )
+    recipe = next(r for r in parse_sedml_recipes(_SEDML) if r.task_id == "task_fig2a")
+    result = corroborate_curve(
+        model, recipe.observables[0], duration=recipe.duration, steps=recipe.steps
+    )
+    assert result.stable
