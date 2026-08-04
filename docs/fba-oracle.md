@@ -75,6 +75,16 @@ assessment = judge_fingerprint(                       # -> a certificate-ready C
 reproduces, otherwise it fails with the named component disagreements recorded as the discrepancy —
 so a fingerprint verdict feeds `build_certificate` exactly like a scalar or curve one.
 
+## Self-validation
+
+Before the class's verdicts are trusted, the pathway is measured against a real published model
+whose result is independently known. [`datasets/constraint_based/e_coli_core.xml`](../datasets/constraint_based/)
+is the standard *E. coli* core model; [`tests/test_fba_selfvalidation.py`](../tests/test_fba_selfvalidation.py)
+ingests it with `ingest_fbc_sbml`, solves it, and checks the optimum against the textbook maximal
+growth rate (0.873922 mmol · gDW⁻¹ · h⁻¹). The expected value lives only in the test assertion —
+nothing in the engine encodes it — so this is a genuine reproduction of a known result, and the
+full FROG analyses are exercised on a real network rather than only the tiny fixtures.
+
 ## Failure modes
 
 A `partial` or `failed` FBA verdict carries a first-class constraint-based root cause, not a

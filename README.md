@@ -92,7 +92,10 @@ Constraint-based (FBA) models reproduce a different kind of claim — an optimiz
 a time course — so they get their own oracle behind the optional **`fba`** extra (scipy's linear
 solver). It reports the fingerprints the constraint-based-class spec names, each preserving the
 "abstain when unsure" rule under alternate optima; see
-[docs/fba-oracle.md](docs/fba-oracle.md).
+[docs/fba-oracle.md](docs/fba-oracle.md). It self-validates against a real published model:
+[datasets/constraint_based/](datasets/constraint_based/) ships the *E. coli* core model, and the
+`ingest_fbc_sbml` → `solve_objective` pathway reproduces its independently-known maximal growth
+rate (0.873922) to every published digit.
 
 ```bash
 pip install -e ".[dev,fba]"   # then pytest -q runs the FBA oracle tests too
