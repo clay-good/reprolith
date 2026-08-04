@@ -94,6 +94,15 @@ essentiality is validated the same way: e_coli_core's 69 GPR-annotated reactions
 and `gene_essentiality` recovers its essential-gene set — including the independently known
 essential enolase (`b2779`) — computed from the model's own GPR rules.
 
+Beyond the one core model, a [cross-validation set](../datasets/constraint_based/cross_validation/)
+checks the ingester on structural variety: three diverse genome-scale models (*H. pylori*, *T.
+maritima*, *L. lactis*; 500–750 reactions) whose growth rate the independent COBRApy implementation
+computes are reproduced by `ingest_fbc_sbml` + `solve_objective` to six digits — a non-circular
+cross-tool check where a stoichiometry-, bound-, or objective-parsing bug would surface. The
+[milestone blind run](../datasets/constraint_based/milestone/) folds all four models (the documented
+core model plus the three cross-validated ones) into one blind agreement report through the shared
+catalog and `run_test_set`: 4/4 agreement with ground truth.
+
 ## From a paper to a certificate
 
 The oracle above is the back end. The front end — turning a constraint-based *paper* into a
