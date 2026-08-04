@@ -67,6 +67,16 @@ fp = frog_fingerprint(ingest_fbc_sbml(model_sbml))
 verdict = compare_frog(fp, curated_fingerprint)   # verdict.agrees, verdict.disagreements
 ```
 
+## Failure modes
+
+A `partial` or `failed` FBA verdict carries a first-class constraint-based root cause, not a
+borrowed PK/PD one. The maintained set (`reprolith.FailureMode`) adds the recurring reasons
+constraint-based reproductions fail — an unspecified or ambiguous medium/exchange bound, an
+ambiguous biomass/objective definition, missing or inconsistent gene–reaction associations, and
+alternate-optima flux ambiguity — with LP solver sensitivity named by the shared
+`ENGINE_SENSITIVITY`. A failure fitting none of them is recorded as `UNCATEGORIZED`, which flags
+the catalog to be extended rather than silently misclassifying.
+
 ## Example
 
 ```python

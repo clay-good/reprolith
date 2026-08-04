@@ -51,15 +51,31 @@ class ToleranceSource(str, Enum):
 
 
 class FailureMode(str, Enum):
-    """The PK/PD root-cause categories for a non-reproducing verdict (spec:
-    ``simulation-oracle`` — "Root-caused failures")."""
+    """The maintained set of root-cause categories for a non-reproducing verdict.
 
+    Failure modes are specialized per model class (spec: ``simulation-oracle`` — "Root-caused
+    failures"; ``constraint-based-class`` — "Known constraint-based failure modes are
+    first-class"). The first group is PK/PD; the second is constraint-based (FBA). Two are shared
+    across classes: ``ENGINE_SENSITIVITY`` also names LP solver sensitivity, and
+    ``MANUSCRIPT_ERROR``/``ASSUMPTION_DEPENDENCE`` are class-agnostic. ``UNCATEGORIZED`` is the
+    escape hatch: a failure fitting none of the catalogued causes is recorded as uncategorized and
+    flags the set to be extended, so the catalog never silently misclassifies."""
+
+    # PK/PD (ODE curve-matching) root causes.
     MISSING_PARAMETER = "missing-parameter"
     UNIT_MISMATCH = "unit-mismatch"
     AMBIGUOUS_INITIAL_CONDITION = "ambiguous-initial-condition"
     ENGINE_SENSITIVITY = "engine-algorithm-sensitivity"
     MANUSCRIPT_ERROR = "apparent-manuscript-error"
     ASSUMPTION_DEPENDENCE = "load-bearing-assumption-dependence"
+    # Constraint-based (FBA) root causes (spec: constraint-based-class). LP solver sensitivity is
+    # named by the shared ``ENGINE_SENSITIVITY`` above.
+    UNSPECIFIED_MEDIUM = "unspecified-medium-or-exchange-bounds"
+    AMBIGUOUS_OBJECTIVE = "ambiguous-biomass-or-objective-definition"
+    INCONSISTENT_GENE_ASSOCIATIONS = "missing-or-inconsistent-gene-reaction-associations"
+    ALTERNATE_OPTIMA = "alternate-optima-flux-ambiguity"
+    # Escape hatch for a failure fitting none of the above (spec: "recorded as uncategorized").
+    UNCATEGORIZED = "uncategorized"
 
 
 class Fault(str, Enum):

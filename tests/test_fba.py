@@ -158,6 +158,19 @@ def test_judge_flux_fails_when_outside_the_feasible_range() -> None:
     assert a.verdict is Verdict.FAILED
 
 
+def test_fba_failure_carries_a_constraint_based_root_cause() -> None:
+    # A failed FBA verdict can be attributed with a first-class constraint-based category
+    # (here, an unspecified medium) rather than borrowing a PK/PD root cause.
+    a = judge_objective(
+        claim_id="obj", quantity="max growth flux", source_location="Table 1",
+        reported=4.0, stoichiometry=_S, objective=_OBJECTIVE, lower=_LOWER, upper=_UPPER,
+        attribution=Attribution(mode=FailureMode.UNSPECIFIED_MEDIUM,
+                                implicated="exchange bounds", fault=Fault.MANUSCRIPT),
+    )
+    assert a.verdict is Verdict.FAILED
+    assert a.root_cause == "unspecified-medium-or-exchange-bounds"
+
+
 _MODEL = FbaModel(
     species_ids=("A",),
     reaction_ids=("v_in", "v_out"),
