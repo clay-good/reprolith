@@ -73,6 +73,7 @@ from .oracle import (
     relative_error,
     verdict_for,
 )
+from .persistence import certificate_from_content
 from .query import ReprolithQuery
 from .reconstruction import (
     ModelOrigin,
@@ -152,6 +153,7 @@ __all__ = [
     "canonical_bytes",
     "canonical_json",
     "certificate_digest",
+    "certificate_from_content",
     "certified_from_claims",
     "certify_model",
     "claim_counts",
