@@ -100,4 +100,54 @@ def judge_objective(
     )
 
 
-__all__ = ["FbaUnavailable", "InfeasibleFba", "judge_objective", "solve_objective"]
+def reaction_essentiality(
+    stoichiometry: Sequence[Sequence[float]],
+    objective: Sequence[float],
+    lower: Sequence[float],
+    upper: Sequence[float | None],
+    *,
+    threshold: float = 1e-6,
+) -> frozenset[int]:
+    """The indices of reactions whose knockout collapses the objective — the essential set.
+
+    A reaction is essential if constraining its flux to zero drops the optimum below
+    ``threshold`` of the unperturbed optimum (or makes the problem infeasible). This is the
+    second FBA fingerprint the spec names (spec: constraint-based-class), and it too is
+    well-defined regardless of alternate optima.
+    """
+    baseline = solve_objective(stoichiometry, objective, lower, upper)
+    if baseline <= 0.0:
+        return frozenset()
+    essential: set[int] = set()
+    for i in range(len(objective)):
+        knocked_lower = [0.0 if j == i else lo for j, lo in enumerate(lower)]
+        knocked_upper: list[float | None] = [0.0 if j == i else up for j, up in enumerate(upper)]
+        try:
+            optimum = solve_objective(stoichiometry, objective, knocked_lower, knocked_upper)
+        except InfeasibleFba:
+            optimum = 0.0
+        if optimum < threshold * baseline:
+            essential.add(i)
+    return frozenset(essential)
+
+
+def essentiality_agreement(computed: frozenset[int], reported: frozenset[int]) -> float:
+    """Fraction of reactions the computed and reported essential sets agree on, over their union.
+
+    1.0 is a perfect match; 0.0 is complete disagreement. An empty union (nothing essential
+    either way) counts as full agreement.
+    """
+    union = computed | reported
+    if not union:
+        return 1.0
+    return len(computed & reported) / len(union)
+
+
+__all__ = [
+    "FbaUnavailable",
+    "InfeasibleFba",
+    "essentiality_agreement",
+    "judge_objective",
+    "reaction_essentiality",
+    "solve_objective",
+]

@@ -19,7 +19,9 @@ from reprolith import (  # noqa: E402
     PaperIdentity,
     Verdict,
     build_certificate,
+    essentiality_agreement,
     judge_objective,
+    reaction_essentiality,
     solve_objective,
 )
 
@@ -68,3 +70,25 @@ def test_infeasible_problem_raises() -> None:
     # Force infeasibility: v_out lower-bounded above what v_in can supply.
     with pytest.raises(InfeasibleFba):
         solve_objective(_S, _OBJECTIVE, [0.0, 20.0], [8.0, None])
+
+
+def test_both_reactions_are_essential() -> None:
+    # In v_in -> A -> v_out, knocking out either reaction starves the objective, so both
+    # reactions are essential.
+    assert reaction_essentiality(_S, _OBJECTIVE, _LOWER, _UPPER) == frozenset({0, 1})
+
+
+def test_a_redundant_reaction_is_not_essential() -> None:
+    # Add a second inflow v_in2 -> A. Now either inflow alone can feed v_out (its bound is 8),
+    # so neither inflow is essential on its own; only the single outflow remains essential.
+    stoich = [[1.0, 1.0, -1.0]]  # v_in, v_in2, v_out
+    objective = [0.0, 0.0, 1.0]
+    lower = [0.0, 0.0, 0.0]
+    upper: list[float | None] = [8.0, 8.0, None]
+    assert reaction_essentiality(stoich, objective, lower, upper) == frozenset({2})
+
+
+def test_essentiality_agreement_scores_overlap() -> None:
+    assert essentiality_agreement(frozenset({0, 1}), frozenset({0, 1})) == pytest.approx(1.0)
+    assert essentiality_agreement(frozenset({0, 1}), frozenset({0, 2})) == pytest.approx(1 / 3)
+    assert essentiality_agreement(frozenset(), frozenset()) == pytest.approx(1.0)

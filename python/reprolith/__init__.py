@@ -47,7 +47,14 @@ from .enums import (
     ReproductionLevel,
     Verdict,
 )
-from .fba import FbaUnavailable, InfeasibleFba, judge_objective, solve_objective
+from .fba import (
+    FbaUnavailable,
+    InfeasibleFba,
+    essentiality_agreement,
+    judge_objective,
+    reaction_essentiality,
+    solve_objective,
+)
 from .ingest import ingest_sbml
 from .linter import LintResult, lint_curve
 from .mcp_server import handle_request, serve_stdio
@@ -190,6 +197,7 @@ __all__ = [
     "engine_pin",
     "estimate_difficulty",
     "engine_version",
+    "essentiality_agreement",
     "gap_items",
     "handle_request",
     "ingest_sbml",
@@ -212,6 +220,7 @@ __all__ = [
     "serve_stdio",
     "seed_catalog",
     "simulate",
+    "reaction_essentiality",
     "solve_objective",
     "verdict_for",
     "__version__",
