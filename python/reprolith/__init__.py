@@ -35,6 +35,7 @@ from .model import (
     PaperIdentity,
     RunMetadata,
 )
+from .render import claim_counts, gap_items, render_human, render_machine
 from .scope import Scope
 
 __version__ = "0.0.1"
@@ -63,8 +64,12 @@ __all__ = [
     "canonical_bytes",
     "canonical_json",
     "certificate_digest",
+    "claim_counts",
     "content_hash",
     "derive_overall",
+    "gap_items",
+    "render_human",
+    "render_machine",
     "same_modulo_run_metadata",
     "__version__",
 ]
