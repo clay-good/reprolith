@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""Regenerate the generic-kinetic milestone artifact from committed data.
+
+The kinetic counterpart of ``run_milestone.py`` / ``run_fba_milestone.py``. Seeds the catalog with
+the curated kinetic entries whose reproducibility is independently known (the cross-validation set),
+certifies each *blind* through the shared curve path ``certify_curves`` — the verdict path never
+sees the label — scores agreement with ground truth on the same ``run_test_set`` machinery the other
+classes use, and writes the walkable result.
+
+Each entry's label is `reproduced`, its ground truth the species time-course an independent simulator
+(libRoadRunner) computes for the model; certifying reproduces that curve under Reprolith's COPASI
+engine. Reproducible from the repository alone — no network — but needs the ``engine`` extra
+(python-copasi). Run from the repo root:
+
+    python scripts/run_kinetic_milestone.py
+"""
+
+from __future__ import annotations
+
+import json
+from collections import Counter
+from pathlib import Path
+
+from reprolith import (
+    Catalog,
+    CurveClaim,
+    EnginePin,
+    GroundTruth,
+    Identifiers,
+    ModelClass,
+    OverallVerdict,
+    PaperIdentity,
+    certify_curves,
+    engine_pin,
+    run_test_set,
+)
+
+REPO = Path(__file__).resolve().parents[1]
+KIN = REPO / "datasets" / "kinetic"
+
+
+def main() -> None:
+    catalog = Catalog()
+    models = json.loads((KIN / "cross_validation.json").read_text(encoding="utf-8"))["models"]
+    pin: EnginePin = engine_pin()  # the concrete installed COPASI version
+
+    certified = {}
+    for spec in models:
+        catalog.add(
+            Identifiers(title=spec["name"], accession=spec["id"]),
+            ModelClass.KINETIC,
+            ground_truth=GroundTruth(
+                expected=OverallVerdict.REPRODUCED,
+                source=f"{spec['source']}; reference curve via {spec['reference_tool']}",
+            ),
+        )
+        # Certify blind: only the model and the reference curve are inputs, never the label.
+        certified[spec["id"]] = certify_curves(
+            (KIN / f"{spec['id']}.xml").read_text(encoding="utf-8"),
+            paper=PaperIdentity(title=spec["name"], doi=""),
+            engine_pin=pin,
+            claims=[CurveClaim(
+                claim_id=f"{spec['id']}-timecourse",
+                quantity=f"{spec['species']} time-course ({spec['network']})",
+                species=spec["species"],
+                reference=tuple(spec["curve"]),
+                source_location=spec["source"],
+                duration=spec["duration"],
+                steps=spec["steps"],
+            )],
+        )
+
+    certificates, report = run_test_set(
+        catalog.entries, engine_pin=pin, certified=certified, advance=True
+    )
+
+    milestone = KIN / "milestone"
+    milestone.mkdir(exist_ok=True)
+    (milestone / "agreement_report.json").write_text(
+        json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n"
+    )
+    certs = milestone / "certificates"
+    certs.mkdir(exist_ok=True)
+    for accession, cert in certified.items():
+        (certs / f"{accession}.json").write_text(
+            json.dumps(cert.content(), indent=2, sort_keys=True) + "\n"
+        )
+    (milestone / "catalog.json").write_text(
+        json.dumps(catalog.to_dict(), indent=2, sort_keys=True) + "\n"
+    )
+
+    counts = Counter(cert.overall.value for cert in certificates)
+    print(f"entries: {len(certificates)} | verdicts: {dict(counts)}")
+    print(f"agreement: {report.agreements}/{report.total}")
+    print(f"wrote {(milestone / 'agreement_report.json').relative_to(REPO)}")
+
+
+if __name__ == "__main__":
+    main()

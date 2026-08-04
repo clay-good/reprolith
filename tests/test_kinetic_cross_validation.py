@@ -23,7 +23,16 @@ import pytest
 
 pytest.importorskip("COPASI", reason="the optional 'engine' extra (python-copasi) is not installed")
 
-from reprolith import Verdict, judge_curve, simulate  # noqa: E402
+from reprolith import (  # noqa: E402
+    CurveClaim,
+    EnginePin,
+    OverallVerdict,
+    PaperIdentity,
+    Verdict,
+    certify_curves,
+    judge_curve,
+    simulate,
+)
 
 _DIR = Path(__file__).parent.parent / "datasets" / "kinetic"
 _MODELS = json.loads((_DIR / "cross_validation.json").read_text(encoding="utf-8"))["models"]
@@ -62,3 +71,23 @@ def test_reproduces_the_independent_trajectory_pointwise(model_id: str) -> None:
     peak = max(abs(v) for v in reference)
     for got, want in zip(predicted, reference):
         assert got == pytest.approx(want, abs=3e-3 * peak)
+
+
+def test_certify_curves_assembles_a_reproduced_certificate() -> None:
+    # The curve certification entry point (the kinetic analogue of certify_model) runs the model
+    # under the pin, judges the trajectory, and builds a scope-flagged certificate — reproduced.
+    spec = _BY_ID["BIOMD0000000010"]
+    cert = certify_curves(
+        (_DIR / f"{spec['id']}.xml").read_text(encoding="utf-8"),
+        paper=PaperIdentity(title=spec["name"], doi=""),
+        engine_pin=EnginePin(engine="copasi", version="test", algorithm="deterministic-lsoda"),
+        claims=[CurveClaim(
+            claim_id="mapk-pp", quantity="MAPK_PP time-course", species=spec["species"],
+            reference=tuple(spec["curve"]), source_location=spec["source"],
+            duration=spec["duration"], steps=spec["steps"],
+        )],
+    )
+    assert cert.overall is OverallVerdict.REPRODUCED
+    (assessment,) = cert.assessments
+    assert assessment.verdict is Verdict.REPRODUCED
+    assert cert.scope.machine  # the inescapable scope flag travels with the certificate

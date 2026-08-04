@@ -20,7 +20,7 @@ from .catalog import (
     Transition,
 )
 from .certificate import build_certificate, derive_overall
-from .certify import Claim, certify_model
+from .certify import Claim, CurveClaim, certify_curves, certify_model
 from .constraint_based import (
     certify_constraint_based,
     constraint_based_dossier,
@@ -145,6 +145,7 @@ __all__ = [
     "Certificate",
     "Claim",
     "ClaimAssessment",
+    "CurveClaim",
     "ComparisonMethod",
     "Dossier",
     "DossierClaim",
@@ -203,6 +204,7 @@ __all__ = [
     "certificates_needing_review",
     "certified_from_claims",
     "certify_constraint_based",
+    "certify_curves",
     "certify_model",
     "claim_counts",
     "constraint_based_dossier",

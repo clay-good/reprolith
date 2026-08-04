@@ -22,7 +22,7 @@ from typing import Any
 from .certificate import build_certificate
 from .engine import simulate
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
-from .oracle import Attribution, ReferenceKind, Tolerance, judge_scalar
+from .oracle import Attribution, ReferenceKind, Tolerance, judge_curve, judge_scalar
 
 
 @dataclass(frozen=True)
@@ -137,4 +137,69 @@ def certify_model(
     )
 
 
-__all__ = ["Claim", "certify_model"]
+@dataclass(frozen=True)
+class CurveClaim:
+    """A published time-course to reproduce: a species curve judged by normalized distance.
+
+    Unlike :class:`Claim` (a scalar metric), the whole trajectory is the claim. ``reference`` holds
+    the reported values sampled at the same ``steps + 1`` uniform points over ``[0, duration]`` the
+    simulation produces, so the oracle compares like with like. This is the curve counterpart of the
+    scalar claim and the natural claim shape for the generic-kinetic class, where the reproducible
+    result is the dynamics themselves.
+    """
+
+    claim_id: str
+    quantity: str
+    species: str
+    reference: tuple[float, ...]
+    source_location: str
+    duration: float
+    steps: int
+    tolerance: Tolerance | None = None
+    reference_kind: ReferenceKind = ReferenceKind.NUMERIC
+    parameter_overrides: tuple[tuple[str, float], ...] = ()
+    assumption_qualified: bool = False
+    shortfall: Attribution | None = field(default=None)
+
+
+def certify_curves(
+    sbml: str,
+    *,
+    paper: PaperIdentity,
+    engine_pin: EnginePin,
+    claims: Iterable[CurveClaim],
+    assumptions: Iterable[Assumption] = (),
+) -> Certificate:
+    """Run each curve claim under the pin, judge its trajectory, and assemble the certificate.
+
+    The curve counterpart of :func:`certify_model`: it reproduces a whole species time-course with
+    the shared curve oracle (:func:`reprolith.judge_curve`) instead of a scalar metric, and builds
+    the certificate through the same rule and scope flag. Each claim carries its own ``duration``
+    and ``steps``, so the reference and the simulation are sampled at identical points.
+    """
+    assessments = []
+    for claim in claims:
+        model = _apply_overrides(sbml, claim.parameter_overrides) if claim.parameter_overrides else sbml
+        _, values = simulate(model, claim.species, duration=claim.duration, steps=claim.steps)
+        assessments.append(
+            judge_curve(
+                claim_id=claim.claim_id,
+                quantity=claim.quantity,
+                source_location=claim.source_location,
+                reference=claim.reference,
+                predicted=values,
+                reference_kind=claim.reference_kind,
+                tolerance=claim.tolerance,
+                attribution=claim.shortfall,
+                assumption_qualified=claim.assumption_qualified,
+            )
+        )
+    return build_certificate(
+        paper=paper,
+        engine_pin=engine_pin,
+        assessments=assessments,
+        assumptions=tuple(assumptions),
+    )
+
+
+__all__ = ["Claim", "CurveClaim", "certify_curves", "certify_model"]
