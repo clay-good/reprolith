@@ -73,7 +73,11 @@ from .oracle import (
     relative_error,
     verdict_for,
 )
-from .persistence import certificate_from_content
+from .persistence import (
+    bundle_from_dict,
+    certificate_from_content,
+    dossier_from_dict,
+)
 from .query import ReprolithQuery
 from .reconstruction import (
     ModelOrigin,
@@ -152,6 +156,7 @@ __all__ = [
     "build_agreement_report",
     "build_certificate",
     "build_model_sbml",
+    "bundle_from_dict",
     "canonical_bytes",
     "canonical_json",
     "certificate_digest",
@@ -166,6 +171,7 @@ __all__ = [
     "derive_overall",
     "describe_changes",
     "dossier_digest",
+    "dossier_from_dict",
     "engine_pin",
     "engine_version",
     "gap_items",

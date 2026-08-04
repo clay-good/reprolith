@@ -1,16 +1,26 @@
-"""Loading a certificate back from its stored content (design goal 3: inspectable files).
+"""Reloading the inspectable artifacts from their stored dicts (design goal 3).
 
-Certificates serialize to plain dicts via :meth:`Certificate.content`; this reconstructs one
-from that dict, so a stored certificate can be re-opened, re-served, or re-hashed without the
-inputs that produced it. The overall verdict is taken from the stored content exactly — a
-loaded certificate must reproduce what was written, not re-derive it — so a round trip is
-byte-identical: ``certificate_from_content(cert.content()).content() == cert.content()``.
+Every durable Reprolith artifact serializes to a plain dict via ``to_dict``/``content``; this
+module reconstructs them, so a stored certificate, dossier, or reconstruction bundle can be
+re-opened, re-served, or re-hashed without the inputs that produced it. Reconstruction is exact
+(the certificate's overall verdict, for instance, is taken from storage, not re-derived), so a
+round trip is byte-identical.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from .dossier import (
+    Dossier,
+    DossierClaim,
+    Equation,
+    ExtractionConfidence,
+    Gap,
+    GapKind,
+    ModelArtifact,
+    Parameter,
+)
 from .enums import OverallVerdict, ReproductionLevel, Verdict
 from .model import (
     Assumption,
@@ -18,6 +28,13 @@ from .model import (
     ClaimAssessment,
     EnginePin,
     PaperIdentity,
+)
+from .oracle import ReferenceKind
+from .reconstruction import (
+    ModelOrigin,
+    NonReconstructable,
+    RecipeStep,
+    ReconstructionBundle,
 )
 from .scope import Scope
 
@@ -70,4 +87,67 @@ def certificate_from_content(content: dict[str, Any]) -> Certificate:
     )
 
 
-__all__ = ["certificate_from_content"]
+def _parameter_from(record: dict[str, Any]) -> Parameter:
+    return Parameter(
+        name=record["name"],
+        value=record["value"],
+        unit=record["unit"],
+        source_location=record["source_location"],
+        confidence=ExtractionConfidence(record["confidence"]),
+    )
+
+
+def dossier_from_dict(record: dict[str, Any]) -> Dossier:
+    """Reconstruct a :class:`~reprolith.dossier.Dossier` from its ``to_dict`` output."""
+    return Dossier(
+        entry=record["entry"],
+        state_variables=tuple(record["state_variables"]),
+        equations=tuple(
+            Equation(target=e["target"], expression=e["expression"], source_location=e["source_location"])
+            for e in record["equations"]
+        ),
+        parameters=tuple(_parameter_from(p) for p in record["parameters"]),
+        initial_conditions=tuple(_parameter_from(p) for p in record["initial_conditions"]),
+        claims=tuple(
+            DossierClaim(
+                id=c["id"],
+                quantity=c["quantity"],
+                conditions=c["conditions"],
+                source_location=c["source_location"],
+                targetable=c["targetable"],
+                reference_kind=ReferenceKind(c["reference_kind"]) if c["reference_kind"] else None,
+                reference_data=tuple(c["reference_data"]),
+            )
+            for c in record["claims"]
+        ),
+        gaps=tuple(
+            Gap(element=g["element"], kind=GapKind(g["kind"]), detail=g["detail"],
+                load_bearing=g["load_bearing"])
+            for g in record["gaps"]
+        ),
+        artifacts=tuple(
+            ModelArtifact(filename=a["filename"], detected_format=a["detected_format"],
+                          validates=a["validates"])
+            for a in record["artifacts"]
+        ),
+    )
+
+
+def bundle_from_dict(record: dict[str, Any]) -> ReconstructionBundle:
+    """Reconstruct a :class:`~reprolith.reconstruction.ReconstructionBundle` from its dict."""
+    model = record["model"]
+    pin = record["engine_pin"]
+    return ReconstructionBundle(
+        entry=record["entry"],
+        engine_pin=EnginePin(engine=pin["engine"], version=pin["version"], algorithm=pin["algorithm"]),
+        model=ModelArtifact(**model) if model else None,
+        origin=ModelOrigin(record["origin"]),
+        recipe=tuple(RecipeStep(**s) for s in record["recipe"]),
+        assumptions=tuple(_assumption_from(a) for a in record["assumptions"]),
+        non_reconstructable=tuple(NonReconstructable(**n) for n in record["non_reconstructable"]),
+        mismatches=tuple(record["mismatches"]),
+        source_dossier=record["source_dossier"],
+    )
+
+
+__all__ = ["bundle_from_dict", "certificate_from_content", "dossier_from_dict"]

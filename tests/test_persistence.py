@@ -64,3 +64,73 @@ def test_survives_a_json_file_round_trip() -> None:
     assert reloaded.assumptions[0].alternatives == ("0.9", "1.5")
     assert reloaded.assessments[1].fault_hypothesis == "manuscript"
     assert reloaded.scope.machine == "reproducible-not-correct-not-clinical"
+
+
+def test_dossier_round_trips_through_json() -> None:
+    import json
+
+    from reprolith import (
+        Dossier,
+        DossierClaim,
+        Equation,
+        ExtractionConfidence,
+        Gap,
+        GapKind,
+        ModelArtifact,
+        Parameter,
+        dossier_digest,
+        dossier_from_dict,
+    )
+
+    dossier = Dossier(
+        entry="10.1/x",
+        state_variables=("A_gut", "A_central"),
+        equations=(Equation(target="A_central", expression="ka*A_gut - ke*A_central",
+                            source_location="Eq 1"),),
+        parameters=(Parameter(name="ke", value=0.1, unit="1/h", source_location="Table 1",
+                              confidence=ExtractionConfidence.INTERPRETED),),
+        initial_conditions=(Parameter(name="A_gut", value=100.0, unit="mg", source_location="M"),),
+        claims=(DossierClaim(id="C1", quantity="AUC", conditions="100mg", source_location="T2",
+                             reference_kind=ReferenceKind.NUMERIC, reference_data=(1.0, 2.0)),
+                DossierClaim(id="S1", quantity="schematic", conditions="", source_location="F1",
+                             targetable=False),),
+        gaps=(Gap(element="CL", kind=GapKind.PARAMETER, detail="unreported", load_bearing=True),),
+        artifacts=(ModelArtifact(filename="m.xml", detected_format="sbml", validates=True),),
+    )
+    reloaded = dossier_from_dict(json.loads(json.dumps(dossier.to_dict())))
+    assert reloaded.to_dict() == dossier.to_dict()
+    assert dossier_digest(reloaded) == dossier_digest(dossier)
+    assert reloaded.parameters[0].confidence is ExtractionConfidence.INTERPRETED
+    assert reloaded.claims[0].reference_kind is ReferenceKind.NUMERIC
+
+
+def test_bundle_round_trips_through_json() -> None:
+    import json
+
+    from reprolith import (
+        Assumption,
+        EnginePin,
+        ModelArtifact,
+        ModelOrigin,
+        NonReconstructable,
+        RecipeStep,
+        ReconstructionBundle,
+        bundle_from_dict,
+    )
+
+    bundle = ReconstructionBundle(
+        entry="10.1/x",
+        engine_pin=EnginePin(engine="copasi", version="4.46", algorithm="lsoda"),
+        model=ModelArtifact(filename="author.xml", detected_format="sbml", validates=True),
+        origin=ModelOrigin.AUTHOR_SUPPLIED,
+        recipe=(RecipeStep(claim_id="C1", protocol="100mg IV", output="AUC", time_span="0-24h"),),
+        assumptions=(Assumption(id="k", description="ka", chosen="1.2", basis="typical",
+                                load_bearing=True, alternatives=("0.9",)),),
+        non_reconstructable=(NonReconstructable(claim_id="C2", reason="no protocol"),),
+        mismatches=("Eq 2 vs Table 1",),
+        source_dossier="10.1/x",
+    )
+    reloaded = bundle_from_dict(json.loads(json.dumps(bundle.to_dict())))
+    assert reloaded.to_dict() == bundle.to_dict()
+    assert reloaded.origin is ModelOrigin.AUTHOR_SUPPLIED
+    assert reloaded.load_bearing_assumptions()[0].id == "k"
