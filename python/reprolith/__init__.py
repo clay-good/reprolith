@@ -31,6 +31,7 @@ from .dossier import (
     ModelArtifact,
     Parameter,
 )
+from .engine import EngineUnavailable, engine_pin, engine_version, simulate
 from .enums import (
     LifecycleState,
     ModelClass,
@@ -93,6 +94,7 @@ __all__ = [
     "DossierHistory",
     "DossierRevision",
     "EnginePin",
+    "EngineUnavailable",
     "Equation",
     "ExtractionConfidence",
     "Fault",
@@ -133,6 +135,8 @@ __all__ = [
     "derive_overall",
     "describe_changes",
     "dossier_digest",
+    "engine_pin",
+    "engine_version",
     "gap_items",
     "judge_curve",
     "judge_scalar",
@@ -143,5 +147,6 @@ __all__ = [
     "render_machine",
     "revise",
     "same_modulo_run_metadata",
+    "simulate",
     "__version__",
 ]

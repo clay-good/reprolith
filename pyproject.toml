@@ -36,6 +36,10 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "ruff>=0.4", "mypy>=1.8"]
+# The pinned registered simulation engine (bootstrap task 0.1). Optional on purpose:
+# the core stays dependency-free and the required-checks gate does not need it. Install
+# with `pip install -e ".[engine]"` to run the simulation-backed tests and reconstructions.
+engine = ["python-copasi>=4.42"]
 
 [project.urls]
 Homepage = "https://github.com/clay-good/reprolith"
@@ -62,6 +66,12 @@ ignore = ["E501"]
 python_version = "3.9"
 strict = true
 files = ["python/reprolith"]
+
+# The pinned engine (python-copasi) is an optional dependency with no type stubs; it is
+# only touched behind the lazy import in reprolith.engine.
+[[tool.mypy.overrides]]
+module = "COPASI"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -5,9 +5,9 @@ a phase done until its verification holds.
 
 ## 0. Foundations
 
-- [ ] 0.1 Confirm the open-standard targets and one pinned registered engine the MVP will use → verify: a trivial hand-built model runs under the pin and returns a known output
+- [x] 0.1 Confirm the open-standard targets and one pinned registered engine the MVP will use → verify: a trivial hand-built model runs under the pin and returns a known output
 - [x] 0.2 Define the on-disk shapes for entry, dossier, reconstruction bundle, and certificate → verify: an empty example of each validates against its shape
-- [ ] 0.3 Establish the determinism harness (same inputs + pin ⇒ same certificate) → verify: two runs of the trivial model produce byte-identical certificates modulo run metadata
+- [x] 0.3 Establish the determinism harness (same inputs + pin ⇒ same certificate) → verify: two runs of the trivial model produce byte-identical certificates modulo run metadata
 
 ## 1. Catalog (MVP slice)
 
