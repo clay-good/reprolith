@@ -27,13 +27,13 @@ dependency-free.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Gap, GapKind, ModelArtifact, Parameter
 from .fba import FbaModel, judge_objective
 from .model import Certificate, EnginePin, PaperIdentity
-from .oracle import ReferenceKind, Tolerance
+from .oracle import Attribution, ReferenceKind, Tolerance
 
 #: The field-standard flux unit; the unit every medium uptake limit is recorded in.
 FLUX_UNIT = "mmol/gDW/h"
@@ -147,6 +147,7 @@ def certify_constraint_based(
     paper: PaperIdentity,
     engine_pin: EnginePin,
     tolerance: Tolerance | None = None,
+    shortfalls: Mapping[str, Attribution] | None = None,
 ) -> Certificate:
     """Certify a constraint-based dossier end to end and assemble its certificate.
 
@@ -156,10 +157,17 @@ def certify_constraint_based(
     built by the shared builder, so its overall verdict and inescapable scope flag come from the
     same rules as every other class; any unstated, load-bearing medium is surfaced in the gap
     report. ``sbml`` is the adopted model's text (it must be the artifact the dossier names).
+
+    ``shortfalls`` maps a claim id to its root-cause :class:`~reprolith.oracle.Attribution` — a
+    constraint-based failure mode such as an unspecified medium or an ambiguous objective. It is
+    required for any claim expected to fall short, exactly as the oracle refuses a bare non-pass
+    verdict; supplying it lets this path emit an honest *not-reproduced* certificate, not only a
+    reproduced one.
     """
     from .sbml import ingest_fbc_sbml
 
     model = _apply_medium(ingest_fbc_sbml(sbml), dossier.parameters)
+    attributions = shortfalls or {}
     assessments = [
         judge_objective(
             claim_id=claim.id,
@@ -171,6 +179,7 @@ def certify_constraint_based(
             lower=model.lower,
             upper=model.upper,
             tolerance=tolerance,
+            attribution=attributions.get(claim.id),
         )
         for claim in dossier.targetable_claims()
     ]

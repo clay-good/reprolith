@@ -175,3 +175,43 @@ def test_the_medium_is_genuinely_load_bearing() -> None:
     anaerobic_lower[model.reaction_index("R_EX_o2_e")] = 0.0
     anaerobic = solve_objective(model.stoichiometry, model.objective, anaerobic_lower, model.upper)
     assert anaerobic < 0.3 < aerobic
+
+
+@pytestmark_engine
+def test_certifies_an_honest_not_reproduced_verdict_with_a_root_cause() -> None:
+    # A dossier claiming a growth rate the model does not reach must be certifiable as a *failure*,
+    # not left uncertifiable: with the required constraint-based root cause supplied, the pathway
+    # emits an honest not-reproduced certificate carrying that cause.
+    from reprolith import (
+        Attribution,
+        EnginePin,
+        FailureMode,
+        Fault,
+        OverallVerdict,
+        PaperIdentity,
+        Verdict,
+        certify_constraint_based,
+    )
+
+    overclaim = DossierClaim(
+        id="overclaimed-growth", quantity="maximal growth rate", conditions="glucose minimal",
+        source_location="hypothetical over-report", reference_kind=ReferenceKind.NUMERIC,
+        reference_data=(1.5,),  # far above the ~0.874 the model can reach
+    )
+    dossier = constraint_based_dossier(
+        "overclaim", model=_adopted_model(), objective_claims=[overclaim],
+        medium=_glucose_aerobic_medium(),
+    )
+    cert = certify_constraint_based(
+        dossier, sbml=_MODEL_PATH.read_text(encoding="utf-8"),
+        paper=PaperIdentity(title="E. coli core (over-report)", doi=""),
+        engine_pin=EnginePin(engine="scipy-highs", version="1.13", algorithm="linprog-highs"),
+        shortfalls={"overclaimed-growth": Attribution(
+            mode=FailureMode.AMBIGUOUS_OBJECTIVE,
+            implicated="reported objective value exceeds the model optimum",
+            fault=Fault.MANUSCRIPT)},
+    )
+    assert cert.overall is OverallVerdict.NOT_REPRODUCED
+    (assessment,) = cert.assessments
+    assert assessment.verdict is Verdict.FAILED
+    assert assessment.root_cause == "ambiguous-biomass-or-objective-definition"
