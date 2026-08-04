@@ -66,7 +66,7 @@ def certified_from_claims(
     base = Path(base_dir)
     certificates: dict[str, Certificate] = {}
     for accession, entry in claims_dataset["entries"].items():
-        sbml = (base / entry["model_file"]).read_text()
+        sbml = (base / entry["model_file"]).read_text(encoding="utf-8")
         claims = [Claim.from_record(record) for record in entry["claims"]]
         assumptions = [Assumption(**record) for record in entry.get("assumptions", [])]
         certificates[accession] = certify_model(

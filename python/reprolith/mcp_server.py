@@ -220,7 +220,7 @@ def load_certificates(ledger: CertificateLedger, directory: Path | str) -> int:
     loaded = 0
     if path.is_dir():
         for file in sorted(path.glob("*.json")):
-            ledger.issue(certificate_from_content(json.loads(file.read_text())))
+            ledger.issue(certificate_from_content(json.loads(file.read_text(encoding="utf-8"))))
             loaded += 1
     return loaded
 
@@ -235,7 +235,7 @@ def main() -> None:  # pragma: no cover - stdio entry point
     milestone = Path(__file__).resolve().parents[2] / "datasets" / "milestone"
     catalog_file = milestone / "catalog.json"
     if catalog_file.is_file():
-        catalog = Catalog.from_dict(json.loads(catalog_file.read_text()))  # the run's real progress
+        catalog = Catalog.from_dict(json.loads(catalog_file.read_text(encoding="utf-8")))  # the run's real progress
     else:
         catalog = Catalog()
         seed_catalog(catalog)

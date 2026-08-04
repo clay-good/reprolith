@@ -99,7 +99,7 @@ def test_status_reflects_persisted_run_progress() -> None:
     from pathlib import Path
 
     catalog_file = Path(__file__).parent.parent / "datasets" / "milestone" / "catalog.json"
-    catalog = Catalog.from_dict(json.loads(catalog_file.read_text()))
+    catalog = Catalog.from_dict(json.loads(catalog_file.read_text(encoding="utf-8")))
     query = ReprolithQuery(catalog, CertificateLedger())
     status, _ = _call(query, "status", {"accession": "BIOMD0000001028"})
     assert status["state"] == "certified"

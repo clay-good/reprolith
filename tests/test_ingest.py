@@ -44,7 +44,7 @@ def test_ingest_round_trips_a_built_model() -> None:
 
 
 def test_ingests_a_real_biomodels_pkpd_model() -> None:
-    sbml = _FIXTURE.read_text()
+    sbml = _FIXTURE.read_text(encoding="utf-8")
     dossier = ingest_sbml(sbml, entry="BIOMD0000000241", source_label="BioModels BIOMD0000000241")
 
     # A real 5-compartment PK/PD model: gut, plasma, peripheral, effect, tolerance.
@@ -63,7 +63,7 @@ def test_real_model_runs_under_the_pin() -> None:
     pytest.importorskip("COPASI", reason="python-copasi not installed")
     from reprolith import simulate
 
-    sbml = _FIXTURE.read_text()
+    sbml = _FIXTURE.read_text(encoding="utf-8")
     times, values = simulate(sbml, "C_p", duration=10.0, steps=10)
     # The plasma concentration is produced and finite across the run.
     assert len(values) == 11
@@ -72,7 +72,7 @@ def test_real_model_runs_under_the_pin() -> None:
 
 def test_ingests_parameter_state_variables() -> None:
     # Overgaard2007 ships no species: its states are SBML parameters with rate rules.
-    sbml = (Path(__file__).parent / "fixtures" / "BIOMD0000000238.xml").read_text()
+    sbml = (Path(__file__).parent / "fixtures" / "BIOMD0000000238.xml").read_text(encoding="utf-8")
     dossier = ingest_sbml(sbml, entry="BIOMD0000000238", source_label="BioModels BIOMD0000000238")
     assert set(dossier.state_variables) == {"M", "T", "BR"}
     ics = {p.name for p in dossier.initial_conditions}

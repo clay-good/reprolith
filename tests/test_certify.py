@@ -65,7 +65,7 @@ def test_claim_from_record_defaults() -> None:
 
 
 def test_claims_dataset_records_parse() -> None:
-    data = json.loads(_CLAIMS.read_text())
+    data = json.loads(_CLAIMS.read_text(encoding="utf-8"))
     for entry in data["entries"].values():
         assert entry["model_file"] and entry["paper"]["doi"]
         claims = [Claim.from_record(r) for r in entry["claims"]]

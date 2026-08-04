@@ -52,12 +52,12 @@ _REPORTED_CMAX_1000 = 11.2  # nmol/mL, 1000 mg PO, Chung dataset
 
 def _cmax_shipped() -> float:
     # The model as shipped: its default dose (389.92 mg) is the 500 mg HCl scenario.
-    _, values = simulate(_MODEL.read_text(), "mPlasmaVenous", duration=24.0, steps=480)
+    _, values = simulate(_MODEL.read_text(encoding="utf-8"), "mPlasmaVenous", duration=24.0, steps=480)
     return max(values)
 
 
 def _cmax_at_dose(dose_mg: float) -> float:
-    document = libsbml.readSBMLFromString(_MODEL.read_text())
+    document = libsbml.readSBMLFromString(_MODEL.read_text(encoding="utf-8"))
     document.getModel().getParameter("Metformin_Dose_in_Lumen_in_mg").setValue(dose_mg)
     _, values = simulate(libsbml.writeSBMLToString(document), "mPlasmaVenous", duration=24.0, steps=480)
     return max(values)
@@ -106,7 +106,7 @@ def test_two_claim_certificate_via_certify_model() -> None:
     # verdict is downgraded from a clean pass.
     free_base = 1000.0 * _MW_FREE_BASE / _MW_HCL
     cert = certify_model(
-        _MODEL.read_text(),
+        _MODEL.read_text(encoding="utf-8"),
         paper=_PAPER,
         engine_pin=_PIN,
         duration=24.0,
