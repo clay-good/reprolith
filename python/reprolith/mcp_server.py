@@ -119,6 +119,27 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             "required": ["sbml", "species", "reference", "duration", "steps"],
         },
     },
+    {
+        "name": "lint_objective",
+        "description": (
+            "Deterministic FBA linter: solve a supplied SBML-fbc model's objective and judge its "
+            "optimum against a reported value, under an optional medium (exchange reaction -> max "
+            "uptake). Needs the engine and fba extras."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "sbml": {"type": "string", "description": "the SBML-fbc model to solve"},
+                "reported": {"type": "number", "description": "the reported optimal objective value"},
+                "medium": {
+                    "type": "object",
+                    "additionalProperties": {"type": "number"},
+                    "description": "optional exchange-reaction id -> maximum uptake",
+                },
+            },
+            "required": ["sbml", "reported"],
+        },
+    },
 ]
 
 
@@ -253,6 +274,14 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
             steps=arguments["steps"],
         )
         return result.to_dict()
+    if name == "lint_objective":
+        from .linter import lint_objective
+
+        return lint_objective(
+            arguments["sbml"],
+            reported=arguments["reported"],
+            medium=arguments.get("medium"),
+        ).to_dict()
     raise KeyError(f"unknown tool: {name}")
 
 

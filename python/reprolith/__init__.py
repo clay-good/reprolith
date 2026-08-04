@@ -70,7 +70,7 @@ from .fba import (
     solve_objective,
 )
 from .ingest import ingest_sbml
-from .linter import LintResult, lint_curve
+from .linter import LintResult, lint_curve, lint_objective
 from .mcp_server import handle_request, serve_stdio
 from .model import (
     Assumption,
@@ -233,6 +233,7 @@ __all__ = [
     "judge_objective",
     "judge_scalar",
     "lint_curve",
+    "lint_objective",
     "load_claims_dataset",
     "load_test_set",
     "normalized_curve_distance",

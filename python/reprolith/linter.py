@@ -16,7 +16,7 @@ Running the engine needs the optional ``engine`` extra; the comparison itself is
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -28,6 +28,7 @@ from .oracle import (
     Tolerance,
     default_tolerance,
     normalized_curve_distance,
+    relative_error,
     verdict_for,
 )
 from .scope import Scope
@@ -88,4 +89,46 @@ def lint_curve(
     )
 
 
-__all__ = ["LintResult", "lint_curve"]
+def lint_objective(
+    sbml: str,
+    *,
+    reported: float,
+    medium: Mapping[str, float] | None = None,
+    tolerance: Tolerance | None = None,
+    reference_kind: ReferenceKind = ReferenceKind.NUMERIC,
+) -> LintResult:
+    """Check a supplied SBML-fbc model's optimal objective against a reported value (inline FBA).
+
+    The constraint-based counterpart of :func:`lint_curve`: ingest the model, apply the optional
+    ``medium`` (each entry an exchange reaction's maximum uptake, applied as that reaction's uptake
+    bound), solve the objective linear program, and judge the optimum against ``reported`` with the
+    scalar oracle and its declared tolerance. Same deterministic, scope-flagged ``LintResult`` an
+    agent can gate on — never a bare boolean.
+
+    Needs the ``engine`` extra (python-libsbml for fbc ingest) and the ``fba`` extra (scipy's LP
+    solver), both imported lazily. A ``medium`` entry naming a reaction the model does not contain
+    raises, so a typo is surfaced rather than silently ignored.
+    """
+    from .fba import solve_objective
+    from .sbml import ingest_fbc_sbml
+
+    model = ingest_fbc_sbml(sbml)
+    lower = list(model.lower)
+    for reaction_id, uptake in (medium or {}).items():
+        if reaction_id not in model.reaction_ids:
+            raise ValueError(
+                f"medium names reaction {reaction_id!r}, which the model does not contain"
+            )
+        lower[model.reaction_index(reaction_id)] = -abs(uptake)
+    predicted = solve_objective(model.stoichiometry, model.objective, lower, model.upper)
+    tol = tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind)
+    error = relative_error(reported, predicted)
+    return LintResult(
+        verdict=verdict_for(error, tol),
+        method=ComparisonMethod.SCALAR_RELATIVE_ERROR.value,
+        discrepancy=f"relative error {error:.4f} (optimum {predicted:.6g} vs reported {reported:.6g})",
+        tolerance=tol.label(),
+    )
+
+
+__all__ = ["LintResult", "lint_curve", "lint_objective"]

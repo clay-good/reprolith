@@ -49,7 +49,8 @@ qualifications.
 | `backlog_health` | — | Backlog depth by state, class, and difficulty, and the labelled mix |
 | `dossier` | `accession` | The ingested dossier — extracted model structure |
 | `bundle` | `accession` | The reconstruction bundle — model, recipe, assumptions |
-| `lint` | `sbml`, `species`, `reference`, `duration`, `steps` | A deterministic per-claim verdict (needs the engine extra) |
+| `lint` | `sbml`, `species`, `reference`, `duration`, `steps` | A deterministic per-claim verdict for an ODE model curve (needs the engine extra) |
+| `lint_objective` | `sbml`, `reported`, `medium` (optional) | A deterministic verdict for an SBML-fbc model's optimal objective under an optional medium (needs the engine and fba extras) |
 
 ## Effectful tool
 

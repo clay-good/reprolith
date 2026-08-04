@@ -92,6 +92,28 @@ def test_lint_tool_is_registered() -> None:
     assert "lint" in {t["name"] for t in TOOL_DEFINITIONS}
 
 
+def test_lint_objective_tool_is_registered() -> None:
+    assert "lint_objective" in {t["name"] for t in TOOL_DEFINITIONS}
+
+
+def test_lint_objective_tool_returns_a_scope_qualified_verdict() -> None:
+    from pathlib import Path
+
+    import pytest
+
+    pytest.importorskip("libsbml", reason="the engine extra (python-libsbml) is not installed")
+    pytest.importorskip("scipy", reason="the fba extra (scipy) is not installed")
+    query, _ = _fixture()
+    sbml = (Path(__file__).parent.parent / "datasets" / "constraint_based" / "e_coli_core.xml").read_text(
+        encoding="utf-8"
+    )
+    result, is_error = _call(query, "lint_objective", {"sbml": sbml, "reported": 0.873922})
+    assert not is_error
+    assert result["verdict"] == "reproduced"
+    assert result["method"] == "scalar-relative-error"
+    assert result["scope"]["machine"] == "reproducible-not-correct-not-clinical"
+
+
 def test_dossier_tool_serves_the_stored_ingested_dossier() -> None:
     # The metformin dossier the milestone run ingested and stored is served for inspection.
     from pathlib import Path
