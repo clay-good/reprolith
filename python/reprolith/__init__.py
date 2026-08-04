@@ -38,12 +38,16 @@ from .dossier import (
     Parameter,
     estimate_difficulty,
 )
+from .corroboration import EngineCorroboration, corroborate_curve
 from .engine import (
     EngineUnavailable,
     NonFiniteSimulation,
     engine_pin,
     engine_version,
+    roadrunner_pin,
+    roadrunner_version,
     simulate,
+    simulate_with_roadrunner,
 )
 from .enums import (
     LifecycleState,
@@ -151,6 +155,7 @@ __all__ = [
     "DossierClaim",
     "DossierHistory",
     "DossierRevision",
+    "EngineCorroboration",
     "EnginePin",
     "EngineUnavailable",
     "Equation",
@@ -209,6 +214,7 @@ __all__ = [
     "claim_counts",
     "constraint_based_dossier",
     "close_gap",
+    "corroborate_curve",
     "assess_match",
     "compare_frog",
     "compare_sbml_to_dossier",
@@ -246,7 +252,10 @@ __all__ = [
     "render_machine",
     "reverify_dependents",
     "revise",
+    "roadrunner_pin",
+    "roadrunner_version",
     "run_test_set",
+    "simulate_with_roadrunner",
     "same_modulo_run_metadata",
     "serve_stdio",
     "seed_catalog",

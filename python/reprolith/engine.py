@@ -23,6 +23,12 @@ from .model import EnginePin
 ENGINE = "copasi"
 ALGORITHM = "deterministic-lsoda"
 
+# A second, independently-implemented registered engine, used for cross-engine corroboration
+# (spec: simulation-oracle — engine-sensitivity). libRoadRunner shares no code with COPASI, so
+# agreement between the two separates a model's behavior from a single solver's quirks.
+ROADRUNNER_ENGINE = "roadrunner"
+ROADRUNNER_ALGORITHM = "cvode"
+
 
 class EngineUnavailable(RuntimeError):
     """Raised when a simulation is requested but the optional engine is not installed."""
@@ -98,6 +104,49 @@ def simulate(
         copasi.CRootContainer.removeDatamodel(datamodel)
 
 
+def _roadrunner() -> Any:
+    try:
+        import roadrunner
+    except ImportError as exc:  # pragma: no cover - exercised only without the extra
+        raise EngineUnavailable(
+            "the roadrunner corroboration engine is not installed; install the 'corroborate' extra "
+            "(pip install 'reprolith[corroborate]')"
+        ) from exc
+    return roadrunner
+
+
+def roadrunner_version() -> str:
+    """The version string of the installed libRoadRunner corroboration engine."""
+    return str(_roadrunner().__version__)
+
+
+def roadrunner_pin() -> EnginePin:
+    """The :class:`~reprolith.model.EnginePin` for the libRoadRunner corroboration engine."""
+    return EnginePin(engine=ROADRUNNER_ENGINE, version=roadrunner_version(), algorithm=ROADRUNNER_ALGORITHM)
+
+
+def simulate_with_roadrunner(
+    sbml: str,
+    species: str,
+    *,
+    duration: float,
+    steps: int,
+) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    """Simulate an SBML model under libRoadRunner and return a ``species`` time course.
+
+    The independent-engine counterpart of :func:`simulate`, with the same ``(times, values)`` shape
+    and the same uniform grid over ``[0, duration]``, so the two engines' outputs are directly
+    comparable for cross-engine corroboration. Needs the ``corroborate`` extra (libRoadRunner).
+    """
+    roadrunner = _roadrunner()
+    runner = roadrunner.RoadRunner(sbml)
+    runner.timeCourseSelections = ["time", species]
+    result = runner.simulate(0.0, float(duration), int(steps) + 1)
+    times = tuple(float(duration) * i / int(steps) for i in range(len(result)))
+    values = tuple(float(row[1]) for row in result)
+    return times, require_finite(values, species)
+
+
 def require_finite(values: tuple[float, ...], species: str) -> tuple[float, ...]:
     """Return ``values`` unless any is non-finite (inf/nan), in which case raise.
 
@@ -127,9 +176,14 @@ def _species_column(series: Any, name: str, datamodel: Any) -> int:
 __all__ = [
     "ALGORITHM",
     "ENGINE",
+    "ROADRUNNER_ALGORITHM",
+    "ROADRUNNER_ENGINE",
     "EngineUnavailable",
     "NonFiniteSimulation",
     "engine_pin",
     "engine_version",
+    "roadrunner_pin",
+    "roadrunner_version",
     "simulate",
+    "simulate_with_roadrunner",
 ]
