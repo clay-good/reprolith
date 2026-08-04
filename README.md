@@ -102,7 +102,7 @@ maximal growth rate (0.873922) to every published digit — with a
 [worked example](datasets/constraint_based/worked_example/) walking the whole dossier → certificate.
 
 ```bash
-pip install -e ".[dev,fba]"   # then pytest -q runs the FBA oracle tests too
+pip install -e ".[dev,engine,fba]"   # fba brings the LP solver; engine (libsbml) reads the .xml model
 ```
 
 Reprolith gets better when people who know the science validate its judgment. When it isn't sure
