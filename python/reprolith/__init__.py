@@ -31,6 +31,7 @@ from .dossier import (
     GapKind,
     ModelArtifact,
     Parameter,
+    estimate_difficulty,
 )
 from .engine import (
     EngineUnavailable,
@@ -173,6 +174,7 @@ __all__ = [
     "dossier_digest",
     "dossier_from_dict",
     "engine_pin",
+    "estimate_difficulty",
     "engine_version",
     "gap_items",
     "handle_request",

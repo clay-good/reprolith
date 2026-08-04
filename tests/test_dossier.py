@@ -122,3 +122,30 @@ def test_full_dossier_round_trips_through_to_dict() -> None:
     assert out["state_variables"] == ["A_gut", "A_central"]
     assert out["artifacts"][0]["detected_format"] == "sbml"
     assert out["initial_conditions"][0]["name"] == "A_gut"
+
+
+# --- difficulty estimate from observable signals (spec: model-catalog) --------------
+
+
+def test_difficulty_estimate_from_signals() -> None:
+    from reprolith import estimate_difficulty
+
+    base = dict(entry="x", state_variables=("A",),
+                equations=(Equation(target="A", expression="-A", source_location="e"),))
+
+    # A valid shipped model and no gaps: adopt-and-verify, low difficulty.
+    low = Dossier(**base, artifacts=(ModelArtifact(filename="m.xml", detected_format="sbml", validates=True),))
+    assert estimate_difficulty(low) == "low"
+
+    # A load-bearing gap makes it high regardless of the model.
+    high = Dossier(**base, artifacts=(ModelArtifact(filename="m.xml", detected_format="sbml", validates=True),),
+                   gaps=(Gap(element="CL", kind=GapKind.PARAMETER, detail="x", load_bearing=True),))
+    assert estimate_difficulty(high) == "high"
+
+    # A non-load-bearing gap with a model is medium.
+    medium = Dossier(**base, artifacts=(ModelArtifact(filename="m.xml", detected_format="sbml", validates=True),),
+                     gaps=(Gap(element="unit", kind=GapKind.UNIT, detail="x"),))
+    assert estimate_difficulty(medium) == "medium"
+
+    # No model structure at all is high.
+    assert estimate_difficulty(Dossier(entry="x")) == "high"

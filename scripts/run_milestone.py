@@ -44,12 +44,6 @@ def main() -> None:
     out = DATASETS / "milestone" / "agreement_report.json"
     out.write_text(json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n")
 
-    # Persist the advanced catalog so the durable registry reflects the run (each entry's
-    # lifecycle state and history), and can be reloaded — e.g. by the MCP server.
-    (DATASETS / "milestone" / "catalog.json").write_text(
-        json.dumps(catalog.to_dict(), indent=2, sort_keys=True) + "\n"
-    )
-
     # Store each certified certificate's content as JSON so it can be re-opened and served
     # (design goal 3) without recomputing it — e.g. loaded into the MCP server's ledger.
     cert_dir = DATASETS / "milestone" / "certificates"
@@ -65,10 +59,12 @@ def main() -> None:
     from reprolith import (
         Assumption,
         Claim,
+        Identifiers,
         ModelArtifact,
         ModelOrigin,
         RecipeStep,
         ReconstructionBundle,
+        estimate_difficulty,
         ingest_sbml,
     )
 
@@ -82,6 +78,10 @@ def main() -> None:
         (dossier_dir / f"{accession}.json").write_text(
             json.dumps(dossier.to_dict(), indent=2, sort_keys=True) + "\n"
         )
+        # Record the advisory difficulty from the ingested dossier's observable signals.
+        catalog_entry = catalog.find(Identifiers(title="", accession=accession))
+        if catalog_entry is not None:
+            catalog_entry.difficulty = estimate_difficulty(dossier)
         recipe = tuple(
             RecipeStep(claim_id=(c := Claim.from_record(rec)).claim_id, protocol=c.source_location,
                        output=c.species, time_span=f"0-{entry['duration']}")
@@ -99,6 +99,12 @@ def main() -> None:
         (bundle_dir / f"{accession}.json").write_text(
             json.dumps(bundle.to_dict(), indent=2, sort_keys=True) + "\n"
         )
+
+    # Persist the advanced catalog (lifecycle state, history, and difficulty) so the durable
+    # registry reflects the run and can be reloaded — e.g. by the MCP server.
+    (DATASETS / "milestone" / "catalog.json").write_text(
+        json.dumps(catalog.to_dict(), indent=2, sort_keys=True) + "\n"
+    )
 
     counts = Counter(cert.overall.value for cert in certificates)
     print(f"entries: {len(certificates)} | verdicts: {dict(counts)}")

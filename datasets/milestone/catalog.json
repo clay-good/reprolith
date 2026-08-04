@@ -33,6 +33,8 @@
         "pubmed_id": null,
         "title": "Mager2005 - Quasi-equilibrium pharmacokinetic model for drugs exhibiting target-mediated drug disposition"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -69,6 +71,8 @@
         "pubmed_id": null,
         "title": "Shi1993_Caffeine_pressor_tolerance"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -105,6 +109,8 @@
         "pubmed_id": null,
         "title": "Sluka2016 - Acetaminophen PBPK"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -141,6 +147,8 @@
         "pubmed_id": null,
         "title": "Landberg2009 - Alkylresorcinol Dose Response"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -177,6 +185,8 @@
         "pubmed_id": null,
         "title": "Sluka2016 - Acetaminophen metabolism"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -213,6 +223,8 @@
         "pubmed_id": null,
         "title": "Benson2014 - FAAH inhibitors for the treatment of osteoarthritic pain"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -249,6 +261,8 @@
         "pubmed_id": null,
         "title": "Demin2013 - PKPD behaviour - 5-Lipoxygenase inhibitors"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -285,6 +299,8 @@
         "pubmed_id": null,
         "title": "Overgaard2007_PDmodel_IL21"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -321,6 +337,8 @@
         "pubmed_id": null,
         "title": "Roblitz2013 - Menstrual Cycle following GnRH analogue administration"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -357,6 +375,8 @@
         "pubmed_id": null,
         "title": "Dwivedi2014 - Healthy Volunteer IL6 Model"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -393,6 +413,8 @@
         "pubmed_id": null,
         "title": "Dwivedi2014 - Crohns IL6 Disease model - Anti-IL6 Antibody"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -429,6 +451,8 @@
         "pubmed_id": null,
         "title": "Dwivedi2014 - Crohns IL6 Disease model - Anti-IL6R Antibody"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -465,6 +489,8 @@
         "pubmed_id": null,
         "title": "Dwivedi2014 - Crohns IL6 Disease model - sgp130 activity"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -501,6 +527,8 @@
         "pubmed_id": null,
         "title": "Grange2001 - L Dopa PK model"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -537,6 +565,8 @@
         "pubmed_id": null,
         "title": "Grange2001 - PK interaction of L-dopa and benserazide"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -573,6 +603,8 @@
         "pubmed_id": null,
         "title": "Lockwood2006 - Alzheimer's Disease PBPK model"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -609,11 +641,13 @@
         "pubmed_id": null,
         "title": "Zake2021 - PBPK model of metformin in mice: single dose intravenous"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
     {
-      "difficulty": null,
+      "difficulty": "low",
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
@@ -675,6 +709,8 @@
         "pubmed_id": null,
         "title": "Zake2021 - PBPK model of metformin in humans, single PO dose"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "certified"
     },
@@ -711,6 +747,8 @@
         "pubmed_id": null,
         "title": "Zake2021 - PBPK model of metformin in humans, eight PO administrations with 12h interval"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -747,6 +785,8 @@
         "pubmed_id": null,
         "title": "Zake2021 - PBPK model of metformin in mice: single dose peroral"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -783,6 +823,8 @@
         "pubmed_id": null,
         "title": "Palsson2013 - Fully-integrated immune response model (FIRM)"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -819,6 +861,8 @@
         "pubmed_id": null,
         "title": "Loccisano2011 - pharmacokinetics of PFOA and PFOS in the monkey"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -855,6 +899,8 @@
         "pubmed_id": null,
         "title": "Koeller2021 - PBPK model of ICG liver function tests"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -891,6 +937,8 @@
         "pubmed_id": null,
         "title": "Peng2013 - melatonin: effects of light and routes of administration"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -927,6 +975,8 @@
         "pubmed_id": null,
         "title": "KaratzaKaralis2020 - CYP mediated losartan metabolism"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -963,6 +1013,8 @@
         "pubmed_id": null,
         "title": "Grzegorzewski2022 - PBPK model of dextromethorphan"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -999,6 +1051,8 @@
         "pubmed_id": null,
         "title": "Yang2006_Methadone_PKmodel"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -1035,6 +1089,8 @@
         "pubmed_id": null,
         "title": "Melhem 2017 - Neutropenia Model"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -1071,6 +1127,8 @@
         "pubmed_id": null,
         "title": "Sier2017_estrogen_PBPK_GSMN"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -1107,6 +1165,8 @@
         "pubmed_id": null,
         "title": "Abbiati2021 - Avadomide-induced neutropenia model"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     },
@@ -1143,6 +1203,8 @@
         "pubmed_id": null,
         "title": "Zager2007_Genistein_Biliary_Excretion"
       },
+      "lease_expires": null,
+      "leased_to": null,
       "model_class": "ode-pkpd",
       "state": "blocked"
     }

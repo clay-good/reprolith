@@ -218,6 +218,27 @@ class Dossier:
         }
 
 
+def estimate_difficulty(dossier: Dossier) -> str:
+    """Advisory difficulty estimate from a dossier's observable signals (spec: model-catalog).
+
+    Reads the signals the spec names — a runnable model file, parameter/equation completeness,
+    and how many gaps (especially load-bearing ones) reconstruction must close:
+
+    * ``low`` — a valid shipped model and no gaps: adopt-and-verify with nothing to assume;
+    * ``high`` — a load-bearing gap, or many gaps, or no usable model structure at all;
+    * ``medium`` — otherwise.
+
+    Never a gate: the estimate routes and prioritizes, it does not block a requester.
+    """
+    has_runnable_model = any(a.validates for a in dossier.artifacts)
+    has_structure = bool(dossier.equations or dossier.state_variables)
+    if dossier.load_bearing_gaps() or len(dossier.gaps) > 3 or not has_structure:
+        return "high"
+    if has_runnable_model and not dossier.gaps:
+        return "low"
+    return "medium"
+
+
 def _duplicates(label: str, names: list[str]) -> list[str]:
     seen: set[str] = set()
     dupes: list[str] = []
@@ -237,4 +258,5 @@ __all__ = [
     "GapKind",
     "ModelArtifact",
     "Parameter",
+    "estimate_difficulty",
 ]
