@@ -100,6 +100,7 @@ from .sbml import build_model_sbml, compare_sbml_to_dossier
 from .scope import Scope
 from .seed import load_test_set, seed_catalog
 from .supersession import CertificateLedger, describe_changes
+from .verification import VerificationDecision, VerificationItem, VerificationQueue
 
 __version__ = "0.0.1"
 
@@ -152,6 +153,9 @@ __all__ = [
     "ToleranceSource",
     "Transition",
     "Verdict",
+    "VerificationDecision",
+    "VerificationItem",
+    "VerificationQueue",
     "advance_to_outcome",
     "blocked_certificate",
     "build_agreement_report",
