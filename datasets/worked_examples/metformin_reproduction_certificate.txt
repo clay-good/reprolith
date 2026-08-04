@@ -1,0 +1,17 @@
+REPRODUCTION CERTIFICATE — Zake2021 - PBPK model of metformin in humans, single PO dose
+  doi=10.1371/journal.pone.0249594
+Engine pin: copasi 4.46.300 / deterministic-lsoda
+
+OVERALL: partially-reproduced
+  claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
+  assumption-qualified claims: Cmax-1000mg
+
+CLAIMS
+  [Cmax-1000mg] plasma Cmax after 1000 mg single oral dose: reproduced [assumption-qualified] (source Chung dataset (reported 11.2 nmol/mL) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+
+ASSUMPTIONS (supplied by Reprolith, not the paper)
+  [dose-salt-form] the stated 1000 mg oral dose is metformin HCl; the model's dose input is free base -> 779.9 mg free base (1000 mg HCl x 129.16/165.62) [load-bearing]
+      basis: model default 389.92 mg equals 500 mg HCl expressed as free base; clinical doses are the HCl salt (attributed to reprolith)
+
+SCOPE
+  This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.
