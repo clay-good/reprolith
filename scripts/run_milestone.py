@@ -59,17 +59,45 @@ def main() -> None:
             json.dumps(cert.content(), indent=2, sort_keys=True) + "\n"
         )
 
-    # Ingest and store each certified entry's dossier (its extracted model structure), so the
-    # MCP server can serve it for inspection.
-    from reprolith import ingest_sbml
+    # Ingest and store each certified entry's dossier (its extracted model structure) and its
+    # reconstruction bundle (the adopted model, the recipe, and the assumptions), so the MCP
+    # server can serve both for inspection.
+    from reprolith import (
+        Assumption,
+        Claim,
+        ModelArtifact,
+        ModelOrigin,
+        RecipeStep,
+        ReconstructionBundle,
+        ingest_sbml,
+    )
 
     dossier_dir = DATASETS / "milestone" / "dossiers"
+    bundle_dir = DATASETS / "milestone" / "bundles"
     dossier_dir.mkdir(exist_ok=True)
+    bundle_dir.mkdir(exist_ok=True)
     for accession, entry in claims["entries"].items():
         sbml = (DATASETS / entry["model_file"]).read_text(encoding="utf-8")
         dossier = ingest_sbml(sbml, entry=accession, source_label=f"BioModels {accession}")
         (dossier_dir / f"{accession}.json").write_text(
             json.dumps(dossier.to_dict(), indent=2, sort_keys=True) + "\n"
+        )
+        recipe = tuple(
+            RecipeStep(claim_id=(c := Claim.from_record(rec)).claim_id, protocol=c.source_location,
+                       output=c.species, time_span=f"0-{entry['duration']}")
+            for rec in entry["claims"]
+        )
+        bundle = ReconstructionBundle(
+            entry=accession,
+            engine_pin=pin,
+            model=ModelArtifact(filename=entry["model_file"], detected_format="sbml", validates=True),
+            origin=ModelOrigin.AUTHOR_SUPPLIED,
+            recipe=recipe,
+            assumptions=tuple(Assumption(**a) for a in entry.get("assumptions", [])),
+            source_dossier=accession,
+        )
+        (bundle_dir / f"{accession}.json").write_text(
+            json.dumps(bundle.to_dict(), indent=2, sort_keys=True) + "\n"
         )
 
     counts = Counter(cert.overall.value for cert in certificates)

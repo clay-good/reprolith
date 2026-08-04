@@ -81,6 +81,15 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "bundle",
+        "description": "The reconstruction bundle for an entry accession — model, recipe, assumptions.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"accession": {"type": "string"}},
+            "required": ["accession"],
+        },
+    },
+    {
         "name": "lint",
         "description": (
             "Deterministic linter: run a supplied SBML model under the pinned engine and judge "
@@ -121,6 +130,8 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return query.certificates_for(**_identifier_kwargs(arguments))
     if name == "dossier":
         return query.dossier(arguments["accession"])
+    if name == "bundle":
+        return query.bundle(arguments["accession"])
     if name == "lint":
         from .linter import lint_curve
 
@@ -237,17 +248,20 @@ def load_certificates(ledger: CertificateLedger, directory: Path | str) -> int:
 
 
 def load_dossiers(directory: Path | str) -> dict[str, Any]:
-    """Load stored dossier JSON files into a dict keyed by their filename stem (the accession)."""
+    """Load stored JSON files into a dict keyed by their filename stem (the accession).
+
+    Shared by the dossier and bundle directories: both store one JSON per entry accession.
+    """
     path = Path(directory)
-    dossiers: dict[str, Any] = {}
+    loaded: dict[str, Any] = {}
     if path.is_dir():
         for file in sorted(path.glob("*.json")):
-            dossiers[file.stem] = json.loads(file.read_text(encoding="utf-8"))
-    return dossiers
+            loaded[file.stem] = json.loads(file.read_text(encoding="utf-8"))
+    return loaded
 
 
 def main() -> None:  # pragma: no cover - stdio entry point
-    """Run the server over stdio, loading the persisted catalog, certificates, and dossiers."""
+    """Run the server over stdio, loading the persisted catalog, certificates, and artifacts."""
     import json
 
     from .catalog import Catalog
@@ -263,7 +277,8 @@ def main() -> None:  # pragma: no cover - stdio entry point
     ledger = CertificateLedger()
     load_certificates(ledger, milestone / "certificates")
     dossiers = load_dossiers(milestone / "dossiers")
-    serve_stdio(ReprolithQuery(catalog, ledger, dossiers))
+    bundles = load_dossiers(milestone / "bundles")
+    serve_stdio(ReprolithQuery(catalog, ledger, dossiers, bundles))
 
 
 if __name__ == "__main__":  # pragma: no cover

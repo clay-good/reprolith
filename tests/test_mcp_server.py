@@ -108,6 +108,19 @@ def test_dossier_tool_serves_the_stored_ingested_dossier() -> None:
     assert not is_error and missing is None
 
 
+def test_bundle_tool_serves_the_stored_reconstruction_bundle() -> None:
+    from pathlib import Path
+
+    bundle_dir = Path(__file__).parent.parent / "datasets" / "milestone" / "bundles"
+    bundles = load_dossiers(bundle_dir)  # same loader (one JSON per accession)
+    query = ReprolithQuery(Catalog(), CertificateLedger(), bundles=bundles)
+    bundle, is_error = _call(query, "bundle", {"accession": "BIOMD0000001028"})
+    assert not is_error
+    assert bundle["origin"] == "author-supplied"  # the metformin model was adopted
+    assert len(bundle["recipe"]) == 2  # a recipe step per claim
+    assert bundle["assumptions"]  # the salt-form assumption travels
+
+
 def test_status_reflects_persisted_run_progress() -> None:
     # The persisted milestone catalog records the run's lifecycle; status shows the metformin
     # entry as certified, loaded from disk with no re-run.

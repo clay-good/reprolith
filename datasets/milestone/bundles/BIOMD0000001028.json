@@ -1,0 +1,42 @@
+{
+  "assumptions": [
+    {
+      "alternatives": [],
+      "attributed_to": "reprolith",
+      "basis": "model default 389.92 mg equals 500 mg HCl expressed as free base; clinical doses are the HCl salt",
+      "chosen": "779.9 mg free base (1000 mg HCl x 129.16/165.62)",
+      "description": "the stated 1000 mg oral dose is metformin HCl; the model's dose input is free base",
+      "id": "dose-salt-form",
+      "load_bearing": true
+    }
+  ],
+  "engine_pin": {
+    "algorithm": "deterministic-lsoda",
+    "engine": "copasi",
+    "version": "4.46.300 (Source)"
+  },
+  "entry": "BIOMD0000001028",
+  "mismatches": [],
+  "model": {
+    "detected_format": "sbml",
+    "filename": "worked_examples/Zake2021_metformin_human_single_PO.xml",
+    "validates": true
+  },
+  "non_reconstructable": [],
+  "origin": "author-supplied",
+  "recipe": [
+    {
+      "claim_id": "Cmax-500mg",
+      "output": "mPlasmaVenous",
+      "protocol": "Table 4, Zaharenko dataset (reported 6.2 nmol/mL)",
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-1000mg",
+      "output": "mPlasmaVenous",
+      "protocol": "Chung dataset (reported 11.2 nmol/mL)",
+      "time_span": "0-24.0"
+    }
+  ],
+  "source_dossier": "BIOMD0000001028"
+}

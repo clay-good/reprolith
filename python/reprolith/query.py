@@ -39,12 +39,15 @@ class ReprolithQuery:
         catalog: Catalog,
         ledger: CertificateLedger,
         dossiers: dict[str, dict[str, Any]] | None = None,
+        bundles: dict[str, dict[str, Any]] | None = None,
     ) -> None:
         self._catalog = catalog
         self._ledger = ledger
-        # Ingested dossiers keyed by entry accession, so an agent can inspect the model
-        # structure Reprolith extracted (design goal 3). Empty when none are loaded.
+        # Ingested dossiers and reconstruction bundles keyed by entry accession, so an agent can
+        # inspect the model structure Reprolith extracted and how it reconstructed it (design
+        # goal 3). Empty when none are loaded.
         self._dossiers = dossiers or {}
+        self._bundles = bundles or {}
 
     # --- catalog / status (blind: no ground-truth label leaves the catalog) --------
 
@@ -81,6 +84,10 @@ class ReprolithQuery:
     def dossier(self, accession: str) -> dict[str, Any] | None:
         """The ingested dossier for an entry accession — its extracted model structure."""
         return self._dossiers.get(accession)
+
+    def bundle(self, accession: str) -> dict[str, Any] | None:
+        """The reconstruction bundle for an entry accession — the model, recipe, and assumptions."""
+        return self._bundles.get(accession)
 
     # --- certificates / verdicts (scope always travels) ----------------------------
 
