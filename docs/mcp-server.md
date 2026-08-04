@@ -58,6 +58,7 @@ catalog (as `reprolith-mcp` does):
 | Tool | Arguments | Effect |
 |---|---|---|
 | `submit_paper` | `title` (required), `doi`/`pubmed_id`/`accession`/`model_class` | Adds a candidate paper as a queued `ode-pkpd` entry and reports what changed. Submitting the same paper again resolves to the existing entry — never a duplicate — and the change is persisted. |
+| `claim_work` | `requester` (required), `model_class`, `lease_seconds` (default 3600) | Claims the next best claimable entry and leases it to the requester, so concurrent agents don't collide. Ground-truth-labelled work is offered first; an expired lease returns the entry to the pool. Returns the leased entry or that there is no eligible work. |
 
 ## Example
 
@@ -76,6 +77,5 @@ but only under a load-bearing salt-form assumption, which the certificate flags.
 
 The server computes no verdict of its own: every tool delegates to the same query surface and
 oracle the repository uses, so it can never disagree with the repository. Read-only and
-effectful tools are separated: the effectful `submit_paper` appears only with a mutable catalog.
-Lease-aware work handoff (claiming and progressing work) is not yet part of this surface — the
-repository is the work surface for that.
+effectful tools are separated: the effectful `submit_paper` and `claim_work` appear only when the
+server runs with a mutable catalog, and a read-only server hides and refuses them.

@@ -139,6 +139,22 @@ EFFECTFUL_TOOLS: list[dict[str, Any]] = [
             "required": ["title"],
         },
     },
+    {
+        "name": "claim_work",
+        "description": (
+            "EFFECTFUL: claim the next best unit of work, leased to the requester so concurrent "
+            "requesters do not collide. Returns the leased entry, or that there is no eligible work."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "requester": {"type": "string"},
+                "model_class": {"type": "string", "description": "optional filter"},
+                "lease_seconds": {"type": "number", "description": "default 3600"},
+            },
+            "required": ["requester"],
+        },
+    },
 ]
 
 
@@ -157,6 +173,20 @@ def submit_paper(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
         "resolved_to_existing": existing is not None,
         "entry": entry.blind().to_dict(),
     }
+
+
+def claim_work(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dict[str, Any]:
+    """Claim the next best work item at time ``at``, leased to the requester."""
+    model_class = ModelClass(arguments["model_class"]) if arguments.get("model_class") else None
+    entry = catalog.claim_next(
+        arguments["requester"],
+        at=at,
+        seconds=float(arguments.get("lease_seconds", 3600.0)),
+        model_class=model_class,
+    )
+    if entry is None:
+        return {"claimed": False, "reason": "no eligible work"}
+    return {"claimed": True, "entry": entry.blind().to_dict(), "lease_expires": entry.lease_expires}
 
 
 def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -> Any:
@@ -209,13 +239,16 @@ def handle_request(
     *,
     catalog: Catalog | None = None,
     on_change: Callable[[], None] | None = None,
+    now: Callable[[], float] | None = None,
 ) -> dict[str, Any] | None:
     """Handle one JSON-RPC request; return the response, or ``None`` for a notification.
 
     Implements ``initialize``, ``tools/list``, and ``tools/call`` (plus the
     ``notifications/initialized`` notification). When a mutable ``catalog`` is supplied the
     effectful tools are offered too; ``on_change`` is called after a mutation so the caller can
-    persist it. Without a catalog the server is read-only and effectful calls are refused.
+    persist it, and ``now`` supplies the wall-clock time leasing needs (injected so the library
+    stays deterministic). Without a catalog the server is read-only and effectful calls are
+    refused.
     """
     method = request.get("method")
     request_id = request.get("id")
@@ -245,6 +278,12 @@ def handle_request(
                 data = submit_paper(catalog, arguments)
                 if on_change is not None:
                     on_change()
+            elif name == "claim_work":
+                if catalog is None:
+                    raise KeyError("claim_work is not enabled on this read-only server")
+                data = claim_work(catalog, arguments, at=(now() if now is not None else 0.0))
+                if on_change is not None:
+                    on_change()
             else:
                 data = dispatch_tool(query, name, arguments)
         except (KeyError, TypeError, ValueError, RuntimeError) as exc:
@@ -272,6 +311,7 @@ def serve_stdio(
     writer: IO[str] | None = None,
     catalog: Catalog | None = None,
     on_change: Callable[[], None] | None = None,
+    now: Callable[[], float] | None = None,
 ) -> None:
     """Serve over newline-delimited JSON-RPC on stdio (effectful tools if ``catalog`` given)."""
     reader = reader or sys.stdin
@@ -281,7 +321,7 @@ def serve_stdio(
         if not line:
             continue
         request = json.loads(line)
-        response = handle_request(query, request, catalog=catalog, on_change=on_change)
+        response = handle_request(query, request, catalog=catalog, on_change=on_change, now=now)
         if response is not None:
             writer.write(json.dumps(response) + "\n")
             writer.flush()
@@ -348,7 +388,14 @@ def main() -> None:  # pragma: no cover - stdio entry point
             json.dumps(catalog.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
 
-    serve_stdio(ReprolithQuery(catalog, ledger, dossiers, bundles), catalog=catalog, on_change=save)
+    import time
+
+    serve_stdio(
+        ReprolithQuery(catalog, ledger, dossiers, bundles),
+        catalog=catalog,
+        on_change=save,
+        now=time.time,
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover
@@ -359,6 +406,7 @@ __all__ = [
     "EFFECTFUL_TOOLS",
     "PROTOCOL_VERSION",
     "TOOL_DEFINITIONS",
+    "claim_work",
     "dispatch_tool",
     "handle_request",
     "load_certificates",

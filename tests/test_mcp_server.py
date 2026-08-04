@@ -250,6 +250,35 @@ def test_submit_paper_adds_an_entry_persists_and_dedups() -> None:
     assert len(catalog) == 1
 
 
+def test_claim_work_tool_leases_the_next_item() -> None:
+    catalog = Catalog()
+    catalog.add(Identifiers(title="A", accession="A1"), ModelClass.ODE_PKPD)
+    catalog.add(Identifiers(title="B", accession="B2"), ModelClass.ODE_PKPD)
+    query = ReprolithQuery(catalog, CertificateLedger())
+    clock = [1000.0]  # an injected wall clock
+
+    def claim(requester):
+        resp = handle_request(query, {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                      "params": {"name": "claim_work",
+                                                 "arguments": {"requester": requester, "lease_seconds": 60}}},
+                              catalog=catalog, now=lambda: clock[0])
+        return json.loads(resp["result"]["content"][0]["text"])
+
+    first = claim("agent-1")
+    assert first["claimed"] and first["lease_expires"] == 1060.0
+    second = claim("agent-2")  # different item, no collision
+    assert second["claimed"] and second["entry"]["identifiers"]["accession"] != first["entry"]["identifiers"]["accession"]
+    # No eligible work left while both are leased.
+    assert claim("agent-3") == {"claimed": False, "reason": "no eligible work"}
+
+
+def test_claim_work_refused_on_read_only_server() -> None:
+    query, _ = _fixture()
+    resp = handle_request(query, {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                  "params": {"name": "claim_work", "arguments": {"requester": "a"}}})
+    assert resp["result"]["isError"]
+
+
 def test_stdio_round_trip() -> None:
     query, digest = _fixture()
     requests = "\n".join([

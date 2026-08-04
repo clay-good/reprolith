@@ -229,10 +229,32 @@ class CatalogEntry:
         self.ground_truth = ground_truth
         self._state = LifecycleState.QUEUED
         self._history: list[Transition] = []
+        self.leased_to: str | None = None
+        self.lease_expires: float | None = None
 
     @property
     def state(self) -> LifecycleState:
         return self._state
+
+    def is_claimable(self, at: float) -> bool:
+        """Whether this entry can be claimed as work at time ``at`` (a numeric timestamp).
+
+        Claimable means queued and not held by a live lease — a lease that has expired (or was
+        never set) frees the entry again.
+        """
+        return self._state is LifecycleState.QUEUED and (
+            self.lease_expires is None or at >= self.lease_expires
+        )
+
+    def lease(self, requester: str, *, at: float, seconds: float) -> None:
+        """Lease this entry to ``requester`` until ``at + seconds``."""
+        self.leased_to = requester
+        self.lease_expires = at + seconds
+
+    def release_lease(self) -> None:
+        """Release any lease, returning the entry to the claimable pool."""
+        self.leased_to = None
+        self.lease_expires = None
 
     @property
     def history(self) -> tuple[Transition, ...]:
@@ -299,6 +321,8 @@ class CatalogEntry:
             "state": self._state.value,
             "history": [t.to_dict() for t in self._history],
             "ground_truth": self.ground_truth.to_dict() if self.ground_truth else None,
+            "leased_to": self.leased_to,
+            "lease_expires": self.lease_expires,
         }
 
     @classmethod
@@ -317,6 +341,8 @@ class CatalogEntry:
         )
         entry._state = LifecycleState(record["state"])
         entry._history = [Transition.from_dict(t) for t in record.get("history", [])]
+        entry.leased_to = record.get("leased_to")
+        entry.lease_expires = record.get("lease_expires")
         return entry
 
 
@@ -395,6 +421,42 @@ class Catalog:
     def find(self, identifiers: Identifiers) -> CatalogEntry | None:
         """Return the entry this paper resolves to, or ``None`` — a read-only lookup."""
         return self._match(identifiers)
+
+    def claimable(self, at: float, *, model_class: ModelClass | None = None) -> list[CatalogEntry]:
+        """The entries claimable as work at time ``at``, in priority order.
+
+        Ranking is explainable and stable: ground-truth-labelled entries first (they keep
+        self-validation possible), then insertion order. Filtered to ``model_class`` when given.
+        """
+        pool = [
+            entry
+            for entry in self._entries
+            if entry.is_claimable(at) and (model_class is None or entry.model_class is model_class)
+        ]
+        # Stable sort: labelled (ground-truth) entries sort before unlabelled; ties keep order.
+        pool.sort(key=lambda entry: entry.ground_truth is None)
+        return pool
+
+    def claim_next(
+        self,
+        requester: str,
+        *,
+        at: float,
+        seconds: float,
+        model_class: ModelClass | None = None,
+    ) -> CatalogEntry | None:
+        """Lease the highest-priority claimable entry to ``requester``, or ``None`` if none.
+
+        The lease holds until ``at + seconds``; concurrent requesters do not collide because a
+        claimed entry stops being claimable until its lease expires (spec: model-catalog —
+        "Never-empty prioritized queue").
+        """
+        pool = self.claimable(at, model_class=model_class)
+        if not pool:
+            return None
+        entry = pool[0]
+        entry.lease(requester, at=at, seconds=seconds)
+        return entry
 
     def _match(self, identifiers: Identifiers) -> CatalogEntry | None:
         for key in identifiers.keys():

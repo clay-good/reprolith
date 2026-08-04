@@ -214,3 +214,65 @@ def test_reloaded_entry_still_advances_from_its_restored_state() -> None:
     # A legal move from the restored state works; an illegal one is still rejected.
     e.transition(LifecycleState.INGESTED, at="t2", actor="a", reason="r2")
     assert e.state is LifecycleState.INGESTED
+
+
+# --- lease-aware work queue (spec: model-catalog, "Never-empty prioritized queue") ---
+
+
+def test_claim_next_leases_and_prevents_collision() -> None:
+    catalog = Catalog()
+    catalog.add(Identifiers(title="A", accession="A1"), ModelClass.ODE_PKPD)
+    catalog.add(Identifiers(title="B", accession="B2"), ModelClass.ODE_PKPD)
+
+    a = catalog.claim_next("agent-1", at=0.0, seconds=100.0)
+    assert a is not None and a.leased_to == "agent-1"
+    # A second requester at the same time gets a different entry, not the leased one.
+    b = catalog.claim_next("agent-2", at=0.0, seconds=100.0)
+    assert b is not None and b is not a
+    # No more claimable work.
+    assert catalog.claim_next("agent-3", at=0.0, seconds=100.0) is None
+
+
+def test_expired_lease_becomes_claimable_again() -> None:
+    catalog = Catalog()
+    entry = catalog.add(Identifiers(title="A", accession="A1"), ModelClass.ODE_PKPD)
+    catalog.claim_next("agent-1", at=0.0, seconds=100.0)
+    assert catalog.claim_next("agent-2", at=50.0, seconds=100.0) is None  # still leased
+    # After the lease window, the entry is claimable again.
+    reclaimed = catalog.claim_next("agent-2", at=100.0, seconds=100.0)
+    assert reclaimed is entry and reclaimed.leased_to == "agent-2"
+
+
+def test_claim_is_ground_truth_first_and_class_filtered() -> None:
+    catalog = Catalog()
+    catalog.add(Identifiers(title="unlabelled", accession="U"), ModelClass.ODE_PKPD)
+    catalog.add(Identifiers(title="labelled", accession="L"), ModelClass.ODE_PKPD,
+                ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source="c"))
+    catalog.add(Identifiers(title="other class", accession="K"), ModelClass.KINETIC)
+
+    # Ground-truth-labelled entry is claimed first.
+    first = catalog.claim_next("a", at=0.0, seconds=10.0)
+    assert first is not None and first.identifiers.accession == "L"
+    # A class filter only returns matching, claimable work.
+    kin = catalog.claim_next("a", at=0.0, seconds=10.0, model_class=ModelClass.KINETIC)
+    assert kin is not None and kin.identifiers.accession == "K"
+
+
+def test_non_queued_entry_is_not_claimable() -> None:
+    catalog = Catalog()
+    entry = catalog.add(Identifiers(title="A", accession="A1"), ModelClass.ODE_PKPD)
+    entry.transition(LifecycleState.INGESTING, at="t", actor="a", reason="start")
+    assert catalog.claim_next("a", at=0.0, seconds=10.0) is None
+
+
+def test_lease_survives_catalog_persistence() -> None:
+    import json
+
+    catalog = Catalog()
+    catalog.add(Identifiers(title="A", accession="A1"), ModelClass.ODE_PKPD)
+    catalog.claim_next("agent-1", at=5.0, seconds=100.0)
+    reloaded = Catalog.from_dict(json.loads(json.dumps(catalog.to_dict())))
+    entry = reloaded.find(Identifiers(title="A", accession="A1"))
+    assert entry is not None and entry.leased_to == "agent-1" and entry.lease_expires == 105.0
+    # The reloaded lease is still honored: not claimable inside the window.
+    assert reloaded.claim_next("agent-2", at=50.0, seconds=10.0) is None
