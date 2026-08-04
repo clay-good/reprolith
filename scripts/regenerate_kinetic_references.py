@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Regenerate the generic-kinetic cross-validation reference curve from the committed model.
+"""Regenerate the generic-kinetic cross-validation reference curves from the committed models.
 
-The kinetic class's ground truth (``datasets/kinetic/mapk_reference_curve.json``) is the species
-time-course an independent simulator — libRoadRunner (CVODE) — computes for the committed model.
-For a reproducibility tool, that ground truth must itself be reproducible: this regenerates it, so
-the committed curve is auditable, not a magic array.
+The kinetic class's ground truth (``datasets/kinetic/cross_validation.json``) is the species
+time-course an independent simulator — libRoadRunner (CVODE) — computes for each committed model.
+For a reproducibility tool, that ground truth must itself be reproducible: this regenerates every
+reference curve from its model, so the committed arrays are auditable, not magic numbers.
 
-Needs libRoadRunner (``pip install libroadrunner``) — a dev-time reference generator, not a
-Reprolith runtime dependency. Deterministic: re-running produces a byte-identical file. Run from
-the repo root:
+The per-model settings (species, duration, steps) are read from the existing manifest, so this
+recomputes the curves in place without changing the set. Needs libRoadRunner
+(``pip install libroadrunner``) — a dev-time reference generator, not a Reprolith runtime
+dependency. Deterministic: re-running produces a byte-identical file. Run from the repo root:
 
     python scripts/regenerate_kinetic_references.py
 """
@@ -25,39 +26,21 @@ warnings.filterwarnings("ignore")
 
 REPO = Path(__file__).resolve().parents[1]
 KIN = REPO / "datasets" / "kinetic"
-
-MODEL_ID = "BIOMD0000000010"
-SPECIES = "MAPK_PP"
-DURATION = 4000.0
-STEPS = 200
+MANIFEST = KIN / "cross_validation.json"
 
 
 def main() -> None:
-    xml = (KIN / f"{MODEL_ID}.xml").read_text(encoding="utf-8")
-    runner = roadrunner.RoadRunner(xml)
-    runner.timeCourseSelections = ["time", SPECIES]
-    result = runner.simulate(0, DURATION, STEPS + 1)
-    curve = [round(float(row[1]), 6) for row in result]
-
-    doc = {
-        "description": "Independent reference time-course for the Kholodenko2000 MAPK cascade "
-                       f"(BioModels {MODEL_ID}), computed by libRoadRunner (CVODE) — a simulator "
-                       "with no code shared with the COPASI engine Reprolith runs. Reprolith's "
-                       "simulate must reproduce this curve, a non-circular cross-tool check that the "
-                       "curve oracle carries a systems-biology kinetic model, not only PK/PD.",
-        "model": f"{MODEL_ID} — Kholodenko2000, ultrasensitivity and negative feedback bring "
-                 "oscillations in the MAPK cascade",
-        "source": f"BioModels https://www.ebi.ac.uk/biomodels/{MODEL_ID} (curated); "
-                  "Kholodenko (2000) Eur J Biochem, doi:10.1046/j.1432-1327.2000.01197.x",
-        "reference_tool": f"libRoadRunner {roadrunner.__version__} (CVODE)",
-        "species": SPECIES,
-        "duration": DURATION,
-        "steps": STEPS,
-        "curve": curve,
-    }
-    out = KIN / "mapk_reference_curve.json"
-    out.write_text(json.dumps(doc, indent=2) + "\n")
-    print(f"wrote {out.relative_to(REPO)} ({len(curve)} points, peak {max(curve):.4g})")
+    doc = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    for spec in doc["models"]:
+        xml = (KIN / f"{spec['id']}.xml").read_text(encoding="utf-8")
+        runner = roadrunner.RoadRunner(xml)
+        runner.timeCourseSelections = ["time", spec["species"]]
+        result = runner.simulate(0, spec["duration"], spec["steps"] + 1)
+        spec["curve"] = [round(float(row[1]), 6) for row in result]
+        spec["reference_tool"] = f"libRoadRunner {roadrunner.__version__} (CVODE)"
+        print(f"  {spec['id']} {spec['species']}: {len(spec['curve'])} points, peak {max(spec['curve']):.4g}")
+    MANIFEST.write_text(json.dumps(doc, indent=2) + "\n")
+    print(f"wrote {MANIFEST.relative_to(REPO)}")
 
 
 if __name__ == "__main__":
