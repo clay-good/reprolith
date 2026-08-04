@@ -92,6 +92,20 @@ def test_lint_tool_is_registered() -> None:
     assert "lint" in {t["name"] for t in TOOL_DEFINITIONS}
 
 
+def test_status_reflects_persisted_run_progress() -> None:
+    # The persisted milestone catalog records the run's lifecycle; status shows the metformin
+    # entry as certified, loaded from disk with no re-run.
+    import json
+    from pathlib import Path
+
+    catalog_file = Path(__file__).parent.parent / "datasets" / "milestone" / "catalog.json"
+    catalog = Catalog.from_dict(json.loads(catalog_file.read_text()))
+    query = ReprolithQuery(catalog, CertificateLedger())
+    status, _ = _call(query, "status", {"accession": "BIOMD0000001028"})
+    assert status["state"] == "certified"
+    assert status["history"]  # the lifecycle path was recorded
+
+
 def test_server_serves_the_stored_milestone_certificate() -> None:
     # End to end, no engine: the metformin certificate the milestone run stored as JSON is
     # loaded into the ledger and served through the MCP tools.

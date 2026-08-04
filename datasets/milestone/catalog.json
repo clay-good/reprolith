@@ -1,0 +1,1150 @@
+{
+  "entries": [
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000765",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Mager2005 - Quasi-equilibrium pharmacokinetic model for drugs exhibiting target-mediated drug disposition"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000241",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Shi1993_Caffeine_pressor_tolerance"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000619",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Sluka2016 - Acetaminophen PBPK"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000948",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Landberg2009 - Alkylresorcinol Dose Response"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000624",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Sluka2016 - Acetaminophen metabolism"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000512",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Benson2014 - FAAH inhibitors for the treatment of osteoarthritic pain"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000490",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Demin2013 - PKPD behaviour - 5-Lipoxygenase inhibitors"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000238",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Overgaard2007_PDmodel_IL21"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000494",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Roblitz2013 - Menstrual Cycle following GnRH analogue administration"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000534",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Dwivedi2014 - Healthy Volunteer IL6 Model"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000535",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Dwivedi2014 - Crohns IL6 Disease model - Anti-IL6 Antibody"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000537",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Dwivedi2014 - Crohns IL6 Disease model - Anti-IL6R Antibody"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000536",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Dwivedi2014 - Crohns IL6 Disease model - sgp130 activity"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000321",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Grange2001 - L Dopa PK model"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000320",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Grange2001 - PK interaction of L-dopa and benserazide"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000673",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Lockwood2006 - Alzheimer's Disease PBPK model"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000001039",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Zake2021 - PBPK model of metformin in mice: single dose intravenous"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000001028",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Zake2021 - PBPK model of metformin in humans, single PO dose"
+      },
+      "model_class": "ode-pkpd",
+      "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000001029",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Zake2021 - PBPK model of metformin in humans, eight PO administrations with 12h interval"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000001027",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Zake2021 - PBPK model of metformin in mice: single dose peroral"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000608",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Palsson2013 - Fully-integrated immune response model (FIRM)"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "not-reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "MODEL2003190002",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Loccisano2011 - pharmacokinetics of PFOA and PFOS in the monkey"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "not-reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "MODEL2301090001",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Koeller2021 - PBPK model of ICG liver function tests"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "not-reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "MODEL2003190006",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Peng2013 - melatonin: effects of light and routes of administration"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "not-reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "MODEL2412180001",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "KaratzaKaralis2020 - CYP mediated losartan metabolism"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "not-reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "MODEL2301090002",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Grzegorzewski2022 - PBPK model of dextromethorphan"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "not-reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "MODEL1006230040",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Yang2006_Methadone_PKmodel"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "not-reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "MODEL2211040001",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Melhem 2017 - Neutropenia Model"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "not-reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "MODEL1711210003",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Sier2017_estrogen_PBPK_GSMN"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "not-reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "MODEL2412270001",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Abbiati2021 - Avadomide-induced neutropenia model"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "not-reproduced",
+        "note": null,
+        "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [
+            "no machine-checkable claims extracted from the shipped model artifact; reproduction requires the paper's targetable claims (manuscript claim extraction)"
+          ],
+          "reason": "blind run",
+          "to_state": "blocked"
+        }
+      ],
+      "identifiers": {
+        "accession": "MODEL6963432821",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Zager2007_Genistein_Biliary_Excretion"
+      },
+      "model_class": "ode-pkpd",
+      "state": "blocked"
+    }
+  ]
+}

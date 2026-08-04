@@ -22,7 +22,7 @@ from .agreement import AgreementReport, build_agreement_report
 from .catalog import CatalogEntry
 from .certificate import build_certificate
 from .certify import Claim, certify_model
-from .enums import OverallVerdict
+from .enums import LifecycleState, OverallVerdict
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
 
 NO_CLAIMS_REASON = (
@@ -88,18 +88,64 @@ def load_claims_dataset(path: Path | str) -> dict[str, Any]:
     return data
 
 
+# The lifecycle path each outcome walks, so a certified/blocked entry's history is the honest
+# record of the pathway (ingest -> reconstruct -> verify -> outcome), not a single jump.
+_TO_CERTIFIED = (
+    LifecycleState.INGESTING,
+    LifecycleState.INGESTED,
+    LifecycleState.RECONSTRUCTING,
+    LifecycleState.RECONSTRUCTED,
+    LifecycleState.VERIFYING,
+    LifecycleState.CERTIFIED,
+)
+_TO_FAILED = _TO_CERTIFIED[:-1] + (LifecycleState.FAILED,)
+_TO_BLOCKED = (LifecycleState.INGESTING, LifecycleState.BLOCKED)
+
+
+def advance_to_outcome(
+    entry: CatalogEntry,
+    overall: OverallVerdict,
+    *,
+    at: str,
+    actor: str,
+    blocked_reason: str = NO_CLAIMS_REASON,
+) -> None:
+    """Walk a queued entry to the lifecycle state matching its run outcome, recording each move.
+
+    ``reproduced``/``partially-reproduced`` end at ``certified``; ``not-reproduced`` at
+    ``failed``; ``blocked`` at ``blocked`` with the missing input. Only advances an entry still
+    in ``queued`` (a re-run does not double-record).
+    """
+    if entry.state is not LifecycleState.QUEUED:
+        return
+    path: tuple[LifecycleState, ...]
+    if overall is OverallVerdict.BLOCKED:
+        path = _TO_BLOCKED
+    elif overall is OverallVerdict.NOT_REPRODUCED:
+        path = _TO_FAILED
+    else:
+        path = _TO_CERTIFIED
+    for state in path:
+        missing = (blocked_reason,) if state is LifecycleState.BLOCKED else ()
+        entry.transition(state, at=at, actor=actor, reason="blind run", missing_inputs=missing)
+
+
 def run_test_set(
     entries: Sequence[CatalogEntry],
     *,
     engine_pin: EnginePin,
     certified: Mapping[str, Certificate] | None = None,
     blocked_reason: str = NO_CLAIMS_REASON,
+    advance: bool = False,
+    at: str = "blind-run",
+    actor: str = "reprolith",
 ) -> tuple[list[Certificate], AgreementReport]:
     """Produce a certificate for every entry and score agreement with ground truth.
 
     ``certified`` maps an entry's BioModels accession (or title) to a certificate already
-    produced for it; any entry not present is blocked. Returns the certificates in entry order
-    and the agreement report comparing each entry's overall verdict to its label.
+    produced for it; any entry not present is blocked. With ``advance``, each entry's lifecycle
+    is walked to its outcome state so the catalog records the run. Returns the certificates in
+    entry order and the agreement report comparing each entry's overall verdict to its label.
     """
     certified = certified or {}
     certificates: list[Certificate] = []
@@ -111,11 +157,15 @@ def run_test_set(
         )
         certificates.append(certificate)
         scored.append((entry, certificate.overall))
+        if advance:
+            advance_to_outcome(entry, certificate.overall, at=at, actor=actor,
+                               blocked_reason=blocked_reason)
     return certificates, build_agreement_report(scored)
 
 
 __all__ = [
     "NO_CLAIMS_REASON",
+    "advance_to_outcome",
     "blocked_certificate",
     "certified_from_claims",
     "load_claims_dataset",

@@ -39,10 +39,16 @@ def main() -> None:
     claims = load_claims_dataset(DATASETS / "pkpd_claims.json")
     certified = certified_from_claims(claims, base_dir=DATASETS, engine_pin=pin)
 
-    certificates, report = run_test_set(entries, engine_pin=pin, certified=certified)
+    certificates, report = run_test_set(entries, engine_pin=pin, certified=certified, advance=True)
 
     out = DATASETS / "milestone" / "agreement_report.json"
     out.write_text(json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n")
+
+    # Persist the advanced catalog so the durable registry reflects the run (each entry's
+    # lifecycle state and history), and can be reloaded — e.g. by the MCP server.
+    (DATASETS / "milestone" / "catalog.json").write_text(
+        json.dumps(catalog.to_dict(), indent=2, sort_keys=True) + "\n"
+    )
 
     # Store each certified certificate's content as JSON so it can be re-opened and served
     # (design goal 3) without recomputing it — e.g. loaded into the MCP server's ledger.

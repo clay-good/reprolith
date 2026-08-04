@@ -226,14 +226,21 @@ def load_certificates(ledger: CertificateLedger, directory: Path | str) -> int:
 
 
 def main() -> None:  # pragma: no cover - stdio entry point
-    """Run the server over stdio, seeding the catalog and loading stored certificates."""
+    """Run the server over stdio, loading the persisted catalog and certificates if present."""
+    import json
+
     from .catalog import Catalog
     from .seed import seed_catalog
 
-    catalog = Catalog()
-    seed_catalog(catalog)
+    milestone = Path(__file__).resolve().parents[2] / "datasets" / "milestone"
+    catalog_file = milestone / "catalog.json"
+    if catalog_file.is_file():
+        catalog = Catalog.from_dict(json.loads(catalog_file.read_text()))  # the run's real progress
+    else:
+        catalog = Catalog()
+        seed_catalog(catalog)
     ledger = CertificateLedger()
-    load_certificates(ledger, Path(__file__).resolve().parents[2] / "datasets" / "milestone" / "certificates")
+    load_certificates(ledger, milestone / "certificates")
     serve_stdio(ReprolithQuery(catalog, ledger))
 
 

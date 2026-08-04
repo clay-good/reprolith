@@ -85,6 +85,7 @@ from .reconstruction import (
 from .render import claim_counts, gap_items, render_human, render_machine
 from .revision import DossierHistory, DossierRevision, dossier_digest, revise
 from .run import (
+    advance_to_outcome,
     blocked_certificate,
     certified_from_claims,
     load_claims_dataset,
@@ -146,6 +147,7 @@ __all__ = [
     "ToleranceSource",
     "Transition",
     "Verdict",
+    "advance_to_outcome",
     "blocked_certificate",
     "build_agreement_report",
     "build_certificate",

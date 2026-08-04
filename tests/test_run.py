@@ -64,3 +64,43 @@ def test_run_is_reproducible() -> None:
     a = run_test_set(catalog.entries, engine_pin=PIN)[1].to_dict()
     b = run_test_set(catalog.entries, engine_pin=PIN)[1].to_dict()
     assert a == b
+
+
+def test_run_advances_lifecycle_and_survives_persistence() -> None:
+    # The blind run records each entry's lifecycle to its outcome, and the resulting catalog
+    # state survives a save/load round trip (the durable registry reflects the run).
+    import json
+
+    from reprolith import Catalog, LifecycleState
+
+    catalog = Catalog()
+    catalog.add(Identifiers(title="A", accession="BIOMD1"), ModelClass.ODE_PKPD,
+                ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source="c"))
+    catalog.add(Identifiers(title="B", accession="MODEL2"), ModelClass.ODE_PKPD,
+                ground_truth=GroundTruth(expected=OverallVerdict.NOT_REPRODUCED, source="c"))
+
+    cert_a = build_certificate(
+        paper=PaperIdentity(title="A"), engine_pin=PIN,
+        assessments=[ClaimAssessment(claim_id="c", quantity="AUC", verdict=Verdict.REPRODUCED,
+                                     source_location="T1")],
+    )
+    run_test_set(catalog.entries, engine_pin=PIN, certified={"BIOMD1": cert_a}, advance=True)
+
+    reloaded = Catalog.from_dict(json.loads(json.dumps(catalog.to_dict())))
+    a = reloaded.find(Identifiers(title="A", accession="BIOMD1"))
+    b = reloaded.find(Identifiers(title="B", accession="MODEL2"))
+    assert a is not None and a.state is LifecycleState.CERTIFIED
+    assert b is not None and b.state is LifecycleState.BLOCKED
+    # The blocked entry records the precise missing input.
+    assert any(t.missing_inputs for t in b.history)
+
+
+def test_advance_is_idempotent_for_a_non_queued_entry() -> None:
+    from reprolith import Catalog, LifecycleState, advance_to_outcome
+
+    catalog = Catalog()
+    entry = catalog.add(Identifiers(title="A", accession="X"), ModelClass.ODE_PKPD)
+    advance_to_outcome(entry, OverallVerdict.BLOCKED, at="t", actor="a")
+    n = len(entry.history)
+    advance_to_outcome(entry, OverallVerdict.BLOCKED, at="t", actor="a")  # already advanced
+    assert entry.state is LifecycleState.BLOCKED and len(entry.history) == n
