@@ -104,3 +104,14 @@ def test_advance_is_idempotent_for_a_non_queued_entry() -> None:
     n = len(entry.history)
     advance_to_outcome(entry, OverallVerdict.BLOCKED, at="t", actor="a")  # already advanced
     assert entry.state is LifecycleState.BLOCKED and len(entry.history) == n
+
+
+def test_advance_maps_not_reproduced_to_failed() -> None:
+    from reprolith import Catalog, LifecycleState, advance_to_outcome
+
+    catalog = Catalog()
+    entry = catalog.add(Identifiers(title="A", accession="X"), ModelClass.ODE_PKPD)
+    advance_to_outcome(entry, OverallVerdict.NOT_REPRODUCED, at="t", actor="a")
+    assert entry.state is LifecycleState.FAILED
+    # A failed attempt ran to completion, so it records no missing input.
+    assert all(not t.missing_inputs for t in entry.history)
