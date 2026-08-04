@@ -60,6 +60,10 @@ class CertificateLedger:
         """Retrieve a previously issued certificate by its content digest."""
         return self._by_digest.get(digest)
 
+    def items(self) -> tuple[tuple[str, Certificate], ...]:
+        """Every issued (digest, certificate) pair — a read-only snapshot."""
+        return tuple(self._by_digest.items())
+
     def chain(self, cert: Certificate) -> tuple[Certificate, ...]:
         """The supersession lineage of ``cert``, newest first, back to the root.
 

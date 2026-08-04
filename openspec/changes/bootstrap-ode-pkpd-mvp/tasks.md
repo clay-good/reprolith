@@ -48,10 +48,10 @@ a phase done until its verification holds.
 
 ## 6. MCP surface (minimal)
 
-- [ ] 6.1 Expose read-only catalog/status/certificate/gap queries → verify: queries change no state and return the certificate's full qualifications
+- [x] 6.1 Expose read-only catalog/status/certificate/gap queries → verify: queries change no state and return the certificate's full qualifications
 - [ ] 6.2 Expose the inline deterministic linter check (model + claim ⇒ verdict) → verify: same submission yields same verdict
-- [ ] 6.3 Guarantee the scope flag travels with every returned verdict → verify: no code path returns a bare boolean
-- [ ] 6.4 Confirm surface parity with the repository → verify: same entry reports the same verdict through both
+- [x] 6.3 Guarantee the scope flag travels with every returned verdict → verify: no code path returns a bare boolean
+- [x] 6.4 Confirm surface parity with the repository → verify: same entry reports the same verdict through both
 
 ## 7. Self-validation and the discipline loop
 

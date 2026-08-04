@@ -35,6 +35,7 @@ from .model import (
     PaperIdentity,
     RunMetadata,
 )
+from .query import ReprolithQuery
 from .render import claim_counts, gap_items, render_human, render_machine
 from .scope import Scope
 from .supersession import CertificateLedger, describe_changes
@@ -58,6 +59,7 @@ __all__ = [
     "OverallVerdict",
     "PaperIdentity",
     "ReproductionLevel",
+    "ReprolithQuery",
     "RunMetadata",
     "Scope",
     "Transition",

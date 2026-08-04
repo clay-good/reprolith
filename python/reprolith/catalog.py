@@ -328,6 +328,10 @@ class Catalog:
         self._reindex(entry)
         return entry
 
+    def find(self, identifiers: Identifiers) -> CatalogEntry | None:
+        """Return the entry this paper resolves to, or ``None`` — a read-only lookup."""
+        return self._match(identifiers)
+
     def _match(self, identifiers: Identifiers) -> CatalogEntry | None:
         for key in identifiers.keys():
             hit = self._index.get(key)
