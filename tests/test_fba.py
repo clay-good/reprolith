@@ -21,6 +21,7 @@ from reprolith import (  # noqa: E402
     build_certificate,
     essentiality_agreement,
     flux_variability,
+    judge_flux,
     judge_objective,
     reaction_essentiality,
     solve_objective,
@@ -120,3 +121,35 @@ def test_fva_reports_the_alternate_optima_range() -> None:
     assert ranges[1] == pytest.approx((0.0, 10.0))  # parallel route — free within the optimum
     assert ranges[2] == pytest.approx((0.0, 10.0))
     assert ranges[3] == pytest.approx((10.0, 10.0))  # objective outflow forced
+
+
+def test_judge_flux_reproduces_a_pinned_flux() -> None:
+    # A flux the model pins to a single value, matching the report, is a clean reproduction.
+    a = judge_flux(
+        claim_id="v_out", quantity="outflow at optimum", source_location="Table 2",
+        reported=10.0, interval=(10.0, 10.0),
+    )
+    assert a.verdict is Verdict.REPRODUCED
+
+
+def test_judge_flux_abstains_when_not_uniquely_determined() -> None:
+    # The report sits inside a wide FVA interval: the model is consistent with it but does not
+    # pin it, so the honest verdict is abstain, not a pass (design goal 2).
+    a = judge_flux(
+        claim_id="r1", quantity="parallel-route flux", source_location="Table 2",
+        reported=5.0, interval=(0.0, 10.0),
+    )
+    assert a.verdict is Verdict.NOT_EVALUABLE
+    assert "does not uniquely determine" in (a.root_cause or "")
+
+
+def test_judge_flux_fails_when_outside_the_feasible_range() -> None:
+    # A reported flux the model cannot reach at the optimum fails, judged against the nearest
+    # feasible value; like any non-pass it must carry a root-cause attribution.
+    a = judge_flux(
+        claim_id="r1", quantity="parallel-route flux", source_location="Table 2",
+        reported=25.0, interval=(0.0, 10.0),
+        attribution=Attribution(mode=FailureMode.MANUSCRIPT_ERROR, implicated="reported flux",
+                                fault=Fault.MANUSCRIPT),
+    )
+    assert a.verdict is Verdict.FAILED

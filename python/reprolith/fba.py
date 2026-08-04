@@ -18,7 +18,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from .model import ClaimAssessment
-from .oracle import Attribution, ReferenceKind, Tolerance, judge_scalar
+from .oracle import Attribution, ReferenceKind, Tolerance, judge_scalar, not_evaluable
 
 
 class FbaUnavailable(RuntimeError):
@@ -172,6 +172,77 @@ def flux_variability(
     return ranges
 
 
+def judge_flux(
+    *,
+    claim_id: str,
+    quantity: str,
+    source_location: str,
+    reported: float,
+    interval: tuple[float, float],
+    pin_tolerance: float = 1e-6,
+    tolerance: Tolerance | None = None,
+    reference_kind: ReferenceKind = ReferenceKind.NUMERIC,
+    attribution: Attribution | None = None,
+    assumption_qualified: bool = False,
+) -> ClaimAssessment:
+    """Judge a reported reaction flux against its flux-variability interval — honestly.
+
+    ``interval`` is the ``(min, max)`` this reaction can take at the optimum (from
+    :func:`flux_variability`). The verdict follows the spec's honesty rule for alternate optima
+    (spec: constraint-based-class), which is design goal 2 in this setting:
+
+    * The interval **pins** the flux (min == max within ``pin_tolerance``) and contains the
+      reported value → the model uniquely produces it: judged as reproduced via the scalar oracle.
+    * The reported value lies **inside a non-trivial interval** → the model is *consistent with*
+      the value but does not determine it; certifying "reproduced" would overstate, so we abstain
+      (``not-evaluable``) rather than claim a pass the alternate optima do not earn.
+    * The reported value lies **outside** the feasible interval → the model cannot achieve this
+      flux at the optimum: judged against the nearest feasible flux, so it lands partial/failed
+      (and, like any non-pass, requires an ``attribution``).
+    """
+    lo, hi = interval
+    slack = pin_tolerance * max(1.0, abs(lo), abs(hi))
+    inside = lo - slack <= reported <= hi + slack
+    pinned = (hi - lo) <= slack
+
+    if inside and pinned:
+        return judge_scalar(
+            claim_id=claim_id,
+            quantity=quantity,
+            source_location=source_location,
+            reported=reported,
+            predicted=(lo + hi) / 2.0,
+            reference_kind=reference_kind,
+            tolerance=tolerance,
+            attribution=attribution,
+            assumption_qualified=assumption_qualified,
+        )
+    if inside:
+        return not_evaluable(
+            claim_id=claim_id,
+            quantity=quantity,
+            source_location=source_location,
+            reason=(
+                f"the model does not uniquely determine this flux at the optimum: the "
+                f"flux-variability interval [{lo:.4g}, {hi:.4g}] contains the reported "
+                f"{reported:.4g} but leaves it free (alternate optima)"
+            ),
+            reference_kind=reference_kind,
+        )
+    nearest = lo if reported < lo else hi
+    return judge_scalar(
+        claim_id=claim_id,
+        quantity=quantity,
+        source_location=source_location,
+        reported=reported,
+        predicted=nearest,
+        reference_kind=reference_kind,
+        tolerance=tolerance,
+        attribution=attribution,
+        assumption_qualified=assumption_qualified,
+    )
+
+
 def essentiality_agreement(computed: frozenset[int], reported: frozenset[int]) -> float:
     """Fraction of reactions the computed and reported essential sets agree on, over their union.
 
@@ -189,6 +260,7 @@ __all__ = [
     "InfeasibleFba",
     "essentiality_agreement",
     "flux_variability",
+    "judge_flux",
     "judge_objective",
     "reaction_essentiality",
     "solve_objective",
