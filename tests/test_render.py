@@ -129,3 +129,16 @@ def test_certificate_level_gap_notes_are_included() -> None:
     gaps = render_machine(cert, RUN)["gaps"]
     needs = [g["needs"] for g in gaps]
     assert "dosing schedule ambiguous" in needs
+
+
+def test_unverified_assumption_names_its_queue_item() -> None:
+    from reprolith import RunMetadata, render_human
+    cert = _cert(
+        [_claim(Verdict.REPRODUCED, cid="a", qualified=True)],
+        assumptions=[Assumption(id="k1", description="ka", chosen="1.2", basis="typical",
+                                load_bearing=True, verification_item="VQ-7")],
+    )
+    run = RunMetadata(created_at="t", actor="a", tool_version="0.0.1")
+    text = render_human(cert, run)
+    # The certificate names the pending queue item it rests on (spec: verification-queue).
+    assert "unverified" in text and "VQ-7" in text

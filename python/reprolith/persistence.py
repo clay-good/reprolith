@@ -67,6 +67,7 @@ def _assumption_from(record: dict[str, Any]) -> Assumption:
         load_bearing=record["load_bearing"],
         alternatives=tuple(record["alternatives"]),
         attributed_to=record["attributed_to"],
+        verification_item=record.get("verification_item"),
     )
 
 

@@ -122,7 +122,9 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
         lines.append("ASSUMPTIONS (supplied by Reprolith, not the paper)")
         for asm in content["assumptions"]:
             flag = " [load-bearing]" if asm.get("load_bearing") else ""
-            lines.append(f"  [{asm['id']}] {asm['description']} -> {asm['chosen']}{flag}")
+            pending = asm.get("verification_item")
+            unverified = f" [unverified — pending review: {pending}]" if pending else ""
+            lines.append(f"  [{asm['id']}] {asm['description']} -> {asm['chosen']}{flag}{unverified}")
             lines.append(f"      basis: {asm['basis']} (attributed to {asm['attributed_to']})")
         lines.append("")
 

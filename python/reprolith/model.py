@@ -60,6 +60,7 @@ class Assumption:
     load_bearing: bool
     alternatives: tuple[str, ...] = ()
     attributed_to: str = "reprolith"
+    verification_item: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -70,6 +71,7 @@ class Assumption:
             "load_bearing": self.load_bearing,
             "alternatives": list(self.alternatives),
             "attributed_to": self.attributed_to,
+            "verification_item": self.verification_item,
         }
 
 
