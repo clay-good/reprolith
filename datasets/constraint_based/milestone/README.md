@@ -11,26 +11,32 @@ python scripts/run_fba_milestone.py
 
 ## The result in one line
 
-**The one ground-truth constraint-based entry was certified blind and agrees with its label: 1/1.**
+**Every constraint-based entry was certified blind and agrees with its label: 4/4.**
 
-| Entry | Label | Verdict | Agreement |
-|---|---|---|---|
-| E. coli core (`e_coli_core`) | `reproduced` (known growth rate 0.873922) | `reproduced` | ✓ |
+| Entry | Organism | Label source | Verdict | Agreement |
+|---|---|---|---|---|
+| `e_coli_core` | *E. coli* K-12 | documented growth rate 0.873922 (Orth 2010) | `reproduced` | ✓ |
+| `iIT341` | *H. pylori* 26695 | COBRApy reference growth 0.692813 | `reproduced` | ✓ |
+| `iLJ478` | *T. maritima* MSB8 | COBRApy reference growth 0.228407 | `reproduced` | ✓ |
+| `iNF517` | *L. lactis* MG1363 | COBRApy reference growth 0.042635 | `reproduced` | ✓ |
 
-The label — the model's independently-known maximal aerobic growth rate on glucose minimal medium
-(Orth, Fleming & Palsson 2010; BiGG) — is held on the catalog entry but withheld from the verdict
-path, which sees only the dossier and the model. The certificate is produced by solving the model's
-objective and comparing the optimum to the reported value, so the agreement is a genuine blind
-match, not a label read back.
+Each label is held on the catalog entry but withheld from the verdict path, which sees only the
+dossier and the model. The certificate is produced by solving the model's objective and comparing
+the optimum to the labelled reference, so each agreement is a genuine blind match, not a label read
+back. The E. coli core label is a documented literature value; the three genome-scale labels are
+the growth rate an independent implementation ([COBRApy](../cross_validation/)) computes for the
+distributed model — non-circular in both cases. Every label's exact source is recorded on the
+entry.
 
 ## What this demonstrates
 
 - **The class closes its self-validation loop on the shared machinery.** The same catalog
   lifecycle, blind view, `run_test_set`, and agreement report the PK/PD class uses carry the
   constraint-based entry unchanged — the certificate flows through them with no forked driver.
-- **The scope is honest.** This is one entry (`n=1`): the single constraint-based model whose
-  reproducibility is independently known and ships in this repo. Scaling to a larger blind set
-  needs more fingerprint-curated models, which is a data-gathering step, not an engine one.
+- **The scope is honest.** These four entries attest to *cross-implementation reproduction on the
+  distributed models* (and, for E. coli core, a documented literature value) — not to reproducing
+  specific paper-reported numbers behind figures. Scaling further, or adding manuscript-reported
+  claims, is a data-gathering step, not an engine one.
 
 ## Files
 

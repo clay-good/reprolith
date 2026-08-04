@@ -68,6 +68,213 @@
       "model_class": "constraint-based",
       "sources": [],
       "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BiGG Models http://bigg.ucsd.edu/models/iIT341 ; doi:10.1128/JB.187.16.5818-5830.2005 (PMID 16077130); reference growth 0.692813 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "iIT341",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "iIT341 (Helicobacter pylori 26695)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "constraint-based",
+      "sources": [],
+      "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BiGG Models http://bigg.ucsd.edu/models/iLJ478 ; doi:10.1101/gr.234503 (PMID 14718003); reference growth 0.228407 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "iLJ478",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "iLJ478 (Thermotoga maritima MSB8)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "constraint-based",
+      "sources": [],
+      "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BiGG Models http://bigg.ucsd.edu/models/iNF517 ; doi:10.1128/AEM.00113-13 (PMID 23974059); reference growth 0.042635 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "iNF517",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "iNF517 (Lactococcus lactis subsp. cremoris MG1363)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "constraint-based",
+      "sources": [],
+      "state": "certified"
     }
   ]
 }

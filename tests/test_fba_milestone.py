@@ -13,31 +13,37 @@ from pathlib import Path
 _MILESTONE = Path(__file__).parent.parent / "datasets" / "constraint_based" / "milestone"
 
 
+_EXPECTED_ENTRIES = {"e_coli_core", "iIT341", "iLJ478", "iNF517"}
+
+
 def test_agreement_report_shows_a_blind_full_agreement() -> None:
     report = json.loads((_MILESTONE / "agreement_report.json").read_text(encoding="utf-8"))
-    assert report["total"] == 1
-    assert report["agreements"] == 1
+    assert report["total"] == len(_EXPECTED_ENTRIES)
+    assert report["agreements"] == report["total"]
     assert report["agreement_rate"] == 1.0
-    (entry,) = report["per_entry"]
-    assert entry["entry"] == "e_coli_core"
-    assert entry["expected"] == "reproduced" and entry["actual"] == "reproduced"
-    assert entry["agree"] is True
+    assert {e["entry"] for e in report["per_entry"]} == _EXPECTED_ENTRIES
+    for entry in report["per_entry"]:
+        assert entry["expected"] == "reproduced" and entry["actual"] == "reproduced"
+        assert entry["agree"] is True
 
 
-def test_the_committed_certificate_is_a_reproduced_verdict() -> None:
-    content = json.loads(
-        (_MILESTONE / "certificates" / "e_coli_core.json").read_text(encoding="utf-8")
-    )
-    assert content["overall"] == "reproduced"
-    # The inescapable scope flag travels with the stored certificate.
-    assert content["scope"]["machine"] == "reproducible-not-correct-not-clinical"
+def test_every_committed_certificate_is_a_reproduced_verdict() -> None:
+    for accession in _EXPECTED_ENTRIES:
+        content = json.loads(
+            (_MILESTONE / "certificates" / f"{accession}.json").read_text(encoding="utf-8")
+        )
+        assert content["overall"] == "reproduced"
+        # The inescapable scope flag travels with every stored certificate.
+        assert content["scope"]["machine"] == "reproducible-not-correct-not-clinical"
 
 
-def test_the_catalog_recorded_the_entry_as_certified() -> None:
+def test_the_catalog_recorded_every_entry_as_certified() -> None:
     catalog = json.loads((_MILESTONE / "catalog.json").read_text(encoding="utf-8"))
-    (entry,) = catalog["entries"]
-    assert entry["model_class"] == "constraint-based"
-    assert entry["state"] == "certified"
-    # The ground-truth label is retained on the durable entry (it is only withheld from the
-    # verdict path's blind view, not from the persisted record).
-    assert entry["ground_truth"]["expected"] == "reproduced"
+    entries = catalog["entries"]
+    assert len(entries) == len(_EXPECTED_ENTRIES)
+    for entry in entries:
+        assert entry["model_class"] == "constraint-based"
+        assert entry["state"] == "certified"
+        # The ground-truth label is retained on the durable entry (it is only withheld from the
+        # verdict path's blind view, not from the persisted record).
+        assert entry["ground_truth"]["expected"] == "reproduced"

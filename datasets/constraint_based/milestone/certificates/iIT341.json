@@ -2,16 +2,16 @@
   "assessments": [
     {
       "assumption_qualified": false,
-      "claim_id": "growth-glucose-aerobic",
+      "claim_id": "iIT341-growth",
       "discrepancy": "relative error 0.0000",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "quantity": "maximal aerobic growth rate, glucose minimal medium (R_BIOMASS_Ecoli_core_w_GAM, maximize)",
+      "quantity": "maximal growth rate on the distributed medium",
       "reference_kind": "numeric",
       "root_cause": null,
-      "source_location": "Orth, Fleming & Palsson (2010), EcoSal Plus; BiGG e_coli_core",
+      "source_location": "BiGG Models http://bigg.ucsd.edu/models/iIT341 ; doi:10.1128/JB.187.16.5818-5830.2005 (PMID 16077130)",
       "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
@@ -28,7 +28,7 @@
   "paper": {
     "doi": "",
     "pubmed_id": null,
-    "title": "E. coli core metabolic model (Orth, Fleming & Palsson 2010)"
+    "title": "iIT341 (Helicobacter pylori 26695)"
   },
   "scope": {
     "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
