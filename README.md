@@ -105,6 +105,14 @@ maximal growth rate (0.873922) to every published digit — with a
 pip install -e ".[dev,engine,fba]"   # fba brings the LP solver; engine (libsbml) reads the .xml model
 ```
 
+Generic **systems-biology kinetic models** (signaling, metabolic, gene-regulatory networks) are the
+third class. They reuse the PK/PD curve oracle unchanged — the reproducible result is a species
+time-course — so adding them is mostly demonstrating the contract generalizes. The class is
+self-validated non-circularly against an independent simulator (libRoadRunner): curated BioModels
+networks spanning three types reproduce, and the [milestone blind run](datasets/kinetic/milestone/)
+scores 3/3 through the same catalog and agreement machinery as the other classes. See
+[docs/kinetic-class.md](docs/kinetic-class.md).
+
 Reprolith gets better when people who know the science validate its judgment. When it isn't sure
 about a load-bearing value, it opens a **verification issue** with its best estimate — confirming
 or correcting one is the most valuable thing you can do here. See
