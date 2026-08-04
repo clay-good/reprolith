@@ -155,6 +155,18 @@ EFFECTFUL_TOOLS: list[dict[str, Any]] = [
             "required": ["requester"],
         },
     },
+    {
+        "name": "release_work",
+        "description": (
+            "EFFECTFUL: release a claimed entry (by accession) back to the queue. Only the lease "
+            "holder may release it."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"accession": {"type": "string"}, "requester": {"type": "string"}},
+            "required": ["accession", "requester"],
+        },
+    },
 ]
 
 
@@ -187,6 +199,17 @@ def claim_work(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dic
     if entry is None:
         return {"claimed": False, "reason": "no eligible work"}
     return {"claimed": True, "entry": entry.blind().to_dict(), "lease_expires": entry.lease_expires}
+
+
+def release_work(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Release a claimed entry back to the queue; only the lease holder may."""
+    entry = catalog.find(Identifiers(title="", accession=arguments["accession"]))
+    if entry is None:
+        return {"released": False, "reason": "unknown entry"}
+    if entry.leased_to != arguments["requester"]:
+        return {"released": False, "reason": "not the lease holder"}
+    entry.release_lease()
+    return {"released": True}
 
 
 def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -> Any:
@@ -282,6 +305,12 @@ def handle_request(
                 if catalog is None:
                     raise KeyError("claim_work is not enabled on this read-only server")
                 data = claim_work(catalog, arguments, at=(now() if now is not None else 0.0))
+                if on_change is not None:
+                    on_change()
+            elif name == "release_work":
+                if catalog is None:
+                    raise KeyError("release_work is not enabled on this read-only server")
+                data = release_work(catalog, arguments)
                 if on_change is not None:
                     on_change()
             else:
@@ -411,6 +440,7 @@ __all__ = [
     "handle_request",
     "load_certificates",
     "load_dossiers",
+    "release_work",
     "serve_stdio",
     "submit_paper",
 ]

@@ -279,6 +279,26 @@ def test_claim_work_refused_on_read_only_server() -> None:
     assert resp["result"]["isError"]
 
 
+def test_release_work_returns_the_item_to_the_queue() -> None:
+    catalog = Catalog()
+    catalog.add(Identifiers(title="A", accession="A1"), ModelClass.ODE_PKPD)
+    query = ReprolithQuery(catalog, CertificateLedger())
+
+    def call(name, args):
+        resp = handle_request(query, {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                      "params": {"name": name, "arguments": args}},
+                              catalog=catalog, now=lambda: 0.0)
+        return json.loads(resp["result"]["content"][0]["text"])
+
+    call("claim_work", {"requester": "agent-1", "lease_seconds": 1000})
+    # A non-holder cannot release it.
+    assert call("release_work", {"accession": "A1", "requester": "agent-2"})["released"] is False
+    # The holder releases it back to the queue.
+    assert call("release_work", {"accession": "A1", "requester": "agent-1"})["released"] is True
+    # It is claimable again immediately.
+    assert call("claim_work", {"requester": "agent-2", "lease_seconds": 10})["claimed"] is True
+
+
 def test_stdio_round_trip() -> None:
     query, digest = _fixture()
     requests = "\n".join([
