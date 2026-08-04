@@ -28,6 +28,7 @@ happens to land on.
 |---|---|---|
 | `solve_objective` / `judge_objective` | What is the optimal objective value, and does it match the reported one? | the objective value is unique even when the flux vector isn't |
 | `reaction_essentiality` / `essentiality_agreement` | Which reactions, knocked out, collapse the objective? Do they match the reported essential set? | essentiality is a property of the objective optimum, not of any one flux vector |
+| `gene_essentiality` | Which *genes*, deleted, collapse the objective — honoring each reaction's AND/OR gene rule? | gene deletion forces to zero only the reactions whose GPR rule fails; essentiality is still an objective property |
 | `flux_variability` | What min/max can each reaction's flux take while the objective stays optimal? | it reports the *whole* feasible interval instead of picking one vector |
 | `judge_flux` | Does a reported reaction flux reproduce? | it judges against the variability interval, and abstains when the model leaves the flux free |
 
@@ -47,18 +48,23 @@ Given a reported flux and its variability interval `(min, max)` (from `flux_vari
 ## The FROG fingerprint
 
 The spec makes the verdict for a curated model a *fingerprint comparison*, not a single number.
-`frog_fingerprint` bundles the three reaction-level results into one standardized, solver-independent
-artifact — named for the field's FROG analysis (Flux optimum, Reaction variability, Objective,
-Gene/reaction deletion):
+`frog_fingerprint` bundles the results into one standardized, solver-independent artifact — named
+for the field's FROG analysis (Flux optimum, Reaction variability, Objective, Gene/reaction
+deletion):
 
 - the optimal **objective value**,
-- each reaction's **flux-variability interval**, and
-- the **deletion objective** for each reaction (the optimum with that reaction knocked out).
+- each reaction's **flux-variability interval**,
+- the **deletion objective** for each reaction (the optimum with that reaction knocked out), and
+- the **gene-deletion objective** for each gene (the optimum with that gene deleted, forcing to
+  zero every reaction whose gene–protein–reaction rule then fails).
 
-`compare_frog` then checks two fingerprints component-wise, aligning reactions by id and naming
-every disagreement — a reaction present in only one fingerprint is a disagreement, so a structural
-mismatch is never hidden behind a numeric pass. (Gene-level deletion is a further extension that
-needs the gene–reaction associations the fbc ingest does not yet capture.)
+Gene deletion is populated whenever the model carries GPR rules — `ingest_fbc_sbml` parses each
+reaction's SBML-fbc `geneProductAssociation` into a boolean rule (`FbaModel.gene_associations`), so
+a model with gene data gets the full four-part FROG and one without simply has an empty gene section.
+
+`compare_frog` then checks two fingerprints component-wise, aligning reactions *and genes* by id and
+naming every disagreement — an id present in only one fingerprint is a disagreement, so a structural
+mismatch is never hidden behind a numeric pass.
 
 ```python
 from reprolith import frog_fingerprint, compare_frog, judge_fingerprint, ingest_fbc_sbml
@@ -83,7 +89,33 @@ is the standard *E. coli* core model; [`tests/test_fba_selfvalidation.py`](../te
 ingests it with `ingest_fbc_sbml`, solves it, and checks the optimum against the textbook maximal
 growth rate (0.873922 mmol · gDW⁻¹ · h⁻¹). The expected value lives only in the test assertion —
 nothing in the engine encodes it — so this is a genuine reproduction of a known result, and the
-full FROG analyses are exercised on a real network rather than only the tiny fixtures.
+full FROG analyses are exercised on a real network rather than only the tiny fixtures. Gene
+essentiality is validated the same way: e_coli_core's 69 GPR-annotated reactions span 137 genes,
+and `gene_essentiality` recovers its essential-gene set — including the independently known
+essential enolase (`b2779`) — computed from the model's own GPR rules.
+
+## From a paper to a certificate
+
+The oracle above is the back end. The front end — turning a constraint-based *paper* into a
+certified reproduction — is [`reprolith.constraint_based`](../python/reprolith/constraint_based.py),
+the FBA counterpart of the PK/PD `certify_model`. It reuses the shared `Dossier` unchanged rather
+than reshaping it: the structural elements (stoichiometry, bounds, objective, GPR) live in the
+paper's own SBML-fbc file, so a constraint-based dossier **adopts** that validating `ModelArtifact`
+and recovers them with `ingest_fbc_sbml` instead of re-encoding an S matrix. The one thing the file
+cannot pin down on its own — the **medium** — is recorded as first-class dossier elements, because
+it is load-bearing: each stated uptake limit is a `Parameter`, and any unstated exchange bound is a
+`GapKind.MEDIUM` gap the validator requires be load-bearing.
+
+- `constraint_based_dossier` / `validate_constraint_based` build and check that shape.
+- `certify_constraint_based` adopts the model, applies the recorded medium, solves each
+  objective-value claim, and assembles the certificate through the shared builder and scope flag. A
+  `shortfalls` mapping supplies the root cause a failing claim requires, so the path emits an honest
+  *not-reproduced* certificate, not only a reproduced one.
+
+The worked example in [`datasets/constraint_based/worked_example/`](../datasets/constraint_based/worked_example/)
+walks it end to end on E. coli core: the dossier reproduces the known growth rate cleanly, and the
+same network run anaerobically drops to 0.211663 — a concrete demonstration of why the medium is
+load-bearing.
 
 ## Failure modes
 
