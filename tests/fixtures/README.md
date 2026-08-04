@@ -8,3 +8,7 @@
   (https://www.ebi.ac.uk/biomodels/BIOMD0000000948, CC0 1.0). Three of its species share the
   display name "AR" with distinct SBML ids; used to test that the engine resolves a species by
   its SBML id rather than the ambiguous column title.
+- `BIOMD0000000238.xml` — Overgaard2007 IL-21 PD model
+  (https://www.ebi.ac.uk/biomodels/BIOMD0000000238, CC0 1.0). It ships no species — its state
+  variables (M, T, BR) are SBML parameters with rate rules; used to test that ingestion
+  recognizes the "parameter + rateRule" idiom.

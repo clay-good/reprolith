@@ -68,3 +68,15 @@ def test_real_model_runs_under_the_pin() -> None:
     # The plasma concentration is produced and finite across the run.
     assert len(values) == 11
     assert all(math.isfinite(v) for v in values)
+
+
+def test_ingests_parameter_state_variables() -> None:
+    # Overgaard2007 ships no species: its states are SBML parameters with rate rules.
+    sbml = (Path(__file__).parent / "fixtures" / "BIOMD0000000238.xml").read_text()
+    dossier = ingest_sbml(sbml, entry="BIOMD0000000238", source_label="BioModels BIOMD0000000238")
+    assert set(dossier.state_variables) == {"M", "T", "BR"}
+    ics = {p.name for p in dossier.initial_conditions}
+    assert {"M", "T", "BR"} <= ics
+    # A rate-rule-target is a state variable, not also listed as a constant parameter.
+    assert not ({"M", "T", "BR"} & {p.name for p in dossier.parameters})
+    assert dossier.validate() == []

@@ -74,20 +74,32 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
             )
         )
 
+    # A parameter that is the target of a rate rule is a state variable, not a constant — the
+    # "parameter + rateRule" idiom common in PK/PD models that ship no species. Its value is the
+    # initial condition, and it must not be recorded as a fixed parameter.
+    rate_targets = {
+        model.getRule(i).getVariable()
+        for i in range(model.getNumRules())
+        if model.getRule(i).isRate()
+    }
+
     parameters: list[Parameter] = []
     for i in range(model.getNumParameters()):
         parameter = model.getParameter(i)
         if not parameter.isSetValue():
             continue  # value-less parameter (rule-assigned); not a directly-stated value
-        parameters.append(
-            Parameter(
-                name=parameter.getId(),
-                value=float(parameter.getValue()),
-                unit=parameter.getUnits() or "dimensionless",
-                source_location=source,
-                confidence=ExtractionConfidence.QUOTED,
-            )
+        extracted = Parameter(
+            name=parameter.getId(),
+            value=float(parameter.getValue()),
+            unit=parameter.getUnits() or "dimensionless",
+            source_location=source,
+            confidence=ExtractionConfidence.QUOTED,
         )
+        if parameter.getId() in rate_targets:
+            state_variables.append(parameter.getId())
+            initial_conditions.append(extracted)
+        else:
+            parameters.append(extracted)
 
     equations: list[Equation] = []
     for i in range(model.getNumRules()):
