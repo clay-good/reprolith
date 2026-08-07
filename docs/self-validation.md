@@ -34,6 +34,42 @@ follow end to end, all regenerable from the repository alone.
   demonstrated, not asserted. The logical class proves the point hardest: a third, discrete oracle
   (attractors) with no continuous trajectory and no optimization, carried by the same contracts.
 
+## Closed-form reproductions (the simulators themselves)
+
+The table above is blind agreement with *independent tools* on *real* models. Underneath it, each
+simulator is also checked directly against **exact analytical results** — no external tool, no
+fitted data, the formula verified empirically before it is asserted. These run in the core CI job
+(the spatial, stochastic, and logical simulators are pure Python; FBA uses scipy's LP solver), so
+the whole catalogue below is reproduced on every commit.
+
+| Class | Canonical result reproduced | Analytical law | Test |
+|---|---|---|---|
+| Spatial | Point-source diffusion (1-D & 2-D) | Gaussian, variance → var₀ + 2Dt | `test_pure_diffusion_reproduces_the_analytical_gaussian`, `…_2d_…_field` |
+| Spatial | Diffusion with first-order decay | exponential decay of total mass | `test_first_order_decay_matches_the_exponential_analytical_solution` |
+| Spatial | Fisher-KPP pulled front | c = 2·√(rD) | `test_fisher_kpp_reproduces_the_analytical_front_speed` |
+| Spatial | Bistable (Nagumo) pushed front | c = √(D/2)·(1−2a) | `test_bistable_nagumo_reproduces_the_exact_pushed_front_speed` |
+| Spatial | Morphogen gradient | decay length λ = √(D/k) | `test_morphogen_gradient_reproduces_the_analytical_decay_length` |
+| Spatial | Turing dispersion relation | growth rate = dominant eigenvalue of J − k²·diag(D) | `test_two_species_reaction_diffusion_reproduces_the_dispersion_relation` |
+| Spatial | Turing wavelength selection | emergent mode = argmax_m λ(kₘ) | `test_schnakenberg_reproduces_the_turing_wavelength_selection` |
+| Spatial | Spatial-SIR epidemic wave | c = 2·√(D(β·S₀ − γ)) | `test_spatial_sir_reproduces_the_epidemic_wave_speed` |
+| Stochastic | Birth-death stationary moments | mean = variance = k/γ (Poisson) | `test_immigration_death_reproduces_the_poisson_stationary_mean_and_variance` |
+| Stochastic | Birth-death full distribution | χ² goodness-of-fit vs the exact Poisson PMF | `test_immigration_death_reproduces_the_full_poisson_stationary_distribution` |
+| Stochastic | Transient relaxation | λ(t) = (k/γ)(1 − e^{−γt}) | `test_transient_poisson_percentile_envelope_is_reproduced` |
+| Stochastic | Reversible reaction equilibrium | binomial equilibrium mean | `test_reversible_reaction_reproduces_the_binomial_equilibrium_mean` |
+| Stochastic | Intrinsic-noise laws | Fano = 1, CV = 1/√mean | `test_poisson_fano_factor_and_noise_scaling_law` |
+| Stochastic | Bursty expression | super-Poissonian Fano = (b+1)/2 | `test_bursty_production_reproduces_the_super_poissonian_fano_law` |
+| Stochastic | Small-population extinction | mean time = H_{N₀}/γ (harmonic) | `test_pure_death_reproduces_the_harmonic_extinction_time` |
+| Stochastic | Gillespie direct method | Exp(a_total) waiting time; firing ∝ propensity | `test_direct_method_reproduces_its_two_defining_probabilities` |
+| Logical | Thomas' rules | positive circuit → multistability; negative → oscillation | `test_reproduces_thomas_rules_positive_and_negative_feedback_circuits` |
+| Logical | Update-scheme artifact | synchronous spurious cycle absent under async | `test_synchronous_update_creates_a_spurious_cycle_that_async_resolves` |
+| FBA | Pasteur effect | anaerobic 0.2117 /h vs aerobic 0.8739 /h | `test_anaerobic_growth_rate_is_the_pasteur_effect_value` |
+| FBA | Linear growth law | biomass affine in glucose uptake (R² = 1) | `test_biomass_is_exactly_affine_in_glucose_uptake` |
+
+Non-circular by construction: the reference is a mathematical law (a front speed, a dispersion
+relation, a noise law, an attractor theorem, an LP-duality consequence), not a number this engine
+produced. Where a law is only approached asymptotically — the KPP pulled front converges
+logarithmically — the tolerance is a stated, principled override rather than the 5% default.
+
 ## Regenerate it
 
 ```bash
