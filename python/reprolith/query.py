@@ -23,6 +23,7 @@ from typing import Any
 from .catalog import Catalog, CatalogEntry, Identifiers
 from .determinism import certificate_digest
 from .model import Certificate
+from .presubmission import presubmission_report
 from .render import claim_counts, gap_items
 from .supersession import CertificateLedger
 
@@ -113,6 +114,16 @@ class ReprolithQuery:
         """The structured "what was missing" report for a digest, or ``None``."""
         cert = self._ledger.get(digest)
         return gap_items(cert) if cert is not None else None
+
+    def presubmission(self, digest: str) -> dict[str, Any] | None:
+        """The author-facing pre-submission report for a digest, or ``None``.
+
+        Re-presents the certificate as a readiness signal plus a prioritized fix list for an
+        author to run on their own model before publishing (spec: ``presubmission-check``). It
+        recomputes no verdict — the report is derived from the stored certificate.
+        """
+        cert = self._ledger.get(digest)
+        return presubmission_report(cert) if cert is not None else None
 
     def certificates_for(
         self,

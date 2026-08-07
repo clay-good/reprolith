@@ -70,6 +70,14 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "inputSchema": _ONE_DIGEST,
     },
     {
+        "name": "presubmission",
+        "description": (
+            "Author-facing pre-submission check for a digest: readiness, per-claim verdicts, and "
+            "a prioritized 'fix before you submit' list. Runs on your own model before publishing."
+        ),
+        "inputSchema": _ONE_DIGEST,
+    },
+    {
         "name": "certificates_for",
         "description": "Digests of every certificate issued for a paper, newest first.",
         "inputSchema": _IDENTIFIER,
@@ -255,6 +263,8 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return query.verdict(arguments["digest"])
     if name == "gaps":
         return query.gaps(arguments["digest"])
+    if name == "presubmission":
+        return query.presubmission(arguments["digest"])
     if name == "certificates_for":
         return query.certificates_for(**_identifier_kwargs(arguments))
     if name == "backlog_health":

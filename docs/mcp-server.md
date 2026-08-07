@@ -45,6 +45,7 @@ qualifications.
 | `certificate` | `digest` | The full certificate: content, verdicts, scope, gaps |
 | `verdict` | `digest` | The scope-qualified verdict (overall + per-claim + counts) |
 | `gaps` | `digest` | The structured "what was missing" report |
+| `presubmission` | `digest` | Author-facing pre-submission check: readiness + prioritized fix list |
 | `certificates_for` | `title`/`doi`/… | Digests of every certificate for a paper, newest first |
 | `backlog_health` | — | Backlog depth by state, class, and difficulty, and the labelled mix |
 | `dossier` | `accession` | The ingested dossier — extracted model structure |

@@ -152,7 +152,7 @@ a change under `openspec/changes/`.
 
 ### 10. Author / journal reproducibility gap report and pre-submission check
 
-- **Type:** capability / distribution
+- **Type:** capability / distribution *(landed: `presubmission-check` spec + MCP `presubmission` tool)*
 - **Why (value):** The adoption flywheel. Package the "what was missing" report as something an
   author or journal runs *before* publication — turning Reprolith from an after-the-fact auditor
   into a tool people want, and converting the un-curated tail into fewer irreproducible papers at
