@@ -206,3 +206,54 @@ def test_lint_steady_state_is_deterministic() -> None:
     a = lint_steady_state({"X": "X"}, {"X": 1})
     b = lint_steady_state({"X": "X"}, {"X": 1})
     assert a == b
+
+
+# --- certificate integration (shared contracts carry the class) --------------------
+
+
+def test_certify_logical_builds_a_certificate_through_the_shared_builder() -> None:
+    from reprolith import (
+        EnginePin,
+        LogicalClaim,
+        OverallVerdict,
+        PaperIdentity,
+        certify_logical,
+    )
+
+    cert = certify_logical(
+        paper=PaperIdentity(title="A Boolean signaling model", doi="10.9/log"),
+        engine_pin=EnginePin(engine="reprolith-logical", version="0.0.1"),
+        claims=[
+            LogicalClaim(
+                claim_id="ss1", quantity="ON steady state", rules={"A": "!B", "B": "!A"},
+                reported={"A": 1, "B": 0}, source_location="Fig 2",
+            ),
+            LogicalClaim(
+                claim_id="ss2", quantity="OFF steady state", rules={"A": "!B", "B": "!A"},
+                reported={"A": 0, "B": 1}, source_location="Fig 2",
+            ),
+        ],
+    )
+    assert cert.overall is OverallVerdict.REPRODUCED  # both reported states are fixed points
+    assert {a.method for a in cert.assessments} == {"attractor-set-match"}
+    assert cert.scope.machine  # the scope flag travels with a logical certificate too
+
+
+def test_certify_logical_emits_an_honest_not_reproduced_certificate() -> None:
+    from reprolith import EnginePin, LogicalClaim, OverallVerdict, PaperIdentity, certify_logical
+
+    cert = certify_logical(
+        paper=PaperIdentity(title="A Boolean signaling model", doi="10.9/log"),
+        engine_pin=EnginePin(engine="reprolith-logical", version="0.0.1"),
+        claims=[
+            LogicalClaim(
+                claim_id="bad", quantity="claimed steady state", rules={"A": "!B", "B": "!A"},
+                reported={"A": 1, "B": 1}, source_location="Fig 2",  # not a fixed point
+                shortfall=Attribution(
+                    mode=FailureMode.UNSPECIFIED_UPDATE_SCHEME, implicated="update scheme",
+                    fault=Fault.MANUSCRIPT,
+                ),
+            ),
+        ],
+    )
+    assert cert.overall is OverallVerdict.NOT_REPRODUCED

@@ -86,6 +86,8 @@ from .ingest import ingest_sbml
 from .linter import LintResult, lint_curve, lint_objective, lint_steady_state
 from .logical import (
     BooleanNetwork,
+    LogicalClaim,
+    certify_logical,
     compile_boolean_rule,
     judge_attractor_set,
     judge_steady_state,
@@ -200,6 +202,7 @@ __all__ = [
     "IllegalTransition",
     "LifecycleState",
     "LintResult",
+    "LogicalClaim",
     "ModelArtifact",
     "ModelClass",
     "ModelOrigin",
@@ -244,6 +247,7 @@ __all__ = [
     "certify_curves",
     "certify_estimation",
     "certify_model",
+    "certify_logical",
     "certify_population",
     "claim_counts",
     "constraint_based_dossier",

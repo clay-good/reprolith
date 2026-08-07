@@ -17,11 +17,12 @@ contract so a logical verdict carries the same tolerance provenance and attribut
 from __future__ import annotations
 
 import ast
-from collections.abc import Callable, Container, Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Callable, Container, Iterable, Mapping, Sequence
+from dataclasses import dataclass, field
 from itertools import product
 
-from .model import ClaimAssessment
+from .certificate import build_certificate
+from .model import Assumption, Certificate, ClaimAssessment, EnginePin, PaperIdentity
 from .oracle import Attribution, ComparisonMethod, ReferenceKind, assess_match
 
 # A network state as node values in sorted-node order, so states hash and sort deterministically.
@@ -252,10 +253,65 @@ def judge_attractor_set(
     )
 
 
+@dataclass(frozen=True)
+class LogicalClaim:
+    """A published logical steady-state claim to reproduce: a network and a reported fixed point.
+
+    ``rules`` is the JSON-friendly network form — each node mapped to a Boolean rule expression
+    over the others (e.g. ``{"A": "!B", "B": "!A"}``). ``reported`` is the steady state the paper
+    claims the network holds. ``shortfall`` supplies the root cause a non-pass verdict requires.
+    """
+
+    claim_id: str
+    quantity: str
+    rules: Mapping[str, str]
+    reported: Mapping[str, int]
+    source_location: str
+    assumption_qualified: bool = False
+    shortfall: Attribution | None = field(default=None)
+
+
+def certify_logical(
+    *,
+    paper: PaperIdentity,
+    engine_pin: EnginePin,
+    claims: Iterable[LogicalClaim],
+    assumptions: Iterable[Assumption] = (),
+) -> Certificate:
+    """Assemble a certificate of logical steady-state verdicts through the shared builder.
+
+    The logical counterpart of ``certify_constraint_based``: each claim's network is parsed and its
+    reported steady state judged with :func:`judge_steady_state`, and the certificate is built by
+    the same rule and scope flag as every other class — demonstrating the shared contracts carry
+    the logical class (spec: logical-class — "Shared contracts carry the new class"). Needs no
+    engine extra; the attractor analysis is exact and pure.
+    """
+    assessments = [
+        judge_steady_state(
+            claim_id=claim.claim_id,
+            quantity=claim.quantity,
+            source_location=claim.source_location,
+            reported=claim.reported,
+            network=parse_boolean_network(claim.rules),
+            attribution=claim.shortfall,
+            assumption_qualified=claim.assumption_qualified,
+        )
+        for claim in claims
+    ]
+    return build_certificate(
+        paper=paper,
+        engine_pin=engine_pin,
+        assessments=assessments,
+        assumptions=tuple(assumptions),
+    )
+
+
 __all__ = [
     "BooleanNetwork",
+    "LogicalClaim",
     "Rule",
     "State",
+    "certify_logical",
     "compile_boolean_rule",
     "judge_attractor_set",
     "judge_steady_state",
