@@ -277,6 +277,40 @@ def certify_stochastic(
     )
 
 
+def time_to_extinction(
+    n_species: int,
+    reactions: Sequence[Reaction],
+    initial: Sequence[int],
+    *,
+    species: int,
+    rng: random.Random,
+    max_time: float = 1e9,
+) -> float:
+    """The first time ``species`` reaches zero along one SSA trajectory (its extinction time).
+
+    Runs the direct method until the species count hits zero (or ``max_time`` / an absorbing state
+    with no further reactions). The extinction time of a small population is a first-passage
+    observable central to population dynamics — extinction of small populations, loss of a
+    drug-resistant clone. Deterministic in ``rng``.
+    """
+    state = list(initial)
+    t = 0.0
+    while state[species] > 0 and t < max_time:
+        propensities = [reaction.propensity(state) for reaction in reactions]
+        total = math.fsum(propensities)
+        if total <= 0.0:
+            break
+        t += -math.log(rng.random()) / total
+        threshold = rng.random() * total
+        cumulative = 0.0
+        for reaction, propensity in zip(reactions, propensities):
+            cumulative += propensity
+            if cumulative >= threshold:
+                reaction.apply(state)
+                break
+    return t
+
+
 def fano_factor(ensemble: Sequence[Sequence[int]], species: int) -> float:
     """The Fano factor (variance / mean) of a species across the ensemble.
 
@@ -374,4 +408,5 @@ __all__ = [
     "gillespie",
     "gillespie_at_times",
     "species_mean_variance",
+    "time_to_extinction",
 ]

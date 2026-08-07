@@ -204,6 +204,7 @@ from .stochastic import (
     gillespie_at_times,
     species_mean_variance,
     stochastic_dossier,
+    time_to_extinction,
     validate_stochastic,
 )
 from .supersession import CertificateLedger, describe_changes
@@ -402,6 +403,7 @@ __all__ = [
     "spatial_dossier",
     "species_mean_variance",
     "stochastic_dossier",
+    "time_to_extinction",
     "validate_constraint_based",
     "validate_logical",
     "validate_spatial",

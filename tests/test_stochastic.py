@@ -239,3 +239,23 @@ def test_bursty_production_reproduces_the_super_poissonian_fano_law() -> None:
         assert abs(mean - b * k / gamma) / (b * k / gamma) < 0.05  # mean = b·k/γ
         analytic_fano = (b + 1) / 2
         assert abs(fano_factor(ensemble, 0) - analytic_fano) < 0.15  # Fano = (b+1)/2
+
+
+def test_pure_death_reproduces_the_harmonic_extinction_time() -> None:
+    # For a pure-death process, each of N0 molecules dies independently at rate gamma, so the
+    # population's extinction time is the maximum of N0 exponentials, with mean (1/gamma)*H_{N0}
+    # (the N0-th harmonic number). A clean first-passage result for small-population extinction.
+    from reprolith import judge_scalar, time_to_extinction
+
+    gamma, n0 = 1.0, 8
+    harmonic = math.fsum(1.0 / m for m in range(1, n0 + 1))
+    analytic_mean = harmonic / gamma  # ~ 2.718
+    death = [Reaction(rate=gamma, reactants=((0, 1),), products=())]
+    rng = random.Random(20260807)
+    times = [time_to_extinction(1, death, [n0], species=0, rng=rng) for _ in range(3000)]
+    measured_mean = math.fsum(times) / len(times)
+    verdict = judge_scalar(
+        claim_id="extinction", quantity="mean extinction time", source_location="H_{N0}/gamma",
+        reported=analytic_mean, predicted=measured_mean,
+    )
+    assert verdict.verdict is Verdict.REPRODUCED  # within the 5% default for 3000 trajectories
