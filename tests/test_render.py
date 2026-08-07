@@ -182,3 +182,36 @@ def test_human_render_marks_an_estimation_level_verdict() -> None:
     text = render_human(_cert([est, sim]), RUN)
     assert "[e] AUC: reproduced [estimation]" in text
     assert "[s] AUC: reproduced (" in text  # simulation level is not tagged
+
+
+def test_render_registry_is_browsable_and_honest() -> None:
+    from reprolith import render_registry
+
+    clean = _cert([_claim(Verdict.REPRODUCED, cid="a")])
+    qualified = _cert([_claim(Verdict.REPRODUCED, cid="b", qualified=True)])  # -> partially-reproduced
+    failed = _cert([_claim(Verdict.FAILED, cid="c")])
+    html = render_registry([
+        ("ode-pkpd", clean),
+        ("logical", qualified),
+        ("constraint-based", failed),
+    ])
+
+    # Every certificate is listed and navigable, grouped by class and verdict.
+    assert html.count('class="entry"') == 3
+    assert 'data-class="logical"' in html and 'data-class="ode-pkpd"' in html
+    assert 'data-verdict="partially-reproduced"' in html
+    # The scope statement travels and cannot be emptied.
+    assert "reproducible" in html.lower() and "clinical" in html.lower()
+    # No silent green: the qualified/partial entry is not painted the clean-pass green.
+    partial_badge_green = "partially-reproduced" in html and "#4c1" in html.split("partially-reproduced")[0][-400:]
+    assert not partial_badge_green
+    # A self-contained page.
+    assert html.startswith("<!doctype html>") and "</html>" in html
+
+
+def test_render_registry_handles_no_certificates() -> None:
+    from reprolith import render_registry
+
+    html = render_registry([])
+    assert "No certificates yet" in html
+    assert "clinical" in html.lower()  # scope disclaimer still present

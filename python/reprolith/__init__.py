@@ -146,7 +146,14 @@ from .reconstruction import (
     ReconstructionBundle,
     close_gap,
 )
-from .render import claim_counts, gap_items, render_badge, render_human, render_machine
+from .render import (
+    claim_counts,
+    gap_items,
+    render_badge,
+    render_human,
+    render_machine,
+    render_registry,
+)
 from .revision import DossierHistory, DossierRevision, dossier_digest, revise
 from .run import (
     advance_to_outcome,
@@ -318,6 +325,7 @@ __all__ = [
     "render_human",
     "render_machine",
     "render_presubmission_human",
+    "render_registry",
     "reverify_dependents",
     "revise",
     "roadrunner_pin",
