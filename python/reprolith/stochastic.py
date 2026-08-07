@@ -277,6 +277,31 @@ def certify_stochastic(
     )
 
 
+def fano_factor(ensemble: Sequence[Sequence[int]], species: int) -> float:
+    """The Fano factor (variance / mean) of a species across the ensemble.
+
+    The signature of the noise regime: 1 for Poisson (constitutive) statistics, greater than 1 for
+    super-Poissonian/bursty expression, less than 1 for sub-Poissonian. A fundamental readout in
+    single-cell and gene-expression biology.
+    """
+    mean, variance = species_mean_variance(ensemble, species)
+    if mean == 0.0:
+        raise ValueError("Fano factor is undefined for a zero mean")
+    return variance / mean
+
+
+def coefficient_of_variation(ensemble: Sequence[Sequence[int]], species: int) -> float:
+    """The coefficient of variation (standard deviation / mean) of a species across the ensemble.
+
+    The relative noise level; for Poisson statistics it scales as ``1/√mean`` — the fundamental law
+    that smaller molecule populations are proportionally noisier.
+    """
+    mean, variance = species_mean_variance(ensemble, species)
+    if mean == 0.0:
+        raise ValueError("coefficient of variation is undefined for a zero mean")
+    return math.sqrt(variance) / mean
+
+
 def validate_stochastic(dossier: Dossier) -> list[str]:
     """Structural problems that make a stochastic dossier ill-formed; empty when well-formed.
 
@@ -340,6 +365,8 @@ __all__ = [
     "Reaction",
     "StochasticClaim",
     "certify_stochastic",
+    "coefficient_of_variation",
+    "fano_factor",
     "stochastic_dossier",
     "validate_stochastic",
     "ensemble_final_counts",

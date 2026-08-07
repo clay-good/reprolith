@@ -201,3 +201,20 @@ def test_stochastic_dossier_records_species_reactions_and_sampling_gap() -> None
     # An unstated sampling protocol is a load-bearing gap.
     assert len(dossier.load_bearing_gaps()) == 1
     assert dossier.load_bearing_gaps()[0].kind is GapKind.SAMPLING
+
+
+def test_poisson_fano_factor_and_noise_scaling_law() -> None:
+    # The immigration-death process is Poisson at stationarity, so its Fano factor (variance/mean)
+    # is 1 and its coefficient of variation scales as 1/sqrt(mean) — the fundamental law that
+    # smaller molecule populations are proportionally noisier. Both are famous, closed-form results.
+    from reprolith import coefficient_of_variation, fano_factor
+
+    for k in (4.0, 16.0, 64.0):  # stationary mean = k/gamma = k
+        ensemble = ensemble_final_counts(
+            1, _immigration_death(k, 1.0), [0], duration=40.0, trajectories=800, seed=int(k) * 7
+        )
+        fano = fano_factor(ensemble, 0)
+        cv = coefficient_of_variation(ensemble, 0)
+        assert abs(fano - 1.0) < 0.15  # Poisson signature: variance == mean
+        # CV * sqrt(mean) == 1 for Poisson; check the 1/sqrt(mean) scaling holds across sizes.
+        assert abs(cv * math.sqrt(k) - 1.0) < 0.12
