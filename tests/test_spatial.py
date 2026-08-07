@@ -140,6 +140,42 @@ def test_fisher_kpp_reproduces_the_analytical_front_speed() -> None:
     assert 1.8 < speed < 2.0  # approaching the asymptotic speed from below
 
 
+def test_bistable_nagumo_reproduces_the_exact_pushed_front_speed() -> None:
+    # The bistable (Nagumo) equation u_t = D u_xx + u(1-u)(u-a), 0<a<1/2, has a *pushed* front
+    # connecting the two stable states u=1 and u=0 with an EXACT closed-form speed c = sqrt(D/2)(1-2a).
+    # Unlike the Fisher-KPP pulled front (which reaches its speed only logarithmically, needing a ~10%
+    # override), a pushed front has a sharply selected speed the solver reproduces within the default
+    # tolerance — a qualitatively different, and stronger, reproduction.
+    from reprolith import front_position, judge_scalar, react_diffuse_1d
+
+    D, a = 1.0, 0.25
+    analytic_speed = math.sqrt(D / 2.0) * (1.0 - 2.0 * a)  # = 0.35355...
+    dx = 0.25
+    n = 481  # domain [0, 120]: the front settles and travels without reaching the boundary
+    dt = 0.2 * dx * dx / D
+    xs = [i * dx for i in range(n)]
+    # A smooth step: u=1 (invaded) on the left, u=0 ahead, centered at x=25.
+    u = [0.5 * (1.0 - math.tanh((x - 25.0) / 4.0)) for x in xs]
+
+    def reaction(c: float) -> float:
+        return c * (1.0 - c) * (c - a)
+
+    def advance(state: list[float], elapsed: float) -> list[float]:
+        return react_diffuse_1d(state, diffusivity=D, dx=dx, dt=dt, steps=round(elapsed / dt),
+                                reaction=reaction)
+
+    at_30 = advance(u, 30.0)  # let the transient settle onto the traveling profile
+    at_60 = advance(at_30, 30.0)
+    speed = (front_position(at_60, dx=dx) - front_position(at_30, dx=dx)) / 30.0
+
+    verdict = judge_scalar(  # default tolerance: the pushed front's speed is exact, not asymptotic
+        claim_id="nagumo-front", quantity="bistable (Nagumo) pushed-front speed",
+        source_location="analytical c=sqrt(D/2)(1-2a)", reported=analytic_speed, predicted=speed,
+    )
+    assert verdict.verdict is Verdict.REPRODUCED
+    assert abs(speed - analytic_speed) / analytic_speed < 0.01  # reproduced to ~0.1%, no override
+
+
 def test_react_diffuse_matches_pure_diffusion_when_the_reaction_is_zero() -> None:
     # With a zero reaction term, react_diffuse_1d must agree with diffuse_1d.
     initial = gaussian_profile(_CENTERS, mass=5.0, variance=1.0)
