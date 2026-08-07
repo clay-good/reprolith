@@ -24,9 +24,11 @@ from .certify import (
     Claim,
     CurveClaim,
     EstimationClaim,
+    PopulationClaim,
     certify_curves,
     certify_estimation,
     certify_model,
+    certify_population,
 )
 from .constraint_based import (
     certify_constraint_based,
@@ -207,6 +209,7 @@ __all__ = [
     "Parameter",
     "PaperIdentity",
     "PercentileBand",
+    "PopulationClaim",
     "RecipeStep",
     "ReconstructionBundle",
     "ReferenceKind",
@@ -241,6 +244,7 @@ __all__ = [
     "certify_curves",
     "certify_estimation",
     "certify_model",
+    "certify_population",
     "claim_counts",
     "constraint_based_dossier",
     "close_gap",

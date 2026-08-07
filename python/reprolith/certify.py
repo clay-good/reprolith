@@ -24,9 +24,11 @@ from .engine import simulate
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import (
     Attribution,
+    PercentileBand,
     ReferenceKind,
     Tolerance,
     judge_curve,
+    judge_distribution,
     judge_estimation,
     judge_scalar,
 )
@@ -265,11 +267,73 @@ def certify_estimation(
     )
 
 
+@dataclass(frozen=True)
+class PopulationClaim:
+    """A published population figure to reproduce: a percentile envelope over time.
+
+    The population counterpart of :class:`CurveClaim`. ``reported`` and ``predicted`` are the
+    paper's and the simulated population's percentile bands (median plus outer percentiles);
+    simulating a virtual population is the deferred, engine-and-sampling half, so this glue takes
+    the already-``predicted`` bands. ``assumption_qualified`` defaults to ``True`` because a
+    population reproduction depends on the reconstructed variability model and the sampling, so its
+    verdict is qualified unless the paper fully specifies both.
+    """
+
+    claim_id: str
+    quantity: str
+    reported: tuple[PercentileBand, ...]
+    predicted: tuple[PercentileBand, ...]
+    source_location: str
+    tolerance: Tolerance | None = None
+    reference_kind: ReferenceKind = ReferenceKind.NUMERIC
+    assumption_qualified: bool = True
+    shortfall: Attribution | None = field(default=None)
+
+
+def certify_population(
+    *,
+    paper: PaperIdentity,
+    engine_pin: EnginePin,
+    claims: Iterable[PopulationClaim],
+    assumptions: Iterable[Assumption] = (),
+) -> Certificate:
+    """Assemble a certificate of population-envelope verdicts (reported vs simulated bands).
+
+    The population counterpart of :func:`certify_curves`: each claim is judged with
+    :func:`reprolith.judge_distribution` — governed by its worst-matched percentile band and
+    qualified by default — so a reproduced population figure yields a partially-reproduced
+    certificate. Needs no engine extra: the simulated bands are supplied, the population
+    simulation being the deferred half.
+    """
+    assessments = [
+        judge_distribution(
+            claim_id=claim.claim_id,
+            quantity=claim.quantity,
+            source_location=claim.source_location,
+            reference=claim.reported,
+            predicted=claim.predicted,
+            reference_kind=claim.reference_kind,
+            tolerance=claim.tolerance,
+            attribution=claim.shortfall,
+            assumption_qualified=claim.assumption_qualified,
+        )
+        for claim in claims
+    ]
+    return build_certificate(
+        paper=paper,
+        engine_pin=engine_pin,
+        assessments=assessments,
+        assumptions=tuple(assumptions),
+    )
+
+
 __all__ = [
     "Claim",
     "CurveClaim",
     "EstimationClaim",
+    "PopulationClaim",
     "certify_curves",
     "certify_estimation",
     "certify_model",
+    "certify_population",
 ]

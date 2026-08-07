@@ -180,6 +180,25 @@ def test_repeated_evaluation_is_identical() -> None:
     assert run() == run()
 
 
+def test_certify_population_assembles_a_qualified_certificate() -> None:
+    from reprolith import OverallVerdict, PopulationClaim, certify_population
+
+    cert = certify_population(
+        paper=PaperIdentity(doi="10.0/pop2", title="A population PK model"),
+        engine_pin=EnginePin(engine="test-engine", version="0.0.0"),
+        claims=[
+            PopulationClaim(
+                claim_id="env", quantity="concentration envelope",
+                reported=_REF, predicted=_perturb(_REF, 1.02), source_location="Fig 5",
+            ),
+        ],
+    )
+    assert cert.assessments[0].verdict is Verdict.REPRODUCED
+    assert cert.assessments[0].assumption_qualified is True
+    # A reproduced-but-qualified population figure cannot earn a clean overall verdict.
+    assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+
+
 def test_qualified_population_reproduction_yields_partial_certificate() -> None:
     # A population figure that reproduces still cannot earn a clean overall verdict: the
     # qualification forbids an unqualified full reproduction (done-when: "a qualified verdict").
