@@ -148,3 +148,36 @@ def test_react_diffuse_matches_pure_diffusion_when_the_reaction_is_zero() -> Non
     b = react_diffuse_1d(initial, diffusivity=1.0, dx=_DX, dt=0.2 * _DX * _DX, steps=50,
                          reaction=lambda u: 0.0)
     assert a == b
+
+
+def test_morphogen_gradient_reproduces_the_analytical_decay_length() -> None:
+    # A morphogen released at a boundary and degraded (diffusion + linear decay) forms the
+    # exponential gradient C(x) = C0 exp(-x/lambda) with decay length lambda = sqrt(D/k) — the
+    # central length scale in developmental biology, and a closed-form ground truth.
+    from reprolith import (
+        gradient_decay_length,
+        judge_scalar,
+        morphogen_gradient,
+    )
+
+    D, k, C0 = 1.0, 0.25, 100.0
+    analytic_lambda = math.sqrt(D / k)  # = 2.0
+    dx = 0.1
+    dt = 0.2 * dx * dx / D
+    profile = morphogen_gradient(
+        source=C0, diffusivity=D, decay=k, dx=dx, points=300, dt=dt, steps=40000
+    )
+    # Fit the decay length over the mid-gradient (away from the source and the far boundary).
+    measured = gradient_decay_length(profile, dx=dx, start=20, end=120)
+    verdict = judge_scalar(
+        claim_id="gradient-length", quantity="morphogen decay length",
+        source_location="analytical lambda=sqrt(D/k)", reported=analytic_lambda, predicted=measured,
+    )
+    assert verdict.verdict is Verdict.REPRODUCED  # exact to well within the 5% default
+
+
+def test_gradient_decay_length_rejects_a_non_decaying_window() -> None:
+    from reprolith import gradient_decay_length
+
+    with pytest.raises(ValueError, match="does not decay"):
+        gradient_decay_length([1.0, 2.0, 3.0, 4.0], dx=1.0, start=0, end=4)

@@ -100,6 +100,70 @@ def react_diffuse_1d(
     return current
 
 
+def morphogen_gradient(
+    *,
+    source: float,
+    diffusivity: float,
+    decay: float,
+    dx: float,
+    points: int,
+    dt: float,
+    steps: int,
+) -> list[float]:
+    """The steady-state morphogen gradient from a fixed source: diffusion with linear decay.
+
+    Solves ``∂C/∂t = D ∂²C/∂x² − k·C`` to steady state with a Dirichlet source (``C = source`` pinned
+    at x=0) and a zero-flux far boundary, over ``points`` grid points. This is the developmental-
+    biology gradient: a morphogen released at a boundary and degraded as it spreads, forming the
+    exponential profile ``C(x) = source·e^{−x/λ}`` with decay length ``λ = √(D/k)``. ``steps`` must be
+    large enough to reach steady state; the result is deterministic in the discretization.
+    """
+    alpha = diffusivity * dt / (dx * dx)
+    if alpha > 0.5 + 1e-12:
+        raise ValueError(
+            f"unstable discretization: D·dt/dx² = {alpha:.3g} exceeds the explicit limit 0.5"
+        )
+    if points < 2:
+        raise ValueError("need at least two grid points")
+    current = [0.0] * points
+    current[0] = source
+    for _ in range(steps):
+        nxt = current[:]
+        for i in range(1, points):
+            left = current[i - 1]
+            right = current[i + 1] if i < points - 1 else current[i]
+            nxt[i] = current[i] + alpha * (left - 2.0 * current[i] + right) - dt * decay * current[i]
+        nxt[0] = source  # Dirichlet source
+        current = nxt
+    return current
+
+
+def gradient_decay_length(profile: Sequence[float], *, dx: float, start: int, end: int) -> float:
+    """The decay length λ of an exponential gradient, from the slope of ``ln C`` over ``[start, end)``.
+
+    Fits ``ln C(x) = ln C₀ − x/λ`` by least squares over the grid-index window ``[start, end)`` and
+    returns ``λ``. The window must lie in the positive, exponential part of the profile.
+    """
+    xs = [i * dx for i in range(start, end)]
+    values = [profile[i] for i in range(start, end)]
+    if any(v <= 0.0 for v in values):
+        raise ValueError("the fit window must be in the positive part of the gradient")
+    ys = [math.log(v) for v in values]
+    n = len(xs)
+    if n < 2:
+        raise ValueError("need at least two points to fit a decay length")
+    sx, sy = math.fsum(xs), math.fsum(ys)
+    sxx = math.fsum(x * x for x in xs)
+    sxy = math.fsum(x * y for x, y in zip(xs, ys))
+    denominator = n * sxx - sx * sx
+    if denominator == 0.0:
+        raise ValueError("degenerate fit window")
+    slope = (n * sxy - sx * sy) / denominator
+    if slope >= 0.0:
+        raise ValueError("the profile does not decay over the fit window")
+    return -1.0 / slope
+
+
 def front_position(profile: Sequence[float], *, dx: float, level: float = 0.5) -> float | None:
     """The spatial position where ``profile`` first descends through ``level`` (linearly interpolated).
 
@@ -251,6 +315,8 @@ __all__ = [
     "diffuse_1d",
     "front_position",
     "gaussian_profile",
+    "gradient_decay_length",
+    "morphogen_gradient",
     "react_diffuse_1d",
     "spatial_dossier",
     "validate_spatial",
