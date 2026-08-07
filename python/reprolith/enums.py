@@ -51,6 +51,7 @@ class ModelClass(str, Enum):
     ODE_PKPD = "ode-pkpd"
     KINETIC = "kinetic"
     CONSTRAINT_BASED = "constraint-based"
+    LOGICAL = "logical"
     UNASSIGNED = "unassigned"
 
 

@@ -75,6 +75,7 @@ from .fba import (
 )
 from .ingest import ingest_sbml
 from .linter import LintResult, lint_curve, lint_objective
+from .logical import BooleanNetwork, judge_attractor_set, judge_steady_state
 from .mcp_server import handle_request, serve_stdio
 from .model import (
     Assumption,
@@ -148,6 +149,7 @@ __all__ = [
     "AgreementReport",
     "Assumption",
     "Attribution",
+    "BooleanNetwork",
     "BlindEntry",
     "Candidate",
     "EntryAgreement",
@@ -249,6 +251,7 @@ __all__ = [
     "handle_request",
     "ingest_fbc_sbml",
     "ingest_sbml",
+    "judge_attractor_set",
     "judge_curve",
     "judge_distribution",
     "judge_estimation",
@@ -256,6 +259,7 @@ __all__ = [
     "judge_flux",
     "judge_objective",
     "judge_scalar",
+    "judge_steady_state",
     "lint_curve",
     "lint_objective",
     "load_claims_dataset",

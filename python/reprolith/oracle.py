@@ -35,6 +35,7 @@ class ComparisonMethod(str, Enum):
     CURVE_NORMALIZED_DISTANCE = "curve-normalized-distance"
     DISTRIBUTION_BAND_DISTANCE = "distribution-band-distance"
     FINGERPRINT_COMPARISON = "fingerprint-comparison"
+    ATTRACTOR_SET_MATCH = "attractor-set-match"
 
 
 class ReferenceKind(str, Enum):
@@ -85,6 +86,10 @@ class FailureMode(str, Enum):
     AMBIGUOUS_OBJECTIVE = "ambiguous-biomass-or-objective-definition"
     INCONSISTENT_GENE_ASSOCIATIONS = "missing-or-inconsistent-gene-reaction-associations"
     ALTERNATE_OPTIMA = "alternate-optima-flux-ambiguity"
+    # Logical / Boolean-network root causes (spec: logical-class — "Catalogued root causes").
+    UNSPECIFIED_UPDATE_SCHEME = "unspecified-update-scheme"
+    AMBIGUOUS_LOGIC_RULE = "ambiguous-or-missing-logic-rule"
+    UNSPECIFIED_INITIAL_STATE = "unspecified-initial-state-or-inputs"
     # Escape hatch for a failure fitting none of the above (spec: "recorded as uncategorized").
     UNCATEGORIZED = "uncategorized"
 

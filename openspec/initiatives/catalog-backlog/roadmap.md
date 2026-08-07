@@ -139,7 +139,7 @@ a change under `openspec/changes/`.
 
 ### 9. Logical / Boolean and rule-based network model class
 
-- **Type:** model class
+- **Type:** model class *(oracle landed: `logical-class` spec + exact attractor judge; ingestion + blind self-validation set still to come)*
 - **Why (value):** A third distinct oracle — discrete-state attractors and qualitative dynamics
   rather than continuous trajectories or optimization. Common in signaling models, and further
   hardens the claim that the engine is oracle-agnostic.
