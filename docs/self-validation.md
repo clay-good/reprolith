@@ -10,7 +10,7 @@ follow end to end, all regenerable from the repository alone.
 | **PK/PD (ODE)** | 1 partially-reproduced + 30 honest abstentions, **0 wrong verdicts** over 31 BioModels entries | BioModels manual-curation status; the metformin claim read from the paper | [`datasets/milestone/`](../datasets/milestone/) |
 | **Constraint-based (FBA)** | **4/4** blind agreement | E. coli core's documented growth rate; COBRApy references for the genome-scale set | [`datasets/constraint_based/milestone/`](../datasets/constraint_based/milestone/) |
 | **Generic-kinetic (ODE)** | **6/6** blind agreement across six network types | libRoadRunner (independent CVODE) reference trajectories | [`datasets/kinetic/milestone/`](../datasets/kinetic/milestone/) |
-| **Logical (Boolean)** | **4/4** attractor-signature agreement on real published models | CANA (independent Boolean-network library) attractors | [`datasets/logical/cross_validation/`](../datasets/logical/cross_validation/) |
+| **Logical (Boolean)** | **4/4** blind agreement on real published models | CANA (independent Boolean-network library) attractors | [`datasets/logical/milestone/`](../datasets/logical/milestone/) |
 
 ## What makes each row honest
 

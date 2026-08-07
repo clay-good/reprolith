@@ -1,0 +1,280 @@
+{
+  "entries": [
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "CANA 1.0.0 (Correia et al. 2018): 11 attractors"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "budding_yeast",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Budding yeast cell-cycle network (Li et al. 2004)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "logical",
+      "sources": [],
+      "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "CANA 1.0.0 (Correia et al. 2018): 10 attractors"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "drosophila",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Drosophila melanogaster segment polarity, single cell (Albert & Othmer 2003)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "logical",
+      "sources": [],
+      "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "CANA 1.0.0 (Correia et al. 2018): 1 attractors"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "marques_pita",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Two-symbol schemata example network (Marques-Pita & Rocha 2013)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "logical",
+      "sources": [],
+      "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "CANA 1.0.0 (Correia et al. 2018): 10 attractors"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "thaliana",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "logical",
+      "sources": [],
+      "state": "certified"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": false,
+      "claim_id": "thaliana-attractors",
+      "discrepancy": "reproduced 10 fixed points vs CANA's 10",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "attractor-set-match",
+      "quantity": "steady-state (fixed-point) attractor count",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006)",
+      "tolerance": "reproduced<=0, partial<=0 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": null,
+    "engine": "reprolith-logical",
+    "version": "0.0.1"
+  },
+  "gap_report": [],
+  "overall": "reproduced",
+  "paper": {
+    "doi": "",
+    "pubmed_id": null,
+    "title": "Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006)"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

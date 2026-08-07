@@ -1,0 +1,39 @@
+{
+  "agreement_rate": 1.0,
+  "agreements": 4,
+  "confusion": {
+    "reproduced->reproduced": 4
+  },
+  "disagreements": 0,
+  "per_entry": [
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "budding_yeast",
+      "expected": "reproduced",
+      "source": "CANA 1.0.0 (Correia et al. 2018): 11 attractors"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "drosophila",
+      "expected": "reproduced",
+      "source": "CANA 1.0.0 (Correia et al. 2018): 10 attractors"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "marques_pita",
+      "expected": "reproduced",
+      "source": "CANA 1.0.0 (Correia et al. 2018): 1 attractors"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "thaliana",
+      "expected": "reproduced",
+      "source": "CANA 1.0.0 (Correia et al. 2018): 10 attractors"
+    }
+  ],
+  "total": 4
+}
