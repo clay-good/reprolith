@@ -175,3 +175,29 @@ def test_certify_stochastic_produces_a_qualified_reproduced_certificate() -> Non
     # Reproduced but qualified by the sampling dependence -> the certificate cannot round up to clean.
     assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
     assert cert.scope.machine  # the scope flag travels with a stochastic certificate too
+
+
+def test_stochastic_dossier_records_species_reactions_and_sampling_gap() -> None:
+    from reprolith import (
+        DossierClaim,
+        Equation,
+        GapKind,
+        Parameter,
+        stochastic_dossier,
+    )
+
+    dossier = stochastic_dossier(
+        "immigration-death",
+        species={"A": 0},
+        reactions=[Equation(target="birth", expression="k", source_location="Eq 1"),
+                   Equation(target="death", expression="gamma*A", source_location="Eq 2")],
+        rates=[Parameter(name="k", value=10.0, unit="1/time", source_location="Table 1"),
+               Parameter(name="gamma", value=1.0, unit="1/time", source_location="Table 1")],
+        source_location="Table 1", sampling_stated=False,
+        claims=[DossierClaim(id="mean", quantity="stationary mean", conditions="", source_location="Fig 1")],
+    )
+    assert dossier.state_variables == ("A",)
+    assert dossier.initial_conditions[0].name == "A"
+    # An unstated sampling protocol is a load-bearing gap.
+    assert len(dossier.load_bearing_gaps()) == 1
+    assert dossier.load_bearing_gaps()[0].kind is GapKind.SAMPLING

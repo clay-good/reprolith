@@ -17,10 +17,11 @@ from __future__ import annotations
 
 import math
 import random
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 
 from .certificate import build_certificate
+from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, Parameter
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import Attribution, PercentileBand, Tolerance, judge_scalar
 
@@ -276,10 +277,71 @@ def certify_stochastic(
     )
 
 
+def validate_stochastic(dossier: Dossier) -> list[str]:
+    """Structural problems that make a stochastic dossier ill-formed; empty when well-formed.
+
+    On top of the shared checks: an unstated sampling protocol (seed and trajectory count) must be a
+    load-bearing gap, because it determines the ensemble and therefore the reproduced statistic
+    (spec: stochastic-class — "A pinned seed is part of the protocol").
+    """
+    problems = dossier.validate()
+    for gap in dossier.gaps:
+        if gap.kind is GapKind.SAMPLING and not gap.load_bearing:
+            problems.append("an unstated sampling protocol must be recorded as a load-bearing gap")
+    return problems
+
+
+def stochastic_dossier(
+    entry: str,
+    *,
+    species: Mapping[str, int],
+    reactions: Sequence[Equation],
+    rates: Sequence[Parameter],
+    source_location: str,
+    sampling_stated: bool,
+    claims: Sequence[DossierClaim] = (),
+) -> Dossier:
+    """Assemble a well-formed stochastic dossier, or raise if it is ill-formed.
+
+    Records the ``species`` with their initial molecule counts (as initial conditions), each
+    reaction's stoichiometry (as an equation) and its ``rates`` (mass-action rate constants), and
+    the reported statistic ``claims``. When ``sampling_stated`` is false the seed/trajectory-count
+    protocol is recorded as a load-bearing :class:`~reprolith.dossier.Gap`. Validated by
+    :func:`validate_stochastic`.
+    """
+    initial_conditions = tuple(
+        Parameter(name=name, value=float(count), unit="molecules", source_location=source_location)
+        for name, count in sorted(species.items())
+    )
+    gaps: tuple[Gap, ...] = ()
+    if not sampling_stated:
+        gaps = (Gap(
+            element="sampling protocol",
+            kind=GapKind.SAMPLING,
+            detail="the paper does not state the random seed and number of trajectories",
+            load_bearing=True,
+        ),)
+    dossier = Dossier(
+        entry=entry,
+        state_variables=tuple(sorted(species)),
+        equations=tuple(reactions),
+        parameters=tuple(rates),
+        initial_conditions=initial_conditions,
+        claims=tuple(claims),
+        gaps=gaps,
+    )
+    problems = validate_stochastic(dossier)
+    if problems:
+        raise ValueError("ill-formed stochastic dossier: " + "; ".join(problems))
+    return dossier
+
+
 __all__ = [
     "Reaction",
     "StochasticClaim",
     "certify_stochastic",
+    "stochastic_dossier",
+    "validate_stochastic",
     "ensemble_final_counts",
     "ensemble_percentile_bands",
     "gillespie",

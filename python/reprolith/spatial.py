@@ -15,10 +15,11 @@ than producing a diverging profile (spec: "Discretization is part of the protoco
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 
 from .certificate import build_certificate
+from .dossier import Dossier, DossierClaim, Gap, GapKind, Parameter
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import Attribution, Tolerance, judge_curve
 
@@ -139,4 +140,66 @@ def certify_spatial(
     )
 
 
-__all__ = ["SpatialClaim", "certify_spatial", "diffuse_1d", "gaussian_profile"]
+def validate_spatial(dossier: Dossier) -> list[str]:
+    """Structural problems that make a spatial dossier ill-formed; empty when well-formed.
+
+    On top of the shared checks: an unstated spatial domain or boundary condition must be a
+    load-bearing gap, because it changes the profile (spec: spatial-class — "Structural elements").
+    """
+    problems = dossier.validate()
+    for gap in dossier.gaps:
+        if gap.kind is GapKind.BOUNDARY and not gap.load_bearing:
+            problems.append("an unstated domain/boundary condition must be recorded as a load-bearing gap")
+    return problems
+
+
+def spatial_dossier(
+    entry: str,
+    *,
+    species: Sequence[str],
+    diffusivities: Mapping[str, float],
+    source_location: str,
+    boundary_stated: bool,
+    claims: Sequence[DossierClaim] = (),
+) -> Dossier:
+    """Assemble a well-formed spatial dossier, or raise if it is ill-formed.
+
+    Records the ``species`` as state variables, their ``diffusivities`` as parameters, and the
+    reported profile ``claims``. When ``boundary_stated`` is false the spatial domain / boundary
+    condition is recorded as a load-bearing :class:`~reprolith.dossier.Gap`. Validated by
+    :func:`validate_spatial`.
+    """
+    parameters = tuple(
+        Parameter(name=f"D_{name}", value=diffusivities[name], unit="length^2/time",
+                  source_location=source_location)
+        for name in sorted(diffusivities)
+    )
+    gaps: tuple[Gap, ...] = ()
+    if not boundary_stated:
+        gaps = (Gap(
+            element="domain/boundary condition",
+            kind=GapKind.BOUNDARY,
+            detail="the paper does not state the spatial domain or its boundary conditions",
+            load_bearing=True,
+        ),)
+    dossier = Dossier(
+        entry=entry,
+        state_variables=tuple(sorted(species)),
+        parameters=parameters,
+        claims=tuple(claims),
+        gaps=gaps,
+    )
+    problems = validate_spatial(dossier)
+    if problems:
+        raise ValueError("ill-formed spatial dossier: " + "; ".join(problems))
+    return dossier
+
+
+__all__ = [
+    "SpatialClaim",
+    "certify_spatial",
+    "diffuse_1d",
+    "gaussian_profile",
+    "spatial_dossier",
+    "validate_spatial",
+]

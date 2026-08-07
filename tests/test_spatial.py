@@ -66,3 +66,18 @@ def test_solver_is_deterministic() -> None:
     a = diffuse_1d(initial, diffusivity=1.0, dx=_DX, dt=0.2 * _DX * _DX, steps=100)
     b = diffuse_1d(initial, diffusivity=1.0, dx=_DX, dt=0.2 * _DX * _DX, steps=100)
     assert a == b
+
+
+def test_spatial_dossier_records_diffusivities_and_boundary_gap() -> None:
+    from reprolith import DossierClaim, GapKind, spatial_dossier
+
+    dossier = spatial_dossier(
+        "morphogen", species=["M"], diffusivities={"M": 1.0}, source_location="Eq 3",
+        boundary_stated=False,
+        claims=[DossierClaim(id="grad", quantity="gradient profile", conditions="", source_location="Fig 2")],
+    )
+    assert dossier.state_variables == ("M",)
+    assert dossier.parameters[0].name == "D_M"
+    # An unstated domain/boundary condition is a load-bearing gap.
+    assert len(dossier.load_bearing_gaps()) == 1
+    assert dossier.load_bearing_gaps()[0].kind is GapKind.BOUNDARY

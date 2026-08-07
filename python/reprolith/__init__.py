@@ -174,7 +174,14 @@ from .scope import Scope
 from .screening import Candidate, Screening, ScreeningResult, screen_candidate, storable_content
 from .sedml import SimulationRecipe, parse_sedml_recipes
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
-from .spatial import SpatialClaim, certify_spatial, diffuse_1d, gaussian_profile
+from .spatial import (
+    SpatialClaim,
+    certify_spatial,
+    diffuse_1d,
+    gaussian_profile,
+    spatial_dossier,
+    validate_spatial,
+)
 from .stochastic import (
     Reaction,
     StochasticClaim,
@@ -184,6 +191,8 @@ from .stochastic import (
     gillespie,
     gillespie_at_times,
     species_mean_variance,
+    stochastic_dossier,
+    validate_stochastic,
 )
 from .supersession import CertificateLedger, describe_changes
 from .verification import (
@@ -366,9 +375,13 @@ __all__ = [
     "simulate",
     "reaction_essentiality",
     "solve_objective",
+    "spatial_dossier",
     "species_mean_variance",
+    "stochastic_dossier",
     "validate_constraint_based",
     "validate_logical",
+    "validate_spatial",
+    "validate_stochastic",
     "verdict_for",
     "__version__",
 ]
