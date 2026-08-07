@@ -14,11 +14,14 @@ imported lazily, so the core package stays dependency-free.
 
 from __future__ import annotations
 
+import operator
+from collections.abc import Callable, Container, Mapping
 from typing import Any
 
 from .dossier import Dossier
 from .engine import EngineUnavailable
 from .fba import FbaModel
+from .logical import BooleanNetwork, Rule
 
 
 def _libsbml() -> Any:
@@ -267,4 +270,139 @@ def _sid(text: str) -> str:
     return cleaned
 
 
-__all__ = ["build_model_sbml", "compare_sbml_to_dossier", "ingest_fbc_sbml"]
+def _compile_qual_num(node: Any, libsbml: Any, nodes: Container[str]) -> Callable[[Mapping[str, int]], float]:
+    """Compile an SBML-qual math *operand* (a species level or an integer) into a state -> number."""
+    kind = node.getType()
+    if kind == libsbml.AST_NAME:
+        name = node.getName()
+        if name not in nodes:
+            raise ValueError(f"transition math references unknown species {name!r}")
+        return lambda s: float(s[name])
+    if kind in (libsbml.AST_INTEGER, libsbml.AST_REAL, libsbml.AST_REAL_E, libsbml.AST_RATIONAL):
+        value = float(node.getValue())
+        return lambda s: value
+    raise ValueError(f"unsupported qual math operand (AST type {kind})")
+
+
+_QUAL_RELATIONS: dict[str, Callable[[float, float], bool]] = {
+    "eq": operator.eq, "neq": operator.ne, "geq": operator.ge,
+    "leq": operator.le, "gt": operator.gt, "lt": operator.lt,
+}
+
+
+def _compile_qual_bool(node: Any, libsbml: Any, nodes: Container[str]) -> Callable[[Mapping[str, int]], bool]:
+    """Compile an SBML-qual functionTerm condition into a pure state -> bool closure.
+
+    Only Boolean structure is compiled — the logical connectives and the level comparisons a
+    two-level qual model uses — so nothing libsbml holds is retained after ingestion and the
+    resulting network is pure Python. An unsupported construct raises rather than being ignored.
+    """
+    kind = node.getType()
+    if kind == libsbml.AST_CONSTANT_TRUE:
+        return lambda s: True
+    if kind == libsbml.AST_CONSTANT_FALSE:
+        return lambda s: False
+    if kind == libsbml.AST_LOGICAL_NOT:
+        inner = _compile_qual_bool(node.getChild(0), libsbml, nodes)
+        return lambda s: not inner(s)
+    if kind in (libsbml.AST_LOGICAL_AND, libsbml.AST_LOGICAL_OR, libsbml.AST_LOGICAL_XOR):
+        subs = [_compile_qual_bool(node.getChild(i), libsbml, nodes) for i in range(node.getNumChildren())]
+        if kind == libsbml.AST_LOGICAL_AND:
+            return lambda s: all(f(s) for f in subs)
+        if kind == libsbml.AST_LOGICAL_OR:
+            return lambda s: any(f(s) for f in subs)
+        return lambda s: sum(1 for f in subs if f(s)) % 2 == 1  # xor: an odd number are true
+    relation_name = _relation_name(node, libsbml)
+    relation = _QUAL_RELATIONS.get(relation_name) if relation_name is not None else None
+    if relation is not None:
+        left = _compile_qual_num(node.getChild(0), libsbml, nodes)
+        right = _compile_qual_num(node.getChild(1), libsbml, nodes)
+        return lambda s: relation(left(s), right(s))
+    raise ValueError(f"unsupported qual math condition (AST type {kind})")
+
+
+def _relation_name(node: Any, libsbml: Any) -> str | None:
+    kind = node.getType()
+    return {
+        libsbml.AST_RELATIONAL_EQ: "eq", libsbml.AST_RELATIONAL_NEQ: "neq",
+        libsbml.AST_RELATIONAL_GEQ: "geq", libsbml.AST_RELATIONAL_LEQ: "leq",
+        libsbml.AST_RELATIONAL_GT: "gt", libsbml.AST_RELATIONAL_LT: "lt",
+    }.get(kind)
+
+
+def _qual_rule(terms: list[tuple[Callable[[Mapping[str, int]], bool], int]], default_level: int) -> Rule:
+    """A node's update rule: the first satisfied functionTerm's level, else the default level."""
+    def rule(state: Mapping[str, int]) -> int:
+        for condition, level in terms:
+            if condition(state):
+                return level
+        return default_level
+    return rule
+
+
+def ingest_qual_sbml(sbml: str) -> BooleanNetwork:
+    """Parse an SBML-qual logical model into the :class:`BooleanNetwork` the logical oracle judges.
+
+    The logical-class counterpart of :func:`ingest_fbc_sbml`: it reads the qualitative species and
+    each transition's function terms, compiling every functionTerm condition into a pure-Python
+    closure so the returned network retains nothing libsbml owns. Each species that is the output of
+    a transition gets that transition's update rule (the first satisfied term's result level, else
+    the default term's); a species with no transition is a constant input that holds its value.
+
+    Restricted to two-level (Boolean) models: a qualitative species with ``maxLevel > 1`` raises,
+    because the Boolean oracle judges 0/1 states, not multi-valued logic. Needs the ``engine`` extra
+    (python-libsbml, which bundles the qual package).
+    """
+    libsbml = _libsbml()
+    document = libsbml.readSBMLFromString(sbml)
+    model = document.getModel()
+    if model is None:
+        raise ValueError("the artifact is not readable SBML")
+    qual = model.getPlugin("qual")
+    if qual is None:
+        raise ValueError("the model declares no qual (logical) package")
+
+    node_names: set[str] = set()
+    for i in range(qual.getNumQualitativeSpecies()):
+        qs = qual.getQualitativeSpecies(i)
+        max_level = qs.getMaxLevel() if qs.isSetMaxLevel() else 1
+        if max_level > 1:
+            raise ValueError(
+                f"species {qs.getId()!r} has maxLevel {max_level}; the Boolean oracle supports "
+                "only two-level (0/1) logical models"
+            )
+        node_names.add(qs.getId())
+
+    rules: dict[str, Rule] = {}
+    for i in range(qual.getNumTransitions()):
+        transition = qual.getTransition(i)
+        if transition.getNumOutputs() != 1:
+            raise ValueError(f"transition {transition.getId()!r} must have exactly one output")
+        target = transition.getOutput(0).getQualitativeSpecies()
+        if target not in node_names:
+            raise ValueError(f"transition {transition.getId()!r} outputs unknown species {target!r}")
+        if target in rules:
+            raise ValueError(f"species {target!r} is the output of more than one transition")
+        default_term = transition.getDefaultTerm()
+        default_level = default_term.getResultLevel() if default_term is not None else 0
+        terms: list[tuple[Callable[[Mapping[str, int]], bool], int]] = []
+        for k in range(transition.getNumFunctionTerms()):
+            function_term = transition.getFunctionTerm(k)
+            level = function_term.getResultLevel()
+            math = function_term.getMath()
+            if math is None:
+                raise ValueError(f"a function term of transition {transition.getId()!r} has no math")
+            if level not in (0, 1):
+                raise ValueError(f"result level {level} is not Boolean in transition {transition.getId()!r}")
+            terms.append((_compile_qual_bool(math, libsbml, node_names), level))
+        if default_level not in (0, 1):
+            raise ValueError(f"default result level {default_level} is not Boolean in transition {transition.getId()!r}")
+        rules[target] = _qual_rule(terms, default_level)
+
+    for name in sorted(node_names - set(rules)):  # inputs with no transition hold their value
+        rules[name] = (lambda held: lambda s: 1 if s[held] else 0)(name)
+
+    return BooleanNetwork(rules)
+
+
+__all__ = ["build_model_sbml", "compare_sbml_to_dossier", "ingest_fbc_sbml", "ingest_qual_sbml"]

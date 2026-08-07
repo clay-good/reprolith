@@ -147,7 +147,12 @@ from .run import (
     load_claims_dataset,
     run_test_set,
 )
-from .sbml import build_model_sbml, compare_sbml_to_dossier, ingest_fbc_sbml
+from .sbml import (
+    build_model_sbml,
+    compare_sbml_to_dossier,
+    ingest_fbc_sbml,
+    ingest_qual_sbml,
+)
 from .scope import Scope
 from .screening import Candidate, Screening, ScreeningResult, screen_candidate, storable_content
 from .sedml import SimulationRecipe, parse_sedml_recipes
@@ -276,6 +281,7 @@ __all__ = [
     "gap_items",
     "handle_request",
     "ingest_fbc_sbml",
+    "ingest_qual_sbml",
     "ingest_sbml",
     "judge_attractor_set",
     "judge_curve",

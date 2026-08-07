@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" xmlns:qual="http://www.sbml.org/sbml/level3/version1/qual/version1" level="3" version="1" qual:required="true">
+  <model>
+    <listOfCompartments>
+      <compartment id="c" constant="true"/>
+    </listOfCompartments>
+    <qual:listOfQualitativeSpecies>
+      <qual:qualitativeSpecies qual:id="A" qual:compartment="c" qual:constant="false" qual:initialLevel="0" qual:maxLevel="1"/>
+      <qual:qualitativeSpecies qual:id="B" qual:compartment="c" qual:constant="false" qual:initialLevel="0" qual:maxLevel="1"/>
+    </qual:listOfQualitativeSpecies>
+    <qual:listOfTransitions>
+      <qual:transition qual:id="tA">
+        <qual:listOfInputs>
+          <qual:input qual:id="in_tA_B" qual:qualitativeSpecies="B" qual:transitionEffect="none"/>
+        </qual:listOfInputs>
+        <qual:listOfOutputs>
+          <qual:output qual:qualitativeSpecies="A" qual:transitionEffect="assignmentLevel"/>
+        </qual:listOfOutputs>
+        <qual:listOfFunctionTerms>
+          <qual:defaultTerm qual:resultLevel="0"/>
+          <qual:functionTerm qual:resultLevel="1">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <eq/>
+                <ci> B </ci>
+                <cn type="integer"> 0 </cn>
+              </apply>
+            </math>
+          </qual:functionTerm>
+        </qual:listOfFunctionTerms>
+      </qual:transition>
+      <qual:transition qual:id="tB">
+        <qual:listOfInputs>
+          <qual:input qual:id="in_tB_A" qual:qualitativeSpecies="A" qual:transitionEffect="none"/>
+        </qual:listOfInputs>
+        <qual:listOfOutputs>
+          <qual:output qual:qualitativeSpecies="B" qual:transitionEffect="assignmentLevel"/>
+        </qual:listOfOutputs>
+        <qual:listOfFunctionTerms>
+          <qual:defaultTerm qual:resultLevel="0"/>
+          <qual:functionTerm qual:resultLevel="1">
+            <math xmlns="http://www.w3.org/1998/Math/MathML">
+              <apply>
+                <eq/>
+                <ci> A </ci>
+                <cn type="integer"> 0 </cn>
+              </apply>
+            </math>
+          </qual:functionTerm>
+        </qual:listOfFunctionTerms>
+      </qual:transition>
+    </qual:listOfTransitions>
+  </model>
+</sbml>

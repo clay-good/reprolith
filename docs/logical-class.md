@@ -87,11 +87,22 @@ attractors), an ambiguous or missing logic rule, and an unspecified initial stat
 A failure fitting none of them is recorded as `UNCATEGORIZED`, flagging the catalog to be extended
 rather than silently misclassifying.
 
+## Ingestion from SBML-qual
+
+`ingest_qual_sbml` is the class front-end, the logical counterpart of `ingest_fbc_sbml`: it reads a
+standard **SBML-qual** model — the field's interchange format for logical models — into a
+`BooleanNetwork`. Each transition's function terms are compiled into pure-Python closures (the first
+satisfied term's result level, else the default term's), so the returned network retains nothing
+libsbml owns; a species with no transition is a constant input that holds its value. It is scoped to
+two-level (Boolean) models on purpose — a `maxLevel > 1` species raises rather than being silently
+flattened — and needs the `engine` extra (python-libsbml, which bundles the qual package).
+
 ## Status
 
-The oracle and its agent surface are complete and fully tested
-([`tests/test_logical.py`](../tests/test_logical.py)). What is **not** yet done, and is therefore
-not claimed: ingestion of a logical model from a paper (e.g. SBML-qual) and a blind self-validation
-set against independently-known ground truth. Until a logical entry flows from a real curated model
-to a blind agreement report — as the PK/PD, kinetic, and constraint-based classes already do — this
-class is a validated *oracle*, not yet a self-validated *class*.
+The oracle, its agent surface, and SBML-qual ingestion are complete and tested
+([`tests/test_logical.py`](../tests/test_logical.py),
+[`tests/test_qual_ingest.py`](../tests/test_qual_ingest.py)). What is **not** yet done, and is
+therefore not claimed: a blind self-validation set against independently-known ground truth. Until a
+logical entry flows from a real curated model to a blind agreement report — as the PK/PD, kinetic,
+and constraint-based classes already do — this class is a validated *oracle with ingestion*, not yet
+a self-validated *class*.
