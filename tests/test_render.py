@@ -172,3 +172,13 @@ def test_badge_colors_for_not_reproduced_and_blocked() -> None:
     from reprolith import render_badge
     assert "#e05d44" in render_badge(_cert([_claim(Verdict.FAILED, cid="a")]))  # not-reproduced red
     assert "#9f9f9f" in render_badge(_cert([_claim(Verdict.NOT_EVALUABLE, cid="a")]))  # blocked grey
+
+
+def test_human_render_marks_an_estimation_level_verdict() -> None:
+    from reprolith import ReproductionLevel
+
+    est = _claim(Verdict.REPRODUCED, cid="e", level=ReproductionLevel.ESTIMATION)
+    sim = _claim(Verdict.REPRODUCED, cid="s")  # default simulation level
+    text = render_human(_cert([est, sim]), RUN)
+    assert "[e] AUC: reproduced [estimation]" in text
+    assert "[s] AUC: reproduced (" in text  # simulation level is not tagged

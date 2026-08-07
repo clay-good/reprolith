@@ -150,8 +150,12 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
         tol = f", tol={a['tolerance']}" if a.get("tolerance") else ""
         method = f" via {a['method']}" if a.get("method") else ""
         qualified = " [assumption-qualified]" if a.get("assumption_qualified") else ""
+        # Surface a non-default reproduction level (e.g. estimation) so an estimation verdict is
+        # visibly distinct from a simulation one, never conflated (spec: simulation-oracle —
+        # "Estimation reproduction is a distinct verdict").
+        level = f" [{a['level']}]" if a.get("level") and a["level"] != "simulation" else ""
         lines.append(
-            f"  [{a['claim_id']}] {a['quantity']}: {a['verdict']}{qualified}"
+            f"  [{a['claim_id']}] {a['quantity']}: {a['verdict']}{level}{qualified}"
             f" (source {a['source_location']}{method}{tol})"
         )
     lines.append("")
