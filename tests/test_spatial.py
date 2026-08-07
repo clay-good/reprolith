@@ -230,6 +230,74 @@ def test_two_species_reaction_diffusion_reproduces_the_dispersion_relation() -> 
     assert verdict.verdict is Verdict.REPRODUCED  # matches to the O(dx^2) discretization error
 
 
+def test_schnakenberg_reproduces_the_turing_wavelength_selection() -> None:
+    # THE landmark morphogenesis result (Turing 1952): a reaction-diffusion system that is stable
+    # to uniform perturbations becomes unstable to a *band* of spatial modes once diffusion is added,
+    # and the pattern that emerges is dominated by the single fastest-growing mode. Here the
+    # dispersion relation predicts the winning mode m* = argmax_m lambda(k_m); the nonlinear
+    # Schnakenberg solver, seeded from a broadband perturbation, must select exactly that mode.
+    # Non-circular: the emergent wavenumber comes from simulation, the prediction from linear
+    # stability analysis. Stronger than the dispersion-relation test — it validates *which* pattern
+    # forms, not just one mode's growth rate.
+    from reprolith import react_diffuse_2species
+
+    # Schnakenberg: u_t = Du u_xx + a - u + u^2 v ,  v_t = Dv v_xx + b - u^2 v.
+    a, b = 0.1, 0.9
+    Du, Dv = 1.0, 40.0
+    u_star, v_star = a + b, b / (a + b) ** 2  # homogeneous steady state
+
+    # Reaction Jacobian at (u*, v*).
+    fu = -1.0 + 2.0 * u_star * v_star
+    fv = u_star * u_star
+    gu = -2.0 * u_star * v_star
+    gv = -u_star * u_star
+
+    # Turing preconditions: stable without diffusion (trace<0, det>0), so any instability is
+    # diffusion-driven — the defining signature of a Turing pattern.
+    assert fu + gv < 0.0
+    assert fu * gv - fv * gu > 0.0
+
+    length, n = 40.0, 201
+    dx = length / (n - 1)
+    xs = [i * dx for i in range(n)]
+
+    def dispersion(k2: float) -> float:  # dominant real eigenvalue of J - k^2 diag(Du, Dv)
+        m00, m11 = fu - Du * k2, gv - Dv * k2
+        trace, det = m00 + m11, m00 * m11 - fv * gu
+        disc = trace * trace - 4.0 * det
+        return trace / 2.0 if disc < 0.0 else (trace + math.sqrt(disc)) / 2.0
+
+    modes = range(1, 40)  # admissible zero-flux modes cos(m pi x / L)
+    growth = {m: dispersion((m * math.pi / length) ** 2) for m in modes}
+    m_star = max(modes, key=lambda m: growth[m])  # predicted fastest-growing mode
+    assert growth[m_star] > 0.0  # a genuine Turing instability exists
+
+    dt = 0.24 * dx * dx / Dv  # Dv dt/dx^2 = 0.24 within the explicit limit
+    # Broadband deterministic seed: equal weight on every mode, so selection is the solver's doing.
+    u = [u_star + 0.001 * sum(math.cos(m * math.pi * x / length) for m in modes) for x in xs]
+    v = [v_star for _ in xs]
+
+    def reaction_u(uu: float, vv: float) -> float:
+        return a - uu + uu * uu * vv
+
+    def reaction_v(uu: float, vv: float) -> float:
+        return b - uu * uu * vv
+
+    u, v = react_diffuse_2species(u, v, du=Du, dv=Dv, dx=dx, dt=dt, steps=16000,
+                                  reaction_u=reaction_u, reaction_v=reaction_v)
+
+    def mode_amplitude(field: list[float], m: int) -> float:  # |projection onto cos(m pi x / L)|
+        total = 0.0
+        for i, x in enumerate(xs):
+            weight = 0.5 if i in (0, n - 1) else 1.0  # trapezoid
+            total += weight * (field[i] - u_star) * math.cos(m * math.pi * x / length)
+        return abs(total)
+
+    dominant = max(modes, key=lambda m: mode_amplitude(u, m))
+    assert max(u) - min(u) > 0.01  # the instability actually grew a pattern
+    assert dominant == m_star  # wavelength selection reproduced: the fastest-growing mode won
+
+
 def test_2d_diffusion_reproduces_the_analytical_gaussian_field() -> None:
     # 2-D diffusion of a Gaussian is a Gaussian whose (isotropic) variance grows by 2·D·t — the
     # exact tissue-scale-spread ground truth.
