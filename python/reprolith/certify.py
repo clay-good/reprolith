@@ -22,7 +22,14 @@ from typing import Any
 from .certificate import build_certificate
 from .engine import simulate
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
-from .oracle import Attribution, ReferenceKind, Tolerance, judge_curve, judge_scalar
+from .oracle import (
+    Attribution,
+    ReferenceKind,
+    Tolerance,
+    judge_curve,
+    judge_estimation,
+    judge_scalar,
+)
 
 
 @dataclass(frozen=True)
@@ -202,4 +209,67 @@ def certify_curves(
     )
 
 
-__all__ = ["Claim", "CurveClaim", "certify_curves", "certify_model"]
+@dataclass(frozen=True)
+class EstimationClaim:
+    """A published *parameter estimate* to reproduce by re-fitting from the paper's raw data.
+
+    The estimation counterpart of :class:`Claim`. ``reported`` is the paper's stated estimate and
+    ``recovered`` is the estimate Reprolith's re-fit produced; the re-fitting itself — running the
+    paper's stated estimation over the shipped raw data — is the deferred, engine-dependent half,
+    exactly as the simulator is for a scalar claim, so this glue takes an already-``recovered``
+    value. ``shortfall`` supplies the root cause a non-pass estimation verdict requires.
+    """
+
+    claim_id: str
+    quantity: str
+    reported: float
+    recovered: float
+    source_location: str
+    tolerance: Tolerance | None = None
+    assumption_qualified: bool = False
+    shortfall: Attribution | None = field(default=None)
+
+
+def certify_estimation(
+    *,
+    paper: PaperIdentity,
+    engine_pin: EnginePin,
+    claims: Iterable[EstimationClaim],
+    assumptions: Iterable[Assumption] = (),
+) -> Certificate:
+    """Assemble a certificate of estimation verdicts (re-fit estimates vs reported estimates).
+
+    The estimation counterpart of :func:`certify_model`: each claim is judged with
+    :func:`reprolith.judge_estimation`, so every verdict is recorded at the estimation
+    reproduction level and reported separately from simulation. Needs no engine extra — the
+    re-derived estimates are supplied, the re-fitter being the deferred half.
+    """
+    assessments = [
+        judge_estimation(
+            claim_id=claim.claim_id,
+            quantity=claim.quantity,
+            source_location=claim.source_location,
+            reported=claim.reported,
+            recovered=claim.recovered,
+            tolerance=claim.tolerance,
+            attribution=claim.shortfall,
+            assumption_qualified=claim.assumption_qualified,
+        )
+        for claim in claims
+    ]
+    return build_certificate(
+        paper=paper,
+        engine_pin=engine_pin,
+        assessments=assessments,
+        assumptions=tuple(assumptions),
+    )
+
+
+__all__ = [
+    "Claim",
+    "CurveClaim",
+    "EstimationClaim",
+    "certify_curves",
+    "certify_estimation",
+    "certify_model",
+]

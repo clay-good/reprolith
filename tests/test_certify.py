@@ -70,3 +70,42 @@ def test_claims_dataset_records_parse() -> None:
         assert entry["model_file"] and entry["paper"]["doi"]
         claims = [Claim.from_record(r) for r in entry["claims"]]
         assert claims and all(c.source_location for c in claims)  # every claim cites its source
+
+
+def test_certify_estimation_records_a_distinct_estimation_verdict() -> None:
+    from reprolith import (
+        Attribution,
+        EnginePin,
+        EstimationClaim,
+        FailureMode,
+        Fault,
+        OverallVerdict,
+        PaperIdentity,
+        ReproductionLevel,
+        Verdict,
+        certify_estimation,
+    )
+
+    cert = certify_estimation(
+        paper=PaperIdentity(title="A data-shipping PK paper", doi="10.9/est"),
+        engine_pin=EnginePin(engine="test-engine", version="0.0.0"),
+        claims=[
+            EstimationClaim(
+                claim_id="cl", quantity="CL/F estimate", reported=3.20, recovered=3.30,
+                source_location="Table 3",
+            ),
+            EstimationClaim(
+                claim_id="vc", quantity="Vc estimate", reported=10.0, recovered=18.0,
+                source_location="Table 3",
+                shortfall=Attribution(
+                    mode=FailureMode.LOCAL_OPTIMUM, implicated="central volume",
+                    fault=Fault.RECONSTRUCTION,
+                ),
+            ),
+        ],
+    )
+    assert all(a.level is ReproductionLevel.ESTIMATION for a in cert.assessments)
+    verdicts = {a.claim_id: a.verdict for a in cert.assessments}
+    assert verdicts["cl"] is Verdict.REPRODUCED  # ~3% inside the 10% estimation default
+    assert verdicts["vc"] is Verdict.FAILED
+    assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
