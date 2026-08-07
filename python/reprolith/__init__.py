@@ -172,7 +172,14 @@ from .scope import Scope
 from .screening import Candidate, Screening, ScreeningResult, screen_candidate, storable_content
 from .sedml import SimulationRecipe, parse_sedml_recipes
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
-from .stochastic import Reaction, ensemble_final_counts, gillespie, species_mean_variance
+from .stochastic import (
+    Reaction,
+    ensemble_final_counts,
+    ensemble_percentile_bands,
+    gillespie,
+    gillespie_at_times,
+    species_mean_variance,
+)
 from .supersession import CertificateLedger, describe_changes
 from .verification import (
     VerificationDecision,
@@ -293,12 +300,14 @@ __all__ = [
     "estimate_difficulty",
     "engine_version",
     "ensemble_final_counts",
+    "ensemble_percentile_bands",
     "essentiality_agreement",
     "flux_variability",
     "frog_fingerprint",
     "gene_essentiality",
     "gap_items",
     "gillespie",
+    "gillespie_at_times",
     "handle_request",
     "ingest_fbc_sbml",
     "ingest_qual_sbml",

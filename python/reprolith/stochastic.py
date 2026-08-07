@@ -20,6 +20,8 @@ import random
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from .oracle import PercentileBand
+
 
 @dataclass(frozen=True)
 class Reaction:
@@ -90,6 +92,89 @@ def gillespie(
     return state
 
 
+def gillespie_at_times(
+    n_species: int,
+    reactions: Sequence[Reaction],
+    initial: Sequence[int],
+    times: Sequence[float],
+    *,
+    rng: random.Random,
+) -> list[list[int]]:
+    """Run one SSA trajectory and return the species counts sampled at each time in ``times``.
+
+    The SSA state is piecewise-constant between reaction firings, so each sample time reads the state
+    that holds over the interval containing it. ``times`` must be non-decreasing.
+    """
+    ordered = list(times)
+    state = list(initial)
+    t = 0.0
+    samples: list[list[int]] = []
+    index = 0
+    while index < len(ordered):
+        propensities = [reaction.propensity(state) for reaction in reactions]
+        total = math.fsum(propensities)
+        if total <= 0.0:
+            while index < len(ordered):  # absorbing: every remaining sample sees this state
+                samples.append(list(state))
+                index += 1
+            break
+        t_next = t + -math.log(rng.random()) / total
+        while index < len(ordered) and ordered[index] < t_next:
+            samples.append(list(state))  # this interval's constant state
+            index += 1
+        if index >= len(ordered):
+            break
+        threshold = rng.random() * total
+        cumulative = 0.0
+        for reaction, propensity in zip(reactions, propensities):
+            cumulative += propensity
+            if cumulative >= threshold:
+                reaction.apply(state)
+                break
+        t = t_next
+    return samples
+
+
+def _empirical_percentile(values: Sequence[int], percentile: float) -> float:
+    """The nearest-rank empirical percentile of ``values`` (percentile in (0, 100))."""
+    ordered = sorted(values)
+    rank = max(1, math.ceil(percentile / 100.0 * len(ordered)))
+    return float(ordered[rank - 1])
+
+
+def ensemble_percentile_bands(
+    n_species: int,
+    reactions: Sequence[Reaction],
+    initial: Sequence[int],
+    times: Sequence[float],
+    *,
+    species: int,
+    percentiles: Sequence[float],
+    trajectories: int,
+    seed: int,
+) -> tuple[PercentileBand, ...]:
+    """Simulate a pinned ensemble and return one species' percentile envelope over ``times``.
+
+    The stochastic counterpart of a population figure: each requested percentile becomes a
+    :class:`~reprolith.oracle.PercentileBand` of that species' count across the ensemble at each
+    sample time, ready for :func:`reprolith.judge_distribution`. Deterministic in ``seed``.
+    """
+    rng = random.Random(seed)
+    # per_time[t] is the list of this species' counts across the ensemble at sample time t.
+    per_time: list[list[int]] = [[] for _ in times]
+    for _ in range(trajectories):
+        trajectory = gillespie_at_times(n_species, reactions, initial, times, rng=rng)
+        for i, sampled in enumerate(trajectory):
+            per_time[i].append(sampled[species])
+    return tuple(
+        PercentileBand(
+            percentile,
+            tuple(_empirical_percentile(per_time[i], percentile) for i in range(len(times))),
+        )
+        for percentile in percentiles
+    )
+
+
 def ensemble_final_counts(
     n_species: int,
     reactions: Sequence[Reaction],
@@ -126,6 +211,8 @@ def species_mean_variance(ensemble: Sequence[Sequence[int]], species: int) -> tu
 __all__ = [
     "Reaction",
     "ensemble_final_counts",
+    "ensemble_percentile_bands",
     "gillespie",
+    "gillespie_at_times",
     "species_mean_variance",
 ]

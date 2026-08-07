@@ -7,17 +7,38 @@ these run in the core CI job and reproduce byte-for-byte.
 
 from __future__ import annotations
 
+import math
 import random
 
 import pytest
 from reprolith import (
+    PercentileBand,
     Reaction,
+    ReferenceKind,
     Verdict,
     ensemble_final_counts,
+    ensemble_percentile_bands,
     gillespie,
+    judge_distribution,
     judge_scalar,
     species_mean_variance,
 )
+
+
+def _poisson_quantile(lam: float, percentile: float) -> float:
+    """The nearest-rank quantile of a Poisson(lam) distribution — pure-Python closed form."""
+    if lam <= 0.0:
+        return 0.0
+    target = percentile / 100.0
+    cdf = 0.0
+    term = math.exp(-lam)
+    k = 0
+    while True:
+        cdf += term
+        if cdf >= target - 1e-12:
+            return float(k)
+        k += 1
+        term *= lam / k
 
 
 def _immigration_death(k: float, gamma: float) -> list[Reaction]:
@@ -46,6 +67,37 @@ def test_immigration_death_reproduces_the_poisson_stationary_mean_and_variance()
     assert verdict.verdict is Verdict.REPRODUCED
     # The Poisson signature — variance equals the mean — is reproduced too (looser: variance is noisier).
     assert abs(variance - analytic) / analytic < 0.20
+
+
+def test_transient_poisson_percentile_envelope_is_reproduced() -> None:
+    # Immigration-death started empty is Poisson at every time t with mean λ(t) = (k/γ)(1 - e^{-γt}).
+    # So the analytical percentile envelope over time is exact — an independent, closed-form ground
+    # truth for the distributional (population) oracle applied to a stochastic reproduction.
+    k, gamma = 8.0, 1.0
+    reactions = _immigration_death(k, gamma)
+    times = [1.0, 2.0, 4.0, 7.0, 12.0]
+    percentiles = [10.0, 50.0, 90.0]
+    lam = [k / gamma * (1 - math.exp(-gamma * t)) for t in times]
+    analytic = tuple(
+        PercentileBand(p, tuple(_poisson_quantile(x, p) for x in lam)) for p in percentiles
+    )
+    simulated = ensemble_percentile_bands(
+        1, reactions, [0], times, species=0,
+        percentiles=percentiles, trajectories=2000, seed=42,
+    )
+    # A stochastic percentile envelope carries Monte-Carlo and discrete-count noise, so it is judged
+    # at the distributional figure tolerance — under which it reproduces the closed-form envelope.
+    verdict = judge_distribution(
+        claim_id="A-envelope", quantity="transient percentile envelope",
+        source_location="closed-form transient Poisson", reference=analytic, predicted=simulated,
+        reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+    )
+    assert verdict.verdict is Verdict.REPRODUCED
+    assert verdict.assumption_qualified is True  # a population reproduction is qualified by default
+    # The median band matches the analytical Poisson median exactly at every sample time.
+    sim_median = next(b for b in simulated if b.percentile == 50.0)
+    analytic_median = next(b for b in analytic if b.percentile == 50.0)
+    assert sim_median.curve == analytic_median.curve
 
 
 def test_reversible_reaction_reproduces_the_binomial_equilibrium_mean() -> None:
