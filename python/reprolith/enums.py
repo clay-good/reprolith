@@ -52,6 +52,7 @@ class ModelClass(str, Enum):
     KINETIC = "kinetic"
     CONSTRAINT_BASED = "constraint-based"
     LOGICAL = "logical"
+    STOCHASTIC = "stochastic"
     UNASSIGNED = "unassigned"
 
 

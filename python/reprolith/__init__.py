@@ -172,6 +172,7 @@ from .scope import Scope
 from .screening import Candidate, Screening, ScreeningResult, screen_candidate, storable_content
 from .sedml import SimulationRecipe, parse_sedml_recipes
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
+from .stochastic import Reaction, ensemble_final_counts, gillespie, species_mean_variance
 from .supersession import CertificateLedger, describe_changes
 from .verification import (
     VerificationDecision,
@@ -234,6 +235,7 @@ __all__ = [
     "PaperIdentity",
     "PercentileBand",
     "PopulationClaim",
+    "Reaction",
     "RecipeStep",
     "ReconstructionBundle",
     "ReferenceKind",
@@ -290,11 +292,13 @@ __all__ = [
     "engine_pin",
     "estimate_difficulty",
     "engine_version",
+    "ensemble_final_counts",
     "essentiality_agreement",
     "flux_variability",
     "frog_fingerprint",
     "gene_essentiality",
     "gap_items",
+    "gillespie",
     "handle_request",
     "ingest_fbc_sbml",
     "ingest_qual_sbml",
@@ -341,6 +345,7 @@ __all__ = [
     "simulate",
     "reaction_essentiality",
     "solve_objective",
+    "species_mean_variance",
     "validate_constraint_based",
     "verdict_for",
     "__version__",
