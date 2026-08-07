@@ -96,6 +96,36 @@ depends on the variability model and the sampling.
   shared set, including an unspecified between-subject variability model and an unspecified
   population size or sampling scheme
 
+### Requirement: Estimation reproduction is a distinct verdict
+
+When a paper ships the raw data it was fit to, Reprolith SHALL be able to reproduce the
+*estimation*, not just the simulation — re-fitting the model with the paper's stated method and
+checking the reported parameter estimates — and SHALL keep that verdict distinct from a
+simulation verdict so the two levels are never conflated.
+
+#### Scenario: Estimation verdict is reported separately
+
+- **WHEN** an estimation reproduction is judged
+- **THEN** the resulting per-claim verdict is recorded at the estimation reproduction level and
+  is distinguishable from simulation-level verdicts on the same paper
+- **AND** a recovered estimate is compared to the paper's reported estimate within a declared
+  tolerance, with the same attribution and provenance discipline as any other verdict
+
+#### Scenario: Estimation tolerance reflects re-fit sensitivity
+
+- **WHEN** no paper-stated precision or reviewer override exists for an estimation claim
+- **THEN** the oracle applies a documented estimation-level default tolerance that is wider than
+  a simulation scalar's, because a re-fit is sensitive to the optimizer, its starting values,
+  and the objective
+- **AND** the tolerance's origin is recorded like any other tolerance
+
+#### Scenario: Estimation-specific failure modes
+
+- **WHEN** an estimation claim is `partial` or `failed`
+- **THEN** the root cause may be selected from estimation-specific causes in addition to the
+  shared set, including an unstated estimation method or objective, unstated parameter starting
+  values, and convergence to a different local optimum
+
 ### Requirement: Figure references are handled honestly
 
 When a claim's only reference is a rendered figure, the oracle SHALL be explicit about the

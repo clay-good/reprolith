@@ -24,7 +24,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 
-from .enums import Verdict
+from .enums import ReproductionLevel, Verdict
 from .model import ClaimAssessment
 
 
@@ -71,6 +71,11 @@ class FailureMode(str, Enum):
     # failure modes").
     UNSPECIFIED_VARIABILITY_MODEL = "unspecified-between-subject-variability-model"
     UNSPECIFIED_POPULATION_SAMPLING = "unspecified-population-size-or-sampling"
+    # Estimation-reproduction root causes: re-fitting recovers a different estimate (spec:
+    # simulation-oracle — "Estimation reproduction is a distinct verdict").
+    UNSTATED_ESTIMATION_METHOD = "unstated-estimation-method-or-objective"
+    UNSTATED_STARTING_VALUES = "unstated-parameter-starting-values"
+    LOCAL_OPTIMUM = "convergence-to-a-different-local-optimum"
     ENGINE_SENSITIVITY = "engine-algorithm-sensitivity"
     MANUSCRIPT_ERROR = "apparent-manuscript-error"
     ASSUMPTION_DEPENDENCE = "load-bearing-assumption-dependence"
@@ -188,6 +193,13 @@ def default_tolerance(method: ComparisonMethod, reference_kind: ReferenceKind) -
     return _DEFAULTS[(method, reference_kind)]
 
 
+# Estimation reproduction re-fits parameters from raw data, so a recovered estimate is sensitive
+# to the optimizer, its starting values, and the objective — looser than reproducing a reported
+# scalar from a fixed model. This documented default reflects that; it is keyed by reproduction
+# level, not comparison method (spec: "Estimation reproduction is a distinct verdict").
+_ESTIMATION_DEFAULT = Tolerance(0.10, 0.25, ToleranceSource.CLASS_DEFAULT)
+
+
 def relative_error(reported: float, predicted: float) -> float:
     """Relative error of ``predicted`` against the ``reported`` value.
 
@@ -279,6 +291,7 @@ def _assemble(
     reference_kind: ReferenceKind,
     attribution: Attribution | None,
     assumption_qualified: bool,
+    level: ReproductionLevel = ReproductionLevel.SIMULATION,
 ) -> ClaimAssessment:
     verdict = verdict_for(measure, tol)
     if verdict in (Verdict.PARTIAL, Verdict.FAILED):
@@ -294,6 +307,7 @@ def _assemble(
         quantity=quantity,
         verdict=verdict,
         source_location=source_location,
+        level=level,
         method=method.value,
         tolerance=tol.label(),
         tolerance_source=tol.source.value,
@@ -336,6 +350,48 @@ def judge_scalar(
         reference_kind=reference_kind,
         attribution=attribution,
         assumption_qualified=assumption_qualified,
+    )
+
+
+def judge_estimation(
+    *,
+    claim_id: str,
+    quantity: str,
+    source_location: str,
+    reported: float,
+    recovered: float,
+    tolerance: Tolerance | None = None,
+    attribution: Attribution | None = None,
+    assumption_qualified: bool = False,
+) -> ClaimAssessment:
+    """Judge an *estimation* claim: a parameter estimate re-derived by re-fitting from raw data.
+
+    This is the second, stronger level of reproduction (spec: simulation-oracle — "Estimation
+    reproduction is a distinct verdict"). It is attempted only when the paper ships the raw data
+    to re-fit against; the re-fitting itself — running the paper's stated estimation to recover
+    an estimate — is the deferred, engine-dependent half, exactly as the simulator is for
+    :func:`judge_scalar`. Given an already-``recovered`` estimate, this compares it to the
+    paper's ``reported`` estimate by relative error and records the verdict at
+    ``ReproductionLevel.ESTIMATION`` so it is reported separately from simulation reproduction.
+
+    Uses the documented estimation-class default (wider than a simulation scalar, because a
+    re-fit is sensitive to the optimizer and its starting values) when ``tolerance`` is unset. A
+    ``partial`` or ``failed`` outcome requires an ``attribution``.
+    """
+    tol = tolerance or _ESTIMATION_DEFAULT
+    err = relative_error(reported, recovered)
+    return _assemble(
+        claim_id=claim_id,
+        quantity=quantity,
+        source_location=source_location,
+        method=ComparisonMethod.SCALAR_RELATIVE_ERROR,
+        measure=err,
+        discrepancy=f"relative error {err:.4f}",
+        tol=tol,
+        reference_kind=ReferenceKind.NUMERIC,
+        attribution=attribution,
+        assumption_qualified=assumption_qualified,
+        level=ReproductionLevel.ESTIMATION,
     )
 
 
@@ -494,6 +550,7 @@ __all__ = [
     "default_tolerance",
     "judge_curve",
     "judge_distribution",
+    "judge_estimation",
     "judge_scalar",
     "normalized_curve_distance",
     "not_evaluable",

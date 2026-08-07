@@ -120,7 +120,7 @@ a change under `openspec/changes/`.
 
 ### 8. Estimation reproduction (re-fit from raw data)
 
-- **Type:** capability
+- **Type:** capability *(estimation judge landed in `simulation-oracle`; re-fitting engine deferred)*
 - **Why (value):** The level-2 oracle deferred from the MVP: when raw data ships, re-fit the
   model and check the *reported parameter estimates*, not just the shown curve. The strongest form
   of reproducibility, and the most convincing when it holds.
