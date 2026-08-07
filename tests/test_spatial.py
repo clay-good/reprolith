@@ -267,3 +267,57 @@ def test_2d_diffusion_conserves_mass_and_rejects_instability() -> None:
     assert total == pytest.approx(5.0, abs=1e-4)  # zero-flux conserves 2-D mass
     with pytest.raises(ValueError, match="0.25"):
         diffuse_2d(field, diffusivity=1.0, dx=dx, dt=0.3 * dx * dx, steps=1)  # number 0.3 > 0.25
+
+
+def test_spatial_sir_reproduces_the_epidemic_wave_speed() -> None:
+    # A spatially spreading epidemic (S non-diffusing, I diffusing) forms a traveling infection
+    # front. Ahead of the front the I equation linearizes to a Fisher-KPP form with growth rate
+    # r = beta*S0 - gamma, so the wave speed is c = 2*sqrt(D*(beta*S0 - gamma)) — the canonical
+    # spatial-epidemiology result for how fast an epidemic spreads geographically.
+    from reprolith import (
+        Tolerance,
+        ToleranceSource,
+        front_position,
+        judge_scalar,
+        react_diffuse_2species,
+    )
+
+    D, beta, gamma, s0 = 1.0, 1.0, 0.5, 1.0
+    r = beta * s0 - gamma
+    c_analytic = 2.0 * math.sqrt(D * r)
+    dx = 0.5
+    n = 1601
+    dt = 0.2 * dx * dx / D
+    xs = [i * dx for i in range(n)]
+    sus = [s0] * n
+    inf = [0.5 if x < 20.0 else 0.0 for x in xs]
+
+    def susceptible_rate(s, i):
+        return -beta * s * i
+
+    def infected_rate(s, i):
+        return beta * s * i - gamma * i
+
+    def advance(state_s, state_i, to_steps):
+        return react_diffuse_2species(state_s, state_i, du=0.0, dv=D, dx=dx, dt=dt,
+                                      steps=to_steps, reaction_u=susceptible_rate,
+                                      reaction_v=infected_rate)
+
+    per = round(100.0 / dt)
+    sus, inf = advance(sus, inf, per)          # t = 100
+    front_100 = front_position(inf, dx=dx, level=0.1)
+    sus, inf = advance(sus, inf, per)          # t = 200
+    front_200 = front_position(inf, dx=dx, level=0.1)
+    speed = (front_200 - front_100) / 100.0
+
+    tol = Tolerance(
+        0.10, 0.20, ToleranceSource.REVIEWER_OVERRIDE,
+        rationale="KPP-type front speed converges logarithmically; finite-time + discretized "
+                  "measurement expected within ~10%",
+    )
+    verdict = judge_scalar(
+        claim_id="sir-wave", quantity="spatial SIR epidemic wave speed",
+        source_location="analytical c=2*sqrt(D(beta*S0-gamma))", reported=c_analytic,
+        predicted=speed, tolerance=tol,
+    )
+    assert verdict.verdict is Verdict.REPRODUCED
