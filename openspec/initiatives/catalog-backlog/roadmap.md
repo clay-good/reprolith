@@ -139,7 +139,7 @@ a change under `openspec/changes/`.
 
 ### 9. Logical / Boolean and rule-based network model class
 
-- **Type:** model class *(oracle + SBML-qual ingestion landed: `logical-class` spec, exact sync/async attractor judge, `ingest_qual_sbml`; blind self-validation set still to come)*
+- **Type:** model class *(DONE: `logical-class` spec, exact sync/async attractor judge, `ingest_qual_sbml`, and 4/4 blind cross-validation vs CANA on real published models)*
 - **Why (value):** A third distinct oracle — discrete-state attractors and qualitative dynamics
   rather than continuous trajectories or optimization. Common in signaling models, and further
   hardens the claim that the engine is oracle-agnostic.

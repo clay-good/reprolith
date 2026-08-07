@@ -97,12 +97,18 @@ libsbml owns; a species with no transition is a constant input that holds its va
 two-level (Boolean) models on purpose — a `maxLevel > 1` species raises rather than being silently
 flattened — and needs the `engine` extra (python-libsbml, which bundles the qual package).
 
-## Status
+## Self-validation
 
-The oracle, its agent surface, and SBML-qual ingestion are complete and tested
-([`tests/test_logical.py`](../tests/test_logical.py),
-[`tests/test_qual_ingest.py`](../tests/test_qual_ingest.py)). What is **not** yet done, and is
-therefore not claimed: a blind self-validation set against independently-known ground truth. Until a
-logical entry flows from a real curated model to a blind agreement report — as the PK/PD, kinetic,
-and constraint-based classes already do — this class is a validated *oracle with ingestion*, not yet
-a self-validated *class*.
+The class is measured against **CANA** (Correia et al. 2018), an independent Boolean-network
+library, on four real published models — the Arabidopsis flower, Drosophila segment-polarity,
+budding-yeast cell-cycle, and a schemata example network. Each model's rules are exported from CANA
+and *proven faithful* (checked against CANA's own per-node step over every input), and Reprolith's
+own attractor computation reproduces CANA's independently-computed attractor signature on all four —
+including the 11 fixed points of the Li et al. 2004 yeast cell-cycle network. See
+[`datasets/logical/cross_validation/`](../datasets/logical/cross_validation/) and
+[`tests/test_logical_cross_validation.py`](../tests/test_logical_cross_validation.py). The oracle
+itself is additionally validated by differential and property testing over ~1,800 random networks
+([`tests/test_logical_properties.py`](../tests/test_logical_properties.py)).
+
+This is the same non-circular discipline as the FBA (vs COBRApy) and kinetic (vs libRoadRunner)
+classes, so the logical class is now a self-validated class, not only a validated oracle.

@@ -47,10 +47,10 @@ fba = ["scipy>=1.7"]
 # both COPASI and libRoadRunner and report whether the verdict is engine-independent. Optional.
 corroborate = ["libroadrunner>=2.5"]
 # Independent reference generators for the cross-validation ground truth (a dev-only task, run by
-# scripts/regenerate_*_references.py). COBRApy re-computes the FBA references and libRoadRunner the
-# kinetic curves; the tests themselves need neither — they read the committed reference data. Not
-# a runtime dependency of Reprolith.
-refgen = ["cobra>=0.29", "libroadrunner>=2.5"]
+# scripts/regenerate_*_references.py). COBRApy re-computes the FBA references, libRoadRunner the
+# kinetic curves, and CANA the logical (Boolean-network) attractors; the tests themselves need none
+# of them — they read the committed reference data. Not a runtime dependency of Reprolith.
+refgen = ["cobra>=0.29", "libroadrunner>=2.5", "cana>=1.0"]
 
 [project.scripts]
 # The agent-facing MCP server over the read-only query surface (JSON-RPC over stdio,
