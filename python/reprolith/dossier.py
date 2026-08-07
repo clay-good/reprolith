@@ -41,6 +41,9 @@ class GapKind(str, Enum):
     EQUATION = "equation"
     DOSING = "dosing"
     MEDIUM = "medium"  # constraint-based: an unstated exchange/medium bound (load-bearing)
+    UPDATE_SCHEME = "update-scheme"  # logical: an unstated synchronous/asynchronous scheme (load-bearing)
+    SAMPLING = "sampling"  # stochastic: an unstated seed/trajectory-count sampling protocol
+    BOUNDARY = "boundary"  # spatial: an unstated spatial domain or boundary condition
     OTHER = "other"
 
 

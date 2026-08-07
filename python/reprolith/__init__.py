@@ -99,7 +99,9 @@ from .logical import (
     compile_boolean_rule,
     judge_attractor_set,
     judge_steady_state,
+    logical_dossier,
     parse_boolean_network,
+    validate_logical,
 )
 from .mcp_server import handle_request, serve_stdio
 from .model import (
@@ -337,6 +339,7 @@ __all__ = [
     "lint_steady_state",
     "load_claims_dataset",
     "load_test_set",
+    "logical_dossier",
     "normalized_curve_distance",
     "not_evaluable",
     "parse_boolean_network",
@@ -365,6 +368,7 @@ __all__ = [
     "solve_objective",
     "species_mean_variance",
     "validate_constraint_based",
+    "validate_logical",
     "verdict_for",
     "__version__",
 ]

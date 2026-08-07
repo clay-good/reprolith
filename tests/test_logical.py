@@ -289,3 +289,38 @@ def test_certify_logical_emits_an_honest_not_reproduced_certificate() -> None:
         ],
     )
     assert cert.overall is OverallVerdict.NOT_REPRODUCED
+
+
+# --- dossier shape (spec: Logical dossier shape) -----------------------------------
+
+
+def test_logical_dossier_records_nodes_rules_and_scheme() -> None:
+    from reprolith import DossierClaim, logical_dossier
+
+    dossier = logical_dossier(
+        "toggle", rules={"A": "!B", "B": "!A"}, source_location="Fig 1",
+        update_scheme=UpdateScheme.SYNCHRONOUS,
+        claims=[DossierClaim(id="ss", quantity="ON steady state", conditions="", source_location="Fig 1")],
+    )
+    assert dossier.state_variables == ("A", "B")
+    assert {e.target for e in dossier.equations} == {"A", "B"}
+    assert dossier.gaps == ()  # the scheme is stated, so no gap
+    assert dossier.targetable_claims()[0].id == "ss"
+
+
+def test_unstated_update_scheme_is_a_load_bearing_gap() -> None:
+    from reprolith import GapKind, logical_dossier
+
+    dossier = logical_dossier(
+        "toggle", rules={"A": "!B", "B": "!A"}, source_location="Fig 1", update_scheme=None
+    )
+    assert len(dossier.load_bearing_gaps()) == 1
+    assert dossier.load_bearing_gaps()[0].kind is GapKind.UPDATE_SCHEME
+
+
+def test_logical_dossier_rejects_a_rule_referencing_an_unknown_node() -> None:
+    from reprolith import logical_dossier
+
+    with pytest.raises(ValueError, match="unknown node"):
+        logical_dossier("bad", rules={"A": "!Z"}, source_location="Fig 1",
+                        update_scheme=UpdateScheme.SYNCHRONOUS)

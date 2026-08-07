@@ -23,6 +23,7 @@ from enum import Enum
 from itertools import product
 
 from .certificate import build_certificate
+from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, ModelArtifact
 from .model import Assumption, Certificate, ClaimAssessment, EnginePin, PaperIdentity
 from .oracle import Attribution, ComparisonMethod, ReferenceKind, assess_match
 
@@ -388,6 +389,73 @@ class LogicalClaim:
     shortfall: Attribution | None = field(default=None)
 
 
+def validate_logical(dossier: Dossier) -> list[str]:
+    """Structural problems that make a logical dossier ill-formed; empty when well-formed.
+
+    On top of the shared checks, the rule expressions (carried as the dossier's equations) must
+    parse and reference only declared nodes, and the update scheme's load-bearing status must be
+    honest — an unstated scheme is a load-bearing gap, because synchronous and asynchronous updating
+    can yield different attractors (spec: logical-class — "Update scheme is load-bearing").
+    """
+    problems = dossier.validate()
+    nodes = {expr.target for expr in dossier.equations}
+    rules = {expr.target: expr.expression for expr in dossier.equations}
+    for target, expression in rules.items():
+        try:
+            compile_boolean_rule(expression, nodes)
+        except ValueError as exc:
+            problems.append(f"rule for node {target!r}: {exc}")
+    scheme_gaps = [g for g in dossier.gaps if g.kind is GapKind.UPDATE_SCHEME]
+    for gap in scheme_gaps:
+        if not gap.load_bearing:
+            problems.append("an unstated update scheme must be recorded as a load-bearing gap")
+    return problems
+
+
+def logical_dossier(
+    entry: str,
+    *,
+    rules: Mapping[str, str],
+    source_location: str,
+    claims: Sequence[DossierClaim] = (),
+    update_scheme: UpdateScheme | None = None,
+    model: ModelArtifact | None = None,
+) -> Dossier:
+    """Assemble a well-formed logical dossier, or raise if it is ill-formed.
+
+    ``rules`` maps each node to its Boolean update rule (recorded as the dossier's equations, each
+    citing ``source_location``); the nodes become the dossier's state variables. ``update_scheme``
+    is the stated synchronous/asynchronous scheme — when ``None`` it is recorded as a load-bearing
+    :class:`~reprolith.dossier.Gap`, because the scheme changes the attractors. ``model`` is the
+    optional adopted SBML-qual artifact. Validated by :func:`validate_logical`; a structural problem
+    is an error, never a silently-accepted dossier.
+    """
+    equations = tuple(
+        Equation(target=node, expression=expr, source_location=source_location)
+        for node, expr in sorted(rules.items())
+    )
+    gaps: tuple[Gap, ...] = ()
+    if update_scheme is None:
+        gaps = (Gap(
+            element="update scheme",
+            kind=GapKind.UPDATE_SCHEME,
+            detail="the paper does not state synchronous vs asynchronous updating",
+            load_bearing=True,
+        ),)
+    dossier = Dossier(
+        entry=entry,
+        state_variables=tuple(sorted(rules)),
+        equations=equations,
+        claims=tuple(claims),
+        gaps=gaps,
+        artifacts=(model,) if model is not None else (),
+    )
+    problems = validate_logical(dossier)
+    if problems:
+        raise ValueError("ill-formed logical dossier: " + "; ".join(problems))
+    return dossier
+
+
 def certify_logical(
     *,
     paper: PaperIdentity,
@@ -433,5 +501,7 @@ __all__ = [
     "compile_boolean_rule",
     "judge_attractor_set",
     "judge_steady_state",
+    "logical_dossier",
     "parse_boolean_network",
+    "validate_logical",
 ]
