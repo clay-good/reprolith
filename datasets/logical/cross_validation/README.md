@@ -19,6 +19,12 @@ Four **real, published** Boolean models bundled by CANA:
 For each, [`reference.json`](reference.json) stores the model's Boolean rules and CANA's
 independently-computed **attractor signature** — the number of attractors and their periods.
 
+Two synthetic networks are added so the **limit-cycle** path is cross-validated too, not only fixed
+points: a three-gene `repressilator` ring (a period-6 synchronous cycle plus a period-2 one) and a
+`toggle_plus_switch` (four fixed points crossed with two 2-cycles). CANA remains the independent
+oracle for these; they exercise cyclic attractors that the published models above (all fixed-point
+only under synchronous updating) do not.
+
 ## Why it is non-circular and faithful
 
 - **Independent oracle.** The attractor counts come from CANA's own algorithm, not Reprolith's.

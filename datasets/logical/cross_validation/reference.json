@@ -86,6 +86,20 @@
         "Two": "1"
       }
     },
+    "repressilator": {
+      "attractor_periods": [
+        2,
+        6
+      ],
+      "citation": "Three-gene repressilator ring \u2014 a synchronous limit cycle, no fixed point",
+      "n_attractors": 2,
+      "n_nodes": 3,
+      "rules": {
+        "A": "(!C)",
+        "B": "(!A)",
+        "C": "(!B)"
+      }
+    },
     "thaliana": {
       "attractor_periods": [
         1,
@@ -118,6 +132,24 @@
         "TFL1": "(!AP1 & EMF1 & !LFY & !AP2) | (!AP1 & EMF1 & !LFY & AP2)",
         "UFO": "(UFO)",
         "WUS": "(WUS & !AG & !SEP) | (WUS & !AG & SEP) | (WUS & AG & !SEP)"
+      }
+    },
+    "toggle_plus_switch": {
+      "attractor_periods": [
+        1,
+        1,
+        1,
+        1,
+        2,
+        2
+      ],
+      "citation": "A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch",
+      "n_attractors": 6,
+      "n_nodes": 3,
+      "rules": {
+        "A": "(!B)",
+        "B": "(!A)",
+        "C": "(C)"
       }
     }
   }

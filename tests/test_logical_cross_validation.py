@@ -50,7 +50,20 @@ def test_reprolith_reproduces_cana_attractor_signature(model: str) -> None:
         assert full == periods, f"{model}: attractor periods {full} != CANA {periods}"
 
 
-def test_reference_covers_the_expected_published_models() -> None:
-    assert set(_REFERENCE["models"]) == {"thaliana", "drosophila", "budding_yeast", "marques_pita"}
-    # The budding-yeast cell-cycle network's documented fixed-point count, as an anchored sanity check.
+def test_reference_covers_published_models_and_cyclic_cases() -> None:
+    models = set(_REFERENCE["models"])
+    # The four real published models.
+    assert {"thaliana", "drosophila", "budding_yeast", "marques_pita"} <= models
+    # Plus synthetic networks that exercise the limit-cycle path against CANA, not just fixed points.
+    assert {"repressilator", "toggle_plus_switch"} <= models
+    # Anchored sanity checks: the Li et al. 2004 yeast fixed-point count, and a genuine cycle.
     assert _REFERENCE["models"]["budding_yeast"]["n_attractors"] == 11
+    assert _REFERENCE["models"]["repressilator"]["attractor_periods"] == [2, 6]  # a period-6 cycle
+
+
+def test_at_least_one_reference_model_has_a_cyclic_attractor() -> None:
+    # Guards that the cross-validation actually covers cyclic attractors, not only steady states.
+    assert any(
+        any(period > 1 for period in entry["attractor_periods"])
+        for entry in _REFERENCE["models"].values()
+    )

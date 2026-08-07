@@ -28,11 +28,24 @@ from itertools import product
 from pathlib import Path
 
 # The published models to cross-validate against, with the citation CANA records for each.
-_MODELS = {
+_PUBLISHED = {
     "thaliana": ("THALIANA", "Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006)"),
     "drosophila": ("DROSOPHILA", "Drosophila melanogaster segment polarity, single cell (Albert & Othmer 2003)"),
     "budding_yeast": ("BUDDING_YEAST", "Budding yeast cell-cycle network (Li et al. 2004)"),
     "marques_pita": ("MARQUESPITA", "Two-symbol schemata example network (Marques-Pita & Rocha 2013)"),
+}
+
+# Synthetic networks with cyclic attractors, so the limit-cycle path (not just fixed points) is
+# cross-validated against CANA. Given as CANA rule strings; CANA is still the independent oracle.
+_SYNTHETIC = {
+    "repressilator": (
+        "A*= not C\nB*= not A\nC*= not B\n",
+        "Three-gene repressilator ring — a synchronous limit cycle, no fixed point",
+    ),
+    "toggle_plus_switch": (
+        "A*= not B\nB*= not A\nC*= C\n",
+        "A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch",
+    ),
 }
 
 _OUT = Path(__file__).resolve().parents[1] / "datasets" / "logical" / "cross_validation"
@@ -94,9 +107,16 @@ def main() -> None:
     except ImportError as exc:
         raise SystemExit("this script needs the refgen extra: pip install -e \".[refgen]\"") from exc
 
+    from cana.boolean_network import BooleanNetwork as CanaNetwork
+
+    networks = {key: (getattr(bio, loader)(), citation) for key, (loader, citation) in _PUBLISHED.items()}
+    networks.update(
+        {key: (CanaNetwork.from_string_boolean(rules), citation) for key, (rules, citation) in _SYNTHETIC.items()}
+    )
+
     reference = {"_source": f"CANA {cana.__version__} (Correia et al. 2018)", "models": {}}
-    for key, (loader, citation) in _MODELS.items():
-        bn = getattr(bio, loader)()
+    for key in sorted(networks):
+        bn, citation = networks[key]
         rules = _export_rules(bn)
         _assert_faithful(bn, rules)  # committed rules are provably CANA's model
         periods = sorted(len(attractor) for attractor in bn.attractors())
