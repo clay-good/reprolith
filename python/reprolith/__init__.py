@@ -172,7 +172,7 @@ from .scope import Scope
 from .screening import Candidate, Screening, ScreeningResult, screen_candidate, storable_content
 from .sedml import SimulationRecipe, parse_sedml_recipes
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
-from .spatial import diffuse_1d, gaussian_profile
+from .spatial import SpatialClaim, certify_spatial, diffuse_1d, gaussian_profile
 from .stochastic import (
     Reaction,
     StochasticClaim,
@@ -254,6 +254,7 @@ __all__ = [
     "ReprolithQuery",
     "RunMetadata",
     "Scope",
+    "SpatialClaim",
     "Screening",
     "ScreeningResult",
     "SeedingReport",
@@ -284,6 +285,7 @@ __all__ = [
     "certify_model",
     "certify_logical",
     "certify_population",
+    "certify_spatial",
     "certify_stochastic",
     "claim_counts",
     "constraint_based_dossier",

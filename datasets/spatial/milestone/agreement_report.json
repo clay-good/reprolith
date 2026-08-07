@@ -1,0 +1,32 @@
+{
+  "agreement_rate": 1.0,
+  "agreements": 3,
+  "confusion": {
+    "reproduced->reproduced": 3
+  },
+  "disagreements": 0,
+  "per_entry": [
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "diffusion_D1",
+      "expected": "reproduced",
+      "source": "closed-form Gaussian diffusion"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "diffusion_D2",
+      "expected": "reproduced",
+      "source": "closed-form Gaussian diffusion"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "diffusion_Dhalf",
+      "expected": "reproduced",
+      "source": "closed-form Gaussian diffusion"
+    }
+  ],
+  "total": 3
+}

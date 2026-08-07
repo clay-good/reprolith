@@ -1,0 +1,211 @@
+{
+  "entries": [
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "closed-form Gaussian diffusion"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "diffusion_D1",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "1-D diffusion of a Gaussian (D=1)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "spatial",
+      "sources": [],
+      "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "closed-form Gaussian diffusion"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "diffusion_D2",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "1-D diffusion of a Gaussian (D=2)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "spatial",
+      "sources": [],
+      "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "closed-form Gaussian diffusion"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "diffusion_Dhalf",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "1-D diffusion of a Gaussian (D=0.5)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "spatial",
+      "sources": [],
+      "state": "certified"
+    }
+  ]
+}

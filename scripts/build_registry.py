@@ -25,6 +25,7 @@ _SOURCES = {
     "kinetic": REPO / "datasets" / "kinetic" / "milestone" / "certificates",
     "logical": REPO / "datasets" / "logical" / "milestone" / "certificates",
     "stochastic": REPO / "datasets" / "stochastic" / "milestone" / "certificates",
+    "spatial": REPO / "datasets" / "spatial" / "milestone" / "certificates",
 }
 
 

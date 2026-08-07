@@ -15,7 +15,12 @@ than producing a diverging profile (spec: "Discretization is part of the protoco
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass, field
+
+from .certificate import build_certificate
+from .model import Assumption, Certificate, EnginePin, PaperIdentity
+from .oracle import Attribution, Tolerance, judge_curve
 
 
 def diffuse_1d(
@@ -71,4 +76,67 @@ def gaussian_profile(centers: Sequence[float], *, mass: float, variance: float, 
     return [norm * math.exp(-((x - center) ** 2) / (2.0 * variance)) for x in centers]
 
 
-__all__ = ["diffuse_1d", "gaussian_profile"]
+@dataclass(frozen=True)
+class SpatialClaim:
+    """A published spatial-profile claim: a reported concentration profile over space to reproduce.
+
+    ``initial`` is the starting profile at grid spacing ``dx``; the model is evolved ``steps`` steps
+    of ``dt`` under ``diffusivity`` (and optional first-order ``decay``), and the resulting profile
+    is compared to ``reference`` — the paper's reported profile at that time — with the curve oracle.
+    ``shortfall`` supplies the root cause a non-pass verdict requires.
+    """
+
+    claim_id: str
+    quantity: str
+    initial: tuple[float, ...]
+    reference: tuple[float, ...]
+    source_location: str
+    diffusivity: float
+    dx: float
+    dt: float
+    steps: int
+    decay: float = 0.0
+    tolerance: Tolerance | None = None
+    assumption_qualified: bool = False
+    shortfall: Attribution | None = field(default=None)
+
+
+def certify_spatial(
+    *,
+    paper: PaperIdentity,
+    engine_pin: EnginePin,
+    claims: Iterable[SpatialClaim],
+    assumptions: Iterable[Assumption] = (),
+) -> Certificate:
+    """Run each spatial claim's diffusion to its stated time, judge the profile, build the certificate.
+
+    The spatial class front-end (the counterpart of ``certify_curves`` / ``certify_stochastic``):
+    each claim's reconstructed profile is simulated with :func:`diffuse_1d` and judged against the
+    reported profile by the shared curve oracle, then assembled through the same rule and scope flag
+    as every other class. Deterministic — no engine extra, no sampling qualification.
+    """
+    assessments = []
+    for claim in claims:
+        predicted = diffuse_1d(
+            claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
+            steps=claim.steps, decay=claim.decay,
+        )
+        assessments.append(
+            judge_curve(
+                claim_id=claim.claim_id,
+                quantity=claim.quantity,
+                source_location=claim.source_location,
+                reference=claim.reference,
+                predicted=predicted,
+                tolerance=claim.tolerance,
+                attribution=claim.shortfall,
+                assumption_qualified=claim.assumption_qualified,
+            )
+        )
+    return build_certificate(
+        paper=paper, engine_pin=engine_pin,
+        assessments=assessments, assumptions=tuple(assumptions),
+    )
+
+
+__all__ = ["SpatialClaim", "certify_spatial", "diffuse_1d", "gaussian_profile"]

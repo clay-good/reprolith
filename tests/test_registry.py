@@ -20,6 +20,7 @@ _SOURCES = {
     "kinetic": _REPO / "datasets" / "kinetic" / "milestone" / "certificates",
     "logical": _REPO / "datasets" / "logical" / "milestone" / "certificates",
     "stochastic": _REPO / "datasets" / "stochastic" / "milestone" / "certificates",
+    "spatial": _REPO / "datasets" / "spatial" / "milestone" / "certificates",
 }
 
 
@@ -37,7 +38,7 @@ def test_committed_registry_matches_the_milestone_certificates() -> None:
 
 def test_registry_lists_every_class_and_certificate() -> None:
     html = _REGISTRY.read_text(encoding="utf-8")
-    assert html.count('class="entry"') == 18  # 1 PK/PD + 4 FBA + 6 kinetic + 4 logical + 3 stochastic
+    assert html.count('class="entry"') == 21  # +3 spatial: 1 PK/PD + 4 FBA + 6 kinetic + 4 logical + 3 stochastic + 3 spatial
     for model_class in _SOURCES:
         assert f'data-class="{model_class}"' in html
     # The scope statement travels with the published registry and cannot be emptied.

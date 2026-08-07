@@ -57,8 +57,8 @@ never runs dry.
 *Reprolith · reproduce + monolith · the bedrock layer under a literature that should be
 runnable.*
 
-> Status: pre-alpha. Five model classes (PK/PD, constraint-based, kinetic, logical, stochastic) are
-> built and self-validated in the open. See [`openspec/`](openspec/) for the full specification.
+> Status: pre-alpha. Six model classes (PK/PD, constraint-based, kinetic, logical, stochastic,
+> spatial) are built and self-validated in the open. See [`openspec/`](openspec/) for the full spec.
 
 ## Build and contribute
 
@@ -132,7 +132,12 @@ population figures use, and the class is self-validated non-circularly against c
 the immigration-death process's Poisson stationary mean and variance and a reversible reaction's
 binomial equilibrium — with a 3/3 [milestone blind run](datasets/stochastic/milestone/).
 
-All five classes are measured blind against independently-established ground truth on the same
+**Spatial reaction-diffusion (PDE) models** are the sixth class: the reproducible result is a
+concentration profile over space, so a pure-Python finite-difference solver feeds the same curve
+oracle, self-validated non-circularly against the exact analytical diffusion solution (a Gaussian
+whose variance grows by 2·D·t) with a 3/3 [milestone blind run](datasets/spatial/milestone/).
+
+All six classes are measured blind against independently-established ground truth on the same
 machinery — [docs/self-validation.md](docs/self-validation.md) is the one-look evidence summary.
 
 Reprolith gets better when people who know the science validate its judgment. When it isn't sure

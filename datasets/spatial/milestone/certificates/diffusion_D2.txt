@@ -1,0 +1,11 @@
+REPRODUCTION CERTIFICATE — 1-D diffusion of a Gaussian (D=2)
+Engine pin: reprolith-fd 0.0.1
+
+OVERALL: reproduced
+  claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
+
+CLAIMS
+  [diffusion_D2-profile] diffused concentration profile: reproduced (source closed-form via curve-normalized-distance, tol=reproduced<=0.1, partial<=0.25 (class-default))
+
+SCOPE
+  This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

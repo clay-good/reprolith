@@ -174,8 +174,9 @@ a change under `openspec/changes/`.
   self-validated. Landed as `stochastic-class`: a pure-Python Gillespie SSA reusing the
   distributional oracle, self-validated against closed-form Poisson/binomial results. A dossier,
   certify path, and milestone remain.
-- **Spatial / PDE simulation class** — different simulation machinery and a weaker free oracle;
-  revisit after the stochastic class is broad.
+- **Spatial / PDE simulation class** — *STARTED*: landed as `spatial-class`, a pure-Python 1-D
+  finite-difference reaction-diffusion solver reusing the curve oracle, self-validated against the
+  closed-form Gaussian diffusion solution (3/3 milestone). A dossier and ingestion remain.
 - **Whole-cell and very large QSP networks** — in-kind but often intractable under a single
   pinned engine; wait for item 5 and better resource handling.
 - **A hosted web dashboard** — valuable for outreach, but the certificate and MCP surface come
