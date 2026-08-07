@@ -195,6 +195,28 @@ def test_reproduces_thomas_rules_positive_and_negative_feedback_circuits() -> No
     assert len(async_negative[0]) > 1  # a genuine cycle: sustained oscillation, not a steady state
 
 
+def test_synchronous_update_creates_a_spurious_cycle_that_async_resolves() -> None:
+    # The canonical caveat of Boolean modeling and the reason both update schemes exist: the
+    # *synchronous* scheme (every node updates at once) can manufacture a spurious limit cycle where
+    # the biology has none, because it forbids the intermediate states an asynchronous update passes
+    # through. The toggle switch is the textbook case — synchronous dynamics add a (0,0)↔(1,1)
+    # 2-cycle on top of the two real steady states, which asynchronous dynamics correctly omit.
+    toggle = parse_boolean_network({"A": "not B", "B": "not A"})
+
+    fixed = [{"A": 0, "B": 1}, {"A": 1, "B": 0}]
+    sync = toggle.attractors(UpdateScheme.SYNCHRONOUS)
+    async_ = toggle.attractors(UpdateScheme.ASYNCHRONOUS)
+
+    # Both schemes agree on the two genuine steady states.
+    assert [a[0] for a in sync if len(a) == 1] == fixed
+    assert [a[0] for a in async_ if len(a) == 1] == fixed
+
+    # Synchronous update alone carries a spurious cyclic attractor; asynchronous has none.
+    sync_cycles = [a for a in sync if len(a) > 1]
+    assert sync_cycles == [({"A": 0, "B": 0}, {"A": 1, "B": 1})]
+    assert [a for a in async_ if len(a) > 1] == []
+
+
 def test_repeated_judgment_is_identical() -> None:
     def run():
         return judge_steady_state(
