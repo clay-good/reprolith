@@ -62,6 +62,16 @@ present, so verdicts match how the field judges a model.
   definition and compares it to the reported value within tolerance
 - **AND** the definition used for the metric is recorded so the comparison is auditable
 
+#### Scenario: Population figure reproduction
+
+- **WHEN** a claim is a population figure (a percentile envelope, prediction interval, or a
+  reported inter-individual variability metric) rather than a single-subject trajectory
+- **THEN** the oracle compares the reported distribution to the simulated population's
+  distribution under the class distributional tolerance, judging a percentile envelope by its
+  worst-matched band and a variability scalar by relative error
+- **AND** the verdict is assumption-qualified to reflect its dependence on the variability
+  model and sampling, per the simulation-oracle distributional contract
+
 ### Requirement: Class-default tolerances
 
 This class SHALL define sensible default tolerances so verdicts are consistent across papers,

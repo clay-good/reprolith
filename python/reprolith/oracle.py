@@ -33,6 +33,7 @@ class ComparisonMethod(str, Enum):
 
     SCALAR_RELATIVE_ERROR = "scalar-relative-error"
     CURVE_NORMALIZED_DISTANCE = "curve-normalized-distance"
+    DISTRIBUTION_BAND_DISTANCE = "distribution-band-distance"
     FINGERPRINT_COMPARISON = "fingerprint-comparison"
 
 
@@ -66,6 +67,10 @@ class FailureMode(str, Enum):
     MISSING_PARAMETER = "missing-parameter"
     UNIT_MISMATCH = "unit-mismatch"
     AMBIGUOUS_INITIAL_CONDITION = "ambiguous-initial-condition"
+    # PK/PD population (distributional) root causes (spec: simulation-oracle — "Population-specific
+    # failure modes").
+    UNSPECIFIED_VARIABILITY_MODEL = "unspecified-between-subject-variability-model"
+    UNSPECIFIED_POPULATION_SAMPLING = "unspecified-population-size-or-sampling"
     ENGINE_SENSITIVITY = "engine-algorithm-sensitivity"
     MANUSCRIPT_ERROR = "apparent-manuscript-error"
     ASSUMPTION_DEPENDENCE = "load-bearing-assumption-dependence"
@@ -127,6 +132,29 @@ class Attribution:
     fault: Fault
 
 
+@dataclass(frozen=True)
+class PercentileBand:
+    """One percentile curve of a population envelope: a percentile and its trajectory.
+
+    A population figure is a set of these — e.g. the 5th, 50th, and 95th percentile of the
+    simulated concentration over time. ``percentile`` is in the open interval (0, 100); the
+    band label (``P5``, ``P50``, …) is derived from it so a discrepancy can name the band that
+    governed the verdict.
+    """
+
+    percentile: float
+    curve: tuple[float, ...]
+
+    def __post_init__(self) -> None:
+        if not 0.0 < self.percentile < 100.0:
+            raise ValueError("percentile must be in the open interval (0, 100)")
+        if not self.curve:
+            raise ValueError("a percentile band needs at least one sample point")
+
+    def label(self) -> str:
+        return f"P{self.percentile:g}"
+
+
 # Documented MVP-initial class defaults. Simulation reproduction of a deterministic ODE model
 # should match closely; the slack absorbs digitization and rounding, and is wider for a
 # figure-only reference to reflect its added uncertainty. Refined by the discipline loop (7.4).
@@ -142,6 +170,15 @@ _DEFAULTS: dict[tuple[ComparisonMethod, ReferenceKind], Tolerance] = {
     ),
     (ComparisonMethod.CURVE_NORMALIZED_DISTANCE, ReferenceKind.DIGITIZED_FIGURE): Tolerance(
         0.20, 0.40, ToleranceSource.CLASS_DEFAULT
+    ),
+    # A population envelope is judged by its worst-matched percentile band and carries the
+    # Monte-Carlo sampling error of a simulated population, so its band-distance defaults are
+    # wider than a single deterministic trajectory's (spec: "Distributional tolerance provenance").
+    (ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, ReferenceKind.NUMERIC): Tolerance(
+        0.15, 0.35, ToleranceSource.CLASS_DEFAULT
+    ),
+    (ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, ReferenceKind.DIGITIZED_FIGURE): Tolerance(
+        0.25, 0.50, ToleranceSource.CLASS_DEFAULT
     ),
 }
 
@@ -183,6 +220,37 @@ def normalized_curve_distance(reference: Sequence[float], predicted: Sequence[fl
     if span == 0.0:
         return 0.0 if rmse == 0.0 else float("inf")
     return rmse / span
+
+
+def band_envelope_distance(
+    reference: Sequence[PercentileBand], predicted: Sequence[PercentileBand]
+) -> tuple[float, PercentileBand]:
+    """Distance between two population envelopes, governed by their worst-matched band.
+
+    ``reference`` and ``predicted`` are the reported and simulated percentile bands. The two
+    envelopes must describe the same percentiles; each reference band is compared to the
+    predicted band at the same percentile via :func:`normalized_curve_distance`, and the
+    envelope's distance is the *worst* (largest) band distance — a well-matched median cannot
+    hide a divergent tail, because the whole point of a population claim is its spread. Returns
+    the worst distance together with the reference band that produced it, so the discrepancy can
+    name the governing percentile.
+    """
+    if not reference or not predicted:
+        raise ValueError("both envelopes need at least one percentile band")
+    ref_by_pct = {b.percentile: b for b in reference}
+    pred_by_pct = {b.percentile: b for b in predicted}
+    if len(ref_by_pct) != len(reference) or len(pred_by_pct) != len(predicted):
+        raise ValueError("percentiles within an envelope must be distinct")
+    if ref_by_pct.keys() != pred_by_pct.keys():
+        raise ValueError("reference and predicted envelopes must cover the same percentiles")
+    worst_distance = -1.0
+    worst_band = reference[0]
+    for pct in sorted(ref_by_pct):
+        ref_band, pred_band = ref_by_pct[pct], pred_by_pct[pct]
+        distance = normalized_curve_distance(ref_band.curve, pred_band.curve)
+        if distance > worst_distance:
+            worst_distance, worst_band = distance, ref_band
+    return worst_distance, worst_band
 
 
 def verdict_for(measure: float, tol: Tolerance) -> Verdict:
@@ -306,6 +374,53 @@ def judge_curve(
     )
 
 
+def judge_distribution(
+    *,
+    claim_id: str,
+    quantity: str,
+    source_location: str,
+    reference: Sequence[PercentileBand],
+    predicted: Sequence[PercentileBand],
+    reference_kind: ReferenceKind = ReferenceKind.NUMERIC,
+    tolerance: Tolerance | None = None,
+    attribution: Attribution | None = None,
+    assumption_qualified: bool = True,
+) -> ClaimAssessment:
+    """Judge a population envelope claim by its worst-matched percentile band.
+
+    A population figure (a percentile envelope or prediction interval over time) is compared
+    band-for-band; the verdict is governed by the worst-matched band so a good median cannot
+    mask a divergent tail. Uses the documented distributional class default when ``tolerance``
+    is unset — wider than a single trajectory's to absorb population sampling error.
+
+    ``assumption_qualified`` defaults to ``True``: reproducing a population depends on the
+    reconstructed between-subject variability model and the sampling, load-bearing assumptions
+    a manuscript often under-specifies, so the verdict is qualified unless the caller states the
+    variability model was fully specified and the sampling made deterministic (spec:
+    simulation-oracle — "Population reproduction is a qualified verdict"). A ``partial`` or
+    ``failed`` outcome still requires an ``attribution``.
+
+    A single variability *scalar* (a CV%, a between-subject SD, one percentile value) is not an
+    envelope; judge it with :func:`judge_scalar` by relative error.
+    """
+    tol = tolerance or default_tolerance(
+        ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, reference_kind
+    )
+    distance, worst_band = band_envelope_distance(reference, predicted)
+    return _assemble(
+        claim_id=claim_id,
+        quantity=quantity,
+        source_location=source_location,
+        method=ComparisonMethod.DISTRIBUTION_BAND_DISTANCE,
+        measure=distance,
+        discrepancy=f"worst band {worst_band.label()} normalized distance {distance:.4f}",
+        tol=tol,
+        reference_kind=reference_kind,
+        attribution=attribution,
+        assumption_qualified=assumption_qualified,
+    )
+
+
 def assess_match(
     *,
     claim_id: str,
@@ -370,12 +485,15 @@ __all__ = [
     "ComparisonMethod",
     "Fault",
     "FailureMode",
+    "PercentileBand",
     "ReferenceKind",
     "Tolerance",
     "ToleranceSource",
     "assess_match",
+    "band_envelope_distance",
     "default_tolerance",
     "judge_curve",
+    "judge_distribution",
     "judge_scalar",
     "normalized_curve_distance",
     "not_evaluable",
