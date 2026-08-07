@@ -22,6 +22,7 @@ from .dossier import Dossier
 from .engine import EngineUnavailable
 from .fba import FbaModel
 from .logical import BooleanNetwork, Rule
+from .stochastic import Reaction
 
 
 def _libsbml() -> Any:
@@ -405,4 +406,81 @@ def ingest_qual_sbml(sbml: str) -> BooleanNetwork:
     return BooleanNetwork(rules)
 
 
-__all__ = ["build_model_sbml", "compare_sbml_to_dossier", "ingest_fbc_sbml", "ingest_qual_sbml"]
+def _mass_action_rate(kinetic_law: Any) -> float:
+    """The mass-action rate constant of a reaction's kinetic law.
+
+    Scoped to mass-action laws with a single rate parameter (the common ``k · reactant …`` form),
+    so the constant is read directly without interpreting the rate expression. Accepts the rate as a
+    single kinetic-law local parameter (SBML L3) or a single legacy law parameter (SBML L2); any
+    other shape — no parameter, or several — is ambiguous and raises rather than guessing.
+    """
+    if kinetic_law is None:
+        raise ValueError("a stochastic reaction needs a mass-action kinetic law with a rate constant")
+    n_local = kinetic_law.getNumLocalParameters()
+    if n_local == 1:
+        return float(kinetic_law.getLocalParameter(0).getValue())
+    n_legacy = kinetic_law.getNumParameters()
+    if n_local == 0 and n_legacy == 1:
+        return float(kinetic_law.getParameter(0).getValue())
+    raise ValueError(
+        "expected exactly one mass-action rate parameter in the kinetic law; "
+        f"found {n_local} local and {n_legacy} legacy — only single-parameter mass action is supported"
+    )
+
+
+def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[int]]:
+    """Parse an SBML reaction network into the species, reactions, and initial counts the SSA runs.
+
+    The stochastic counterpart of :func:`ingest_fbc_sbml`: a stochastic model *is* an SBML
+    reaction network read discretely. Reads each species' initial molecule count and each reaction's
+    reactant/product stoichiometry structurally, and its mass-action rate constant from the kinetic
+    law (see :func:`_mass_action_rate`), building the :class:`~reprolith.stochastic.Reaction` list the
+    Gillespie SSA consumes. Returns the ordered species names, the reactions, and the initial counts.
+
+    Scoped to mass-action kinetics with integer initial amounts — the discrete-molecule regime the
+    SSA models; a non-integer initial amount or a non-mass-action law raises rather than being
+    silently coerced. Needs the ``engine`` extra (python-libsbml).
+    """
+    libsbml = _libsbml()
+    document = libsbml.readSBMLFromString(sbml)
+    model = document.getModel()
+    if model is None:
+        raise ValueError("the artifact is not readable SBML")
+
+    species = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
+    index_of = {sid: i for i, sid in enumerate(species)}
+    initial: list[int] = []
+    for i in range(model.getNumSpecies()):
+        amount = model.getSpecies(i).getInitialAmount()
+        rounded = round(amount)
+        if abs(amount - rounded) > 1e-9:
+            raise ValueError(
+                f"species {species[i]!r} has non-integer initial amount {amount}; the SSA needs "
+                "discrete molecule counts"
+            )
+        initial.append(int(rounded))
+
+    reactions: list[Reaction] = []
+    for j in range(model.getNumReactions()):
+        rxn = model.getReaction(j)
+        reactants = tuple(
+            (index_of[rxn.getReactant(k).getSpecies()], int(round(rxn.getReactant(k).getStoichiometry())))
+            for k in range(rxn.getNumReactants())
+        )
+        products = tuple(
+            (index_of[rxn.getProduct(k).getSpecies()], int(round(rxn.getProduct(k).getStoichiometry())))
+            for k in range(rxn.getNumProducts())
+        )
+        rate = _mass_action_rate(rxn.getKineticLaw())
+        reactions.append(Reaction(rate=rate, reactants=reactants, products=products))
+
+    return species, reactions, initial
+
+
+__all__ = [
+    "build_model_sbml",
+    "compare_sbml_to_dossier",
+    "ingest_fbc_sbml",
+    "ingest_qual_sbml",
+    "ingest_stochastic_sbml",
+]

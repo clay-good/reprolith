@@ -169,6 +169,7 @@ from .sbml import (
     compare_sbml_to_dossier,
     ingest_fbc_sbml,
     ingest_qual_sbml,
+    ingest_stochastic_sbml,
 )
 from .scope import Scope
 from .screening import Candidate, Screening, ScreeningResult, screen_candidate, storable_content
@@ -332,6 +333,7 @@ __all__ = [
     "ingest_fbc_sbml",
     "ingest_qual_sbml",
     "ingest_sbml",
+    "ingest_stochastic_sbml",
     "judge_attractor_set",
     "judge_curve",
     "judge_distribution",
