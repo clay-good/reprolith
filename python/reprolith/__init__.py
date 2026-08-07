@@ -74,8 +74,14 @@ from .fba import (
     solve_objective,
 )
 from .ingest import ingest_sbml
-from .linter import LintResult, lint_curve, lint_objective
-from .logical import BooleanNetwork, judge_attractor_set, judge_steady_state
+from .linter import LintResult, lint_curve, lint_objective, lint_steady_state
+from .logical import (
+    BooleanNetwork,
+    compile_boolean_rule,
+    judge_attractor_set,
+    judge_steady_state,
+    parse_boolean_network,
+)
 from .mcp_server import handle_request, serve_stdio
 from .model import (
     Assumption,
@@ -234,6 +240,7 @@ __all__ = [
     "band_envelope_distance",
     "compare_frog",
     "compare_sbml_to_dossier",
+    "compile_boolean_rule",
     "content_hash",
     "default_tolerance",
     "derive_overall",
@@ -262,10 +269,12 @@ __all__ = [
     "judge_steady_state",
     "lint_curve",
     "lint_objective",
+    "lint_steady_state",
     "load_claims_dataset",
     "load_test_set",
     "normalized_curve_distance",
     "not_evaluable",
+    "parse_boolean_network",
     "parse_sedml_recipes",
     "presubmission_report",
     "relative_error",

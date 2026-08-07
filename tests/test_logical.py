@@ -14,8 +14,11 @@ from reprolith import (
     FailureMode,
     Fault,
     Verdict,
+    compile_boolean_rule,
     judge_attractor_set,
     judge_steady_state,
+    lint_steady_state,
+    parse_boolean_network,
 )
 
 # A toggle switch: two mutually repressing nodes. Synchronous dynamics have two fixed points —
@@ -145,3 +148,61 @@ def test_repeated_judgment_is_identical() -> None:
         )
 
     assert run() == run()
+
+
+# --- Boolean-rule parsing (the JSON-friendly network form) -------------------------
+
+
+def test_parse_boolean_network_matches_the_callable_toggle() -> None:
+    parsed = parse_boolean_network({"A": "not B", "B": "not A"})
+    assert parsed.fixed_points() == _TOGGLE.fixed_points()
+    assert parsed.attractors() == _TOGGLE.attractors()
+
+
+def test_rule_parser_supports_both_spellings_and_operators() -> None:
+    rule = compile_boolean_rule("(A & !B) | (C ^ 1)", {"A", "B", "C"})
+    assert rule({"A": 1, "B": 0, "C": 0}) == 1  # A and not B
+    assert rule({"A": 0, "B": 1, "C": 0}) == 1  # C xor 1 == 1
+    assert rule({"A": 0, "B": 1, "C": 1}) == 0
+
+
+def test_rule_referencing_an_unknown_node_is_rejected() -> None:
+    with pytest.raises(ValueError, match="unknown node"):
+        parse_boolean_network({"A": "not Z"})  # Z is not a declared node
+
+
+def test_rule_with_a_function_call_is_rejected() -> None:
+    # The parser allow-lists Boolean structure only, so a rule can never execute arbitrary code.
+    with pytest.raises(ValueError, match="unsupported"):
+        compile_boolean_rule("__import__('os')", {"A"})
+
+
+def test_invalid_rule_syntax_is_rejected() -> None:
+    with pytest.raises(ValueError, match="invalid Boolean rule"):
+        compile_boolean_rule("A &", {"A"})
+
+
+# --- inline linter -----------------------------------------------------------------
+
+
+def test_lint_steady_state_passes_a_fixed_point() -> None:
+    result = lint_steady_state({"A": "!B", "B": "!A"}, {"A": 1, "B": 0})
+    assert result.verdict is Verdict.REPRODUCED
+    assert result.method == "attractor-set-match"
+    assert result.scope.machine  # the scope flag travels with the verdict
+
+
+def test_lint_steady_state_fails_a_non_fixed_point() -> None:
+    result = lint_steady_state({"A": "!B", "B": "!A"}, {"A": 1, "B": 1})
+    assert result.verdict is Verdict.FAILED
+
+
+def test_lint_steady_state_requires_a_full_state() -> None:
+    with pytest.raises(ValueError, match="exactly the network's nodes"):
+        lint_steady_state({"A": "!B", "B": "!A"}, {"A": 1})  # missing B
+
+
+def test_lint_steady_state_is_deterministic() -> None:
+    a = lint_steady_state({"X": "X"}, {"X": 1})
+    b = lint_steady_state({"X": "X"}, {"X": 1})
+    assert a == b

@@ -114,6 +114,27 @@ def test_lint_objective_tool_returns_a_scope_qualified_verdict() -> None:
     assert result["scope"]["machine"] == "reproducible-not-correct-not-clinical"
 
 
+def test_lint_steady_state_tool_is_registered() -> None:
+    assert "lint_steady_state" in {t["name"] for t in TOOL_DEFINITIONS}
+
+
+def test_lint_steady_state_tool_returns_a_scope_qualified_verdict() -> None:
+    # The logical linter is pure Python — no engine extra — so it runs unconditionally over MCP.
+    query, _ = _fixture()
+    result, is_error = _call(query, "lint_steady_state", {
+        "rules": {"A": "!B", "B": "!A"}, "reported": {"A": 1, "B": 0},
+    })
+    assert not is_error
+    assert result["verdict"] == "reproduced"
+    assert result["method"] == "attractor-set-match"
+    assert result["scope"]["machine"] == "reproducible-not-correct-not-clinical"
+
+    bad, is_error = _call(query, "lint_steady_state", {
+        "rules": {"A": "!B", "B": "!A"}, "reported": {"A": 1, "B": 1},
+    })
+    assert not is_error and bad["verdict"] == "failed"
+
+
 def test_dossier_tool_serves_the_stored_ingested_dossier() -> None:
     # The metformin dossier the milestone run ingested and stored is served for inspection.
     from pathlib import Path

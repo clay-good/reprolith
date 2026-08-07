@@ -16,7 +16,8 @@ contract so a logical verdict carries the same tolerance provenance and attribut
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+import ast
+from collections.abc import Callable, Container, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import product
 
@@ -25,6 +26,8 @@ from .oracle import Attribution, ComparisonMethod, ReferenceKind, assess_match
 
 # A network state as node values in sorted-node order, so states hash and sort deterministically.
 State = tuple[int, ...]
+
+Rule = Callable[[Mapping[str, int]], int]
 
 
 @dataclass(frozen=True, eq=False)
@@ -90,6 +93,79 @@ class BooleanNetwork:
                 found[canon] = tuple(cycle[pivot:] + cycle[:pivot])
         ordered = sorted(found.values())
         return [tuple(self._as_dict(s) for s in cycle) for cycle in ordered]
+
+
+def _compile_ast(node: ast.AST, nodes: Container[str]) -> Rule:
+    """Compile an allow-listed Boolean-expression AST node into a state -> 0/1 callable.
+
+    Only Boolean structure is permitted — ``and``/``or``/``not`` and their bitwise spellings
+    ``&``/``|``/``^``/``~``, node names, and the constants 0/1 — so a rule string can never
+    execute arbitrary code. Anything outside that grammar (a call, an attribute, an unknown
+    node) raises, surfacing the problem rather than evaluating it.
+    """
+    if isinstance(node, ast.Expression):
+        return _compile_ast(node.body, nodes)
+    if isinstance(node, ast.BoolOp):
+        subs = [_compile_ast(v, nodes) for v in node.values]
+        if isinstance(node.op, ast.And):
+            return lambda s: 1 if all(f(s) for f in subs) else 0
+        if isinstance(node.op, ast.Or):
+            return lambda s: 1 if any(f(s) for f in subs) else 0
+        raise ValueError("unsupported boolean operator")
+    if isinstance(node, ast.UnaryOp):
+        if isinstance(node.op, (ast.Not, ast.Invert)):
+            operand = _compile_ast(node.operand, nodes)
+            return lambda s: 1 - operand(s)
+        raise ValueError("unsupported unary operator")
+    if isinstance(node, ast.BinOp):
+        left, right = _compile_ast(node.left, nodes), _compile_ast(node.right, nodes)
+        if isinstance(node.op, ast.BitAnd):
+            return lambda s: 1 if left(s) and right(s) else 0
+        if isinstance(node.op, ast.BitOr):
+            return lambda s: 1 if left(s) or right(s) else 0
+        if isinstance(node.op, ast.BitXor):
+            return lambda s: left(s) ^ right(s)
+        raise ValueError("unsupported binary operator")
+    if isinstance(node, ast.Name):
+        name = node.id
+        if name not in nodes:
+            raise ValueError(f"rule references unknown node {name!r}")
+        return lambda s: 1 if s[name] else 0
+    if isinstance(node, ast.Constant):
+        if node.value in (0, 1, True, False):
+            value = int(bool(node.value))
+            return lambda s: value
+        raise ValueError(f"unsupported constant {node.value!r} (only 0/1)")
+    raise ValueError(f"unsupported expression element: {type(node).__name__}")
+
+
+def compile_boolean_rule(expr: str, nodes: Container[str]) -> Rule:
+    """Compile a Boolean rule expression (e.g. ``"A & !B"``) into a state -> 0/1 callable.
+
+    Accepts ``and``/``or``/``not`` and the bitwise ``&``/``|``/``^``/``~`` spellings, the ``!``
+    negation common in the literature, node names, parentheses, and the constants 0/1. Parsing is
+    safe: the expression is compiled from an allow-listed AST, never ``eval``-ed.
+    """
+    # ``!`` is the field's usual negation but not Python syntax; normalize it to the unary ``~``,
+    # which the AST allow-list already handles with the same 1 - operand semantics.
+    normalized = expr.replace("!", "~")
+    try:
+        tree = ast.parse(normalized, mode="eval")
+    except SyntaxError as exc:
+        raise ValueError(f"invalid Boolean rule {expr!r}: {exc}") from exc
+    return _compile_ast(tree, nodes)
+
+
+def parse_boolean_network(rules: Mapping[str, str]) -> BooleanNetwork:
+    """Build a :class:`BooleanNetwork` from rule *expressions*, one per node.
+
+    ``rules`` maps each node to a Boolean expression over the other nodes; a rule naming a node
+    the network does not declare raises, so a typo is surfaced rather than silently treated as a
+    constant. This is the JSON-friendly network form an agent or an ingester supplies.
+    """
+    node_names = set(rules)
+    compiled = {name: compile_boolean_rule(expr, node_names) for name, expr in rules.items()}
+    return BooleanNetwork(compiled)
 
 
 def _attractor_ids(network: BooleanNetwork) -> set[frozenset[State]]:
@@ -178,7 +254,10 @@ def judge_attractor_set(
 
 __all__ = [
     "BooleanNetwork",
+    "Rule",
     "State",
+    "compile_boolean_rule",
     "judge_attractor_set",
     "judge_steady_state",
+    "parse_boolean_network",
 ]

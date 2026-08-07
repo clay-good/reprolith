@@ -131,4 +131,37 @@ def lint_objective(
     )
 
 
-__all__ = ["LintResult", "lint_curve", "lint_objective"]
+def lint_steady_state(
+    rules: Mapping[str, str],
+    reported: Mapping[str, int],
+) -> LintResult:
+    """Check whether a reported steady state is a fixed point of a supplied Boolean network.
+
+    The logical-class counterpart of :func:`lint_curve`: ``rules`` maps each node to a Boolean
+    expression over the others (e.g. ``{"A": "!B", "B": "!A"}``), and ``reported`` assigns every
+    node a 0/1 value. The network's synchronous fixed points are computed exactly and the reported
+    state is checked for membership — a dependency-free, deterministic gate an agent can rely on.
+    The comparison is an exact attractor-set match, so there is no numeric tolerance to declare.
+    """
+    from .logical import parse_boolean_network
+
+    network = parse_boolean_network(rules)
+    if set(reported) != set(network.nodes):
+        raise ValueError("reported state must assign exactly the network's nodes")
+    target = tuple(1 if reported[n] else 0 for n in network.nodes)
+    fixed = {tuple(1 if fp[n] else 0 for n in network.nodes) for fp in network.fixed_points()}
+    matched = target in fixed
+    discrepancy = (
+        "reported steady state is a fixed point"
+        if matched
+        else f"reported state is not a fixed point (network has {len(fixed)} fixed point(s))"
+    )
+    return LintResult(
+        verdict=Verdict.REPRODUCED if matched else Verdict.FAILED,
+        method=ComparisonMethod.ATTRACTOR_SET_MATCH.value,
+        discrepancy=discrepancy,
+        tolerance="exact (attractor-set-match)",
+    )
+
+
+__all__ = ["LintResult", "lint_curve", "lint_objective", "lint_steady_state"]

@@ -128,6 +128,30 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "lint_steady_state",
+        "description": (
+            "Deterministic logical linter: check whether a reported steady state is a fixed point "
+            "of a supplied Boolean network. Rules map each node to a Boolean expression over the "
+            "others (e.g. 'A & !B'); pure and dependency-free — no engine extra needed."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "rules": {
+                    "type": "object",
+                    "additionalProperties": {"type": "string"},
+                    "description": "node id -> Boolean rule expression over the other nodes",
+                },
+                "reported": {
+                    "type": "object",
+                    "additionalProperties": {"type": "integer"},
+                    "description": "the reported steady state: node id -> 0/1",
+                },
+            },
+            "required": ["rules", "reported"],
+        },
+    },
+    {
         "name": "lint_objective",
         "description": (
             "Deterministic FBA linter: solve a supplied SBML-fbc model's objective and judge its "
@@ -284,6 +308,10 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
             steps=arguments["steps"],
         )
         return result.to_dict()
+    if name == "lint_steady_state":
+        from .linter import lint_steady_state
+
+        return lint_steady_state(arguments["rules"], arguments["reported"]).to_dict()
     if name == "lint_objective":
         from .linter import lint_objective
 
