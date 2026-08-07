@@ -1,0 +1,12 @@
+REPRODUCTION CERTIFICATE — Immigration-death process (k=6, γ=1.5) — Poisson stationary mean
+Engine pin: reprolith-ssa 0.0.1
+
+OVERALL: partially-reproduced
+  claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
+  assumption-qualified claims: immigration_death_4-mean
+
+CLAIMS
+  [immigration_death_4-mean] mean copy number: reproduced [assumption-qualified] (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+
+SCOPE
+  This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

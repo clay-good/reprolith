@@ -1,0 +1,12 @@
+REPRODUCTION CERTIFICATE — Reversible isomerization A<->B (N=50, kf=3, kr=1) — binomial equilibrium mean
+Engine pin: reprolith-ssa 0.0.1
+
+OVERALL: partially-reproduced
+  claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
+  assumption-qualified claims: reversible_isomerization-mean
+
+CLAIMS
+  [reversible_isomerization-mean] mean copy number: reproduced [assumption-qualified] (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+
+SCOPE
+  This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

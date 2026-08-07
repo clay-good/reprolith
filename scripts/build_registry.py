@@ -24,6 +24,7 @@ _SOURCES = {
     "constraint-based": REPO / "datasets" / "constraint_based" / "milestone" / "certificates",
     "kinetic": REPO / "datasets" / "kinetic" / "milestone" / "certificates",
     "logical": REPO / "datasets" / "logical" / "milestone" / "certificates",
+    "stochastic": REPO / "datasets" / "stochastic" / "milestone" / "certificates",
 }
 
 

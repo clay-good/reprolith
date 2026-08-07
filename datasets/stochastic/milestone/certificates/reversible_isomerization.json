@@ -1,0 +1,38 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": true,
+      "claim_id": "reversible_isomerization-mean",
+      "discrepancy": "relative error 0.0063",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "quantity": "mean copy number",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "closed-form",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": null,
+    "engine": "reprolith-ssa",
+    "version": "0.0.1"
+  },
+  "gap_report": [],
+  "overall": "partially-reproduced",
+  "paper": {
+    "doi": "",
+    "pubmed_id": null,
+    "title": "Reversible isomerization A<->B (N=50, kf=3, kr=1) \u2014 binomial equilibrium mean"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

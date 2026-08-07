@@ -1,0 +1,32 @@
+{
+  "agreement_rate": 1.0,
+  "agreements": 3,
+  "confusion": {
+    "partially-reproduced->partially-reproduced": 3
+  },
+  "disagreements": 0,
+  "per_entry": [
+    {
+      "actual": "partially-reproduced",
+      "agree": true,
+      "entry": "immigration_death_10",
+      "expected": "partially-reproduced",
+      "source": "closed-form mean 10.0"
+    },
+    {
+      "actual": "partially-reproduced",
+      "agree": true,
+      "entry": "immigration_death_4",
+      "expected": "partially-reproduced",
+      "source": "closed-form mean 4.0"
+    },
+    {
+      "actual": "partially-reproduced",
+      "agree": true,
+      "entry": "reversible_isomerization",
+      "expected": "partially-reproduced",
+      "source": "closed-form mean 37.5"
+    }
+  ],
+  "total": 3
+}
