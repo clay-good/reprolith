@@ -7,6 +7,8 @@ the core CI job.
 
 from __future__ import annotations
 
+import math
+
 import pytest
 from reprolith import Verdict, diffuse_1d, gaussian_profile, judge_curve
 
@@ -97,3 +99,52 @@ def test_lint_diffusion_inline_verdict_and_mcp_registration() -> None:
     assert result.verdict is Verdict.REPRODUCED
     assert result.method == "curve-normalized-distance"
     assert result.scope.machine == "reproducible-not-correct-not-clinical"
+
+
+def test_fisher_kpp_reproduces_the_analytical_front_speed() -> None:
+    # The Fisher-KPP equation u_t = D u_xx + r u(1-u) — the canonical invasion/growth-front model —
+    # develops a traveling wave whose asymptotic speed is c = 2*sqrt(rD), a closed-form ground truth.
+    from reprolith import Tolerance, ToleranceSource, front_position, judge_scalar, react_diffuse_1d
+
+    D, r = 1.0, 1.0
+    analytic_speed = 2.0 * math.sqrt(r * D)
+    dx = 0.5
+    n = 1201  # domain [0, 600], long enough for the front not to reach the boundary
+    dt = 0.2 * dx * dx / D
+    u = [1.0 if i * dx < 20.0 else 0.0 for i in range(n)]
+
+    def to_time(state, target_t):
+        steps = round(target_t / dt)
+        return react_diffuse_1d(state, diffusivity=D, dx=dx, dt=dt, steps=steps,
+                                reaction=lambda c: r * c * (1.0 - c))
+
+    at_100 = to_time(u, 100.0)
+    at_200 = react_diffuse_1d(at_100, diffusivity=D, dx=dx, dt=dt, steps=round(100.0 / dt),
+                              reaction=lambda c: r * c * (1.0 - c))
+    speed = (front_position(at_200, dx=dx) - front_position(at_100, dx=dx)) / 100.0
+
+    # KPP fronts approach 2*sqrt(rD) only logarithmically in time, and the explicit discretization
+    # adds its own bias, so a finite-time measurement sits a few percent below — a known, stated
+    # effect, so the tolerance is a principled override, not a magic number.
+    tol = Tolerance(
+        0.10, 0.20, ToleranceSource.REVIEWER_OVERRIDE,
+        rationale="KPP front speed converges to 2*sqrt(rD) logarithmically; finite-time + "
+                  "discretized measurement expected within ~10%",
+    )
+    verdict = judge_scalar(
+        claim_id="front-speed", quantity="Fisher-KPP asymptotic front speed",
+        source_location="analytical c=2*sqrt(rD)", reported=analytic_speed, predicted=speed,
+        tolerance=tol,
+    )
+    assert verdict.verdict is Verdict.REPRODUCED
+    assert 1.8 < speed < 2.0  # approaching the asymptotic speed from below
+
+
+def test_react_diffuse_matches_pure_diffusion_when_the_reaction_is_zero() -> None:
+    # With a zero reaction term, react_diffuse_1d must agree with diffuse_1d.
+    initial = gaussian_profile(_CENTERS, mass=5.0, variance=1.0)
+    a = diffuse_1d(initial, diffusivity=1.0, dx=_DX, dt=0.2 * _DX * _DX, steps=50)
+    from reprolith import react_diffuse_1d
+    b = react_diffuse_1d(initial, diffusivity=1.0, dx=_DX, dt=0.2 * _DX * _DX, steps=50,
+                         reaction=lambda u: 0.0)
+    assert a == b

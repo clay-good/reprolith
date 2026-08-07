@@ -15,7 +15,7 @@ than producing a diverging profile (spec: "Discretization is part of the protoco
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 
 from .certificate import build_certificate
@@ -62,6 +62,56 @@ def diffuse_1d(
             nxt[i] = current[i] + alpha * laplacian - decay * dt * current[i]
         current = nxt
     return current
+
+
+def react_diffuse_1d(
+    profile: Sequence[float],
+    *,
+    diffusivity: float,
+    dx: float,
+    dt: float,
+    steps: int,
+    reaction: Callable[[float], float],
+) -> list[float]:
+    """Evolve a 1-D profile under diffusion plus a general local reaction term.
+
+    Solves ``∂u/∂t = D ∂²u/∂x² + f(u)`` with the same explicit forward-time centered-space scheme as
+    :func:`diffuse_1d`, where ``reaction`` is the local rate ``f(u)`` — e.g. logistic growth
+    ``r·u·(1−u)`` for the Fisher-KPP invasion/growth-front model. Zero-flux boundaries, deterministic,
+    and subject to the same diffusion stability limit (the reaction term's own stability is the
+    caller's to keep, e.g. by a small ``dt``).
+    """
+    alpha = diffusivity * dt / (dx * dx)
+    if alpha > 0.5 + 1e-12:
+        raise ValueError(
+            f"unstable discretization: D·dt/dx² = {alpha:.3g} exceeds the explicit limit 0.5"
+        )
+    current = list(profile)
+    n = len(current)
+    if n < 2:
+        raise ValueError("need at least two grid points")
+    for _ in range(steps):
+        nxt = current[:]
+        for i in range(n):
+            left = current[i - 1] if i > 0 else current[i]
+            right = current[i + 1] if i < n - 1 else current[i]
+            nxt[i] = current[i] + alpha * (left - 2.0 * current[i] + right) + dt * reaction(current[i])
+        current = nxt
+    return current
+
+
+def front_position(profile: Sequence[float], *, dx: float, level: float = 0.5) -> float | None:
+    """The spatial position where ``profile`` first descends through ``level`` (linearly interpolated).
+
+    The front location of a traveling wave — used to measure a front's speed between two times.
+    Returns ``None`` when the profile never crosses the level.
+    """
+    for i in range(len(profile) - 1):
+        if profile[i] >= level >= profile[i + 1]:
+            span = profile[i] - profile[i + 1]
+            frac = (profile[i] - level) / span if span != 0.0 else 0.0
+            return (i + frac) * dx
+    return None
 
 
 def gaussian_profile(centers: Sequence[float], *, mass: float, variance: float, center: float = 0.0) -> list[float]:
@@ -199,7 +249,9 @@ __all__ = [
     "SpatialClaim",
     "certify_spatial",
     "diffuse_1d",
+    "front_position",
     "gaussian_profile",
+    "react_diffuse_1d",
     "spatial_dossier",
     "validate_spatial",
 ]
