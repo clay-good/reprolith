@@ -57,8 +57,8 @@ never runs dry.
 *Reprolith · reproduce + monolith · the bedrock layer under a literature that should be
 runnable.*
 
-> Status: pre-alpha. Four model classes (PK/PD, constraint-based, kinetic, logical) are built and
-> self-validated in the open. See [`openspec/`](openspec/) for the full specification.
+> Status: pre-alpha. Five model classes (PK/PD, constraint-based, kinetic, logical, stochastic) are
+> built and self-validated in the open. See [`openspec/`](openspec/) for the full specification.
 
 ## Build and contribute
 
@@ -125,7 +125,14 @@ networks, and a schemata example — with the [milestone blind run](datasets/log
 scoring 4/4 through the same catalog and agreement machinery. See
 [docs/logical-class.md](docs/logical-class.md).
 
-All four classes are measured blind against independently-established ground truth on the same
+**Stochastic (SSA) models** are the fifth class: discrete-molecule reaction networks where a single
+run is a random sample, so the reproducible result is a distribution. An exact, pure-Python
+Gillespie simulator (deterministic under a pinned seed) feeds the same distributional oracle the
+population figures use, and the class is self-validated non-circularly against closed-form results —
+the immigration-death process's Poisson stationary mean and variance and a reversible reaction's
+binomial equilibrium — with a 3/3 [milestone blind run](datasets/stochastic/milestone/).
+
+All five classes are measured blind against independently-established ground truth on the same
 machinery — [docs/self-validation.md](docs/self-validation.md) is the one-look evidence summary.
 
 Reprolith gets better when people who know the science validate its judgment. When it isn't sure
