@@ -218,3 +218,24 @@ def test_poisson_fano_factor_and_noise_scaling_law() -> None:
         assert abs(fano - 1.0) < 0.15  # Poisson signature: variance == mean
         # CV * sqrt(mean) == 1 for Poisson; check the 1/sqrt(mean) scaling holds across sizes.
         assert abs(cv * math.sqrt(k) - 1.0) < 0.12
+
+
+def test_bursty_production_reproduces_the_super_poissonian_fano_law() -> None:
+    # Production in bursts of size b (immigration of b molecules at a time), with first-order death,
+    # gives super-Poissonian noise with Fano factor (b+1)/2 — the closed-form signature of bursty
+    # gene expression, reducing to Poisson (Fano 1) when b=1.
+    from reprolith import fano_factor
+
+    k, gamma = 5.0, 1.0
+    for b in (1, 2, 4):
+        reactions = [
+            Reaction(rate=k, reactants=(), products=((0, b),)),  # burst of b
+            Reaction(rate=gamma, reactants=((0, 1),), products=()),
+        ]
+        ensemble = ensemble_final_counts(
+            1, reactions, [0], duration=40.0, trajectories=1500, seed=b * 13
+        )
+        mean, _ = species_mean_variance(ensemble, 0)
+        assert abs(mean - b * k / gamma) / (b * k / gamma) < 0.05  # mean = b·k/γ
+        analytic_fano = (b + 1) / 2
+        assert abs(fano_factor(ensemble, 0) - analytic_fano) < 0.15  # Fano = (b+1)/2
