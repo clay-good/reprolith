@@ -220,6 +220,69 @@ def front_position(profile: Sequence[float], *, dx: float, level: float = 0.5) -
     return None
 
 
+def diffuse_2d(
+    grid: Sequence[Sequence[float]],
+    *,
+    diffusivity: float,
+    dx: float,
+    dt: float,
+    steps: int,
+) -> list[list[float]]:
+    """Evolve a 2-D concentration field under isotropic diffusion (tissue-scale spread).
+
+    Solves ``∂C/∂t = D (C_xx + C_yy)`` with the explicit five-point stencil under zero-flux
+    boundaries on a uniform ``dx``-spaced grid (rows × columns). Deterministic. Raises if the 2-D
+    diffusion number ``D·dt/dx²`` exceeds ``0.25`` — the explicit scheme's stability limit in two
+    dimensions (stricter than 1-D's 0.5).
+    """
+    alpha = diffusivity * dt / (dx * dx)
+    if alpha > 0.25 + 1e-12:
+        raise ValueError(
+            f"unstable discretization: D·dt/dx² = {alpha:.3g} exceeds the 2-D explicit limit 0.25"
+        )
+    ny = len(grid)
+    nx = len(grid[0]) if ny else 0
+    if ny < 2 or nx < 2:
+        raise ValueError("need at least a 2x2 grid")
+    current = [list(row) for row in grid]
+    for _ in range(steps):
+        nxt = [row[:] for row in current]
+        for i in range(ny):
+            for j in range(nx):
+                up = current[i - 1][j] if i > 0 else current[i][j]
+                down = current[i + 1][j] if i < ny - 1 else current[i][j]
+                left = current[i][j - 1] if j > 0 else current[i][j]
+                right = current[i][j + 1] if j < nx - 1 else current[i][j]
+                laplacian = up + down + left + right - 4.0 * current[i][j]
+                nxt[i][j] = current[i][j] + alpha * laplacian
+        current = nxt
+    return current
+
+
+def gaussian_field_2d(
+    xs: Sequence[float],
+    ys: Sequence[float],
+    *,
+    mass: float,
+    variance: float,
+    center: tuple[float, float] = (0.0, 0.0),
+) -> list[list[float]]:
+    """A 2-D Gaussian concentration field sampled on the ``ys`` × ``xs`` grid.
+
+    The analytical shape a 2-D point source diffuses into: ``mass`` is the integral ∫∫C dx dy and
+    ``variance`` the (isotropic) spread. Used to seed a 2-D simulation and, at a later variance, as
+    the exact diffusion solution to check against.
+    """
+    if variance <= 0.0:
+        raise ValueError("variance must be positive")
+    cx, cy = center
+    norm = mass / (2.0 * math.pi * variance)
+    return [
+        [norm * math.exp(-(((x - cx) ** 2 + (y - cy) ** 2) / (2.0 * variance))) for x in xs]
+        for y in ys
+    ]
+
+
 def gaussian_profile(centers: Sequence[float], *, mass: float, variance: float, center: float = 0.0) -> list[float]:
     """A Gaussian concentration profile sampled at ``centers`` with the given total ``mass``.
 
@@ -355,7 +418,9 @@ __all__ = [
     "SpatialClaim",
     "certify_spatial",
     "diffuse_1d",
+    "diffuse_2d",
     "front_position",
+    "gaussian_field_2d",
     "gaussian_profile",
     "gradient_decay_length",
     "morphogen_gradient",

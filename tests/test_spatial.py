@@ -228,3 +228,42 @@ def test_two_species_reaction_diffusion_reproduces_the_dispersion_relation() -> 
         source_location="dispersion relation of J - k^2 D", reported=eigenvalue, predicted=growth_rate,
     )
     assert verdict.verdict is Verdict.REPRODUCED  # matches to the O(dx^2) discretization error
+
+
+def test_2d_diffusion_reproduces_the_analytical_gaussian_field() -> None:
+    # 2-D diffusion of a Gaussian is a Gaussian whose (isotropic) variance grows by 2·D·t — the
+    # exact tissue-scale-spread ground truth.
+    from reprolith import diffuse_2d, gaussian_field_2d, judge_curve
+
+    D, var0, mass = 1.0, 1.0, 10.0
+    dx = 0.4
+    m = 61
+    axis = [-12.0 + i * dx for i in range(m)]
+    dt = 0.2 * dx * dx / D  # 2-D number D·dt/dx² = 0.2 < 0.25
+    steps = 200
+    elapsed = steps * dt
+    initial = gaussian_field_2d(axis, axis, mass=mass, variance=var0)
+    simulated = diffuse_2d(initial, diffusivity=D, dx=dx, dt=dt, steps=steps)
+    analytic = gaussian_field_2d(axis, axis, mass=mass, variance=var0 + 2 * D * elapsed)
+
+    # Flatten both fields and judge with the shared curve oracle.
+    flat_sim = [c for row in simulated for c in row]
+    flat_ref = [c for row in analytic for c in row]
+    verdict = judge_curve(
+        claim_id="Cxy", quantity="2-D diffused concentration field",
+        source_location="analytical 2-D Gaussian diffusion", reference=flat_ref, predicted=flat_sim,
+    )
+    assert verdict.verdict is Verdict.REPRODUCED
+
+
+def test_2d_diffusion_conserves_mass_and_rejects_instability() -> None:
+    from reprolith import diffuse_2d, gaussian_field_2d
+
+    dx = 0.4
+    axis = [-12.0 + i * dx for i in range(61)]
+    field = gaussian_field_2d(axis, axis, mass=5.0, variance=1.0)
+    final = diffuse_2d(field, diffusivity=1.0, dx=dx, dt=0.2 * dx * dx / 1.0, steps=100)
+    total = sum(c for row in final for c in row) * dx * dx
+    assert total == pytest.approx(5.0, abs=1e-4)  # zero-flux conserves 2-D mass
+    with pytest.raises(ValueError, match="0.25"):
+        diffuse_2d(field, diffusivity=1.0, dx=dx, dt=0.3 * dx * dx, steps=1)  # number 0.3 > 0.25
