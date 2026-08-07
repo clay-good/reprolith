@@ -19,6 +19,7 @@ from __future__ import annotations
 import ast
 from collections.abc import Callable, Container, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from enum import Enum
 from itertools import product
 
 from .certificate import build_certificate
@@ -29,6 +30,21 @@ from .oracle import Attribution, ComparisonMethod, ReferenceKind, assess_match
 State = tuple[int, ...]
 
 Rule = Callable[[Mapping[str, int]], int]
+
+
+class UpdateScheme(str, Enum):
+    """How a Boolean network advances — a load-bearing modelling choice.
+
+    Under **synchronous** updating every node advances at once, so the dynamics are deterministic
+    and an attractor is a simple cycle. Under **asynchronous** updating any single unstable node
+    may flip, so a state can have several successors and an attractor is a terminal strongly
+    connected set of states. The two schemes share the same fixed points but can differ on cyclic
+    attractors, which is exactly why an unstated scheme is a first-class gap for this class
+    (spec: logical-class — "Update scheme is load-bearing").
+    """
+
+    SYNCHRONOUS = "synchronous"
+    ASYNCHRONOUS = "asynchronous"
 
 
 @dataclass(frozen=True, eq=False)
@@ -71,13 +87,23 @@ class BooleanNetwork:
         fixed = [s for s in self._states() if self._step_tuple(s) == s]
         return [self._as_dict(s) for s in sorted(fixed)]
 
-    def attractors(self) -> list[tuple[dict[str, int], ...]]:
-        """Every synchronous attractor (fixed points and limit cycles), deterministically ordered.
+    def attractors(
+        self, scheme: UpdateScheme = UpdateScheme.SYNCHRONOUS
+    ) -> list[tuple[dict[str, int], ...]]:
+        """Every attractor (fixed points and cyclic attractors) under ``scheme``, ordered.
 
-        Each attractor is returned as its cycle of states, rotated to start at the
-        lexicographically smallest state so the same attractor always renders identically; the
-        list is sorted by that starting state. A fixed point is a length-1 cycle.
+        Synchronous attractors are simple cycles, each rotated to start at the lexicographically
+        smallest state; asynchronous attractors are terminal strongly connected sets of states,
+        returned sorted. A fixed point is a single-state attractor either way. In both cases the
+        list is sorted by the attractor's smallest state, so the output is deterministic.
         """
+        if scheme is UpdateScheme.ASYNCHRONOUS:
+            cycles = self._async_attractors()
+        else:
+            cycles = self._sync_attractors()
+        return [tuple(self._as_dict(s) for s in cycle) for cycle in cycles]
+
+    def _sync_attractors(self) -> list[tuple[State, ...]]:
         found: dict[frozenset[State], tuple[State, ...]] = {}
         for start in self._states():
             index: dict[State, int] = {}
@@ -92,8 +118,48 @@ class BooleanNetwork:
             if canon not in found:
                 pivot = cycle.index(min(cycle))
                 found[canon] = tuple(cycle[pivot:] + cycle[:pivot])
-        ordered = sorted(found.values())
-        return [tuple(self._as_dict(s) for s in cycle) for cycle in ordered]
+        return [found[k] for k in sorted(found, key=min)]
+
+    def _async_successors(self, s: State) -> list[State]:
+        """The asynchronous successors of ``s``: flip each single node that is unstable.
+
+        A node is unstable when its current value differs from its update rule's value; flipping
+        one such node is one asynchronous transition. A state with no unstable node is a fixed
+        point and has no successors.
+        """
+        target = self._step_tuple(s)
+        successors = []
+        for i in range(len(s)):
+            if s[i] != target[i]:
+                flipped = list(s)
+                flipped[i] = target[i]
+                successors.append(tuple(flipped))
+        return successors
+
+    def _async_attractors(self) -> list[tuple[State, ...]]:
+        """Asynchronous attractors: the terminal strongly connected sets of the async graph.
+
+        A set of states is an attractor when the dynamics, once inside, cannot leave — every state
+        reachable from a member is itself a member and can reach the others back. Computed by
+        reachability closure: a state's reachable set is a terminal SCC exactly when every state in
+        it has the same reachable set. Small by design (exhaustive over the state space).
+        """
+        reachable: dict[State, frozenset[State]] = {}
+        for start in self._states():
+            seen = {start}
+            stack = [start]
+            while stack:
+                s = stack.pop()
+                for nxt in self._async_successors(s):
+                    if nxt not in seen:
+                        seen.add(nxt)
+                        stack.append(nxt)
+            reachable[start] = frozenset(seen)
+        attractors: dict[frozenset[State], tuple[State, ...]] = {}
+        for closure in reachable.values():
+            if closure not in attractors and all(reachable[t] == closure for t in closure):
+                attractors[closure] = tuple(sorted(closure))
+        return [attractors[k] for k in sorted(attractors, key=min)]
 
 
 def _compile_ast(node: ast.AST, nodes: Container[str]) -> Rule:
@@ -169,9 +235,12 @@ def parse_boolean_network(rules: Mapping[str, str]) -> BooleanNetwork:
     return BooleanNetwork(compiled)
 
 
-def _attractor_ids(network: BooleanNetwork) -> set[frozenset[State]]:
+def _attractor_ids(
+    network: BooleanNetwork, scheme: UpdateScheme = UpdateScheme.SYNCHRONOUS
+) -> set[frozenset[State]]:
     return {
-        frozenset(network._as_tuple(state) for state in cycle) for cycle in network.attractors()
+        frozenset(network._as_tuple(state) for state in cycle)
+        for cycle in network.attractors(scheme)
     }
 
 
@@ -218,20 +287,23 @@ def judge_attractor_set(
     source_location: str,
     reported: Sequence[Sequence[Mapping[str, int]]],
     network: BooleanNetwork,
+    scheme: UpdateScheme = UpdateScheme.SYNCHRONOUS,
     attribution: Attribution | None = None,
     assumption_qualified: bool = False,
 ) -> ClaimAssessment:
     """Judge a reported set of attractors against the network's computed attractors.
 
     ``reported`` is a sequence of attractors, each a sequence of states (its cycle). The claim
-    reproduces when the reported set equals the computed set; a reported attractor absent from the
-    computed set, or an unexpected extra one, makes it fail and is named in the discrepancy. A
-    non-match requires an ``attribution``.
+    reproduces when the reported set equals the set the network produces under ``scheme`` — the
+    update scheme matters, since a cyclic attractor under synchronous updating may not survive
+    asynchronous updating. A reported attractor absent from the computed set, or an unexpected
+    extra one, makes it fail and is named in the discrepancy. A non-match requires an
+    ``attribution``.
     """
     reported_ids = {
         frozenset(network._as_tuple(state) for state in cycle) for cycle in reported
     }
-    computed_ids = _attractor_ids(network)
+    computed_ids = _attractor_ids(network, scheme)
     matched = reported_ids == computed_ids
     missing = len(reported_ids - computed_ids)
     extra = len(computed_ids - reported_ids)
@@ -311,6 +383,7 @@ __all__ = [
     "LogicalClaim",
     "Rule",
     "State",
+    "UpdateScheme",
     "certify_logical",
     "compile_boolean_rule",
     "judge_attractor_set",

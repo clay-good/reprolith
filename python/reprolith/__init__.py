@@ -87,6 +87,7 @@ from .linter import LintResult, lint_curve, lint_objective, lint_steady_state
 from .logical import (
     BooleanNetwork,
     LogicalClaim,
+    UpdateScheme,
     certify_logical,
     compile_boolean_rule,
     judge_attractor_set,
@@ -227,6 +228,7 @@ __all__ = [
     "Tolerance",
     "ToleranceSource",
     "Transition",
+    "UpdateScheme",
     "Verdict",
     "VerificationDecision",
     "VerificationItem",

@@ -28,10 +28,17 @@ approximation.
 
 | Function | Answers |
 |---|---|
-| `BooleanNetwork.fixed_points` | Which states does the synchronous update map to themselves? |
-| `BooleanNetwork.attractors` | Every attractor — fixed points and limit cycles — deterministically ordered |
+| `BooleanNetwork.fixed_points` | Which states does the update map to themselves? (scheme-invariant) |
+| `BooleanNetwork.attractors(scheme)` | Every attractor under the chosen update scheme — deterministically ordered |
 | `judge_steady_state` | Is a reported steady state one of the network's fixed points? |
-| `judge_attractor_set` | Does the reported set of attractors equal the computed set — surfacing any missing or unexpected one? |
+| `judge_attractor_set` | Does the reported set of attractors equal the computed set under a scheme — surfacing any missing or unexpected one? |
+
+`attractors` takes an `UpdateScheme`: **synchronous** (every node advances at once; attractors are
+simple cycles) or **asynchronous** (any single unstable node may flip; attractors are the terminal
+strongly connected sets of the state graph). The two schemes share the same *fixed points* but can
+differ on cyclic attractors — the toggle switch's 2-cycle exists synchronously and vanishes
+asynchronously — which is precisely why an unstated scheme is a first-class gap for this class, and
+why `judge_attractor_set` takes the scheme it should judge under.
 
 Both judges map onto the shared assessment contract via `assess_match`: a match reproduces,
 otherwise it fails and — like any non-pass — requires a root-cause attribution. So a logical

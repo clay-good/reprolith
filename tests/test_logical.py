@@ -13,6 +13,7 @@ from reprolith import (
     BooleanNetwork,
     FailureMode,
     Fault,
+    UpdateScheme,
     Verdict,
     compile_boolean_rule,
     judge_attractor_set,
@@ -53,6 +54,37 @@ def test_attractors_include_the_two_cycle() -> None:
     two_cycle = next(cycle for cycle in attractors if len(cycle) == 2)
     states = {tuple(sorted(s.items())) for s in two_cycle}
     assert states == {(("A", 0), ("B", 0)), (("A", 1), ("B", 1))}
+
+
+def test_asynchronous_updating_drops_the_synchronous_two_cycle() -> None:
+    # The toggle's (0,0)<->(1,1) 2-cycle exists only under synchronous updating; asynchronously,
+    # (0,0) and (1,1) are transient and only the two fixed points remain. Fixed points are
+    # scheme-invariant, so this is the sharpest demonstration that the scheme is load-bearing.
+    sync = _TOGGLE.attractors(UpdateScheme.SYNCHRONOUS)
+    async_ = _TOGGLE.attractors(UpdateScheme.ASYNCHRONOUS)
+    assert sorted(len(c) for c in sync) == [1, 1, 2]
+    assert sorted(len(c) for c in async_) == [1, 1]  # the 2-cycle is gone
+    async_states = {tuple(sorted(s.items())) for cycle in async_ for s in cycle}
+    assert async_states == {(("A", 0), ("B", 1)), (("A", 1), ("B", 0))}  # the fixed points
+
+
+def test_fixed_points_are_scheme_invariant() -> None:
+    # Every synchronous fixed point is a single-state attractor under async too, and vice versa.
+    sync_fps = {tuple(sorted(s.items())) for c in _TOGGLE.attractors(UpdateScheme.SYNCHRONOUS)
+                for s in c if len(c) == 1}
+    async_fps = {tuple(sorted(s.items())) for c in _TOGGLE.attractors(UpdateScheme.ASYNCHRONOUS)
+                 for s in c if len(c) == 1}
+    assert sync_fps == async_fps
+
+
+def test_judge_attractor_set_under_the_asynchronous_scheme() -> None:
+    # Reporting only the two fixed points reproduces under async (no 2-cycle), but fails under sync.
+    reported = [[{"A": 1, "B": 0}], [{"A": 0, "B": 1}]]
+    good = judge_attractor_set(
+        claim_id="att", quantity="attractors", source_location="Table 1",
+        reported=reported, network=_TOGGLE, scheme=UpdateScheme.ASYNCHRONOUS,
+    )
+    assert good.verdict is Verdict.REPRODUCED
 
 
 def test_step_is_synchronous() -> None:
