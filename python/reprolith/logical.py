@@ -137,29 +137,74 @@ class BooleanNetwork:
         return successors
 
     def _async_attractors(self) -> list[tuple[State, ...]]:
-        """Asynchronous attractors: the terminal strongly connected sets of the async graph.
+        """Asynchronous attractors: the terminal strongly connected components of the async graph.
 
-        A set of states is an attractor when the dynamics, once inside, cannot leave — every state
-        reachable from a member is itself a member and can reach the others back. Computed by
-        reachability closure: a state's reachable set is a terminal SCC exactly when every state in
-        it has the same reachable set. Small by design (exhaustive over the state space).
+        A set of states is an attractor when the dynamics, once inside, cannot leave — it is a
+        strongly connected component with no edge to any other component. Found with an iterative
+        Tarjan SCC pass (linear in the graph, so it scales past the per-state reachability approach)
+        followed by a terminal-component filter. Iterative rather than recursive so a large state
+        space cannot overflow the call stack.
         """
-        reachable: dict[State, frozenset[State]] = {}
-        for start in self._states():
-            seen = {start}
-            stack = [start]
-            while stack:
-                s = stack.pop()
-                for nxt in self._async_successors(s):
-                    if nxt not in seen:
-                        seen.add(nxt)
-                        stack.append(nxt)
-            reachable[start] = frozenset(seen)
-        attractors: dict[frozenset[State], tuple[State, ...]] = {}
-        for closure in reachable.values():
-            if closure not in attractors and all(reachable[t] == closure for t in closure):
-                attractors[closure] = tuple(sorted(closure))
-        return [attractors[k] for k in sorted(attractors, key=min)]
+        index: dict[State, int] = {}
+        lowlink: dict[State, int] = {}
+        on_stack: set[State] = set()
+        scc_stack: list[State] = []
+        component_of: dict[State, int] = {}
+        components: list[list[State]] = []
+        counter = 0
+
+        for root in self._states():
+            if root in index:
+                continue
+            work: list[tuple[State, list[State], int]] = [(root, self._async_successors(root), 0)]
+            index[root] = lowlink[root] = counter
+            counter += 1
+            scc_stack.append(root)
+            on_stack.add(root)
+            while work:
+                node, successors, i = work[-1]
+                recursed = False
+                while i < len(successors):
+                    child = successors[i]
+                    i += 1
+                    if child not in index:
+                        work[-1] = (node, successors, i)
+                        index[child] = lowlink[child] = counter
+                        counter += 1
+                        scc_stack.append(child)
+                        on_stack.add(child)
+                        work.append((child, self._async_successors(child), 0))
+                        recursed = True
+                        break
+                    if child in on_stack:
+                        lowlink[node] = min(lowlink[node], index[child])
+                if recursed:
+                    continue
+                work[-1] = (node, successors, i)
+                if lowlink[node] == index[node]:
+                    component: list[State] = []
+                    while True:
+                        member = scc_stack.pop()
+                        on_stack.discard(member)
+                        component_of[member] = len(components)
+                        component.append(member)
+                        if member == node:
+                            break
+                    components.append(component)
+                work.pop()
+                if work:
+                    parent = work[-1][0]
+                    lowlink[parent] = min(lowlink[parent], lowlink[node])
+
+        terminal: list[tuple[State, ...]] = []
+        for cid, component in enumerate(components):
+            if all(
+                component_of[succ] == cid
+                for state in component
+                for succ in self._async_successors(state)
+            ):
+                terminal.append(tuple(sorted(component)))
+        return sorted(terminal, key=min)
 
 
 def _compile_ast(node: ast.AST, nodes: Container[str]) -> Rule:

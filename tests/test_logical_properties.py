@@ -142,6 +142,25 @@ def test_async_attractors_are_closed_and_strongly_connected() -> None:
                 assert members <= _reachable(net, s)
 
 
+def _reference_async_attractors(net: BooleanNetwork) -> set[frozenset[tuple[int, ...]]]:
+    """An independent reference for async attractors via reachability closure.
+
+    A state's reachable set is a terminal SCC exactly when every state in it has the same reachable
+    set. This is the obvious-but-quadratic method; the production oracle uses Tarjan, so agreement
+    here is a genuine differential check of the faster algorithm.
+    """
+    reachable = {s: frozenset(_reachable(net, s)) for s in _all_states(net)}
+    return {closure for closure in reachable.values()
+            if all(reachable[t] == closure for t in closure)}
+
+
+def test_async_attractors_match_the_reachability_reference() -> None:
+    rng = random.Random(55)
+    for _ in range(400):
+        net = _random_network(rng, rng.randint(1, 4))
+        assert _production_ids(net, UpdateScheme.ASYNCHRONOUS) == _reference_async_attractors(net)
+
+
 def test_fixed_points_are_scheme_invariant_and_are_singleton_attractors() -> None:
     rng = random.Random(44)
     for _ in range(200):
