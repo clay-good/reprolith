@@ -69,6 +69,47 @@ def test_immigration_death_reproduces_the_poisson_stationary_mean_and_variance()
     assert abs(variance - analytic) / analytic < 0.20
 
 
+def test_immigration_death_reproduces_the_full_poisson_stationary_distribution() -> None:
+    # Beyond mean and variance: the *entire* stationary distribution of the immigration-death
+    # process is Poisson(λ = k/γ) — provable by detailed balance. A Pearson chi-square goodness-of-fit
+    # of the ensemble against the exact PMF tests the whole shape (every moment), not just the first
+    # two. Non-circular: the reference is the closed-form Poisson law; deterministic under the seed.
+    k, gamma = 8.0, 1.0
+    lam = k / gamma
+    trajectories = 4000
+    ensemble = ensemble_final_counts(
+        1, _immigration_death(k, gamma), [0], duration=20.0, trajectories=trajectories, seed=20260807
+    )
+    counts = [c[0] for c in ensemble]
+
+    def pmf(n: int) -> float:
+        return math.exp(-lam) * lam**n / math.factorial(n)
+
+    # Inner bins 4..13 individually; the sparse tails are pooled into the edge bins (n≤3 keyed by
+    # `low`, n≥14 keyed by `high`) so every expected count stays ≥ 5 — the validity condition for the
+    # chi-square approximation. All bin keys are integers.
+    low, high = 3, 14
+    observed: dict[int, int] = {}
+    for n in counts:
+        key = low if n <= low else high if n >= high else n
+        observed[key] = observed.get(key, 0) + 1
+
+    def expected(key: int) -> float:
+        if key == low:
+            return trajectories * sum(pmf(n) for n in range(low + 1))
+        if key == high:
+            return trajectories * (1.0 - sum(pmf(n) for n in range(high)))
+        return trajectories * pmf(key)
+
+    keys = list(range(low, high + 1))  # 3..14 inclusive → 12 bins
+    chi_square = sum((observed.get(key, 0) - expected(key)) ** 2 / expected(key) for key in keys)
+
+    # df = bins − 1 = 11. The upper-tail 0.99 critical value of χ²(11) is 24.72; a statistic below it
+    # means the ensemble is consistent with Poisson at the 1% level — the fit is not rejected.
+    assert len(keys) - 1 == 11
+    assert chi_square < 24.72
+
+
 def test_transient_poisson_percentile_envelope_is_reproduced() -> None:
     # Immigration-death started empty is Poisson at every time t with mean λ(t) = (k/γ)(1 - e^{-γt}).
     # So the analytical percentile envelope over time is exact — an independent, closed-form ground
