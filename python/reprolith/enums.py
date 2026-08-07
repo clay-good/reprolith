@@ -53,6 +53,7 @@ class ModelClass(str, Enum):
     CONSTRAINT_BASED = "constraint-based"
     LOGICAL = "logical"
     STOCHASTIC = "stochastic"
+    SPATIAL = "spatial"
     UNASSIGNED = "unassigned"
 
 

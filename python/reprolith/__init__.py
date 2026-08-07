@@ -172,6 +172,7 @@ from .scope import Scope
 from .screening import Candidate, Screening, ScreeningResult, screen_candidate, storable_content
 from .sedml import SimulationRecipe, parse_sedml_recipes
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
+from .spatial import diffuse_1d, gaussian_profile
 from .stochastic import (
     Reaction,
     StochasticClaim,
@@ -298,6 +299,7 @@ __all__ = [
     "estimation_default_tolerance",
     "derive_overall",
     "describe_changes",
+    "diffuse_1d",
     "dossier_digest",
     "dossier_from_dict",
     "engine_pin",
@@ -308,6 +310,7 @@ __all__ = [
     "essentiality_agreement",
     "flux_variability",
     "frog_fingerprint",
+    "gaussian_profile",
     "gene_essentiality",
     "gap_items",
     "gillespie",
