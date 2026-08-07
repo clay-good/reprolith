@@ -148,3 +148,30 @@ def test_dimerization_propensity_uses_the_falling_factorial() -> None:
     dimerize = Reaction(rate=1.0, reactants=((0, 2),), products=((1, 1),))
     assert dimerize.propensity([4, 0]) == pytest.approx(6.0)
     assert dimerize.propensity([1, 0]) == 0.0  # cannot fire with a single molecule
+
+
+def test_certify_stochastic_produces_a_qualified_reproduced_certificate() -> None:
+    from reprolith import (
+        EnginePin,
+        OverallVerdict,
+        PaperIdentity,
+        StochasticClaim,
+        certify_stochastic,
+    )
+
+    k, gamma = 10.0, 1.0
+    cert = certify_stochastic(
+        paper=PaperIdentity(title="An immigration-death process", doi="10.0/id"),
+        engine_pin=EnginePin(engine="reprolith-ssa", version="0.0.1"),
+        n_species=1, reactions=_immigration_death(k, gamma), initial=[0],
+        claims=[StochasticClaim(
+            claim_id="A-mean", quantity="stationary mean copy number", species=0,
+            reported_mean=k / gamma, source_location="closed-form Poisson",
+            duration=40.0, trajectories=400, seed=20260807,
+        )],
+    )
+    assert cert.assessments[0].verdict is Verdict.REPRODUCED
+    assert cert.assessments[0].assumption_qualified is True  # sampling-dependent
+    # Reproduced but qualified by the sampling dependence -> the certificate cannot round up to clean.
+    assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+    assert cert.scope.machine  # the scope flag travels with a stochastic certificate too

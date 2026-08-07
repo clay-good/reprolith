@@ -17,10 +17,12 @@ from __future__ import annotations
 
 import math
 import random
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass, field
 
-from .oracle import PercentileBand
+from .certificate import build_certificate
+from .model import Assumption, Certificate, EnginePin, PaperIdentity
+from .oracle import Attribution, PercentileBand, Tolerance, judge_scalar
 
 
 @dataclass(frozen=True)
@@ -208,8 +210,76 @@ def species_mean_variance(ensemble: Sequence[Sequence[int]], species: int) -> tu
     return mean, variance
 
 
+@dataclass(frozen=True)
+class StochasticClaim:
+    """A published stochastic summary-statistic claim: a reported mean species count to reproduce.
+
+    ``species`` indexes the network species; ``reported_mean`` is the paper's value. The sampling
+    protocol — ``duration``, number of ``trajectories``, and the ``seed`` — is recorded so the
+    reproduction is byte-reproducible (spec: "A pinned seed is part of the protocol"). ``shortfall``
+    supplies the root cause a non-pass verdict requires.
+    """
+
+    claim_id: str
+    quantity: str
+    species: int
+    reported_mean: float
+    source_location: str
+    duration: float
+    trajectories: int
+    seed: int
+    tolerance: Tolerance | None = None
+    assumption_qualified: bool = True
+    shortfall: Attribution | None = field(default=None)
+
+
+def certify_stochastic(
+    *,
+    paper: PaperIdentity,
+    engine_pin: EnginePin,
+    n_species: int,
+    reactions: Sequence[Reaction],
+    initial: Sequence[int],
+    claims: Iterable[StochasticClaim],
+    assumptions: Iterable[Assumption] = (),
+) -> Certificate:
+    """Run each claim's pinned ensemble, judge its mean, and assemble the certificate.
+
+    The stochastic class front-end (the counterpart of ``certify_logical`` / ``certify_curves``):
+    each claim's mean species count is reproduced from a seeded SSA ensemble and judged by the
+    shared scalar oracle, then the certificate is built by the same rule and scope flag as every
+    other class. Verdicts are assumption-qualified by default because a stochastic reproduction
+    depends on the sampling (seed and trajectory count). Needs no engine extra — the SSA is pure.
+    """
+    assessments = []
+    for claim in claims:
+        ensemble = ensemble_final_counts(
+            n_species, reactions, initial,
+            duration=claim.duration, trajectories=claim.trajectories, seed=claim.seed,
+        )
+        mean, _ = species_mean_variance(ensemble, claim.species)
+        assessments.append(
+            judge_scalar(
+                claim_id=claim.claim_id,
+                quantity=claim.quantity,
+                source_location=claim.source_location,
+                reported=claim.reported_mean,
+                predicted=mean,
+                tolerance=claim.tolerance,
+                attribution=claim.shortfall,
+                assumption_qualified=claim.assumption_qualified,
+            )
+        )
+    return build_certificate(
+        paper=paper, engine_pin=engine_pin,
+        assessments=assessments, assumptions=tuple(assumptions),
+    )
+
+
 __all__ = [
     "Reaction",
+    "StochasticClaim",
+    "certify_stochastic",
     "ensemble_final_counts",
     "ensemble_percentile_bands",
     "gillespie",

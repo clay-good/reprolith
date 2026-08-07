@@ -174,6 +174,8 @@ from .sedml import SimulationRecipe, parse_sedml_recipes
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
 from .stochastic import (
     Reaction,
+    StochasticClaim,
+    certify_stochastic,
     ensemble_final_counts,
     ensemble_percentile_bands,
     gillespie,
@@ -244,6 +246,7 @@ __all__ = [
     "PopulationClaim",
     "Reaction",
     "RecipeStep",
+    "StochasticClaim",
     "ReconstructionBundle",
     "ReferenceKind",
     "ReproductionLevel",
@@ -280,6 +283,7 @@ __all__ = [
     "certify_model",
     "certify_logical",
     "certify_population",
+    "certify_stochastic",
     "claim_counts",
     "constraint_based_dossier",
     "close_gap",

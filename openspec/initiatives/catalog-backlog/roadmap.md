@@ -169,8 +169,13 @@ a change under `openspec/changes/`.
 
 ## Not in the top 10 (parked, with reasons)
 
-- **Spatial / PDE and stochastic simulation classes** — different simulation machinery and a
-  weaker free oracle; revisit after the deterministic classes are broad.
+- **Stochastic (SSA) simulation class** — *STARTED*: the parking reason (revisit after the
+  deterministic classes are broad) is discharged now that four deterministic classes are
+  self-validated. Landed as `stochastic-class`: a pure-Python Gillespie SSA reusing the
+  distributional oracle, self-validated against closed-form Poisson/binomial results. A dossier,
+  certify path, and milestone remain.
+- **Spatial / PDE simulation class** — different simulation machinery and a weaker free oracle;
+  revisit after the stochastic class is broad.
 - **Whole-cell and very large QSP networks** — in-kind but often intractable under a single
   pinned engine; wait for item 5 and better resource handling.
 - **A hosted web dashboard** — valuable for outreach, but the certificate and MCP surface come
