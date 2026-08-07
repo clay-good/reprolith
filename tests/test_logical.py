@@ -172,6 +172,29 @@ def test_self_activating_node_has_two_fixed_points() -> None:
     assert a.verdict is Verdict.REPRODUCED
 
 
+def test_reproduces_thomas_rules_positive_and_negative_feedback_circuits() -> None:
+    # Thomas' rules, the foundational theorems of logical modeling: a *positive* feedback circuit
+    # (even number of negative interactions) is necessary for multistationarity, and a *negative*
+    # circuit (odd number) is necessary for sustained oscillation. Reproduced here on the two
+    # canonical minimal circuits. Non-circular: the ground truth is Thomas' theorems, not this engine.
+
+    # Positive circuit — the toggle switch (double-negative loop, two negatives → positive): it must
+    # be MULTISTATIONARY (two stable steady states) and must NOT oscillate.
+    positive = parse_boolean_network({"A": "not B", "B": "not A"})
+    assert positive.fixed_points() == [{"A": 0, "B": 1}, {"A": 1, "B": 0}]  # bistable
+    async_positive = positive.attractors(UpdateScheme.ASYNCHRONOUS)
+    assert all(len(attractor) == 1 for attractor in async_positive)  # every attractor is a point
+    assert len(async_positive) == 2  # exactly the two steady states — no cyclic attractor
+
+    # Negative circuit — the 3-node repressilator (three repressions, odd → negative): it must have
+    # NO steady state and must OSCILLATE (a single cyclic attractor).
+    negative = parse_boolean_network({"A": "not C", "B": "not A", "C": "not B"})
+    assert negative.fixed_points() == []  # a negative circuit admits no fixed point
+    async_negative = negative.attractors(UpdateScheme.ASYNCHRONOUS)
+    assert len(async_negative) == 1
+    assert len(async_negative[0]) > 1  # a genuine cycle: sustained oscillation, not a steady state
+
+
 def test_repeated_judgment_is_identical() -> None:
     def run():
         return judge_steady_state(
