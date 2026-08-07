@@ -205,6 +205,11 @@ def default_tolerance(method: ComparisonMethod, reference_kind: ReferenceKind) -
 _ESTIMATION_DEFAULT = Tolerance(0.10, 0.25, ToleranceSource.CLASS_DEFAULT)
 
 
+def estimation_default_tolerance() -> Tolerance:
+    """The documented estimation-level default tolerance (wider than a simulation scalar's)."""
+    return _ESTIMATION_DEFAULT
+
+
 def relative_error(reported: float, predicted: float) -> float:
     """Relative error of ``predicted`` against the ``reported`` value.
 
@@ -553,6 +558,7 @@ __all__ = [
     "assess_match",
     "band_envelope_distance",
     "default_tolerance",
+    "estimation_default_tolerance",
     "judge_curve",
     "judge_distribution",
     "judge_estimation",

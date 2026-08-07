@@ -371,3 +371,17 @@ def test_backlog_health_tool_reports_the_backlog() -> None:
     assert health["by_state"]["queued"] == 2
     assert health["labelled"] == 1 and health["unlabelled"] == 1
     assert health["by_class"] == {"ode-pkpd": 1, "kinetic": 1}
+
+
+def test_inline_linters_for_estimation_and_population_over_mcp() -> None:
+    query, _ = _fixture()
+    est, is_error = _call(query, "lint_estimation", {"reported": 3.2, "recovered": 3.3})
+    assert not is_error and est["verdict"] == "reproduced"
+    assert est["scope"]["machine"] == "reproducible-not-correct-not-clinical"
+
+    def bands(f):
+        return [{"percentile": p, "curve": [1.0 * f, 2.0 * f, 3.0 * f]} for p in (5.0, 50.0, 95.0)]
+
+    pop, is_error = _call(query, "lint_distribution", {"reported": bands(1.0), "predicted": bands(1.02)})
+    assert not is_error and pop["verdict"] == "reproduced"
+    assert pop["method"] == "distribution-band-distance"

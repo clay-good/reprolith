@@ -212,3 +212,18 @@ def test_qualified_population_reproduction_yields_partial_certificate() -> None:
         assessments=[a],
     )
     assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+
+
+def test_lint_distribution_inline_verdict() -> None:
+    from reprolith import lint_distribution
+
+    reported = [{"percentile": b.percentile, "curve": list(b.curve)} for b in _REF]
+    good_pred = [{"percentile": b.percentile, "curve": [v * 1.02 for v in b.curve]} for b in _REF]
+    result = lint_distribution(reported, good_pred)
+    assert result.verdict is Verdict.REPRODUCED
+    assert result.method == "distribution-band-distance"
+    assert result.scope.machine
+
+    blown = [{"percentile": b.percentile, "curve": [v * (2.0 if b.percentile == 95.0 else 1.0)
+                                                    for v in b.curve]} for b in _REF]
+    assert lint_distribution(reported, blown).verdict is Verdict.FAILED

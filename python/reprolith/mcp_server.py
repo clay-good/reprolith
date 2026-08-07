@@ -152,6 +152,46 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "lint_estimation",
+        "description": (
+            "Deterministic estimation linter: judge a re-derived parameter estimate against a "
+            "paper's reported estimate by relative error, at the wider estimation-level tolerance. "
+            "Pure — no engine extra."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "reported": {"type": "number", "description": "the paper's reported estimate"},
+                "recovered": {"type": "number", "description": "the estimate your re-fit recovered"},
+            },
+            "required": ["reported", "recovered"],
+        },
+    },
+    {
+        "name": "lint_distribution",
+        "description": (
+            "Deterministic population linter: judge a simulated percentile envelope against a "
+            "reported one, governed by the worst-matched band. Each band is {percentile, curve}. "
+            "Pure — no engine extra."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "reported": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "description": "reported percentile bands: [{percentile, curve:[...]}]",
+                },
+                "predicted": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "description": "simulated percentile bands at the same percentiles",
+                },
+            },
+            "required": ["reported", "predicted"],
+        },
+    },
+    {
         "name": "lint_objective",
         "description": (
             "Deterministic FBA linter: solve a supplied SBML-fbc model's objective and judge its "
@@ -312,6 +352,14 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         from .linter import lint_steady_state
 
         return lint_steady_state(arguments["rules"], arguments["reported"]).to_dict()
+    if name == "lint_estimation":
+        from .linter import lint_estimation
+
+        return lint_estimation(arguments["reported"], arguments["recovered"]).to_dict()
+    if name == "lint_distribution":
+        from .linter import lint_distribution
+
+        return lint_distribution(arguments["reported"], arguments["predicted"]).to_dict()
     if name == "lint_objective":
         from .linter import lint_objective
 

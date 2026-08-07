@@ -24,9 +24,12 @@ from .engine import simulate
 from .enums import Verdict
 from .oracle import (
     ComparisonMethod,
+    PercentileBand,
     ReferenceKind,
     Tolerance,
+    band_envelope_distance,
     default_tolerance,
+    estimation_default_tolerance,
     normalized_curve_distance,
     relative_error,
     verdict_for,
@@ -164,4 +167,64 @@ def lint_steady_state(
     )
 
 
-__all__ = ["LintResult", "lint_curve", "lint_objective", "lint_steady_state"]
+def lint_estimation(
+    reported: float,
+    recovered: float,
+    *,
+    tolerance: Tolerance | None = None,
+) -> LintResult:
+    """Check a re-derived parameter estimate against a paper's reported estimate (inline estimation).
+
+    The estimation counterpart of :func:`lint_curve`: given a ``recovered`` estimate (the caller
+    ran the re-fit — the engine-dependent half) and the paper's ``reported`` estimate, judge them by
+    relative error against the documented estimation-level default tolerance, which is wider than a
+    simulation scalar's because a re-fit is sensitive to the optimizer and its starting values.
+    Deterministic and dependency-free — the same pair always yields the same scope-flagged verdict.
+    """
+    tol = tolerance or estimation_default_tolerance()
+    error = relative_error(reported, recovered)
+    return LintResult(
+        verdict=verdict_for(error, tol),
+        method=ComparisonMethod.SCALAR_RELATIVE_ERROR.value,
+        discrepancy=f"relative error {error:.4f} (estimation: recovered {recovered:.6g} vs reported {reported:.6g})",
+        tolerance=tol.label(),
+    )
+
+
+def lint_distribution(
+    reported: Sequence[Mapping[str, Any]],
+    predicted: Sequence[Mapping[str, Any]],
+    *,
+    tolerance: Tolerance | None = None,
+    reference_kind: ReferenceKind = ReferenceKind.NUMERIC,
+) -> LintResult:
+    """Check a simulated population envelope against a reported one (inline population reproduction).
+
+    The population counterpart of :func:`lint_curve`: ``reported`` and ``predicted`` are percentile
+    bands, each a ``{"percentile": p, "curve": [...]}`` mapping. The verdict is governed by the
+    worst-matched band (so a good median cannot mask a divergent tail) against the documented
+    distributional default tolerance, wider than a single trajectory's to absorb population sampling
+    error. Deterministic and dependency-free.
+    """
+    ref_bands = tuple(PercentileBand(float(b["percentile"]), tuple(b["curve"])) for b in reported)
+    pred_bands = tuple(PercentileBand(float(b["percentile"]), tuple(b["curve"])) for b in predicted)
+    tol = tolerance or default_tolerance(
+        ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, reference_kind
+    )
+    distance, worst_band = band_envelope_distance(ref_bands, pred_bands)
+    return LintResult(
+        verdict=verdict_for(distance, tol),
+        method=ComparisonMethod.DISTRIBUTION_BAND_DISTANCE.value,
+        discrepancy=f"worst band {worst_band.label()} normalized distance {distance:.4f}",
+        tolerance=tol.label(),
+    )
+
+
+__all__ = [
+    "LintResult",
+    "lint_curve",
+    "lint_distribution",
+    "lint_estimation",
+    "lint_objective",
+    "lint_steady_state",
+]

@@ -119,3 +119,15 @@ def test_repeated_evaluation_is_identical() -> None:
         )
 
     assert run() == run()
+
+
+def test_lint_estimation_inline_verdict() -> None:
+    from reprolith import lint_estimation
+
+    good = lint_estimation(3.20, 3.30)  # ~3%, inside the 10% estimation default
+    assert good.verdict is Verdict.REPRODUCED
+    assert good.scope.machine  # the scope flag travels with the verdict
+    assert "estimation" in good.discrepancy
+
+    bad = lint_estimation(10.0, 18.0)  # 80% off
+    assert bad.verdict is Verdict.FAILED

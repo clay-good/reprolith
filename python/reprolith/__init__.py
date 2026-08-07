@@ -83,7 +83,14 @@ from .fba import (
     solve_objective,
 )
 from .ingest import ingest_sbml
-from .linter import LintResult, lint_curve, lint_objective, lint_steady_state
+from .linter import (
+    LintResult,
+    lint_curve,
+    lint_distribution,
+    lint_estimation,
+    lint_objective,
+    lint_steady_state,
+)
 from .logical import (
     BooleanNetwork,
     LogicalClaim,
@@ -115,6 +122,7 @@ from .oracle import (
     assess_match,
     band_envelope_distance,
     default_tolerance,
+    estimation_default_tolerance,
     judge_curve,
     judge_distribution,
     judge_estimation,
@@ -267,6 +275,7 @@ __all__ = [
     "compile_boolean_rule",
     "content_hash",
     "default_tolerance",
+    "estimation_default_tolerance",
     "derive_overall",
     "describe_changes",
     "dossier_digest",
@@ -293,6 +302,8 @@ __all__ = [
     "judge_scalar",
     "judge_steady_state",
     "lint_curve",
+    "lint_distribution",
+    "lint_estimation",
     "lint_objective",
     "lint_steady_state",
     "load_claims_dataset",
