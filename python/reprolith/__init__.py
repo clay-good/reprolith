@@ -186,6 +186,7 @@ from .spatial import (
     gradient_decay_length,
     morphogen_gradient,
     react_diffuse_1d,
+    react_diffuse_2species,
     spatial_dossier,
     validate_spatial,
 )
@@ -387,6 +388,7 @@ __all__ = [
     "seed_catalog",
     "simulate",
     "react_diffuse_1d",
+    "react_diffuse_2species",
     "reaction_essentiality",
     "solve_objective",
     "spatial_dossier",

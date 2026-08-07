@@ -164,6 +164,48 @@ def gradient_decay_length(profile: Sequence[float], *, dx: float, start: int, en
     return -1.0 / slope
 
 
+def react_diffuse_2species(
+    u: Sequence[float],
+    v: Sequence[float],
+    *,
+    du: float,
+    dv: float,
+    dx: float,
+    dt: float,
+    steps: int,
+    reaction_u: Callable[[float, float], float],
+    reaction_v: Callable[[float, float], float],
+) -> tuple[list[float], list[float]]:
+    """Evolve two coupled fields under reaction-diffusion — the basis of pattern formation.
+
+    Solves the activator-inhibitor system ``u_t = Du u_xx + f(u,v)``, ``v_t = Dv v_xx + g(u,v)`` with
+    the shared explicit scheme and zero-flux boundaries. This is the machinery behind Turing patterns
+    (morphogenesis, pigmentation) and other multi-species spatial models. ``reaction_u``/``reaction_v``
+    are the local rates ``f`` and ``g``. Deterministic; both species must satisfy the diffusion
+    stability limit.
+    """
+    au, av = du * dt / (dx * dx), dv * dt / (dx * dx)
+    if au > 0.5 + 1e-12 or av > 0.5 + 1e-12:
+        raise ValueError(
+            f"unstable discretization: D·dt/dx² = {max(au, av):.3g} exceeds the explicit limit 0.5"
+        )
+    cu, cv = list(u), list(v)
+    n = len(cu)
+    if n < 2 or len(cv) != n:
+        raise ValueError("u and v must have the same length, at least two grid points")
+    for _ in range(steps):
+        nu, nv = cu[:], cv[:]
+        for i in range(n):
+            ul = cu[i - 1] if i > 0 else cu[i]
+            ur = cu[i + 1] if i < n - 1 else cu[i]
+            vl = cv[i - 1] if i > 0 else cv[i]
+            vr = cv[i + 1] if i < n - 1 else cv[i]
+            nu[i] = cu[i] + au * (ul - 2.0 * cu[i] + ur) + dt * reaction_u(cu[i], cv[i])
+            nv[i] = cv[i] + av * (vl - 2.0 * cv[i] + vr) + dt * reaction_v(cu[i], cv[i])
+        cu, cv = nu, nv
+    return cu, cv
+
+
 def front_position(profile: Sequence[float], *, dx: float, level: float = 0.5) -> float | None:
     """The spatial position where ``profile`` first descends through ``level`` (linearly interpolated).
 
@@ -318,6 +360,7 @@ __all__ = [
     "gradient_decay_length",
     "morphogen_gradient",
     "react_diffuse_1d",
+    "react_diffuse_2species",
     "spatial_dossier",
     "validate_spatial",
 ]

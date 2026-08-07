@@ -181,3 +181,50 @@ def test_gradient_decay_length_rejects_a_non_decaying_window() -> None:
 
     with pytest.raises(ValueError, match="does not decay"):
         gradient_decay_length([1.0, 2.0, 3.0, 4.0], dx=1.0, start=0, end=4)
+
+
+def test_two_species_reaction_diffusion_reproduces_the_dispersion_relation() -> None:
+    # A linear activator-inhibitor system's spatial mode cos(k x) grows at the dominant eigenvalue
+    # of J - k^2·diag(Du,Dv) — the dispersion relation underlying Turing pattern formation, and a
+    # closed-form ground truth. The coupled solver must reproduce that growth rate.
+    from reprolith import judge_scalar, react_diffuse_2species
+
+    a, b, c, d = 2.0, -1.0, 1.0, -1.0  # reaction Jacobian at the (0,0) steady state
+    Du, Dv = 0.5, 2.0
+    n = 201
+    dx = 0.1
+    length = (n - 1) * dx
+    dt = 0.002  # keeps Dv·dt/dx² = 0.4 within the stability limit
+    k0 = math.pi / length
+    k2 = k0 * k0
+
+    m00, m01, m10, m11 = a - Du * k2, b, c, d - Dv * k2
+    trace = m00 + m11
+    determinant = m00 * m11 - m01 * m10
+    eigenvalue = (trace + math.sqrt(trace * trace - 4 * determinant)) / 2  # dominant
+    ex, ey = m01, eigenvalue - m00  # its eigenvector
+    norm = math.hypot(ex, ey)
+    ex, ey = ex / norm, ey / norm
+
+    eps = 1e-4
+    xs = [i * dx for i in range(n)]
+    u = [eps * ex * math.cos(k0 * x) for x in xs]
+    v = [eps * ey * math.cos(k0 * x) for x in xs]
+
+    def fu(uu, vv):
+        return a * uu + b * vv
+
+    def fv(uu, vv):
+        return c * uu + d * vv
+
+    u1, v1 = react_diffuse_2species(u, v, du=Du, dv=Dv, dx=dx, dt=dt, steps=500,
+                                    reaction_u=fu, reaction_v=fv)
+    u2, v2 = react_diffuse_2species(u1, v1, du=Du, dv=Dv, dx=dx, dt=dt, steps=500,
+                                    reaction_u=fu, reaction_v=fv)
+    growth_rate = math.log(u2[0] / u1[0]) / (500 * dt)
+
+    verdict = judge_scalar(
+        claim_id="dispersion", quantity="linear growth rate of a spatial mode",
+        source_location="dispersion relation of J - k^2 D", reported=eigenvalue, predicted=growth_rate,
+    )
+    assert verdict.verdict is Verdict.REPRODUCED  # matches to the O(dx^2) discretization error
