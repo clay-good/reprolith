@@ -56,6 +56,7 @@ qualifications.
 | `lint_estimation` | `reported`, `recovered` | A deterministic verdict on a re-derived parameter estimate vs a reported one, at the estimation tolerance (pure, no extra) |
 | `lint_distribution` | `reported`, `predicted` | A deterministic verdict on a simulated percentile envelope vs a reported one, worst-band governed (pure, no extra) |
 | `lint_stochastic` | `sbml`, `species`, `reported_mean`, `duration`, `trajectories`, `seed` | A deterministic verdict on an SBML reaction network's mean species count via a pinned Gillespie SSA (needs the engine extra) |
+| `lint_diffusion` | `initial`, `reference`, `diffusivity`, `dx`, `dt`, `steps` | A deterministic verdict on a 1-D diffusion profile vs a reported one, by curve distance (pure, no extra) |
 
 ## Effectful tool
 

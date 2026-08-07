@@ -171,6 +171,39 @@ def lint_stochastic(
     )
 
 
+def lint_diffusion(
+    initial: Sequence[float],
+    reference: Sequence[float],
+    *,
+    diffusivity: float,
+    dx: float,
+    dt: float,
+    steps: int,
+    decay: float = 0.0,
+    tolerance: Tolerance | None = None,
+    reference_kind: ReferenceKind = ReferenceKind.NUMERIC,
+) -> LintResult:
+    """Check a 1-D reaction-diffusion profile against a reported one (inline spatial reproduction).
+
+    The spatial counterpart of :func:`lint_curve`: evolve ``initial`` under diffusion (and optional
+    first-order ``decay``) for ``steps`` steps of ``dt`` at spacing ``dx``, and judge the resulting
+    profile against ``reference`` by normalized curve distance. Pure and dependency-free — no engine
+    extra — and deterministic, so the same discretization always yields the same scope-flagged
+    verdict. Rejects a time step past the explicit-scheme stability limit (via :func:`diffuse_1d`).
+    """
+    from .spatial import diffuse_1d
+
+    predicted = diffuse_1d(initial, diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, decay=decay)
+    tol = tolerance or default_tolerance(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind)
+    distance = normalized_curve_distance(reference, predicted)
+    return LintResult(
+        verdict=verdict_for(distance, tol),
+        method=ComparisonMethod.CURVE_NORMALIZED_DISTANCE.value,
+        discrepancy=f"normalized distance {distance:.4f}",
+        tolerance=tol.label(),
+    )
+
+
 def lint_steady_state(
     rules: Mapping[str, str],
     reported: Mapping[str, int],
@@ -260,6 +293,7 @@ def lint_distribution(
 __all__ = [
     "LintResult",
     "lint_curve",
+    "lint_diffusion",
     "lint_distribution",
     "lint_estimation",
     "lint_objective",

@@ -81,3 +81,19 @@ def test_spatial_dossier_records_diffusivities_and_boundary_gap() -> None:
     # An unstated domain/boundary condition is a load-bearing gap.
     assert len(dossier.load_bearing_gaps()) == 1
     assert dossier.load_bearing_gaps()[0].kind is GapKind.BOUNDARY
+
+
+def test_lint_diffusion_inline_verdict_and_mcp_registration() -> None:
+    from reprolith import lint_diffusion
+    from reprolith.mcp_server import TOOL_DEFINITIONS
+
+    assert "lint_diffusion" in {t["name"] for t in TOOL_DEFINITIONS}
+    D = 1.0
+    dt = 0.4 * _DX * _DX / D
+    steps = 500
+    initial = gaussian_profile(_CENTERS, mass=10.0, variance=1.0)
+    reference = gaussian_profile(_CENTERS, mass=10.0, variance=1.0 + 2 * D * steps * dt)
+    result = lint_diffusion(initial, reference, diffusivity=D, dx=_DX, dt=dt, steps=steps)
+    assert result.verdict is Verdict.REPRODUCED
+    assert result.method == "curve-normalized-distance"
+    assert result.scope.machine == "reproducible-not-correct-not-clinical"

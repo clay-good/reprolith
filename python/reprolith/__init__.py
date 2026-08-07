@@ -86,6 +86,7 @@ from .ingest import ingest_sbml
 from .linter import (
     LintResult,
     lint_curve,
+    lint_diffusion,
     lint_distribution,
     lint_estimation,
     lint_objective,
@@ -345,6 +346,7 @@ __all__ = [
     "judge_scalar",
     "judge_steady_state",
     "lint_curve",
+    "lint_diffusion",
     "lint_distribution",
     "lint_estimation",
     "lint_objective",

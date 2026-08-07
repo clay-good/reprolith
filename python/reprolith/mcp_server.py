@@ -192,6 +192,27 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "lint_diffusion",
+        "description": (
+            "Deterministic spatial linter: evolve a 1-D concentration profile under diffusion (and "
+            "optional decay) and judge it against a reported profile by curve distance. Pure — no "
+            "engine extra."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "initial": {"type": "array", "items": {"type": "number"}},
+                "reference": {"type": "array", "items": {"type": "number"}},
+                "diffusivity": {"type": "number"},
+                "dx": {"type": "number"},
+                "dt": {"type": "number"},
+                "steps": {"type": "integer"},
+                "decay": {"type": "number", "description": "optional first-order decay rate"},
+            },
+            "required": ["initial", "reference", "diffusivity", "dx", "dt", "steps"],
+        },
+    },
+    {
         "name": "lint_stochastic",
         "description": (
             "Deterministic stochastic linter: ingest an SBML reaction network, run a pinned "
@@ -380,6 +401,14 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         from .linter import lint_distribution
 
         return lint_distribution(arguments["reported"], arguments["predicted"]).to_dict()
+    if name == "lint_diffusion":
+        from .linter import lint_diffusion
+
+        return lint_diffusion(
+            arguments["initial"], arguments["reference"], diffusivity=arguments["diffusivity"],
+            dx=arguments["dx"], dt=arguments["dt"], steps=arguments["steps"],
+            decay=arguments.get("decay", 0.0),
+        ).to_dict()
     if name == "lint_stochastic":
         from .linter import lint_stochastic
 
