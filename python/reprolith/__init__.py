@@ -90,6 +90,7 @@ from .linter import (
     lint_estimation,
     lint_objective,
     lint_steady_state,
+    lint_stochastic,
 )
 from .logical import (
     BooleanNetwork,
@@ -348,6 +349,7 @@ __all__ = [
     "lint_estimation",
     "lint_objective",
     "lint_steady_state",
+    "lint_stochastic",
     "load_claims_dataset",
     "load_test_set",
     "logical_dossier",

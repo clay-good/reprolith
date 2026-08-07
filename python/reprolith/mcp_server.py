@@ -192,6 +192,26 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "lint_stochastic",
+        "description": (
+            "Deterministic stochastic linter: ingest an SBML reaction network, run a pinned "
+            "Gillespie SSA ensemble, and judge a species' mean count against a reported value. "
+            "Needs the engine extra."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "sbml": {"type": "string", "description": "the SBML reaction network to run"},
+                "species": {"type": "integer", "description": "the species index to read"},
+                "reported_mean": {"type": "number"},
+                "duration": {"type": "number"},
+                "trajectories": {"type": "integer"},
+                "seed": {"type": "integer"},
+            },
+            "required": ["sbml", "species", "reported_mean", "duration", "trajectories", "seed"],
+        },
+    },
+    {
         "name": "lint_objective",
         "description": (
             "Deterministic FBA linter: solve a supplied SBML-fbc model's objective and judge its "
@@ -360,6 +380,14 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         from .linter import lint_distribution
 
         return lint_distribution(arguments["reported"], arguments["predicted"]).to_dict()
+    if name == "lint_stochastic":
+        from .linter import lint_stochastic
+
+        return lint_stochastic(
+            arguments["sbml"], species=arguments["species"],
+            reported_mean=arguments["reported_mean"], duration=arguments["duration"],
+            trajectories=arguments["trajectories"], seed=arguments["seed"],
+        ).to_dict()
     if name == "lint_objective":
         from .linter import lint_objective
 

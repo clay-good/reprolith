@@ -134,6 +134,43 @@ def lint_objective(
     )
 
 
+def lint_stochastic(
+    sbml: str,
+    *,
+    species: int,
+    reported_mean: float,
+    duration: float,
+    trajectories: int,
+    seed: int,
+    tolerance: Tolerance | None = None,
+) -> LintResult:
+    """Check a supplied SBML reaction network's mean species count against a reported value (inline SSA).
+
+    The stochastic counterpart of :func:`lint_objective`: ingest the SBML reaction network, run a
+    pinned Gillespie SSA ensemble, and judge the mean of ``species`` at ``duration`` against
+    ``reported_mean`` with the scalar oracle. Deterministic in ``seed`` — the same network and
+    protocol always yield the same scope-flagged verdict an agent can gate on.
+
+    Needs the ``engine`` extra (python-libsbml for ingestion); the SSA itself is pure.
+    """
+    from .sbml import ingest_stochastic_sbml
+    from .stochastic import ensemble_final_counts, species_mean_variance
+
+    names, reactions, initial = ingest_stochastic_sbml(sbml)
+    ensemble = ensemble_final_counts(
+        len(names), reactions, initial, duration=duration, trajectories=trajectories, seed=seed
+    )
+    mean, _ = species_mean_variance(ensemble, species)
+    tol = tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC)
+    error = relative_error(reported_mean, mean)
+    return LintResult(
+        verdict=verdict_for(error, tol),
+        method=ComparisonMethod.SCALAR_RELATIVE_ERROR.value,
+        discrepancy=f"relative error {error:.4f} (mean {mean:.4g} vs reported {reported_mean:.4g})",
+        tolerance=tol.label(),
+    )
+
+
 def lint_steady_state(
     rules: Mapping[str, str],
     reported: Mapping[str, int],
@@ -227,4 +264,5 @@ __all__ = [
     "lint_estimation",
     "lint_objective",
     "lint_steady_state",
+    "lint_stochastic",
 ]

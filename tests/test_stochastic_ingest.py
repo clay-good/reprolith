@@ -72,3 +72,17 @@ def test_non_integer_initial_amount_is_rejected() -> None:
     species.setConstant(False)
     with pytest.raises(ValueError, match="non-integer"):
         ingest_stochastic_sbml(libsbml.writeSBMLToString(doc))
+
+
+def test_lint_stochastic_inline_verdict_and_mcp_registration() -> None:
+    from reprolith import lint_stochastic
+    from reprolith.mcp_server import TOOL_DEFINITIONS
+
+    assert "lint_stochastic" in {t["name"] for t in TOOL_DEFINITIONS}
+    result = lint_stochastic(
+        (_FIX / "immigration_death.xml").read_text(encoding="utf-8"),
+        species=0, reported_mean=10.0, duration=40.0, trajectories=400, seed=20260807,
+    )
+    assert result.verdict is Verdict.REPRODUCED
+    assert result.method == "scalar-relative-error"
+    assert result.scope.machine == "reproducible-not-correct-not-clinical"
