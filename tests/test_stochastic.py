@@ -170,6 +170,36 @@ def test_conservation_is_respected_every_trajectory() -> None:
     assert all(a + b == 30 for a, b in ensemble)
 
 
+def test_direct_method_reproduces_its_two_defining_probabilities() -> None:
+    # Gillespie's direct method rests on two exact laws, and every stochastic result above inherits
+    # its correctness from them. This validates the *sampler itself*, not an outcome:
+    #   (a) the time to the first reaction is Exponential(total propensity), so
+    #       P(≥1 event by T) = 1 − e^{−a_total·T};
+    #   (b) the firing reaction is chosen with probability proportional to its propensity.
+    # Two competing zero-order immigrations making distinct species make both observable from the
+    # final counts alone. Non-circular: the reference is the algorithm's definition; seed-pinned.
+    a, b = 3.0, 1.0
+    reactions = [
+        Reaction(rate=a, reactants=(), products=((0, 1),)),  # ∅ -> A
+        Reaction(rate=b, reactants=(), products=((1, 1),)),  # ∅ -> B
+    ]
+    total = a + b
+    duration = 0.1  # short, so most trajectories see zero or one event
+    trajectories = 20000
+    ensemble = ensemble_final_counts(
+        2, reactions, [0, 0], duration=duration, trajectories=trajectories, seed=20260807
+    )
+
+    # (a) waiting-time law: fraction of runs with any event matches the exponential CDF.
+    fired = sum(1 for a_count, b_count in ensemble if a_count + b_count >= 1) / trajectories
+    assert abs(fired - (1 - math.exp(-total * duration))) < 0.01  # ~3 SE at n=20000
+
+    # (b) selection law: among single-event runs, the event is A with probability a/(a+b).
+    single = [(a_count, b_count) for a_count, b_count in ensemble if a_count + b_count == 1]
+    fraction_a = sum(1 for a_count, _ in single if a_count == 1) / len(single)
+    assert abs(fraction_a - a / total) < 0.02  # ~3 SE
+
+
 def test_pinned_seed_is_byte_reproducible() -> None:
     reactions = _immigration_death(5.0, 1.0)
     a = ensemble_final_counts(1, reactions, [0], duration=20.0, trajectories=100, seed=99)
