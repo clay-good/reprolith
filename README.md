@@ -57,8 +57,8 @@ never runs dry.
 *Reprolith · reproduce + monolith · the bedrock layer under a literature that should be
 runnable.*
 
-> Status: pre-alpha. Building the first model class in the open. See
-> [`openspec/`](openspec/) for the full specification.
+> Status: pre-alpha. Four model classes (PK/PD, constraint-based, kinetic, logical) are built and
+> self-validated in the open. See [`openspec/`](openspec/) for the full specification.
 
 ## Build and contribute
 
@@ -114,7 +114,18 @@ calcium) reproduce, and the [milestone blind run](datasets/kinetic/milestone/) s
 same catalog and agreement machinery as the other classes. See
 [docs/kinetic-class.md](docs/kinetic-class.md).
 
-All three classes are measured blind against independently-established ground truth on the same
+**Logical / Boolean network models** are the fourth class, and the sharpest generalization proof: a
+discrete oracle with no continuous trajectory and no optimization, where the reproducible result is
+the network's steady states and attractors. It reuses the shared contracts and adds only exact,
+dependency-free attractor analysis (synchronous and asynchronous), reads standard SBML-qual, and is
+self-validated non-circularly against CANA (Correia et al. 2018), an independent Boolean-network
+library: Reprolith's own attractor oracle reproduces CANA's results on four real
+published models — the Arabidopsis flower, Drosophila segment-polarity, and budding-yeast cell-cycle
+networks, and a schemata example — with the [milestone blind run](datasets/logical/milestone/)
+scoring 4/4 through the same catalog and agreement machinery. See
+[docs/logical-class.md](docs/logical-class.md).
+
+All four classes are measured blind against independently-established ground truth on the same
 machinery — [docs/self-validation.md](docs/self-validation.md) is the one-look evidence summary.
 
 Reprolith gets better when people who know the science validate its judgment. When it isn't sure
