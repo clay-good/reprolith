@@ -108,6 +108,17 @@ def _linprog() -> Any:
     return linprog
 
 
+def _milp() -> Any:
+    try:
+        from scipy.optimize import milp
+    except ImportError as exc:  # pragma: no cover - exercised only without the extra
+        raise FbaUnavailable(
+            "loopless flux-variability needs the 'fba' extra (scipy); "
+            "install with pip install 'reprolith[fba]'"
+        ) from exc
+    return milp
+
+
 def solve_objective(
     stoichiometry: Sequence[Sequence[float]],
     objective: Sequence[float],
@@ -326,6 +337,140 @@ def flux_variability(
         )
         if not lo.success or not hi.success:
             raise InfeasibleFba(f"flux-variability problem is not solvable for reaction {i}")
+        ranges.append((float(lo.fun), float(-hi.fun)))
+    return ranges
+
+
+def _internal_reactions(stoichiometry: Sequence[Sequence[float]]) -> list[int]:
+    """Reaction (column) indices that touch more than one metabolite — the internal reactions.
+
+    A reaction with a single nonzero stoichiometric entry crosses the system boundary (an exchange,
+    demand, or sink); only reactions internal to the network can close a stoichiometric cycle, so
+    those are the ones the thermodynamic loop law constrains. This is the same structural boundary
+    test community tools use, and it needs no metadata beyond S itself.
+    """
+    n_reactions = len(stoichiometry[0]) if stoichiometry else 0
+    internal = []
+    for j in range(n_reactions):
+        touched = sum(1 for row in stoichiometry if row[j] != 0.0)
+        if touched > 1:
+            internal.append(j)
+    return internal
+
+
+def loopless_flux_variability(
+    stoichiometry: Sequence[Sequence[float]],
+    objective: Sequence[float],
+    lower: Sequence[float],
+    upper: Sequence[float | None],
+    *,
+    fraction_of_optimum: float = 1.0,
+) -> list[tuple[float, float]]:
+    """Flux variability with thermodynamically infeasible internal loops removed.
+
+    Plain :func:`flux_variability` can report a spuriously wide interval for a reaction that sits on
+    an internal stoichiometric cycle: the cycle satisfies the mass balance S·v = 0 yet carries no
+    net thermodynamic driving force, so its flux is a solver artifact, not real flexibility. This
+    adds the loop law (Schellenberger et al. 2011): every internal reaction's flux must be
+    sign-opposed to a *conservative* energy field — one orthogonal to every internal cycle, so no
+    cycle runs uphill — encoded as a mixed-integer constraint. The reported range is then the one a
+    physically realizable flux distribution can actually reach.
+
+    Returns one ``(min, max)`` tuple per reaction, in reaction order. On a model with no internal
+    loops the null space of the internal stoichiometry is trivial and the result equals
+    :func:`flux_variability` exactly. Solves 2·(reaction count) MILPs, so it is heavier than plain
+    FVA — it is the honest range, used where loop inflation would otherwise mislead a verdict. Needs
+    the ``fba`` extra (scipy).
+    """
+    import numpy as np
+    from scipy.linalg import null_space
+    from scipy.optimize import Bounds, LinearConstraint
+
+    milp = _milp()
+    n = len(objective)
+    internal = _internal_reactions(stoichiometry)
+    m = len(internal)
+    s_matrix = [list(row) for row in stoichiometry]
+    s_internal = np.array([[row[j] for j in internal] for row in s_matrix], dtype=float)
+    cycles = null_space(s_internal) if m else np.zeros((0, 0))
+    if cycles.shape[1] == 0:
+        # No internal cycle carries flux, so no loop can inflate a range: plain FVA is already loopless.
+        return flux_variability(
+            stoichiometry, objective, lower, upper, fraction_of_optimum=fraction_of_optimum
+        )
+
+    optimum = solve_objective(stoichiometry, objective, lower, upper)
+    floor = fraction_of_optimum * optimum
+    # Big-M for the sign coupling must dominate every reaction's own flux bound, or it would clip a
+    # legitimately large flux; the energy scale reuses the same M (only G's sign matters).
+    finite_bounds = [abs(b) for b in lower] + [abs(b) for b in upper if b is not None]
+    big_m = max(1000.0, *finite_bounds) if finite_bounds else 1000.0
+    epsilon = 1.0
+
+    # Variables x = [ v (n fluxes) | a (m binaries, the sign of each internal flux) | g (m energies) ].
+    nvar = n + 2 * m
+    a0, g0 = n, n + m  # column offsets of the a- and g-blocks
+
+    def _row() -> list[float]:
+        return [0.0] * nvar
+
+    rows: list[list[float]] = []
+    lb: list[float] = []
+    ub: list[float] = []
+
+    # Steady state S·v = 0.
+    for s_row in s_matrix:
+        row = _row()
+        row[:n] = s_row
+        rows.append(row)
+        lb.append(0.0)
+        ub.append(0.0)
+    # Hold the objective at (a fraction of) its optimum.
+    obj_row = _row()
+    obj_row[:n] = list(objective)
+    rows.append(obj_row)
+    lb.append(floor)
+    ub.append(np.inf)
+    # Per internal reaction: couple flux sign to the binary, and the energy to the binary.
+    for k, r in enumerate(internal):
+        # a=1 ⟹ vᵣ ∈ [0, M]; a=0 ⟹ vᵣ ∈ [−M, 0].  (expression vᵣ − M·a ∈ [−M, 0])
+        sign_row = _row()
+        sign_row[r], sign_row[a0 + k] = 1.0, -big_m
+        rows.append(sign_row)
+        lb.append(-big_m)
+        ub.append(0.0)
+        # a=1 ⟹ gₖ ≤ −ε (forward runs downhill); a=0 ⟹ gₖ ≥ +ε (reverse runs downhill).
+        # Both fit one row: gₖ + M·a ∈ [ε, M − ε].
+        energy_row = _row()
+        energy_row[g0 + k], energy_row[a0 + k] = 1.0, big_m
+        rows.append(energy_row)
+        lb.append(epsilon)
+        ub.append(big_m - epsilon)
+    # The energy field is conservative: orthogonal to every internal cycle (Kᵀ·g = 0).
+    for c in range(cycles.shape[1]):
+        row = _row()
+        for k in range(m):
+            row[g0 + k] = float(cycles[k, c])
+        rows.append(row)
+        lb.append(0.0)
+        ub.append(0.0)
+
+    constraint = LinearConstraint(np.array(rows), np.array(lb), np.array(ub))
+    var_lb = [*lower, *([0.0] * m), *([-big_m] * m)]
+    var_ub = [b if b is not None else np.inf for b in upper] + [1.0] * m + [big_m] * m
+    bounds = Bounds(np.array(var_lb, dtype=float), np.array(var_ub, dtype=float))
+    integrality = np.array([0] * n + [1] * m + [0] * m)
+
+    ranges: list[tuple[float, float]] = []
+    for i in range(n):
+        select = _row()
+        select[i] = 1.0
+        lo = milp(c=select, constraints=constraint, integrality=integrality, bounds=bounds)
+        hi = milp(
+            c=[-x for x in select], constraints=constraint, integrality=integrality, bounds=bounds
+        )
+        if not lo.success or not hi.success:
+            raise InfeasibleFba(f"loopless flux-variability is not solvable for reaction {i}")
         ranges.append((float(lo.fun), float(-hi.fun)))
     return ranges
 

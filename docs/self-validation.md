@@ -70,6 +70,7 @@ the whole catalogue below is reproduced on every commit.
 | FBA | Phenotypic phase plane | growth vs O₂ is concave, piecewise-linear, with a saturation breakpoint | `test_oxygen_phenotypic_phase_plane_is_concave_with_a_saturation_breakpoint` |
 | FBA | LP duality (shadow prices) | dual = ∂Z*/∂b; complementary slackness; strong duality Z* = Σ rc·bound | `test_metabolite_shadow_prices_are_the_primal_optimum_sensitivity`, `test_strong_duality_reconstructs_the_optimum_from_the_binding_bounds` |
 | FBA | Shadow price = phase-plane slope (real model) | O₂ marginal value falls then hits zero at the breakpoint (E. coli core) | `test_oxygen_marginal_value_is_positive_and_falling_then_zero_at_the_plateau` |
+| FBA | Loopless FVA | an internal cycle's flux is thermodynamically infeasible → loopless range collapses to the hand-derived value where plain FVA inflates it | `test_loopless_fva_collapses_the_cycle_to_its_thermodynamic_range`, `test_loopless_fva_equals_standard_fva_on_a_loop_free_model` |
 
 Non-circular by construction: the reference is a mathematical law (a front speed, a dispersion
 relation, a noise law, an attractor theorem, an LP-duality consequence), not a number this engine

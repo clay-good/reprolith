@@ -30,6 +30,7 @@ happens to land on.
 | `reaction_essentiality` / `essentiality_agreement` | Which reactions, knocked out, collapse the objective? Do they match the reported essential set? | essentiality is a property of the objective optimum, not of any one flux vector |
 | `gene_essentiality` | Which *genes*, deleted, collapse the objective — honoring each reaction's AND/OR gene rule? | gene deletion forces to zero only the reactions whose GPR rule fails; essentiality is still an objective property |
 | `flux_variability` | What min/max can each reaction's flux take while the objective stays optimal? | it reports the *whole* feasible interval instead of picking one vector |
+| `loopless_flux_variability` | Same interval, but with thermodynamically infeasible internal loops removed | it adds the loop law (Schellenberger 2011) so a spurious internal cycle can't inflate the interval |
 | `judge_flux` | Does a reported reaction flux reproduce? | it judges against the variability interval, and abstains when the model leaves the flux free |
 
 ### `judge_flux` — the honest verdict for a reported flux
@@ -125,6 +126,27 @@ assumption*, and should be qualified as such rather than presented as the model'
 Validated non-circularly in `tests/test_fba_parsimonious.py` against analytically known
 minimal-flux solutions (a short route chosen over a detour, a pinned chain recovered exactly) and,
 on the real E. coli core model, shown to preserve the documented optimum.
+
+## Loopless FVA — the range a real flux can reach
+
+Plain `flux_variability` can report a spuriously wide interval for a reaction on an internal
+stoichiometric cycle: the cycle satisfies `S·v = 0` for any magnitude yet carries no net
+thermodynamic driving force, so that flux is a solver artifact, not real flexibility.
+`loopless_flux_variability` adds the loop law (Schellenberger et al. 2011) — every internal
+reaction's flux must be sign-opposed to a *conservative* energy field, one orthogonal to every
+internal cycle, so no cycle runs uphill — encoded as a mixed-integer program. On a model with no
+internal loops the internal null space is trivial and it reproduces `flux_variability` exactly.
+
+```python
+from reprolith import loopless_flux_variability
+
+intervals = loopless_flux_variability(stoich, objective, lower, upper)  # one (min, max) per reaction
+```
+
+Validated non-circularly in `tests/test_fba_loopless.py`: on a hand-built A→B→C→A cycle the loopless
+range collapses to the value derivable from the network by hand (the pure-cycle reaction pinned to
+zero, the productive reactions pinned to the boundary flux) where plain FVA reports the inflated
+range, and on a loop-free chain the two agree to solver tolerance.
 
 ## Self-validation
 
