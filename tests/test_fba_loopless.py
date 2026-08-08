@@ -60,6 +60,18 @@ def test_loopless_fva_collapses_the_cycle_to_its_thermodynamic_range() -> None:
     assert r3 == pytest.approx((0.0, 0.0), abs=1e-5)
 
 
+def test_loopless_fva_reactions_subset_matches_the_full_computation() -> None:
+    """The ``reactions`` subset returns exactly the requested indices, in order, with full-run values."""
+    full = loopless_flux_variability(_LOOP_S, _LOOP_OBJECTIVE, _LOOP_LOWER, _LOOP_UPPER)
+    # Ask for R3 (a pure cycle) then R1 (productive), deliberately out of order.
+    subset = loopless_flux_variability(
+        _LOOP_S, _LOOP_OBJECTIVE, _LOOP_LOWER, _LOOP_UPPER, reactions=[4, 2]
+    )
+    assert len(subset) == 2
+    assert subset[0] == pytest.approx(full[4], abs=1e-6)  # R3
+    assert subset[1] == pytest.approx(full[2], abs=1e-6)  # R1
+
+
 def test_loopless_fva_equals_standard_fva_on_a_loop_free_model() -> None:
     """With no internal cycle the null space is trivial: loopless FVA must reproduce standard FVA."""
     # Drop R3, so R1/R2 no longer close a loop; the network is a straight chain A→B→C.

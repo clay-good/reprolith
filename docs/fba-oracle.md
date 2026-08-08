@@ -141,7 +141,13 @@ internal loops the internal null space is trivial and it reproduces `flux_variab
 from reprolith import loopless_flux_variability
 
 intervals = loopless_flux_variability(stoich, objective, lower, upper)  # one (min, max) per reaction
+# Each reaction is a separate mixed-integer solve, so restrict to the ones you care about:
+some = loopless_flux_variability(stoich, objective, lower, upper, reactions=[i, j])
 ```
+
+The big-M encoding assumes sanely-bounded fluxes, as a curated core model has; a model shipping
+±1e6 placeholder bounds should have them tightened first, or the mixed-integer solve is
+ill-conditioned.
 
 A loopless interval feeds `judge_flux` unchanged — it is just a tighter `(min, max)` — which is
 where the honesty payoff lands: a reaction whose *only* flexibility was the loop is inflated by plain

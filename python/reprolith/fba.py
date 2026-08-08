@@ -365,6 +365,7 @@ def loopless_flux_variability(
     upper: Sequence[float | None],
     *,
     fraction_of_optimum: float = 1.0,
+    reactions: Sequence[int] | None = None,
 ) -> list[tuple[float, float]]:
     """Flux variability with thermodynamically infeasible internal loops removed.
 
@@ -376,11 +377,16 @@ def loopless_flux_variability(
     cycle runs uphill — encoded as a mixed-integer constraint. The reported range is then the one a
     physically realizable flux distribution can actually reach.
 
-    Returns one ``(min, max)`` tuple per reaction, in reaction order. On a model with no internal
-    loops the null space of the internal stoichiometry is trivial and the result equals
-    :func:`flux_variability` exactly. Solves 2·(reaction count) MILPs, so it is heavier than plain
-    FVA — it is the honest range, used where loop inflation would otherwise mislead a verdict. Needs
-    the ``fba`` extra (scipy).
+    ``reactions`` optionally restricts the computation to a subset of reaction indices; the result
+    is then one ``(min, max)`` per requested index, in the order given. This matters because each
+    reaction costs a mixed-integer solve — on a genome-scale model, checking only the few reactions
+    you care about is the difference between seconds and hours. When ``None`` (the default) every
+    reaction is computed, in reaction order.
+
+    On a model with no internal loops the null space of the internal stoichiometry is trivial and
+    the result equals :func:`flux_variability`. The big-M encoding assumes sanely-bounded fluxes (as
+    a curated core model has); a model shipping ±1e6 placeholder bounds should have them tightened
+    first, or the mixed-integer solve is ill-conditioned. Needs the ``fba`` extra (scipy).
     """
     import numpy as np
     from scipy.linalg import null_space
@@ -388,6 +394,7 @@ def loopless_flux_variability(
 
     milp = _milp()
     n = len(objective)
+    targets = list(range(n)) if reactions is None else list(reactions)
     internal = _internal_reactions(stoichiometry)
     m = len(internal)
     s_matrix = [list(row) for row in stoichiometry]
@@ -395,14 +402,17 @@ def loopless_flux_variability(
     cycles = null_space(s_internal) if m else np.zeros((0, 0))
     if cycles.shape[1] == 0:
         # No internal cycle carries flux, so no loop can inflate a range: plain FVA is already loopless.
-        return flux_variability(
+        full = flux_variability(
             stoichiometry, objective, lower, upper, fraction_of_optimum=fraction_of_optimum
         )
+        return [full[i] for i in targets]
 
     optimum = solve_objective(stoichiometry, objective, lower, upper)
     floor = fraction_of_optimum * optimum
     # Big-M for the sign coupling must dominate every reaction's own flux bound, or it would clip a
-    # legitimately large flux; the energy scale reuses the same M (only G's sign matters).
+    # legitimately large flux; the energy scale reuses the same M (only g's sign matters). This
+    # assumes sanely-bounded fluxes: a model that ships ±1e6 placeholder bounds forces big_m ≈ 1e6
+    # and the mixed-integer solve becomes ill-conditioned — tighten such bounds before calling.
     finite_bounds = [abs(b) for b in lower] + [abs(b) for b in upper if b is not None]
     big_m = max(1000.0, *finite_bounds) if finite_bounds else 1000.0
     epsilon = 1.0
@@ -462,7 +472,7 @@ def loopless_flux_variability(
     integrality = np.array([0] * n + [1] * m + [0] * m)
 
     ranges: list[tuple[float, float]] = []
-    for i in range(n):
+    for i in targets:
         select = _row()
         select[i] = 1.0
         lo = milp(c=select, constraints=constraint, integrality=integrality, bounds=bounds)
