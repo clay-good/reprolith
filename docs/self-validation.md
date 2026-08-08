@@ -64,6 +64,7 @@ the whole catalogue below is reproduced on every commit.
 | Logical | Update-scheme artifact | synchronous spurious cycle absent under async | `test_synchronous_update_creates_a_spurious_cycle_that_async_resolves` |
 | Logical | Derrida annealed slope | expected Hamming spread = 2·p·(1−p)·K | `test_derrida_slope_matches_the_annealed_law_2p1mpk` |
 | Logical | Kauffman critical connectivity | order/critical/chaos at K = 1 / 2 / 3 (p = ½) | `test_critical_connectivity_is_two_for_unbiased_networks` |
+| Logical | Expected fixed-point count | E[# fixed points] = 1, independent of N and K | `test_expected_fixed_point_count_is_one_independent_of_size`, `…_independent_of_connectivity` |
 | FBA | Pasteur effect | anaerobic 0.2117 /h vs aerobic 0.8739 /h | `test_anaerobic_growth_rate_is_the_pasteur_effect_value` |
 | FBA | Linear growth law | biomass affine in glucose uptake (R² = 1) | `test_biomass_is_exactly_affine_in_glucose_uptake` |
 | FBA | Phenotypic phase plane | growth vs O₂ is concave, piecewise-linear, with a saturation breakpoint | `test_oxygen_phenotypic_phase_plane_is_concave_with_a_saturation_breakpoint` |
