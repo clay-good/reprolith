@@ -152,7 +152,10 @@ Validated non-circularly in `tests/test_fba_loopless.py`: on a hand-built A→B�
 range collapses to the value derivable from the network by hand (the pure-cycle reaction pinned to
 zero, the productive reactions pinned to the boundary flux) where plain FVA reports the inflated
 range; on a loop-free chain the two agree to solver tolerance; and end to end, a loop-inflated
-abstention becomes a `reproduced` verdict once the loop is removed.
+abstention becomes a `reproduced` verdict once the loop is removed. It is also checked at real scale
+on the E. coli core model, where it strips the textbook FRD7/SUCDi infeasible loop (Orth et al.
+2010) — both reactions' spurious ~1000 plain-FVA range collapses to their physiological flux —
+while every reaction's loopless interval stays contained in its standard one.
 
 ## Self-validation
 

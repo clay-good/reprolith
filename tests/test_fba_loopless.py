@@ -10,6 +10,8 @@ reproduce standard FVA exactly.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 pytest.importorskip("scipy")
@@ -100,3 +102,43 @@ def test_loop_inflation_forces_a_false_abstention_that_loopless_fva_resolves() -
     )
     assert plain_verdict.verdict is Verdict.NOT_EVALUABLE
     assert loopless_verdict.verdict is Verdict.REPRODUCED
+
+
+# --- Real-model validation: the E. coli core FRD7/SUCDi thermodynamically infeasible loop ---
+#
+# Ground truth is documented and independent of this engine: fumarate reductase (FRD7) and succinate
+# dehydrogenase (SUCDi) form the textbook infeasible loop of the E. coli core model (Orth, Thiele &
+# Palsson 2010; the canonical example of the loopless-FBA literature, Schellenberger et al. 2011).
+# At the aerobic growth optimum SUCDi carries a specific TCA-cycle flux and FRD7 is off, so their
+# plain-FVA ranges reaching ~1000 (the default bound) are pure loop artifacts, not real flexibility.
+
+_MODEL = Path(__file__).parent.parent / "datasets" / "constraint_based" / "e_coli_core.xml"
+
+
+def _core_model():
+    from reprolith.sbml import ingest_fbc_sbml
+
+    return ingest_fbc_sbml(_MODEL.read_text(encoding="utf-8"))
+
+
+def test_loopless_fva_removes_the_e_coli_core_frd7_sucdi_loop() -> None:
+    pytest.importorskip("libsbml", reason="the engine extra (python-libsbml) is not installed")
+    model = _core_model()
+    args = (model.stoichiometry, model.objective, model.lower, model.upper)
+    standard = flux_variability(*args, fraction_of_optimum=1.0)
+    loopless = loopless_flux_variability(*args, fraction_of_optimum=1.0)
+
+    sucdi = model.reaction_ids.index("R_SUCDi")
+    frd7 = model.reaction_ids.index("R_FRD7")
+    # Plain FVA shows the loop: both reactions can run to (near) the ±1000 bound.
+    assert standard[sucdi][1] > 900.0
+    assert standard[frd7][1] > 900.0
+    # Loopless FVA strips the artifact: neither reaction's optimal range comes near that bound.
+    assert loopless[sucdi][1] < 100.0
+    assert loopless[frd7][1] < 100.0
+
+    # The exact invariant across the whole model: adding the loop law can only shrink a range, never
+    # widen it, so every loopless interval is contained in the standard one.
+    for (s_lo, s_hi), (l_lo, l_hi) in zip(standard, loopless):
+        assert l_lo >= s_lo - 1e-6
+        assert l_hi <= s_hi + 1e-6
