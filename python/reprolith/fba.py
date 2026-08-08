@@ -134,6 +134,57 @@ def solve_objective(
     return float(-result.fun)
 
 
+@dataclass(frozen=True)
+class ShadowPrices:
+    """The LP dual of a flux-balance optimum: the marginal value of each constraint.
+
+    ``metabolites`` gives each metabolite's *shadow price* — the change in the optimum per unit of
+    net production imposed on that metabolite's mass balance (∂Z*/∂b). ``reactions`` gives each
+    reaction's *reduced cost* — the change in the optimum per unit relaxation of its active flux
+    bound (∂Z*/∂bound), and is zero for any reaction not sitting at a bound (complementary
+    slackness). Together they are the economic reading of the solution the FROG primal never
+    exposes: what each metabolite and each capacity limit is worth to the objective at the optimum.
+    Indices follow the metabolite (S-row) and reaction (S-column) order of the inputs.
+    """
+
+    metabolites: tuple[float, ...]
+    reactions: tuple[float, ...]
+
+
+def shadow_prices(
+    stoichiometry: Sequence[Sequence[float]],
+    objective: Sequence[float],
+    lower: Sequence[float],
+    upper: Sequence[float | None],
+) -> ShadowPrices:
+    """Solve the flux-balance LP and return its dual — metabolite shadow prices and reduced costs.
+
+    Same maximization problem as :func:`solve_objective`, read from the other side: the dual
+    variables on the steady-state constraints (metabolite shadow prices) and on the reaction bounds
+    (reduced costs), both expressed as sensitivities of the *maximized* objective. Raises
+    :class:`InfeasibleFba` if the problem is not solvable. Needs the ``fba`` extra (scipy).
+    """
+    linprog = _linprog()
+    result = linprog(
+        c=[-x for x in objective],  # linprog minimizes -Z; the duals below are re-signed to Z
+        A_eq=[list(row) for row in stoichiometry],
+        b_eq=[0.0] * len(stoichiometry),
+        bounds=list(zip(lower, upper)),
+        method="highs",
+    )
+    if not result.success:
+        raise InfeasibleFba(f"the flux-balance problem is not solvable: {result.message}")
+    # scipy reports marginals for the minimization it solved; negate to sensitivities of the
+    # maximized objective. A reaction rests on at most one bound, so summing the lower/upper
+    # marginals selects whichever is active (the other is zero).
+    metabolites = tuple(-float(m) for m in result.eqlin.marginals)
+    reactions = tuple(
+        -float(lo + up)
+        for lo, up in zip(result.lower.marginals, result.upper.marginals)
+    )
+    return ShadowPrices(metabolites=metabolites, reactions=reactions)
+
+
 def judge_objective(
     *,
     claim_id: str,
@@ -571,6 +622,7 @@ __all__ = [
     "FrogComparison",
     "FrogFingerprint",
     "InfeasibleFba",
+    "ShadowPrices",
     "compare_frog",
     "essentiality_agreement",
     "flux_variability",
@@ -580,5 +632,6 @@ __all__ = [
     "judge_flux",
     "judge_objective",
     "reaction_essentiality",
+    "shadow_prices",
     "solve_objective",
 ]

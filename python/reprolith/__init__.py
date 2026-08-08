@@ -71,6 +71,7 @@ from .fba import (
     FrogComparison,
     FrogFingerprint,
     InfeasibleFba,
+    ShadowPrices,
     compare_frog,
     essentiality_agreement,
     flux_variability,
@@ -80,6 +81,7 @@ from .fba import (
     judge_flux,
     judge_objective,
     reaction_essentiality,
+    shadow_prices,
     solve_objective,
 )
 from .ingest import ingest_sbml
@@ -263,6 +265,7 @@ __all__ = [
     "ModelClass",
     "ModelOrigin",
     "NonFiniteSimulation",
+    "ShadowPrices",
     "NonReconstructable",
     "OverallVerdict",
     "Parameter",
@@ -399,6 +402,7 @@ __all__ = [
     "react_diffuse_1d",
     "react_diffuse_2species",
     "reaction_essentiality",
+    "shadow_prices",
     "solve_objective",
     "spatial_dossier",
     "species_mean_variance",

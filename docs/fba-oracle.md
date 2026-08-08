@@ -81,6 +81,30 @@ assessment = judge_fingerprint(                       # -> a certificate-ready C
 reproduces, otherwise it fails with the named component disagreements recorded as the discrepancy —
 so a fingerprint verdict feeds `build_certificate` exactly like a scalar or curve one.
 
+## The LP dual — shadow prices and reduced costs
+
+The FROG fingerprint reads the optimum from the primal side. Its economic dual — what each
+metabolite and each capacity limit is *worth* at the optimum — is a separate, standard FBA output
+(COBRApy exposes it as `shadow_prices` / `reduced_costs`). `shadow_prices` returns both from the
+LP's dual variables, signed as sensitivities of the *maximized* objective:
+
+- each metabolite's **shadow price** — ∂Z\*/∂b, the change in the optimum per unit of net
+  production imposed on that metabolite's mass balance, and
+- each reaction's **reduced cost** — ∂Z\*/∂bound, the change per unit relaxation of its active flux
+  bound, zero for any reaction not sitting at a bound (complementary slackness).
+
+```python
+from reprolith import shadow_prices, ingest_fbc_sbml
+
+m = ingest_fbc_sbml(model_sbml)
+dual = shadow_prices(m.stoichiometry, m.objective, m.lower, m.upper)  # .metabolites, .reactions
+```
+
+The duals are validated non-circularly: `tests/test_fba_shadow_prices.py` checks each returned
+value against the derivative of the primal optimum estimated by re-solving perturbed LPs, and
+confirms LP strong duality reconstructs the optimum from the binding bounds alone — a check that
+shares nothing with reading the solver's dual marginals.
+
 ## Self-validation
 
 Before the class's verdicts are trusted, the pathway is measured against a real published model

@@ -67,6 +67,7 @@ the whole catalogue below is reproduced on every commit.
 | FBA | Pasteur effect | anaerobic 0.2117 /h vs aerobic 0.8739 /h | `test_anaerobic_growth_rate_is_the_pasteur_effect_value` |
 | FBA | Linear growth law | biomass affine in glucose uptake (R² = 1) | `test_biomass_is_exactly_affine_in_glucose_uptake` |
 | FBA | Phenotypic phase plane | growth vs O₂ is concave, piecewise-linear, with a saturation breakpoint | `test_oxygen_phenotypic_phase_plane_is_concave_with_a_saturation_breakpoint` |
+| FBA | LP duality (shadow prices) | dual = ∂Z*/∂b; complementary slackness; strong duality Z* = Σ rc·bound | `test_metabolite_shadow_prices_are_the_primal_optimum_sensitivity`, `test_strong_duality_reconstructs_the_optimum_from_the_binding_bounds` |
 
 Non-circular by construction: the reference is a mathematical law (a front speed, a dispersion
 relation, a noise law, an attractor theorem, an LP-duality consequence), not a number this engine
