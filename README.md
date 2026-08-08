@@ -93,8 +93,9 @@ a time course — so they get their own oracle behind the optional **`fba`** ext
 solver). It reports the full FROG fingerprint the constraint-based-class spec names — objective
 value, flux variability, and both reaction- and gene-deletion outcomes — each preserving the
 "abstain when unsure" rule under alternate optima, plus the LP dual (`shadow_prices`: metabolite
-shadow prices and reaction reduced costs, validated against the primal by strong duality); see
-[docs/fba-oracle.md](docs/fba-oracle.md). The same shared pathway carries it end to end: a
+shadow prices and reaction reduced costs, validated against the primal by strong duality) and
+parsimonious FBA (`parsimonious_fluxes`: the minimal-total-flux tie-break among alternate optima);
+see [docs/fba-oracle.md](docs/fba-oracle.md). The same shared pathway carries it end to end: a
 constraint-based dossier adopts the paper's SBML-fbc model and records its load-bearing medium,
 then certifies to a scope-flagged verdict, reproduced or honestly not. It self-validates against a
 real published model: [datasets/constraint_based/](datasets/constraint_based/) ships the *E. coli*

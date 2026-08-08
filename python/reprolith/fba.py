@@ -330,6 +330,69 @@ def flux_variability(
     return ranges
 
 
+@dataclass(frozen=True)
+class ParsimoniousSolution:
+    """A parsimonious (pFBA) flux distribution: the minimal-total-flux vector that stays optimal.
+
+    ``fluxes`` is one flux per reaction (in reaction order); ``total_flux`` is the minimized
+    Σ|vᵢ|; ``objective_value`` is the optimum the solution preserves. Where plain FBA leaves many
+    reactions free among alternate optima — so :func:`judge_flux` must abstain — pFBA selects the
+    single distribution that achieves the optimum with the least total enzymatic flux, the standard
+    parsimony assumption (Lewis et al. 2010). That assumption is load-bearing: a flux certified this
+    way is reproduced *under parsimony*, and should be qualified accordingly.
+    """
+
+    fluxes: tuple[float, ...]
+    total_flux: float
+    objective_value: float
+
+
+def parsimonious_fluxes(
+    stoichiometry: Sequence[Sequence[float]],
+    objective: Sequence[float],
+    lower: Sequence[float],
+    upper: Sequence[float | None],
+    *,
+    fraction_of_optimum: float = 1.0,
+) -> ParsimoniousSolution:
+    """The parsimonious FBA solution: minimize total flux Σ|vᵢ| while holding the objective optimal.
+
+    A two-stage LP (Lewis et al. 2010): first find the optimum, then, among all flux vectors that
+    still reach (a ``fraction_of_optimum`` of) it, choose the one minimizing total flux. Total flux
+    is linearized with per-reaction auxiliaries aᵢ ≥ |vᵢ|, so the whole thing stays a single LP.
+    Unlike a raw optimal vector, this one is canonical — the biologically-motivated tie-break among
+    alternate optima. Raises :class:`InfeasibleFba` if unsolvable. Needs the ``fba`` extra (scipy).
+    """
+    linprog = _linprog()
+    n = len(objective)
+    optimum = solve_objective(stoichiometry, objective, lower, upper)
+    floor = fraction_of_optimum * optimum
+    # Variables: the n fluxes v, then n auxiliaries a. Minimize Σ a (the aᵢ pin down |vᵢ|).
+    cost = [0.0] * n + [1.0] * n
+    # Steady state on v only; hold the objective at its optimum (−objective·v ≤ −floor).
+    a_eq = [[*row, *([0.0] * n)] for row in stoichiometry]
+    b_eq = [0.0] * len(stoichiometry)
+    a_ub = [[-x for x in objective] + [0.0] * n]
+    b_ub = [-floor]
+    # aᵢ ≥ vᵢ and aᵢ ≥ −vᵢ, i.e. vᵢ − aᵢ ≤ 0 and −vᵢ − aᵢ ≤ 0.
+    for i in range(n):
+        upper_row = [0.0] * (2 * n)
+        upper_row[i], upper_row[n + i] = 1.0, -1.0
+        a_ub.append(upper_row)
+        b_ub.append(0.0)
+        lower_row = [0.0] * (2 * n)
+        lower_row[i], lower_row[n + i] = -1.0, -1.0
+        a_ub.append(lower_row)
+        b_ub.append(0.0)
+    bounds = list(zip(lower, upper)) + [(0.0, None)] * n
+    result = linprog(c=cost, A_ub=a_ub, b_ub=b_ub, A_eq=a_eq, b_eq=b_eq, bounds=bounds, method="highs")
+    if not result.success:
+        raise InfeasibleFba(f"the parsimonious-flux problem is not solvable: {result.message}")
+    fluxes = tuple(float(v) for v in result.x[:n])
+    total_flux = float(sum(result.x[n:]))
+    return ParsimoniousSolution(fluxes=fluxes, total_flux=total_flux, objective_value=optimum)
+
+
 def judge_flux(
     *,
     claim_id: str,
@@ -622,6 +685,7 @@ __all__ = [
     "FrogComparison",
     "FrogFingerprint",
     "InfeasibleFba",
+    "ParsimoniousSolution",
     "ShadowPrices",
     "compare_frog",
     "essentiality_agreement",
@@ -631,6 +695,7 @@ __all__ = [
     "judge_fingerprint",
     "judge_flux",
     "judge_objective",
+    "parsimonious_fluxes",
     "reaction_essentiality",
     "shadow_prices",
     "solve_objective",

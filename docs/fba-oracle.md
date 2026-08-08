@@ -105,6 +105,27 @@ value against the derivative of the primal optimum estimated by re-solving pertu
 confirms LP strong duality reconstructs the optimum from the binding bounds alone — a check that
 shares nothing with reading the solver's dual marginals.
 
+## Parsimonious FBA — a canonical flux vector
+
+`judge_flux` abstains whenever the optimum does not *pin* a reaction's flux (the alternate-optima
+rule above). `parsimonious_fluxes` gives the standard way to pick a single, motivated flux vector
+anyway: pFBA (Lewis et al. 2010) holds the objective at its optimum and, among all vectors that
+reach it, minimizes the total flux Σ|vᵢ| — the least-enzyme solution. It is a two-stage LP kept as
+one solve by linearizing each |vᵢ| with an auxiliary variable.
+
+```python
+from reprolith import parsimonious_fluxes, ingest_fbc_sbml
+
+m = ingest_fbc_sbml(model_sbml)
+sol = parsimonious_fluxes(m.stoichiometry, m.objective, m.lower, m.upper)  # .fluxes, .total_flux
+```
+
+Parsimony is **load-bearing**: a flux certified from `sol.fluxes` is reproduced *under the parsimony
+assumption*, and should be qualified as such rather than presented as the model's only behavior.
+Validated non-circularly in `tests/test_fba_parsimonious.py` against analytically known
+minimal-flux solutions (a short route chosen over a detour, a pinned chain recovered exactly) and,
+on the real E. coli core model, shown to preserve the documented optimum.
+
 ## Self-validation
 
 Before the class's verdicts are trusted, the pathway is measured against a real published model
