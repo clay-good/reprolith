@@ -14,7 +14,12 @@ import pytest
 
 pytest.importorskip("scipy")
 
-from reprolith import flux_variability, loopless_flux_variability  # noqa: E402
+from reprolith import (  # noqa: E402
+    Verdict,
+    flux_variability,
+    judge_flux,
+    loopless_flux_variability,
+)
 
 # Metabolites [A, B, C]; reactions [EX_A, EX_C, R1: A→B, R2: B→C, R3: C→A].
 # EX_A imports A (≤10), EX_C exports C, and R1·R2·R3 close an internal loop. The only productive
@@ -69,3 +74,29 @@ def test_loopless_fva_equals_standard_fva_on_a_loop_free_model() -> None:
     for (s_lo, s_hi), (l_lo, l_hi) in zip(standard, loopless):
         assert l_lo == pytest.approx(s_lo, abs=1e-6)
         assert l_hi == pytest.approx(s_hi, abs=1e-6)
+
+
+def test_loop_inflation_forces_a_false_abstention_that_loopless_fva_resolves() -> None:
+    """The honesty payoff, end to end through ``judge_flux``.
+
+    R1's true flux is exactly 10, and the paper reports 10. Plain FVA's loop-inflated interval
+    [10, 1000] does not *pin* R1, so ``judge_flux`` must abstain — it cannot certify a value the
+    (artifactual) alternate optima leave free. Under loopless FVA the interval collapses to [10, 10],
+    so the same reported value is now a clean reproduction. The loop artifact was the sole cause of
+    the abstention.
+    """
+    r1_index = 2
+    reported = 10.0
+    plain = flux_variability(_LOOP_S, _LOOP_OBJECTIVE, _LOOP_LOWER, _LOOP_UPPER)[r1_index]
+    loopless = loopless_flux_variability(_LOOP_S, _LOOP_OBJECTIVE, _LOOP_LOWER, _LOOP_UPPER)[r1_index]
+
+    plain_verdict = judge_flux(
+        claim_id="R1", quantity="A→B flux at optimum", source_location="Table 1",
+        reported=reported, interval=plain,
+    )
+    loopless_verdict = judge_flux(
+        claim_id="R1", quantity="A→B flux at optimum", source_location="Table 1",
+        reported=reported, interval=loopless,
+    )
+    assert plain_verdict.verdict is Verdict.NOT_EVALUABLE
+    assert loopless_verdict.verdict is Verdict.REPRODUCED

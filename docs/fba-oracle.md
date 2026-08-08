@@ -143,10 +143,16 @@ from reprolith import loopless_flux_variability
 intervals = loopless_flux_variability(stoich, objective, lower, upper)  # one (min, max) per reaction
 ```
 
+A loopless interval feeds `judge_flux` unchanged — it is just a tighter `(min, max)` — which is
+where the honesty payoff lands: a reaction whose *only* flexibility was the loop is inflated by plain
+FVA into a wide interval, so `judge_flux` abstains (`not-evaluable`) on a value the model actually
+pins; the loopless interval collapses it, and the same reported value certifies cleanly.
+
 Validated non-circularly in `tests/test_fba_loopless.py`: on a hand-built A→B→C→A cycle the loopless
 range collapses to the value derivable from the network by hand (the pure-cycle reaction pinned to
 zero, the productive reactions pinned to the boundary flux) where plain FVA reports the inflated
-range, and on a loop-free chain the two agree to solver tolerance.
+range; on a loop-free chain the two agree to solver tolerance; and end to end, a loop-inflated
+abstention becomes a `reproduced` verdict once the loop is removed.
 
 ## Self-validation
 
