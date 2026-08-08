@@ -1,0 +1,6 @@
+{
+  "description": "Independent reference parsimonious-FBA result for e_coli_core, from COBRApy pfba. total_flux is the minimized \u03a3|v\u1d62| holding the objective optimal \u2014 the uniquely-defined pFBA quantity (individual fluxes can differ among alternate optima, so only the total and the preserved objective are cross-checked). Reprolith's parsimonious_fluxes must reproduce both.",
+  "reference_tool": "COBRApy 0.31.1",
+  "total_flux": 518.422085518,
+  "objective_value": 0.873921507
+}

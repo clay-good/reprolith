@@ -10,6 +10,7 @@ files from the models, so the committed numbers are auditable, not magic constan
   - ``e_coli_core_essentiality.json`` — essential genes and reactions (single-deletion)
   - ``e_coli_core_fva.json``        — flux-variability interval per reaction at the optimum
   - ``e_coli_core_loopless_fva.json`` — loopless flux-variability interval per reaction at the optimum
+  - ``e_coli_core_pfba.json``        — parsimonious-FBA total flux (min Σ|vᵢ|) at the optimum
 
 Needs COBRApy (``pip install cobra``) — a dev-time reference generator, not a Reprolith runtime
 dependency. Deterministic: re-running produces byte-identical files. Run from the repo root:
@@ -135,6 +136,18 @@ def main() -> None:
             cid: [_round(loopless.loc[cid]["minimum"]), _round(loopless.loc[cid]["maximum"])]
             for cid in sorted(loopless.index)
         },
+    })
+
+    pfba = cobra.flux_analysis.pfba(core)
+    _write(CROSS / "e_coli_core_pfba.json", {
+        "description": "Independent reference parsimonious-FBA result for e_coli_core, from COBRApy "
+                       "pfba. total_flux is the minimized Σ|vᵢ| holding the objective optimal — the "
+                       "uniquely-defined pFBA quantity (individual fluxes can differ among alternate "
+                       "optima, so only the total and the preserved objective are cross-checked). "
+                       "Reprolith's parsimonious_fluxes must reproduce both.",
+        "reference_tool": tool,
+        "total_flux": _round(float(pfba.fluxes.abs().sum())),
+        "objective_value": _round(float(core.slim_optimize())),
     })
 
 

@@ -29,6 +29,7 @@ from reprolith import (  # noqa: E402
     gene_essentiality,
     ingest_fbc_sbml,
     loopless_flux_variability,
+    parsimonious_fluxes,
     reaction_essentiality,
     solve_objective,
 )
@@ -39,6 +40,7 @@ _CORE = Path(__file__).parent.parent / "datasets" / "constraint_based" / "e_coli
 _ESSENTIALITY = json.loads((_DIR / "e_coli_core_essentiality.json").read_text(encoding="utf-8"))
 _FVA = json.loads((_DIR / "e_coli_core_fva.json").read_text(encoding="utf-8"))
 _LOOPLESS_FVA = json.loads((_DIR / "e_coli_core_loopless_fva.json").read_text(encoding="utf-8"))
+_PFBA = json.loads((_DIR / "e_coli_core_pfba.json").read_text(encoding="utf-8"))
 
 
 @pytest.mark.parametrize("model_id", sorted(_REFERENCE))
@@ -110,3 +112,13 @@ def test_loopless_flux_variability_matches_the_cobra_reference_on_e_coli_core() 
         plain_low, plain_high = _FVA["intervals"][loop_reaction]
         loopless_low, loopless_high = reference[loop_reaction]
         assert (plain_high - plain_low) - (loopless_high - loopless_low) > 100.0
+
+
+def test_parsimonious_flux_matches_the_cobra_reference_on_e_coli_core() -> None:
+    # pFBA's minimized total flux Σ|vᵢ| is uniquely defined (unlike the individual fluxes, which can
+    # differ among alternate optima across solvers), so Reprolith's parsimonious_fluxes must
+    # reproduce COBRApy's pfba total flux — and preserve the growth optimum — reaction-set aside.
+    model = ingest_fbc_sbml(_CORE.read_text(encoding="utf-8"))
+    solution = parsimonious_fluxes(model.stoichiometry, model.objective, model.lower, model.upper)
+    assert solution.total_flux == pytest.approx(_PFBA["total_flux"], rel=1e-6)
+    assert solution.objective_value == pytest.approx(_PFBA["objective_value"], rel=1e-6)
