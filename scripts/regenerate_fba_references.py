@@ -9,6 +9,7 @@ files from the models, so the committed numbers are auditable, not magic constan
   - ``reference_growth.json``       — max growth on the distributed medium, per genome-scale model
   - ``e_coli_core_essentiality.json`` — essential genes and reactions (single-deletion)
   - ``e_coli_core_fva.json``        — flux-variability interval per reaction at the optimum
+  - ``e_coli_core_loopless_fva.json`` — loopless flux-variability interval per reaction at the optimum
 
 Needs COBRApy (``pip install cobra``) — a dev-time reference generator, not a Reprolith runtime
 dependency. Deterministic: re-running produces byte-identical files. Run from the repo root:
@@ -115,6 +116,24 @@ def main() -> None:
         "intervals": {
             cid: [_round(fva.loc[cid]["minimum"]), _round(fva.loc[cid]["maximum"])]
             for cid in sorted(fva.index)
+        },
+    })
+
+    loopless = cobra.flux_analysis.flux_variability_analysis(
+        core, fraction_of_optimum=1.0, loopless=True, processes=1
+    )
+    _write(CROSS / "e_coli_core_loopless_fva.json", {
+        "description": "Independent reference *loopless* flux-variability intervals for e_coli_core "
+                       "at the optimum, from COBRApy flux_variability_analysis(loopless=True). These "
+                       "differ from the plain FVA reference exactly on reactions inflated by "
+                       "thermodynamically infeasible internal loops (e.g. FRD7/SUCDi). Reprolith's "
+                       "loopless_flux_variability must match these — a non-circular cross-tool check "
+                       "of the loop-law MILP against COBRApy's independent implementation.",
+        "reference_tool": tool,
+        "fraction_of_optimum": 1.0,
+        "intervals": {
+            cid: [_round(loopless.loc[cid]["minimum"]), _round(loopless.loc[cid]["maximum"])]
+            for cid in sorted(loopless.index)
         },
     })
 

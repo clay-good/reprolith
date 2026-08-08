@@ -28,6 +28,7 @@ from reprolith import (  # noqa: E402
     flux_variability,
     gene_essentiality,
     ingest_fbc_sbml,
+    loopless_flux_variability,
     reaction_essentiality,
     solve_objective,
 )
@@ -37,6 +38,7 @@ _REFERENCE = json.loads((_DIR / "reference_growth.json").read_text(encoding="utf
 _CORE = Path(__file__).parent.parent / "datasets" / "constraint_based" / "e_coli_core.xml"
 _ESSENTIALITY = json.loads((_DIR / "e_coli_core_essentiality.json").read_text(encoding="utf-8"))
 _FVA = json.loads((_DIR / "e_coli_core_fva.json").read_text(encoding="utf-8"))
+_LOOPLESS_FVA = json.loads((_DIR / "e_coli_core_loopless_fva.json").read_text(encoding="utf-8"))
 
 
 @pytest.mark.parametrize("model_id", sorted(_REFERENCE))
@@ -85,3 +87,26 @@ def test_flux_variability_matches_the_cobra_reference_on_e_coli_core() -> None:
         ref_low, ref_high = reference[reaction_id.removeprefix("R_")]
         assert low == pytest.approx(ref_low, abs=1e-6)
         assert high == pytest.approx(ref_high, abs=1e-6)
+
+
+def test_loopless_flux_variability_matches_the_cobra_reference_on_e_coli_core() -> None:
+    # Reprolith's loop-law MILP must reproduce COBRApy's independent loopless FVA
+    # (flux_variability_analysis(loopless=True)) reaction-for-reaction — a non-circular cross-tool
+    # check that the loop removal is *correct*, not merely self-consistent.
+    model = ingest_fbc_sbml(_CORE.read_text(encoding="utf-8"))
+    intervals = loopless_flux_variability(
+        model.stoichiometry, model.objective, model.lower, model.upper,
+        fraction_of_optimum=_LOOPLESS_FVA["fraction_of_optimum"],
+    )
+    reference = _LOOPLESS_FVA["intervals"]
+    for reaction_id, (low, high) in zip(model.reaction_ids, intervals):
+        ref_low, ref_high = reference[reaction_id.removeprefix("R_")]
+        assert low == pytest.approx(ref_low, abs=1e-6)
+        assert high == pytest.approx(ref_high, abs=1e-6)
+
+    # The reference must genuinely differ from plain FVA, or the test would pass trivially: the
+    # FRD7/SUCDi loop reactions are the ones removed, so their loopless interval is strictly tighter.
+    for loop_reaction in ("SUCDi", "FRD7"):
+        plain_low, plain_high = _FVA["intervals"][loop_reaction]
+        loopless_low, loopless_high = reference[loop_reaction]
+        assert (plain_high - plain_low) - (loopless_high - loopless_low) > 100.0

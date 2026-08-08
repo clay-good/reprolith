@@ -26,7 +26,9 @@ follow end to end, all regenerable from the repository alone.
   step over every input — before the attractor signatures are compared.
 - **Depth beyond a single number.** FBA cross-validates all three FROG components (objective,
   flux-variability, gene/reaction deletion) across five models up to genome scale (iJO1366, 2583
-  reactions). Kinetic verdicts are additionally shown **engine-independent** — every model
+  reactions), plus **loopless FVA** — its loop-law MILP reproduces COBRApy's independent
+  `flux_variability_analysis(loopless=True)` reaction-for-reaction on E. coli core. Kinetic verdicts
+  are additionally shown **engine-independent** — every model
   reproduces identically under COPASI and libRoadRunner (`corroborate_curve`), so no verdict rests
   on one solver's quirk.
 - **The same contracts throughout.** All six classes flow through one catalog lifecycle, one

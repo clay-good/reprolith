@@ -155,7 +155,10 @@ range; on a loop-free chain the two agree to solver tolerance; and end to end, a
 abstention becomes a `reproduced` verdict once the loop is removed. It is also checked at real scale
 on the E. coli core model, where it strips the textbook FRD7/SUCDi infeasible loop (Orth et al.
 2010) — both reactions' spurious ~1000 plain-FVA range collapses to their physiological flux —
-while every reaction's loopless interval stays contained in its standard one.
+while every reaction's loopless interval stays contained in its standard one. And it is
+cross-validated against an independent tool: on E. coli core the MILP reproduces COBRApy's
+`flux_variability_analysis(loopless=True)` reaction-for-reaction to solver tolerance
+(`tests/test_fba_cross_validation.py`, reference in `datasets/constraint_based/cross_validation/`).
 
 ## Self-validation
 
