@@ -49,6 +49,8 @@ _GENOME_SCALE = {
                "reference": "doi:10.1186/1752-0509-3-37 (PMID 19321003)"},
     "iEK1008": {"organism": "Mycobacterium tuberculosis H37Rv",
                 "reference": "doi:10.1186/s12918-018-0557-y (PMID 29499714)"},
+    "iAF1260": {"organism": "Escherichia coli str. K-12 substr. MG1655 (2007 reconstruction)",
+                "reference": "doi:10.1038/msb4100155 (PMID 17593909)"},
 }
 
 

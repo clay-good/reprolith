@@ -24,15 +24,18 @@ disagreement that the single core model could not reveal.
 | `iNF517` | *Lactococcus lactis* cremoris MG1363 | 754 | 650 | 0.042635 |
 | `iEK1008` | *Mycobacterium tuberculosis* H37Rv | 1226 | 998 | 0.058174 |
 | `iMM904` | *Saccharomyces cerevisiae* S288C (eukaryote) | 1577 | 1226 | 0.287866 |
+| `iAF1260` | *E. coli* K-12 MG1655 (2007 reconstruction) | 2382 | 1668 | 0.736701 |
 | `iJO1366` | *E. coli* K-12 MG1655 (genome-scale) | 2583 | 1805 | 0.982372 |
 
 All are from [BiGG Models](http://bigg.ucsd.edu/) (SBML L3 fbc), stored gzipped. The set spans
-clades on purpose: two enterobacteria, a thermophile, a lactic-acid bacterium, a pathogen
-(*M. tuberculosis*), and a **eukaryote** (*S. cerevisiae*, with compartmentalized metabolism) — so
-a parsing assumption that holds only for one cell type surfaces as a disagreement. `iJO1366` — the
-canonical full *E. coli* reconstruction, 27× the core model — stress-tests the ingester at true
-genome scale. The reference values were generated once with COBRApy and committed; the test itself
-needs only the `engine` and `fba` extras, not COBRApy.
+clades on purpose: a gastric pathogen (*H. pylori*), a hyperthermophile, a lactic-acid bacterium,
+an actinobacterial pathogen (*M. tuberculosis*), a **eukaryote** (*S. cerevisiae*, with
+compartmentalized metabolism), and two independent *E. coli* reconstructions of different vintages
+(`iAF1260` 2007, `iJO1366` 2011) — so a parsing assumption that holds only for one cell type or one
+reconstruction style surfaces as a disagreement. `iJO1366` — the canonical full *E. coli*
+reconstruction, 27× the core model — stress-tests the ingester at true genome scale. The reference
+values were generated once with COBRApy and committed; the test itself needs only the `engine` and
+`fba` extras, not COBRApy.
 
 ## Essentiality cross-check
 

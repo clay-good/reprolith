@@ -57,6 +57,25 @@ Two findings, both from real data:
    the exception; figure-locked claims are the norm, and the scaling constraint is therefore
    **figure digitization**, not simulation.
 
+## The figure boundary is not PK/PD-specific — FBA hits it too
+
+The same wall recurs in the constraint-based class, which rules out "PK/PD figures are just
+unusually visual" as the explanation. The landmark *E. coli* iAF1260 reconstruction (Feist et al.,
+*Mol Syst Biol* 2007, open access) is on BiGG and ingests and solves cleanly — Reprolith reproduces
+COBRApy's maximal growth on the model's distributed minimal medium (glucose uptake 8, O₂ 18.5
+mmol·gDW⁻¹·h⁻¹) to solver tolerance (0.7367009…, agreeing to ~10 significant figures). But the
+paper reports its predicted growth rate only as
+a **figure** — the growth-rate-versus-glucose-uptake sensitivity curve — with no single growth value
+in the text (the O₂ cap of 18.5 is text-stated; the growth number is not). So a *manuscript-claim*
+reproduction abstains for exactly the reason Sluka2016 does: the number lives on a plot axis, and
+guessing it off the figure would violate the honesty rule.
+
+This is why the constraint-based blind set is labelled by an **independent tool** (COBRApy) rather
+than by paper-reported numbers: cross-implementation agreement on the shipped model is honestly
+attainable at scale, whereas paper-figure reproduction is blocked on digitization in every class.
+Reprolith's own textbook *E. coli* core value (0.873922, stated in the model's documentation) and
+the metformin table remain the exceptions that prove the rule.
+
 ## The engine is robust across diverse real models
 
 The engine was hardened against real BioModels, not just synthetic tests. Sweeping the full

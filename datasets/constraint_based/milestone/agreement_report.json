@@ -1,8 +1,8 @@
 {
   "agreement_rate": 1.0,
-  "agreements": 7,
+  "agreements": 8,
   "confusion": {
-    "reproduced->reproduced": 7
+    "reproduced->reproduced": 8
   },
   "disagreements": 0,
   "per_entry": [
@@ -12,6 +12,13 @@
       "entry": "e_coli_core",
       "expected": "reproduced",
       "source": "BiGG / Orth, Fleming & Palsson (2010): known maximal growth rate 0.873922"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "iAF1260",
+      "expected": "reproduced",
+      "source": "BiGG Models http://bigg.ucsd.edu/models/iAF1260 ; doi:10.1038/msb4100155 (PMID 17593909); reference growth 0.736701 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
     },
     {
       "actual": "reproduced",
@@ -56,5 +63,5 @@
       "source": "BiGG Models http://bigg.ucsd.edu/models/iNF517 ; doi:10.1128/AEM.00113-13 (PMID 23974059); reference growth 0.042635 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
     }
   ],
-  "total": 7
+  "total": 8
 }

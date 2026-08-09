@@ -11,7 +11,7 @@ python scripts/run_fba_milestone.py
 
 ## The result in one line
 
-**Every constraint-based entry was certified blind and agrees with its label: 7/7.**
+**Every constraint-based entry was certified blind and agrees with its label: 8/8.**
 
 | Entry | Organism | Label source | Verdict | Agreement |
 |---|---|---|---|---|
@@ -19,6 +19,7 @@ python scripts/run_fba_milestone.py
 | `iIT341` | *H. pylori* 26695 | COBRApy reference growth 0.692813 | `reproduced` | ✓ |
 | `iLJ478` | *T. maritima* MSB8 | COBRApy reference growth 0.228407 | `reproduced` | ✓ |
 | `iNF517` | *L. lactis* MG1363 | COBRApy reference growth 0.042635 | `reproduced` | ✓ |
+| `iAF1260` | *E. coli* K-12 (2007 reconstruction, 2382 rxns) | COBRApy reference growth 0.736701 | `reproduced` | ✓ |
 | `iJO1366` | *E. coli* K-12 (genome-scale, 2583 rxns) | COBRApy reference growth 0.982372 | `reproduced` | ✓ |
 | `iMM904` | *S. cerevisiae* S288C (eukaryote) | COBRApy reference growth 0.287866 | `reproduced` | ✓ |
 | `iEK1008` | *M. tuberculosis* H37Rv (pathogen) | COBRApy reference growth 0.058174 | `reproduced` | ✓ |
@@ -26,7 +27,7 @@ python scripts/run_fba_milestone.py
 Each label is held on the catalog entry but withheld from the verdict path, which sees only the
 dossier and the model. The certificate is produced by solving the model's objective and comparing
 the optimum to the labelled reference, so each agreement is a genuine blind match, not a label read
-back. The E. coli core label is a documented literature value; the six genome-scale labels are
+back. The E. coli core label is a documented literature value; the seven genome-scale labels are
 the growth rate an independent implementation ([COBRApy](../cross_validation/)) computes for the
 distributed model — non-circular in both cases. Every label's exact source is recorded on the
 entry.
@@ -36,7 +37,7 @@ entry.
 - **The class closes its self-validation loop on the shared machinery.** The same catalog
   lifecycle, blind view, `run_test_set`, and agreement report the PK/PD class uses carry the
   constraint-based entry unchanged — the certificate flows through them with no forked driver.
-- **The scope is honest.** These seven entries attest to *cross-implementation reproduction on the
+- **The scope is honest.** These eight entries attest to *cross-implementation reproduction on the
   distributed models* (and, for E. coli core, a documented literature value) — not to reproducing
   specific paper-reported numbers behind figures. Scaling further, or adding manuscript-reported
   claims, is a data-gathering step, not an engine one.

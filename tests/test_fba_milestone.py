@@ -14,7 +14,7 @@ _MILESTONE = Path(__file__).parent.parent / "datasets" / "constraint_based" / "m
 
 
 _EXPECTED_ENTRIES = {
-    "e_coli_core", "iIT341", "iLJ478", "iNF517", "iJO1366", "iMM904", "iEK1008"
+    "e_coli_core", "iIT341", "iLJ478", "iNF517", "iJO1366", "iMM904", "iEK1008", "iAF1260"
 }
 
 

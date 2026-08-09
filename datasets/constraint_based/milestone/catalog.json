@@ -74,6 +74,75 @@
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
+        "source": "BiGG Models http://bigg.ucsd.edu/models/iAF1260 ; doi:10.1038/msb4100155 (PMID 17593909); reference growth 0.736701 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "iAF1260",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "iAF1260 (Escherichia coli str. K-12 substr. MG1655 (2007 reconstruction))"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "constraint-based",
+      "sources": [],
+      "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
         "source": "BiGG Models http://bigg.ucsd.edu/models/iEK1008 ; doi:10.1186/s12918-018-0557-y (PMID 29499714); reference growth 0.058174 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
       },
       "history": [
