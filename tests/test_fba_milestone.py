@@ -3,6 +3,11 @@
 Dependency-free guard on the walkable result `scripts/run_fba_milestone.py` produces: if the
 committed agreement report or catalog drifts from a full-agreement blind run, this fails and the
 artifact must be regenerated. Reading JSON needs no extras, so it runs in the core CI job.
+
+The expected entry set is *derived* from the cross-validation reference the milestone is built from
+(e_coli_core plus every genome-scale model in `reference_growth.json`), not hardcoded — so adding a
+model to the reference without regenerating the committed milestone fails this guard instead of
+drifting silently, the exact staleness that once left iJO1366 out of the committed artifact.
 """
 
 from __future__ import annotations
@@ -10,12 +15,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-_MILESTONE = Path(__file__).parent.parent / "datasets" / "constraint_based" / "milestone"
+_CB = Path(__file__).parent.parent / "datasets" / "constraint_based"
+_MILESTONE = _CB / "milestone"
 
-
-_EXPECTED_ENTRIES = {
-    "e_coli_core", "iIT341", "iLJ478", "iNF517", "iJO1366", "iMM904", "iEK1008", "iAF1260"
-}
+_REFERENCE_GROWTH = json.loads(
+    (_CB / "cross_validation" / "reference_growth.json").read_text(encoding="utf-8")
+)
+# The milestone seeds e_coli_core (documented literature value) plus every genome-scale model the
+# reference labels — so the expected set tracks the reference automatically.
+_EXPECTED_ENTRIES = {"e_coli_core", *_REFERENCE_GROWTH["models"]}
 
 
 def test_agreement_report_shows_a_blind_full_agreement() -> None:

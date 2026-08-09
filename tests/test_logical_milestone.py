@@ -15,11 +15,18 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-_MILESTONE = Path(__file__).parent.parent / "datasets" / "logical" / "milestone"
-_EXPECTED = {
-    "thaliana", "drosophila", "budding_yeast", "marques_pita",
-    "repressilator", "toggle_plus_switch", "leukemia",
-}
+_LOGICAL = Path(__file__).parent.parent / "datasets" / "logical"
+_MILESTONE = _LOGICAL / "milestone"
+
+# Derive the expected entries from the references the milestone is built from — the small models in
+# reference.json plus the large models in scalable_fixed_points.json — so adding a model to either
+# reference without regenerating the milestone fails this guard instead of drifting silently.
+_EXPECTED = (
+    set(json.loads((_LOGICAL / "cross_validation" / "reference.json").read_text())["models"])
+    | set(json.loads(
+        (_LOGICAL / "cross_validation" / "scalable_fixed_points.json").read_text()
+    )["models"])
+)
 
 
 def test_agreement_report_shows_a_blind_full_agreement() -> None:
