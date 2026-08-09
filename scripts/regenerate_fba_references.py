@@ -9,6 +9,7 @@ files from the models, so the committed numbers are auditable, not magic constan
   - ``reference_growth.json``       — max growth on the distributed medium, per genome-scale model
   - ``e_coli_core_essentiality.json`` — essential genes and reactions (single-deletion)
   - ``e_coli_core_fva.json``        — flux-variability interval per reaction at the optimum
+  - ``iIT341_fva.json``             — the same, on a larger different-organism model (generality)
   - ``e_coli_core_loopless_fva.json`` — loopless flux-variability interval per reaction at the optimum
   - ``e_coli_core_pfba.json``        — parsimonious-FBA total flux (min Σ|vᵢ|) at the optimum
   - ``e_coli_core_production_envelope.json`` — acetate-vs-growth production envelope (concave frontier)
@@ -124,6 +125,25 @@ def main() -> None:
         "intervals": {
             cid: [_round(fva.loc[cid]["minimum"]), _round(fva.loc[cid]["maximum"])]
             for cid in sorted(fva.index)
+        },
+    })
+
+    # FVA on a second, larger, different-organism model, so the variability code is cross-validated
+    # beyond the 95-reaction core — proving it is not overfit to one small toy network.
+    it341 = _load(CROSS / "iIT341.xml.gz")
+    it341_fva = cobra.flux_analysis.flux_variability_analysis(
+        it341, fraction_of_optimum=1.0, processes=1
+    )
+    _write(CROSS / "iIT341_fva.json", {
+        "description": "Independent reference flux-variability intervals for iIT341 (H. pylori, 554 "
+                       "reactions) at the optimum, from COBRApy flux_variability_analysis. Reprolith's "
+                       "flux_variability must match these — the FROG variability component checked on "
+                       "a model 6x the core's size and a different organism, not just the toy core.",
+        "reference_tool": tool,
+        "fraction_of_optimum": 1.0,
+        "intervals": {
+            cid: [_round(it341_fva.loc[cid]["minimum"]), _round(it341_fva.loc[cid]["maximum"])]
+            for cid in sorted(it341_fva.index)
         },
     })
 

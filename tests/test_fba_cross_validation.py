@@ -45,6 +45,7 @@ _PFBA = json.loads((_DIR / "e_coli_core_pfba.json").read_text(encoding="utf-8"))
 _ENVELOPE = json.loads(
     (_DIR / "e_coli_core_production_envelope.json").read_text(encoding="utf-8")
 )
+_IT341_FVA = json.loads((_DIR / "iIT341_fva.json").read_text(encoding="utf-8"))
 
 
 @pytest.mark.parametrize("model_id", sorted(_REFERENCE))
@@ -89,6 +90,23 @@ def test_flux_variability_matches_the_cobra_reference_on_e_coli_core() -> None:
         fraction_of_optimum=_FVA["fraction_of_optimum"],
     )
     reference = _FVA["intervals"]
+    for reaction_id, (low, high) in zip(model.reaction_ids, intervals):
+        ref_low, ref_high = reference[reaction_id.removeprefix("R_")]
+        assert low == pytest.approx(ref_low, abs=1e-6)
+        assert high == pytest.approx(ref_high, abs=1e-6)
+
+
+def test_flux_variability_matches_the_cobra_reference_on_a_larger_model() -> None:
+    # FVA is otherwise cross-validated only on the 95-reaction core. Repeat it on iIT341 (H. pylori,
+    # 554 reactions, a different organism) so the variability code is shown to generalize beyond one
+    # small toy network — a bug that only bites at scale or on other stoichiometries surfaces here.
+    sbml = gzip.decompress((_DIR / "iIT341.xml.gz").read_bytes()).decode("utf-8")
+    model = ingest_fbc_sbml(sbml)
+    intervals = flux_variability(
+        model.stoichiometry, model.objective, model.lower, model.upper,
+        fraction_of_optimum=_IT341_FVA["fraction_of_optimum"],
+    )
+    reference = _IT341_FVA["intervals"]
     for reaction_id, (low, high) in zip(model.reaction_ids, intervals):
         ref_low, ref_high = reference[reaction_id.removeprefix("R_")]
         assert low == pytest.approx(ref_low, abs=1e-6)

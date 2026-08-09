@@ -51,6 +51,10 @@ flux-variability interval of every reaction at the optimum, from COBRApy's
 files cross-check all three FROG components — objective (growth), variability, and deletion —
 against the standard tool.
 
+[`iIT341_fva.json`](iIT341_fva.json) repeats the flux-variability cross-check on a model 6× the
+core's size and a different organism (*H. pylori*, 554 reactions), so the variability code is shown
+to generalize beyond one small toy network, not just to reproduce a single stoichiometry.
+
 ## Provenance and honesty
 
 The reference is an independent tool's computation on the *distributed* model, not a value read
