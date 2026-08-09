@@ -1,0 +1,11 @@
+REPRODUCTION CERTIFICATE — MAPK network / cancer cell-fate decision (Grieco et al. 2013); via Cell Collective (Helikar et al. 2012)
+Engine pin: reprolith-logical 0.0.1
+
+OVERALL: reproduced
+  claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
+
+CLAIMS
+  [mapk_cancer-fixed_points] steady-state (fixed-point) count: reproduced (source MAPK network / cancer cell-fate decision (Grieco et al. 2013); via Cell Collective (Helikar et al. 2012) via attractor-set-match, tol=reproduced<=0, partial<=0 (class-default))
+
+SCOPE
+  This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

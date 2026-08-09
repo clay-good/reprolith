@@ -51,9 +51,16 @@ _SYNTHETIC = {
 
 # Large published models — too big for 2ⁿ attractor enumeration, so only their *fixed points* are
 # cross-validated (that is what the scalable SAT path targets). Ground truth is computed here by
-# sympy's SAT solver, an implementation independent of Reprolith's z3-based one.
+# sympy's SAT solver, an implementation independent of Reprolith's z3-based one. Each value is
+# ``(kind, loader-argument, citation)``: ``"attr"`` calls ``bio.<arg>()``; ``"cc"`` calls
+# ``bio.load_cell_collective_model(<arg>)`` (the Cell Collective repository CANA bundles).
 _LARGE = {
-    "leukemia": ("LEUKEMIA", "T-LGL leukemia signalling network (Zhang et al. 2008)"),
+    "leukemia": ("attr", "LEUKEMIA", "T-LGL leukemia signalling network (Zhang et al. 2008)"),
+    "mapk_cancer": ("cc", "MAPK Cancer Cell Fate Network",
+                    "MAPK network / cancer cell-fate decision (Grieco et al. 2013); "
+                    "via Cell Collective (Helikar et al. 2012)"),
+    "guard_cell_aba": ("cc", "Guard Cell Abscisic Acid Signaling",
+                       "Guard-cell abscisic-acid signalling; via Cell Collective (Helikar et al. 2012)"),
 }
 
 _OUT = Path(__file__).resolve().parents[1] / "datasets" / "logical" / "cross_validation"
@@ -203,8 +210,8 @@ def main() -> None:
     large = {"_source": f"sympy SAT (independent of Reprolith's z3); rules from CANA {_cana.__version__}",
              "models": {}}
     for key in sorted(_LARGE):
-        loader, citation = _LARGE[key]
-        bn = getattr(bio, loader)()
+        kind, arg, citation = _LARGE[key]
+        bn = getattr(bio, arg)() if kind == "attr" else bio.load_cell_collective_model(arg)
         rules = _export_rules(bn)
         _assert_faithful(bn, rules)
         states = _sympy_fixed_points(bn)

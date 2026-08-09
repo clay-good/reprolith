@@ -1,0 +1,38 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": false,
+      "claim_id": "mapk_cancer-fixed_points",
+      "discrepancy": "reproduced 12 vs the independent 12",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "attractor-set-match",
+      "quantity": "steady-state (fixed-point) count",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "MAPK network / cancer cell-fate decision (Grieco et al. 2013); via Cell Collective (Helikar et al. 2012)",
+      "tolerance": "reproduced<=0, partial<=0 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": null,
+    "engine": "reprolith-logical",
+    "version": "0.0.1"
+  },
+  "gap_report": [],
+  "overall": "reproduced",
+  "paper": {
+    "doi": "",
+    "pubmed_id": null,
+    "title": "MAPK network / cancer cell-fate decision (Grieco et al. 2013); via Cell Collective (Helikar et al. 2012)"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

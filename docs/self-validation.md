@@ -10,7 +10,7 @@ follow end to end, all regenerable from the repository alone.
 | **PK/PD (ODE)** | 1 partially-reproduced + 30 honest abstentions, **0 wrong verdicts** over 31 BioModels entries | BioModels manual-curation status; the metformin claim read from the paper | [`datasets/milestone/`](../datasets/milestone/) |
 | **Constraint-based (FBA)** | **8/8** blind agreement across bacteria, a pathogen, and a eukaryote | E. coli core's documented growth rate; COBRApy references for the genome-scale set | [`datasets/constraint_based/milestone/`](../datasets/constraint_based/milestone/) |
 | **Generic-kinetic (ODE)** | **6/6** blind agreement across six network types | libRoadRunner (independent CVODE) reference trajectories | [`datasets/kinetic/milestone/`](../datasets/kinetic/milestone/) |
-| **Logical (Boolean)** | **7/7** blind agreement (incl. a 60-node model at scale) | CANA attractors (small models) + an independent SAT solver (the 60-node leukemia network's steady states) | [`datasets/logical/milestone/`](../datasets/logical/milestone/) |
+| **Logical (Boolean)** | **9/9** blind agreement (incl. three 44–60-node models at scale) | CANA attractors (small models) + an independent SAT solver (the large signalling networks' steady states) | [`datasets/logical/milestone/`](../datasets/logical/milestone/) |
 | **Stochastic (SSA)** | **3/3** blind agreement | Closed-form Poisson / binomial means (analytical) | [`datasets/stochastic/milestone/`](../datasets/stochastic/milestone/) |
 | **Spatial (reaction-diffusion)** | **3/3** blind agreement | Closed-form Gaussian diffusion (analytical) | [`datasets/spatial/milestone/`](../datasets/spatial/milestone/) |
 
@@ -24,9 +24,10 @@ follow end to end, all regenerable from the repository alone.
   is a genuine cross-check, not a tool agreeing with itself. For the logical class the exported
   rules are additionally *proven faithful* to CANA's model — checked against CANA's own per-node
   step over every input — before the attractor signatures are compared. The logical class also
-  scales past enumeration for *fixed points*: the 60-node T-LGL leukemia network's 71 steady states
-  (a 2⁶⁰ space) are found by SAT and cross-validated against an independent SAT solver (Reprolith's
-  z3 vs the reference's sympy), each verified to be a genuine fixed point.
+  scales past enumeration for *fixed points*: three real signalling networks of 44–60 nodes (T-LGL
+  leukemia, MAPK cancer cell-fate, guard-cell ABA — up to a 2⁶⁰ space) have their steady states
+  found by SAT and cross-validated against an independent SAT solver (Reprolith's z3 vs the
+  reference's sympy), each verified to be a genuine fixed point.
 - **Depth beyond a single number.** FBA cross-validates all three FROG components (objective,
   flux-variability, gene/reaction deletion) across eight models up to genome scale (iJO1366, 2583
   reactions) and spanning bacteria, a pathogen, and a eukaryote, plus **loopless FVA** — its loop-law MILP reproduces COBRApy's independent

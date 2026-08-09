@@ -131,9 +131,10 @@ self-validated non-circularly against CANA (Correia et al. 2018), an independent
 library, on real published models (the Arabidopsis flower, Drosophila segment-polarity, and
 budding-yeast cell-cycle networks, and a schemata example). For networks too large to enumerate, a
 scalable SAT path (optional `sat` extra) finds fixed points without walking the 2ⁿ state space — the
-60-node T-LGL leukemia network's 71 steady states are reproduced against an independent solver — so
-the [milestone blind run](datasets/logical/milestone/) scores 7/7 through the same catalog and
-agreement machinery. See [docs/logical-class.md](docs/logical-class.md).
+steady states of three real 44–60-node signalling networks (T-LGL leukemia, MAPK cancer cell-fate,
+guard-cell ABA) are reproduced against an independent solver — so the
+[milestone blind run](datasets/logical/milestone/) scores 9/9 through the same catalog and agreement
+machinery. See [docs/logical-class.md](docs/logical-class.md).
 
 **Stochastic (SSA) models** are the fifth class: discrete-molecule reaction networks where a single
 run is a random sample, so the reproducible result is a distribution. An exact, pure-Python

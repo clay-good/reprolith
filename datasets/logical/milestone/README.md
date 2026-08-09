@@ -8,15 +8,16 @@ nothing with curve-matching or linear programming.
 
 ## What is here
 
-- [`catalog.json`](catalog.json) — the seven entries, each tagged `logical`, carrying a ground-truth
+- [`catalog.json`](catalog.json) — the nine entries, each tagged `logical`, carrying a ground-truth
   label (`reproduced`) withheld from the verdict path, advanced to `certified`.
 - [`certificates/`](certificates/) — one machine- and human-readable certificate per model. Each
   certifies a single claim, judged by `attractor-set-match`: for the small networks, that Reprolith
   reproduces the independent **attractor count** (fixed points *and* cyclic attractors — the two
-  synthetic networks contribute synchronous limit cycles); for the 60-node **leukemia** network,
-  that it reproduces the **steady-state count** via the scalable SAT fixed-point path, where 2⁶⁰
-  enumeration is impossible.
-- [`agreement_report.json`](agreement_report.json) — **7/7** agreement with ground truth.
+  synthetic networks contribute synchronous limit cycles); for the three large signalling networks —
+  the 60-node **leukemia**, 53-node **MAPK cancer cell-fate** (Grieco et al. 2013), and 44-node
+  **guard-cell ABA** networks — that it reproduces the **steady-state count** via the scalable SAT
+  fixed-point path, where 2⁴⁴–2⁶⁰ enumeration is impossible.
+- [`agreement_report.json`](agreement_report.json) — **9/9** agreement with ground truth.
 
 ## Blind and non-circular
 

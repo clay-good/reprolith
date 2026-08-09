@@ -45,12 +45,21 @@ reference with `pip install -e ".[refgen]"` then `python scripts/regenerate_logi
 ## Scalable fixed points on a large model
 
 The four models above are small enough to enumerate. [`scalable_fixed_points.json`](scalable_fixed_points.json)
-cross-validates the **scalable** path on a model that is not: the 60-node **T-LGL leukemia**
-signalling network (Zhang et al. 2008), whose 2⁶⁰ state space is far beyond enumeration. Its
-**fixed points** (steady states) are found by SAT instead. The committed reference — the model's
-rules, the fixed-point count, and a SHA-256 of the sorted fixed-point set — is computed by **sympy's**
-SAT solver, an implementation independent of the **z3** solver Reprolith uses, so agreement is again
-a cross-tool check. [`tests/test_logical_scalable.py`](../../../tests/test_logical_scalable.py)
-checks Reprolith reproduces that exact set (71 fixed points), verifies each is a genuine steady
-state, and separately confirms the SAT path equals exhaustive enumeration on many small random
-networks. It needs the `sat` extra (z3) and skips without it.
+cross-validates the **scalable** path on three real signalling networks that are not — their state
+spaces are far beyond 2ⁿ enumeration:
+
+| Model | Nodes | Fixed points | Source |
+|---|---|---|---|
+| `leukemia` | 60 | 71 | T-LGL leukemia signalling (Zhang et al. 2008) |
+| `mapk_cancer` | 53 | 12 | MAPK network / cancer cell-fate (Grieco et al. 2013) |
+| `guard_cell_aba` | 44 | 16 | Guard-cell abscisic-acid signalling (Cell Collective) |
+
+Their **fixed points** (steady states) are found by SAT instead of enumeration. For each, the
+committed reference — the model's rules, the fixed-point count, and a SHA-256 of the sorted
+fixed-point set — is computed by **sympy's** SAT solver, an implementation independent of the **z3**
+solver Reprolith uses, so agreement is again a cross-tool check.
+[`tests/test_logical_scalable.py`](../../../tests/test_logical_scalable.py) checks Reprolith
+reproduces each exact set, verifies every returned state is a genuine steady state, and separately
+confirms the SAT path equals exhaustive enumeration on many small random networks. It needs the
+`sat` extra (z3) and skips without it. The rules are exported from CANA (Cell Collective models via
+`load_cell_collective_model`) and *proven faithful* before use, exactly as for the small models.

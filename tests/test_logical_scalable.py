@@ -64,11 +64,13 @@ def test_sat_fixed_points_match_exhaustive_enumeration(seed: int) -> None:
     assert network._fixed_points_sat() == network.fixed_points()
 
 
-def test_reproduces_the_leukemia_fixed_points_at_scale() -> None:
-    # 60 nodes: 2⁶⁰ states, impossible to enumerate. The SAT path reproduces the independent
-    # (sympy) reference's exact fixed-point set — checked by count and SHA-256 — and every returned
-    # state is verified to be a genuine fixed point.
-    entry = _REF["models"]["leukemia"]
+@pytest.mark.parametrize("model", sorted(_REF["models"]))
+def test_reproduces_large_model_fixed_points_at_scale(model: str) -> None:
+    # Real published networks of 44–60 nodes (2⁴⁴–2⁶⁰ states, impossible to enumerate). The SAT path
+    # reproduces the independent (sympy) reference's exact fixed-point set — checked by count and
+    # SHA-256 — and every returned state is verified to be a genuine fixed point.
+    entry = _REF["models"][model]
+    assert entry["n_nodes"] > 20  # genuinely beyond the enumeration cap
     network = parse_boolean_network(entry["rules"])
     assert len(network.nodes) == entry["n_nodes"]
 

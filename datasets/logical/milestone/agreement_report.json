@@ -1,8 +1,8 @@
 {
   "agreement_rate": 1.0,
-  "agreements": 7,
+  "agreements": 9,
   "confusion": {
-    "reproduced->reproduced": 7
+    "reproduced->reproduced": 9
   },
   "disagreements": 0,
   "per_entry": [
@@ -51,10 +51,24 @@
     {
       "actual": "reproduced",
       "agree": true,
+      "entry": "guard_cell_aba",
+      "expected": "reproduced",
+      "source": "sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0: 16 fixed points"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
       "entry": "leukemia",
       "expected": "reproduced",
       "source": "sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0: 71 fixed points"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "mapk_cancer",
+      "expected": "reproduced",
+      "source": "sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0: 12 fixed points"
     }
   ],
-  "total": 7
+  "total": 9
 }
