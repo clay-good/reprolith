@@ -1,8 +1,8 @@
 {
   "agreement_rate": 1.0,
-  "agreements": 4,
+  "agreements": 7,
   "confusion": {
-    "reproduced->reproduced": 4
+    "reproduced->reproduced": 7
   },
   "disagreements": 0,
   "per_entry": [
@@ -16,9 +16,23 @@
     {
       "actual": "reproduced",
       "agree": true,
+      "entry": "iEK1008",
+      "expected": "reproduced",
+      "source": "BiGG Models http://bigg.ucsd.edu/models/iEK1008 ; doi:10.1186/s12918-018-0557-y (PMID 29499714); reference growth 0.058174 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
       "entry": "iIT341",
       "expected": "reproduced",
       "source": "BiGG Models http://bigg.ucsd.edu/models/iIT341 ; doi:10.1128/JB.187.16.5818-5830.2005 (PMID 16077130); reference growth 0.692813 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "iJO1366",
+      "expected": "reproduced",
+      "source": "BiGG Models http://bigg.ucsd.edu/models/iJO1366 ; doi:10.1038/msb.2011.65 (PMID 21988831); reference growth 0.982372 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
     },
     {
       "actual": "reproduced",
@@ -30,10 +44,17 @@
     {
       "actual": "reproduced",
       "agree": true,
+      "entry": "iMM904",
+      "expected": "reproduced",
+      "source": "BiGG Models http://bigg.ucsd.edu/models/iMM904 ; doi:10.1186/1752-0509-3-37 (PMID 19321003); reference growth 0.287866 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
       "entry": "iNF517",
       "expected": "reproduced",
       "source": "BiGG Models http://bigg.ucsd.edu/models/iNF517 ; doi:10.1128/AEM.00113-13 (PMID 23974059); reference growth 0.042635 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
     }
   ],
-  "total": 4
+  "total": 7
 }

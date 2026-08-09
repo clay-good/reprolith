@@ -13,7 +13,9 @@ from pathlib import Path
 _MILESTONE = Path(__file__).parent.parent / "datasets" / "constraint_based" / "milestone"
 
 
-_EXPECTED_ENTRIES = {"e_coli_core", "iIT341", "iLJ478", "iNF517"}
+_EXPECTED_ENTRIES = {
+    "e_coli_core", "iIT341", "iLJ478", "iNF517", "iJO1366", "iMM904", "iEK1008"
+}
 
 
 def test_agreement_report_shows_a_blind_full_agreement() -> None:

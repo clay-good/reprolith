@@ -6,9 +6,10 @@ based entries whose reproducibility is independently known, certifies each *blin
 shared ``certify_constraint_based`` — the verdict path never sees the label — scores agreement with
 ground truth on the same machinery the PK/PD run uses, and writes the walkable result.
 
-The set is n=4: the E. coli core model, labelled by its documented maximal growth rate, plus three
-diverse genome-scale models (``datasets/constraint_based/cross_validation/``) labelled by the
-growth rate the independent COBRApy implementation computes for each. Every entry's ground-truth
+The set is n=7: the E. coli core model, labelled by its documented maximal growth rate, plus six
+diverse genome-scale models (``datasets/constraint_based/cross_validation/``) — spanning bacteria, a
+pathogen (M. tuberculosis iEK1008), and a eukaryote (S. cerevisiae iMM904) — each labelled by the
+growth rate the independent COBRApy implementation computes for it. Every entry's ground-truth
 source is recorded on its label.
 
 Reproducible from the repository alone — no network — but needs the ``engine`` extra

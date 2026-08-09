@@ -1,6 +1,15 @@
 {
   "description": "Cross-validation set: Reprolith's ingest_fbc_sbml + solver must reproduce the growth rate the independent COBRApy implementation computes for each model's distributed medium. Non-circular (a different implementation is the reference) and it validates ingestion on structurally diverse real models.",
   "models": {
+    "iEK1008": {
+      "genes": 1008,
+      "metabolites": 998,
+      "organism": "Mycobacterium tuberculosis H37Rv",
+      "reactions": 1226,
+      "reference_growth": 0.05817387298969876,
+      "reference_tool": "COBRApy 0.31.1 slim_optimize on the model's distributed medium",
+      "source": "BiGG Models http://bigg.ucsd.edu/models/iEK1008 ; doi:10.1186/s12918-018-0557-y (PMID 29499714)"
+    },
     "iIT341": {
       "genes": 339,
       "metabolites": 485,
@@ -27,6 +36,15 @@
       "reference_growth": 0.22840679202944705,
       "reference_tool": "COBRApy 0.31.1 slim_optimize on the model's distributed medium",
       "source": "BiGG Models http://bigg.ucsd.edu/models/iLJ478 ; doi:10.1101/gr.234503 (PMID 14718003)"
+    },
+    "iMM904": {
+      "genes": 905,
+      "metabolites": 1226,
+      "organism": "Saccharomyces cerevisiae S288C (eukaryote)",
+      "reactions": 1577,
+      "reference_growth": 0.2878657037040256,
+      "reference_tool": "COBRApy 0.31.1 slim_optimize on the model's distributed medium",
+      "source": "BiGG Models http://bigg.ucsd.edu/models/iMM904 ; doi:10.1186/1752-0509-3-37 (PMID 19321003)"
     },
     "iNF517": {
       "genes": 516,

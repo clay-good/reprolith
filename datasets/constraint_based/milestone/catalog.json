@@ -74,6 +74,75 @@
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
+        "source": "BiGG Models http://bigg.ucsd.edu/models/iEK1008 ; doi:10.1186/s12918-018-0557-y (PMID 29499714); reference growth 0.058174 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "iEK1008",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "iEK1008 (Mycobacterium tuberculosis H37Rv)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "constraint-based",
+      "sources": [],
+      "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
         "source": "BiGG Models http://bigg.ucsd.edu/models/iIT341 ; doi:10.1128/JB.187.16.5818-5830.2005 (PMID 16077130); reference growth 0.692813 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
       },
       "history": [
@@ -143,6 +212,75 @@
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
+        "source": "BiGG Models http://bigg.ucsd.edu/models/iJO1366 ; doi:10.1038/msb.2011.65 (PMID 21988831); reference growth 0.982372 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "iJO1366",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "iJO1366 (Escherichia coli str. K-12 substr. MG1655 (genome-scale))"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "constraint-based",
+      "sources": [],
+      "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
         "source": "BiGG Models http://bigg.ucsd.edu/models/iLJ478 ; doi:10.1101/gr.234503 (PMID 14718003); reference growth 0.228407 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
       },
       "history": [
@@ -200,6 +338,75 @@
         "doi": null,
         "pubmed_id": null,
         "title": "iLJ478 (Thermotoga maritima MSB8)"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "constraint-based",
+      "sources": [],
+      "state": "certified"
+    },
+    {
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BiGG Models http://bigg.ucsd.edu/models/iMM904 ; doi:10.1186/1752-0509-3-37 (PMID 19321003); reference growth 0.287866 via COBRApy 0.31.1 slim_optimize on the model's distributed medium"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "iMM904",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "iMM904 (Saccharomyces cerevisiae S288C (eukaryote))"
       },
       "lease_expires": null,
       "leased_to": null,

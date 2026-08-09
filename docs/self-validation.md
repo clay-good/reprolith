@@ -8,7 +8,7 @@ follow end to end, all regenerable from the repository alone.
 | Class | Blind agreement | Independent ground truth | Milestone |
 |---|---|---|---|
 | **PK/PD (ODE)** | 1 partially-reproduced + 30 honest abstentions, **0 wrong verdicts** over 31 BioModels entries | BioModels manual-curation status; the metformin claim read from the paper | [`datasets/milestone/`](../datasets/milestone/) |
-| **Constraint-based (FBA)** | **4/4** blind agreement | E. coli core's documented growth rate; COBRApy references for the genome-scale set | [`datasets/constraint_based/milestone/`](../datasets/constraint_based/milestone/) |
+| **Constraint-based (FBA)** | **7/7** blind agreement across bacteria, a pathogen, and a eukaryote | E. coli core's documented growth rate; COBRApy references for the genome-scale set | [`datasets/constraint_based/milestone/`](../datasets/constraint_based/milestone/) |
 | **Generic-kinetic (ODE)** | **6/6** blind agreement across six network types | libRoadRunner (independent CVODE) reference trajectories | [`datasets/kinetic/milestone/`](../datasets/kinetic/milestone/) |
 | **Logical (Boolean)** | **4/4** blind agreement on real published models | CANA (independent Boolean-network library) attractors | [`datasets/logical/milestone/`](../datasets/logical/milestone/) |
 | **Stochastic (SSA)** | **3/3** blind agreement | Closed-form Poisson / binomial means (analytical) | [`datasets/stochastic/milestone/`](../datasets/stochastic/milestone/) |
@@ -25,8 +25,8 @@ follow end to end, all regenerable from the repository alone.
   rules are additionally *proven faithful* to CANA's model — checked against CANA's own per-node
   step over every input — before the attractor signatures are compared.
 - **Depth beyond a single number.** FBA cross-validates all three FROG components (objective,
-  flux-variability, gene/reaction deletion) across five models up to genome scale (iJO1366, 2583
-  reactions), plus **loopless FVA** — its loop-law MILP reproduces COBRApy's independent
+  flux-variability, gene/reaction deletion) across seven models up to genome scale (iJO1366, 2583
+  reactions) and spanning bacteria, a pathogen, and a eukaryote, plus **loopless FVA** — its loop-law MILP reproduces COBRApy's independent
   `flux_variability_analysis(loopless=True)` reaction-for-reaction on E. coli core — **pFBA**,
   whose minimized total flux matches COBRApy's `pfba` on the same model, and the **production
   envelope**, whose acetate-vs-growth frontier reproduces COBRApy's `production_envelope` point for
