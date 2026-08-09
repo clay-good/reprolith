@@ -105,6 +105,10 @@ real published model: [datasets/constraint_based/](datasets/constraint_based/) s
 core model, and the `ingest_fbc_sbml` → `solve_objective` pathway reproduces its independently-known
 maximal growth rate (0.873922) to every published digit — with a
 [worked example](datasets/constraint_based/worked_example/) walking the whole dossier → certificate.
+The blind milestone then scales this to **8 real BiGG models** spanning bacteria, a pathogen, and a
+eukaryote (up to genome-scale *E. coli* iJO1366, 2583 reactions), each reproduced against the growth
+rate the independent COBRApy implementation computes — 8/8 blind agreement — with FROG variability
+cross-checked on two models and loopless-FVA, pFBA, and the production envelope against COBRApy too.
 
 ```bash
 pip install -e ".[dev,engine,fba]"   # fba brings the LP solver; engine (libsbml) reads the .xml model
