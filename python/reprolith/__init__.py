@@ -101,8 +101,10 @@ from .linter import (
     lint_stochastic,
 )
 from .logical import (
+    MAX_ENUMERABLE_NODES,
     BooleanNetwork,
     LogicalClaim,
+    NetworkTooLarge,
     UpdateScheme,
     certify_logical,
     compile_boolean_rule,
@@ -266,9 +268,11 @@ __all__ = [
     "LifecycleState",
     "LintResult",
     "LogicalClaim",
+    "MAX_ENUMERABLE_NODES",
     "ModelArtifact",
     "ModelClass",
     "ModelOrigin",
+    "NetworkTooLarge",
     "NonFiniteSimulation",
     "ParsimoniousSolution",
     "ProductionEnvelope",

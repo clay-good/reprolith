@@ -22,7 +22,10 @@ unconditionally with no extra installed.
 
 Exhaustive enumeration is 2ⁿ in the node count, which is exactly right for the small signaling and
 regulatory motifs this class targets first; larger networks are a later concern, not a hidden
-approximation.
+approximation. That boundary is enforced, not just documented: above `MAX_ENUMERABLE_NODES` (20)
+the fixed-point and attractor paths raise `NetworkTooLarge` at once — so feeding a real 60–80-node
+model (say CANA's LEUKEMIA or BREAST_CANCER) fails fast and clearly instead of hanging or
+exhausting memory. Single-state stepping does not enumerate, so it stays available at any size.
 
 ## The judges
 

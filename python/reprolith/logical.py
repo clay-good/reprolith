@@ -32,6 +32,17 @@ State = tuple[int, ...]
 
 Rule = Callable[[Mapping[str, int]], int]
 
+#: The largest network this exact oracle enumerates. Fixed-point and attractor analysis here walk
+#: the whole 2ⁿ state space, so cost doubles with every node; 2²⁰ ≈ 1M states stays tractable
+#: (seconds), while a real signalling model of 60–80 nodes (e.g. CANA's BREAST_CANCER, LEUKEMIA)
+#: is astronomically beyond exhaustive enumeration. Above this the oracle refuses fast and clearly
+#: rather than hang or exhaust memory — the honest scale boundary of an exact method.
+MAX_ENUMERABLE_NODES = 20
+
+
+class NetworkTooLarge(RuntimeError):
+    """Raised when exhaustive attractor analysis is requested on a network beyond enumeration."""
+
 
 class UpdateScheme(str, Enum):
     """How a Boolean network advances — a load-bearing modelling choice.
@@ -80,8 +91,24 @@ class BooleanNetwork:
         """One synchronous update: every node advances simultaneously."""
         return self._as_dict(self._step_tuple(self._as_tuple(state)))
 
-    def _states(self) -> list[State]:
-        return [tuple(bits) for bits in product((0, 1), repeat=len(self.nodes))]
+    def _states(self) -> Iterable[State]:
+        """Every state in the 2ⁿ space, streamed. Guards the exact oracle's scale boundary.
+
+        Refuses a network too large to enumerate (see :data:`MAX_ENUMERABLE_NODES`) with a clear
+        error, so a real 60–80-node signalling model fails fast here instead of hanging or
+        exhausting memory. Yields lazily so the largest tractable networks never materialise all
+        2ⁿ states at once. Stepping a single state (:meth:`step`) is unaffected — only the
+        exhaustive fixed-point and attractor paths pass through here.
+        """
+        n = len(self.nodes)
+        if n > MAX_ENUMERABLE_NODES:
+            raise NetworkTooLarge(
+                f"exhaustive attractor analysis enumerates all 2^{n} states, which is intractable "
+                f"for {n} nodes; this exact oracle handles up to {MAX_ENUMERABLE_NODES}. Reduce the "
+                f"network (fix or prune nodes) or use a scalable Boolean solver for a model this size"
+            )
+        for bits in product((0, 1), repeat=n):
+            yield tuple(bits)
 
     def fixed_points(self) -> list[dict[str, int]]:
         """Every steady state: a state the synchronous update maps to itself, sorted."""
@@ -492,8 +519,10 @@ def certify_logical(
 
 
 __all__ = [
+    "MAX_ENUMERABLE_NODES",
     "BooleanNetwork",
     "LogicalClaim",
+    "NetworkTooLarge",
     "Rule",
     "State",
     "UpdateScheme",
