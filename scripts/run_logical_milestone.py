@@ -2,15 +2,17 @@
 """Regenerate the logical (Boolean-network) milestone artifact from committed data.
 
 The logical counterpart of ``run_milestone.py`` / ``run_fba_milestone.py`` / ``run_kinetic_milestone.py``.
-Seeds the catalog with the four real published Boolean models whose attractor structure an
-independent tool (CANA) established, certifies each *blind* — the verdict path never sees the label
-— by checking that Reprolith's own attractor oracle reproduces CANA's independently-computed
-attractor count, and scores agreement with ground truth on the same ``run_test_set`` machinery every
-other class uses. This is the fourth class flowing through one catalog lifecycle, one certificate
-format, one agreement report, and one scope flag — the generalization demonstrated, not asserted.
+Seeds the catalog with real published Boolean models (plus two synthetic limit-cycle networks) whose
+attractor structure an independent tool (CANA) established, certifies each *blind* — the verdict path
+never sees the label — by checking that Reprolith's own oracle reproduces the independently-computed
+count, and scores agreement with ground truth on the same ``run_test_set`` machinery every other
+class uses. Small networks are certified on their full attractor count; the large T-LGL leukemia
+network (60 nodes) is certified on its steady-state count via the **scalable** SAT fixed-point path,
+where 2⁶⁰ enumeration is impossible — so the milestone exercises that path end to end.
 
 Reproducible from the repository alone — no network, no CANA (it reads the committed
-``datasets/logical/cross_validation/reference.json``). Run from the repo root:
+``datasets/logical/cross_validation/``). The leukemia entry needs the ``sat`` extra (z3). Run from
+the repo root:
 
     python scripts/run_logical_milestone.py
 """
@@ -48,39 +50,54 @@ LOG = REPO / "datasets" / "logical"
 
 def main() -> None:
     reference = json.loads((LOG / "cross_validation" / "reference.json").read_text(encoding="utf-8"))
+    scalable = json.loads(
+        (LOG / "cross_validation" / "scalable_fixed_points.json").read_text(encoding="utf-8")
+    )
     pin = EnginePin(engine="reprolith-logical", version="0.0.1")  # exact analysis, no external solver
     catalog = Catalog()
     certified = {}
 
+    # (accession, citation, reproduce->count, expected count, quantity, ground-truth note) per model.
+    # Small models are certified on their full attractor count (fixed points *and* cyclic attractors,
+    # so the synchronous limit cycles of the synthetic networks count correctly, not just steady
+    # states); the large models on their steady-state count via the scalable SAT path, since their
+    # 2ⁿ state space puts cyclic-attractor enumeration out of reach.
+    plans = []
     for key in sorted(reference["models"]):
         entry = reference["models"][key]
+        plans.append((key, entry["rules"], entry["citation"], "attractors",
+                      entry["n_attractors"], "attractor count",
+                      f"{reference['_source']}: {entry['n_attractors']} attractors"))
+    for key in sorted(scalable["models"]):
+        entry = scalable["models"][key]
+        plans.append((key, entry["rules"], entry["citation"], "fixed_points",
+                      entry["n_fixed_points"], "steady-state (fixed-point) count",
+                      f"{scalable['_source']}: {entry['n_fixed_points']} fixed points"))
+
+    for key, rules, citation, kind, expected, quantity, source in plans:
         catalog.add(
-            Identifiers(title=entry["citation"], accession=key),
+            Identifiers(title=citation, accession=key),
             ModelClass.LOGICAL,
-            ground_truth=GroundTruth(
-                expected=OverallVerdict.REPRODUCED,
-                source=f"{reference['_source']}: {entry['n_attractors']} attractors",
-            ),
+            ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source=source),
         )
-        # Certify blind: only the model rules and CANA's attractor count are inputs, never the label.
-        net = parse_boolean_network(entry["rules"])
-        found = len(net.fixed_points())  # every reference model is fixed-point only
-        expected = entry["n_attractors"]
+        # Certify blind: only the model rules and the independent count are inputs, never the label.
+        net = parse_boolean_network(rules)
+        found = len(net.attractors()) if kind == "attractors" else len(net.fixed_points())
         matched = found == expected
         assessment = assess_match(
-            claim_id=f"{key}-attractors",
-            quantity="steady-state (fixed-point) attractor count",
-            source_location=entry["citation"],
+            claim_id=f"{key}-{kind}",
+            quantity=quantity,
+            source_location=citation,
             matched=matched,
             method=ComparisonMethod.ATTRACTOR_SET_MATCH,
-            discrepancy=f"reproduced {found} fixed points vs CANA's {expected}",
+            discrepancy=f"reproduced {found} vs the independent {expected}",
             attribution=None if matched else Attribution(
                 mode=FailureMode.UNSPECIFIED_UPDATE_SCHEME,
-                implicated="attractor count", fault=Fault.RECONSTRUCTION,
+                implicated=quantity, fault=Fault.RECONSTRUCTION,
             ),
         )
         certified[key] = build_certificate(
-            paper=PaperIdentity(title=entry["citation"], doi=""),
+            paper=PaperIdentity(title=citation, doi=""),
             engine_pin=pin,
             assessments=[assessment],
         )

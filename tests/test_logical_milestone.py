@@ -1,11 +1,13 @@
 """The committed logical milestone artifact stays consistent (roadmap #9).
 
 Dependency-free guard on the walkable result `scripts/run_logical_milestone.py` produces: if the
-committed agreement report, certificates, or catalog drift from a full-agreement blind run over the
-four CANA-validated published Boolean models, this fails and the artifact must be regenerated.
-Reading JSON needs no extras, so it runs in the core CI job. (The non-circular reproduction of the
-attractor counts themselves is checked in test_logical_cross_validation.py; this guards the catalog
-and agreement-report integration — the fourth class flowing through the shared contracts.)
+committed agreement report, certificates, or catalog drift from a full-agreement blind run, this
+fails and the artifact must be regenerated. The set is the CANA-validated small models (published
+fixed-point networks plus two synthetic limit-cycle networks, certified on their full attractor
+count) and the large T-LGL leukemia network (certified on its steady-state count via the scalable
+SAT path). Reading JSON needs no extras, so it runs in the core CI job. (The non-circular
+reproduction of the counts themselves is checked in test_logical_cross_validation.py and
+test_logical_scalable.py; this guards the catalog and agreement-report integration.)
 """
 
 from __future__ import annotations
@@ -14,7 +16,10 @@ import json
 from pathlib import Path
 
 _MILESTONE = Path(__file__).parent.parent / "datasets" / "logical" / "milestone"
-_EXPECTED = {"thaliana", "drosophila", "budding_yeast", "marques_pita"}
+_EXPECTED = {
+    "thaliana", "drosophila", "budding_yeast", "marques_pita",
+    "repressilator", "toggle_plus_switch", "leukemia",
+}
 
 
 def test_agreement_report_shows_a_blind_full_agreement() -> None:

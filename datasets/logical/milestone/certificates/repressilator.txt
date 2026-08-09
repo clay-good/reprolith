@@ -1,11 +1,11 @@
-REPRODUCTION CERTIFICATE — Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006)
+REPRODUCTION CERTIFICATE — Three-gene repressilator ring — a synchronous limit cycle, no fixed point
 Engine pin: reprolith-logical 0.0.1
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
 
 CLAIMS
-  [thaliana-attractors] attractor count: reproduced (source Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006) via attractor-set-match, tol=reproduced<=0, partial<=0 (class-default))
+  [repressilator-attractors] attractor count: reproduced (source Three-gene repressilator ring — a synchronous limit cycle, no fixed point via attractor-set-match, tol=reproduced<=0, partial<=0 (class-default))
 
 SCOPE
   This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

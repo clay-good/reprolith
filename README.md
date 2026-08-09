@@ -125,14 +125,15 @@ same catalog and agreement machinery as the other classes. See
 
 **Logical / Boolean network models** are the fourth class, and the sharpest generalization proof: a
 discrete oracle with no continuous trajectory and no optimization, where the reproducible result is
-the network's steady states and attractors. It reuses the shared contracts and adds only exact,
+the network's steady states and attractors. It reuses the shared contracts and adds exact,
 dependency-free attractor analysis (synchronous and asynchronous), reads standard SBML-qual, and is
 self-validated non-circularly against CANA (Correia et al. 2018), an independent Boolean-network
-library: Reprolith's own attractor oracle reproduces CANA's results on four real
-published models — the Arabidopsis flower, Drosophila segment-polarity, and budding-yeast cell-cycle
-networks, and a schemata example — with the [milestone blind run](datasets/logical/milestone/)
-scoring 4/4 through the same catalog and agreement machinery. See
-[docs/logical-class.md](docs/logical-class.md).
+library, on real published models (the Arabidopsis flower, Drosophila segment-polarity, and
+budding-yeast cell-cycle networks, and a schemata example). For networks too large to enumerate, a
+scalable SAT path (optional `sat` extra) finds fixed points without walking the 2ⁿ state space — the
+60-node T-LGL leukemia network's 71 steady states are reproduced against an independent solver — so
+the [milestone blind run](datasets/logical/milestone/) scores 7/7 through the same catalog and
+agreement machinery. See [docs/logical-class.md](docs/logical-class.md).
 
 **Stochastic (SSA) models** are the fifth class: discrete-molecule reaction networks where a single
 run is a random sample, so the reproducible result is a distribution. An exact, pure-Python

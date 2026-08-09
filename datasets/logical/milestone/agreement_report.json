@@ -1,8 +1,8 @@
 {
   "agreement_rate": 1.0,
-  "agreements": 4,
+  "agreements": 7,
   "confusion": {
-    "reproduced->reproduced": 4
+    "reproduced->reproduced": 7
   },
   "disagreements": 0,
   "per_entry": [
@@ -30,10 +30,31 @@
     {
       "actual": "reproduced",
       "agree": true,
+      "entry": "repressilator",
+      "expected": "reproduced",
+      "source": "CANA 1.0.0 (Correia et al. 2018): 2 attractors"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
       "entry": "thaliana",
       "expected": "reproduced",
       "source": "CANA 1.0.0 (Correia et al. 2018): 10 attractors"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "toggle_plus_switch",
+      "expected": "reproduced",
+      "source": "CANA 1.0.0 (Correia et al. 2018): 6 attractors"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "leukemia",
+      "expected": "reproduced",
+      "source": "sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0: 71 fixed points"
     }
   ],
-  "total": 4
+  "total": 7
 }
