@@ -486,6 +486,76 @@ def loopless_flux_variability(
 
 
 @dataclass(frozen=True)
+class ProductionEnvelope:
+    """The growth-vs-byproduct trade-off: a target reaction's feasible flux at each growth level.
+
+    Introduced by Varma & Palsson (1994), this is the phenotypic phase plane a metabolic-engineering
+    paper reports when it claims a strain can secrete a product *and* grow: the frontier of maximum
+    product flux achievable at each growth rate. Reproducing that curve is a distinct claim from a
+    single objective value — it is the whole Pareto front, not one point on it.
+
+    ``growth`` is the grid of objective (growth) levels from 0 to the unconstrained optimum;
+    ``target_min`` and ``target_max`` are the least and greatest the target reaction's flux can take
+    while the objective is held at that level (from an LP min/max, so alternate optima are handled
+    honestly). ``target_max`` is the production frontier. All three are aligned tuples, one entry per
+    grid point, in increasing-growth order.
+    """
+
+    growth: tuple[float, ...]
+    target_min: tuple[float, ...]
+    target_max: tuple[float, ...]
+
+
+def production_envelope(
+    stoichiometry: Sequence[Sequence[float]],
+    objective: Sequence[float],
+    lower: Sequence[float],
+    upper: Sequence[float | None],
+    *,
+    target: int,
+    points: int = 20,
+) -> ProductionEnvelope:
+    """The production envelope of a target reaction versus the objective (spec: constraint-based-class).
+
+    Sweeps the objective (growth) from 0 to its unconstrained optimum over ``points`` levels; at each
+    level the objective is pinned by an equality (``objective · v == level``) and the target
+    reaction's flux is both minimized and maximized. The upper boundary (``target_max``) is the
+    classic concave frontier: because the feasible set at each level is a convex polytope and the
+    pinning constraint is linear in the level, the maximum target flux is a concave, piecewise-linear
+    function of growth — a product's yield trades off against growth along straight segments with a
+    breakpoint where a new pathway (e.g. overflow secretion) engages.
+
+    ``target`` is the reaction's column index. ``points`` must be at least 2 (the endpoints).
+    Raises :class:`InfeasibleFba` if a level is not solvable. Needs the ``fba`` extra (scipy).
+    """
+    if points < 2:
+        raise ValueError("a production envelope needs at least 2 points (the two endpoints)")
+    linprog = _linprog()
+    n = len(objective)
+    max_growth = solve_objective(stoichiometry, objective, lower, upper)
+    # Pin the objective at each swept level with an equality row appended to the steady state.
+    a_eq = [list(row) for row in stoichiometry] + [list(objective)]
+    bounds = list(zip(lower, upper))
+    select = [1.0 if j == target else 0.0 for j in range(n)]
+    growth: list[float] = []
+    target_min: list[float] = []
+    target_max: list[float] = []
+    for k in range(points):
+        level = max_growth * k / (points - 1)
+        b_eq = [0.0] * len(stoichiometry) + [level]
+        lo = linprog(c=select, A_eq=a_eq, b_eq=b_eq, bounds=bounds, method="highs")
+        hi = linprog(c=[-x for x in select], A_eq=a_eq, b_eq=b_eq, bounds=bounds, method="highs")
+        if not lo.success or not hi.success:
+            raise InfeasibleFba(f"the production envelope is not solvable at growth level {level:.6g}")
+        growth.append(level)
+        target_min.append(float(lo.fun))
+        target_max.append(float(-hi.fun))
+    return ProductionEnvelope(
+        growth=tuple(growth), target_min=tuple(target_min), target_max=tuple(target_max)
+    )
+
+
+@dataclass(frozen=True)
 class ParsimoniousSolution:
     """A parsimonious (pFBA) flux distribution: the minimal-total-flux vector that stays optimal.
 
@@ -841,6 +911,7 @@ __all__ = [
     "FrogFingerprint",
     "InfeasibleFba",
     "ParsimoniousSolution",
+    "ProductionEnvelope",
     "ShadowPrices",
     "compare_frog",
     "essentiality_agreement",
@@ -851,6 +922,7 @@ __all__ = [
     "judge_flux",
     "judge_objective",
     "parsimonious_fluxes",
+    "production_envelope",
     "reaction_essentiality",
     "shadow_prices",
     "solve_objective",

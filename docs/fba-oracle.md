@@ -31,6 +31,7 @@ happens to land on.
 | `gene_essentiality` | Which *genes*, deleted, collapse the objective — honoring each reaction's AND/OR gene rule? | gene deletion forces to zero only the reactions whose GPR rule fails; essentiality is still an objective property |
 | `flux_variability` | What min/max can each reaction's flux take while the objective stays optimal? | it reports the *whole* feasible interval instead of picking one vector |
 | `loopless_flux_variability` | Same interval, but with thermodynamically infeasible internal loops removed | it adds the loop law (Schellenberger 2011) so a spurious internal cycle can't inflate the interval |
+| `production_envelope` | What is the feasible range of a byproduct's flux at each growth rate? | it returns the whole growth-vs-product Pareto front (Varma & Palsson 1994), not one point |
 | `judge_flux` | Does a reported reaction flux reproduce? | it judges against the variability interval, and abstains when the model leaves the flux free |
 
 ### `judge_flux` — the honest verdict for a reported flux
@@ -165,6 +166,32 @@ while every reaction's loopless interval stays contained in its standard one. An
 cross-validated against an independent tool: on E. coli core the MILP reproduces COBRApy's
 `flux_variability_analysis(loopless=True)` reaction-for-reaction to solver tolerance
 (`tests/test_fba_cross_validation.py`, reference in `datasets/constraint_based/cross_validation/`).
+
+## Production envelope — the growth-vs-byproduct frontier
+
+A metabolic-engineering paper often claims not one flux but a *trade-off*: how much of a product a
+strain can secrete at each growth rate. `production_envelope` reproduces that whole curve. It sweeps
+the objective (growth) from zero to its optimum and, at each level, minimizes and maximizes the
+target reaction's flux — the phenotypic phase plane of Varma & Palsson (1994).
+
+```python
+from reprolith import production_envelope
+
+env = production_envelope(stoich, objective, lower, upper, target=acetate_index, points=20)
+env.growth        # the swept growth levels, 0 .. max
+env.target_max    # the production frontier: most product achievable at each growth level
+env.target_min    # the least (often zero — the model can always decline to secrete)
+```
+
+The upper boundary is provably **concave** and piecewise-linear: the feasible flux polytope is
+convex and the pinned growth level enters as one linear equality, so a convex combination of two
+feasible `(growth, product)` points is itself feasible and the frontier can only bow outward. That
+is an exact parametric-LP theorem, not a shape the engine chose — verified in
+`tests/test_fba_production_envelope.py` on E. coli core's classic acetate frontier, which also shows
+the overflow-metabolism breakpoint (acetate secretion engaging below the maximum growth rate). And
+it is cross-validated against the community standard: on E. coli core it reproduces COBRApy's
+`production_envelope` point for point (`tests/test_fba_cross_validation.py`, reference in
+`datasets/constraint_based/cross_validation/`).
 
 ## Self-validation
 

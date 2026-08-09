@@ -11,6 +11,7 @@ files from the models, so the committed numbers are auditable, not magic constan
   - ``e_coli_core_fva.json``        — flux-variability interval per reaction at the optimum
   - ``e_coli_core_loopless_fva.json`` — loopless flux-variability interval per reaction at the optimum
   - ``e_coli_core_pfba.json``        — parsimonious-FBA total flux (min Σ|vᵢ|) at the optimum
+  - ``e_coli_core_production_envelope.json`` — acetate-vs-growth production envelope (concave frontier)
 
 Needs COBRApy (``pip install cobra``) — a dev-time reference generator, not a Reprolith runtime
 dependency. Deterministic: re-running produces byte-identical files. Run from the repo root:
@@ -148,6 +149,27 @@ def main() -> None:
         "reference_tool": tool,
         "total_flux": _round(float(pfba.fluxes.abs().sum())),
         "objective_value": _round(float(core.slim_optimize())),
+    })
+
+    # Production envelope: acetate secretion (the textbook overflow byproduct) versus growth. Grid
+    # over the biomass objective, min/max acetate at each level — the classic concave frontier.
+    target, points = "EX_ac_e", 20
+    biomass = [r.id for r in core.reactions if r.objective_coefficient != 0][0]
+    env = cobra.flux_analysis.production_envelope(core, [biomass], objective=target, points=points)
+    _write(CROSS / "e_coli_core_production_envelope.json", {
+        "description": "Independent reference production envelope for e_coli_core from COBRApy "
+                       "production_envelope: the min/max acetate secretion (EX_ac_e) at each growth "
+                       "level, swept over the biomass objective. Reprolith's production_envelope must "
+                       "reproduce the whole concave frontier — a cross-tool check of the phenotypic "
+                       "phase plane, not a single point.",
+        "reference_tool": tool,
+        "target": target,
+        "objective": biomass,
+        "points": points,
+        "envelope": [
+            [_round(g), _round(lo), _round(hi)]
+            for g, lo, hi in zip(env[biomass], env["flux_minimum"], env["flux_maximum"])
+        ],
     })
 
 

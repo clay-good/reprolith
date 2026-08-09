@@ -95,8 +95,9 @@ value, flux variability, and both reaction- and gene-deletion outcomes — each 
 "abstain when unsure" rule under alternate optima, plus the LP dual (`shadow_prices`: metabolite
 shadow prices and reaction reduced costs, validated against the primal by strong duality),
 parsimonious FBA (`parsimonious_fluxes`: the minimal-total-flux tie-break among alternate optima),
-and loopless FVA (`loopless_flux_variability`: the flux-variability interval with thermodynamically
-infeasible internal loops removed, so a spurious cycle can't inflate it); see
+loopless FVA (`loopless_flux_variability`: the flux-variability interval with thermodynamically
+infeasible internal loops removed, so a spurious cycle can't inflate it), and the production envelope
+(`production_envelope`: the growth-vs-byproduct Pareto front, a provably concave frontier); see
 [docs/fba-oracle.md](docs/fba-oracle.md). The same shared pathway carries it end to end: a
 constraint-based dossier adopts the paper's SBML-fbc model and records its load-bearing medium,
 then certifies to a scope-flagged verdict, reproduced or honestly not. It self-validates against a

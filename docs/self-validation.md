@@ -27,8 +27,10 @@ follow end to end, all regenerable from the repository alone.
 - **Depth beyond a single number.** FBA cross-validates all three FROG components (objective,
   flux-variability, gene/reaction deletion) across five models up to genome scale (iJO1366, 2583
   reactions), plus **loopless FVA** — its loop-law MILP reproduces COBRApy's independent
-  `flux_variability_analysis(loopless=True)` reaction-for-reaction on E. coli core — and **pFBA**,
-  whose minimized total flux matches COBRApy's `pfba` on the same model. Kinetic verdicts
+  `flux_variability_analysis(loopless=True)` reaction-for-reaction on E. coli core — **pFBA**,
+  whose minimized total flux matches COBRApy's `pfba` on the same model, and the **production
+  envelope**, whose acetate-vs-growth frontier reproduces COBRApy's `production_envelope` point for
+  point. Kinetic verdicts
   are additionally shown **engine-independent** — every model
   reproduces identically under COPASI and libRoadRunner (`corroborate_curve`), so no verdict rests
   on one solver's quirk.
@@ -74,6 +76,7 @@ the whole catalogue below is reproduced on every commit.
 | FBA | LP duality (shadow prices) | dual = ∂Z*/∂b; complementary slackness; strong duality Z* = Σ rc·bound | `test_metabolite_shadow_prices_are_the_primal_optimum_sensitivity`, `test_strong_duality_reconstructs_the_optimum_from_the_binding_bounds` |
 | FBA | Shadow price = phase-plane slope (real model) | O₂ marginal value falls then hits zero at the breakpoint (E. coli core) | `test_oxygen_marginal_value_is_positive_and_falling_then_zero_at_the_plateau` |
 | FBA | Loopless FVA (toy + real) | an internal cycle's flux is thermodynamically infeasible → loopless range collapses to the hand-derived value where plain FVA inflates it; on E. coli core the textbook FRD7/SUCDi loop's spurious ~1000 range is stripped | `test_loopless_fva_collapses_the_cycle_to_its_thermodynamic_range`, `…_equals_standard_fva_on_a_loop_free_model`, `test_loopless_fva_removes_the_e_coli_core_frd7_sucdi_loop` |
+| FBA | Production envelope (Varma & Palsson) | the growth-vs-byproduct frontier is concave and piecewise-linear (parametric-LP theorem), with E. coli core's overflow-metabolism acetate breakpoint | `test_production_envelope_frontier_is_concave_and_piecewise_linear` |
 
 Non-circular by construction: the reference is a mathematical law (a front speed, a dispersion
 relation, a noise law, an attractor theorem, an LP-duality consequence), not a number this engine

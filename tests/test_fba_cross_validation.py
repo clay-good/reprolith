@@ -30,6 +30,7 @@ from reprolith import (  # noqa: E402
     ingest_fbc_sbml,
     loopless_flux_variability,
     parsimonious_fluxes,
+    production_envelope,
     reaction_essentiality,
     solve_objective,
 )
@@ -41,6 +42,9 @@ _ESSENTIALITY = json.loads((_DIR / "e_coli_core_essentiality.json").read_text(en
 _FVA = json.loads((_DIR / "e_coli_core_fva.json").read_text(encoding="utf-8"))
 _LOOPLESS_FVA = json.loads((_DIR / "e_coli_core_loopless_fva.json").read_text(encoding="utf-8"))
 _PFBA = json.loads((_DIR / "e_coli_core_pfba.json").read_text(encoding="utf-8"))
+_ENVELOPE = json.loads(
+    (_DIR / "e_coli_core_production_envelope.json").read_text(encoding="utf-8")
+)
 
 
 @pytest.mark.parametrize("model_id", sorted(_REFERENCE))
@@ -122,3 +126,23 @@ def test_parsimonious_flux_matches_the_cobra_reference_on_e_coli_core() -> None:
     solution = parsimonious_fluxes(model.stoichiometry, model.objective, model.lower, model.upper)
     assert solution.total_flux == pytest.approx(_PFBA["total_flux"], rel=1e-6)
     assert solution.objective_value == pytest.approx(_PFBA["objective_value"], rel=1e-6)
+
+
+def test_production_envelope_matches_the_cobra_reference_on_e_coli_core() -> None:
+    # The acetate-vs-growth production envelope must reproduce COBRApy's production_envelope point
+    # for point — the whole concave frontier, not a single objective value. A non-circular
+    # cross-tool check of the phenotypic phase plane against the community-standard implementation.
+    model = ingest_fbc_sbml(_CORE.read_text(encoding="utf-8"))
+    target = model.reaction_index("R_" + _ENVELOPE["target"])
+    envelope = production_envelope(
+        model.stoichiometry, model.objective, model.lower, model.upper,
+        target=target, points=_ENVELOPE["points"],
+    )
+    reference = _ENVELOPE["envelope"]
+    assert len(envelope.growth) == len(reference)
+    for (growth, lo, hi), (ref_growth, ref_lo, ref_hi) in zip(
+        zip(envelope.growth, envelope.target_min, envelope.target_max), reference
+    ):
+        assert growth == pytest.approx(ref_growth, abs=1e-6)
+        assert lo == pytest.approx(ref_lo, abs=1e-6)
+        assert hi == pytest.approx(ref_hi, abs=1e-6)
