@@ -21,6 +21,7 @@ from collections.abc import Callable, Container, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import Enum
 from itertools import product
+from typing import Any
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, ModelArtifact
@@ -39,9 +40,14 @@ Rule = Callable[[Mapping[str, int]], int]
 #: rather than hang or exhaust memory — the honest scale boundary of an exact method.
 MAX_ENUMERABLE_NODES = 20
 
+#: The most fixed points the scalable SAT path will enumerate before refusing. A well-posed model
+#: has a handful; a network dominated by free input nodes has 2^(#inputs) of them, which is a
+#: combinatorial blow-up no downstream verdict can use — so the solver stops and says so.
+MAX_SAT_FIXED_POINTS = 100_000
+
 
 class NetworkTooLarge(RuntimeError):
-    """Raised when exhaustive attractor analysis is requested on a network beyond enumeration."""
+    """Raised when exact attractor analysis or fixed-point enumeration exceeds a tractable bound."""
 
 
 class UpdateScheme(str, Enum):
@@ -67,9 +73,16 @@ class BooleanNetwork:
     0/1) and returning that node's next value (0 or 1). Nodes are the sorted rule keys, so every
     state is a canonical tuple in that order. A fixed input node is expressed as a rule that
     returns its own current value.
+
+    ``expressions`` optionally carries each node's rule as its source Boolean-expression string
+    (what :func:`parse_boolean_network` was given). It is what makes the *scalable* fixed-point
+    path possible: a large network's fixed points are found by encoding these expressions to a
+    solver rather than enumerating 2ⁿ states. A network built directly from opaque callables has no
+    ``expressions`` and so stays enumeration-bound.
     """
 
     rules: Mapping[str, Callable[[Mapping[str, int]], int]]
+    expressions: Mapping[str, str] | None = None
 
     @property
     def nodes(self) -> tuple[str, ...]:
@@ -111,8 +124,77 @@ class BooleanNetwork:
             yield tuple(bits)
 
     def fixed_points(self) -> list[dict[str, int]]:
-        """Every steady state: a state the synchronous update maps to itself, sorted."""
+        """Every steady state: a state the synchronous update maps to itself, sorted.
+
+        Small networks are solved by exact enumeration. A network larger than
+        :data:`MAX_ENUMERABLE_NODES` is solved *scalably* — its rule expressions are encoded to a
+        SAT solver and every satisfying fixed point enumerated — so real signalling models (60–80
+        nodes) are handled in well under a second where 2ⁿ enumeration is impossible. The scalable
+        path needs the network's symbolic ``expressions`` (a network built from raw callables has
+        none) and the ``sat`` extra (sympy); without either, a too-large network still raises
+        :class:`NetworkTooLarge` via the enumeration guard.
+        """
+        if len(self.nodes) > MAX_ENUMERABLE_NODES and self.expressions is not None:
+            return self._fixed_points_sat()
         fixed = [s for s in self._states() if self._step_tuple(s) == s]
+        return [self._as_dict(s) for s in sorted(fixed)]
+
+    def _fixed_points_sat(self) -> list[dict[str, int]]:
+        """Fixed points via SAT: enumerate every state that satisfies ``xᵢ ⟺ ruleᵢ(x)`` for all i.
+
+        The fixed-point condition is a Boolean formula over the node variables; its satisfying
+        assignments are exactly the steady states. Solving it (z3, with a blocking clause added per
+        solution so the search is exhaustive over the solution space, not the 2ⁿ state space) is what
+        makes large networks tractable. Each solution is a *completed* model and is verified to be a
+        genuine fixed point (``step(s) == s``) before it is kept, so a solver-encoding error can
+        never pass silently. If the network has more than :data:`MAX_SAT_FIXED_POINTS` fixed points
+        (a degenerate network dominated by free inputs), it refuses rather than enumerate a
+        combinatorial blow-up. Needs the network's ``expressions`` and the ``sat`` extra (z3).
+        """
+        z3 = _z3()
+        assert self.expressions is not None  # guarded by the caller
+        names = self.nodes
+        # A free self-input (rule is exactly the node itself, e.g. an input/source node held fixed)
+        # is unconstrained at every fixed point, multiplying the count by two. Catch that blow-up up
+        # front — instantly — rather than let the blocking-clause loop grind through 2^(#inputs).
+        def _identity(expr: str, node_name: str) -> bool:
+            return expr.replace("(", "").replace(")", "").replace(" ", "").replace("!", "~") == node_name
+
+        free_inputs = sum(1 for name in names if _identity(self.expressions[name], name))
+        if free_inputs and 2**free_inputs > MAX_SAT_FIXED_POINTS:
+            raise NetworkTooLarge(
+                f"network has {free_inputs} free input nodes, so at least 2^{free_inputs} fixed "
+                f"points — a combinatorial blow-up past {MAX_SAT_FIXED_POINTS}; fix the input nodes "
+                f"to specific values to make the steady states well-posed"
+            )
+        variables = {name: z3.Bool(name) for name in names}
+        ops = {
+            "and_": lambda xs: z3.And(*xs),
+            "or_": lambda xs: z3.Or(*xs),
+            "not_": z3.Not,
+            "xor_": z3.Xor,
+            "const_": z3.BoolVal,
+        }
+        solver = z3.Solver()
+        for name in names:
+            solver.add(variables[name] == _translate_rule(self.expressions[name], variables, ops))
+        fixed: list[State] = []
+        while solver.check() == z3.sat:
+            model = solver.model()
+            state = tuple(
+                1 if z3.is_true(model.eval(variables[name], model_completion=True)) else 0
+                for name in names
+            )
+            if self._step_tuple(state) != state:  # never trust the encoding; re-check definitionally
+                raise ValueError("SAT returned a state that is not a fixed point")
+            fixed.append(state)
+            if len(fixed) > MAX_SAT_FIXED_POINTS:
+                raise NetworkTooLarge(
+                    f"network has more than {MAX_SAT_FIXED_POINTS} fixed points; refusing to "
+                    f"enumerate a combinatorial blow-up (it is dominated by free input nodes)"
+                )
+            # Block this exact state so the next solve returns a different fixed point.
+            solver.add(z3.Or([variables[name] != bool(bit) for name, bit in zip(names, state)]))
         return [self._as_dict(s) for s in sorted(fixed)]
 
     def attractors(
@@ -296,16 +378,79 @@ def compile_boolean_rule(expr: str, nodes: Container[str]) -> Rule:
     return _compile_ast(tree, nodes)
 
 
+def _z3() -> Any:
+    try:
+        import z3
+    except ImportError as exc:  # pragma: no cover - exercised only without the extra
+        raise NetworkTooLarge(
+            "the scalable fixed-point solver for a large network needs the 'sat' extra (z3); "
+            "install with pip install 'reprolith[sat]'"
+        ) from exc
+    return z3
+
+
+def _translate_boolean_ast(node: ast.AST, symbols: Mapping[str, Any], ops: Mapping[str, Any]) -> Any:
+    """Translate an allow-listed Boolean AST into a backend expression via ``ops``.
+
+    The same rule grammar as :func:`_compile_ast`, but emitting whatever a backend builds — a z3
+    formula for the SAT path here, and reusable for any other symbolic backend — so the scalable
+    path can never diverge from the exact evaluator's grammar. Anything outside the grammar raises.
+    ``ops`` supplies ``and_``/``or_``/``not_``/``xor_`` (each taking operands) and ``const_``.
+    """
+    if isinstance(node, ast.Expression):
+        return _translate_boolean_ast(node.body, symbols, ops)
+    if isinstance(node, ast.BoolOp):
+        subs = [_translate_boolean_ast(v, symbols, ops) for v in node.values]
+        if isinstance(node.op, ast.And):
+            return ops["and_"](subs)
+        if isinstance(node.op, ast.Or):
+            return ops["or_"](subs)
+        raise ValueError("unsupported boolean operator")
+    if isinstance(node, ast.UnaryOp):
+        if isinstance(node.op, (ast.Not, ast.Invert)):
+            return ops["not_"](_translate_boolean_ast(node.operand, symbols, ops))
+        raise ValueError("unsupported unary operator")
+    if isinstance(node, ast.BinOp):
+        left = _translate_boolean_ast(node.left, symbols, ops)
+        right = _translate_boolean_ast(node.right, symbols, ops)
+        if isinstance(node.op, ast.BitAnd):
+            return ops["and_"]([left, right])
+        if isinstance(node.op, ast.BitOr):
+            return ops["or_"]([left, right])
+        if isinstance(node.op, ast.BitXor):
+            return ops["xor_"](left, right)
+        raise ValueError("unsupported binary operator")
+    if isinstance(node, ast.Name):
+        if node.id not in symbols:
+            raise ValueError(f"rule references unknown node {node.id!r}")
+        return symbols[node.id]
+    if isinstance(node, ast.Constant):
+        if node.value in (0, 1, True, False):
+            return ops["const_"](bool(node.value))
+        raise ValueError(f"unsupported constant {node.value!r} (only 0/1)")
+    raise ValueError(f"unsupported expression element: {type(node).__name__}")
+
+
+def _translate_rule(expr: str, symbols: Mapping[str, Any], ops: Mapping[str, Any]) -> Any:
+    """Parse a Boolean rule string to a backend expression, via the same safe AST as compilation."""
+    try:
+        tree = ast.parse(expr.replace("!", "~"), mode="eval")
+    except SyntaxError as exc:
+        raise ValueError(f"invalid Boolean rule {expr!r}: {exc}") from exc
+    return _translate_boolean_ast(tree, symbols, ops)
+
+
 def parse_boolean_network(rules: Mapping[str, str]) -> BooleanNetwork:
     """Build a :class:`BooleanNetwork` from rule *expressions*, one per node.
 
     ``rules`` maps each node to a Boolean expression over the other nodes; a rule naming a node
     the network does not declare raises, so a typo is surfaced rather than silently treated as a
-    constant. This is the JSON-friendly network form an agent or an ingester supplies.
+    constant. This is the JSON-friendly network form an agent or an ingester supplies. The source
+    expressions are retained on the network so a large one can take the scalable fixed-point path.
     """
     node_names = set(rules)
     compiled = {name: compile_boolean_rule(expr, node_names) for name, expr in rules.items()}
-    return BooleanNetwork(compiled)
+    return BooleanNetwork(compiled, expressions=dict(rules))
 
 
 def _attractor_ids(
@@ -520,6 +665,7 @@ def certify_logical(
 
 __all__ = [
     "MAX_ENUMERABLE_NODES",
+    "MAX_SAT_FIXED_POINTS",
     "BooleanNetwork",
     "LogicalClaim",
     "NetworkTooLarge",

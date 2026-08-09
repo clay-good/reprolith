@@ -23,7 +23,10 @@ follow end to end, all regenerable from the repository alone.
   the PK/PD metformin value is read from the manuscript, not re-derived. Reprolith reproducing them
   is a genuine cross-check, not a tool agreeing with itself. For the logical class the exported
   rules are additionally *proven faithful* to CANA's model — checked against CANA's own per-node
-  step over every input — before the attractor signatures are compared.
+  step over every input — before the attractor signatures are compared. The logical class also
+  scales past enumeration for *fixed points*: the 60-node T-LGL leukemia network's 71 steady states
+  (a 2⁶⁰ space) are found by SAT and cross-validated against an independent SAT solver (Reprolith's
+  z3 vs the reference's sympy), each verified to be a genuine fixed point.
 - **Depth beyond a single number.** FBA cross-validates all three FROG components (objective,
   flux-variability, gene/reaction deletion) across eight models up to genome scale (iJO1366, 2583
   reactions) and spanning bacteria, a pathogen, and a eukaryote, plus **loopless FVA** — its loop-law MILP reproduces COBRApy's independent

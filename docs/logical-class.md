@@ -21,11 +21,19 @@ one **computes the attractors it judges** — there is nothing stubbed, and the 
 unconditionally with no extra installed.
 
 Exhaustive enumeration is 2ⁿ in the node count, which is exactly right for the small signaling and
-regulatory motifs this class targets first; larger networks are a later concern, not a hidden
-approximation. That boundary is enforced, not just documented: above `MAX_ENUMERABLE_NODES` (20)
-the fixed-point and attractor paths raise `NetworkTooLarge` at once — so feeding a real 60–80-node
-model (say CANA's LEUKEMIA or BREAST_CANCER) fails fast and clearly instead of hanging or
-exhausting memory. Single-state stepping does not enumerate, so it stays available at any size.
+regulatory motifs this class targets, and is used directly up to `MAX_ENUMERABLE_NODES` (20).
+
+**Fixed points scale past that** without enumeration: a steady state satisfies `xᵢ ⟺ ruleᵢ(x)` for
+every node, so `fixed_points()` on a large network encodes that condition and enumerates its
+solutions with a SAT solver (z3, the optional `sat` extra), returning each verified steady state.
+Real signalling models are then tractable — the 60-node T-LGL leukemia network's 71 fixed points come
+back in a fraction of a second where 2⁶⁰ enumeration is impossible. The scalable path needs the
+network's symbolic rules (a network built from opaque callables has none) and refuses fast, rather
+than blowing up, when free input nodes would give 2^(#inputs) fixed points.
+
+**Cyclic attractors do not scale** — finding them still walks the state space, so `attractors()`
+above the cap raises `NetworkTooLarge`, an honest boundary rather than a silent hang. Single-state
+stepping never enumerates and stays available at any size.
 
 ## The judges
 

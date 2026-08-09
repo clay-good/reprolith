@@ -43,6 +43,10 @@ dev = ["pytest>=7.0", "ruff>=0.4", "mypy>=1.8"]
 engine = ["python-copasi>=4.42", "python-libsbml>=5.20"]
 # The constraint-based (FBA) oracle's linear-programming solver. Optional, like the engine.
 fba = ["scipy>=1.7"]
+# The scalable fixed-point solver for the logical class: a SAT solver (z3) that finds a large
+# Boolean network's steady states without enumerating its 2ⁿ state space, so real 60–80-node
+# signalling models are tractable. Optional — small networks use exact enumeration and need none.
+sat = ["z3-solver>=4.12"]
 # A second registered engine (libRoadRunner) for cross-engine corroboration — run a curve under
 # both COPASI and libRoadRunner and report whether the verdict is engine-independent. Optional.
 corroborate = ["libroadrunner>=2.5"]
@@ -50,7 +54,7 @@ corroborate = ["libroadrunner>=2.5"]
 # scripts/regenerate_*_references.py). COBRApy re-computes the FBA references, libRoadRunner the
 # kinetic curves, and CANA the logical (Boolean-network) attractors; the tests themselves need none
 # of them — they read the committed reference data. Not a runtime dependency of Reprolith.
-refgen = ["cobra>=0.29", "libroadrunner>=2.5", "cana>=1.0"]
+refgen = ["cobra>=0.29", "libroadrunner>=2.5", "cana>=1.0", "sympy>=1.12"]
 
 [project.scripts]
 # The agent-facing MCP server over the read-only query surface (JSON-RPC over stdio,
@@ -100,6 +104,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "roadrunner"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "z3"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

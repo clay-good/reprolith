@@ -102,6 +102,7 @@ from .linter import (
 )
 from .logical import (
     MAX_ENUMERABLE_NODES,
+    MAX_SAT_FIXED_POINTS,
     BooleanNetwork,
     LogicalClaim,
     NetworkTooLarge,
@@ -269,6 +270,7 @@ __all__ = [
     "LintResult",
     "LogicalClaim",
     "MAX_ENUMERABLE_NODES",
+    "MAX_SAT_FIXED_POINTS",
     "ModelArtifact",
     "ModelClass",
     "ModelOrigin",
