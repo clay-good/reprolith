@@ -262,8 +262,13 @@ def build_parser() -> argparse.ArgumentParser:
 def run(argv: list[str] | None = None) -> int:
     """Parse ``argv`` and execute one read-only command; return the process exit code."""
     args = build_parser().parse_args(argv)
-    data_dir = args.data_dir if args.data_dir is not None else default_data_dir()
-    query, _catalog = load_repository(data_dir)
+    if args.data_dir is not None:
+        # An explicit --data-dir means "read exactly this state" — no cross-class aggregation.
+        query, _catalog = load_repository(args.data_dir)
+    else:
+        # The default view aggregates every class's published milestone certificates, so a
+        # verdict from any of the six classes is reachable, not just the PK/PD one.
+        query, _catalog = load_repository(default_data_dir(), aggregate_certificates=True)
     result: int = args.func(query, args)
     return result
 

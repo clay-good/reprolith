@@ -385,3 +385,38 @@ def test_inline_linters_for_estimation_and_population_over_mcp() -> None:
     pop, is_error = _call(query, "lint_distribution", {"reported": bands(1.0), "predicted": bands(1.02)})
     assert not is_error and pop["verdict"] == "reproduced"
     assert pop["method"] == "distribution-band-distance"
+
+
+def test_aggregated_view_reaches_every_class_certificate() -> None:
+    """The default read surface aggregates all six classes' published certificates, not just PK/PD.
+
+    Without aggregation the ledger holds only the PK/PD milestone certificate; with it, every
+    class's committed certificates are queryable — so an agent can fetch and cite any of them.
+    """
+    from reprolith.mcp_server import (
+        default_data_dir,
+        load_repository,
+        milestone_certificate_dirs,
+    )
+
+    dirs = milestone_certificate_dirs()
+    assert set(dirs) == {
+        "ode-pkpd", "constraint-based", "kinetic", "logical", "stochastic", "spatial",
+    }
+    committed = sum(len(list(d.glob("*.json"))) for d in dirs.values())
+    assert committed >= 30  # the six classes' walkable milestones
+
+    plain, _ = load_repository(default_data_dir())
+    aggregated, _ = load_repository(default_data_dir(), aggregate_certificates=True)
+    assert len(plain._ledger) < len(aggregated._ledger)
+    assert len(aggregated._ledger) == committed
+
+    # A constraint-based (FBA) verdict is reachable only through the aggregated surface, and it
+    # still travels with its scope flag — the honesty invariant holds across the aggregation.
+    fba_digest = next(
+        d for d, c in aggregated._ledger.items() if "iAF1260" in c.paper.title
+    )
+    assert plain.verdict(fba_digest) is None
+    view = aggregated.verdict(fba_digest)
+    assert view is not None
+    assert view["scope"]["machine"] == "reproducible-not-correct-not-clinical"

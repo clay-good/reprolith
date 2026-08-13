@@ -577,17 +577,48 @@ def load_dossiers(directory: Path | str) -> dict[str, Any]:
 
 
 def default_data_dir() -> Path:
-    """The persisted repository state both surfaces read by default (the milestone run)."""
+    """The persisted repository state both surfaces read by default (the PK/PD milestone run).
+
+    This is the mutable work-queue catalog (the labelled PK/PD blind set) plus its dossiers and
+    bundles. Published certificates span all six classes — see :func:`milestone_certificate_dirs`.
+    """
     return Path(__file__).resolve().parents[2] / "datasets" / "milestone"
 
 
-def load_repository(data_dir: Path | str) -> tuple[ReprolithQuery, Catalog]:
+def milestone_certificate_dirs() -> dict[str, Path]:
+    """Every class's committed milestone certificate directory, keyed by its model-class label.
+
+    The single source of truth for "all published certificates", shared by the read surfaces
+    (which load them into the ledger so every class's verdicts are queryable) and the registry
+    builder (which renders them). Reading the whole set here is what lets an agent or a human
+    fetch any of the six classes' certificates, not just the PK/PD one.
+    """
+    datasets = Path(__file__).resolve().parents[2] / "datasets"
+    return {
+        "ode-pkpd": datasets / "milestone" / "certificates",
+        "constraint-based": datasets / "constraint_based" / "milestone" / "certificates",
+        "kinetic": datasets / "kinetic" / "milestone" / "certificates",
+        "logical": datasets / "logical" / "milestone" / "certificates",
+        "stochastic": datasets / "stochastic" / "milestone" / "certificates",
+        "spatial": datasets / "spatial" / "milestone" / "certificates",
+    }
+
+
+def load_repository(
+    data_dir: Path | str, *, aggregate_certificates: bool = False
+) -> tuple[ReprolithQuery, Catalog]:
     """Load the persisted catalog, certificates, dossiers, and bundles into a read surface.
 
     The single loader both surfaces share — the human CLI (:mod:`reprolith.cli`) and the MCP
     server's ``main`` — so the terminal view and the agent view are guaranteed to read identical
     state ("Parity with the human surface"). Returns the read-only query and the mutable catalog
     (the caller decides whether to expose the effectful tools that mutate it).
+
+    With ``aggregate_certificates`` the ledger is also loaded from every class's milestone
+    certificate directory (:func:`milestone_certificate_dirs`), so all six classes' published
+    verdicts are queryable — not just the PK/PD one that lives under ``data_dir``. The catalog,
+    dossiers, and bundles still come from ``data_dir`` alone (the catalog is the mutable work
+    queue and must not be polluted by the read-only cross-class aggregation).
     """
     from .seed import seed_catalog
 
@@ -600,6 +631,10 @@ def load_repository(data_dir: Path | str) -> tuple[ReprolithQuery, Catalog]:
         seed_catalog(catalog)
     ledger = CertificateLedger()
     load_certificates(ledger, directory / "certificates")
+    if aggregate_certificates:
+        # Idempotent by digest, so re-loading data_dir's own certificates here is harmless.
+        for certs_dir in milestone_certificate_dirs().values():
+            load_certificates(ledger, certs_dir)
     dossiers = load_dossiers(directory / "dossiers")
     bundles = load_dossiers(directory / "bundles")
     return ReprolithQuery(catalog, ledger, dossiers, bundles), catalog
@@ -609,7 +644,7 @@ def main() -> None:  # pragma: no cover - stdio entry point
     """Run the server over stdio, loading the persisted catalog, certificates, and artifacts."""
     milestone = default_data_dir()
     catalog_file = milestone / "catalog.json"
-    query, catalog = load_repository(milestone)
+    query, catalog = load_repository(milestone, aggregate_certificates=True)
 
     def save() -> None:
         catalog_file.parent.mkdir(parents=True, exist_ok=True)
@@ -642,6 +677,7 @@ __all__ = [
     "load_certificates",
     "load_dossiers",
     "load_repository",
+    "milestone_certificate_dirs",
     "release_work",
     "serve_stdio",
     "submit_paper",

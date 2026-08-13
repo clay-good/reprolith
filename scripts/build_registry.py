@@ -15,18 +15,14 @@ import json
 from pathlib import Path
 
 from reprolith import certificate_from_content, render_registry
+from reprolith.mcp_server import milestone_certificate_dirs
 
 REPO = Path(__file__).resolve().parents[1]
 
-# Each class's milestone certificate directory and the model-class label it certifies.
-_SOURCES = {
-    "ode-pkpd": REPO / "datasets" / "milestone" / "certificates",
-    "constraint-based": REPO / "datasets" / "constraint_based" / "milestone" / "certificates",
-    "kinetic": REPO / "datasets" / "kinetic" / "milestone" / "certificates",
-    "logical": REPO / "datasets" / "logical" / "milestone" / "certificates",
-    "stochastic": REPO / "datasets" / "stochastic" / "milestone" / "certificates",
-    "spatial": REPO / "datasets" / "spatial" / "milestone" / "certificates",
-}
+# Each class's milestone certificate directory and the model-class label it certifies — the same
+# source of truth the read surfaces aggregate into the query ledger, so the registry and the
+# queryable surface can never list a different set of certificates.
+_SOURCES = milestone_certificate_dirs()
 
 
 def collect() -> list[tuple[str, object]]:

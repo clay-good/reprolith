@@ -50,7 +50,8 @@ for the tool reference.
 The same read-only surface is a plain CLI, so you don't need to speak JSON-RPC or write Python to
 read a verdict. It reads the exact state the MCP server does through the exact same query model —
 the terminal view and the agent view can't disagree — and every certificate prints in the same
-scope-flagged human form the repository publishes.
+scope-flagged human form the repository publishes. Both surfaces aggregate every class's published
+milestone certificates, so any of the six classes' verdicts is reachable, not just PK/PD's.
 
 ```bash
 reprolith catalog                    # browse the catalog (blind public view)
