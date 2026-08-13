@@ -70,6 +70,16 @@ in the text (the O₂ cap of 18.5 is text-stated; the growth number is not). So 
 reproduction abstains for exactly the reason Sluka2016 does: the number lives on a plot axis, and
 guessing it off the figure would violate the honesty rule.
 
+The boundary holds on a second flagship model, so it is not an iAF1260 quirk. Its successor **iJO1366**
+(Orth et al., *Mol Syst Biol* 2011, open access via PMC) — the current-generation genome-scale *E.
+coli* reconstruction — was fetched and read in full. Its predicted growth rate is likewise never a
+single text-stated number: growth is discussed qualitatively and shown in figures, and the paper even
+states that phenotypic predictions were "not expected" to change from iAF1260. Its most reproducible
+numeric claim is *gene essentiality*, but that is reported in the supplement and rests on the exact
+minimal medium and a genotype-matching knockout adjustment that the main text does not pin down — so
+an honest per-paper reproduction abstains rather than guess the medium. Two independent flagship
+reconstructions, read in full, both wall off at the same place.
+
 This is why the constraint-based blind set is labelled by an **independent tool** (COBRApy) rather
 than by paper-reported numbers: cross-implementation agreement on the shipped model is honestly
 attainable at scale, whereas paper-figure reproduction is blocked on digitization in every class.
