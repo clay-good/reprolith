@@ -30,6 +30,7 @@ from reprolith import (  # noqa: E402
     judge_objective,
     reaction_essentiality,
     solve_objective,
+    synthetic_lethal_reactions,
 )
 
 # A tiny network: v_in -> A -> v_out(objective). Steady state on A means v_in = v_out; the
@@ -93,6 +94,28 @@ def test_a_redundant_reaction_is_not_essential() -> None:
     lower = [0.0, 0.0, 0.0]
     upper: list[float | None] = [8.0, 8.0, None]
     assert reaction_essentiality(stoich, objective, lower, upper) == frozenset({2})
+
+
+def test_a_redundant_pair_is_synthetic_lethal_though_neither_is_essential() -> None:
+    # The same two-inflow network. By construction the inflows back each other up: neither is
+    # essential singly (see the test above), yet deleting BOTH starves the objective. So single
+    # deletion finds no lethality here, while double deletion pinpoints the redundant pair — the
+    # exact case synthetic-lethal analysis exists to catch.
+    stoich = [[1.0, 1.0, -1.0]]  # v_in, v_in2, v_out
+    objective = [0.0, 0.0, 1.0]
+    lower = [0.0, 0.0, 0.0]
+    upper: list[float | None] = [8.0, 8.0, None]
+
+    assert reaction_essentiality(stoich, objective, lower, upper) == frozenset({2})
+    assert synthetic_lethal_reactions(stoich, objective, lower, upper) == frozenset(
+        {frozenset({0, 1})}
+    )
+
+
+def test_no_synthetic_lethal_pairs_when_a_single_path_carries_everything() -> None:
+    # In the strictly linear v_in -> A -> v_out both reactions are already single-essential, so no
+    # pair is *synthetically* lethal — the lethality is single-deletion knowledge, not epistasis.
+    assert synthetic_lethal_reactions(_S, _OBJECTIVE, _LOWER, _UPPER) == frozenset()
 
 
 def test_essentiality_agreement_scores_overlap() -> None:

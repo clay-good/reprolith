@@ -261,6 +261,67 @@ def reaction_essentiality(
     return frozenset(essential)
 
 
+def _objective_with_knockouts(
+    stoichiometry: Sequence[Sequence[float]],
+    objective: Sequence[float],
+    lower: Sequence[float],
+    upper: Sequence[float | None],
+    knockouts: frozenset[int],
+) -> float:
+    """The optimum after forcing every reaction in ``knockouts`` to zero flux; 0.0 if infeasible."""
+    knocked_lower = [0.0 if j in knockouts else lo for j, lo in enumerate(lower)]
+    knocked_upper: list[float | None] = [0.0 if j in knockouts else up for j, up in enumerate(upper)]
+    try:
+        return solve_objective(stoichiometry, objective, knocked_lower, knocked_upper)
+    except InfeasibleFba:
+        return 0.0
+
+
+def synthetic_lethal_reactions(
+    stoichiometry: Sequence[Sequence[float]],
+    objective: Sequence[float],
+    lower: Sequence[float],
+    upper: Sequence[float | None],
+    *,
+    threshold: float = 1e-6,
+    reactions: Sequence[int] | None = None,
+) -> frozenset[frozenset[int]]:
+    """Reaction pairs that are viable to delete singly but lethal together — the synthetic lethals.
+
+    Double-deletion (epistasis) analysis, the pairwise counterpart of :func:`reaction_essentiality`.
+    A pair ``{i, j}`` is synthetic-lethal when neither reaction is essential on its own — each single
+    knockout keeps the optimum at or above ``threshold`` of the unperturbed optimum — yet knocking
+    out both drops it below that floor (or makes the model infeasible). Single-deletion analysis is
+    blind to these: two reactions that back each other up (a redundant or parallel pathway) each look
+    dispensable alone, and only the double knockout exposes the dependency.
+
+    ``reactions`` optionally restricts the search to a subset of reaction indices — all pairs drawn
+    from it — the way :func:`loopless_flux_variability` accepts a subset; double deletion is O(R²) LP
+    solves, so a genome-scale sweep is bounded by naming the reactions of interest. Essential
+    reactions in the set are skipped as pair members (their lethality is not synthetic). Returns a set
+    of two-element frozensets, so ``{i, j}`` and ``{j, i}`` are one entry.
+    """
+    baseline = solve_objective(stoichiometry, objective, lower, upper)
+    if baseline <= 0.0:
+        return frozenset()
+    floor = threshold * baseline
+    candidates = range(len(objective)) if reactions is None else sorted(set(reactions))
+    # Only reactions that are individually viable can form a *synthetic* lethal pair; an essential
+    # one makes every pair it joins lethal by itself, which is single-deletion knowledge already.
+    viable = [
+        i
+        for i in candidates
+        if _objective_with_knockouts(stoichiometry, objective, lower, upper, frozenset((i,))) >= floor
+    ]
+    lethal: set[frozenset[int]] = set()
+    for a_index in range(len(viable)):
+        for b_index in range(a_index + 1, len(viable)):
+            pair = frozenset((viable[a_index], viable[b_index]))
+            if _objective_with_knockouts(stoichiometry, objective, lower, upper, pair) < floor:
+                lethal.add(pair)
+    return frozenset(lethal)
+
+
 def _objective_without_gene(model: FbaModel, gene: str) -> float:
     """The optimum after deleting one gene: every reaction whose GPR then fails is forced to zero.
 
@@ -926,4 +987,5 @@ __all__ = [
     "reaction_essentiality",
     "shadow_prices",
     "solve_objective",
+    "synthetic_lethal_reactions",
 ]

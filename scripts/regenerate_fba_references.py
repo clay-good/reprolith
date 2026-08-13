@@ -8,6 +8,7 @@ files from the models, so the committed numbers are auditable, not magic constan
 
   - ``reference_growth.json``       — max growth on the distributed medium, per genome-scale model
   - ``e_coli_core_essentiality.json`` — essential genes and reactions (single-deletion)
+  - ``e_coli_core_synthetic_lethal.json`` — synthetic-lethal reaction pairs (double-deletion)
   - ``e_coli_core_fva.json``        — flux-variability interval per reaction at the optimum
   - ``iIT341_fva.json``             — the same, on a larger different-organism model (generality)
   - ``e_coli_core_loopless_fva.json`` — loopless flux-variability interval per reaction at the optimum
@@ -68,6 +69,28 @@ def _essential(frame: object) -> list[str]:
     )
 
 
+def _synthetic_lethal(model: cobra.Model) -> list[list[str]]:
+    """Synthetic-lethal reaction pairs from COBRApy double_reaction_deletion: both singly viable,
+    lethal together. Restricts the pairwise sweep to the single-viable reactions (an essential
+    reaction's pairs are lethal by itself, not synthetically), matching Reprolith's definition."""
+    floor = 1e-6 * float(model.slim_optimize())
+    single = cobra.flux_analysis.single_reaction_deletion(model, processes=1)
+    viable = sorted(
+        list(ids)[0]
+        for ids, growth in zip(single["ids"], single["growth"])  # type: ignore[index]
+        if growth is not None and growth == growth and growth >= floor
+    )
+    double = cobra.flux_analysis.double_reaction_deletion(model, reaction_list1=viable, processes=1)
+    pairs = []
+    for ids, growth in zip(double["ids"], double["growth"]):  # type: ignore[index]
+        members = sorted(ids)
+        if len(members) != 2:
+            continue
+        if growth is None or growth != growth or growth < floor:
+            pairs.append(members)
+    return sorted(pairs)
+
+
 def _round(value: float) -> float:
     # Normalize signed zero so regeneration is byte-stable (an LP can return -0.0 for a hard 0).
     rounded = round(float(value), 9)
@@ -113,6 +136,16 @@ def main() -> None:
         "essential_reactions": _essential(
             cobra.flux_analysis.single_reaction_deletion(core, processes=1)
         ),
+    })
+
+    _write(CROSS / "e_coli_core_synthetic_lethal.json", {
+        "description": "Independent reference synthetic-lethal reaction pairs for e_coli_core, from "
+                       "COBRApy double_reaction_deletion on the distributed medium: pairs viable to "
+                       "delete singly but lethal together. Reprolith's synthetic_lethal_reactions "
+                       "must match this set exactly — a non-circular cross-tool check of the "
+                       "double-deletion (epistasis) analysis single deletion cannot reveal.",
+        "reference_tool": tool,
+        "pairs": _synthetic_lethal(core),
     })
 
     fva = cobra.flux_analysis.flux_variability_analysis(core, fraction_of_optimum=1.0, processes=1)

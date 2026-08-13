@@ -96,7 +96,9 @@ value, flux variability, and both reaction- and gene-deletion outcomes — each 
 shadow prices and reaction reduced costs, validated against the primal by strong duality),
 parsimonious FBA (`parsimonious_fluxes`: the minimal-total-flux tie-break among alternate optima),
 loopless FVA (`loopless_flux_variability`: the flux-variability interval with thermodynamically
-infeasible internal loops removed, so a spurious cycle can't inflate it), and the production envelope
+infeasible internal loops removed, so a spurious cycle can't inflate it), synthetic-lethal pairs
+(`synthetic_lethal_reactions`: double-deletion epistasis — reactions viable to delete singly but
+lethal together — that single deletion is blind to), and the production envelope
 (`production_envelope`: the growth-vs-byproduct Pareto front, a provably concave frontier); see
 [docs/fba-oracle.md](docs/fba-oracle.md). The same shared pathway carries it end to end: a
 constraint-based dossier adopts the paper's SBML-fbc model and records its load-bearing medium,
@@ -108,7 +110,8 @@ maximal growth rate (0.873922) to every published digit — with a
 The blind milestone then scales this to **8 real BiGG models** spanning bacteria, a pathogen, and a
 eukaryote (up to genome-scale *E. coli* iJO1366, 2583 reactions), each reproduced against the growth
 rate the independent COBRApy implementation computes — 8/8 blind agreement — with FROG variability
-cross-checked on two models and loopless-FVA, pFBA, and the production envelope against COBRApy too.
+cross-checked on two models and synthetic lethality, loopless-FVA, pFBA, and the production envelope
+against COBRApy too.
 
 ```bash
 pip install -e ".[dev,engine,fba]"   # fba brings the LP solver; engine (libsbml) reads the .xml model

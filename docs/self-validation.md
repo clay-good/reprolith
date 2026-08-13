@@ -30,7 +30,10 @@ follow end to end, all regenerable from the repository alone.
   reference's sympy), each verified to be a genuine fixed point.
 - **Depth beyond a single number.** FBA cross-validates all three FROG components (objective,
   flux-variability, gene/reaction deletion) across eight models up to genome scale (iJO1366, 2583
-  reactions) and spanning bacteria, a pathogen, and a eukaryote, plus **loopless FVA** — its loop-law MILP reproduces COBRApy's independent
+  reactions) and spanning bacteria, a pathogen, and a eukaryote, plus **synthetic lethality** — its
+  double-deletion analysis reproduces COBRApy's `double_reaction_deletion` pair-for-pair on E. coli
+  core (all 111 synthetic-lethal reaction pairs, an epistasis single deletion cannot see) —
+  **loopless FVA** — its loop-law MILP reproduces COBRApy's independent
   `flux_variability_analysis(loopless=True)` reaction-for-reaction on E. coli core — **pFBA**,
   whose minimized total flux matches COBRApy's `pfba` on the same model, and the **production
   envelope**, whose acetate-vs-growth frontier reproduces COBRApy's `production_envelope` point for

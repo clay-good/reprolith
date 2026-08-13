@@ -33,12 +33,16 @@ from reprolith import (  # noqa: E402
     production_envelope,
     reaction_essentiality,
     solve_objective,
+    synthetic_lethal_reactions,
 )
 
 _DIR = Path(__file__).parent.parent / "datasets" / "constraint_based" / "cross_validation"
 _REFERENCE = json.loads((_DIR / "reference_growth.json").read_text(encoding="utf-8"))["models"]
 _CORE = Path(__file__).parent.parent / "datasets" / "constraint_based" / "e_coli_core.xml"
 _ESSENTIALITY = json.loads((_DIR / "e_coli_core_essentiality.json").read_text(encoding="utf-8"))
+_SYNTHETIC_LETHAL = json.loads(
+    (_DIR / "e_coli_core_synthetic_lethal.json").read_text(encoding="utf-8")
+)
 _FVA = json.loads((_DIR / "e_coli_core_fva.json").read_text(encoding="utf-8"))
 _LOOPLESS_FVA = json.loads((_DIR / "e_coli_core_loopless_fva.json").read_text(encoding="utf-8"))
 _PFBA = json.loads((_DIR / "e_coli_core_pfba.json").read_text(encoding="utf-8"))
@@ -78,6 +82,23 @@ def test_essentiality_matches_the_cobra_reference_on_e_coli_core() -> None:
         model.reaction_ids[i].removeprefix("R_") for i in essential_indices
     }
     assert essential_reactions == set(_ESSENTIALITY["essential_reactions"])
+
+
+def test_synthetic_lethal_pairs_match_the_cobra_reference_on_e_coli_core() -> None:
+    # Double-deletion (epistasis): the synthetic-lethal reaction pairs — viable to delete singly but
+    # lethal together — must match, pair for pair, the set COBRApy's double_reaction_deletion finds.
+    # A cross-tool check of an analysis single deletion is blind to, over the whole ~2900-pair sweep.
+    model = ingest_fbc_sbml(_CORE.read_text(encoding="utf-8"))
+    pairs = synthetic_lethal_reactions(
+        model.stoichiometry, model.objective, model.lower, model.upper
+    )
+    # Reprolith reaction ids carry the SBML "R_" prefix; COBRApy's do not.
+    computed = {
+        frozenset(model.reaction_ids[i].removeprefix("R_") for i in pair) for pair in pairs
+    }
+    reference = {frozenset(pair) for pair in _SYNTHETIC_LETHAL["pairs"]}
+    assert reference  # the reference is non-trivial, so equality is a real check
+    assert computed == reference
 
 
 def test_flux_variability_matches_the_cobra_reference_on_e_coli_core() -> None:

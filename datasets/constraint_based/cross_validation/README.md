@@ -45,6 +45,13 @@ E. coli core model. Reprolith's `gene_essentiality` (with its GPR AND/OR logic) 
 `reaction_essentiality` reproduce both sets exactly (7 genes, 18 reactions) — an independent
 cross-tool check of the deletion analyses, not a self-asserted count.
 
+[`e_coli_core_synthetic_lethal.json`](e_coli_core_synthetic_lethal.json) records the
+synthetic-lethal reaction pairs COBRApy's `double_reaction_deletion` finds for the E. coli core
+model — pairs viable to delete singly but lethal together. Reprolith's `synthetic_lethal_reactions`
+reproduces the whole set exactly (all 111 pairs), a cross-tool check of the double-deletion
+(epistasis) analysis that single deletion is blind to: redundant pathways that back each other up
+look dispensable one at a time and only the pair reveals the dependency.
+
 [`e_coli_core_fva.json`](e_coli_core_fva.json) does the same for the third FROG component: the
 flux-variability interval of every reaction at the optimum, from COBRApy's
 `flux_variability_analysis`, which Reprolith's `flux_variability` reproduces. Together the two

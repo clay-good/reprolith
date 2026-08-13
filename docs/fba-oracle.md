@@ -29,6 +29,7 @@ happens to land on.
 | `solve_objective` / `judge_objective` | What is the optimal objective value, and does it match the reported one? | the objective value is unique even when the flux vector isn't |
 | `reaction_essentiality` / `essentiality_agreement` | Which reactions, knocked out, collapse the objective? Do they match the reported essential set? | essentiality is a property of the objective optimum, not of any one flux vector |
 | `gene_essentiality` | Which *genes*, deleted, collapse the objective — honoring each reaction's AND/OR gene rule? | gene deletion forces to zero only the reactions whose GPR rule fails; essentiality is still an objective property |
+| `synthetic_lethal_reactions` | Which reaction *pairs* are viable to delete singly but lethal together? | synthetic lethality is an objective property of the double knockout, and redundant pathways are invisible to single deletion |
 | `flux_variability` | What min/max can each reaction's flux take while the objective stays optimal? | it reports the *whole* feasible interval instead of picking one vector |
 | `loopless_flux_variability` | Same interval, but with thermodynamically infeasible internal loops removed | it adds the loop law (Schellenberger 2011) so a spurious internal cycle can't inflate the interval |
 | `production_envelope` | What is the feasible range of a byproduct's flux at each growth rate? | it returns the whole growth-vs-product Pareto front (Varma & Palsson 1994), not one point |
