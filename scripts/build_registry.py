@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Build the public reproduction registry from every class's committed milestone certificates.
 
-Aggregates the walkable milestone certificates of all four model classes — PK/PD, constraint-based,
-kinetic, and logical — into one browsable HTML page via `reprolith.render_registry` (spec:
-certificate-publication, "Every certificate is publicly browsable"). Reads only committed JSON, so
-it needs no extras and no network. Writes `datasets/registry.html`. Run from the repo root:
+Aggregates the walkable milestone certificates of all six model classes — PK/PD, constraint-based,
+kinetic, logical, stochastic, and spatial — into one browsable HTML page via
+`reprolith.render_registry` (spec: certificate-publication, "Every certificate is publicly
+browsable"), with a blind self-validation summary banner. Reads only committed JSON, so it needs no
+extras and no network. Writes `datasets/registry.html`. Run from the repo root:
 
     python scripts/build_registry.py
 """

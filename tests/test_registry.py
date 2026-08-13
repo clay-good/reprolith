@@ -1,7 +1,7 @@
 """The committed public registry stays consistent with the milestone certificates (spec: certificate-publication).
 
 Dependency-free guard on the artifact `scripts/build_registry.py` produces: if the committed
-`datasets/registry.html` drifts from the four classes' milestone certificates, this fails and the
+`datasets/registry.html` drifts from the six classes' milestone certificates, this fails and the
 registry must be rebuilt. Reading JSON needs no extras, so it runs in the core CI job.
 """
 

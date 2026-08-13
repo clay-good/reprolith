@@ -213,9 +213,12 @@ checks the ingester on structural variety: three diverse genome-scale models (*H
 maritima*, *L. lactis*; 500–750 reactions) whose growth rate the independent COBRApy implementation
 computes are reproduced by `ingest_fbc_sbml` + `solve_objective` to six digits — a non-circular
 cross-tool check where a stoichiometry-, bound-, or objective-parsing bug would surface. The
-[milestone blind run](../datasets/constraint_based/milestone/) folds all four models (the documented
-core model plus the three cross-validated ones) into one blind agreement report through the shared
-catalog and `run_test_set`: 4/4 agreement with ground truth.
+[milestone blind run](../datasets/constraint_based/milestone/) folds eight real BiGG models — the
+documented core model plus seven genome-scale reconstructions (*E. coli* iAF1260 and iJO1366,
+*M. tuberculosis* iEK1008, *H. pylori* iIT341, *T. maritima* iLJ478, *L. lactis* iNF517, and
+*S. cerevisiae* iMM904), spanning bacteria, a pathogen, and a eukaryote up to genome scale — into
+one blind agreement report through the shared catalog and `run_test_set`: **8/8** agreement with the
+growth rate the independent COBRApy implementation computes.
 
 ## From a paper to a certificate
 
