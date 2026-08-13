@@ -576,24 +576,40 @@ def load_dossiers(directory: Path | str) -> dict[str, Any]:
     return loaded
 
 
-def main() -> None:  # pragma: no cover - stdio entry point
-    """Run the server over stdio, loading the persisted catalog, certificates, and artifacts."""
-    import json
+def default_data_dir() -> Path:
+    """The persisted repository state both surfaces read by default (the milestone run)."""
+    return Path(__file__).resolve().parents[2] / "datasets" / "milestone"
 
-    from .catalog import Catalog
+
+def load_repository(data_dir: Path | str) -> tuple[ReprolithQuery, Catalog]:
+    """Load the persisted catalog, certificates, dossiers, and bundles into a read surface.
+
+    The single loader both surfaces share — the human CLI (:mod:`reprolith.cli`) and the MCP
+    server's ``main`` — so the terminal view and the agent view are guaranteed to read identical
+    state ("Parity with the human surface"). Returns the read-only query and the mutable catalog
+    (the caller decides whether to expose the effectful tools that mutate it).
+    """
     from .seed import seed_catalog
 
-    milestone = Path(__file__).resolve().parents[2] / "datasets" / "milestone"
-    catalog_file = milestone / "catalog.json"
+    directory = Path(data_dir)
+    catalog_file = directory / "catalog.json"
     if catalog_file.is_file():
         catalog = Catalog.from_dict(json.loads(catalog_file.read_text(encoding="utf-8")))  # the run's real progress
     else:
         catalog = Catalog()
         seed_catalog(catalog)
     ledger = CertificateLedger()
-    load_certificates(ledger, milestone / "certificates")
-    dossiers = load_dossiers(milestone / "dossiers")
-    bundles = load_dossiers(milestone / "bundles")
+    load_certificates(ledger, directory / "certificates")
+    dossiers = load_dossiers(directory / "dossiers")
+    bundles = load_dossiers(directory / "bundles")
+    return ReprolithQuery(catalog, ledger, dossiers, bundles), catalog
+
+
+def main() -> None:  # pragma: no cover - stdio entry point
+    """Run the server over stdio, loading the persisted catalog, certificates, and artifacts."""
+    milestone = default_data_dir()
+    catalog_file = milestone / "catalog.json"
+    query, catalog = load_repository(milestone)
 
     def save() -> None:
         catalog_file.parent.mkdir(parents=True, exist_ok=True)
@@ -604,7 +620,7 @@ def main() -> None:  # pragma: no cover - stdio entry point
     import time
 
     serve_stdio(
-        ReprolithQuery(catalog, ledger, dossiers, bundles),
+        query,
         catalog=catalog,
         on_change=save,
         now=time.time,
@@ -620,10 +636,12 @@ __all__ = [
     "PROTOCOL_VERSION",
     "TOOL_DEFINITIONS",
     "claim_work",
+    "default_data_dir",
     "dispatch_tool",
     "handle_request",
     "load_certificates",
     "load_dossiers",
+    "load_repository",
     "release_work",
     "serve_stdio",
     "submit_paper",

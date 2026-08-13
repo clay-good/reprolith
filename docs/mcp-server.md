@@ -88,3 +88,8 @@ The server computes no verdict of its own: every tool delegates to the same quer
 oracle the repository uses, so it can never disagree with the repository. Read-only and
 effectful tools are separated: the effectful `submit_paper` and `claim_work` appear only when the
 server runs with a mutable catalog, and a read-only server hides and refuses them.
+
+The human-facing `reprolith` CLI is the same surface for people at a terminal: it loads the same
+persisted state through the same `load_repository` and reads it through the same `ReprolithQuery`,
+so the terminal view and the agent view are guaranteed identical. Any read command takes `--json`
+to emit the exact object the corresponding MCP tool returns.

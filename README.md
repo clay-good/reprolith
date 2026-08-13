@@ -45,6 +45,25 @@ always travels with its scope flag and qualifications. Run it with `reprolith-mc
 `pip install -e .`); see [docs/mcp-server.md](docs/mcp-server.md) to register it in a client and
 for the tool reference.
 
+## For humans, at a terminal
+
+The same read-only surface is a plain CLI, so you don't need to speak JSON-RPC or write Python to
+read a verdict. It reads the exact state the MCP server does through the exact same query model —
+the terminal view and the agent view can't disagree — and every certificate prints in the same
+scope-flagged human form the repository publishes.
+
+```bash
+reprolith catalog                    # browse the catalog (blind public view)
+reprolith backlog                    # backlog depth by state, class, difficulty
+reprolith certificate <digest>       # the full certificate, human-readable
+reprolith verdict <digest>           # the scope-qualified verdict, never a bare boolean
+reprolith gaps <digest>              # the "what was missing" report
+reprolith status <accession>         # a paper's lifecycle status and history
+```
+
+Add `--json` to any read command to get the exact object an agent receives over MCP. Run
+`reprolith --help` for the full command list.
+
 ## Where it starts
 
 Narrow and deep first: **ODE pharmacokinetic/pharmacodynamic models** — dose-in,

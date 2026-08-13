@@ -57,6 +57,9 @@ corroborate = ["libroadrunner>=2.5"]
 refgen = ["cobra>=0.29", "libroadrunner>=2.5", "cana>=1.0", "sympy>=1.12"]
 
 [project.scripts]
+# The human-facing CLI over the same read-only query surface — browse the catalog, read a
+# certificate, list its gaps — from a terminal. Run `reprolith --help` after installing.
+reprolith = "reprolith.cli:main"
 # The agent-facing MCP server over the read-only query surface (JSON-RPC over stdio,
 # dependency-free). Run `reprolith-mcp` after installing.
 reprolith-mcp = "reprolith.mcp_server:main"
