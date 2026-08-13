@@ -58,6 +58,12 @@ def _write_repo(tmp_path: Path) -> tuple[Path, str]:
     (certs / f"{digest}.json").write_text(
         json.dumps(cert.content(), indent=2, sort_keys=True), encoding="utf-8"
     )
+    # A dossier and a reconstruction bundle keyed by the entry accession, as the milestone writes.
+    for kind in ("dossiers", "bundles"):
+        (tmp_path / kind).mkdir()
+        (tmp_path / kind / "ACC1.json").write_text(
+            json.dumps({"accession": "ACC1", "kind": kind}, sort_keys=True), encoding="utf-8"
+        )
     return tmp_path, digest
 
 
@@ -172,6 +178,35 @@ def test_self_validation_json_splits_abstentions(capsys):
     pkpd = report["by_class"]["ode-pkpd"]
     assert pkpd["agreements"] == 0
     assert overall["abstentions"] >= 30
+
+
+def test_presubmission_report(tmp_path, capsys):
+    repo, digest = _write_repo(tmp_path)
+    assert run(["--data-dir", str(repo), "presubmission", digest]) == 0
+    report = json.loads(capsys.readouterr().out)
+    # a partial certificate is never reported ready to submit, and scope always travels
+    assert report["ready_to_submit"] is False
+    assert "clinical" in json.dumps(report).lower()
+
+
+def test_presubmission_unknown_digest_exits_nonzero(tmp_path, capsys):
+    repo, _ = _write_repo(tmp_path)
+    assert run(["--data-dir", str(repo), "presubmission", "nope"]) == 1
+    assert "unknown digest" in capsys.readouterr().err
+
+
+def test_dossier_and_bundle(tmp_path, capsys):
+    repo, _ = _write_repo(tmp_path)
+    assert run(["--data-dir", str(repo), "dossier", "ACC1"]) == 0
+    assert json.loads(capsys.readouterr().out)["kind"] == "dossiers"
+    assert run(["--data-dir", str(repo), "bundle", "ACC1"]) == 0
+    assert json.loads(capsys.readouterr().out)["kind"] == "bundles"
+
+
+def test_dossier_unknown_accession_exits_nonzero(tmp_path, capsys):
+    repo, _ = _write_repo(tmp_path)
+    assert run(["--data-dir", str(repo), "dossier", "MISSING"]) == 1
+    assert "no dossier" in capsys.readouterr().err
 
 
 def test_command_required(capsys):
