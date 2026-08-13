@@ -49,6 +49,26 @@ follow end to end, all regenerable from the repository alone.
   demonstrated, not asserted. The logical class proves the point hardest: a third, discrete oracle
   (attractors) with no continuous trajectory and no optimization, carried by the same contracts.
 
+## Read it live
+
+This track record is not just prose here — it is queryable through the same read surface that
+serves verdicts, so an agent can weigh a class's proven reliability before citing one of its
+certificates. `reprolith self-validation` (or the MCP `self_validation` tool) reports it per class
+and overall, straight from the committed agreement reports:
+
+```
+$ reprolith self-validation
+  class               matched  abstained  other  of total
+  constraint-based          8          0      0  / 8
+  ...
+  ode-pkpd                  0         30      1  / 31
+  overall: 29 matched, 30 honest abstentions, 1 other, over 60 labelled entries across 6 classes
+```
+
+It deliberately reports no single blended agreement rate: an *abstention* (a `blocked` verdict —
+insufficient information) is counted apart from a wrong verdict, so the PK/PD run's 30 honest
+abstentions are never dressed up as agreement or misread as error.
+
 ## Closed-form reproductions (the simulators themselves)
 
 The table above is blind agreement with *independent tools* on *real* models. Underneath it, each

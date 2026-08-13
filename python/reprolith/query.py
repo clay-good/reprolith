@@ -28,6 +28,16 @@ from .render import claim_counts, gap_items
 from .supersession import CertificateLedger
 
 
+def _abstentions(report: dict[str, Any]) -> int:
+    """Count entries where the blind verdict abstained (``blocked``) from a committed report.
+
+    Read off the confusion matrix's ``expected->actual`` keys: an abstention is any entry whose
+    actual verdict was ``blocked`` — an honest "insufficient information", not a wrong verdict.
+    """
+    confusion = report.get("confusion", {})
+    return sum(v for k, v in confusion.items() if k.split("->")[-1] == "blocked")
+
+
 class ReprolithQuery:
     """A read-only view over a catalog and a certificate ledger.
 
@@ -41,6 +51,7 @@ class ReprolithQuery:
         ledger: CertificateLedger,
         dossiers: dict[str, dict[str, Any]] | None = None,
         bundles: dict[str, dict[str, Any]] | None = None,
+        agreement_reports: dict[str, dict[str, Any]] | None = None,
     ) -> None:
         self._catalog = catalog
         self._ledger = ledger
@@ -49,6 +60,9 @@ class ReprolithQuery:
         # goal 3). Empty when none are loaded.
         self._dossiers = dossiers or {}
         self._bundles = bundles or {}
+        # Per-class blind self-validation reports keyed by model-class label — how each class's
+        # verdicts matched independently-established ground truth. Empty when none are loaded.
+        self._agreement_reports = agreement_reports or {}
 
     # --- catalog / status (blind: no ground-truth label leaves the catalog) --------
 
@@ -85,6 +99,34 @@ class ReprolithQuery:
     def backlog_health(self) -> dict[str, Any]:
         """Report backlog depth by state, class, and difficulty, and the labelled mix."""
         return self._catalog.backlog_health()
+
+    def self_validation(self) -> dict[str, Any]:
+        """Reprolith's blind self-validation track record, per model class and overall.
+
+        ``by_class`` is each class's committed agreement report verbatim — how its blind verdicts
+        matched independently-established ground truth (rate, counts, confusion matrix, per-entry
+        detail). ``overall`` splits the labelled entries three honest ways rather than as a single
+        blended rate, because a blended rate would misrepresent the discipline: a verdict that
+        *abstained* (``blocked`` — "insufficient information") is counted apart from one that
+        confidently differed from the label. So the PK/PD run's 30 honest abstentions are never
+        lumped in with a wrong verdict. ``other_disagreements`` are the remaining confident
+        differences (e.g. a qualified ``partially-reproduced`` where the label said ``reproduced``);
+        read the confusion matrices for their structure. Empty ``by_class`` when none are loaded.
+        """
+        by_class = self._agreement_reports
+        agreements = sum(int(r.get("agreements", 0)) for r in by_class.values())
+        total = sum(int(r.get("total", 0)) for r in by_class.values())
+        abstentions = sum(_abstentions(r) for r in by_class.values())
+        return {
+            "by_class": by_class,
+            "overall": {
+                "classes": len(by_class),
+                "labelled_entries": total,
+                "agreements": agreements,
+                "abstentions": abstentions,
+                "other_disagreements": total - agreements - abstentions,
+            },
+        }
 
     def dossier(self, accession: str) -> dict[str, Any] | None:
         """The ingested dossier for an entry accession — its extracted model structure."""

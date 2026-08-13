@@ -77,6 +77,34 @@ def _cmd_backlog(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_self_validation(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    from .query import _abstentions
+
+    report = query.self_validation()
+    if args.json:
+        _print_json(report)
+        return 0
+    by_class = report["by_class"]
+    if not by_class:
+        print("(no self-validation reports loaded)")
+        return 0
+    print("BLIND SELF-VALIDATION (verdicts vs independently-established ground truth)")
+    print(f"  {'class':<18} {'matched':>8} {'abstained':>10} {'other':>6}  of total")
+    for label in sorted(by_class):
+        r = by_class[label]
+        total = int(r.get("total", 0))
+        matched = int(r.get("agreements", 0))
+        abstained = _abstentions(r)
+        other = total - matched - abstained
+        print(f"  {label:<18} {matched:>8} {abstained:>10} {other:>6}  / {total}")
+    o = report["overall"]
+    print(f"\n  overall: {o['agreements']} matched, {o['abstentions']} honest abstentions, "
+          f"{o['other_disagreements']} other, over {o['labelled_entries']} labelled entries "
+          f"across {o['classes']} classes")
+    print("  (an abstention is a 'blocked' verdict — insufficient information — not a wrong verdict)")
+    return 0
+
+
 def _cmd_status(query: ReprolithQuery, args: argparse.Namespace) -> int:
     view = query.status(**_identifier_kwargs(args))
     if view is None:
@@ -219,6 +247,13 @@ def build_parser() -> argparse.ArgumentParser:
     add_json(p)
     p.set_defaults(func=_cmd_backlog)
 
+    p = sub.add_parser(
+        "self-validation",
+        help="blind track record: verdicts vs independently-established ground truth",
+    )
+    add_json(p)
+    p.set_defaults(func=_cmd_self_validation)
+
     p = sub.add_parser("status", help="a paper's lifecycle status and history")
     add_identifier(p)
     add_json(p)
@@ -268,7 +303,7 @@ def run(argv: list[str] | None = None) -> int:
     else:
         # The default view aggregates every class's published milestone certificates, so a
         # verdict from any of the six classes is reachable, not just the PK/PD one.
-        query, _catalog = load_repository(default_data_dir(), aggregate_certificates=True)
+        query, _catalog = load_repository(default_data_dir(), aggregate=True)
     result: int = args.func(query, args)
     return result
 

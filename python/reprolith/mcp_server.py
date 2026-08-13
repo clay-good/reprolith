@@ -88,6 +88,15 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
+        "name": "self_validation",
+        "description": (
+            "Reprolith's blind self-validation track record — per model class and overall, how "
+            "its verdicts matched independently-established ground truth. The evidence a verdict "
+            "rests on."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
         "name": "dossier",
         "description": "The ingested dossier for an entry accession — its extracted model structure.",
         "inputSchema": {
@@ -374,6 +383,8 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return query.certificates_for(**_identifier_kwargs(arguments))
     if name == "backlog_health":
         return query.backlog_health()
+    if name == "self_validation":
+        return query.self_validation()
     if name == "dossier":
         return query.dossier(arguments["accession"])
     if name == "bundle":
@@ -604,9 +615,23 @@ def milestone_certificate_dirs() -> dict[str, Path]:
     }
 
 
-def load_repository(
-    data_dir: Path | str, *, aggregate_certificates: bool = False
-) -> tuple[ReprolithQuery, Catalog]:
+def milestone_agreement_reports() -> dict[str, dict[str, Any]]:
+    """Each class's committed blind self-validation report, keyed by its model-class label.
+
+    Sits beside :func:`milestone_certificate_dirs` (one directory up from each certificates
+    folder). This is the credibility evidence — how each class's blind verdicts matched
+    independently-established ground truth — so exposing it through the read surface lets an
+    agent check Reprolith's validated track record before trusting a verdict.
+    """
+    reports: dict[str, dict[str, Any]] = {}
+    for label, certs_dir in milestone_certificate_dirs().items():
+        report_file = certs_dir.parent / "agreement_report.json"
+        if report_file.is_file():
+            reports[label] = json.loads(report_file.read_text(encoding="utf-8"))
+    return reports
+
+
+def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[ReprolithQuery, Catalog]:
     """Load the persisted catalog, certificates, dossiers, and bundles into a read surface.
 
     The single loader both surfaces share — the human CLI (:mod:`reprolith.cli`) and the MCP
@@ -614,11 +639,13 @@ def load_repository(
     state ("Parity with the human surface"). Returns the read-only query and the mutable catalog
     (the caller decides whether to expose the effectful tools that mutate it).
 
-    With ``aggregate_certificates`` the ledger is also loaded from every class's milestone
-    certificate directory (:func:`milestone_certificate_dirs`), so all six classes' published
-    verdicts are queryable — not just the PK/PD one that lives under ``data_dir``. The catalog,
-    dossiers, and bundles still come from ``data_dir`` alone (the catalog is the mutable work
-    queue and must not be polluted by the read-only cross-class aggregation).
+    With ``aggregate`` the read surface also carries the whole committed cross-class milestone
+    evidence: the ledger is loaded from every class's certificate directory
+    (:func:`milestone_certificate_dirs`) so all six classes' published verdicts are queryable, and
+    the per-class blind self-validation reports (:func:`milestone_agreement_reports`) are attached
+    so the validated track record is queryable too. The mutable catalog, dossiers, and bundles
+    still come from ``data_dir`` alone (the catalog is the work queue and must not be polluted by
+    the read-only cross-class aggregation).
     """
     from .seed import seed_catalog
 
@@ -631,20 +658,23 @@ def load_repository(
         seed_catalog(catalog)
     ledger = CertificateLedger()
     load_certificates(ledger, directory / "certificates")
-    if aggregate_certificates:
+    agreement_reports: dict[str, dict[str, Any]] = {}
+    if aggregate:
         # Idempotent by digest, so re-loading data_dir's own certificates here is harmless.
         for certs_dir in milestone_certificate_dirs().values():
             load_certificates(ledger, certs_dir)
+        agreement_reports = milestone_agreement_reports()
     dossiers = load_dossiers(directory / "dossiers")
     bundles = load_dossiers(directory / "bundles")
-    return ReprolithQuery(catalog, ledger, dossiers, bundles), catalog
+    query = ReprolithQuery(catalog, ledger, dossiers, bundles, agreement_reports=agreement_reports)
+    return query, catalog
 
 
 def main() -> None:  # pragma: no cover - stdio entry point
     """Run the server over stdio, loading the persisted catalog, certificates, and artifacts."""
     milestone = default_data_dir()
     catalog_file = milestone / "catalog.json"
-    query, catalog = load_repository(milestone, aggregate_certificates=True)
+    query, catalog = load_repository(milestone, aggregate=True)
 
     def save() -> None:
         catalog_file.parent.mkdir(parents=True, exist_ok=True)
@@ -677,6 +707,7 @@ __all__ = [
     "load_certificates",
     "load_dossiers",
     "load_repository",
+    "milestone_agreement_reports",
     "milestone_certificate_dirs",
     "release_work",
     "serve_stdio",

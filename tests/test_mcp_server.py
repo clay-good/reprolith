@@ -407,7 +407,7 @@ def test_aggregated_view_reaches_every_class_certificate() -> None:
     assert committed >= 30  # the six classes' walkable milestones
 
     plain, _ = load_repository(default_data_dir())
-    aggregated, _ = load_repository(default_data_dir(), aggregate_certificates=True)
+    aggregated, _ = load_repository(default_data_dir(), aggregate=True)
     assert len(plain._ledger) < len(aggregated._ledger)
     assert len(aggregated._ledger) == committed
 
@@ -420,3 +420,24 @@ def test_aggregated_view_reaches_every_class_certificate() -> None:
     view = aggregated.verdict(fba_digest)
     assert view is not None
     assert view["scope"]["machine"] == "reproducible-not-correct-not-clinical"
+
+
+def test_self_validation_tool_is_honest_over_mcp() -> None:
+    """The self_validation tool reports abstentions apart from wrong verdicts, and lists every class."""
+    from reprolith.mcp_server import default_data_dir, load_repository
+
+    aggregated, _ = load_repository(default_data_dir(), aggregate=True)
+    report, is_error = _call(aggregated, "self_validation", {})
+    assert not is_error
+    assert set(report["by_class"]) == {
+        "ode-pkpd", "constraint-based", "kinetic", "logical", "stochastic", "spatial",
+    }
+    overall = report["overall"]
+    # honest partition: matched + abstained + other == labelled, and no blended rate to mislead
+    assert (overall["agreements"] + overall["abstentions"] + overall["other_disagreements"]
+            == overall["labelled_entries"])
+    assert "agreement_rate" not in overall
+    # the read-only surface refuses the tool when no reports are loaded (empty by_class)
+    plain, _ = load_repository(default_data_dir())
+    plain_report, _ = _call(plain, "self_validation", {})
+    assert plain_report["by_class"] == {}

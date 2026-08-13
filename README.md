@@ -60,6 +60,7 @@ reprolith certificate <digest>       # the full certificate, human-readable
 reprolith verdict <digest>           # the scope-qualified verdict, never a bare boolean
 reprolith gaps <digest>              # the "what was missing" report
 reprolith status <accession>         # a paper's lifecycle status and history
+reprolith self-validation            # the blind track record, per class and overall
 ```
 
 Add `--json` to any read command to get the exact object an agent receives over MCP. Run

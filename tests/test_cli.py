@@ -137,6 +137,34 @@ def test_unknown_paper_exits_nonzero(tmp_path, capsys):
     assert "unknown paper" in capsys.readouterr().err
 
 
+def test_self_validation_default_view(capsys):
+    """The default view (no --data-dir) reports the honest blind track record across classes."""
+    assert run(["self-validation"]) == 0
+    out = capsys.readouterr().out
+    assert "BLIND SELF-VALIDATION" in out
+    # every class that shipped a milestone appears
+    for label in ("constraint-based", "kinetic", "logical", "ode-pkpd", "spatial", "stochastic"):
+        assert label in out
+    # abstentions are named as such, never folded into "wrong"
+    assert "honest abstentions" in out
+    assert "not a wrong verdict" in out
+
+
+def test_self_validation_json_splits_abstentions(capsys):
+    assert run(["self-validation", "--json"]) == 0
+    report = json.loads(capsys.readouterr().out)
+    overall = report["overall"]
+    # matched + abstentions + other must partition the labelled entries exactly
+    assert (overall["agreements"] + overall["abstentions"] + overall["other_disagreements"]
+            == overall["labelled_entries"])
+    # a single blended agreement_rate must NOT be presented — it would misrepresent abstentions
+    assert "agreement_rate" not in overall
+    # PK/PD's disagreements are abstentions, not wrong verdicts (the "0 wrong verdicts" story)
+    pkpd = report["by_class"]["ode-pkpd"]
+    assert pkpd["agreements"] == 0
+    assert overall["abstentions"] >= 30
+
+
 def test_command_required(capsys):
     with pytest.raises(SystemExit):
         run([])
