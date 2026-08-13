@@ -9,6 +9,7 @@ files from the models, so the committed numbers are auditable, not magic constan
   - ``reference_growth.json``       — max growth on the distributed medium, per genome-scale model
   - ``e_coli_core_essentiality.json`` — essential genes and reactions (single-deletion)
   - ``e_coli_core_synthetic_lethal.json`` — synthetic-lethal reaction pairs (double-deletion)
+  - ``e_coli_core_synthetic_lethal_genes.json`` — synthetic-lethal gene pairs (double gene deletion)
   - ``e_coli_core_fva.json``        — flux-variability interval per reaction at the optimum
   - ``iIT341_fva.json``             — the same, on a larger different-organism model (generality)
   - ``e_coli_core_loopless_fva.json`` — loopless flux-variability interval per reaction at the optimum
@@ -69,26 +70,42 @@ def _essential(frame: object) -> list[str]:
     )
 
 
-def _synthetic_lethal(model: cobra.Model) -> list[list[str]]:
-    """Synthetic-lethal reaction pairs from COBRApy double_reaction_deletion: both singly viable,
-    lethal together. Restricts the pairwise sweep to the single-viable reactions (an essential
-    reaction's pairs are lethal by itself, not synthetically), matching Reprolith's definition."""
-    floor = 1e-6 * float(model.slim_optimize())
-    single = cobra.flux_analysis.single_reaction_deletion(model, processes=1)
-    viable = sorted(
+def _viable_singles(frame: object, floor: float) -> list[str]:
+    return sorted(
         list(ids)[0]
-        for ids, growth in zip(single["ids"], single["growth"])  # type: ignore[index]
+        for ids, growth in zip(frame["ids"], frame["growth"])  # type: ignore[index]
         if growth is not None and growth == growth and growth >= floor
     )
-    double = cobra.flux_analysis.double_reaction_deletion(model, reaction_list1=viable, processes=1)
+
+
+def _lethal_pairs(frame: object, floor: float) -> list[list[str]]:
     pairs = []
-    for ids, growth in zip(double["ids"], double["growth"]):  # type: ignore[index]
+    for ids, growth in zip(frame["ids"], frame["growth"]):  # type: ignore[index]
         members = sorted(ids)
         if len(members) != 2:
             continue
         if growth is None or growth != growth or growth < floor:
             pairs.append(members)
     return sorted(pairs)
+
+
+def _synthetic_lethal_reactions(model: cobra.Model) -> list[list[str]]:
+    """Synthetic-lethal reaction pairs from COBRApy double_reaction_deletion: both singly viable,
+    lethal together. Restricts the pairwise sweep to the single-viable reactions (an essential
+    reaction's pairs are lethal by itself, not synthetically), matching Reprolith's definition."""
+    floor = 1e-6 * float(model.slim_optimize())
+    viable = _viable_singles(cobra.flux_analysis.single_reaction_deletion(model, processes=1), floor)
+    double = cobra.flux_analysis.double_reaction_deletion(model, reaction_list1=viable, processes=1)
+    return _lethal_pairs(double, floor)
+
+
+def _synthetic_lethal_genes(model: cobra.Model) -> list[list[str]]:
+    """Synthetic-lethal gene pairs from COBRApy double_gene_deletion: both singly viable, lethal
+    together. Same construction as the reaction version, restricted to single-viable genes."""
+    floor = 1e-6 * float(model.slim_optimize())
+    viable = _viable_singles(cobra.flux_analysis.single_gene_deletion(model, processes=1), floor)
+    double = cobra.flux_analysis.double_gene_deletion(model, gene_list1=viable, processes=1)
+    return _lethal_pairs(double, floor)
 
 
 def _round(value: float) -> float:
@@ -145,7 +162,18 @@ def main() -> None:
                        "must match this set exactly — a non-circular cross-tool check of the "
                        "double-deletion (epistasis) analysis single deletion cannot reveal.",
         "reference_tool": tool,
-        "pairs": _synthetic_lethal(core),
+        "pairs": _synthetic_lethal_reactions(core),
+    })
+
+    _write(CROSS / "e_coli_core_synthetic_lethal_genes.json", {
+        "description": "Independent reference synthetic-lethal gene pairs for e_coli_core, from "
+                       "COBRApy double_gene_deletion on the distributed medium: gene pairs viable to "
+                       "delete singly but lethal together (through the model's GPR rules). "
+                       "Reprolith's synthetic_lethal_genes must match this set exactly — a "
+                       "non-circular cross-tool check of gene-level double deletion, the classic "
+                       "synthetic-lethality screen single-gene deletion is blind to.",
+        "reference_tool": tool,
+        "pairs": _synthetic_lethal_genes(core),
     })
 
     fva = cobra.flux_analysis.flux_variability_analysis(core, fraction_of_optimum=1.0, processes=1)

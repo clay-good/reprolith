@@ -30,6 +30,7 @@ from reprolith import (  # noqa: E402
     judge_objective,
     reaction_essentiality,
     solve_objective,
+    synthetic_lethal_genes,
     synthetic_lethal_reactions,
 )
 
@@ -288,6 +289,14 @@ def test_gene_essentiality_respects_and_or_rules() -> None:
     # The OR on v_in makes each isozyme dispensable; the AND on the objective reaction makes both
     # subunits of the complex essential — the whole point of reading GPR rules rather than guessing.
     assert gene_essentiality(_GENE_MODEL) == frozenset({"g3", "g4"})
+
+
+def test_isozyme_genes_are_synthetic_lethal_though_neither_is_essential() -> None:
+    # v_in is gated by (g1 OR g2): each isozyme is dispensable alone (the other carries the flux),
+    # so gene essentiality misses them. Deleting BOTH knocks out v_in and starves the objective, so
+    # {g1, g2} is the one synthetic-lethal gene pair — the case gene double-deletion exists to catch.
+    # (g3/g4 are single-essential via the AND, so they form no *synthetic* pair.)
+    assert synthetic_lethal_genes(_GENE_MODEL) == frozenset({frozenset({"g1", "g2"})})
 
 
 def test_essentiality_agreement_scores_gene_label_sets() -> None:

@@ -33,6 +33,7 @@ from reprolith import (  # noqa: E402
     production_envelope,
     reaction_essentiality,
     solve_objective,
+    synthetic_lethal_genes,
     synthetic_lethal_reactions,
 )
 
@@ -42,6 +43,9 @@ _CORE = Path(__file__).parent.parent / "datasets" / "constraint_based" / "e_coli
 _ESSENTIALITY = json.loads((_DIR / "e_coli_core_essentiality.json").read_text(encoding="utf-8"))
 _SYNTHETIC_LETHAL = json.loads(
     (_DIR / "e_coli_core_synthetic_lethal.json").read_text(encoding="utf-8")
+)
+_SYNTHETIC_LETHAL_GENES = json.loads(
+    (_DIR / "e_coli_core_synthetic_lethal_genes.json").read_text(encoding="utf-8")
 )
 _FVA = json.loads((_DIR / "e_coli_core_fva.json").read_text(encoding="utf-8"))
 _LOOPLESS_FVA = json.loads((_DIR / "e_coli_core_loopless_fva.json").read_text(encoding="utf-8"))
@@ -97,6 +101,17 @@ def test_synthetic_lethal_pairs_match_the_cobra_reference_on_e_coli_core() -> No
         frozenset(model.reaction_ids[i].removeprefix("R_") for i in pair) for pair in pairs
     }
     reference = {frozenset(pair) for pair in _SYNTHETIC_LETHAL["pairs"]}
+    assert reference  # the reference is non-trivial, so equality is a real check
+    assert computed == reference
+
+
+def test_synthetic_lethal_genes_match_the_cobra_reference_on_e_coli_core() -> None:
+    # The gene-level double deletion: synthetic-lethal gene pairs — viable to delete singly but
+    # lethal together through the model's GPR rules — must match COBRApy's double_gene_deletion
+    # pair-for-pair. Exercises the GPR AND/OR logic under paired deletion, not just single.
+    model = ingest_fbc_sbml(_CORE.read_text(encoding="utf-8"))
+    computed = {frozenset(pair) for pair in synthetic_lethal_genes(model)}
+    reference = {frozenset(pair) for pair in _SYNTHETIC_LETHAL_GENES["pairs"]}
     assert reference  # the reference is non-trivial, so equality is a real check
     assert computed == reference
 

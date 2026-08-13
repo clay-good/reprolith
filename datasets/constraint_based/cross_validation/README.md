@@ -52,6 +52,12 @@ reproduces the whole set exactly (all 111 pairs), a cross-tool check of the doub
 (epistasis) analysis that single deletion is blind to: redundant pathways that back each other up
 look dispensable one at a time and only the pair reveals the dependency.
 
+[`e_coli_core_synthetic_lethal_genes.json`](e_coli_core_synthetic_lethal_genes.json) is the
+gene-level counterpart, from COBRApy's `double_gene_deletion`: the synthetic-lethal *gene* pairs —
+viable to delete singly but lethal together through the model's GPR rules. Reprolith's
+`synthetic_lethal_genes` reproduces the whole set exactly (all 53 pairs), the classic
+synthetic-lethality screen that underlies combination-therapy target discovery.
+
 [`e_coli_core_fva.json`](e_coli_core_fva.json) does the same for the third FROG component: the
 flux-variability interval of every reaction at the optimum, from COBRApy's
 `flux_variability_analysis`, which Reprolith's `flux_variability` reproduces. Together the two

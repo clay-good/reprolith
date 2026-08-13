@@ -322,14 +322,14 @@ def synthetic_lethal_reactions(
     return frozenset(lethal)
 
 
-def _objective_without_gene(model: FbaModel, gene: str) -> float:
-    """The optimum after deleting one gene: every reaction whose GPR then fails is forced to zero.
+def _objective_without_genes(model: FbaModel, deleted: frozenset[str]) -> float:
+    """The optimum after deleting a set of genes: every reaction whose GPR then fails is zeroed.
 
     A reaction with no GPR (a spontaneous or exchange reaction) is never affected by a gene
     deletion, so only genetically-controlled reactions can be knocked out. Returns 0.0 if the
     knockout makes the model infeasible.
     """
-    present = frozenset(g for g in model.genes() if g != gene)
+    present = frozenset(g for g in model.genes() if g not in deleted)
     rules = dict(model.gene_associations)
     lower = list(model.lower)
     upper: list[float | None] = list(model.upper)
@@ -342,6 +342,11 @@ def _objective_without_gene(model: FbaModel, gene: str) -> float:
         return solve_objective(model.stoichiometry, model.objective, lower, upper)
     except InfeasibleFba:
         return 0.0
+
+
+def _objective_without_gene(model: FbaModel, gene: str) -> float:
+    """The optimum after deleting one gene — the single-gene case of :func:`_objective_without_genes`."""
+    return _objective_without_genes(model, frozenset((gene,)))
 
 
 def gene_essentiality(model: FbaModel, *, threshold: float = 1e-6) -> frozenset[str]:
@@ -359,6 +364,43 @@ def gene_essentiality(model: FbaModel, *, threshold: float = 1e-6) -> frozenset[
     return frozenset(
         gene for gene in model.genes() if _objective_without_gene(model, gene) < threshold * baseline
     )
+
+
+def synthetic_lethal_genes(
+    model: FbaModel,
+    *,
+    threshold: float = 1e-6,
+    genes: Sequence[str] | None = None,
+) -> frozenset[frozenset[str]]:
+    """Gene pairs that are viable to delete singly but lethal together — the synthetic-lethal genes.
+
+    The gene-level counterpart of :func:`synthetic_lethal_reactions`, and the pairwise sibling of
+    :func:`gene_essentiality`: a pair ``{g, h}`` is synthetic-lethal when neither gene is essential on
+    its own — each single deletion keeps the optimum at or above ``threshold`` of the unperturbed
+    optimum — yet deleting both drops it below that floor (or makes the model infeasible). It reads
+    the same GPR AND/OR rules :func:`gene_essentiality` uses, so a pair is lethal only when losing
+    both genes actually knocks out a load-bearing reaction (two isozymes of one enzyme, or two
+    enzymes on parallel routes). These pairs — invisible to single-gene deletion — are the classic
+    target of synthetic-lethality screens (e.g. combination-therapy discovery).
+
+    ``genes`` optionally restricts the search to a subset of gene labels — all pairs drawn from it —
+    the way :func:`synthetic_lethal_reactions` accepts a reaction subset; double deletion is O(G²) LP
+    solves. Essential genes in the set are skipped as pair members (their lethality is not synthetic).
+    Returns a set of two-element frozensets, so ``{g, h}`` and ``{h, g}`` are one entry.
+    """
+    baseline = solve_objective(model.stoichiometry, model.objective, model.lower, model.upper)
+    if baseline <= 0.0:
+        return frozenset()
+    floor = threshold * baseline
+    candidates = sorted(model.genes()) if genes is None else sorted(set(genes))
+    viable = [g for g in candidates if _objective_without_genes(model, frozenset((g,))) >= floor]
+    lethal: set[frozenset[str]] = set()
+    for a_index in range(len(viable)):
+        for b_index in range(a_index + 1, len(viable)):
+            pair = frozenset((viable[a_index], viable[b_index]))
+            if _objective_without_genes(model, pair) < floor:
+                lethal.add(pair)
+    return frozenset(lethal)
 
 
 def flux_variability(
@@ -987,5 +1029,6 @@ __all__ = [
     "reaction_essentiality",
     "shadow_prices",
     "solve_objective",
+    "synthetic_lethal_genes",
     "synthetic_lethal_reactions",
 ]

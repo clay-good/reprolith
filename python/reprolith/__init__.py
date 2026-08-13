@@ -88,6 +88,7 @@ from .fba import (
     reaction_essentiality,
     shadow_prices,
     solve_objective,
+    synthetic_lethal_genes,
     synthetic_lethal_reactions,
 )
 from .ingest import ingest_sbml
@@ -421,6 +422,7 @@ __all__ = [
     "reaction_essentiality",
     "shadow_prices",
     "solve_objective",
+    "synthetic_lethal_genes",
     "synthetic_lethal_reactions",
     "spatial_dossier",
     "species_mean_variance",
