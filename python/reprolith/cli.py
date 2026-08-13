@@ -133,7 +133,7 @@ def _cmd_certificate(query: ReprolithQuery, args: argparse.Namespace) -> int:
             return 1
         _print_json(view)
         return 0
-    cert = query._ledger.get(args.digest)  # human rendering needs the object, not the dict view
+    cert = query.certificate_object(args.digest)  # human rendering needs the object, not the dict view
     if cert is None:
         print(f"unknown digest: {args.digest}", file=sys.stderr)
         return 1

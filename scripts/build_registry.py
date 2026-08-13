@@ -13,17 +13,18 @@ extras and no network. Writes `datasets/registry.html`. Run from the repo root:
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from reprolith import certificate_from_content, render_registry
-from reprolith.mcp_server import default_data_dir, load_repository, milestone_certificate_dirs
-
-REPO = Path(__file__).resolve().parents[1]
+from reprolith.mcp_server import milestone_agreement_reports, milestone_certificate_dirs
+from reprolith.query import self_validation_summary
 
 # Each class's milestone certificate directory and the model-class label it certifies — the same
 # source of truth the read surfaces aggregate into the query ledger, so the registry and the
-# queryable surface can never list a different set of certificates.
+# queryable surface can never list a different set of certificates. Read and write both hang off
+# this one root (the imported package's datasets dir), so the registry can't be built from one
+# checkout's certificates and written into another's.
 _SOURCES = milestone_certificate_dirs()
+_DATASETS = _SOURCES["ode-pkpd"].parents[1]  # .../datasets
 
 
 def collect() -> list[tuple[str, object]]:
@@ -37,11 +38,12 @@ def collect() -> list[tuple[str, object]]:
 
 def main() -> None:
     entries = collect()
-    # The blind self-validation track record, from the same read surface the CLI/MCP use, so the
-    # browsable registry's credibility summary can't diverge from the queried one.
-    query, _ = load_repository(default_data_dir(), aggregate=True)
-    html = render_registry(entries, self_validation=query.self_validation())
-    out = REPO / "datasets" / "registry.html"
+    # The blind self-validation track record, built from the same committed agreement reports the
+    # CLI/MCP surfaces summarize (no certificate ledger to load), so the browsable registry's
+    # credibility summary can't diverge from the queried one.
+    self_validation = self_validation_summary(milestone_agreement_reports())
+    html = render_registry(entries, self_validation=self_validation)
+    out = _DATASETS / "registry.html"
     out.write_text(html, encoding="utf-8")
     by_class: dict[str, int] = {}
     for model_class, _ in entries:

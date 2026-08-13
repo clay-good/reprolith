@@ -24,16 +24,22 @@ def summarize_report(report: dict[str, Any]) -> dict[str, int]:
     """Split a committed agreement report into matched / abstained / other entry counts.
 
     The single source of truth for the honesty rule the whole read surface depends on: an
-    *abstention* is a ``blocked`` verdict — Reprolith declined to assert, "insufficient
-    information" — and is counted apart from a verdict that confidently differed from the label
-    ("An abstention is never counted as a wrong verdict"). ``other`` is the remaining confident
-    differences. The three partition ``total`` exactly. Reads only the committed report's
-    aggregate counts and its ``expected->actual`` confusion keys.
+    *abstention* is a *disagreement* whose blind verdict was ``blocked`` — Reprolith declined to
+    assert, "insufficient information" — counted apart from a verdict that confidently differed
+    from the label ("An abstention is never counted as a wrong verdict"). ``other`` is the
+    remaining confident differences. The three partition ``total`` exactly: because an abstention
+    is only ever a *disagreement*, a matched entry (including the ``blocked->blocked`` case where
+    the label itself was ``blocked``) counts once, in ``matched``, and never also in ``abstained``.
+    Reads only the committed report's aggregate counts and its ``expected->actual`` confusion keys.
     """
     total = int(report.get("total", 0))
     matched = int(report.get("agreements", 0))
     confusion = report.get("confusion", {})
-    abstained = sum(int(v) for k, v in confusion.items() if k.split("->")[-1] == "blocked")
+    abstained = 0
+    for key, count in confusion.items():
+        expected, _, actual = key.partition("->")
+        if actual == "blocked" and expected != actual:  # a disagreement that abstained
+            abstained += int(count)
     return {"total": total, "matched": matched, "abstained": abstained, "other": total - matched - abstained}
 
 

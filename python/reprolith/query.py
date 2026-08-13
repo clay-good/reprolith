@@ -29,6 +29,31 @@ from .render import claim_counts, gap_items
 from .supersession import CertificateLedger
 
 
+def self_validation_summary(agreement_reports: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """The blind self-validation track record from per-class committed agreement reports.
+
+    Pure function of the reports, so it can be built without loading the certificate ledger (the
+    registry builder uses it directly). ``by_class`` is the reports verbatim; ``overall`` splits
+    the labelled entries into matched / abstentions / other via
+    :func:`reprolith.agreement.summarize_report`, which never counts an abstention as a wrong
+    verdict. The three partition ``labelled_entries`` exactly.
+    """
+    splits = [summarize_report(r) for r in agreement_reports.values()]
+    agreements = sum(s["matched"] for s in splits)
+    total = sum(s["total"] for s in splits)
+    abstentions = sum(s["abstained"] for s in splits)
+    return {
+        "by_class": agreement_reports,
+        "overall": {
+            "classes": len(agreement_reports),
+            "labelled_entries": total,
+            "agreements": agreements,
+            "abstentions": abstentions,
+            "other_disagreements": total - agreements - abstentions,
+        },
+    }
+
+
 class ReprolithQuery:
     """A read-only view over a catalog and a certificate ledger.
 
@@ -119,21 +144,7 @@ class ReprolithQuery:
         differences (e.g. a qualified ``partially-reproduced`` where the label said ``reproduced``);
         read the confusion matrices for their structure. Empty ``by_class`` when none are loaded.
         """
-        by_class = self._agreement_reports
-        splits = [summarize_report(r) for r in by_class.values()]
-        agreements = sum(s["matched"] for s in splits)
-        total = sum(s["total"] for s in splits)
-        abstentions = sum(s["abstained"] for s in splits)
-        return {
-            "by_class": by_class,
-            "overall": {
-                "classes": len(by_class),
-                "labelled_entries": total,
-                "agreements": agreements,
-                "abstentions": abstentions,
-                "other_disagreements": total - agreements - abstentions,
-            },
-        }
+        return self_validation_summary(self._agreement_reports)
 
     def dossier(self, accession: str) -> dict[str, Any] | None:
         """The ingested dossier for an entry accession — its extracted model structure."""
@@ -144,6 +155,16 @@ class ReprolithQuery:
         return self._bundles.get(accession)
 
     # --- certificates / verdicts (scope always travels) ----------------------------
+
+    def certificate_object(self, digest: str) -> Certificate | None:
+        """The stored :class:`~reprolith.model.Certificate` for a digest, or ``None``.
+
+        The one place the surface hands back the certificate object rather than a dict view: a
+        renderer (the CLI's human certificate) needs the object to run :func:`render_human`
+        without reaching into the ledger itself. It still produces no verdict — it returns exactly
+        what the engine stored.
+        """
+        return self._ledger.get(digest)
 
     def certificate(self, digest: str) -> dict[str, Any] | None:
         """The full certificate for a digest: content, verdicts, scope, and gaps."""
@@ -235,4 +256,4 @@ class ReprolithQuery:
         return Identifiers(title=p.title, doi=p.doi, pubmed_id=p.pubmed_id).keys()
 
 
-__all__ = ["ReprolithQuery"]
+__all__ = ["ReprolithQuery", "self_validation_summary"]

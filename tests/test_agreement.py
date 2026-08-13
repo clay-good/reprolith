@@ -72,3 +72,27 @@ def test_report_records_the_label_source() -> None:
     e = _labelled(catalog, "A", OverallVerdict.REPRODUCED, doi="10.1/a")
     report = build_agreement_report([(e, OverallVerdict.REPRODUCED)])
     assert report.per_entry[0].source == "BioModels curation"
+
+
+def test_summarize_report_partitions_and_never_double_counts_a_matched_abstention() -> None:
+    """matched / abstained / other partition total exactly, even when the label itself is blocked."""
+    from reprolith.agreement import summarize_report
+
+    # A report with: one matched reproduction, one matched abstention (label was blocked and the
+    # verdict abstained -> agree), 30 honest abstentions on reproducible-labelled entries, and one
+    # confident difference. A matched abstention must count only as matched, never also as abstained.
+    report = {
+        "total": 33,
+        "agreements": 2,  # reproduced->reproduced and blocked->blocked
+        "confusion": {
+            "reproduced->reproduced": 1,
+            "blocked->blocked": 1,           # matched abstention — not a disagreement
+            "reproduced->blocked": 30,       # honest abstentions
+            "not-reproduced->reproduced": 1,  # a confident difference (wrong verdict)
+        },
+    }
+    s = summarize_report(report)
+    assert s["matched"] == 2
+    assert s["abstained"] == 30  # the blocked->blocked match is excluded
+    assert s["other"] == 1
+    assert s["matched"] + s["abstained"] + s["other"] == s["total"]  # exact partition
