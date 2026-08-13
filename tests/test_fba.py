@@ -119,6 +119,20 @@ def test_no_synthetic_lethal_pairs_when_a_single_path_carries_everything() -> No
     assert synthetic_lethal_reactions(_S, _OBJECTIVE, _LOWER, _UPPER) == frozenset()
 
 
+def test_synthetic_lethal_reactions_honors_the_reactions_subset() -> None:
+    # The two-inflow network again. Restricting the sweep to the redundant pair still finds it;
+    # restricting to a subset containing the essential outflow (index 2) finds nothing, since an
+    # essential reaction is never a *synthetic*-pair member.
+    stoich = [[1.0, 1.0, -1.0]]
+    objective = [0.0, 0.0, 1.0]
+    lower = [0.0, 0.0, 0.0]
+    upper: list[float | None] = [8.0, 8.0, None]
+    assert synthetic_lethal_reactions(
+        stoich, objective, lower, upper, reactions=[0, 1]
+    ) == frozenset({frozenset({0, 1})})
+    assert synthetic_lethal_reactions(stoich, objective, lower, upper, reactions=[0, 2]) == frozenset()
+
+
 def test_essentiality_agreement_scores_overlap() -> None:
     assert essentiality_agreement(frozenset({0, 1}), frozenset({0, 1})) == pytest.approx(1.0)
     assert essentiality_agreement(frozenset({0, 1}), frozenset({0, 2})) == pytest.approx(1 / 3)
@@ -297,6 +311,15 @@ def test_isozyme_genes_are_synthetic_lethal_though_neither_is_essential() -> Non
     # {g1, g2} is the one synthetic-lethal gene pair — the case gene double-deletion exists to catch.
     # (g3/g4 are single-essential via the AND, so they form no *synthetic* pair.)
     assert synthetic_lethal_genes(_GENE_MODEL) == frozenset({frozenset({"g1", "g2"})})
+
+
+def test_synthetic_lethal_genes_honors_the_genes_subset() -> None:
+    # Restricting the sweep to the redundant isozyme genes still finds the pair; a subset pairing a
+    # redundant gene with an essential one (g3) finds nothing, since g3 is dropped as single-viable.
+    assert synthetic_lethal_genes(_GENE_MODEL, genes=["g1", "g2"]) == frozenset(
+        {frozenset({"g1", "g2"})}
+    )
+    assert synthetic_lethal_genes(_GENE_MODEL, genes=["g1", "g3"]) == frozenset()
 
 
 def test_essentiality_agreement_scores_gene_label_sets() -> None:
