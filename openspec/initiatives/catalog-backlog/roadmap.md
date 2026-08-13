@@ -169,14 +169,19 @@ a change under `openspec/changes/`.
 
 ## Not in the top 10 (parked, with reasons)
 
-- **Stochastic (SSA) simulation class** — *STARTED*: the parking reason (revisit after the
-  deterministic classes are broad) is discharged now that four deterministic classes are
-  self-validated. Landed as `stochastic-class`: a pure-Python Gillespie SSA reusing the
-  distributional oracle, self-validated against closed-form Poisson/binomial results. A dossier,
-  certify path, and milestone remain.
-- **Spatial / PDE simulation class** — *STARTED*: landed as `spatial-class`, a pure-Python 1-D
-  finite-difference reaction-diffusion solver reusing the curve oracle, self-validated against the
-  closed-form Gaussian diffusion solution (3/3 milestone). A dossier and ingestion remain.
+- **Stochastic (SSA) simulation class** — *DONE*: landed as `stochastic-class`, a pure-Python
+  Gillespie SSA reusing the distributional oracle, self-validated against closed-form
+  Poisson/binomial results. Now complete across the full class pattern: `stochastic_dossier` /
+  `validate_stochastic` (unstated sampling protocol as a load-bearing gap), `certify_stochastic`,
+  `ingest_stochastic_sbml`, the `lint_stochastic` inline linter, and a walkable 3/3 milestone.
+- **Spatial / PDE simulation class** — *DONE (bar ingestion)*: landed as `spatial-class`, a
+  pure-Python 1-D/2-D finite-difference reaction-diffusion solver reusing the curve oracle,
+  self-validated against closed-form results (Gaussian diffusion, Fisher-KPP and Nagumo front
+  speeds, morphogen decay length, the Turing dispersion relation and wavelength selection). Has
+  `spatial_dossier` / `validate_spatial` (unstated domain/boundary as a load-bearing gap),
+  `certify_spatial`, the `lint_diffusion` inline linter, and a walkable 3/3 milestone. Only
+  ingestion remains, and it is genuinely blocked: there is no standard single-file interchange
+  format for a reaction-diffusion model to ingest.
 - **Whole-cell and very large QSP networks** — in-kind but often intractable under a single
   pinned engine; wait for item 5 and better resource handling.
 - **A hosted web dashboard** — valuable for outreach, but the certificate and MCP surface come
