@@ -81,11 +81,25 @@ class ReprolithQuery:
         pubmed_id: str | None = None,
         accession: str | None = None,
     ) -> dict[str, Any] | None:
-        """A paper's lifecycle status and recorded history, or ``None`` if unknown."""
+        """A paper's lifecycle status, recorded history, and any certificate digests, or ``None``.
+
+        Resolving an entry (by accession from the catalog listing, say) and then finding its
+        certificates would otherwise be a dead end — an entry carries an accession but a
+        certificate is keyed by the paper's title/doi/pubmed. So the view includes
+        ``certificates``: the digests issued for this paper, newest first, bridging catalog
+        browsing to the certificate a reader actually wants.
+        """
         entry = self._catalog.find(
             Identifiers(title=title or "", doi=doi, pubmed_id=pubmed_id, accession=accession)
         )
-        return self._entry_view(entry) if entry is not None else None
+        if entry is None:
+            return None
+        view = self._entry_view(entry)
+        ids = entry.identifiers
+        view["certificates"] = self.certificates_for(
+            title=ids.title, doi=ids.doi, pubmed_id=ids.pubmed_id
+        )
+        return view
 
     def backlog_health(self) -> dict[str, Any]:
         """Report backlog depth by state, class, and difficulty, and the labelled mix."""

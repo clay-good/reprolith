@@ -117,6 +117,11 @@ def _cmd_status(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print("  history:")
         for t in view["history"]:
             print(f"    {t['from_state']} -> {t['to_state']} ({t['reason']})")
+    certs = view.get("certificates") or []
+    if certs:
+        print("  certificates:")
+        for digest in certs:
+            print(f"    {digest}")
     return 0
 
 

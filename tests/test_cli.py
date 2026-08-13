@@ -118,6 +118,15 @@ def test_status_by_accession(tmp_path, capsys):
     assert "Two-compartment PK model" in out
 
 
+def test_status_bridges_accession_to_certificate(tmp_path, capsys):
+    """status resolves an entry by accession and surfaces its certificate digest — no dead end."""
+    repo, digest = _write_repo(tmp_path)  # the catalog entry (ACC1) and the cert share title/doi
+    assert run(["--data-dir", str(repo), "status", "ACC1"]) == 0
+    out = capsys.readouterr().out
+    assert "certificates:" in out
+    assert digest in out
+
+
 def test_certificates_for_by_title(tmp_path, capsys):
     repo, digest = _write_repo(tmp_path)
     assert run(["--data-dir", str(repo), "certificates-for",
