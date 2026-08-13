@@ -41,6 +41,7 @@ stepping never enumerates and stays available at any size.
 |---|---|
 | `BooleanNetwork.fixed_points` | Which states does the update map to themselves? (scheme-invariant) |
 | `BooleanNetwork.attractors(scheme)` | Every attractor under the chosen update scheme — deterministically ordered |
+| `BooleanNetwork.basin_sizes` | How many states flow into each synchronous attractor — the basins, which partition the 2ⁿ space (so the sizes sum to 2ⁿ) and answer "which attractor dominates" |
 | `judge_steady_state` | Is a reported steady state one of the network's fixed points? |
 | `judge_attractor_set` | Does the reported set of attractors equal the computed set under a scheme — surfacing any missing or unexpected one? |
 

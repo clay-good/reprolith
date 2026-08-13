@@ -56,6 +56,24 @@ def test_attractors_include_the_two_cycle() -> None:
     assert states == {(("A", 0), ("B", 0)), (("A", 1), ("B", 1))}
 
 
+def test_basin_sizes_of_the_toggle_switch() -> None:
+    # The toggle's synchronous state space (4 states) splits into three basins: the two fixed
+    # points 01 and 10 each attract only themselves, and the spurious 00<->11 two-cycle attracts
+    # both its own states — so the basins are 1, 1, 2 and tile the whole space.
+    attractors = _TOGGLE.attractors()
+    sizes = _TOGGLE.basin_sizes()
+    basin_of = {
+        frozenset(tuple(sorted(s.items())) for s in cycle): size
+        for cycle, size in zip(attractors, sizes)
+    }
+    assert basin_of[frozenset({(("A", 0), ("B", 1))})] == 1  # fixed point 01
+    assert basin_of[frozenset({(("A", 1), ("B", 0))})] == 1  # fixed point 10
+    assert basin_of[
+        frozenset({(("A", 0), ("B", 0)), (("A", 1), ("B", 1))})
+    ] == 2  # the 00<->11 two-cycle
+    assert sum(sizes) == 4
+
+
 def test_asynchronous_updating_drops_the_synchronous_two_cycle() -> None:
     # The toggle's (0,0)<->(1,1) 2-cycle exists only under synchronous updating; asynchronously,
     # (0,0) and (1,1) are transient and only the two fixed points remain. Fixed points are

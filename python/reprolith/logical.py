@@ -213,6 +213,39 @@ class BooleanNetwork:
             cycles = self._sync_attractors()
         return [tuple(self._as_dict(s) for s in cycle) for cycle in cycles]
 
+    def basin_sizes(self) -> list[int]:
+        """The size of each synchronous attractor's basin — how many states flow into it.
+
+        Aligned with :meth:`attractors` in :attr:`UpdateScheme.SYNCHRONOUS` order: entry *i* is the
+        number of states whose forward synchronous trajectory ends in attractor *i* (its own cycle
+        states included). Under synchronous update every state has exactly one successor, so the
+        basins partition the state space and the sizes sum to exactly 2ⁿ — the honest answer to
+        "which attractor dominates" (e.g. what fraction of initial conditions reach a given
+        phenotype). Asynchronous basins are ill-defined (a state can reach several attractors under
+        nondeterministic order), so this is synchronous-only.
+
+        Exact and enumeration-bound, like :meth:`attractors`: a network past
+        :data:`MAX_ENUMERABLE_NODES` raises :class:`NetworkTooLarge`. Runs in one pass over the state
+        space by memoizing each trajectory onto the attractor it reaches.
+        """
+        attractors = self._sync_attractors()
+        resolved: dict[State, int] = {
+            state: index for index, cycle in enumerate(attractors) for state in cycle
+        }
+        for start in self._states():
+            path: list[State] = []
+            s = start
+            while s not in resolved:
+                path.append(s)
+                s = self._step_tuple(s)
+            index = resolved[s]
+            for state in path:
+                resolved[state] = index
+        sizes = [0] * len(attractors)
+        for index in resolved.values():
+            sizes[index] += 1
+        return sizes
+
     def _sync_attractors(self) -> list[tuple[State, ...]]:
         found: dict[frozenset[State], tuple[State, ...]] = {}
         for start in self._states():

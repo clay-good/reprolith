@@ -118,6 +118,41 @@ def test_every_state_flows_into_exactly_one_sync_attractor() -> None:
             assert len(hits) == 1  # the landing state belongs to exactly one attractor
 
 
+def _reference_basin_sizes(net: BooleanNetwork) -> list[int]:
+    """An independent basin count: walk each state 2**n steps onto its cycle, match it to an
+    attractor by membership, and tally — deliberately unlike the production memoized single pass."""
+    attractors = net.attractors(UpdateScheme.SYNCHRONOUS)
+    cycles = [frozenset(_t(net, st) for st in cycle) for cycle in attractors]
+    horizon = 2 ** len(net.nodes)
+    sizes = [0] * len(cycles)
+    for start in _all_states(net):
+        s = start
+        for _ in range(horizon):  # certainly on the cycle now
+            s = _sync_step(net, s)
+        hits = [i for i, cycle in enumerate(cycles) if s in cycle]
+        assert len(hits) == 1
+        sizes[hits[0]] += 1
+    return sizes
+
+
+def test_basin_sizes_partition_the_state_space() -> None:
+    rng = random.Random(66)
+    for _ in range(300):
+        net = _random_network(rng, rng.randint(1, 5))
+        sizes = net.basin_sizes()
+        # One basin per synchronous attractor, and the basins tile the whole 2ⁿ state space.
+        assert len(sizes) == len(net.attractors(UpdateScheme.SYNCHRONOUS))
+        assert sum(sizes) == 2 ** len(net.nodes)
+        assert all(size >= 1 for size in sizes)  # an attractor's own states are in its basin
+
+
+def test_basin_sizes_match_an_independent_count() -> None:
+    rng = random.Random(77)
+    for _ in range(300):
+        net = _random_network(rng, rng.randint(1, 5))
+        assert net.basin_sizes() == _reference_basin_sizes(net)
+
+
 def test_sync_attractors_are_closed_cycles() -> None:
     rng = random.Random(22)
     for _ in range(200):
