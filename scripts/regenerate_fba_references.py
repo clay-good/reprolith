@@ -12,6 +12,7 @@ files from the models, so the committed numbers are auditable, not magic constan
   - ``e_coli_core_synthetic_lethal_genes.json`` — synthetic-lethal gene pairs (double gene deletion)
   - ``e_coli_core_fva.json``        — flux-variability interval per reaction at the optimum
   - ``iIT341_fva.json``             — the same, on a larger different-organism model (generality)
+  - ``iIT341_synthetic_lethal.json``  — synthetic-lethal reaction pairs on a bounded iIT341 subset
   - ``e_coli_core_loopless_fva.json`` — loopless flux-variability interval per reaction at the optimum
   - ``e_coli_core_pfba.json``        — parsimonious-FBA total flux (min Σ|vᵢ|) at the optimum
   - ``e_coli_core_production_envelope.json`` — acetate-vs-growth production envelope (concave frontier)
@@ -97,6 +98,18 @@ def _synthetic_lethal_reactions(model: cobra.Model) -> list[list[str]]:
     viable = _viable_singles(cobra.flux_analysis.single_reaction_deletion(model, processes=1), floor)
     double = cobra.flux_analysis.double_reaction_deletion(model, reaction_list1=viable, processes=1)
     return _lethal_pairs(double, floor)
+
+
+def _synthetic_lethal_reactions_subset(model: cobra.Model, n: int) -> dict:
+    """Synthetic-lethal reaction pairs among the ``n`` lexicographically-smallest single-viable
+    reactions — a bounded double-deletion sweep for a genome-scale model, where the full O(R²) sweep
+    is too costly. The subset is stored explicitly so the check is reproducible and the same reaction
+    set drives both the reference and Reprolith."""
+    floor = 1e-6 * float(model.slim_optimize())
+    viable = _viable_singles(cobra.flux_analysis.single_reaction_deletion(model, processes=1), floor)
+    subset = sorted(viable)[:n]
+    double = cobra.flux_analysis.double_reaction_deletion(model, reaction_list1=subset, processes=1)
+    return {"subset": subset, "pairs": _lethal_pairs(double, floor)}
 
 
 def _synthetic_lethal_genes(model: cobra.Model) -> list[list[str]]:
@@ -206,6 +219,19 @@ def main() -> None:
             cid: [_round(it341_fva.loc[cid]["minimum"]), _round(it341_fva.loc[cid]["maximum"])]
             for cid in sorted(it341_fva.index)
         },
+    })
+
+    it341_sl = _synthetic_lethal_reactions_subset(it341, 45)
+    _write(CROSS / "iIT341_synthetic_lethal.json", {
+        "description": "Independent reference synthetic-lethal reaction pairs for iIT341 (H. pylori, "
+                       "554 reactions) among the 45 smallest single-viable reactions, from COBRApy "
+                       "double_reaction_deletion. A bounded double-deletion sweep on a second, larger, "
+                       "different-organism model, so Reprolith's synthetic_lethal_reactions is shown to "
+                       "generalize beyond the 95-reaction E. coli core — not just to reproduce one "
+                       "small network's epistasis.",
+        "reference_tool": tool,
+        "subset": it341_sl["subset"],
+        "pairs": it341_sl["pairs"],
     })
 
     loopless = cobra.flux_analysis.flux_variability_analysis(

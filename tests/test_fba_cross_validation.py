@@ -54,6 +54,9 @@ _ENVELOPE = json.loads(
     (_DIR / "e_coli_core_production_envelope.json").read_text(encoding="utf-8")
 )
 _IT341_FVA = json.loads((_DIR / "iIT341_fva.json").read_text(encoding="utf-8"))
+_IT341_SYNTHETIC_LETHAL = json.loads(
+    (_DIR / "iIT341_synthetic_lethal.json").read_text(encoding="utf-8")
+)
 
 
 @pytest.mark.parametrize("model_id", sorted(_REFERENCE))
@@ -130,6 +133,25 @@ def test_flux_variability_matches_the_cobra_reference_on_e_coli_core() -> None:
         ref_low, ref_high = reference[reaction_id.removeprefix("R_")]
         assert low == pytest.approx(ref_low, abs=1e-6)
         assert high == pytest.approx(ref_high, abs=1e-6)
+
+
+def test_synthetic_lethal_reactions_match_the_cobra_reference_on_a_larger_model() -> None:
+    # Synthetic lethality is otherwise cross-validated only on the 95-reaction E. coli core. Repeat
+    # it on iIT341 (H. pylori, 554 reactions) over a bounded, explicitly-stored reaction subset — so
+    # the double-deletion code is shown to generalize to another organism and stoichiometry, not just
+    # to reproduce one small network's epistasis. The subset drives both sides, so the check is exact.
+    sbml = gzip.decompress((_DIR / "iIT341.xml.gz").read_bytes()).decode("utf-8")
+    model = ingest_fbc_sbml(sbml)
+    subset = [model.reaction_index("R_" + rid) for rid in _IT341_SYNTHETIC_LETHAL["subset"]]
+    pairs = synthetic_lethal_reactions(
+        model.stoichiometry, model.objective, model.lower, model.upper, reactions=subset
+    )
+    computed = {
+        frozenset(model.reaction_ids[i].removeprefix("R_") for i in pair) for pair in pairs
+    }
+    reference = {frozenset(pair) for pair in _IT341_SYNTHETIC_LETHAL["pairs"]}
+    assert reference  # non-trivial, so equality is a real check
+    assert computed == reference
 
 
 def test_flux_variability_matches_the_cobra_reference_on_a_larger_model() -> None:

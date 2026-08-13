@@ -34,7 +34,8 @@ follow end to end, all regenerable from the repository alone.
   double-deletion analysis reproduces COBRApy pair-for-pair on E. coli core, both at reaction level
   (`double_reaction_deletion`, all 111 synthetic-lethal reaction pairs) and gene level
   (`double_gene_deletion`, all 53 synthetic-lethal gene pairs through the GPR rules) — an epistasis
-  single deletion cannot see —
+  single deletion cannot see — and it generalizes: reaction synthetic lethality also reproduces
+  COBRApy on a bounded subset of a second, different-organism model (iIT341, *H. pylori*) —
   **loopless FVA** — its loop-law MILP reproduces COBRApy's independent
   `flux_variability_analysis(loopless=True)` reaction-for-reaction on E. coli core — **pFBA**,
   whose minimized total flux matches COBRApy's `pfba` on the same model, and the **production

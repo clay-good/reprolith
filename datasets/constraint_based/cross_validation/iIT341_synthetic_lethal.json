@@ -1,0 +1,73 @@
+{
+  "description": "Independent reference synthetic-lethal reaction pairs for iIT341 (H. pylori, 554 reactions) among the 45 smallest single-viable reactions, from COBRApy double_reaction_deletion. A bounded double-deletion sweep on a second, larger, different-organism model, so Reprolith's synthetic_lethal_reactions is shown to generalize beyond the 95-reaction E. coli core \u2014 not just to reproduce one small network's epistasis.",
+  "reference_tool": "COBRApy 0.31.1",
+  "subset": [
+    "4HGLSD",
+    "AAtr",
+    "ACACT1r",
+    "ACACt2",
+    "ACALDt",
+    "ACKr",
+    "ACOATA",
+    "ACONT",
+    "ACP1_FMN",
+    "ACPS",
+    "ACS",
+    "ACt2r",
+    "ADD",
+    "ADEt2",
+    "ADNUC",
+    "ADNt2",
+    "ADPT",
+    "ADSK",
+    "ADtr",
+    "AHSERL2",
+    "AKGt2r",
+    "AKO",
+    "ALAD_L",
+    "ALAR",
+    "ALAt2r",
+    "ALAt4",
+    "ALCD2y",
+    "AMAA",
+    "AMID2",
+    "AMID4",
+    "AMID5",
+    "ANS",
+    "ANS2",
+    "ARGSL",
+    "ARGSS",
+    "ASNN",
+    "ASNabc",
+    "ASNt2r",
+    "ASPT",
+    "ASPt2r",
+    "ATPS4r",
+    "BACCL",
+    "BPNT",
+    "CAT",
+    "CCP"
+  ],
+  "pairs": [
+    [
+      "ACKr",
+      "ATPS4r"
+    ],
+    [
+      "ACt2r",
+      "ATPS4r"
+    ],
+    [
+      "ADD",
+      "ADPT"
+    ],
+    [
+      "ANS",
+      "ANS2"
+    ],
+    [
+      "CAT",
+      "CCP"
+    ]
+  ]
+}

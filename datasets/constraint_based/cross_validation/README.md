@@ -52,6 +52,11 @@ reproduces the whole set exactly (all 111 pairs), a cross-tool check of the doub
 (epistasis) analysis that single deletion is blind to: redundant pathways that back each other up
 look dispensable one at a time and only the pair reveals the dependency.
 
+[`iIT341_synthetic_lethal.json`](iIT341_synthetic_lethal.json) repeats the reaction-level check on
+a second, larger, different-organism model (*H. pylori*, 554 reactions), over a bounded, explicitly
+stored 45-reaction subset — so `synthetic_lethal_reactions` is shown to generalize beyond the
+95-reaction core, not just to reproduce one small network's epistasis.
+
 [`e_coli_core_synthetic_lethal_genes.json`](e_coli_core_synthetic_lethal_genes.json) is the
 gene-level counterpart, from COBRApy's `double_gene_deletion`: the synthetic-lethal *gene* pairs —
 viable to delete singly but lethal together through the model's GPR rules. Reprolith's
