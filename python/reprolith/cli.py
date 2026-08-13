@@ -1,4 +1,4 @@
-"""The human-facing command-line surface over the read-only query model.
+"""The human-facing command-line surface over the read-only query model (spec: ``human-cli``).
 
 Reprolith has two surfaces over one core: an MCP server for agents
 (:mod:`reprolith.mcp_server`) and this CLI for humans at a terminal. Both load the same

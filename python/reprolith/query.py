@@ -106,7 +106,8 @@ class ReprolithQuery:
         ``by_class`` is each class's committed agreement report verbatim — how its blind verdicts
         matched independently-established ground truth (rate, counts, confusion matrix, per-entry
         detail). ``overall`` splits the labelled entries three honest ways rather than as a single
-        blended rate, because a blended rate would misrepresent the discipline: a verdict that
+        blended rate, because a blended rate would misrepresent the discipline (spec: ``mcp-server``
+        — "An abstention is never counted as a wrong verdict"): a verdict that
         *abstained* (``blocked`` — "insufficient information") is counted apart from one that
         confidently differed from the label. So the PK/PD run's 30 honest abstentions are never
         lumped in with a wrong verdict. ``other_disagreements`` are the remaining confident

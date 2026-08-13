@@ -47,6 +47,41 @@ not a lossy summary that could mislead it.
 - **WHEN** any certificate or verdict is returned through the server
 - **THEN** the reproducible-not-correct-not-clinical scope statement travels with it
 
+### Requirement: The published body of work is queryable across classes
+
+The read surface SHALL make every model class's published certificates reachable, not only the
+class whose work queue it is loaded from, so an agent can fetch and cite any reproduction Reprolith
+has certified.
+
+#### Scenario: A certificate from any class is fetchable
+
+- **WHEN** the default read surface is queried for a certificate, verdict, or gap report
+- **THEN** the certificates of every class that shipped a milestone are reachable — a
+  constraint-based, logical, kinetic, stochastic, or spatial verdict, not only a PK/PD one
+- **AND** each such verdict still travels with its scope flag and qualifications
+
+### Requirement: Self-validation track record is queryable and honest
+
+The read surface SHALL expose Reprolith's blind self-validation evidence — how each class's
+verdicts matched independently-established ground truth — so an agent can weigh a class's proven
+reliability before citing one of its certificates, and SHALL report it without a metric that
+misrepresents the discipline.
+
+#### Scenario: Track record reported per class and overall
+
+- **WHEN** an agent requests the self-validation track record
+- **THEN** it receives, per model class, the blind agreement of that class's verdicts against its
+  independent ground truth, plus an overall summary across classes
+- **AND** the call returns data and changes no state
+
+#### Scenario: An abstention is never counted as a wrong verdict
+
+- **WHEN** the overall track record summarizes disagreements between a blind verdict and its label
+- **THEN** a verdict that abstained (a `blocked` verdict — insufficient information) is counted
+  apart from a verdict that confidently differed from the label
+- **AND** no single blended agreement rate is presented that would conflate honest abstentions
+  with wrong verdicts
+
 ### Requirement: Deterministic linter mode
 
 The server SHALL support the common agent pattern of checking a single model or claim inline,
