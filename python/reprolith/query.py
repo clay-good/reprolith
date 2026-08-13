@@ -20,22 +20,13 @@ from __future__ import annotations
 
 from typing import Any
 
+from .agreement import summarize_report
 from .catalog import Catalog, CatalogEntry, Identifiers
 from .determinism import certificate_digest
 from .model import Certificate
 from .presubmission import presubmission_report
 from .render import claim_counts, gap_items
 from .supersession import CertificateLedger
-
-
-def _abstentions(report: dict[str, Any]) -> int:
-    """Count entries where the blind verdict abstained (``blocked``) from a committed report.
-
-    Read off the confusion matrix's ``expected->actual`` keys: an abstention is any entry whose
-    actual verdict was ``blocked`` — an honest "insufficient information", not a wrong verdict.
-    """
-    confusion = report.get("confusion", {})
-    return sum(v for k, v in confusion.items() if k.split("->")[-1] == "blocked")
 
 
 class ReprolithQuery:
@@ -115,9 +106,10 @@ class ReprolithQuery:
         read the confusion matrices for their structure. Empty ``by_class`` when none are loaded.
         """
         by_class = self._agreement_reports
-        agreements = sum(int(r.get("agreements", 0)) for r in by_class.values())
-        total = sum(int(r.get("total", 0)) for r in by_class.values())
-        abstentions = sum(_abstentions(r) for r in by_class.values())
+        splits = [summarize_report(r) for r in by_class.values()]
+        agreements = sum(s["matched"] for s in splits)
+        total = sum(s["total"] for s in splits)
+        abstentions = sum(s["abstained"] for s in splits)
         return {
             "by_class": by_class,
             "overall": {

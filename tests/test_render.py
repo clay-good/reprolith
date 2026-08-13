@@ -214,4 +214,30 @@ def test_render_registry_handles_no_certificates() -> None:
 
     html = render_registry([])
     assert "No certificates yet" in html
+
+
+def test_render_registry_track_record_banner_is_honest() -> None:
+    from reprolith import render_registry
+
+    clean = _cert([_claim(Verdict.REPRODUCED, cid="a")])
+    # A self-validation summary shaped like ReprolithQuery.self_validation() output: a class of all
+    # abstentions plus a clean cross-tool class.
+    self_validation = {
+        "by_class": {
+            "ode-pkpd": {"total": 31, "agreements": 0,
+                         "confusion": {"reproduced->blocked": 30, "reproduced->partially-reproduced": 1}},
+            "logical": {"total": 9, "agreements": 9, "confusion": {"reproduced->reproduced": 9}},
+        },
+        "overall": {"agreements": 9, "abstentions": 30, "other_disagreements": 1, "labelled_entries": 40},
+    }
+    html = render_registry([("ode-pkpd", clean)], self_validation=self_validation)
+    assert "Blind self-validation" in html
+    # The abstention is named as such, never dressed as agreement or error.
+    assert "abstention" in html.lower()
+    # The overall row shows the honest split, not a blended rate.
+    assert "<td>30</td>" in html  # 30 abstentions surfaced
+    assert "%" not in html.split("track-record")[1].split("</section>")[0]  # no blended rate in the banner
+
+    # Backward compatible: with no summary, no banner (existing callers unaffected).
+    assert "Blind self-validation" not in render_registry([("ode-pkpd", clean)])
     assert "clinical" in html.lower()  # scope disclaimer still present

@@ -20,6 +20,23 @@ from .catalog import CatalogEntry
 from .enums import OverallVerdict
 
 
+def summarize_report(report: dict[str, Any]) -> dict[str, int]:
+    """Split a committed agreement report into matched / abstained / other entry counts.
+
+    The single source of truth for the honesty rule the whole read surface depends on: an
+    *abstention* is a ``blocked`` verdict — Reprolith declined to assert, "insufficient
+    information" — and is counted apart from a verdict that confidently differed from the label
+    ("An abstention is never counted as a wrong verdict"). ``other`` is the remaining confident
+    differences. The three partition ``total`` exactly. Reads only the committed report's
+    aggregate counts and its ``expected->actual`` confusion keys.
+    """
+    total = int(report.get("total", 0))
+    matched = int(report.get("agreements", 0))
+    confusion = report.get("confusion", {})
+    abstained = sum(int(v) for k, v in confusion.items() if k.split("->")[-1] == "blocked")
+    return {"total": total, "matched": matched, "abstained": abstained, "other": total - matched - abstained}
+
+
 @dataclass(frozen=True)
 class EntryAgreement:
     """Whether one labelled entry's blind verdict matched its ground-truth label."""
@@ -117,4 +134,4 @@ def build_agreement_report(
     return AgreementReport(per_entry=tuple(per_entry))
 
 
-__all__ = ["AgreementReport", "EntryAgreement", "build_agreement_report"]
+__all__ = ["AgreementReport", "EntryAgreement", "build_agreement_report", "summarize_report"]

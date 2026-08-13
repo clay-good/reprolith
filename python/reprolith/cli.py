@@ -78,7 +78,7 @@ def _cmd_backlog(query: ReprolithQuery, args: argparse.Namespace) -> int:
 
 
 def _cmd_self_validation(query: ReprolithQuery, args: argparse.Namespace) -> int:
-    from .query import _abstentions
+    from .agreement import summarize_report
 
     report = query.self_validation()
     if args.json:
@@ -91,12 +91,8 @@ def _cmd_self_validation(query: ReprolithQuery, args: argparse.Namespace) -> int
     print("BLIND SELF-VALIDATION (verdicts vs independently-established ground truth)")
     print(f"  {'class':<18} {'matched':>8} {'abstained':>10} {'other':>6}  of total")
     for label in sorted(by_class):
-        r = by_class[label]
-        total = int(r.get("total", 0))
-        matched = int(r.get("agreements", 0))
-        abstained = _abstentions(r)
-        other = total - matched - abstained
-        print(f"  {label:<18} {matched:>8} {abstained:>10} {other:>6}  / {total}")
+        s = summarize_report(by_class[label])
+        print(f"  {label:<18} {s['matched']:>8} {s['abstained']:>10} {s['other']:>6}  / {s['total']}")
     o = report["overall"]
     print(f"\n  overall: {o['agreements']} matched, {o['abstentions']} honest abstentions, "
           f"{o['other_disagreements']} other, over {o['labelled_entries']} labelled entries "

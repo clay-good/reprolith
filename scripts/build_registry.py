@@ -15,7 +15,7 @@ import json
 from pathlib import Path
 
 from reprolith import certificate_from_content, render_registry
-from reprolith.mcp_server import milestone_certificate_dirs
+from reprolith.mcp_server import default_data_dir, load_repository, milestone_certificate_dirs
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -36,7 +36,10 @@ def collect() -> list[tuple[str, object]]:
 
 def main() -> None:
     entries = collect()
-    html = render_registry(entries)
+    # The blind self-validation track record, from the same read surface the CLI/MCP use, so the
+    # browsable registry's credibility summary can't diverge from the queried one.
+    query, _ = load_repository(default_data_dir(), aggregate=True)
+    html = render_registry(entries, self_validation=query.self_validation())
     out = REPO / "datasets" / "registry.html"
     out.write_text(html, encoding="utf-8")
     by_class: dict[str, int] = {}

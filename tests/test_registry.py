@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 from reprolith import certificate_from_content, render_registry
+from reprolith.mcp_server import default_data_dir, load_repository
 
 _REPO = Path(__file__).parent.parent
 _REGISTRY = _REPO / "datasets" / "registry.html"
@@ -29,7 +30,8 @@ def _rebuild() -> str:
     for model_class, directory in _SOURCES.items():
         for path in sorted(directory.glob("*.json")):
             entries.append((model_class, certificate_from_content(json.loads(path.read_text()))))
-    return render_registry(entries)
+    query, _ = load_repository(default_data_dir(), aggregate=True)
+    return render_registry(entries, self_validation=query.self_validation())
 
 
 def test_committed_registry_matches_the_milestone_certificates() -> None:

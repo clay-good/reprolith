@@ -185,10 +185,47 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
     return "\n".join(lines)
 
 
+def _track_record_banner(self_validation: dict[str, Any]) -> str:
+    """Render the blind self-validation summary as an HTML banner for the public registry.
+
+    Uses :func:`reprolith.agreement.summarize_report`, the same honesty split the CLI and MCP
+    surfaces use, so the browsable credibility number can never disagree with the queried one. An
+    abstention (a ``blocked`` verdict) is shown apart from a wrong verdict; no blended rate.
+    """
+    from .agreement import summarize_report
+
+    by_class = self_validation.get("by_class", {})
+    if not by_class:
+        return ""
+    rows = []
+    for label in sorted(by_class):
+        s = summarize_report(by_class[label])
+        rows.append(
+            f"<tr><td>{html.escape(label)}</td><td>{s['matched']}</td>"
+            f"<td>{s['abstained']}</td><td>{s['other']}</td><td>{s['total']}</td></tr>"
+        )
+    o = self_validation.get("overall", {})
+    foot = (
+        f"<tr class=\"tr-total\"><td>overall</td><td>{o.get('agreements', 0)}</td>"
+        f"<td>{o.get('abstentions', 0)}</td><td>{o.get('other_disagreements', 0)}</td>"
+        f"<td>{o.get('labelled_entries', 0)}</td></tr>"
+    )
+    return (
+        '<section class="track-record"><h2>Blind self-validation</h2>'
+        '<p class="tr-note">How each class’s blind verdicts matched independently-established '
+        "ground truth. An <em>abstention</em> (a “blocked” verdict — insufficient "
+        "information) is shown apart from a wrong verdict; no single blended rate conflates them.</p>"
+        "<table><thead><tr><th>class</th><th>matched</th><th>abstained</th><th>other</th>"
+        f"<th>of total</th></tr></thead><tbody>{''.join(rows)}</tbody><tfoot>{foot}</tfoot></table>"
+        "</section>"
+    )
+
+
 def render_registry(
     entries: Iterable[tuple[str, Certificate]],
     *,
     title: str = "Reprolith reproduction registry",
+    self_validation: dict[str, Any] | None = None,
 ) -> str:
     """A self-contained, browsable HTML registry of certificates (spec: certificate-publication).
 
@@ -248,6 +285,12 @@ def render_registry(
         ".entry h3{margin:.4rem 0}.meta{color:#666;font-size:.9rem;margin:.2rem 0}"
         ".verdict{font-weight:600}.v-reproduced{color:#3a3}.v-partially-reproduced{color:#a80}"
         ".v-not-reproduced{color:#c33}.v-blocked{color:#777}.counts{color:#444;font-size:.9rem}"
+        ".track-record{margin:1rem 0;padding:1rem;border:1px solid #ddd;border-radius:8px;background:#fafafa}"
+        ".track-record h2{margin:.2rem 0}.tr-note{color:#555;max-width:48rem;font-size:.9rem}"
+        ".track-record table{border-collapse:collapse;margin-top:.5rem}"
+        ".track-record th,.track-record td{padding:.2rem .8rem;text-align:right;border-bottom:1px solid #eee}"
+        ".track-record th:first-child,.track-record td:first-child{text-align:left}"
+        ".track-record .tr-total{font-weight:600}"
     )
     script = (
         "const st={class:'all',verdict:'all'};"
@@ -266,6 +309,7 @@ def render_registry(
         f"<title>{html.escape(title)}</title><style>{style}</style></head><body>"
         f"<h1>{html.escape(title)}</h1>"
         f'<p class="disclaimer">{html.escape(scope_human)}</p>'
+        f"{_track_record_banner(self_validation) if self_validation else ''}"
         '<div class="filters">'
         f"{buttons('class', classes)}{buttons('verdict', verdicts)}</div>"
         f'<main>{"".join(cards) if cards else "<p>No certificates yet.</p>"}</main>'
