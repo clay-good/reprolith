@@ -210,7 +210,7 @@ essential enolase (`b2779`) — computed from the model's own GPR rules.
 
 Beyond the one core model, a [cross-validation set](../datasets/constraint_based/cross_validation/)
 checks the ingester on structural variety: three diverse genome-scale models (*H. pylori*, *T.
-maritima*, *L. lactis*; 500–750 reactions) whose growth rate the independent COBRApy implementation
+maritima*, *L. lactis*; 554–754 reactions) whose growth rate the independent COBRApy implementation
 computes are reproduced by `ingest_fbc_sbml` + `solve_objective` to six digits — a non-circular
 cross-tool check where a stoichiometry-, bound-, or objective-parsing bug would surface. The
 [milestone blind run](../datasets/constraint_based/milestone/) folds eight real BiGG models — the
