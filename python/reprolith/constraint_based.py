@@ -168,6 +168,12 @@ def certify_constraint_based(
 
     model = _apply_medium(ingest_fbc_sbml(sbml), dossier.parameters)
     attributions = shortfalls or {}
+    gap_report = _gap_report(dossier)
+    # A load-bearing medium the paper never stated is applied here as the model's default bound,
+    # so any claim that reproduces did so under a guessed value: qualify it, exactly as every other
+    # class marks a reproduction that rests on an assumption. Without this the objective claim would
+    # certify as a clean `reproduced` while the same fact sits, unheeded, only in the gap report.
+    medium_assumed = bool(gap_report)
     assessments = [
         judge_objective(
             claim_id=claim.id,
@@ -179,6 +185,7 @@ def certify_constraint_based(
             lower=model.lower,
             upper=model.upper,
             tolerance=tolerance,
+            assumption_qualified=medium_assumed,
             attribution=attributions.get(claim.id),
         )
         for claim in dossier.targetable_claims()
@@ -187,7 +194,7 @@ def certify_constraint_based(
         paper=paper,
         engine_pin=engine_pin,
         assessments=assessments,
-        gap_report=_gap_report(dossier),
+        gap_report=gap_report,
     )
 
 

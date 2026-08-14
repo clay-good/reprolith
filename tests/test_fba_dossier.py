@@ -181,6 +181,39 @@ def test_certifies_the_known_growth_rate_end_to_end() -> None:
 
 
 @pytestmark_engine
+def test_an_unstated_load_bearing_medium_never_certifies_a_clean_reproduction() -> None:
+    # The honesty invariant, end to end: the model's default bounds happen to reproduce the reported
+    # growth rate, but the paper never stated its oxygen uptake — that value was applied as a guess.
+    # The certificate must not take clean credit; a load-bearing medium gap qualifies the claim and
+    # downgrades the overall verdict to partially-reproduced. (Regression: this path formerly routed
+    # the gap into the prose report only, leaving the verdict a clean green `reproduced`.)
+    from reprolith import (
+        EnginePin,
+        OverallVerdict,
+        PaperIdentity,
+        Verdict,
+        certify_constraint_based,
+    )
+
+    dossier = constraint_based_dossier(
+        "unstated-o2", model=_adopted_model(), objective_claims=[_growth_claim()],
+        medium_gaps=[Gap(element="R_EX_o2_e", kind=GapKind.MEDIUM,
+                         detail="the paper does not state the oxygen uptake bound",
+                         load_bearing=True)],
+    )
+    cert = certify_constraint_based(
+        dossier, sbml=_MODEL_PATH.read_text(encoding="utf-8"),
+        paper=PaperIdentity(title="E. coli core (unstated medium)", doi=""),
+        engine_pin=EnginePin(engine="scipy-highs", version="1.13", algorithm="linprog-highs"),
+    )
+    (assessment,) = cert.assessments
+    assert assessment.verdict is Verdict.REPRODUCED  # the number matches...
+    assert assessment.assumption_qualified  # ...but only under a guessed medium, so it is qualified
+    assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+    assert cert.gap_report and "R_EX_o2_e" in cert.gap_report[0]
+
+
+@pytestmark_engine
 def test_the_medium_is_genuinely_load_bearing() -> None:
     # The same network, same objective — only the medium changed (oxygen shut off) — reproduces a
     # very different growth rate, which is exactly why the medium is a first-class, load-bearing
