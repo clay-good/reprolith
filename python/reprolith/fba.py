@@ -97,6 +97,12 @@ class InfeasibleFba(RuntimeError):
     """Raised when the flux-balance problem has no bounded, feasible optimum."""
 
 
+# Relative slack for re-imposing optimality in flux variability: only used to rescue a reaction the
+# solver wrongly calls infeasible on the exact-optimum boundary. Small enough that the recovered
+# flux stays within the FROG cross-validation tolerance (1e-6). See :func:`_extreme_at_optimum`.
+_FVA_OPTIMUM_TOLERANCE = 1e-6
+
+
 def _linprog() -> Any:
     try:
         from scipy.optimize import linprog
@@ -429,19 +435,48 @@ def flux_variability(
     # Hold the objective at (a fraction of) its optimum: objective . v >= floor, written for a
     # <=-form solver as -objective . v <= -floor.
     a_ub = [[-x for x in objective]]
-    b_ub = [-floor]
     bounds = list(zip(lower, upper))
     ranges: list[tuple[float, float]] = []
     for i in range(len(objective)):
         select = [1.0 if j == i else 0.0 for j in range(len(objective))]
-        lo = linprog(c=select, A_ub=a_ub, b_ub=b_ub, A_eq=a_eq, b_eq=b_eq, bounds=bounds, method="highs")
-        hi = linprog(
-            c=[-x for x in select], A_ub=a_ub, b_ub=b_ub, A_eq=a_eq, b_eq=b_eq, bounds=bounds, method="highs"
-        )
-        if not lo.success or not hi.success:
+        lo = _extreme_at_optimum(linprog, select, a_ub, floor, a_eq, b_eq, bounds, optimum)
+        hi = _extreme_at_optimum(linprog, [-x for x in select], a_ub, floor, a_eq, b_eq, bounds, optimum)
+        if lo is None or hi is None:
             raise InfeasibleFba(f"flux-variability problem is not solvable for reaction {i}")
-        ranges.append((float(lo.fun), float(-hi.fun)))
+        ranges.append((lo, -hi))
     return ranges
+
+
+def _extreme_at_optimum(
+    linprog: Any,
+    select: Sequence[float],
+    a_ub: Sequence[Sequence[float]],
+    floor: float,
+    a_eq: Sequence[Sequence[float]],
+    b_eq: Sequence[float],
+    bounds: Sequence[tuple[float, float | None]],
+    optimum: float,
+) -> float | None:
+    """Minimize ``select . v`` subject to Sv=0, the flux bounds, and objective . v >= ``floor``.
+
+    Returns the optimal value, or ``None`` if the sub-problem is genuinely infeasible.
+
+    At ``fraction_of_optimum`` == 1.0 the floor equals the optimum, which is recomputed by a
+    separate solve, so ``objective . v >= optimum`` sits exactly on the boundary of the feasible
+    region. A reaction with wide placeholder bounds (a curated model often ships ±1e6) makes that
+    LP badly scaled, and a solver whose presolve rounds a hair more aggressively — HiGHS builds
+    differ across platforms — can call an otherwise-solvable reaction infeasible. When that
+    happens, retry once with the floor relaxed by a tolerance negligible against the reported
+    flux. This rescues only the knife-edge reactions; every reaction that already solves is left
+    byte-identical, so a hypersensitive flux (one pinned to zero at the exact optimum) never
+    drifts.
+    """
+    result = linprog(c=select, A_ub=a_ub, b_ub=[-floor], A_eq=a_eq, b_eq=b_eq, bounds=bounds, method="highs")
+    if result.success:
+        return float(result.fun)
+    relaxed = floor - _FVA_OPTIMUM_TOLERANCE * max(1.0, abs(optimum))
+    result = linprog(c=select, A_ub=a_ub, b_ub=[-relaxed], A_eq=a_eq, b_eq=b_eq, bounds=bounds, method="highs")
+    return float(result.fun) if result.success else None
 
 
 def _internal_reactions(stoichiometry: Sequence[Sequence[float]]) -> list[int]:
