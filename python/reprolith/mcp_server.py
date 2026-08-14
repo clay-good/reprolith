@@ -365,6 +365,28 @@ def release_work(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
     return {"released": True}
 
 
+# The lint_* tools run unbounded pure-Python loops (finite-difference steps, SSA trajectories) whose
+# length is a caller-supplied count. The stdio server is a single-threaded request loop, so one
+# oversized request would wedge it for every caller. The untrusted MCP boundary therefore caps the
+# iteration counts and grid sizes that drive those loops; the in-process library API
+# (``reprolith.linter``) stays unbounded for trusted callers. The ceilings are generous — far above
+# any real inline sanity check — and exist only to turn a pathological request into a clean error.
+_MAX_LINT_ITERATIONS = 1_000_000
+_MAX_LINT_POINTS = 100_000
+
+
+def _bounded_count(value: Any, *, name: str, ceiling: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0 or value > ceiling:
+        raise ValueError(f"{name} must be an integer in [0, {ceiling}]; got {value!r}")
+    return int(value)
+
+
+def _bounded_length(sequence: Any, *, name: str) -> Any:
+    if hasattr(sequence, "__len__") and len(sequence) > _MAX_LINT_POINTS:
+        raise ValueError(f"{name} exceeds the {_MAX_LINT_POINTS}-point limit for a lint request")
+    return sequence
+
+
 def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -> Any:
     """Call the named read-only query tool with the given arguments."""
     if name == "list_catalog":
@@ -395,9 +417,9 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         result = lint_curve(
             arguments["sbml"],
             arguments["species"],
-            reference=tuple(arguments["reference"]),
+            reference=tuple(_bounded_length(arguments["reference"], name="reference")),
             duration=arguments["duration"],
-            steps=arguments["steps"],
+            steps=_bounded_count(arguments["steps"], name="steps", ceiling=_MAX_LINT_ITERATIONS),
         )
         return result.to_dict()
     if name == "lint_steady_state":
@@ -416,8 +438,11 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         from .linter import lint_diffusion
 
         return lint_diffusion(
-            arguments["initial"], arguments["reference"], diffusivity=arguments["diffusivity"],
-            dx=arguments["dx"], dt=arguments["dt"], steps=arguments["steps"],
+            _bounded_length(arguments["initial"], name="initial"),
+            _bounded_length(arguments["reference"], name="reference"),
+            diffusivity=arguments["diffusivity"],
+            dx=arguments["dx"], dt=arguments["dt"],
+            steps=_bounded_count(arguments["steps"], name="steps", ceiling=_MAX_LINT_ITERATIONS),
             decay=arguments.get("decay", 0.0),
         ).to_dict()
     if name == "lint_stochastic":
@@ -426,7 +451,10 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return lint_stochastic(
             arguments["sbml"], species=arguments["species"],
             reported_mean=arguments["reported_mean"], duration=arguments["duration"],
-            trajectories=arguments["trajectories"], seed=arguments["seed"],
+            trajectories=_bounded_count(
+                arguments["trajectories"], name="trajectories", ceiling=_MAX_LINT_ITERATIONS
+            ),
+            seed=arguments["seed"],
         ).to_dict()
     if name == "lint_objective":
         from .linter import lint_objective

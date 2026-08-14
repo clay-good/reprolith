@@ -88,6 +88,19 @@ def test_unknown_tool_is_a_tool_error_not_a_crash() -> None:
     assert is_error
 
 
+def test_lint_diffusion_rejects_an_oversized_step_count_instead_of_wedging() -> None:
+    # lint_diffusion runs a pure-Python `for _ in range(steps)` loop; on the single-threaded stdio
+    # server an absurd step count from an untrusted caller would wedge the whole request loop. The
+    # boundary caps it, so a pathological request returns a clean tool error in O(1), not a hang.
+    query, _ = _fixture()
+    text, is_error = _call(query, "lint_diffusion", {
+        "initial": [0.0, 1.0], "reference": [0.0, 1.0],
+        "diffusivity": 0.0, "dx": 1.0, "dt": 1.0, "steps": 10**12,
+    })
+    assert is_error
+    assert "steps" in text
+
+
 def test_lint_tool_is_registered() -> None:
     assert "lint" in {t["name"] for t in TOOL_DEFINITIONS}
 
