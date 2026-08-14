@@ -330,3 +330,29 @@ def test_pure_death_reproduces_the_harmonic_extinction_time() -> None:
         reported=analytic_mean, predicted=measured_mean,
     )
     assert verdict.verdict is Verdict.REPRODUCED  # within the 5% default for 3000 trajectories
+
+
+def test_ensemble_percentile_bands_rejects_an_empty_ensemble() -> None:
+    # Zero trajectories has no distribution to take percentiles of. The house style is a typed
+    # abstention (like species_mean_variance's "need at least one trajectory"), not an IndexError
+    # leaking out of the nearest-rank percentile.
+    birth = [Reaction(rate=1.0, reactants=(), products=((0, 1),))]
+    with pytest.raises(ValueError, match="at least one trajectory"):
+        ensemble_percentile_bands(
+            1, birth, [0], [0.0, 1.0], species=0, percentiles=[50.0], trajectories=0, seed=1
+        )
+
+
+def test_gillespie_max_events_bounds_a_runaway_trajectory() -> None:
+    # The event count of an SSA run is ∫propensity dt, which a caller drives through BOTH the
+    # duration and the network's rates — so a huge duration (or rate) can run unboundedly. The
+    # optional max_events safety valve refuses rather than looping forever; without it the same
+    # request would never return. A constant-propensity birth reaction never depletes, so it
+    # fires without limit until the cap trips.
+    birth = [Reaction(rate=1000.0, reactants=(), products=((0, 1),))]
+    rng = random.Random(1)
+    with pytest.raises(ValueError, match="exceeded"):
+        gillespie(1, birth, [0], duration=1e12, rng=rng, max_events=10_000)
+    # The default (None) preserves the unbounded library contract for a normal, finite run.
+    final = gillespie(1, birth, [0], duration=0.01, rng=random.Random(1))
+    assert final[0] >= 0

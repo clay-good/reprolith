@@ -455,6 +455,7 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
                 arguments["trajectories"], name="trajectories", ceiling=_MAX_LINT_ITERATIONS
             ),
             seed=arguments["seed"],
+            max_events=_MAX_LINT_ITERATIONS,
         ).to_dict()
     if name == "lint_objective":
         from .linter import lint_objective

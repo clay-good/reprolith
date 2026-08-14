@@ -67,6 +67,7 @@ def gillespie(
     *,
     duration: float,
     rng: random.Random,
+    max_events: int | None = None,
 ) -> list[int]:
     """Run one exact SSA trajectory to ``duration`` and return the final species counts.
 
@@ -74,9 +75,16 @@ def gillespie(
     total propensity and the firing reaction is chosen proportional to its propensity. Deterministic
     given ``rng``'s seed — the same seed reproduces the same trajectory (spec: "A pinned seed is part
     of the protocol").
+
+    The event count of an SSA run is ``∫ propensity dt``, which a caller controls through both
+    ``duration`` and the network's rate constants — so ``duration`` alone does not bound the work.
+    ``max_events`` is an optional safety valve: when set, a trajectory that fires more than that many
+    reactions raises ``ValueError`` rather than running unbounded. It defaults to ``None`` (unbounded)
+    for trusted callers; untrusted entry points (the MCP linter) pass a finite ceiling.
     """
     state = list(initial)
     t = 0.0
+    events = 0
     while t < duration:
         propensities = [reaction.propensity(state) for reaction in reactions]
         total = math.fsum(propensities)
@@ -85,6 +93,12 @@ def gillespie(
         t += -math.log(rng.random()) / total
         if t >= duration:
             break
+        if max_events is not None and events >= max_events:
+            raise ValueError(
+                f"SSA trajectory exceeded {max_events} events before reaching duration "
+                f"{duration:.3g}; reduce duration or the network's rates"
+            )
+        events += 1
         threshold = rng.random() * total
         cumulative = 0.0
         for reaction, propensity in zip(reactions, propensities):
@@ -162,6 +176,8 @@ def ensemble_percentile_bands(
     :class:`~reprolith.oracle.PercentileBand` of that species' count across the ensemble at each
     sample time, ready for :func:`reprolith.judge_distribution`. Deterministic in ``seed``.
     """
+    if trajectories < 1:
+        raise ValueError("need at least one trajectory")
     rng = random.Random(seed)
     # per_time[t] is the list of this species' counts across the ensemble at sample time t.
     per_time: list[list[int]] = [[] for _ in times]
@@ -186,16 +202,18 @@ def ensemble_final_counts(
     duration: float,
     trajectories: int,
     seed: int,
+    max_events: int | None = None,
 ) -> list[list[int]]:
     """Run ``trajectories`` independent SSA runs from one pinned ``seed`` and return their final counts.
 
     A single ``random.Random(seed)`` drives every trajectory in sequence, so the whole ensemble is a
     deterministic function of ``seed`` — the reproducible-sampling contract that lets a stochastic
-    reproduction be certified byte-for-byte.
+    reproduction be certified byte-for-byte. ``max_events`` is forwarded to each trajectory as a
+    per-run safety valve (see :func:`gillespie`); ``None`` leaves them unbounded.
     """
     rng = random.Random(seed)
     return [
-        gillespie(n_species, reactions, initial, duration=duration, rng=rng)
+        gillespie(n_species, reactions, initial, duration=duration, rng=rng, max_events=max_events)
         for _ in range(trajectories)
     ]
 

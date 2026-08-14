@@ -143,6 +143,7 @@ def lint_stochastic(
     trajectories: int,
     seed: int,
     tolerance: Tolerance | None = None,
+    max_events: int | None = None,
 ) -> LintResult:
     """Check a supplied SBML reaction network's mean species count against a reported value (inline SSA).
 
@@ -151,6 +152,9 @@ def lint_stochastic(
     ``reported_mean`` with the scalar oracle. Deterministic in ``seed`` — the same network and
     protocol always yield the same scope-flagged verdict an agent can gate on.
 
+    ``max_events`` bounds the per-trajectory SSA work (see :func:`reprolith.stochastic.gillespie`);
+    the MCP boundary passes a finite ceiling so a large ``duration`` or rate cannot wedge the server.
+
     Needs the ``engine`` extra (python-libsbml for ingestion); the SSA itself is pure.
     """
     from .sbml import ingest_stochastic_sbml
@@ -158,7 +162,8 @@ def lint_stochastic(
 
     names, reactions, initial = ingest_stochastic_sbml(sbml)
     ensemble = ensemble_final_counts(
-        len(names), reactions, initial, duration=duration, trajectories=trajectories, seed=seed
+        len(names), reactions, initial, duration=duration, trajectories=trajectories, seed=seed,
+        max_events=max_events,
     )
     mean, _ = species_mean_variance(ensemble, species)
     tol = tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC)
