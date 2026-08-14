@@ -50,6 +50,15 @@ def test_unstable_discretization_is_rejected() -> None:
         diffuse_1d(initial, diffusivity=1.0, dx=_DX, dt=_DX * _DX, steps=10)
 
 
+def test_negative_diffusivity_is_rejected() -> None:
+    # A negative diffusivity is the backward heat equation — unconditionally unstable. The
+    # stability guard is two-sided: it must refuse D·dt/dx² < 0, not only the > 0.5 case, rather
+    # than run to a diverging profile (the module promises to reject unstable discretizations).
+    initial = gaussian_profile(_CENTERS, mass=1.0, variance=1.0)
+    with pytest.raises(ValueError, match="unstable"):
+        diffuse_1d(initial, diffusivity=-1.0, dx=_DX, dt=0.1 * _DX * _DX, steps=10)
+
+
 def test_first_order_decay_matches_the_exponential_analytical_solution() -> None:
     # A spatially uniform field with decay k obeys C(t) = C0·e^{-k t} everywhere, independent of
     # diffusion (a flat profile has zero Laplacian) — another exact check of the reaction term.

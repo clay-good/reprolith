@@ -44,10 +44,10 @@ def diffuse_1d(
     limit — so an unstable discretization is refused, not run to a diverging profile.
     """
     alpha = diffusivity * dt / (dx * dx)
-    if alpha > 0.5 + 1e-12:
+    if not -1e-12 <= alpha <= 0.5 + 1e-12:
         raise ValueError(
-            f"unstable discretization: D·dt/dx² = {alpha:.3g} exceeds the explicit limit 0.5; "
-            "reduce dt or increase dx"
+            f"unstable discretization: D·dt/dx² = {alpha:.3g} must lie in [0, 0.5]; "
+            "reduce dt or increase dx (a negative value is the unstable backward heat equation)"
         )
     current = list(profile)
     n = len(current)
@@ -82,9 +82,10 @@ def react_diffuse_1d(
     caller's to keep, e.g. by a small ``dt``).
     """
     alpha = diffusivity * dt / (dx * dx)
-    if alpha > 0.5 + 1e-12:
+    if not -1e-12 <= alpha <= 0.5 + 1e-12:
         raise ValueError(
-            f"unstable discretization: D·dt/dx² = {alpha:.3g} exceeds the explicit limit 0.5"
+            f"unstable discretization: D·dt/dx² = {alpha:.3g} must lie in [0, 0.5] "
+            "(a negative value is the unstable backward heat equation)"
         )
     current = list(profile)
     n = len(current)
@@ -119,9 +120,10 @@ def morphogen_gradient(
     large enough to reach steady state; the result is deterministic in the discretization.
     """
     alpha = diffusivity * dt / (dx * dx)
-    if alpha > 0.5 + 1e-12:
+    if not -1e-12 <= alpha <= 0.5 + 1e-12:
         raise ValueError(
-            f"unstable discretization: D·dt/dx² = {alpha:.3g} exceeds the explicit limit 0.5"
+            f"unstable discretization: D·dt/dx² = {alpha:.3g} must lie in [0, 0.5] "
+            "(a negative value is the unstable backward heat equation)"
         )
     if points < 2:
         raise ValueError("need at least two grid points")
@@ -185,9 +187,10 @@ def react_diffuse_2species(
     stability limit.
     """
     au, av = du * dt / (dx * dx), dv * dt / (dx * dx)
-    if au > 0.5 + 1e-12 or av > 0.5 + 1e-12:
+    if not (-1e-12 <= au <= 0.5 + 1e-12 and -1e-12 <= av <= 0.5 + 1e-12):
         raise ValueError(
-            f"unstable discretization: D·dt/dx² = {max(au, av):.3g} exceeds the explicit limit 0.5"
+            f"unstable discretization: D·dt/dx² = {max(au, av):.3g} must lie in [0, 0.5] "
+            "(a negative value is the unstable backward heat equation)"
         )
     cu, cv = list(u), list(v)
     n = len(cu)
@@ -236,9 +239,10 @@ def diffuse_2d(
     dimensions (stricter than 1-D's 0.5).
     """
     alpha = diffusivity * dt / (dx * dx)
-    if alpha > 0.25 + 1e-12:
+    if not -1e-12 <= alpha <= 0.25 + 1e-12:
         raise ValueError(
-            f"unstable discretization: D·dt/dx² = {alpha:.3g} exceeds the 2-D explicit limit 0.25"
+            f"unstable discretization: D·dt/dx² = {alpha:.3g} must lie in [0, 0.25] "
+            "(a negative value is the unstable backward heat equation)"
         )
     ny = len(grid)
     nx = len(grid[0]) if ny else 0
