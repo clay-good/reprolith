@@ -51,6 +51,15 @@ result up to a clean pass.
 - **AND** the overall verdict cannot be an unqualified `reproduced` if any counted claim is
   assumption-qualified
 
+#### Scenario: A load-bearing assumption alone forbids a clean pass
+
+- **WHEN** every counted claim reproduced and none is individually marked assumption-qualified,
+  but the certificate carries a load-bearing assumption on its record
+- **THEN** the overall verdict is downgraded to `partially-reproduced`
+- **AND** this holds however the assumption reached the certificate, so a caller cannot obtain
+  an unqualified `reproduced` by supplying a load-bearing assumption while leaving the claims
+  unqualified
+
 ### Requirement: Provenance and citation integrity
 
 Every quantitative statement in a certificate SHALL trace to a source.

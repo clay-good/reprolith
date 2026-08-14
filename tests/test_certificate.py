@@ -79,3 +79,44 @@ def test_build_certificate_derives_overall() -> None:
     )
     # A caller cannot pass in a clean 'reproduced' — the rule downgrades it.
     assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+
+
+def _asm(load_bearing: bool) -> Assumption:
+    return Assumption(
+        id="a1",
+        description="unstated growth medium",
+        chosen="default bounds",
+        basis="not stated in the paper",
+        load_bearing=load_bearing,
+    )
+
+
+def test_load_bearing_assumption_alone_forbids_a_clean_pass() -> None:
+    # Every claim reproduced and NONE assumption-qualified, but a load-bearing assumption
+    # sits on the record. The downgrade must fire on the assumption's own flag — otherwise a
+    # caller could slip an unstated guess past the clean pass by handing it to the builder
+    # while leaving the claims unqualified.
+    assessments = [_claim(Verdict.REPRODUCED, cid="a"), _claim(Verdict.REPRODUCED, cid="b")]
+    assert derive_overall(assessments) is OverallVerdict.REPRODUCED
+    assert derive_overall(assessments, [_asm(True)]) is OverallVerdict.PARTIALLY_REPRODUCED
+
+
+def test_non_load_bearing_assumption_keeps_a_clean_pass() -> None:
+    # A stated / non-load-bearing assumption does not taint an otherwise clean reproduction.
+    assessments = [_claim(Verdict.REPRODUCED, cid="a")]
+    assert derive_overall(assessments, [_asm(False)]) is OverallVerdict.REPRODUCED
+
+
+def test_build_certificate_downgrades_on_load_bearing_assumption_only() -> None:
+    # The escape closed at the builder: unqualified claims + a load-bearing assumption ->
+    # partially-reproduced, which in turn makes the certificate not submission-ready.
+    from reprolith.presubmission import presubmission_report
+
+    cert = build_certificate(
+        paper=PaperIdentity(title="t"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[_claim(Verdict.REPRODUCED, cid="a"), _claim(Verdict.REPRODUCED, cid="b")],
+        assumptions=[_asm(True)],
+    )
+    assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+    assert presubmission_report(cert)["ready_to_submit"] is False
