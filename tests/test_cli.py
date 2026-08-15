@@ -212,3 +212,12 @@ def test_dossier_unknown_accession_exits_nonzero(tmp_path, capsys):
 def test_command_required(capsys):
     with pytest.raises(SystemExit):
         run([])
+
+
+def test_package_is_runnable_as_a_module() -> None:
+    # `python -m reprolith` must reach the same entry point as the console script, so the terminal
+    # surface works without the installed script on PATH.
+    import reprolith.__main__ as entry
+    from reprolith.cli import main
+
+    assert entry.main is main
