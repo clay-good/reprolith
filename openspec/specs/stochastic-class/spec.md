@@ -42,6 +42,14 @@ A stochastic dossier SHALL capture the elements that determine the network's sto
   (duration, number of trajectories, seed) each claim holds under
 - **AND** each element cites its source location
 
+#### Scenario: A non-mass-action rate law is refused, not reinterpreted
+
+- **WHEN** a reaction's kinetic law is not mass action — its rate expression is anything other than
+  the rate constant times each reactant raised to its stoichiometry (a constant flux over a consumed
+  reactant, a saturating or inhibitory rate, an order that disagrees with the stoichiometry)
+- **THEN** ingestion refuses the model rather than reading the single rate parameter and running a
+  fabricated mass-action propensity, so the SSA never certifies a network the artifact did not describe
+
 ### Requirement: Standard stochastic reproduction targets
 
 The oracle for this class SHALL evaluate the results stochastic papers report, using the
