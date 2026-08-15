@@ -20,13 +20,27 @@ def canonical_json(obj: Any) -> str:
     Keys are sorted, separators are fixed, and non-ASCII is preserved verbatim, so
     two structurally equal values always produce identical text regardless of the
     order in which their keys were inserted.
+
+    A non-finite float (``NaN``, ``Infinity``) is refused rather than encoded: Python's
+    default would emit the bare tokens ``NaN``/``Infinity``, which are not valid JSON, so a
+    certificate or dossier carrying one would be an artifact no standards-compliant reader
+    could parse — the opposite of the portable, independently-checkable result the encoding
+    exists to guarantee. Refusing surfaces the bad value at its source instead.
     """
-    return json.dumps(
-        obj,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    )
+    try:
+        return json.dumps(
+            obj,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        )
+    except ValueError as exc:
+        raise ValueError(
+            "cannot canonicalize a non-finite number (NaN or infinity); a certificate or dossier "
+            "must serialize to valid JSON, so the value is rejected rather than emitted as an "
+            "unparseable token"
+        ) from exc
 
 
 def canonical_bytes(obj: Any) -> bytes:
