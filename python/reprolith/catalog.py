@@ -26,6 +26,18 @@ class IllegalTransition(Exception):
     """Raised when a lifecycle transition is not permitted from the current state."""
 
 
+class AmbiguousMerge(Exception):
+    """Raised when a candidate bridges two existing entries that can't be auto-merged.
+
+    De-duplication resolves a paper arriving under different identifiers to a single entry,
+    even when a later record is the first to connect two previously-separate entries. That
+    merge is safe while at most one of the bridged entries carries recorded work. When both
+    have lifecycle history, or they hold conflicting ground-truth labels, folding one away
+    would silently discard recorded state — so the catalog refuses and asks for human
+    reconciliation instead of corrupting the ledger.
+    """
+
+
 # The permitted transitions. A move not listed here is an ``IllegalTransition`` — the
 # lifecycle is a state machine, not free assignment. ``BLOCKED``/``QUARANTINED`` are
 # reachable from every stage that can discover a missing input or bad data, and can be
@@ -104,8 +116,14 @@ class Identifiers:
     accession: str | None = None
 
     def keys(self) -> frozenset[tuple[str, str]]:
-        """The ``(kind, normalized-value)`` pairs this paper can be matched on."""
-        pairs: set[tuple[str, str]] = {("title", _normalize(self.title))}
+        """The ``(kind, normalized-value)`` pairs this paper can be matched on.
+
+        A blank title yields no title key, so two genuinely different papers submitted with an
+        empty title do not collapse onto the shared ``("title", "")`` key.
+        """
+        pairs: set[tuple[str, str]] = set()
+        if _normalize(self.title):
+            pairs.add(("title", _normalize(self.title)))
         if self.doi:
             pairs.add(("doi", _normalize(self.doi)))
         if self.pubmed_id:
@@ -416,19 +434,37 @@ class Catalog:
         where the existing entry left them unset, so a re-seed never overwrites known data.
         A ``source`` is recorded as provenance and survives de-duplication: a paper seeded from
         more than one source keeps every source that contributed it (spec: catalog-seeding).
+
+        When the candidate matches more than one existing entry — the first record to bridge two
+        entries seeded separately under different identifiers — all of them collapse into one, so
+        the "same paper resolves to a single entry" invariant holds even across the bridge. That
+        collapse raises :class:`AmbiguousMerge` if it would discard recorded work (see
+        :meth:`_absorb`). Raises ``ValueError`` if the candidate carries no usable identifier.
         """
-        existing = self._match(identifiers)
-        if existing is not None:
-            existing.identifiers = existing.identifiers.merged_with(identifiers)
-            if existing.model_class is ModelClass.UNASSIGNED:
-                existing.model_class = model_class
-            if existing.difficulty is None:
-                existing.difficulty = difficulty
-            if existing.ground_truth is None:
-                existing.ground_truth = ground_truth
-            _record_source(existing, source)
-            self._reindex(existing)
-            return existing
+        if not identifiers.keys():
+            raise ValueError(
+                "a catalog entry needs at least one identifier "
+                "(a non-empty title, DOI, PubMed ID, or accession)"
+            )
+        matches = self._match_all(identifiers)
+        if matches:
+            # The richest match (most lifecycle history, then a label) is kept; the others fold
+            # into it. On ties this is the earliest-inserted, preserving the prior single-match
+            # behavior exactly.
+            canonical = max(matches, key=lambda e: (len(e.history), e.ground_truth is not None))
+            for other in matches:
+                if other is not canonical:
+                    self._absorb(canonical, other)
+            canonical.identifiers = canonical.identifiers.merged_with(identifiers)
+            if canonical.model_class is ModelClass.UNASSIGNED:
+                canonical.model_class = model_class
+            if canonical.difficulty is None:
+                canonical.difficulty = difficulty
+            if canonical.ground_truth is None:
+                canonical.ground_truth = ground_truth
+            _record_source(canonical, source)
+            self._reindex(canonical)
+            return canonical
 
         entry = CatalogEntry(
             identifiers,
@@ -523,12 +559,64 @@ class Catalog:
                 return hit
         return None
 
+    def _match_all(self, identifiers: Identifiers) -> list[CatalogEntry]:
+        """Every distinct existing entry the candidate matches, in insertion order.
+
+        Usually one, but a record carrying identifiers from two separately-seeded entries
+        matches both — the case ``_match`` (first hit only) silently dropped.
+        """
+        seen: list[CatalogEntry] = []
+        for key in identifiers.keys():
+            hit = self._index.get(key)
+            if hit is not None and hit not in seen:
+                seen.append(hit)
+        seen.sort(key=self._entries.index)  # deterministic: frozenset key order is not stable
+        return seen
+
+    def _absorb(self, winner: CatalogEntry, loser: CatalogEntry) -> None:
+        """Fold ``loser`` into ``winner`` — they turned out to be one paper.
+
+        Refuses (``AmbiguousMerge``) when the loser carries recorded work (any lifecycle
+        history) or a ground-truth label that conflicts with the winner's, since a silent
+        fold would discard that state. Otherwise the loser's identifiers, sources, and any
+        fields the winner left unset move over, and the loser is removed — including its own
+        index keys, so nothing points at a dropped entry.
+        """
+        if loser.history:
+            raise AmbiguousMerge(
+                f"candidate bridges a worked entry ({loser.identifiers.title!r}) into "
+                f"{winner.identifiers.title!r}; reconcile by hand rather than discarding its history"
+            )
+        if (
+            loser.ground_truth is not None
+            and winner.ground_truth is not None
+            and loser.ground_truth.expected is not winner.ground_truth.expected
+        ):
+            raise AmbiguousMerge(
+                f"bridged entries carry conflicting ground-truth labels "
+                f"({winner.ground_truth.expected.value} vs {loser.ground_truth.expected.value})"
+            )
+        winner.identifiers = winner.identifiers.merged_with(loser.identifiers)
+        if winner.model_class is ModelClass.UNASSIGNED:
+            winner.model_class = loser.model_class
+        if winner.difficulty is None:
+            winner.difficulty = loser.difficulty
+        if winner.ground_truth is None:
+            winner.ground_truth = loser.ground_truth
+        for src in loser.sources:
+            _record_source(winner, src)
+        for key in loser.identifiers.keys():
+            if self._index.get(key) is loser:
+                del self._index[key]
+        self._entries.remove(loser)
+
     def _reindex(self, entry: CatalogEntry) -> None:
         for key in entry.identifiers.keys():
             self._index[key] = entry
 
 
 __all__ = [
+    "AmbiguousMerge",
     "BlindEntry",
     "Catalog",
     "CatalogEntry",

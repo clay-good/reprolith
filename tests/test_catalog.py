@@ -176,6 +176,65 @@ def test_reseed_fills_gaps_without_overwriting_known_data() -> None:
     assert entry.model_class is ModelClass.ODE_PKPD
 
 
+def test_a_record_bridging_two_entries_collapses_them_to_one() -> None:
+    # Two papers seeded separately under a single, non-overlapping identifier each. A later
+    # record carrying BOTH identifiers is the first to reveal they are the same paper: the
+    # catalog must collapse them to one entry, not silently orphan the one it didn't merge into
+    # (spec: model-catalog — "resolves them to a single entry and retains all known identifiers").
+    catalog = Catalog()
+    catalog.add(Identifiers(title="Paper A", doi="10.1/x"), source="src-a")
+    catalog.add(Identifiers(title="Paper B", accession="ACC-Z"), source="src-b")
+    bridged = catalog.add(Identifiers(title="Paper C", doi="10.1/x", accession="ACC-Z"), source="src-c")
+
+    assert len(catalog) == 1
+    assert catalog.find(Identifiers(title="?", doi="10.1/x")) is bridged
+    assert catalog.find(Identifiers(title="?", accession="ACC-Z")) is bridged
+    assert sorted(bridged.sources) == ["src-a", "src-b", "src-c"]  # every provenance survives
+    # No index key points at a dropped entry.
+    assert all(entry in catalog.entries for entry in catalog._index.values())
+
+
+def test_bridging_two_worked_entries_refuses_rather_than_losing_history() -> None:
+    # If both bridged entries carry recorded lifecycle work, folding one away would discard
+    # its history — the catalog refuses (AmbiguousMerge) instead of corrupting the ledger.
+    from reprolith import AmbiguousMerge
+
+    catalog = Catalog()
+    a = catalog.add(Identifiers(title="Worked A", doi="10.2/y"))
+    a.transition(LifecycleState.INGESTING, at="t1", actor="agent", reason="start")
+    b = catalog.add(Identifiers(title="Worked B", accession="ACC-Q"))
+    b.transition(LifecycleState.INGESTING, at="t1", actor="agent", reason="start")
+    with pytest.raises(AmbiguousMerge):
+        catalog.add(Identifiers(title="Bridge", doi="10.2/y", accession="ACC-Q"))
+
+
+def test_bridge_keeps_the_worked_entry_when_only_one_side_has_history() -> None:
+    # One worked, one fresh: the merge is safe and keeps the worked entry (and its state) as the
+    # survivor regardless of insertion order.
+    catalog = Catalog()
+    catalog.add(Identifiers(title="Fresh", accession="ACC-F"))
+    worked = catalog.add(Identifiers(title="Worked", doi="10.3/z"))
+    worked.transition(LifecycleState.INGESTING, at="t1", actor="agent", reason="start")
+    survivor = catalog.add(Identifiers(title="Bridge", doi="10.3/z", accession="ACC-F"))
+    assert len(catalog) == 1
+    assert survivor is worked
+    assert survivor.state is LifecycleState.INGESTING
+
+
+def test_empty_title_does_not_collapse_distinct_papers() -> None:
+    # A blank title must not become a shared match key: two papers with different accessions and
+    # no title stay distinct.
+    catalog = Catalog()
+    catalog.add(Identifiers(title="", accession="A"))
+    catalog.add(Identifiers(title="", accession="B"))
+    assert len(catalog) == 2
+
+
+def test_a_candidate_with_no_identifier_is_rejected() -> None:
+    with pytest.raises(ValueError, match="at least one identifier"):
+        Catalog().add(Identifiers(title="   "))
+
+
 # --- catalog persistence: durable, resumable registry (spec: model-catalog) ---------
 
 

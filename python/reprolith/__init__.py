@@ -11,6 +11,7 @@ from __future__ import annotations
 from .agreement import AgreementReport, EntryAgreement, build_agreement_report
 from .canonical import canonical_bytes, canonical_json, content_hash
 from .catalog import (
+    AmbiguousMerge,
     BlindEntry,
     Catalog,
     CatalogEntry,
@@ -267,6 +268,7 @@ __all__ = [
     "GapKind",
     "GroundTruth",
     "Identifiers",
+    "AmbiguousMerge",
     "IllegalTransition",
     "LifecycleState",
     "LintResult",
