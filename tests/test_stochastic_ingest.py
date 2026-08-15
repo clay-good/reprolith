@@ -74,6 +74,49 @@ def test_non_integer_initial_amount_is_rejected() -> None:
         ingest_stochastic_sbml(libsbml.writeSBMLToString(doc))
 
 
+def _single_reactant_model(rate_math: str) -> str:
+    """An ``S -> P`` reaction whose single-parameter kinetic law is ``rate_math`` (parameter ``k``)."""
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1"><model>'
+        '<listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>'
+        '<listOfSpecies>'
+        '<species id="S" compartment="c" initialAmount="100" hasOnlySubstanceUnits="true"'
+        ' boundaryCondition="false" constant="false"/>'
+        '<species id="P" compartment="c" initialAmount="0" hasOnlySubstanceUnits="true"'
+        ' boundaryCondition="false" constant="false"/>'
+        '</listOfSpecies>'
+        '<listOfReactions><reaction id="R" reversible="false">'
+        '<listOfReactants><speciesReference species="S" stoichiometry="1" constant="true"/></listOfReactants>'
+        '<listOfProducts><speciesReference species="P" stoichiometry="1" constant="true"/></listOfProducts>'
+        '<kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML">'
+        f"{rate_math}"
+        '</math><listOfLocalParameters><localParameter id="k" value="0.5"/></listOfLocalParameters>'
+        '</kineticLaw></reaction></listOfReactions></model></sbml>'
+    )
+
+
+def test_single_parameter_non_mass_action_law_is_refused_not_coerced() -> None:
+    # A constant-flux law over a consumed reactant carries exactly one parameter, so a
+    # parameter-count check alone would read it as mass action k*S and run a fabricated propensity.
+    # The structural check refuses it.
+    constant_flux = _single_reactant_model("<ci>k</ci>")
+    with pytest.raises(ValueError, match="not mass action"):
+        ingest_stochastic_sbml(constant_flux)
+
+    inhibition = _single_reactant_model(
+        "<apply><divide/><ci>k</ci><apply><plus/><cn>1</cn><ci>S</ci></apply></apply>"
+    )
+    with pytest.raises(ValueError, match="not mass action"):
+        ingest_stochastic_sbml(inhibition)
+
+    # The genuine mass-action form for the same reaction is accepted, rate read from the parameter.
+    mass_action = _single_reactant_model("<apply><times/><ci>k</ci><ci>S</ci></apply>")
+    _, reactions, _ = ingest_stochastic_sbml(mass_action)
+    assert len(reactions) == 1
+    assert reactions[0].rate == 0.5 and reactions[0].reactants == ((0, 1),)
+
+
 def test_lint_stochastic_inline_verdict_and_mcp_registration() -> None:
     from reprolith import lint_stochastic
     from reprolith.mcp_server import TOOL_DEFINITIONS

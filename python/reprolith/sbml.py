@@ -406,26 +406,83 @@ def ingest_qual_sbml(sbml: str) -> BooleanNetwork:
     return BooleanNetwork(rules)
 
 
-def _mass_action_rate(kinetic_law: Any) -> float:
-    """The mass-action rate constant of a reaction's kinetic law.
+def _factor_powers(node: Any, libsbml: Any) -> dict[str, int] | None:
+    """Decompose a kinetic-law expression into ``{name: integer power}`` if it is a pure product.
 
-    Scoped to mass-action laws with a single rate parameter (the common ``k · reactant …`` form),
-    so the constant is read directly without interpreting the rate expression. Accepts the rate as a
-    single kinetic-law local parameter (SBML L3) or a single legacy law parameter (SBML L2); any
-    other shape — no parameter, or several — is ambiguous and raises rather than guessing.
+    Walks the MathML AST accepting only a product of variables raised to non-negative integer
+    powers — the shape a mass-action rate law takes (``k``, ``k·A``, ``k·A·B``, ``k·A^2``). A bare
+    variable is power 1; nested ``times`` flattens. Anything else — a sum, a quotient, a numeric
+    coefficient, a call, a non-integer or symbolic exponent — means the law is *not* mass action, so
+    the function returns ``None`` rather than a partial reading. This is the structural check that
+    lets :func:`_mass_action_rate` honor its contract: a law it cannot prove is mass action is
+    refused, never silently reinterpreted as one.
+    """
+    powers: dict[str, int] = {}
+
+    def walk(n: Any, multiplier: int) -> bool:
+        node_type = n.getType()
+        if node_type == libsbml.AST_TIMES:
+            return all(walk(n.getChild(i), multiplier) for i in range(n.getNumChildren()))
+        if node_type == libsbml.AST_NAME:
+            powers[n.getName()] = powers.get(n.getName(), 0) + multiplier
+            return True
+        if node_type in (libsbml.AST_POWER, libsbml.AST_FUNCTION_POWER):
+            if n.getNumChildren() != 2:
+                return False
+            base, exponent = n.getChild(0), n.getChild(1)
+            if base.getType() != libsbml.AST_NAME or exponent.getType() != libsbml.AST_INTEGER:
+                return False
+            power = exponent.getInteger()
+            if power < 0:
+                return False
+            powers[base.getName()] = powers.get(base.getName(), 0) + multiplier * power
+            return True
+        return False
+
+    return powers if walk(node, 1) else None
+
+
+def _mass_action_rate(kinetic_law: Any, reactant_powers: Mapping[str, int]) -> float:
+    """The mass-action rate constant of a reaction whose law is ``k · ∏ reactantᵢ^stoichᵢ``.
+
+    Scoped to mass-action laws with a single rate parameter, so the constant is read directly. The
+    rate is a single kinetic-law local parameter (SBML L3) or a single legacy law parameter (SBML
+    L2); any other shape — no parameter, or several — is ambiguous and raises rather than guessing.
+
+    Reading the parameter is not enough: a single-parameter law can still be non-mass-action (a
+    constant flux where a reactant is consumed, a saturating or inhibitory rate). So the law's
+    expression is checked structurally against the reaction's own reactant stoichiometry
+    (``reactant_powers``); unless it is exactly ``rate · ∏ reactantᵢ^stoichᵢ`` — a zeroth-order law
+    being just ``rate`` when there are no reactants — the law is refused. Without this the SSA would
+    run a fabricated mass-action propensity for a law that says something else entirely, certifying a
+    model the artifact never described.
     """
     if kinetic_law is None:
         raise ValueError("a stochastic reaction needs a mass-action kinetic law with a rate constant")
     n_local = kinetic_law.getNumLocalParameters()
-    if n_local == 1:
-        return float(kinetic_law.getLocalParameter(0).getValue())
     n_legacy = kinetic_law.getNumParameters()
-    if n_local == 0 and n_legacy == 1:
-        return float(kinetic_law.getParameter(0).getValue())
-    raise ValueError(
-        "expected exactly one mass-action rate parameter in the kinetic law; "
-        f"found {n_local} local and {n_legacy} legacy — only single-parameter mass action is supported"
-    )
+    if n_local == 1:
+        rate_param = kinetic_law.getLocalParameter(0)
+    elif n_local == 0 and n_legacy == 1:
+        rate_param = kinetic_law.getParameter(0)
+    else:
+        raise ValueError(
+            "expected exactly one mass-action rate parameter in the kinetic law; "
+            f"found {n_local} local and {n_legacy} legacy — only single-parameter mass action is supported"
+        )
+
+    math = kinetic_law.getMath()
+    if math is None:
+        raise ValueError("the kinetic law has no rate expression to verify as mass action")
+    factors = _factor_powers(math, _libsbml())
+    expected = {rate_param.getId(): 1, **dict(reactant_powers)}
+    if factors != expected:
+        raise ValueError(
+            "the kinetic law is not mass action: expected the rate constant times each reactant "
+            f"raised to its stoichiometry ({expected}), but the expression is {factors}; a "
+            "non-mass-action law is refused rather than reinterpreted as mass action"
+        )
+    return float(rate_param.getValue())
 
 
 def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[int]]:
@@ -471,7 +528,13 @@ def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[i
             (index_of[rxn.getProduct(k).getSpecies()], int(round(rxn.getProduct(k).getStoichiometry())))
             for k in range(rxn.getNumProducts())
         )
-        rate = _mass_action_rate(rxn.getKineticLaw())
+        reactant_powers: dict[str, int] = {}
+        for k in range(rxn.getNumReactants()):
+            ref = rxn.getReactant(k)
+            reactant_powers[ref.getSpecies()] = reactant_powers.get(ref.getSpecies(), 0) + int(
+                round(ref.getStoichiometry())
+            )
+        rate = _mass_action_rate(rxn.getKineticLaw(), reactant_powers)
         reactions.append(Reaction(rate=rate, reactants=reactants, products=products))
 
     return species, reactions, initial
