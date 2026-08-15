@@ -136,6 +136,31 @@ def test_figure_only_claim_without_data_abstains() -> None:
     assert "no digitizable" in a.root_cause
 
 
+def test_non_finite_reconstruction_output_abstains_rather_than_failing() -> None:
+    # A diverging integrator yields NaN/inf. Left to the numeric path that classifies as `failed`
+    # (NaN <= tol is False) and then demands a root-cause attribution it has no basis for — so with
+    # no attribution the judge used to raise, and with one it manufactured a misattributed failure.
+    # The honest verdict is not-evaluable: the run produced no comparable value.
+    curve = judge_curve(
+        claim_id="c", quantity="concentration", source_location="T1",
+        reference=[1.0, 2.0, 3.0], predicted=[1.0, float("nan"), 3.0],
+    )
+    assert curve.verdict is Verdict.NOT_EVALUABLE
+    assert curve.discrepancy is None and "non-finite" in curve.root_cause
+
+    scalar = judge_scalar(
+        claim_id="c", quantity="Cmax", source_location="T1",
+        reported=10.0, predicted=float("inf"),
+    )
+    assert scalar.verdict is Verdict.NOT_EVALUABLE
+
+    # A finite comparison is unaffected: a genuine mismatch is still judged, not abstained.
+    good = judge_scalar(
+        claim_id="c", quantity="Cmax", source_location="T1", reported=10.0, predicted=10.2
+    )
+    assert good.verdict is Verdict.REPRODUCED
+
+
 # --- 4.4 root-cause attribution with implicated element and fault hypothesis --------
 
 

@@ -20,7 +20,7 @@ numbers.
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from enum import Enum
 
@@ -275,6 +275,34 @@ def band_envelope_distance(
     return worst_distance, worst_band
 
 
+def _non_finite_abstention(
+    values: Iterable[float],
+    *,
+    claim_id: str,
+    quantity: str,
+    source_location: str,
+    reference_kind: ReferenceKind,
+) -> ClaimAssessment | None:
+    """Abstain when any value feeding the comparison is non-finite, else ``None``.
+
+    A NaN or infinity among the reconstruction's output (a diverging integrator, a stiff blow-up)
+    or the reference means there is nothing meaningful to compare. Left to the numeric path a NaN
+    would silently classify as ``failed`` (``NaN <= tol`` is ``False``) and then demand a root-cause
+    attribution it has no basis for — turning an un-judgeable run into either a crash or a
+    mislabeled, misattributed failure. The honest verdict is ``not-evaluable``: the run produced no
+    comparable value, which is not the same as producing a wrong one.
+    """
+    if all(math.isfinite(v) for v in values):
+        return None
+    return not_evaluable(
+        claim_id=claim_id,
+        quantity=quantity,
+        source_location=source_location,
+        reason="the reconstruction produced non-finite output; the run did not converge to a comparable value",
+        reference_kind=reference_kind,
+    )
+
+
 def verdict_for(measure: float, tol: Tolerance) -> Verdict:
     """Classify a measured discrepancy against a tolerance into a per-claim verdict.
 
@@ -347,6 +375,12 @@ def judge_scalar(
     Uses the documented class default when ``tolerance`` is unset. A ``partial`` or ``failed``
     outcome requires an ``attribution`` (category + implicated element + fault hypothesis).
     """
+    abstention = _non_finite_abstention(
+        (reported, predicted), claim_id=claim_id, quantity=quantity,
+        source_location=source_location, reference_kind=reference_kind,
+    )
+    if abstention is not None:
+        return abstention
     tol = tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind)
     err = relative_error(reported, predicted)
     return _assemble(
@@ -388,6 +422,12 @@ def judge_estimation(
     re-fit is sensitive to the optimizer and its starting values) when ``tolerance`` is unset. A
     ``partial`` or ``failed`` outcome requires an ``attribution``.
     """
+    abstention = _non_finite_abstention(
+        (reported, recovered), claim_id=claim_id, quantity=quantity,
+        source_location=source_location, reference_kind=ReferenceKind.NUMERIC,
+    )
+    if abstention is not None:
+        return abstention
     tol = tolerance or _ESTIMATION_DEFAULT
     err = relative_error(reported, recovered)
     return _assemble(
@@ -422,6 +462,12 @@ def judge_curve(
     Uses the documented class default when ``tolerance`` is unset. A ``partial`` or ``failed``
     outcome requires an ``attribution``.
     """
+    abstention = _non_finite_abstention(
+        (*reference, *predicted), claim_id=claim_id, quantity=quantity,
+        source_location=source_location, reference_kind=reference_kind,
+    )
+    if abstention is not None:
+        return abstention
     tol = tolerance or default_tolerance(
         ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind
     )
@@ -469,6 +515,13 @@ def judge_distribution(
     A single variability *scalar* (a CV%, a between-subject SD, one percentile value) is not an
     envelope; judge it with :func:`judge_scalar` by relative error.
     """
+    abstention = _non_finite_abstention(
+        (*(v for b in reference for v in b.curve), *(v for b in predicted for v in b.curve)),
+        claim_id=claim_id, quantity=quantity,
+        source_location=source_location, reference_kind=reference_kind,
+    )
+    if abstention is not None:
+        return abstention
     tol = tolerance or default_tolerance(
         ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, reference_kind
     )
