@@ -36,12 +36,28 @@ def gap_items(cert: Certificate) -> list[dict[str, Any]]:
     One item per claim that did not cleanly reproduce, each tying the shortfall to the
     claim it blocks — its identifier, quantity, verdict, source location, and the specific
     thing needed to close it (the implicated root cause, else the observed discrepancy, else
-    a plain statement that evaluable output or reference data is required). Certificate-level
-    gap notes follow, not tied to a single claim.
+    a plain statement that evaluable output or reference data is required).
+
+    A claim that reproduced *only because Reprolith supplied an assumption* did not cleanly
+    reproduce either, so it appears here too — otherwise this report would call an
+    assumption-qualified pass "nothing missing" while the overall verdict is
+    ``partially-reproduced``. Each load-bearing assumption is listed as its own item naming the
+    exact condition the paper left out, so the honesty payload always states *why* a clean pass
+    was withheld. Certificate-level gap notes follow, not tied to a single claim.
     """
     items: list[dict[str, Any]] = []
     for a in cert.assessments:
         if a.verdict is Verdict.REPRODUCED:
+            if a.assumption_qualified:
+                items.append(
+                    {
+                        "claim_id": a.claim_id,
+                        "quantity": a.quantity,
+                        "verdict": a.verdict.value,
+                        "source_location": a.source_location,
+                        "needs": "reproduced only under an assumption Reprolith supplied, not a clean pass",
+                    }
+                )
             continue
         needs = a.root_cause or a.discrepancy or "evaluable output or reference data for this claim"
         items.append(
@@ -51,6 +67,18 @@ def gap_items(cert: Certificate) -> list[dict[str, Any]]:
                 "verdict": a.verdict.value,
                 "source_location": a.source_location,
                 "needs": needs,
+            }
+        )
+    for asm in cert.assumptions:
+        if not asm.load_bearing:
+            continue
+        items.append(
+            {
+                "claim_id": None,
+                "quantity": None,
+                "verdict": None,
+                "source_location": None,
+                "needs": f"{asm.description} — Reprolith assumed {asm.chosen} ({asm.basis})",
             }
         )
     for note in cert.gap_report:

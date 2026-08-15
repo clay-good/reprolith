@@ -124,6 +124,34 @@ def test_full_reproduction_has_no_gaps() -> None:
     assert "WHAT WAS MISSING" not in render_human(cert, RUN)
 
 
+def test_assumption_driven_downgrade_is_never_a_silent_empty_gap_report() -> None:
+    # A claim can reproduce yet still not be a clean pass: it reproduced only under a load-bearing
+    # assumption Reprolith supplied, which is why the overall verdict is partially-reproduced. The
+    # "what was missing" report must say so — otherwise the one surface whose job is to explain the
+    # downgrade asserts nothing was missing.
+    cert = _cert(
+        [_claim(Verdict.REPRODUCED, cid="a", qualified=True)],
+        assumptions=[Assumption(id="dose", description="salt form unstated", chosen="free base",
+                                basis="model default", load_bearing=True)],
+    )
+    assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+    gaps = render_machine(cert, RUN)["gaps"]
+    assert gaps, "a sub-full verdict must never yield an empty gap report"
+    needs = " ".join(g["needs"] for g in gaps)
+    assert "assumption" in needs  # the qualified claim is named as not-a-clean-pass
+    assert "salt form unstated" in needs  # the load-bearing assumption names the missing condition
+    assert "WHAT WAS MISSING" in render_human(cert, RUN)
+
+
+def test_assumption_qualified_claim_without_a_recorded_assumption_still_reports_the_gap() -> None:
+    # The stochastic class qualifies a claim on its sampling protocol without recording a separate
+    # assumption object; the gap report must still flag the qualified claim rather than fall silent.
+    cert = _cert([_claim(Verdict.REPRODUCED, cid="a", qualified=True)])
+    assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+    gaps = render_machine(cert, RUN)["gaps"]
+    assert len(gaps) == 1 and gaps[0]["claim_id"] == "a"
+
+
 def test_certificate_level_gap_notes_are_included() -> None:
     cert = _cert([_claim(Verdict.PARTIAL, cid="a")], gap_report=("dosing schedule ambiguous",))
     gaps = render_machine(cert, RUN)["gaps"]
