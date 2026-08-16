@@ -21,7 +21,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import IO, Any
 
-from .catalog import Catalog, Identifiers
+from .catalog import AmbiguousMerge, Catalog, Identifiers, IllegalTransition
 from .enums import ModelClass
 from .query import ReprolithQuery
 from .supersession import CertificateLedger
@@ -497,6 +497,11 @@ def handle_request(
     stays deterministic). Without a catalog the server is read-only and effectful calls are
     refused.
     """
+    if not isinstance(request, dict):
+        # A well-formed JSON value that isn't an object (a bare number, string, list, or null)
+        # is still an invalid JSON-RPC request; refuse it rather than crash on ``.get``.
+        return _error(None, -32600, "invalid request: expected a JSON object")
+
     method = request.get("method")
     request_id = request.get("id")
 
@@ -539,10 +544,18 @@ def handle_request(
                     on_change()
             else:
                 data = dispatch_tool(query, name, arguments)
-        except (KeyError, TypeError, ValueError, RuntimeError) as exc:
-            # Unknown tool / bad args, a length mismatch, or the engine being absent or diverging
-            # (EngineUnavailable and NonFiniteSimulation are RuntimeErrors) are tool-level errors:
-            # report them to the caller rather than crash the server.
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            RuntimeError,
+            AmbiguousMerge,
+            IllegalTransition,
+        ) as exc:
+            # Unknown tool / bad args, a length mismatch, the engine being absent or diverging
+            # (EngineUnavailable and NonFiniteSimulation are RuntimeErrors), or an effectful call
+            # refusing a catalog conflict (AmbiguousMerge/IllegalTransition) are all tool-level
+            # errors: report them to the caller rather than crash the server.
             return _result(
                 request_id,
                 {"content": [{"type": "text", "text": f"error: {exc}"}], "isError": True},
@@ -573,8 +586,20 @@ def serve_stdio(
         line = line.strip()
         if not line:
             continue
-        request = json.loads(line)
-        response = handle_request(query, request, catalog=catalog, on_change=on_change, now=now)
+        try:
+            request = json.loads(line)
+        except json.JSONDecodeError as exc:
+            # One malformed line must not kill the loop for every later caller.
+            writer.write(json.dumps(_error(None, -32700, f"parse error: {exc}")) + "\n")
+            writer.flush()
+            continue
+        try:
+            response = handle_request(
+                query, request, catalog=catalog, on_change=on_change, now=now
+            )
+        except Exception as exc:  # noqa: BLE001 - a handler bug must not wedge the server
+            request_id = request.get("id") if isinstance(request, dict) else None
+            response = _error(request_id, -32603, f"internal error: {exc}")
         if response is not None:
             writer.write(json.dumps(response) + "\n")
             writer.flush()

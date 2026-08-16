@@ -88,6 +88,31 @@ def test_unknown_tool_is_a_tool_error_not_a_crash() -> None:
     assert is_error
 
 
+def test_a_non_object_request_is_refused_not_a_crash() -> None:
+    # A well-formed JSON value that is not an object (a bare number, string, list, or null) must
+    # not reach `request.get(...)` and blow up the loop; it is an invalid JSON-RPC request.
+    query, _ = _fixture()
+    for payload in (42, "hello", [1, 2], None):
+        resp = handle_request(query, payload)  # type: ignore[arg-type]
+        assert resp is not None
+        assert resp["error"]["code"] == -32600
+
+
+def test_serve_stdio_survives_a_malformed_line_and_keeps_serving() -> None:
+    # One garbage line from an untrusted peer must not kill the single-threaded stdio loop for
+    # every later caller: it gets a parse error (-32700), and the next valid request is answered.
+    query, _ = _fixture()
+    valid = '{"jsonrpc": "2.0", "id": 9, "method": "tools/list"}'
+    for first in ("not json at all", "42", "null", "[]"):
+        reader = io.StringIO(first + "\n" + valid + "\n")
+        writer = io.StringIO()
+        serve_stdio(query, reader=reader, writer=writer)
+        lines = [json.loads(line) for line in writer.getvalue().splitlines() if line]
+        assert lines[0]["error"]["code"] in (-32700, -32600)
+        # The following valid request is still answered — the loop did not die.
+        assert lines[-1]["id"] == 9 and "result" in lines[-1]
+
+
 def test_lint_diffusion_rejects_an_oversized_step_count_instead_of_wedging() -> None:
     # lint_diffusion runs a pure-Python `for _ in range(steps)` loop; on the single-threaded stdio
     # server an absurd step count from an untrusted caller would wedge the whole request loop. The
