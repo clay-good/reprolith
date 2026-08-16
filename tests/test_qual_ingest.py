@@ -79,3 +79,68 @@ def test_multi_level_species_is_rejected() -> None:
     species.setInitialLevel(0)
     with pytest.raises(ValueError, match="two-level"):
         ingest_qual_sbml(libsbml_mod.writeSBMLToString(doc))
+
+
+def _qual_document(*, initial_level: int = 0, formula: str = "Signal >= 1",
+                   default_term: bool = True, output_effect: str = "assignment",
+                   input_threshold: int | None = None) -> str:
+    """A two-species qual model — `Target := formula` over a constant input `Signal`."""
+    import libsbml
+
+    doc = libsbml.SBMLDocument(libsbml.SBMLNamespaces(3, 1, "qual", 1))
+    model = doc.createModel()
+    qual = model.getPlugin("qual")
+    compartment = model.createCompartment()
+    compartment.setId("c")
+    compartment.setConstant(True)
+    for species_id, level, constant in (("Signal", initial_level, True), ("Target", 0, False)):
+        species = qual.createQualitativeSpecies()
+        species.setId(species_id)
+        species.setCompartment("c")
+        species.setConstant(constant)
+        species.setInitialLevel(level)  # maxLevel deliberately left unset, as real files often do
+    transition = qual.createTransition()
+    transition.setId("t1")
+    model_input = transition.createInput()
+    model_input.setId("i1")
+    model_input.setQualitativeSpecies("Signal")
+    model_input.setTransitionEffect(libsbml.INPUT_TRANSITION_EFFECT_NONE)
+    if input_threshold is not None:
+        model_input.setThresholdLevel(input_threshold)
+    output = transition.createOutput()
+    output.setQualitativeSpecies("Target")
+    output.setTransitionEffect(
+        libsbml.OUTPUT_TRANSITION_EFFECT_ASSIGNMENT_LEVEL if output_effect == "assignment"
+        else libsbml.OUTPUT_TRANSITION_EFFECT_PRODUCTION
+    )
+    if default_term:
+        transition.createDefaultTerm().setResultLevel(0)
+    term = transition.createFunctionTerm()
+    term.setResultLevel(1)
+    term.setMath(libsbml.parseL3Formula(formula))
+    return libsbml.writeSBMLToString(doc)
+
+
+def test_a_multi_valued_model_without_max_level_is_refused_not_flattened() -> None:
+    # maxLevel is optional, so its absence is no evidence the model is Boolean. A three-level input
+    # driving `Target := (Signal >= 2)` used to ingest as Boolean: the threshold became permanently
+    # false, the model's real dynamics vanished, and a state that is NOT a steady state of the
+    # actual model was certified as reproduced.
+    with pytest.raises(ValueError, match="multi-valued"):
+        ingest_qual_sbml(_qual_document(initial_level=2))
+    # The level also shows up in the math, which is caught even when no species declares it.
+    with pytest.raises(ValueError, match="two-level"):
+        ingest_qual_sbml(_qual_document(formula="Signal >= 2"))
+    # The genuinely Boolean model is untouched.
+    assert ingest_qual_sbml(_qual_document()).nodes == ("Signal", "Target")
+
+
+def test_unsupported_qual_transition_constructs_are_refused() -> None:
+    # Each of these means something the Boolean oracle does not do; running them as ordinary
+    # assignment logic silently certifies a different model.
+    with pytest.raises(ValueError, match="produces rather than assigns"):
+        ingest_qual_sbml(_qual_document(output_effect="production"))
+    with pytest.raises(ValueError, match="no default term"):
+        ingest_qual_sbml(_qual_document(default_term=False))
+    with pytest.raises(ValueError, match="threshold level"):
+        ingest_qual_sbml(_qual_document(input_threshold=3))

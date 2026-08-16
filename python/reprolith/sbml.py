@@ -292,6 +292,16 @@ def _compile_qual_num(node: Any, libsbml: Any, nodes: Container[str]) -> Callabl
         return lambda s: float(s[name])
     if kind in (libsbml.AST_INTEGER, libsbml.AST_REAL, libsbml.AST_REAL_E, libsbml.AST_RATIONAL):
         value = float(node.getValue())
+        if value not in (0.0, 1.0):
+            # A two-level model never needs another threshold, so a literal like the 2 in
+            # `Signal >= 2` is proof the model is multi-valued — even when every species left
+            # maxLevel unset and the level check upstream could not see it. Refuse rather than
+            # evaluate the comparison against a flattened 0/1 level, which makes the condition
+            # permanently false and certifies a state that is not a steady state of the real model.
+            raise ValueError(
+                f"transition math compares against level {value:g}; the Boolean oracle supports "
+                "only two-level (0/1) logical models"
+            )
         return lambda s: value
     raise ValueError(f"unsupported qual math operand (AST type {kind})")
 
@@ -378,10 +388,14 @@ def ingest_qual_sbml(sbml: str) -> BooleanNetwork:
     for i in range(qual.getNumQualitativeSpecies()):
         qs = qual.getQualitativeSpecies(i)
         max_level = qs.getMaxLevel() if qs.isSetMaxLevel() else 1
-        if max_level > 1:
+        initial_level = qs.getInitialLevel() if qs.isSetInitialLevel() else 0
+        # maxLevel is optional, so its absence is not evidence the model is Boolean. An initial
+        # level above 1 says the species is multi-valued just as plainly, and reading it as Boolean
+        # would discard the model's real dynamics while still producing a verdict.
+        if max_level > 1 or initial_level > 1:
             raise ValueError(
-                f"species {qs.getId()!r} has maxLevel {max_level}; the Boolean oracle supports "
-                "only two-level (0/1) logical models"
+                f"species {qs.getId()!r} is multi-valued (maxLevel {max_level}, initial level "
+                f"{initial_level}); the Boolean oracle supports only two-level (0/1) logical models"
             )
         node_names.add(qs.getId())
 
@@ -390,13 +404,44 @@ def ingest_qual_sbml(sbml: str) -> BooleanNetwork:
         transition = qual.getTransition(i)
         if transition.getNumOutputs() != 1:
             raise ValueError(f"transition {transition.getId()!r} must have exactly one output")
-        target = transition.getOutput(0).getQualitativeSpecies()
+        output = transition.getOutput(0)
+        target = output.getQualitativeSpecies()
         if target not in node_names:
             raise ValueError(f"transition {transition.getId()!r} outputs unknown species {target!r}")
         if target in rules:
             raise ValueError(f"species {target!r} is the output of more than one transition")
+        if (
+            output.isSetTransitionEffect()
+            and output.getTransitionEffect() != libsbml.OUTPUT_TRANSITION_EFFECT_ASSIGNMENT_LEVEL
+        ):
+            # "production" adds the result level to the current one; the oracle assigns it. Running
+            # an additive transition as an assignment is a different model, so refuse it.
+            raise ValueError(
+                f"transition {transition.getId()!r} produces rather than assigns its output level; "
+                "only assignment transitions are supported"
+            )
+        for k in range(transition.getNumInputs()):
+            model_input = transition.getInput(k)
+            if (
+                model_input.isSetTransitionEffect()
+                and model_input.getTransitionEffect() == libsbml.INPUT_TRANSITION_EFFECT_CONSUMPTION
+            ):
+                raise ValueError(
+                    f"transition {transition.getId()!r} consumes input "
+                    f"{model_input.getQualitativeSpecies()!r}; consumption is not Boolean logic"
+                )
+            if model_input.isSetThresholdLevel() and model_input.getThresholdLevel() > 1:
+                raise ValueError(
+                    f"transition {transition.getId()!r} sets a threshold level "
+                    f"{model_input.getThresholdLevel()} above 1; the Boolean oracle supports only "
+                    "two-level (0/1) logical models"
+                )
         default_term = transition.getDefaultTerm()
-        default_level = default_term.getResultLevel() if default_term is not None else 0
+        if default_term is None:
+            # SBML-qual requires it, and taking the missing one as 0 invents the behaviour of every
+            # state no function term covers.
+            raise ValueError(f"transition {transition.getId()!r} has no default term")
+        default_level = default_term.getResultLevel()
         terms: list[tuple[Callable[[Mapping[str, int]], bool], int]] = []
         for k in range(transition.getNumFunctionTerms()):
             function_term = transition.getFunctionTerm(k)

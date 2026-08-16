@@ -374,6 +374,11 @@ def release_work(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
 # any real inline sanity check — and exist only to turn a pathological request into a clean error.
 _MAX_LINT_ITERATIONS = 1_000_000
 _MAX_LINT_POINTS = 100_000
+# A Boolean network's work is exponential in its node count, so the node count is the size the
+# logical linter has to bound: checking a fixed point walks the rules once per node, but reaching
+# the answer for a larger network means enumerating 2^n states (or a SAT solve the caller shapes).
+# Fourteen nodes is worst-case seconds, well past any inline sanity check an agent runs mid-workflow.
+_MAX_LINT_NODES = 14
 
 
 def _bounded_count(value: Any, *, name: str, ceiling: int) -> int:
@@ -426,7 +431,14 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
     if name == "lint_steady_state":
         from .linter import lint_steady_state
 
-        return lint_steady_state(arguments["rules"], arguments["reported"]).to_dict()
+        rules = arguments["rules"]
+        if hasattr(rules, "__len__") and len(rules) > _MAX_LINT_NODES:
+            raise ValueError(
+                f"the network has {len(rules)} nodes, above the {_MAX_LINT_NODES}-node limit for a "
+                "lint request; analysing a larger network is exponential work, so run it through "
+                "the library API rather than the shared server"
+            )
+        return lint_steady_state(rules, arguments["reported"]).to_dict()
     if name == "lint_estimation":
         from .linter import lint_estimation
 

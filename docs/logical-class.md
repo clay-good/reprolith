@@ -106,8 +106,12 @@ standard **SBML-qual** model — the field's interchange format for logical mode
 `BooleanNetwork`. Each transition's function terms are compiled into pure-Python closures (the first
 satisfied term's result level, else the default term's), so the returned network retains nothing
 libsbml owns; a species with no transition is a constant input that holds its value. It is scoped to
-two-level (Boolean) models on purpose — a `maxLevel > 1` species raises rather than being silently
-flattened — and needs the `engine` extra (python-libsbml, which bundles the qual package).
+two-level (Boolean) models on purpose, and refuses anything multi-valued rather than flattening it:
+`maxLevel` is optional in SBML-qual, so an initial level above 1, a threshold above 1, or a level
+literal in the transition math all raise on their own. Transition constructs the Boolean oracle does
+not implement — a production (additive) output, a consuming input, a missing default term — raise
+too, because running them as ordinary assignment logic would certify a different model. It needs the
+`engine` extra (python-libsbml, which bundles the qual package).
 
 ## Self-validation
 

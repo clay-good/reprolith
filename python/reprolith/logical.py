@@ -34,8 +34,8 @@ State = tuple[int, ...]
 Rule = Callable[[Mapping[str, int]], int]
 
 #: The largest network this exact oracle enumerates. Fixed-point and attractor analysis here walk
-#: the whole 2ⁿ state space, so cost doubles with every node; 2²⁰ ≈ 1M states stays tractable
-#: (seconds), while a real signalling model of 60–80 nodes (e.g. CANA's BREAST_CANCER, LEUKEMIA)
+#: the whole 2ⁿ state space, so cost doubles with every node; 2²⁰ ≈ 1M states is minutes of pure
+#: Python, while a real signalling model of 60–80 nodes (e.g. CANA's BREAST_CANCER, LEUKEMIA)
 #: is astronomically beyond exhaustive enumeration. Above this the oracle refuses fast and clearly
 #: rather than hang or exhaust memory — the honest scale boundary of an exact method.
 MAX_ENUMERABLE_NODES = 20

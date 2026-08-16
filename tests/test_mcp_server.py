@@ -522,3 +522,21 @@ def test_a_missing_repository_state_names_the_cause(tmp_path: Path, monkeypatch)
     monkeypatch.setattr(mcp_server, "repository_data_root", lambda: tmp_path / "datasets")
     with pytest.raises(FileNotFoundError, match="--data-dir"):
         mcp_server.default_data_dir()
+
+
+def test_lint_steady_state_refuses_an_oversized_network_instead_of_wedging() -> None:
+    # Every other lint_* tool caps the caller-supplied size that drives its loop. This one took a
+    # rules dict of any size, and a Boolean network's analysis is exponential in its node count, so
+    # a single request could occupy the single-threaded stdio server for minutes or longer.
+    query, _ = _fixture()
+    rules = {f"n{i}": f"!n{(i + 1) % 40}" for i in range(40)}
+    text, is_error = _call(query, "lint_steady_state", {
+        "rules": rules, "reported": {name: 0 for name in rules},
+    })
+    assert is_error
+    assert "node limit" in text
+    # A network inside the ceiling is still served.
+    ok, is_error = _call(query, "lint_steady_state", {
+        "rules": {"A": "!B", "B": "!A"}, "reported": {"A": 1, "B": 0},
+    })
+    assert not is_error and ok["verdict"] == "reproduced"
