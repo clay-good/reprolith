@@ -16,6 +16,7 @@ function from a request object to a response object (testable without any I/O), 
 from __future__ import annotations
 
 import json
+import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -724,6 +725,25 @@ def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[R
     return query, catalog
 
 
+def write_json_atomically(path: Path, payload: Any) -> None:
+    """Write ``payload`` as JSON to ``path`` so a failed write cannot leave a half-written file.
+
+    The catalog is rewritten in full on every mutation, and it is the file both surfaces read at
+    startup — so a write interrupted by a signal, a crash, or a full disk truncates it and the next
+    start of the server *and* the CLI dies on the unparseable remains. Writing to a sibling
+    temporary file and renaming it into place makes the replacement atomic: the reader sees either
+    the previous catalog or the new one, never a fragment.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    try:
+        temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        os.replace(temporary, path)
+    except BaseException:
+        temporary.unlink(missing_ok=True)  # leave no debris beside the intact original
+        raise
+
+
 def main() -> None:  # pragma: no cover - stdio entry point
     """Run the server over stdio, loading the persisted catalog, certificates, and artifacts."""
     milestone = default_data_dir()
@@ -731,10 +751,7 @@ def main() -> None:  # pragma: no cover - stdio entry point
     query, catalog = load_repository(milestone, aggregate=True)
 
     def save() -> None:
-        catalog_file.parent.mkdir(parents=True, exist_ok=True)
-        catalog_file.write_text(
-            json.dumps(catalog.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
+        write_json_atomically(catalog_file, catalog.to_dict())
 
     import time
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+from pathlib import Path
 
 from reprolith import (
     Catalog,
@@ -479,3 +480,30 @@ def test_self_validation_tool_is_honest_over_mcp() -> None:
     plain, _ = load_repository(default_data_dir())
     plain_report, _ = _call(plain, "self_validation", {})
     assert plain_report["by_class"] == {}
+
+
+def test_a_failed_catalog_write_leaves_the_previous_catalog_intact(tmp_path: Path) -> None:
+    """A write that dies partway must not destroy the file both surfaces read at startup.
+
+    The catalog is rewritten in full on every mutation. Writing in place meant an interrupted or
+    out-of-space write truncated it, and the next start of the server and the CLI both died on the
+    unparseable remains — a total wedge from one ordinary effectful call.
+    """
+    import json as _json
+
+    import pytest
+    from reprolith.mcp_server import write_json_atomically
+
+    catalog_file = tmp_path / "catalog.json"
+    write_json_atomically(catalog_file, {"entries": ["first"]})
+    original = catalog_file.read_text(encoding="utf-8")
+
+    class Unserializable:
+        pass
+
+    with pytest.raises(TypeError):
+        write_json_atomically(catalog_file, {"entries": [Unserializable()]})
+
+    assert catalog_file.read_text(encoding="utf-8") == original
+    assert _json.loads(original) == {"entries": ["first"]}
+    assert list(tmp_path.iterdir()) == [catalog_file]  # no temporary debris left behind
