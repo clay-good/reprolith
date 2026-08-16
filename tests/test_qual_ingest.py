@@ -144,3 +144,48 @@ def test_unsupported_qual_transition_constructs_are_refused() -> None:
         ingest_qual_sbml(_qual_document(default_term=False))
     with pytest.raises(ValueError, match="threshold level"):
         ingest_qual_sbml(_qual_document(input_threshold=3))
+
+
+def test_the_ingested_network_carries_its_rules_so_a_large_model_stays_solvable() -> None:
+    # Ingestion used to return closures only, and the scalable SAT path needs the symbolic rules —
+    # so every SBML-qual model above the enumeration ceiling refused, which is exactly the size of
+    # the real signalling models the scalable path exists for. The rules now come back with it.
+    net = ingest_qual_sbml(_read("toggle_qual.xml"))
+    assert net.expressions is not None
+    assert set(net.expressions) == {"A", "B"}
+
+
+def test_emitted_rules_reproduce_the_qual_semantics_exactly() -> None:
+    # The rules are written from the function terms, so they have to mean what the terms mean:
+    # ordered terms (a later term only decides when every earlier one missed), the default level,
+    # level comparisons in both directions, and comparisons between two species.
+    import itertools
+
+    from reprolith import compile_boolean_rule
+    from reprolith.sbml import _qual_condition_expression, _qual_rule_expression
+
+    # Ordered terms: B's rule is "first term wins", so term 2 only applies when term 1 missed.
+    rule = _qual_rule_expression([("A", 0), ("C", 1)], default_level=1)
+    predicted = compile_boolean_rule(rule, {"A", "C"})
+    for a, c in itertools.product((0, 1), repeat=2):
+        expected = 0 if a else (1 if c else 1)  # term1 -> 0, else term2 -> 1, else default 1
+        assert predicted({"A": a, "C": c}) == expected, (a, c, rule)
+
+    # Level comparisons, including species-to-species, over both operand orders.
+    import libsbml
+
+    for formula, expected in (
+        ("A >= 1", lambda a, b: a),
+        ("A == 0", lambda a, b: 1 - a),
+        ("1 <= A", lambda a, b: a),
+        ("A > B", lambda a, b: int(a > b)),
+        ("A == B", lambda a, b: int(a == b)),
+        ("A != B", lambda a, b: int(a != b)),
+        ("A >= 0", lambda a, b: 1),
+    ):
+        expression = _qual_condition_expression(
+            libsbml.parseL3Formula(formula), libsbml, {"A", "B"}
+        )
+        compiled = compile_boolean_rule(expression, {"A", "B"})
+        for a, b in itertools.product((0, 1), repeat=2):
+            assert compiled({"A": a, "B": b}) == expected(a, b), (formula, expression, a, b)

@@ -29,7 +29,10 @@ solutions with a SAT solver (z3, the optional `sat` extra), returning each verif
 Real signalling models are then tractable — the 60-node T-LGL leukemia network's 71 fixed points come
 back in a fraction of a second where 2⁶⁰ enumeration is impossible. The scalable path needs the
 network's symbolic rules (a network built from opaque callables has none) and refuses fast, rather
-than blowing up, when free input nodes would give 2^(#inputs) fixed points.
+than blowing up, when free input nodes would multiply the fixed points by 2^(#inputs). Ingesting an
+SBML-qual file yields those rules too — each transition's ordered function terms are written out as
+one expression per node — so a published model of the size this path exists for reaches it, instead
+of refusing at the enumeration ceiling.
 
 **Cyclic attractors do not scale** — finding them still walks the state space, so `attractors()`
 above the cap raises `NetworkTooLarge`, an honest boundary rather than a silent hang. Single-state

@@ -21,7 +21,7 @@ from typing import Any
 from .dossier import Dossier
 from .engine import EngineUnavailable
 from .fba import FbaModel
-from .logical import BooleanNetwork, Rule
+from .logical import BooleanNetwork, parse_boolean_network
 from .stochastic import Reaction
 
 
@@ -282,65 +282,112 @@ def _sid(text: str) -> str:
     return cleaned
 
 
-def _compile_qual_num(node: Any, libsbml: Any, nodes: Container[str]) -> Callable[[Mapping[str, int]], float]:
-    """Compile an SBML-qual math *operand* (a species level or an integer) into a state -> number."""
-    kind = node.getType()
-    if kind == libsbml.AST_NAME:
-        name = node.getName()
-        if name not in nodes:
-            raise ValueError(f"transition math references unknown species {name!r}")
-        return lambda s: float(s[name])
-    if kind in (libsbml.AST_INTEGER, libsbml.AST_REAL, libsbml.AST_REAL_E, libsbml.AST_RATIONAL):
-        value = float(node.getValue())
-        if value not in (0.0, 1.0):
-            # A two-level model never needs another threshold, so a literal like the 2 in
-            # `Signal >= 2` is proof the model is multi-valued — even when every species left
-            # maxLevel unset and the level check upstream could not see it. Refuse rather than
-            # evaluate the comparison against a flattened 0/1 level, which makes the condition
-            # permanently false and certifies a state that is not a steady state of the real model.
-            raise ValueError(
-                f"transition math compares against level {value:g}; the Boolean oracle supports "
-                "only two-level (0/1) logical models"
-            )
-        return lambda s: value
-    raise ValueError(f"unsupported qual math operand (AST type {kind})")
-
-
 _QUAL_RELATIONS: dict[str, Callable[[float, float], bool]] = {
     "eq": operator.eq, "neq": operator.ne, "geq": operator.ge,
     "leq": operator.le, "gt": operator.gt, "lt": operator.lt,
 }
 
 
-def _compile_qual_bool(node: Any, libsbml: Any, nodes: Container[str]) -> Callable[[Mapping[str, int]], bool]:
-    """Compile an SBML-qual functionTerm condition into a pure state -> bool closure.
+def _qual_operand(node: Any, libsbml: Any, nodes: Container[str]) -> str:
+    """One side of a qual level comparison, as a node name or the literal ``"0"``/``"1"``."""
+    kind = node.getType()
+    if kind == libsbml.AST_NAME:
+        name = node.getName()
+        if name not in nodes:
+            raise ValueError(f"transition math references unknown species {name!r}")
+        return str(name)
+    if kind in (libsbml.AST_INTEGER, libsbml.AST_REAL, libsbml.AST_REAL_E, libsbml.AST_RATIONAL):
+        value = float(node.getValue())
+        if value not in (0.0, 1.0):
+            raise ValueError(
+                f"transition math compares against level {value:g}; the Boolean oracle supports "
+                "only two-level (0/1) logical models"
+            )
+        return "1" if value == 1.0 else "0"
+    raise ValueError(f"unsupported qual math operand (AST type {kind})")
 
-    Only Boolean structure is compiled — the logical connectives and the level comparisons a
-    two-level qual model uses — so nothing libsbml holds is retained after ingestion and the
-    resulting network is pure Python. An unsupported construct raises rather than being ignored.
+
+def _comparison_expression(relation: Callable[[float, float], bool], left: str, right: str) -> str:
+    """A level comparison between two 0/1 operands, as a Boolean rule expression.
+
+    Both sides are levels of a two-level model, so the comparison is a function of at most two
+    Boolean variables: enumerate the cases it holds in and write them down as a disjunction. Built
+    from the same relation the closure evaluates, so the expression and the closure cannot drift.
+    """
+    def value(operand: str, assignment: int) -> float:
+        return float(operand) if operand in ("0", "1") else float(assignment)
+
+    variables = [operand for operand in dict.fromkeys((left, right)) if operand not in ("0", "1")]
+    satisfying: list[str] = []
+    for case in range(2 ** len(variables)):
+        bits = {name: (case >> i) & 1 for i, name in enumerate(variables)}
+        if not relation(value(left, bits.get(left, 0)), value(right, bits.get(right, 0))):
+            continue
+        if not variables:
+            return "True"
+        satisfying.append(
+            "(" + " & ".join(name if bits[name] else f"!{name}" for name in variables) + ")"
+        )
+    if not satisfying:
+        return "False"
+    if len(satisfying) == 2 ** len(variables):
+        return "True"
+    return "(" + " | ".join(satisfying) + ")"
+
+
+def _qual_condition_expression(node: Any, libsbml: Any, nodes: Container[str]) -> str:
+    """An SBML-qual functionTerm condition as a Boolean rule expression.
+
+    Carrying the expression is what lets an ingested network above the enumeration
+    ceiling take the scalable SAT path instead of refusing — a real signalling model of sixty to
+    eighty nodes is exactly the case SBML-qual files describe.
     """
     kind = node.getType()
     if kind == libsbml.AST_CONSTANT_TRUE:
-        return lambda s: True
+        return "True"
     if kind == libsbml.AST_CONSTANT_FALSE:
-        return lambda s: False
+        return "False"
     if kind == libsbml.AST_LOGICAL_NOT:
-        inner = _compile_qual_bool(node.getChild(0), libsbml, nodes)
-        return lambda s: not inner(s)
+        return f"(!{_qual_condition_expression(node.getChild(0), libsbml, nodes)})"
     if kind in (libsbml.AST_LOGICAL_AND, libsbml.AST_LOGICAL_OR, libsbml.AST_LOGICAL_XOR):
-        subs = [_compile_qual_bool(node.getChild(i), libsbml, nodes) for i in range(node.getNumChildren())]
-        if kind == libsbml.AST_LOGICAL_AND:
-            return lambda s: all(f(s) for f in subs)
-        if kind == libsbml.AST_LOGICAL_OR:
-            return lambda s: any(f(s) for f in subs)
-        return lambda s: sum(1 for f in subs if f(s)) % 2 == 1  # xor: an odd number are true
+        parts = [
+            _qual_condition_expression(node.getChild(i), libsbml, nodes)
+            for i in range(node.getNumChildren())
+        ]
+        joiner = {
+            libsbml.AST_LOGICAL_AND: " & ", libsbml.AST_LOGICAL_OR: " | ",
+            libsbml.AST_LOGICAL_XOR: " ^ ",
+        }[kind]
+        return "(" + joiner.join(parts) + ")" if parts else "True"
     relation_name = _relation_name(node, libsbml)
     relation = _QUAL_RELATIONS.get(relation_name) if relation_name is not None else None
     if relation is not None:
-        left = _compile_qual_num(node.getChild(0), libsbml, nodes)
-        right = _compile_qual_num(node.getChild(1), libsbml, nodes)
-        return lambda s: relation(left(s), right(s))
+        return _comparison_expression(
+            relation,
+            _qual_operand(node.getChild(0), libsbml, nodes),
+            _qual_operand(node.getChild(1), libsbml, nodes),
+        )
     raise ValueError(f"unsupported qual math condition (AST type {kind})")
+
+
+def _qual_rule_expression(conditions: list[tuple[str, int]], default_level: int) -> str:
+    """A node's whole update rule as one expression: the first satisfied term's level.
+
+    Function terms are ordered, so term *i* only decides the level when every earlier term missed.
+    Written out, the node is 1 exactly when some level-1 term holds and no earlier term did — or,
+    when the default level is 1, when no term holds at all.
+    """
+    disjuncts: list[str] = []
+    earlier: list[str] = []
+    for condition, level in conditions:
+        if level == 1:
+            disjuncts.append("(" + " & ".join([*(f"!{e}" for e in earlier), condition]) + ")")
+        earlier.append(condition)
+    if default_level == 1:
+        disjuncts.append(
+            "(" + " & ".join(f"!{e}" for e in earlier) + ")" if earlier else "True"
+        )
+    return " | ".join(disjuncts) if disjuncts else "False"
 
 
 def _relation_name(node: Any, libsbml: Any) -> str | None:
@@ -350,16 +397,6 @@ def _relation_name(node: Any, libsbml: Any) -> str | None:
         libsbml.AST_RELATIONAL_GEQ: "geq", libsbml.AST_RELATIONAL_LEQ: "leq",
         libsbml.AST_RELATIONAL_GT: "gt", libsbml.AST_RELATIONAL_LT: "lt",
     }.get(kind)
-
-
-def _qual_rule(terms: list[tuple[Callable[[Mapping[str, int]], bool], int]], default_level: int) -> Rule:
-    """A node's update rule: the first satisfied functionTerm's level, else the default level."""
-    def rule(state: Mapping[str, int]) -> int:
-        for condition, level in terms:
-            if condition(state):
-                return level
-        return default_level
-    return rule
 
 
 def ingest_qual_sbml(sbml: str) -> BooleanNetwork:
@@ -399,7 +436,7 @@ def ingest_qual_sbml(sbml: str) -> BooleanNetwork:
             )
         node_names.add(qs.getId())
 
-    rules: dict[str, Rule] = {}
+    rules: dict[str, str] = {}  # node -> its update rule as an expression the SAT path can encode
     for i in range(qual.getNumTransitions()):
         transition = qual.getTransition(i)
         if transition.getNumOutputs() != 1:
@@ -442,7 +479,7 @@ def ingest_qual_sbml(sbml: str) -> BooleanNetwork:
             # state no function term covers.
             raise ValueError(f"transition {transition.getId()!r} has no default term")
         default_level = default_term.getResultLevel()
-        terms: list[tuple[Callable[[Mapping[str, int]], bool], int]] = []
+        conditions: list[tuple[str, int]] = []
         for k in range(transition.getNumFunctionTerms()):
             function_term = transition.getFunctionTerm(k)
             level = function_term.getResultLevel()
@@ -451,15 +488,15 @@ def ingest_qual_sbml(sbml: str) -> BooleanNetwork:
                 raise ValueError(f"a function term of transition {transition.getId()!r} has no math")
             if level not in (0, 1):
                 raise ValueError(f"result level {level} is not Boolean in transition {transition.getId()!r}")
-            terms.append((_compile_qual_bool(math, libsbml, node_names), level))
+            conditions.append((_qual_condition_expression(math, libsbml, node_names), level))
         if default_level not in (0, 1):
             raise ValueError(f"default result level {default_level} is not Boolean in transition {transition.getId()!r}")
-        rules[target] = _qual_rule(terms, default_level)
+        rules[target] = _qual_rule_expression(conditions, default_level)
 
     for name in sorted(node_names - set(rules)):  # inputs with no transition hold their value
-        rules[name] = (lambda held: lambda s: 1 if s[held] else 0)(name)
+        rules[name] = name
 
-    return BooleanNetwork(rules)
+    return parse_boolean_network(rules)
 
 
 def _factor_powers(node: Any, libsbml: Any) -> dict[str, int] | None:
