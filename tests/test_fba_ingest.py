@@ -103,7 +103,10 @@ def test_ingested_model_solves_and_feeds_the_oracle() -> None:
     ) == frozenset({0, 1})
 
 
-def test_minimize_objective_is_sign_corrected() -> None:
-    # A minimize objective is returned negated, so the maximizing oracle solves the same problem.
-    model = ingest_fbc_sbml(_tiny_fbc_sbml(objective_type="minimize"))
-    assert model.objective == (0.0, -1.0)
+def test_minimize_objective_is_refused_not_solved_with_the_wrong_sign() -> None:
+    # Merely negating the objective vector makes the flux distribution an equivalent maximization,
+    # but the optimal VALUE the oracle returns is then negated too — so a reproducible minimize
+    # model would be judged against the paper's un-negated optimum and certify as FAILED. Refuse it
+    # (like other unsupported constructs) rather than hand back a wrong verdict.
+    with pytest.raises(ValueError, match="only 'maximize' is supported"):
+        ingest_fbc_sbml(_tiny_fbc_sbml(objective_type="minimize"))

@@ -142,8 +142,8 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
 def ingest_fbc_sbml(sbml: str) -> FbaModel:
     """Parse an SBML-fbc constraint-based model into the matrices the FBA oracle solves.
 
-    Reads the stoichiometry, the active objective (sign-corrected so a ``minimize`` objective is
-    returned as an equivalent maximization, since the oracle maximizes), and the per-reaction
+    Reads the stoichiometry, the active objective (which must be a ``maximize`` objective — a
+    ``minimize`` objective is refused rather than solved with the wrong sign), and the per-reaction
     flux bounds from the fbc reaction plugin. Boundary-condition species are excluded from the
     steady-state balance: they stand for the model's exchange with its surroundings and are not
     mass-balanced. This is the bridge from a published constraint-based model to
@@ -199,8 +199,19 @@ def ingest_fbc_sbml(sbml: str) -> FbaModel:
         active.getFluxObjective(i).getReaction(): active.getFluxObjective(i).getCoefficient()
         for i in range(active.getNumFluxObjectives())
     }
-    sign = 1.0 if active.getType() == "maximize" else -1.0
-    objective = [sign * coefficients.get(rid, 0.0) for rid in reactions]
+    objective_type = active.getType()
+    if objective_type != "maximize":
+        # Only a maximization objective is supported end-to-end. Merely negating the objective
+        # vector makes the *flux distribution* an equivalent maximization, but the optimal value
+        # the oracle returns is then also negated — so it would be judged against the paper's
+        # (un-negated) reported optimum and a reproducible model would certify as FAILED. The
+        # essentiality and robustness fingerprints likewise assume a positive maximization
+        # optimum. Rather than emit a wrong verdict, refuse, as we do for other unsupported
+        # constructs. (The FROG/biomass models this targets all maximize.)
+        raise ValueError(
+            f"unsupported fbc objective type {objective_type!r}: only 'maximize' is supported"
+        )
+    objective = [coefficients.get(rid, 0.0) for rid in reactions]
 
     gene_labels = {
         fbc.getGeneProduct(i).getId(): fbc.getGeneProduct(i).getLabel()
