@@ -96,6 +96,21 @@ returning a fast, deterministic pass/fail an agentic workflow can gate on.
 - **AND** the same submission yields the same verdict, so the agent can treat it as a
   deterministic gate
 
+### Requirement: One caller's bad request never denies service to the next
+
+The server SHALL survive any input a caller can send, because a single long-lived process serves
+every agent on the stream.
+
+#### Scenario: A malformed or hostile request is answered, not fatal
+
+- **WHEN** a caller sends a line that is not JSON, a payload that is valid JSON but not an object,
+  or a request whose handling raises an error the tool did not anticipate
+- **THEN** the server returns the corresponding protocol error and keeps serving, so the next
+  caller's valid request is still answered
+- **AND** a caller-supplied size — a simulation duration, a trajectory or step count, a grid
+  length — is bounded at the tool boundary and refused when it exceeds the ceiling, rather than
+  occupying the server indefinitely
+
 ### Requirement: Work handoff is lease-aware
 
 The server SHALL let an agent claim and progress catalog work without colliding with other

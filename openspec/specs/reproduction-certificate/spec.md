@@ -105,3 +105,12 @@ Certificates SHALL form an auditable history as models, tolerances, and engines 
 - **THEN** a new certificate is issued that links to the ones it supersedes and states what
   changed
 - **AND** prior certificates remain retrievable rather than being overwritten
+
+#### Scenario: A lineage is always walkable
+
+- **WHEN** a correction is recorded that leaves the dossier unchanged, so it would supersede a
+  version identical to itself
+- **THEN** the correction is refused, because a revision that changes nothing is a reviewer error
+  rather than a new version of the record
+- **AND** walking a lineage terminates even if a self-referential or circular supersession is
+  injected by other means, so reading the history can never hang the reader

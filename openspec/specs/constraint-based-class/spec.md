@@ -32,6 +32,16 @@ so a reproduction is fully specified without the paper.
 - **AND** because an unstated medium silently changes the answer, such a gap is marked
   high-impact
 
+#### Scenario: An objective the oracle cannot honour is refused, not silently re-signed
+
+- **WHEN** an ingested model declares an objective the oracle does not support — today, a
+  minimizing objective, while every analysis in this class assumes a maximum
+- **THEN** ingestion refuses the model and names the unsupported feature, rather than flipping the
+  objective's sign to reuse the maximizing solver and reporting an optimum whose sign no longer
+  matches the value the paper reported
+- **AND** the refusal is preferred because the alternative certifies a genuinely reproducible model
+  as failed, and inverts the deletion and robustness analyses that assume a positive optimum
+
 ### Requirement: Standard constraint-based reproduction targets
 
 The oracle for this class SHALL evaluate the results constraint-based papers actually report,
