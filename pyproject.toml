@@ -42,7 +42,7 @@ dev = ["pytest>=7.0", "ruff>=0.4", "mypy>=1.8"]
 # the simulation-backed tests and reconstructions.
 engine = ["python-copasi>=4.42", "python-libsbml>=5.20"]
 # The constraint-based (FBA) oracle's linear-programming solver. Optional, like the engine.
-fba = ["scipy>=1.7"]
+fba = ["scipy>=1.7", "numpy>=1.20"]  # numpy is imported directly, not only through scipy
 # The scalable fixed-point solver for the logical class: a SAT solver (z3) that finds a large
 # Boolean network's steady states without enumerating its 2ⁿ state space, so real 60–80-node
 # signalling models are tractable. Optional — small networks use exact enumeration and need none.

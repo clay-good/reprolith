@@ -27,9 +27,21 @@ DEFAULT_DATASET = Path(__file__).resolve().parents[2] / "datasets" / "pkpd_test_
 
 
 def load_test_set(path: Path | str = DEFAULT_DATASET) -> dict[str, Any]:
-    """Load the labelled test-set dataset (with its provenance) from disk."""
-    with open(path, encoding="utf-8") as handle:
-        data: dict[str, Any] = json.load(handle)
+    """Load the labelled test-set dataset (with its provenance) from disk.
+
+    The dataset is committed repository data, not a packaged resource, so an installed copy of the
+    library cannot find it at the default path. Say that plainly rather than leaving a bare
+    ``FileNotFoundError`` pointing inside someone's site-packages.
+    """
+    try:
+        with open(path, encoding="utf-8") as handle:
+            data: dict[str, Any] = json.load(handle)
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(
+            f"no labelled test set at {path}. Reprolith's datasets are part of the repository, not "
+            "of the installed package, so this path only resolves inside a source checkout: run "
+            "from a clone, or pass the dataset path explicitly"
+        ) from exc
     return data
 
 

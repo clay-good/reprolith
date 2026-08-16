@@ -93,7 +93,9 @@ def _metric(times: Sequence[float], values: Sequence[float], metric: str) -> flo
 
 
 def _apply_overrides(sbml: str, overrides: tuple[tuple[str, float], ...]) -> str:
-    import libsbml
+    from .sbml import _libsbml
+
+    libsbml = _libsbml()  # the typed error that names the extra, not a bare ImportError
 
     document = libsbml.readSBMLFromString(sbml)
     model = document.getModel()

@@ -526,11 +526,12 @@ def loopless_flux_variability(
     a curated core model has); a model shipping ±1e6 placeholder bounds should have them tightened
     first, or the mixed-integer solve is ill-conditioned. Needs the ``fba`` extra (scipy).
     """
+    milp = _milp()  # first, so a missing extra is the typed error that names it, not an ImportError
+
     import numpy as np
     from scipy.linalg import null_space
     from scipy.optimize import Bounds, LinearConstraint
 
-    milp = _milp()
     n = len(objective)
     targets = list(range(n)) if reactions is None else list(reactions)
     internal = _internal_reactions(stoichiometry)

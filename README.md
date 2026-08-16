@@ -90,9 +90,15 @@ reproducible. The honesty invariants — determinism, the inescapable scope stat
 assumption-qualification — are enforced in code and checked in CI.
 
 ```bash
+python -m pip install --upgrade pip   # editable installs need pip >= 21.3
 pip install -e ".[dev]"
 ruff check . && mypy && pytest -q
 ```
+
+Work from a clone. The committed body of work — the labelled blind sets, every class's milestone
+certificates, the registry — is repository data, not packaged resources, so a non-editable install
+carries the code but none of the state the surfaces read. Both surfaces take `--data-dir` if you
+need to point an installed copy at a checkout.
 
 Actually running a model needs the optional **`engine`** extra, which pins COPASI (a
 BioSimulators-registered engine) and the SBML tooling. It stays out of the core so the fast

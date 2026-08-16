@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import IO, Any
 
@@ -642,13 +642,37 @@ def load_dossiers(directory: Path | str) -> dict[str, Any]:
     return loaded
 
 
+def repository_data_root() -> Path:
+    """The repository's ``datasets`` directory — the committed state every surface reads.
+
+    Resolved relative to the source tree, because the datasets are committed data rather than
+    packaged resources: an installed copy of the library does not carry them. Callers that read the
+    default state should go through :func:`default_data_dir`, which says so plainly when the
+    directory is absent instead of failing later on a missing file.
+    """
+    return Path(__file__).resolve().parents[2] / "datasets"
+
+
 def default_data_dir() -> Path:
     """The persisted repository state both surfaces read by default (the PK/PD milestone run).
 
     This is the mutable work-queue catalog (the labelled PK/PD blind set) plus its dossiers and
     bundles. Published certificates span all six classes — see :func:`milestone_certificate_dirs`.
+
+    Raises ``FileNotFoundError`` naming the cause when the committed data is not reachable, which
+    is what an installed copy of the package sees: the datasets live in the repository, not in the
+    wheel, so a surface run outside a source checkout must be pointed at a checkout's
+    ``datasets/milestone`` directory instead.
     """
-    return Path(__file__).resolve().parents[2] / "datasets" / "milestone"
+    milestone = repository_data_root() / "milestone"
+    if not milestone.is_dir():
+        raise FileNotFoundError(
+            f"no committed repository state at {milestone}. Reprolith's datasets are part of the "
+            "repository, not of the installed package, so a surface running outside a source "
+            "checkout has to be pointed at one: pass --data-dir <checkout>/datasets/milestone, or "
+            "run from a clone of the repository"
+        )
+    return milestone
 
 
 def milestone_certificate_dirs() -> dict[str, Path]:
@@ -659,7 +683,7 @@ def milestone_certificate_dirs() -> dict[str, Path]:
     builder (which renders them). Reading the whole set here is what lets an agent or a human
     fetch any of the six classes' certificates, not just the PK/PD one.
     """
-    datasets = Path(__file__).resolve().parents[2] / "datasets"
+    datasets = repository_data_root()
     return {
         "ode-pkpd": datasets / "milestone" / "certificates",
         "constraint-based": datasets / "constraint_based" / "milestone" / "certificates",
@@ -744,9 +768,25 @@ def write_json_atomically(path: Path, payload: Any) -> None:
         raise
 
 
-def main() -> None:  # pragma: no cover - stdio entry point
-    """Run the server over stdio, loading the persisted catalog, certificates, and artifacts."""
-    milestone = default_data_dir()
+def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - stdio entry point
+    """Run the server over stdio, loading the persisted catalog, certificates, and artifacts.
+
+    ``--data-dir`` points the server at a repository state other than the committed milestone run —
+    the same escape hatch the human CLI has, and the only way to run an installed copy of the
+    package, which carries no datasets of its own.
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="reprolith-mcp", description="Serve the Reprolith read surface over MCP on stdio."
+    )
+    parser.add_argument(
+        "--data-dir", default=None,
+        help="repository state to read (default: the committed milestone run in a source checkout)",
+    )
+    args = parser.parse_args(argv)
+
+    milestone = Path(args.data_dir) if args.data_dir is not None else default_data_dir()
     catalog_file = milestone / "catalog.json"
     query, catalog = load_repository(milestone, aggregate=True)
 

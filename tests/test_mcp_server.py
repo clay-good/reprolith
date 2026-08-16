@@ -507,3 +507,18 @@ def test_a_failed_catalog_write_leaves_the_previous_catalog_intact(tmp_path: Pat
     assert catalog_file.read_text(encoding="utf-8") == original
     assert _json.loads(original) == {"entries": ["first"]}
     assert list(tmp_path.iterdir()) == [catalog_file]  # no temporary debris left behind
+
+
+def test_a_missing_repository_state_names_the_cause(tmp_path: Path, monkeypatch) -> None:
+    """An installed copy of the package carries no datasets, so say that instead of failing later.
+
+    The default state is resolved relative to the source tree. Outside a checkout that path lands
+    inside site-packages, and every surface used to die on a bare FileNotFoundError naming a file
+    the user never heard of, several frames away from the real cause.
+    """
+    import pytest
+    from reprolith import mcp_server
+
+    monkeypatch.setattr(mcp_server, "repository_data_root", lambda: tmp_path / "datasets")
+    with pytest.raises(FileNotFoundError, match="--data-dir"):
+        mcp_server.default_data_dir()
