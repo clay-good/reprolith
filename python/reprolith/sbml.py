@@ -531,20 +531,26 @@ def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[i
     reactions: list[Reaction] = []
     for j in range(model.getNumReactions()):
         rxn = model.getReaction(j)
-        reactants = tuple(
-            (index_of[rxn.getReactant(k).getSpecies()], int(round(rxn.getReactant(k).getStoichiometry())))
-            for k in range(rxn.getNumReactants())
-        )
-        products = tuple(
-            (index_of[rxn.getProduct(k).getSpecies()], int(round(rxn.getProduct(k).getStoichiometry())))
-            for k in range(rxn.getNumProducts())
-        )
+        # SBML lets one species appear as several reactant references (``X + X -> Y``) or as a
+        # single reference with stoichiometry 2; the two encodings mean the same reaction. Sum the
+        # references per species FIRST and build the reaction from that sum, so both encodings give
+        # the same order. Reading the references one by one would run k·n·n where stochastic mass
+        # action calls for k·n(n-1)/2 — while the mass-action check below, which aggregates, still
+        # passed the model as consistent.
         reactant_powers: dict[str, int] = {}
         for k in range(rxn.getNumReactants()):
             ref = rxn.getReactant(k)
             reactant_powers[ref.getSpecies()] = reactant_powers.get(ref.getSpecies(), 0) + int(
                 round(ref.getStoichiometry())
             )
+        reactants = tuple((index_of[sid], stoich) for sid, stoich in reactant_powers.items())
+        product_powers: dict[str, int] = {}
+        for k in range(rxn.getNumProducts()):
+            ref = rxn.getProduct(k)
+            product_powers[ref.getSpecies()] = product_powers.get(ref.getSpecies(), 0) + int(
+                round(ref.getStoichiometry())
+            )
+        products = tuple((index_of[sid], stoich) for sid, stoich in product_powers.items())
         rate = _mass_action_rate(rxn.getKineticLaw(), reactant_powers)
         reactions.append(Reaction(rate=rate, reactants=reactants, products=products))
 

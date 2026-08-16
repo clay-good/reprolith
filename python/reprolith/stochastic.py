@@ -41,6 +41,30 @@ class Reaction:
     reactants: tuple[tuple[int, int], ...]
     products: tuple[tuple[int, int], ...]
 
+    def __post_init__(self) -> None:
+        # A negative or non-finite rate is not a slow reaction, it is a broken one: the total
+        # propensity never becomes positive, so every trajectory freezes at its initial state and
+        # the SSA reports the initial condition as the reproduced value. That is a *finite* number,
+        # so the oracle's non-finite guard cannot see it, and a sign-convention error in an
+        # artifact certifies as a perfect reproduction. Refuse it where the reaction is built.
+        if not math.isfinite(self.rate) or self.rate < 0.0:
+            raise ValueError(
+                f"a mass-action rate constant must be finite and non-negative, not {self.rate!r} "
+                "(a zero rate is legal — it disables the reaction)"
+            )
+        seen: set[int] = set()
+        for species, _ in self.reactants:
+            # Two entries for one species would each contribute their own falling factorial, giving
+            # k·n·n where stochastic mass action calls for k·n(n-1)/2, and consuming the species
+            # twice per firing — which drives counts negative.
+            if species in seen:
+                raise ValueError(
+                    f"species index {species} appears twice in the reactants; combine repeated "
+                    "reactants into a single stoichiometry so the propensity and the consumption "
+                    "follow stochastic mass action"
+                )
+            seen.add(species)
+
     def propensity(self, state: Sequence[int]) -> float:
         a = self.rate
         for species, stoich in self.reactants:
@@ -211,6 +235,8 @@ def ensemble_final_counts(
     reproduction be certified byte-for-byte. ``max_events`` is forwarded to each trajectory as a
     per-run safety valve (see :func:`gillespie`); ``None`` leaves them unbounded.
     """
+    if trajectories < 1:
+        raise ValueError("need at least one trajectory")
     rng = random.Random(seed)
     return [
         gillespie(n_species, reactions, initial, duration=duration, rng=rng, max_events=max_events)

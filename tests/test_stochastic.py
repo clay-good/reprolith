@@ -343,6 +343,34 @@ def test_ensemble_percentile_bands_rejects_an_empty_ensemble() -> None:
         )
 
 
+def test_a_negative_or_non_finite_rate_is_refused_rather_than_freezing_every_trajectory() -> None:
+    # A negative rate makes the total propensity non-positive, so the SSA treats the initial state
+    # as absorbing and every trajectory returns it unchanged. The reported "prediction" is then the
+    # initial condition — a finite number, so the oracle's non-finite guard cannot see it — and a
+    # model whose rate carries the wrong sign certifies as a perfect reproduction. Refuse instead.
+    for bad in (-1.0, float("nan"), float("inf")):
+        with pytest.raises(ValueError, match="finite and non-negative"):
+            Reaction(rate=bad, reactants=((0, 1),), products=((1, 1),))
+    # Zero stays legal: a disabled reaction is a modelling choice, not a broken rate.
+    assert Reaction(rate=0.0, reactants=((0, 1),), products=((1, 1),)).propensity([5, 0]) == 0.0
+
+
+def test_a_species_repeated_in_the_reactants_is_refused() -> None:
+    # Two entries for one species would each contribute their own falling factorial (k*n*n instead
+    # of the dimerization k*n(n-1)/2) and consume the species twice per firing, which drives counts
+    # negative. The single stoichiometry form is the only correct encoding.
+    with pytest.raises(ValueError, match="appears twice"):
+        Reaction(rate=1.0, reactants=((0, 1), (0, 1)), products=((1, 1),))
+
+
+def test_ensemble_final_counts_rejects_an_empty_ensemble() -> None:
+    # Mirrors the percentile-band guard: zero trajectories silently returned [], which then failed
+    # far away in species_mean_variance instead of at the request that was wrong.
+    birth = [Reaction(rate=1.0, reactants=(), products=((0, 1),))]
+    with pytest.raises(ValueError, match="at least one trajectory"):
+        ensemble_final_counts(1, birth, [0], duration=1.0, trajectories=0, seed=1)
+
+
 def test_gillespie_max_events_bounds_a_runaway_trajectory() -> None:
     # The event count of an SSA run is ∫propensity dt, which a caller drives through BOTH the
     # duration and the network's rates — so a huge duration (or rate) can run unboundedly. The
