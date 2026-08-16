@@ -96,3 +96,22 @@ def test_summarize_report_partitions_and_never_double_counts_a_matched_abstentio
     assert s["abstained"] == 30  # the blocked->blocked match is excluded
     assert s["other"] == 1
     assert s["matched"] + s["abstained"] + s["other"] == s["total"]  # exact partition
+
+
+def test_a_report_whose_counters_cannot_partition_is_refused() -> None:
+    # These counts are the credibility claim the read surface, the CLI, and the public registry all
+    # state. A report missing its total used to yield a NEGATIVE count of wrong verdicts, served
+    # verbatim; the subtraction must fail loudly instead of publishing nonsense.
+    import pytest
+    from reprolith.agreement import summarize_report
+
+    no_total = {"agreements": 29, "confusion": {"reproduced->blocked": 30}}
+    with pytest.raises(ValueError, match="does not partition"):
+        summarize_report(no_total)
+
+    overcounted = {"total": 2, "agreements": 3, "confusion": {}}
+    with pytest.raises(ValueError, match="does not partition"):
+        summarize_report(overcounted)
+
+    # An honestly empty report is still a legal partition of nothing.
+    assert summarize_report({"total": 0, "agreements": 0, "confusion": {}})["other"] == 0

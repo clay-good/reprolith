@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 
-from reprolith import certificate_from_content, render_registry
+from reprolith import certificate_digest, certificate_from_content, render_registry
 from reprolith.mcp_server import milestone_agreement_reports, milestone_certificate_dirs
 from reprolith.query import self_validation_summary
 
@@ -28,11 +28,29 @@ _DATASETS = _SOURCES["ode-pkpd"].parents[1]  # .../datasets
 
 
 def collect() -> list[tuple[str, object]]:
+    """Every committed certificate, once, keyed by content digest like the queryable ledger.
+
+    The registry counted files while the ledger keys by digest, so one certificate copied into a
+    second class directory made the published "N certificates" headline disagree with the surface
+    it claims parity with — and filed the copy under the wrong class. Collect by digest instead,
+    and refuse a duplicate that claims two different classes rather than picking one silently.
+    """
     entries: list[tuple[str, object]] = []
+    seen: dict[str, str] = {}  # digest -> the class it was first collected under
     for model_class, directory in _SOURCES.items():
         for path in sorted(directory.glob("*.json")):
             content = json.loads(path.read_text(encoding="utf-8"))
-            entries.append((model_class, certificate_from_content(content)))
+            certificate = certificate_from_content(content)
+            digest = certificate_digest(certificate)
+            if digest in seen:
+                if seen[digest] != model_class:
+                    raise ValueError(
+                        f"{path} holds a certificate already published under {seen[digest]!r}; one "
+                        f"certificate cannot certify both that class and {model_class!r}"
+                    )
+                continue  # the same certificate committed twice under one class — publish it once
+            seen[digest] = model_class
+            entries.append((model_class, certificate))
     return entries
 
 

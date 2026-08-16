@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import fields
 
 import pytest
@@ -391,3 +392,20 @@ def test_readiness_boosts_tractable_wins_within_a_tier() -> None:
                 difficulty="high",
                 ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source="c"))
     assert catalog.claimable(0.0)[0].identifiers.accession == "LH"
+
+
+def test_a_saved_catalog_holding_one_paper_twice_is_refused() -> None:
+    # Restoring entries directly assumes the file is already de-duplicated. A mangled merge of
+    # catalog.json breaks that: two entries sharing an identifier used to load as two catalog
+    # entries behind one index key, inflating every published backlog count and letting the same
+    # work item be claimed twice.
+    import pytest
+
+    catalog = Catalog()
+    catalog.add(Identifiers(title="A paper", accession="BIOMD1"), ModelClass.ODE_PKPD)
+    saved = catalog.to_dict()
+    assert Catalog.from_dict(saved).entries  # the honest file still round-trips
+
+    saved["entries"].append(json.loads(json.dumps(saved["entries"][0])))
+    with pytest.raises(ValueError, match="two entries for"):
+        Catalog.from_dict(saved)

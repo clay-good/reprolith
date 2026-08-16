@@ -31,6 +31,10 @@ def summarize_report(report: dict[str, Any]) -> dict[str, int]:
     is only ever a *disagreement*, a matched entry (including the ``blocked->blocked`` case where
     the label itself was ``blocked``) counts once, in ``matched``, and never also in ``abstained``.
     Reads only the committed report's aggregate counts and its ``expected->actual`` confusion keys.
+    Refuses a report whose own counters cannot partition, rather than publishing the nonsense that
+    falls out of the subtraction: these numbers are the credibility claim the read surface, the CLI,
+    and the public registry all state, so a report missing or misstating ``total`` must be a loud
+    failure and never a negative count of wrong verdicts.
     """
     total = int(report.get("total", 0))
     matched = int(report.get("agreements", 0))
@@ -40,6 +44,11 @@ def summarize_report(report: dict[str, Any]) -> dict[str, int]:
         expected, _, actual = key.partition("->")
         if actual == "blocked" and expected != actual:  # a disagreement that abstained
             abstained += int(count)
+    if total < 0 or matched < 0 or matched + abstained > total:
+        raise ValueError(
+            f"the agreement report does not partition: total={total}, agreements={matched}, "
+            f"abstentions={abstained} — matched and abstained cannot exceed the labelled entries"
+        )
     return {"total": total, "matched": matched, "abstained": abstained, "other": total - matched - abstained}
 
 

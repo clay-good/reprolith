@@ -409,11 +409,21 @@ class Catalog:
         """Reload a catalog saved with :meth:`to_dict`, restoring each entry and the index.
 
         The saved catalog is already de-duplicated, so entries are restored directly rather
-        than re-added through :meth:`add`.
+        than re-added through :meth:`add`. That assumption is checked on the way in: a file that
+        carries the same identifier twice — what a mangled merge of ``catalog.json`` produces —
+        would otherwise load as two entries sharing one index key, silently inflating every
+        published backlog count and handing the same work item out twice.
         """
         catalog = cls()
         for record in data["entries"]:
             entry = CatalogEntry.from_dict(record)
+            for key in entry.identifiers.keys():
+                if key in catalog._index:
+                    field, value = key
+                    raise ValueError(
+                        f"the saved catalog holds two entries for {field}={value!r}; a paper "
+                        "resolves to a single entry, so this file is corrupt"
+                    )
             catalog._entries.append(entry)
             catalog._reindex(entry)
         return catalog
