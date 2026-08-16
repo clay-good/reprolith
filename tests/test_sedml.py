@@ -21,34 +21,126 @@ _SEDML = (Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD00000000
 def test_extracts_the_uniform_time_course_recipes() -> None:
     recipes = parse_sedml_recipes(_SEDML)
     by_task = {r.task_id: r for r in recipes}
-    # The shipped SED-ML describes two figure tasks; the recipe is read from the file, not guessed.
-    assert set(by_task) == {"task_fig2a", "task_fig2b"}
-
+    # The recipe is read from the file, not guessed.
     a = by_task["task_fig2a"]
     assert a.model_ref == "kholodenko"
     assert a.duration == 9000.0 and a.steps == 1000
     assert "MAPK_PP" in a.observables  # the reported figure output
 
-    b = by_task["task_fig2b"]
-    assert b.duration == 12000.0 and b.steps == 1000
-    assert b.observables == ("MAPK_PP", "MAPK")
+
+def test_a_task_over_a_modified_model_is_skipped_not_run_unmodified() -> None:
+    # The shipped SED-ML defines a second model as the first plus thirteen parameter overrides —
+    # including the Hill coefficient that makes Figure 2B oscillate at all — and hangs task_fig2b
+    # on it. A recipe names one model file and carries no overrides, so emitting one for that task
+    # would hand a consumer the *unmodified* model under the modified task's duration and call the
+    # result a reproduction of that figure.
+    assert "kholodenko_b" in _SEDML and "listOfChanges" in _SEDML
+    assert {r.task_id for r in parse_sedml_recipes(_SEDML)} == {"task_fig2a"}
 
 
-def test_reads_a_pk_pd_recipe_with_repeated_task_and_parameter_observables() -> None:
-    # The fast-path is cross-class: the metformin PK/PD SED-ML observes amount *parameters* (not
-    # species) and wraps its time course in a repeatedTask. The parser resolves the repeatedTask to
-    # its base task and reads the parameter observables — real-world SED-ML variety, not the simple case.
+def test_a_parameter_scan_is_not_flattened_into_a_single_default_run() -> None:
+    # The metformin SED-ML plots a repeatedTask that scans three doses; every data generator
+    # references the scan, not the base task. Folding the scan onto its base task produced one
+    # recipe carrying all the scan's observables but none of its doses — a run at the model's
+    # default dose, which is not an arm the document plots.
     metformin = (
         Path(__file__).parent.parent / "datasets" / "worked_examples"
         / "Zake2021_metformin_human_single_PO.sedml"
     ).read_text(encoding="utf-8")
+    assert "vectorRange" in metformin and "setValue" in metformin
     recipes = parse_sedml_recipes(metformin)
-    assert len(recipes) == 1
-    recipe = recipes[0]
-    assert recipe.duration == 30.0 and recipe.steps == 1000
-    # Observables are amount parameters resolved from the repeatedTask onto the runnable base task.
-    assert "mgArterialPlasma" in recipe.observables
-    assert len(recipe.observables) > 100
+    # Only the plain base task remains runnable, and the scan's observables did not migrate onto it.
+    assert [r.task_id for r in recipes] == ["task1"]
+    assert recipes[0].duration == 30.0 and recipes[0].steps == 1000
+    assert recipes[0].observables == ()
+
+
+def test_a_pass_through_repeated_task_still_resolves_to_its_subtask() -> None:
+    # A repeatedTask that varies nothing is just a wrapper, so its observables belong to the base
+    # task — the behaviour that made the fast path work on real files stays.
+    sedml = """<?xml version="1.0"?>
+    <sedML xmlns="http://sed-ml.org/sed-ml/level1/version4">
+      <listOfSimulations>
+        <uniformTimeCourse id="s0" outputStartTime="0" outputEndTime="10" numberOfSteps="100"/>
+      </listOfSimulations>
+      <listOfTasks>
+        <task id="t0" modelReference="m" simulationReference="s0"/>
+        <repeatedTask id="rt0" resetModel="true">
+          <listOfSubTasks><subTask order="1" task="t0"/></listOfSubTasks>
+        </repeatedTask>
+      </listOfTasks>
+      <listOfDataGenerators>
+        <dataGenerator id="d0">
+          <listOfVariables>
+            <variable id="v0" taskReference="rt0"
+                      target="/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species[@id='S1']"/>
+          </listOfVariables>
+        </dataGenerator>
+      </listOfDataGenerators>
+    </sedML>"""
+    recipes = parse_sedml_recipes(sedml)
+    assert [(r.task_id, r.observables) for r in recipes] == [("t0", ("S1",))]
+
+
+def test_the_observed_quantity_is_the_leaf_of_the_target_not_an_ancestor() -> None:
+    # A target may select its leaf by @name under an ancestor that carries an @id. Taking the last
+    # @id anywhere in the path reported the compartment as the observed quantity; a target whose
+    # leaf is not selected by @id is dropped instead of being substituted with its container.
+    sedml = """<?xml version="1.0"?>
+    <sedML xmlns="http://sed-ml.org/sed-ml/level1/version4">
+      <listOfSimulations>
+        <uniformTimeCourse id="s0" outputStartTime="0" outputEndTime="10" numberOfSteps="100"/>
+      </listOfSimulations>
+      <listOfTasks><task id="t0" modelReference="m" simulationReference="s0"/></listOfTasks>
+      <listOfDataGenerators>
+        <dataGenerator id="d0">
+          <listOfVariables>
+            <variable id="v0" taskReference="t0"
+                      target="/sbml:sbml/sbml:model/sbml:listOfCompartments/sbml:compartment[@id='cyt']/sbml:listOfSpecies/sbml:species[@name='S1']"/>
+            <variable id="v1" taskReference="t0"
+                      target="/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species[@id='S2']"/>
+          </listOfVariables>
+        </dataGenerator>
+      </listOfDataGenerators>
+    </sedML>"""
+    assert parse_sedml_recipes(sedml)[0].observables == ("S2",)
+
+
+def test_a_set_value_variable_is_not_read_as_an_observable() -> None:
+    # Variables inside a setValue are inputs to a modification, never plotted quantities. Scanning
+    # every variable in the document put one ahead of the real observable, so a consumer reading
+    # observables[0] would have reproduced the wrong quantity.
+    sedml = """<?xml version="1.0"?>
+    <sedML xmlns="http://sed-ml.org/sed-ml/level1/version4">
+      <listOfSimulations>
+        <uniformTimeCourse id="s0" outputStartTime="0" outputEndTime="10" numberOfSteps="100"/>
+      </listOfSimulations>
+      <listOfTasks>
+        <task id="t0" modelReference="m" simulationReference="s0"/>
+        <repeatedTask id="rt0" range="r0" resetModel="true">
+          <listOfRanges><vectorRange id="r0"><value>1</value></vectorRange></listOfRanges>
+          <listOfChanges>
+            <setValue modelReference="m" range="r0"
+                      target="/sbml:sbml/sbml:model/sbml:listOfParameters/sbml:parameter[@id='dose']">
+              <listOfVariables>
+                <variable id="vx" taskReference="t0"
+                          target="/sbml:sbml/sbml:model/sbml:listOfParameters/sbml:parameter[@id='NOT_PLOTTED']"/>
+              </listOfVariables>
+            </setValue>
+          </listOfChanges>
+          <listOfSubTasks><subTask order="1" task="t0"/></listOfSubTasks>
+        </repeatedTask>
+      </listOfTasks>
+      <listOfDataGenerators>
+        <dataGenerator id="d0">
+          <listOfVariables>
+            <variable id="v0" taskReference="t0"
+                      target="/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species[@id='S1']"/>
+          </listOfVariables>
+        </dataGenerator>
+      </listOfDataGenerators>
+    </sedML>"""
+    assert parse_sedml_recipes(sedml)[0].observables == ("S1",)
 
 
 def test_ill_formed_sedml_is_a_clear_error() -> None:

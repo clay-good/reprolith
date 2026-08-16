@@ -22,9 +22,18 @@ times, values = simulate(model_sbml, recipe.observables[0],
                          duration=recipe.duration, steps=recipe.steps)
 ```
 
-A task whose simulation is not a uniform time course (a steady state, a repeated task) is skipped
-rather than guessed at — there is no single runnable recipe to adopt, and inventing one would be a
-guess.
+A recipe is adopted and run verbatim, so it must describe the run the document specifies. Three
+kinds of task are skipped rather than guessed at:
+
+| Skipped | Why |
+| --- | --- |
+| The simulation is not a uniform time course (a steady state) | There is no single runnable time course to adopt. |
+| The task runs a model the document *modifies* (`source="#other"` with `listOfChanges`) | A recipe names one model file and carries no overrides, so adopting it would run the unmodified model. In the shipped Kholodenko document that is the difference between an oscillating Figure 2B and a flat curve. |
+| The task is a `repeatedTask` that scans a range or applies a `setValue` | The document describes several runs at several parameter values; one run at the model's default value is an arm it never plots. |
+
+A `repeatedTask` that only wraps a subtask, changing nothing, still resolves to that subtask, and
+observables come from the data generators — a variable inside a `setValue` is an input to a
+modification, not a plotted quantity.
 
 ## Verifying it
 
