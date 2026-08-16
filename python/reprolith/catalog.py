@@ -92,8 +92,12 @@ _DIFFICULTY_RANK = {"low": 0, "medium": 1, "high": 2}
 
 
 def _difficulty_rank(difficulty: str | None) -> int:
-    """Queue-ordering rank for a difficulty: lower is readier (surfaces earlier); unassessed is neutral."""
-    return _DIFFICULTY_RANK.get(difficulty or "", 1)
+    """Queue-ordering rank for a difficulty: lower is readier (surfaces earlier); unassessed is neutral.
+
+    Normalized like every other free-text label here, so ``"Low"`` ranks as low rather than falling
+    through to unassessed and losing its place in the queue.
+    """
+    return _DIFFICULTY_RANK.get((difficulty or "").strip().lower(), 1)
 
 
 def _record_source(entry: CatalogEntry, source: str | None) -> None:

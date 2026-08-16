@@ -163,9 +163,10 @@ class BooleanNetwork:
         free_inputs = sum(1 for name in names if _identity(self.expressions[name], name))
         if free_inputs and 2**free_inputs > MAX_SAT_FIXED_POINTS:
             raise NetworkTooLarge(
-                f"network has {free_inputs} free input nodes, so at least 2^{free_inputs} fixed "
-                f"points — a combinatorial blow-up past {MAX_SAT_FIXED_POINTS}; fix the input nodes "
-                f"to specific values to make the steady states well-posed"
+                f"network has {free_inputs} free input nodes, so every fixed point of the rest of "
+                f"the network comes in 2^{free_inputs} copies — a combinatorial blow-up past "
+                f"{MAX_SAT_FIXED_POINTS}; fix the input nodes to specific values to make the "
+                f"steady states well-posed"
             )
         variables = {name: z3.Bool(name) for name in names}
         ops = {

@@ -163,3 +163,15 @@ def test_report_is_derived_not_recomputed() -> None:
     report = presubmission_report(cert)
     assert report["overall"] == cert.overall.value
     assert [c["verdict"] for c in report["per_claim"]] == [a.verdict.value for a in cert.assessments]
+
+
+def test_a_certificate_carrying_a_gap_note_is_not_ready_to_submit() -> None:
+    # Readiness consulted only the verdicts and the per-claim assumption flags, so a certificate
+    # whose gap report records something the artifact never stated read as READY TO SUBMIT above a
+    # fix list naming what to fix first — contradicting this module's own promise that a ready
+    # certificate yields an empty fix list.
+    report = presubmission_report(
+        _cert([_reproduced()], gap_report=("the reported dose units were ambiguous; mg assumed",))
+    )
+    assert report["ready_to_submit"] is False
+    assert report["fix_list"]

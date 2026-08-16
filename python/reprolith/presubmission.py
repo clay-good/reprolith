@@ -70,8 +70,13 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
     assumptions the author should state, then certificate-level notes), and the inescapable scope
     statement. A fully reproduced certificate yields an empty fix list.
     """
-    ready = cert.overall is OverallVerdict.REPRODUCED and not any(
-        a.assumption_qualified for a in cert.assessments
+    # A gap report is a record of something the artifact did not state, so a certificate carrying
+    # one is not ready however clean its verdicts read — otherwise the report says READY TO SUBMIT
+    # above a list of things to fix first, which is the promise in this docstring broken out loud.
+    ready = (
+        cert.overall is OverallVerdict.REPRODUCED
+        and not any(a.assumption_qualified for a in cert.assessments)
+        and not cert.gap_report
     )
 
     actions: list[dict[str, Any]] = []
