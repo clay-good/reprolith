@@ -50,6 +50,17 @@ A stochastic dossier SHALL capture the elements that determine the network's sto
 - **THEN** ingestion refuses the model rather than reading the single rate parameter and running a
   fabricated mass-action propensity, so the SSA never certifies a network the artifact did not describe
 
+#### Scenario: A rate or reactant list the sampler cannot honour is refused
+
+- **WHEN** a reaction carries a negative or non-finite rate constant, or names one species twice
+  among its reactants instead of giving it a stoichiometry
+- **THEN** the reaction is refused where it is built
+- **AND** the refusal is preferred because such a rate leaves the total propensity non-positive, so
+  every trajectory freezes at its initial state and the sampler reports the initial condition as
+  the reproduced value — a finite number the oracle's non-finite guard cannot see, which certifies
+  a wrongly-signed model as a perfect reproduction; and a repeated reactant runs an order the
+  reaction does not have while consuming the species twice per firing
+
 ### Requirement: Standard stochastic reproduction targets
 
 The oracle for this class SHALL evaluate the results stochastic papers report, using the

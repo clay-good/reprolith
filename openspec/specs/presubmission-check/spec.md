@@ -24,6 +24,14 @@ pre-submission verdict cannot diverge from the reproduction the certificate reco
 - **AND** the report carries no less qualification than the certificate — a partial or
   assumption-qualified result is never presented as ready to submit
 
+#### Scenario: Ready to submit means nothing is left to fix
+
+- **WHEN** a certificate reproduces every claim cleanly but records a gap — something the artifact
+  did not state
+- **THEN** the report is not ready to submit, because the same report lists that gap as something
+  to fix first, and a readiness signal that contradicts its own fix list tells an author the
+  opposite of what the evidence says
+
 ### Requirement: Prioritized, actionable fix list
 
 The report SHALL turn the certificate's gaps into an ordered checklist, most impactful first, so

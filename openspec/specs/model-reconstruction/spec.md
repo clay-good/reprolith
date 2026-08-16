@@ -64,6 +64,15 @@ but SHALL still confirm it is runnable.
 - **AND** the certificate records that the model was author-supplied, distinguishing this
   from a Reprolith-rebuilt model
 
+#### Scenario: A shipped recipe that cannot be adopted verbatim is skipped
+
+- **WHEN** a shipped simulation recipe describes a run reconstruction cannot carry over exactly —
+  it runs a model the document itself modifies, or it scans a parameter over several values
+- **THEN** no recipe is produced for it, rather than one that quietly drops the modification or
+  the scan
+- **AND** the skip is preferred because an adopted recipe is run verbatim, so a recipe missing an
+  override runs a different model from the one the document's own figure depends on
+
 #### Scenario: Shipped model does not match the dossier
 
 - **WHEN** an adopted artifact disagrees with the paper's stated equations or parameters

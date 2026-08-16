@@ -35,6 +35,17 @@ reproduction is fully specified without the paper.
   is recorded as a gap, because synchronous and asynchronous updating can yield different
   attractors
 
+#### Scenario: A multi-valued model is refused, not flattened to Boolean
+
+- **WHEN** an ingested logical model uses more than two levels — declared by a maximum level, an
+  initial level, or a threshold above one, or implied by a level literal in its transition logic —
+  or uses a transition the Boolean oracle does not implement, such as one that adds to its output's
+  level rather than assigning it, consumes an input, or omits its default term
+- **THEN** ingestion refuses the model and names what it cannot honour
+- **AND** the refusal is preferred because reading such a model as Boolean makes its higher-level
+  conditions permanently false, so the oracle would judge a state that is not a steady state of the
+  model the artifact describes, and report it as reproduced
+
 ### Requirement: Standard logical reproduction targets
 
 The oracle for this class SHALL evaluate the results logical-model papers actually report, using

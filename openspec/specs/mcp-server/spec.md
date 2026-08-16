@@ -108,8 +108,8 @@ every agent on the stream.
 - **THEN** the server returns the corresponding protocol error and keeps serving, so the next
   caller's valid request is still answered
 - **AND** a caller-supplied size — a simulation duration, a trajectory or step count, a grid
-  length — is bounded at the tool boundary and refused when it exceeds the ceiling, rather than
-  occupying the server indefinitely
+  length, a network's node count — is bounded at the tool boundary and refused when it exceeds the
+  ceiling, rather than occupying the server indefinitely
 
 ### Requirement: Work handoff is lease-aware
 
