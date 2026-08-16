@@ -47,6 +47,28 @@ def test_revision_requires_a_rationale() -> None:
         revise(_dossier(5.0), _dossier(5.2), corrector="c", rationale="  ", at="t")
 
 
+def test_revision_must_change_the_dossier_it_corrects() -> None:
+    # A no-op "correction" digests identically to its prior, so it would supersede itself and give
+    # the lineage a self-loop that hangs `chain`. Refuse it at the source.
+    d = _dossier(5.0)
+    with pytest.raises(ValueError, match="must change"):
+        revise(d, d, corrector="c", rationale="reverted a typo", at="t")
+
+
+def test_chain_never_hangs_on_a_self_superseding_revision() -> None:
+    # Defense in depth: even if a self-supersession is injected past `revise` (via `record_revision`
+    # directly), walking the lineage must terminate rather than loop forever.
+    from reprolith import DossierRevision
+
+    d = _dossier(5.0)
+    history = DossierHistory()
+    digest = history.record_original(d)
+    history.record_revision(
+        DossierRevision(dossier=d, corrector="c", rationale="x", at="t", supersedes=digest)
+    )
+    assert history.chain(d) == (d,)
+
+
 def test_history_chain_walks_newest_first() -> None:
     v1 = _dossier(5.0)
     v2 = _dossier(5.2)

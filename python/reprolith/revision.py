@@ -60,6 +60,9 @@ def revise(
     """
     if not rationale.strip():
         raise ValueError("a tracked revision must record the corrector's rationale")
+    if dossier_digest(corrected) == dossier_digest(prior):
+        # A no-op "correction" would supersede itself by digest, giving the lineage a self-loop.
+        raise ValueError("a tracked revision must change the dossier it corrects")
     return DossierRevision(
         dossier=corrected,
         corrector=corrector,
@@ -101,12 +104,16 @@ class DossierHistory:
         """The revision lineage of ``dossier``, newest first, back to the original."""
         lineage: list[Dossier] = [dossier]
         current = dossier_digest(dossier)
+        seen = {current}
         while current in self._prior_of:
             prior_digest = self._prior_of[current]
+            if prior_digest in seen:
+                break  # a self- or cyclic supersession can't extend the lineage; never loop on it
             prior = self._dossiers.get(prior_digest)
             if prior is None:
                 break
             lineage.append(prior)
+            seen.add(prior_digest)
             current = prior_digest
         return tuple(lineage)
 
