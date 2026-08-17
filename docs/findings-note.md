@@ -166,10 +166,38 @@ can produce a certificate that claims more than it checked:
   is handed; a pin naming another engine would be published without ever having run. The pin is
   now required to name an engine and a version, but validating it against the engine that
   actually ran needs engine dispatch, which does not exist.
-- **The certified tolerance is far looser than the agreement achieved.** The constraint-based
-  certificates carry the 5% class default while agreeing with COBRApy to about 1e-14, so a 3%
-  mis-stated medium — the class's own first-named failure mode — passes as a clean reproduction.
-  Tightening it is a recalibration of the whole tolerance table, not a local change.
+- **The certified tolerance is far looser than the agreement achieved**, measured across the whole
+  set. The constraint-based certificates carry the 5% class default while agreeing with COBRApy to
+  about 1e-14, so a 4.8% mis-stated glucose uptake — the class's own first-named failure mode —
+  passes as a clean reproduction. The spatial certificates carry the 10% curve default while
+  agreeing with the closed-form Gaussian to 4e-05, so the diffusivity the class exists to reproduce
+  can be anywhere from 43% low to 85% high and still pass. Only the PK/PD and stochastic classes
+  actually consume their tolerance budget. Tightening the others is a recalibration of the whole
+  table, not a local change.
+- **A curve verdict's threshold means different things on different curves.** The curve distance
+  is an RMSE divided by the reference's span, so 10% is between 5% and 54% amplitude accuracy
+  depending on the curve's shape — and the certificate reports the ratio, never the normalizer.
+- **A time-course certificate does not record the run window or the sample count.** Every other
+  sampled class now carries a protocol; `certify_curves` does not, so a claim run over a
+  vanishingly short duration returns the initial condition and reads as a perfect reproduction,
+  and the published number cannot be re-derived from the certificate. The fix is a line, but it
+  re-digests the PK/PD and kinetic certificates, which regenerate only under the engine extra.
+- **The published PK/PD bundle cannot re-run the run it describes.** `RecipeStep` has no field for
+  the sample count or a parameter override, so the metformin bundle's two steps are identical
+  where the claims differ by dose, and the 779.9 mg figure survives only as prose in the assumption
+  block. Re-running at hourly output — the only resolution the published recipe supports — adds
+  about 4.4% to the Cmax metric, which is most of the 5% tolerance.
+- **The pure-Python classes' pin is a package version that has never moved.** Re-verification is
+  triggered by a certificate's pin differing from the current one; four of six classes pin
+  `reprolith 0.0.1`, so a change to the SSA, the finite-difference solver, or the attractor
+  enumerator leaves every affected certificate looking fresh. (The logical pin now names its
+  update scheme and z3 version, which moves that class's certificates when the solver does.)
+- **Cross-engine corroboration never runs anywhere automatic.** No CI job installs the extra, so
+  the only executing test skips in every job, and what CI actually checks is that a committed
+  JSON file says `true`. That file records no engine versions, so its staleness cannot be detected
+  either.
+- **An estimation or population certificate is built from numbers the caller supplies**, with no
+  run of its own, yet accepts any engine pin — so it can name an engine that is not installed.
 - **A stochastic certificate's assumption-qualified flag names no assumption.** The flag carries
   the class's real caveat (the verdict depends on the seed and ensemble size, which the protocol
   now records), but it reads as "an assumption Reprolith supplied" with none listed.
