@@ -36,6 +36,29 @@ def _paper_of(entry: CatalogEntry) -> PaperIdentity:
     return PaperIdentity(title=ids.title, doi=ids.doi, pubmed_id=ids.pubmed_id)
 
 
+def _require_same_paper(entry: CatalogEntry, certificate: Certificate, key: str) -> None:
+    """Refuse a certificate keyed to an entry that is not the paper the certificate is about.
+
+    The mapping is keyed by accession-or-title, but the certificate carries its own paper
+    identity, and nothing forces the two to agree. A mis-keyed entry would file one paper's
+    result under another accession *and* score it against that other paper's ground-truth
+    label — a false certificate and a corrupted agreement number from one dataset edit.
+
+    Compared on the stable identifiers only. A title is prose, and one paper is legitimately
+    titled two ways in two records ("E. coli core" and "E. coli core metabolic model"), so a
+    title check would refuse honest data; a DOI or PubMed ID that disagrees is another paper.
+    """
+    stated = _paper_of(entry)
+    certified_paper = certificate.paper
+    for field in ("doi", "pubmed_id"):
+        ours, theirs = getattr(stated, field), getattr(certified_paper, field)
+        if ours and theirs and ours != theirs:
+            raise ValueError(
+                f"certificate filed under {key!r} is for a different paper: entry {field} "
+                f"{ours!r} but certificate {field} {theirs!r}"
+            )
+
+
 def blocked_certificate(
     paper: PaperIdentity,
     engine_pin: EnginePin,
@@ -152,9 +175,11 @@ def run_test_set(
     scored: list[tuple[CatalogEntry, OverallVerdict]] = []
     for entry in entries:
         key = entry.identifiers.accession or entry.identifiers.title
-        certificate = certified.get(key) or blocked_certificate(
-            _paper_of(entry), engine_pin, reason=blocked_reason
-        )
+        certificate = certified.get(key)
+        if certificate is not None:
+            _require_same_paper(entry, certificate, key)
+        else:
+            certificate = blocked_certificate(_paper_of(entry), engine_pin, reason=blocked_reason)
         certificates.append(certificate)
         scored.append((entry, certificate.overall))
         if advance:

@@ -95,15 +95,24 @@ def gap_items(cert: Certificate) -> list[dict[str, Any]]:
             }
         )
     for asm in cert.assumptions:
-        if not asm.load_bearing:
+        # An assumption still awaiting expert confirmation withholds the clean pass exactly as a
+        # load-bearing one does (derive_overall consults both), so the report that exists to say
+        # why the pass was withheld has to name it too.
+        if not asm.load_bearing and not asm.verification_item:
             continue
+        pending = (
+            f" — awaiting expert confirmation ({asm.verification_item})"
+            if asm.verification_item
+            else ""
+        )
         items.append(
             {
                 "claim_id": None,
                 "quantity": None,
                 "verdict": None,
                 "source_location": None,
-                "needs": f"{asm.description} — Reprolith assumed {asm.chosen} ({asm.basis})",
+                "needs": f"{asm.description} — Reprolith assumed {asm.chosen} "
+                         f"({asm.basis}){pending}",
             }
         )
     for note in cert.gap_report:
@@ -312,7 +321,10 @@ def render_registry(
     from .scope import Scope
 
     rows = list(entries)
-    scope_human = rows[0][1].scope.human if rows else Scope().human
+    # The page-wide disclaimer is the scope statement itself, not whichever certificate happens
+    # to sort first: one contributed file must not be able to reword the disclaimer every other
+    # entry on the page is published under.
+    scope_human = Scope().human
     classes = sorted({model_class for model_class, _ in rows})
     verdicts = ["reproduced", "partially-reproduced", "not-reproduced", "blocked"]
 

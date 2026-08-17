@@ -129,6 +129,14 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
     model's parameters and initial values and reports each value that disagrees with the
     dossier beyond ``rel_tol``. An empty list means no disagreement was found.
 
+    "No disagreement" has to mean the values were compared. A model that carries its rate
+    constants as local parameters inside each kinetic law — the common SBML Level 2 idiom —
+    declares no global parameters at all, so reading only those compared nothing and returned
+    the same empty list as a model that agrees. Local parameters are read too, and a dossier
+    value with no counterpart anywhere in the model is itself reported: the manuscript states
+    something the artifact does not have, which is exactly the disagreement this check exists
+    to surface.
+
     A species' initial value is read in the convention the model states it in: a model stating
     concentrations sets no initial *amount*, and reading the unset field instead reports every
     species as a mismatch against 0 (or, in Level 3, compares against NaN and so can never
@@ -145,6 +153,16 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
         model.getParameter(i).getId(): model.getParameter(i).getValue()
         for i in range(model.getNumParameters())
     }
+    for i in range(model.getNumReactions()):
+        law = model.getReaction(i).getKineticLaw()
+        if law is None:
+            continue
+        for j in range(law.getNumParameters()):
+            local = law.getParameter(j)
+            if local.isSetValue():
+                # A local name shadows nothing global in SBML scoping terms, but for the
+                # manuscript's purposes 'k1' is 'k1'; a disagreement is worth reporting once.
+                sbml_params.setdefault(local.getId(), local.getValue())
     sbml_ics: dict[str, float] = {}
     for i in range(model.getNumSpecies()):
         species = model.getSpecies(i)
@@ -158,9 +176,18 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
                 species.getInitialConcentration() * compartment.getSize()
             )
 
+    known = {model.getSpecies(i).getId() for i in range(model.getNumSpecies())}
+    known |= {model.getCompartment(i).getId() for i in range(model.getNumCompartments())}
+    known |= set(sbml_params)
+
     mismatches: list[str] = []
     for parameter in dossier.parameters:
-        if parameter.name in sbml_params and _differs(
+        if parameter.name not in known:
+            mismatches.append(
+                f"parameter {parameter.name}: stated by the dossier ({parameter.value}) but "
+                "not present in the model"
+            )
+        elif parameter.name in sbml_params and _differs(
             parameter.value, sbml_params[parameter.name], rel_tol
         ):
             mismatches.append(

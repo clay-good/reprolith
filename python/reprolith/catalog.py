@@ -475,17 +475,26 @@ class Catalog:
             # into it. On ties this is the earliest-inserted, preserving the prior single-match
             # behavior exactly.
             canonical = max(matches, key=lambda e: (len(e.history), e.ground_truth is not None))
-            for other in matches:
-                if other is not canonical:
-                    self._absorb(canonical, other)
+            # Check every fold, and the frozen-identity rule, BEFORE folding any of them. These
+            # refusals exist to protect recorded state; a refusal raised halfway through the loop
+            # would have already destroyed the entries it folded in the iterations before it.
+            losers = [other for other in matches if other is not canonical]
+            for other in losers:
+                self._refuse_unsafe_absorb(canonical, other)
             if canonical.ground_truth is not None:
                 new_keys = set(identifiers.keys()) - set(canonical.identifiers.keys())
                 if new_keys:
+                    # Names neither the entry nor why its identity is fixed: the refusal itself
+                    # is returned to whoever submitted, and a message saying "that accession is
+                    # ground-truth-labelled, it is paper X" answers a question the submitter is
+                    # not entitled to ask by guessing accessions.
                     raise AmbiguousMerge(
-                        f"candidate would add {sorted(new_keys)} to a ground-truth-labelled entry "
-                        f"({canonical.identifiers.title!r}); a labelled entry's identity is fixed "
-                        "by the dataset that labelled it, not by a submission"
+                        f"candidate would add {sorted(new_keys)} to an existing entry whose "
+                        "identity is fixed by the dataset it came from; correcting it is a "
+                        "curation decision, not a submission"
                     )
+            for other in losers:
+                self._absorb(canonical, other)
             canonical.identifiers = canonical.identifiers.merged_with(identifiers)
             if canonical.model_class is ModelClass.UNASSIGNED:
                 canonical.model_class = model_class
@@ -515,19 +524,24 @@ class Catalog:
     def claimable(self, at: float, *, model_class: ModelClass | None = None) -> list[CatalogEntry]:
         """The entries claimable as work at time ``at``, in priority order.
 
-        Ranking is explainable and stable: ground-truth-labelled entries first (they keep
-        self-validation possible), then by readiness — a lower-difficulty entry, which ships a
+        Ranking is explainable and stable: by readiness — a lower-difficulty entry, which ships a
         runnable model with no gaps to close, yields a certificate at lower cost, so it surfaces
         earlier (spec: catalog-seeding — "Readiness boosts tractable wins") — then insertion order.
         Filtered to ``model_class`` when given.
+
+        Ground truth is deliberately **not** a ranking key. Ordering labelled work first told the
+        agent about to reproduce a paper that this one is in the graded set, since the partition
+        is recoverable from the order alone — the same blindness leak the read surfaces are
+        careful to avoid. Every other surface hands out a blind view; the moment work is handed
+        out is the one that matters most.
         """
         pool = [
             entry
             for entry in self._entries
             if entry.is_claimable(at) and (model_class is None or entry.model_class is model_class)
         ]
-        # Stable sort: labelled first, then low difficulty (high readiness) first; ties keep order.
-        pool.sort(key=lambda entry: (entry.ground_truth is None, _difficulty_rank(entry.difficulty)))
+        # Stable sort: low difficulty (high readiness) first; ties keep insertion order.
+        pool.sort(key=lambda entry: _difficulty_rank(entry.difficulty))
         return pool
 
     def backlog_health(self) -> dict[str, Any]:
@@ -550,16 +564,16 @@ class Catalog:
     def priority_signals(self, entry: CatalogEntry) -> dict[str, Any]:
         """The signals that place an entry in the queue — so its rank is never a black box.
 
-        Ranking is ground-truth-first (labelled work keeps self-validation possible) then
-        submission order; the tractability signal (difficulty) and class are advisory context
-        (spec: model-catalog / catalog-seeding — "Prioritization is explainable").
+        Ranking is by readiness (lower difficulty first, which :meth:`claimable` acts on), then
+        submission order (spec: model-catalog / catalog-seeding — "Prioritization is
+        explainable"). Whether the entry carries a ground-truth label is **not** among the
+        signals: it does not affect rank, and telling a claimant that the paper it is about to
+        reproduce is one it will be graded on is exactly what blind self-validation must not do.
         """
         return {
-            "ground_truth_labelled": entry.ground_truth is not None,
             "difficulty": entry.difficulty,
             "model_class": entry.model_class.value,
-            "ranking": "ground-truth-labelled work first, then readiness (lower difficulty), "
-            "then submission order",
+            "ranking": "readiness (lower difficulty) first, then submission order",
         }
 
     def claim_next(
@@ -611,14 +625,11 @@ class Catalog:
         seen.sort(key=self._entries.index)  # deterministic: frozenset key order is not stable
         return seen
 
-    def _absorb(self, winner: CatalogEntry, loser: CatalogEntry) -> None:
-        """Fold ``loser`` into ``winner`` — they turned out to be one paper.
+    def _refuse_unsafe_absorb(self, winner: CatalogEntry, loser: CatalogEntry) -> None:
+        """Raise :class:`AmbiguousMerge` if folding ``loser`` into ``winner`` would lose state.
 
-        Refuses (``AmbiguousMerge``) when the loser carries recorded work (any lifecycle
-        history) or a ground-truth label that conflicts with the winner's, since a silent
-        fold would discard that state. Otherwise the loser's identifiers, sources, and any
-        fields the winner left unset move over, and the loser is removed — including its own
-        index keys, so nothing points at a dropped entry.
+        Separate from :meth:`_absorb` so a multi-way merge can be validated in full before any
+        of it is applied.
         """
         if winner.ground_truth is not None:
             raise AmbiguousMerge(
@@ -640,6 +651,24 @@ class Catalog:
                 f"bridged entries carry conflicting ground-truth labels "
                 f"({winner.ground_truth.expected.value} vs {loser.ground_truth.expected.value})"
             )
+        if loser.ground_truth is not None and winner.ground_truth is None:
+            # The transplant the frozen-identity rule above blocks in the other direction: the
+            # winner is chosen by how much history it carries, so an unlabelled entry with more
+            # history absorbs the labelled one and inherits its label — scoring an unrelated
+            # paper against a dataset's ground truth.
+            raise AmbiguousMerge(
+                f"candidate bridges the ground-truth-labelled entry "
+                f"{loser.identifiers.title!r} into the unlabelled {winner.identifiers.title!r}; "
+                "folding it would move the label onto another paper, so reconcile by hand"
+            )
+
+    def _absorb(self, winner: CatalogEntry, loser: CatalogEntry) -> None:
+        """Fold ``loser`` into ``winner`` — they turned out to be one paper.
+
+        The loser's identifiers, sources, and any fields the winner left unset move over, and
+        the loser is removed — including its own index keys, so nothing points at a dropped
+        entry. Call :meth:`_refuse_unsafe_absorb` first: this method does not re-check.
+        """
         winner.identifiers = winner.identifiers.merged_with(loser.identifiers)
         if winner.model_class is ModelClass.UNASSIGNED:
             winner.model_class = loser.model_class

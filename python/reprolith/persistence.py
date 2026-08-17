@@ -39,7 +39,7 @@ from .reconstruction import (
     RecipeStep,
     ReconstructionBundle,
 )
-from .scope import Scope
+from .scope import SCOPE_HUMAN, SCOPE_MACHINE, Scope
 
 
 def _assessment_from(record: dict[str, Any]) -> ClaimAssessment:
@@ -83,12 +83,21 @@ def certificate_from_content(content: dict[str, Any]) -> Certificate:
     honesty invariants are enforced when a certificate is *built*; without this check a hand-edited
     or corrupted file could carry a clean green ``reproduced`` over assumption-qualified claims all
     the way to the public registry, which reads certificates from disk and never rebuilds them.
+
+    The scope statement is checked the same way. It is fixed text, not a per-certificate field:
+    a file free to reword it could publish "validated as clinically safe" through every read
+    surface, which is exactly the reading the scope statement exists to prevent.
     """
     paper = content["paper"]
     pin = content["engine_pin"]
     scope = content["scope"]
     assessments = tuple(_assessment_from(a) for a in content["assessments"])
     assumptions = tuple(_assumption_from(a) for a in content["assumptions"])
+    if (scope["machine"], scope["human"]) != (SCOPE_MACHINE, SCOPE_HUMAN):
+        raise ValueError(
+            "certificate carries a scope statement that is not Reprolith's: the scope is fixed "
+            "text and cannot be reworded by the file that carries it"
+        )
     stored = OverallVerdict(content["overall"])
     derived = derive_overall(assessments, assumptions)
     if stored is not derived:

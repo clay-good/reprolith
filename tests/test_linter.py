@@ -63,3 +63,24 @@ def test_same_submission_yields_same_verdict() -> None:
 def test_mismatched_reference_length_is_rejected() -> None:
     with pytest.raises(ValueError):
         lint_curve(ONE_COMPARTMENT_SBML, "A", reference=(1.0, 2.0), duration=10.0, steps=10)
+
+
+def test_a_reported_level_that_is_not_boolean_is_refused_not_coerced() -> None:
+    # Truthiness would read the JSON string "0" as ON, rewriting a state that is not a fixed
+    # point into one that is and linting it green.
+    import pytest
+    from reprolith.linter import lint_steady_state
+
+    rules = {"A": "B", "B": "A", "C": "A"}
+    assert lint_steady_state(rules, {"A": 0, "B": 0, "C": 1}).verdict is Verdict.FAILED
+    for bad in ({"A": "0", "B": "0", "C": "1"}, {"A": 0.4, "B": 0, "C": 0}, {"A": -3, "B": 0, "C": 0}):
+        with pytest.raises(ValueError, match="integer 0 or 1"):
+            lint_steady_state(rules, bad)
+
+
+def test_a_non_finite_input_abstains_rather_than_reporting_the_paper_wrong() -> None:
+    from reprolith.linter import lint_estimation
+
+    nan = float("nan")
+    assert lint_estimation(reported=1.0, recovered=nan).verdict is Verdict.NOT_EVALUABLE
+    assert lint_estimation(reported=1.0, recovered=1.02).verdict is Verdict.REPRODUCED

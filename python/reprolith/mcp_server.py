@@ -16,6 +16,7 @@ function from a request object to a response object (testable without any I/O), 
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 from collections.abc import Callable, Sequence
@@ -383,6 +384,20 @@ _MAX_LINT_WORK = 100_000_000
 # the answer for a larger network means enumerating 2^n states (or a SAT solve the caller shapes).
 # Fourteen nodes is worst-case seconds, well past any inline sanity check an agent runs mid-workflow.
 _MAX_LINT_NODES = 14
+# A simulated duration is a caller-supplied size like any other: an SSA's event count is the
+# integral of its propensities over the duration, so a large one is unbounded work even with the
+# trajectory count capped, and the stdio loop is single-threaded.
+_MAX_LINT_DURATION = 1.0e6
+
+
+def _bounded_duration(value: Any, *, name: str = "duration") -> float:
+    duration = float(value)
+    if not math.isfinite(duration) or duration <= 0.0 or duration > _MAX_LINT_DURATION:
+        raise ValueError(
+            f"{name} must be a positive finite number of time units, at most "
+            f"{_MAX_LINT_DURATION:g}; got {value!r}"
+        )
+    return duration
 
 
 def _bounded_count(value: Any, *, name: str, ceiling: int) -> int:
@@ -441,7 +456,7 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
             arguments["sbml"],
             arguments["species"],
             reference=tuple(_bounded_length(arguments["reference"], name="reference")),
-            duration=arguments["duration"],
+            duration=_bounded_duration(arguments["duration"]),
             steps=_bounded_count(arguments["steps"], name="steps", ceiling=_MAX_LINT_ITERATIONS),
         )
         return result.to_dict()
@@ -484,12 +499,15 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
     if name == "lint_stochastic":
         from .linter import lint_stochastic
 
+        trajectories = _bounded_count(
+            arguments["trajectories"], name="trajectories", ceiling=_MAX_LINT_ITERATIONS
+        )
+        _bounded_work(trajectories * _MAX_LINT_ITERATIONS, name="trajectories × events")
         return lint_stochastic(
             arguments["sbml"], species=arguments["species"],
-            reported_mean=arguments["reported_mean"], duration=arguments["duration"],
-            trajectories=_bounded_count(
-                arguments["trajectories"], name="trajectories", ceiling=_MAX_LINT_ITERATIONS
-            ),
+            reported_mean=arguments["reported_mean"],
+            duration=_bounded_duration(arguments["duration"]),
+            trajectories=trajectories,
             seed=arguments["seed"],
             max_events=_MAX_LINT_ITERATIONS,
         ).to_dict()

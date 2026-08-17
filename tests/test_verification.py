@@ -118,7 +118,7 @@ def test_correction_reverifies_dependents_and_supersedes() -> None:
             supersedes=old,
         )
 
-    replacements = reverify_dependents(item, ledger, recertify=recertify)
+    replacements = reverify_dependents(item, ledger, queue=queue, recertify=recertify)
     assert len(replacements) == 1
     new = replacements[0]
     assert new.supersedes == original_digest  # links to what it supersedes
@@ -173,3 +173,68 @@ def test_a_decided_item_cannot_be_quietly_replaced() -> None:
     )
     with pytest.raises(ValueError, match="already carries an expert decision"):
         queue.add(changed)
+
+
+def test_a_pending_item_cannot_lift_its_dependents_qualification() -> None:
+    """Otherwise the unverified value becomes a clean green certificate with nobody having ruled."""
+    from reprolith import (
+        Assumption,
+        CertificateLedger,
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+        reverify_dependents,
+    )
+
+    original = build_certificate(
+        paper=PaperIdentity(title="t"), engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(claim_id="c", quantity="AUC", verdict=Verdict.REPRODUCED,
+                                     source_location="T1")],
+        assumptions=[Assumption(id="k", description="ka", chosen="1.2", basis="b",
+                                load_bearing=False, verification_item="VQ-9")],
+    )
+    ledger = CertificateLedger()
+    digest = ledger.issue(original)
+    assert original.overall.value == "partially-reproduced"  # withheld, pending review
+
+    queue = VerificationQueue()
+    item = VerificationItem(id="VQ-9", question="is ka=1.2?", best_estimate="1.2", basis="b",
+                            depends_on=(digest,))
+    queue.add(item)
+
+    def recertify(old):  # pragma: no cover - must never be reached
+        raise AssertionError("re-certified while the item was still pending")
+
+    with pytest.raises(ValueError, match="no expert decision yet"):
+        reverify_dependents(item, ledger, queue=queue, recertify=recertify)
+
+    # A rejection is not a confirmation either.
+    queue.decide("VQ-9", VerificationDecision(kind="reject", expert="e", rationale="not supported"))
+    with pytest.raises(ValueError, match="rejected"):
+        reverify_dependents(item, ledger, queue=queue, recertify=recertify)
+
+
+def test_a_downgrade_that_is_pending_review_says_so_in_the_gap_report() -> None:
+    """The report whose job is to explain a withheld pass cannot be silent about the reason."""
+    from reprolith import (
+        Assumption,
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+    )
+    from reprolith.render import gap_items
+
+    cert = build_certificate(
+        paper=PaperIdentity(title="t"), engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(claim_id="c", quantity="peak", verdict=Verdict.REPRODUCED,
+                                     source_location="Fig 1")],
+        assumptions=[Assumption(id="k", description="dose not stated", chosen="10 mg", basis="typical",
+                                load_bearing=False, verification_item="VQ-7")],
+    )
+    assert cert.overall.value == "partially-reproduced"
+    needs = [item["needs"] for item in gap_items(cert)]
+    assert any("VQ-7" in n and "dose not stated" in n for n in needs)

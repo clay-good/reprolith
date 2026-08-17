@@ -247,7 +247,7 @@ def test_lint_tool_reports_missing_engine_as_a_tool_error() -> None:
         pytest.skip("engine installed; the missing-engine path is not exercised")
     query, _ = _fixture()
     text, is_error = _call(query, "lint", {
-        "sbml": "<sbml/>", "species": "A", "reference": [1.0], "duration": 1.0, "steps": 0,
+        "sbml": "<sbml/>", "species": "A", "reference": [1.0, 1.0], "duration": 1.0, "steps": 1,
     })
     # Without the engine extra the tool errors cleanly rather than crashing the server.
     assert is_error and "engine" in text.lower()

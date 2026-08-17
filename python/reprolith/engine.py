@@ -59,6 +59,21 @@ def engine_pin() -> EnginePin:
     return EnginePin(engine=ENGINE, version=engine_version(), algorithm=ALGORITHM)
 
 
+def _require_advancing_run(duration: float, steps: int) -> None:
+    """Refuse a time course that cannot advance.
+
+    A run of zero (or negative, or non-finite) duration returns the initial condition and
+    nothing else, and the metric layer then reads that initial condition as the model's Cmax or
+    final value — a claim stated at its own starting point judges as reproduced against a
+    trajectory that never happened. ``steps`` of zero divides by zero when the grid is built.
+    Both are refused here, at the one boundary every certified time course passes through.
+    """
+    if not math.isfinite(duration) or duration <= 0.0:
+        raise ValueError(f"duration must be a positive finite number of time units, not {duration!r}")
+    if int(steps) < 1:
+        raise ValueError(f"a time course needs at least one step, not {steps!r}")
+
+
 def simulate(
     sbml: str,
     species: str,
@@ -73,6 +88,7 @@ def simulate(
     arguments return byte-identical series, so the result can feed the oracle as a
     reproducible reconstruction output.
     """
+    _require_advancing_run(duration, steps)
     copasi = _copasi()
     datamodel = copasi.CRootContainer.addDatamodel()
     try:
@@ -138,6 +154,7 @@ def simulate_with_roadrunner(
     and the same uniform grid over ``[0, duration]``, so the two engines' outputs are directly
     comparable for cross-engine corroboration. Needs the ``corroborate`` extra (libRoadRunner).
     """
+    _require_advancing_run(duration, steps)
     roadrunner = _roadrunner()
     runner = roadrunner.RoadRunner(sbml)
     runner.timeCourseSelections = ["time", species]

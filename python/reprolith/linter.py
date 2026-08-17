@@ -98,6 +98,8 @@ def lint_curve(
     tol = tolerance or default_tolerance(
         ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind
     )
+    if not _all_finite(reference, predicted):
+        return _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol)
     distance = normalized_curve_distance(reference, predicted)
     return LintResult(
         verdict=verdict_for(distance, tol),
@@ -140,6 +142,8 @@ def lint_objective(
         lower[model.reaction_index(reaction_id)] = -abs(uptake)
     predicted = solve_objective(model.stoichiometry, model.objective, lower, model.upper)
     tol = tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind)
+    if not _all_finite((reported, predicted)):
+        return _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol)
     error = relative_error(reported, predicted)
     return LintResult(
         verdict=verdict_for(error, tol),
@@ -182,6 +186,8 @@ def lint_stochastic(
     )
     mean, _ = species_mean_variance(ensemble, species)
     tol = tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC)
+    if not _all_finite((reported_mean, mean)):
+        return _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol)
     error = relative_error(reported_mean, mean)
     return LintResult(
         verdict=verdict_for(error, tol),
@@ -248,7 +254,16 @@ def lint_steady_state(
     network = parse_boolean_network(rules)
     if set(reported) != set(network.nodes):
         raise ValueError("reported state must assign exactly the network's nodes")
-    target = tuple(1 if reported[n] else 0 for n in network.nodes)
+    # Truthiness is the wrong reading of a reported level: the JSON string "0" and the level 0.4
+    # are both truthy, so a state that is not a fixed point would be rewritten into one that is
+    # and linted green. A Boolean node is 0 or 1 or it is not a Boolean node.
+    for node, level in reported.items():
+        if isinstance(level, bool) or not isinstance(level, int) or level not in (0, 1):
+            raise ValueError(
+                f"node {node!r} has reported level {level!r}; a Boolean state assigns each node "
+                "the integer 0 or 1"
+            )
+    target = tuple(int(reported[n]) for n in network.nodes)
     fixed = {tuple(1 if fp[n] else 0 for n in network.nodes) for fp in network.fixed_points()}
     matched = target in fixed
     discrepancy = (
@@ -279,6 +294,8 @@ def lint_estimation(
     Deterministic and dependency-free — the same pair always yields the same scope-flagged verdict.
     """
     tol = tolerance or estimation_default_tolerance()
+    if not _all_finite((reported, recovered)):
+        return _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol)
     error = relative_error(reported, recovered)
     return LintResult(
         verdict=verdict_for(error, tol),

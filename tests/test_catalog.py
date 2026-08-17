@@ -303,16 +303,17 @@ def test_expired_lease_becomes_claimable_again() -> None:
     assert reclaimed is entry and reclaimed.leased_to == "agent-2"
 
 
-def test_claim_is_ground_truth_first_and_class_filtered() -> None:
+def test_claim_does_not_reveal_which_work_is_graded_and_is_class_filtered() -> None:
     catalog = Catalog()
     catalog.add(Identifiers(title="unlabelled", accession="U"), ModelClass.ODE_PKPD)
     catalog.add(Identifiers(title="labelled", accession="L"), ModelClass.ODE_PKPD,
                 ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source="c"))
     catalog.add(Identifiers(title="other class", accession="K"), ModelClass.KINETIC)
 
-    # Ground-truth-labelled entry is claimed first.
+    # The label is not a ranking key: handing labelled work out first would tell the agent about
+    # to reproduce a paper that this is one it will be graded on. Submission order stands.
     first = catalog.claim_next("a", at=0.0, seconds=10.0)
-    assert first is not None and first.identifiers.accession == "L"
+    assert first is not None and first.identifiers.accession == "U"
     # A class filter only returns matching, claimable work.
     kin = catalog.claim_next("a", at=0.0, seconds=10.0, model_class=ModelClass.KINETIC)
     assert kin is not None and kin.identifiers.accession == "K"
@@ -372,9 +373,11 @@ def test_priority_is_explainable() -> None:
                            difficulty="low",
                            ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source="c"))
     signals = catalog.priority_signals(labelled)
-    assert signals["ground_truth_labelled"] is True
     assert signals["difficulty"] == "low"
-    assert "ground-truth" in signals["ranking"]
+    assert "readiness" in signals["ranking"]
+    # Explaining the rank must not disclose that this entry is one the run will be scored on.
+    assert "ground_truth_labelled" not in signals
+    assert "ground-truth" not in signals["ranking"]
 
 
 def test_readiness_boosts_tractable_wins_within_a_tier() -> None:
@@ -387,11 +390,12 @@ def test_readiness_boosts_tractable_wins_within_a_tier() -> None:
     order = [e.identifiers.accession for e in catalog.claimable(0.0)]
     assert order == ["R", "H"]
 
-    # A ground-truth-labelled entry still outranks readiness (self-validation comes first).
+    # A ground-truth-labelled entry does not jump the queue: readiness still decides, so the
+    # order a claimant observes carries no information about which papers are graded.
     catalog.add(Identifiers(title="labelled-hard", accession="LH"), ModelClass.ODE_PKPD,
                 difficulty="high",
                 ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source="c"))
-    assert catalog.claimable(0.0)[0].identifiers.accession == "LH"
+    assert [e.identifiers.accession for e in catalog.claimable(0.0)] == ["R", "H", "LH"]
 
 
 def test_a_saved_catalog_holding_one_paper_twice_is_refused() -> None:

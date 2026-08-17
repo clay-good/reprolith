@@ -138,9 +138,16 @@ def reverify_dependents(
     item: VerificationItem,
     ledger: CertificateLedger,
     *,
+    queue: VerificationQueue,
     recertify: Callable[[Certificate], Certificate],
 ) -> list[Certificate]:
     """Re-verify the certificates that depend on a decided queue item (spec: verification-queue).
+
+    ``queue`` is the queue holding the decision, and the item must actually have one: the whole
+    point of the qualification is that no expert has ruled yet, so re-issuing its dependents
+    while the item is still pending is how an unverified value becomes a clean green certificate
+    with nobody having confirmed anything. A rejected item is refused for the same reason — a
+    rejection is not a confirmation.
 
     For each dependent certificate (by digest in ``item.depends_on``) still in the ledger,
     ``recertify`` produces its replacement — the caller decides how, based on the expert's
@@ -149,6 +156,17 @@ def reverify_dependents(
     issued into the ledger, and the superseded certificate remains retrievable. Returns the
     replacements, so nothing is settled by a stale certificate after the value beneath it changed.
     """
+    decisions = queue.decisions_for(item.id)
+    if not decisions:
+        raise ValueError(
+            f"verification item {item.id!r} has no expert decision yet; its dependents cannot be "
+            "re-issued while the value they rest on is still awaiting review"
+        )
+    if decisions[-1].kind == "reject":
+        raise ValueError(
+            f"verification item {item.id!r} was rejected; a rejection is not a confirmation, so "
+            "the value beneath its dependents has to be corrected rather than re-issued"
+        )
     replacements: list[Certificate] = []
     for digest in item.depends_on:
         old = ledger.get(digest)

@@ -273,13 +273,18 @@ def test_render_registry_track_record_banner_is_honest() -> None:
 
 def test_registry_escapes_a_scope_statement_carried_in_from_a_stored_certificate() -> None:
     """A contributed certificate must not be able to inject markup into the public registry."""
+    import pytest
     from reprolith import Scope, certificate_from_content, render_badge, render_registry
 
     payload = '</title><script>alert(1)</script>'
     cert = _cert([_claim(Verdict.REPRODUCED, cid="a")], scope=Scope(machine=payload, human="h"))
-    # Straight through the deserialize path the registry actually uses.
-    reloaded = certificate_from_content(cert.content())
-    # The page carries its own filter <script>; what must never appear is the injected one.
-    for html in (render_badge(reloaded), render_registry([("ode-pkpd", reloaded)])):
+    # The deserialize path the registry actually uses refuses the file outright: the scope is
+    # fixed text, so a stored certificate carrying any other wording never loads at all.
+    with pytest.raises(ValueError, match="scope statement that is not Reprolith's"):
+        certificate_from_content(cert.content())
+    # And in memory, where a caller can hand render a Scope of its own, the markup is escaped and
+    # the page-wide disclaimer stays Reprolith's rather than the certificate's.
+    for html in (render_badge(cert), render_registry([("ode-pkpd", cert)])):
         assert "<script>alert" not in html
-        assert "&lt;script&gt;alert" in html
+    page = render_registry([("ode-pkpd", cert)])
+    assert "no claim about biological correctness" in page  # Reprolith's wording, not the file's
