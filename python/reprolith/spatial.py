@@ -24,6 +24,65 @@ from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import Attribution, Tolerance, judge_curve
 
 
+def _diffusion_number(
+    *,
+    diffusivity: float,
+    dx: float,
+    dt: float,
+    steps: int,
+    limit: float,
+    decay: float = 0.0,
+    must_advance: bool = True,
+) -> float:
+    """Validate a discretization and return its diffusion number ``D·dt/dx²``.
+
+    Each input is checked on its own before the combined number is formed, because two wrong
+    signs cancel: a negative diffusivity with a negative time step yields a positive,
+    innocent-looking diffusion number while the caller asked for anti-diffusion running
+    backwards in time.
+
+    The last check is the important one. A discretization whose per-step update is too small to
+    change a value at unit scale — because ``dt``, ``D``, or ``1/dx²`` is zero or subnormal — runs
+    to completion and returns the initial profile unchanged. Judged against a reported profile
+    near that initial condition, a simulation that never happened reads as a perfect
+    reproduction. So a run that cannot advance is refused rather than reported (the spatial
+    counterpart of the stochastic class refusing a rate or duration the SSA cannot advance
+    through). ``must_advance`` is off for solvers whose update carries a reaction or source term
+    that moves the profile on its own.
+    """
+    if steps < 0:
+        raise ValueError(f"steps must not be negative, got {steps}")
+    for name, value in (("diffusivity", diffusivity), ("dx", dx), ("dt", dt), ("decay", decay)):
+        if not math.isfinite(value):
+            raise ValueError(f"{name} must be a finite number, got {value!r}")
+    if diffusivity < 0.0:
+        raise ValueError(f"diffusivity must not be negative, got {diffusivity}")
+    if dx <= 0.0:
+        raise ValueError(f"dx must be a positive grid spacing, got {dx}")
+    if dt < 0.0:
+        raise ValueError(f"dt must not be negative, got {dt}")
+    if decay < 0.0:
+        raise ValueError(f"decay must not be negative (a negative decay is unbounded growth), got {decay}")
+    if decay * dt > 1.0:
+        raise ValueError(
+            f"unstable decay step: decay·dt = {decay * dt:.3g} must not exceed 1; "
+            "above it the first-order term overshoots zero and oscillates"
+        )
+    alpha = diffusivity * dt / (dx * dx)
+    if alpha > limit + 1e-12:
+        raise ValueError(
+            f"unstable discretization: D·dt/dx² = {alpha:.3g} must lie in [0, {limit}]; "
+            "reduce dt or increase dx"
+        )
+    if must_advance and steps > 0 and 1.0 + alpha == 1.0 and 1.0 + decay * dt == 1.0:
+        raise ValueError(
+            f"this discretization cannot advance the profile: D·dt/dx² = {alpha:.3g} and "
+            f"decay·dt = {decay * dt:.3g} are both too small to change a value, so the run "
+            "would return its initial condition unchanged (check the units of D, dx and dt)"
+        )
+    return alpha
+
+
 def diffuse_1d(
     profile: Sequence[float],
     *,
@@ -41,14 +100,13 @@ def diffuse_1d(
     ``steps`` steps of size ``dt``. Deterministic in its inputs.
 
     Raises if the diffusion number ``D·dt/dx²`` exceeds ``0.5`` — the explicit scheme's stability
-    limit — so an unstable discretization is refused, not run to a diverging profile.
+    limit — so an unstable discretization is refused, not run to a diverging profile, and equally
+    refuses a discretization too small to advance the profile at all (see
+    :func:`_diffusion_number`), which would otherwise return the initial condition as a result.
     """
-    alpha = diffusivity * dt / (dx * dx)
-    if not -1e-12 <= alpha <= 0.5 + 1e-12:
-        raise ValueError(
-            f"unstable discretization: D·dt/dx² = {alpha:.3g} must lie in [0, 0.5]; "
-            "reduce dt or increase dx (a negative value is the unstable backward heat equation)"
-        )
+    alpha = _diffusion_number(
+        diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, limit=0.5, decay=decay,
+    )
     current = list(profile)
     n = len(current)
     if n < 2:
@@ -79,14 +137,12 @@ def react_diffuse_1d(
     :func:`diffuse_1d`, where ``reaction`` is the local rate ``f(u)`` — e.g. logistic growth
     ``r·u·(1−u)`` for the Fisher-KPP invasion/growth-front model. Zero-flux boundaries, deterministic,
     and subject to the same diffusion stability limit (the reaction term's own stability is the
-    caller's to keep, e.g. by a small ``dt``).
+    caller's to keep, e.g. by a small ``dt``). The reaction moves the profile on its own, so a
+    zero diffusion number is a legitimate reaction-only run here.
     """
-    alpha = diffusivity * dt / (dx * dx)
-    if not -1e-12 <= alpha <= 0.5 + 1e-12:
-        raise ValueError(
-            f"unstable discretization: D·dt/dx² = {alpha:.3g} must lie in [0, 0.5] "
-            "(a negative value is the unstable backward heat equation)"
-        )
+    alpha = _diffusion_number(
+        diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, limit=0.5, must_advance=False,
+    )
     current = list(profile)
     n = len(current)
     if n < 2:
@@ -119,12 +175,9 @@ def morphogen_gradient(
     exponential profile ``C(x) = source·e^{−x/λ}`` with decay length ``λ = √(D/k)``. ``steps`` must be
     large enough to reach steady state; the result is deterministic in the discretization.
     """
-    alpha = diffusivity * dt / (dx * dx)
-    if not -1e-12 <= alpha <= 0.5 + 1e-12:
-        raise ValueError(
-            f"unstable discretization: D·dt/dx² = {alpha:.3g} must lie in [0, 0.5] "
-            "(a negative value is the unstable backward heat equation)"
-        )
+    alpha = _diffusion_number(
+        diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, limit=0.5, decay=decay,
+    )
     if points < 2:
         raise ValueError("need at least two grid points")
     current = [0.0] * points
@@ -186,12 +239,8 @@ def react_diffuse_2species(
     are the local rates ``f`` and ``g``. Deterministic; both species must satisfy the diffusion
     stability limit.
     """
-    au, av = du * dt / (dx * dx), dv * dt / (dx * dx)
-    if not (-1e-12 <= au <= 0.5 + 1e-12 and -1e-12 <= av <= 0.5 + 1e-12):
-        raise ValueError(
-            f"unstable discretization: D·dt/dx² = {max(au, av):.3g} must lie in [0, 0.5] "
-            "(a negative value is the unstable backward heat equation)"
-        )
+    au = _diffusion_number(diffusivity=du, dx=dx, dt=dt, steps=steps, limit=0.5, must_advance=False)
+    av = _diffusion_number(diffusivity=dv, dx=dx, dt=dt, steps=steps, limit=0.5, must_advance=False)
     cu, cv = list(u), list(v)
     n = len(cu)
     if n < 2 or len(cv) != n:
@@ -238,14 +287,11 @@ def diffuse_2d(
     diffusion number ``D·dt/dx²`` exceeds ``0.25`` — the explicit scheme's stability limit in two
     dimensions (stricter than 1-D's 0.5).
     """
-    alpha = diffusivity * dt / (dx * dx)
-    if not -1e-12 <= alpha <= 0.25 + 1e-12:
-        raise ValueError(
-            f"unstable discretization: D·dt/dx² = {alpha:.3g} must lie in [0, 0.25] "
-            "(a negative value is the unstable backward heat equation)"
-        )
+    alpha = _diffusion_number(diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, limit=0.25)
     ny = len(grid)
     nx = len(grid[0]) if ny else 0
+    if any(len(row) != nx for row in grid):
+        raise ValueError("the grid must be rectangular: every row needs the same number of columns")
     if ny < 2 or nx < 2:
         raise ValueError("need at least a 2x2 grid")
     current = [list(row) for row in grid]
@@ -338,9 +384,18 @@ def certify_spatial(
     each claim's reconstructed profile is simulated with :func:`diffuse_1d` and judged against the
     reported profile by the shared curve oracle, then assembled through the same rule and scope flag
     as every other class. Deterministic — no engine extra, no sampling qualification.
+
+    A claim must describe a run of at least one step. A zero-step run returns the initial profile,
+    which is an input to the reconstruction rather than evidence about it, so judging it against a
+    reported profile would certify a simulation that never ran.
     """
     assessments = []
     for claim in claims:
+        if claim.steps < 1:
+            raise ValueError(
+                f"claim {claim.claim_id!r} asks for {claim.steps} steps: a spatial claim must "
+                "evolve the profile by at least one step to be evidence about the model"
+            )
         predicted = diffuse_1d(
             claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
             steps=claim.steps, decay=claim.decay,

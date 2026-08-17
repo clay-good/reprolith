@@ -16,6 +16,7 @@ Running the engine needs the optional ``engine`` extra; the comparison itself is
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -55,6 +56,20 @@ class LintResult:
             "tolerance": self.tolerance,
             "scope": self.scope.to_dict(),
         }
+
+
+def _all_finite(*series: Sequence[float]) -> bool:
+    return all(math.isfinite(v) for values in series for v in values)
+
+
+def _not_evaluable(method: ComparisonMethod, tolerance: Tolerance) -> LintResult:
+    """Abstain: the run produced nothing comparable, which is not the same as producing a wrong value."""
+    return LintResult(
+        verdict=Verdict.NOT_EVALUABLE,
+        method=method.value,
+        discrepancy="the run produced non-finite output; there is no comparable value to judge",
+        tolerance=tolerance.label(),
+    )
 
 
 def lint_curve(
@@ -194,12 +209,19 @@ def lint_diffusion(
     first-order ``decay``) for ``steps`` steps of ``dt`` at spacing ``dx``, and judge the resulting
     profile against ``reference`` by normalized curve distance. Pure and dependency-free — no engine
     extra — and deterministic, so the same discretization always yields the same scope-flagged
-    verdict. Rejects a time step past the explicit-scheme stability limit (via :func:`diffuse_1d`).
+    verdict. Rejects a time step past the explicit-scheme stability limit, or one too small to
+    advance the profile at all (via :func:`diffuse_1d`), and abstains rather than returning a
+    confident verdict when the run diverges to a non-finite profile — the same rule the certifying
+    oracle applies.
     """
     from .spatial import diffuse_1d
 
+    if steps < 1:
+        raise ValueError("steps must be at least 1: a zero-step run returns the initial profile")
     predicted = diffuse_1d(initial, diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, decay=decay)
     tol = tolerance or default_tolerance(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind)
+    if not _all_finite(reference, predicted):
+        return _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol)
     distance = normalized_curve_distance(reference, predicted)
     return LintResult(
         verdict=verdict_for(distance, tol),
@@ -279,13 +301,20 @@ def lint_distribution(
     bands, each a ``{"percentile": p, "curve": [...]}`` mapping. The verdict is governed by the
     worst-matched band (so a good median cannot mask a divergent tail) against the documented
     distributional default tolerance, wider than a single trajectory's to absorb population sampling
-    error. Deterministic and dependency-free.
+    error. Deterministic and dependency-free. A diverged band makes the envelope un-judgeable, so
+    non-finite input abstains rather than returning a verdict — the same rule the certifying oracle
+    applies.
     """
     ref_bands = tuple(PercentileBand(float(b["percentile"]), tuple(b["curve"])) for b in reported)
     pred_bands = tuple(PercentileBand(float(b["percentile"]), tuple(b["curve"])) for b in predicted)
     tol = tolerance or default_tolerance(
         ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, reference_kind
     )
+    if not _all_finite(
+        [v for band in ref_bands for v in band.curve],
+        [v for band in pred_bands for v in band.curve],
+    ):
+        return _not_evaluable(ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, tol)
     distance, worst_band = band_envelope_distance(ref_bands, pred_bands)
     return LintResult(
         verdict=verdict_for(distance, tol),

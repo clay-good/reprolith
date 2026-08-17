@@ -227,3 +227,13 @@ def test_lint_distribution_inline_verdict() -> None:
     blown = [{"percentile": b.percentile, "curve": [v * (2.0 if b.percentile == 95.0 else 1.0)
                                                     for v in b.curve]} for b in _REF]
     assert lint_distribution(reported, blown).verdict is Verdict.FAILED
+
+
+def test_lint_abstains_rather_than_judging_a_diverged_run() -> None:
+    """A non-finite run has no comparable value; the linter must abstain like the oracle does."""
+    from reprolith import Verdict, lint_distribution
+
+    nan = float("nan")
+    reported = [{"percentile": 50, "curve": [1.0, 2.0, 3.0]}]
+    predicted = [{"percentile": 50, "curve": [nan, nan, nan]}]
+    assert lint_distribution(reported, predicted).verdict is Verdict.NOT_EVALUABLE

@@ -256,6 +256,11 @@ def band_envelope_distance(
     hide a divergent tail, because the whole point of a population claim is its spread. Returns
     the worst distance together with the reference band that produced it, so the discrepancy can
     name the governing percentile.
+
+    A NaN band distance — a diverged tail — is the worst case, not a skipped one. Comparisons
+    against NaN are all false, so a running maximum seeded with a sentinel would step over exactly
+    the band that failed and report the best-matched tail instead, inverting the rule this function
+    exists to enforce.
     """
     if not reference or not predicted:
         raise ValueError("both envelopes need at least one percentile band")
@@ -265,13 +270,16 @@ def band_envelope_distance(
         raise ValueError("percentiles within an envelope must be distinct")
     if ref_by_pct.keys() != pred_by_pct.keys():
         raise ValueError("reference and predicted envelopes must cover the same percentiles")
-    worst_distance = -1.0
+    worst_distance: float | None = None
     worst_band = reference[0]
     for pct in sorted(ref_by_pct):
         ref_band, pred_band = ref_by_pct[pct], pred_by_pct[pct]
         distance = normalized_curve_distance(ref_band.curve, pred_band.curve)
-        if distance > worst_distance:
+        if worst_distance is None or math.isnan(distance) or distance > worst_distance:
             worst_distance, worst_band = distance, ref_band
+        if math.isnan(worst_distance):
+            break
+    assert worst_distance is not None  # the envelopes are non-empty and cover the same percentiles
     return worst_distance, worst_band
 
 

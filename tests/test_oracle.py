@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 import pytest
 from reprolith import (
     Attribution,
@@ -208,3 +210,20 @@ def test_repeated_evaluation_is_identical() -> None:
     a, b = run(), run()
     assert a == b  # frozen dataclass equality: verdict, discrepancy, everything
     assert a.discrepancy == b.discrepancy
+
+
+def test_a_diverged_band_governs_the_envelope_instead_of_being_skipped() -> None:
+    """NaN comparisons are all false, so a running maximum must not step over a diverged tail."""
+    from reprolith import PercentileBand, band_envelope_distance
+
+    ref = (
+        PercentileBand(5.0, (0.4, 0.9, 1.6)),
+        PercentileBand(50.0, (1.0, 2.0, 3.6)),
+        PercentileBand(95.0, (1.8, 3.4, 6.0)),
+    )
+    # The reconstruction's upper tail diverged; the median and lower band match exactly.
+    nan = float("nan")
+    predicted = (ref[0], ref[1], PercentileBand(95.0, (nan, nan, nan)))
+    distance, worst = band_envelope_distance(ref, predicted)
+    assert math.isnan(distance)  # never a clean 0.0, and never the -1.0 sentinel
+    assert worst.percentile == 95.0

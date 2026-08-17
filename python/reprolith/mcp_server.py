@@ -374,6 +374,10 @@ def release_work(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
 # any real inline sanity check — and exist only to turn a pathological request into a clean error.
 _MAX_LINT_ITERATIONS = 1_000_000
 _MAX_LINT_POINTS = 100_000
+# Some loops cost the product of two bounded arguments — a grid of points advanced over a number of
+# steps — so each argument passing its own ceiling is not enough: 100,000 points × 1,000,000 steps is
+# hours of work. This bounds the product at roughly a minute of the pure-Python solver.
+_MAX_LINT_WORK = 100_000_000
 # A Boolean network's work is exponential in its node count, so the node count is the size the
 # logical linter has to bound: checking a fixed point walks the rules once per node, but reaching
 # the answer for a larger network means enumerating 2^n states (or a SAT solve the caller shapes).
@@ -391,6 +395,19 @@ def _bounded_length(sequence: Any, *, name: str) -> Any:
     if hasattr(sequence, "__len__") and len(sequence) > _MAX_LINT_POINTS:
         raise ValueError(f"{name} exceeds the {_MAX_LINT_POINTS}-point limit for a lint request")
     return sequence
+
+
+def _bounded_work(operations: int, *, name: str) -> None:
+    """Bound a loop whose cost is the *product* of two separately bounded arguments.
+
+    A grid and a step count that each pass their own ceiling can still multiply into hours of
+    single-threaded work, which is the same wedge the individual caps exist to prevent.
+    """
+    if operations > _MAX_LINT_WORK:
+        raise ValueError(
+            f"{name} = {operations} exceeds the {_MAX_LINT_WORK}-operation limit for a lint "
+            "request; run a job this size through the library API rather than the shared server"
+        )
 
 
 def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -> Any:
@@ -446,16 +463,22 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
     if name == "lint_distribution":
         from .linter import lint_distribution
 
+        for side in ("reported", "predicted"):
+            for band in _bounded_length(arguments[side], name=side):
+                _bounded_length(band.get("curve", ()), name=f"{side} band curve")
         return lint_distribution(arguments["reported"], arguments["predicted"]).to_dict()
     if name == "lint_diffusion":
         from .linter import lint_diffusion
 
+        initial = _bounded_length(arguments["initial"], name="initial")
+        steps = _bounded_count(arguments["steps"], name="steps", ceiling=_MAX_LINT_ITERATIONS)
+        _bounded_work(len(initial) * steps, name="grid points × steps")
         return lint_diffusion(
-            _bounded_length(arguments["initial"], name="initial"),
+            initial,
             _bounded_length(arguments["reference"], name="reference"),
             diffusivity=arguments["diffusivity"],
             dx=arguments["dx"], dt=arguments["dt"],
-            steps=_bounded_count(arguments["steps"], name="steps", ceiling=_MAX_LINT_ITERATIONS),
+            steps=steps,
             decay=arguments.get("decay", 0.0),
         ).to_dict()
     if name == "lint_stochastic":

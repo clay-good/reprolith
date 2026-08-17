@@ -51,12 +51,54 @@ def test_unstable_discretization_is_rejected() -> None:
 
 
 def test_negative_diffusivity_is_rejected() -> None:
-    # A negative diffusivity is the backward heat equation — unconditionally unstable. The
-    # stability guard is two-sided: it must refuse D·dt/dx² < 0, not only the > 0.5 case, rather
-    # than run to a diverging profile (the module promises to reject unstable discretizations).
+    # A negative diffusivity is the backward heat equation — unconditionally unstable. Each input
+    # is checked on its own, because two wrong signs cancel: D<0 with dt<0 gives an innocent-looking
+    # positive diffusion number while the caller asked for anti-diffusion running backwards.
     initial = gaussian_profile(_CENTERS, mass=1.0, variance=1.0)
-    with pytest.raises(ValueError, match="unstable"):
+    with pytest.raises(ValueError, match="diffusivity must not be negative"):
         diffuse_1d(initial, diffusivity=-1.0, dx=_DX, dt=0.1 * _DX * _DX, steps=10)
+    with pytest.raises(ValueError, match="diffusivity must not be negative"):
+        diffuse_1d(initial, diffusivity=-1.0, dx=_DX, dt=-0.1 * _DX * _DX, steps=10)
+    with pytest.raises(ValueError, match="dx must be a positive"):
+        diffuse_1d(initial, diffusivity=1.0, dx=-_DX, dt=0.1 * _DX * _DX, steps=10)
+
+
+def test_a_discretization_that_cannot_advance_the_profile_is_refused() -> None:
+    # The frozen-run false reproduction: a run that cannot advance returns its initial condition,
+    # which then "reproduces" any reported profile near that condition. Every route into it — a zero
+    # or subnormal time step, zero diffusivity, a grid spacing so large the diffusion number
+    # underflows — must be refused, not reported. (The stochastic class refuses the same way.)
+    initial = gaussian_profile(_CENTERS, mass=1.0, variance=1.0)
+    for kwargs in (
+        {"diffusivity": 1.0, "dx": _DX, "dt": 0.0},
+        {"diffusivity": 0.0, "dx": _DX, "dt": 0.1 * _DX * _DX},
+        {"diffusivity": 1.0, "dx": 1e200, "dt": 0.1},
+        {"diffusivity": 1.0, "dx": _DX, "dt": 1e-320},
+    ):
+        with pytest.raises(ValueError, match="cannot advance"):
+            diffuse_1d(initial, steps=10, **kwargs)  # type: ignore[arg-type]
+
+    # A decay term is enough on its own to advance the profile, so diffusion-free decay is legal.
+    decayed = diffuse_1d(initial, diffusivity=0.0, dx=_DX, dt=0.1, steps=10, decay=0.5)
+    assert decayed[len(decayed) // 2] < initial[len(initial) // 2]
+
+
+def test_a_spatial_claim_must_evolve_the_profile_to_be_evidence() -> None:
+    # A zero-step run returns the initial profile, which is an input to the reconstruction rather
+    # than evidence about it — certifying it would publish a simulation that never ran.
+    from reprolith import EnginePin, PaperIdentity, SpatialClaim, certify_spatial
+
+    profile = tuple(gaussian_profile(_CENTERS, mass=1.0, variance=1.0))
+    claim = SpatialClaim(
+        claim_id="s1", quantity="profile", initial=profile, reference=profile,
+        source_location="Fig 1", diffusivity=1.0, dx=_DX, dt=0.1 * _DX * _DX, steps=0,
+    )
+    with pytest.raises(ValueError, match="at least one step"):
+        certify_spatial(
+            paper=PaperIdentity(title="P", doi="10.1/x"),
+            engine_pin=EnginePin(engine="reprolith-fd", version="0.0.1"),
+            claims=[claim],
+        )
 
 
 def test_first_order_decay_matches_the_exponential_analytical_solution() -> None:
