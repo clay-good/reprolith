@@ -169,6 +169,22 @@ needless re-run of a dependency-free solver costs seconds; a missed one publishe
 current code would not produce. A test holds the corpus to it: a committed certificate carrying an
 older revision than the code fails, and the fix is re-running that class's milestone script.
 
+## A doubled peak that averaged out to a pass
+
+The curve verdict was an RMSE over the reference's span, and an average divides a localized miss by
+the sample count: a single point passes whenever its error is under `0.10·√N` times the range —
+half the range at 25 samples, the whole range at 100, three times it at 1000. Measured on a
+201-point one-compartment PK curve, a reconstruction whose **Cmax was twice the paper's** scored
+0.0705 and certified as a clean reproduction. Cmax is precisely what such a paper reports, and the
+sample count is the reconstruction's own choice, so sampling more finely bought more room for the
+peak.
+
+The verdict now answers to the worst single point as well as to the average. The worst point's
+budget is the tolerance's own *partial* threshold — the width it already calls tolerable — rescaled
+onto the pass threshold, so no new constant enters and the certificate reports both numbers. On the
+committed corpus the worst point runs 2.2× to 9× the RMSE ratio with both under 1e-3, so every real
+reproduction keeps two orders of magnitude of headroom; the doubled peak now fails.
+
 ## Two solvers computing a model the file did not describe
 
 The ingestion lens of the ninth audit found two places where the numbers were right for a model
@@ -327,12 +343,6 @@ can produce a certificate that claims more than it checked:
   entirely on shape: 15.6% on a sigmoid, 23.2% on a one-compartment bolus, 43.7% on a decaying
   exponential, 75.3% on a sharp Gaussian peak. A reconstruction with a half-life 25% short of the
   paper's scores 0.0797 and certifies as reproduced.
-- **Peak masking grows with the sample count, and the reconstructor picks the sample count.** A
-  single-point error passes whenever it is under `0.10·√N` times the reference range: half the range
-  at 25 samples, the whole range at 100, three times it at 1000. On a 201-point PK curve, a Cmax
-  predicted at *twice* the true value scores 0.0705 and reads as reproduced — and Cmax is what a
-  PK paper reports. A per-point guard alongside the RMSE is the fix, and it is a recalibration of
-  every curve verdict rather than a patch.
 - **The curve judge is far more permissive than the scalar judge on the same models.** Over 4,000
   lognormal perturbations of a one-compartment oral PK model at σ=0.2, 70.0% of models passed as
   curve claims while 14.7% passed as scalar AUC claims, and 34% of the curve-passers had AUC or

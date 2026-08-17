@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Budding yeast cell-cycle network (Li et al. 2004)
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev d77982c4a206)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 0cc0f14d248a)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

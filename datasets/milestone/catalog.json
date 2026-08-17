@@ -698,7 +698,7 @@
       "state": "blocked"
     },
     {
-      "difficulty": "low",
+      "difficulty": "high",
       "ground_truth": {
         "expected": "reproduced",
         "note": null,

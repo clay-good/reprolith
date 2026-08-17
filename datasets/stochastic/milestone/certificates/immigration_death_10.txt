@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Immigration-death process (k=10, γ=1) — Poisson stationary mean
-Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev 3d30a00e654f)
+Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev c488ab4e4305)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

@@ -3,7 +3,7 @@
     {
       "assumption_qualified": false,
       "claim_id": "BIOMD0000000012-timecourse",
-      "discrepancy": "normalized distance 0.0003",
+      "discrepancy": "normalized distance 0.0003, worst point 0.0009 of span (budget 0.2500)",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",

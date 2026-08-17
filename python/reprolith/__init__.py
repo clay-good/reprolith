@@ -149,6 +149,7 @@ from .oracle import (
     not_evaluable,
     relative_error,
     verdict_for,
+    worst_point_deviation,
 )
 from .persistence import (
     bundle_from_dict,
@@ -401,6 +402,7 @@ __all__ = [
     "parse_sedml_recipes",
     "presubmission_report",
     "relative_error",
+    "worst_point_deviation",
     "render_badge",
     "render_human",
     "render_machine",

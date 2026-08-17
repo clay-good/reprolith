@@ -289,6 +289,34 @@ def normalized_curve_distance(reference: Sequence[float], predicted: Sequence[fl
     return rmse / span
 
 
+def worst_point_deviation(reference: Sequence[float], predicted: Sequence[float]) -> float:
+    """The largest single-point gap between two aligned curves, as a fraction of the reference span.
+
+    The companion to :func:`normalized_curve_distance`, and the reason it is needed: an RMSE is an
+    average, so a localized miss is divided by the sample count. The error a single point may carry
+    while the RMSE stays under a threshold ``t`` is ``t·√N`` times the span — half the span at 25
+    samples, the whole span at 100, three times it at 1000. Measured on a 201-point PK curve, a
+    reconstruction whose Cmax is *twice* the paper's scores 0.0705 and reads as a clean
+    reproduction, and Cmax is exactly what such a paper reports. Worse, the sample count is the
+    reconstruction's own choice, so sampling more finely buys tolerance for the peak.
+
+    Normalized the same way the RMSE is, so the two are comparable and a tolerance means the same
+    kind of thing against both.
+    """
+    if len(reference) != len(predicted):
+        raise ValueError("reference and predicted must be sampled at the same points")
+    if not reference:
+        raise ValueError("need at least one sample point")
+    n = len(reference)
+    worst = max(abs(p - r) for r, p in zip(reference, predicted))
+    span = max(reference) - min(reference)
+    if span == 0.0:
+        span = abs(sum(reference) / n)
+    if span == 0.0:
+        return 0.0 if worst == 0.0 else float("inf")
+    return worst / span
+
+
 def band_envelope_distance(
     reference: Sequence[PercentileBand], predicted: Sequence[PercentileBand]
 ) -> tuple[float, PercentileBand]:
@@ -603,13 +631,26 @@ def judge_curve(
         ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind
     )
     dist = normalized_curve_distance(reference, predicted)
+    worst = worst_point_deviation(reference, predicted)
+    # The verdict answers to both statistics: the average agreement, and the worst single point.
+    # The worst point's budget is the tolerance's own *partial* threshold — the width it already
+    # calls tolerable — rescaled onto the pass threshold so one number governs. No new constant is
+    # introduced, and on the committed corpus the worst point runs 2.2x-9x the RMSE ratio with
+    # both under 1e-3, so nothing that genuinely reproduces comes near the bound.
+    scaled_worst = (
+        worst * (tol.reproduced_within / tol.partial_within) if tol.partial_within > 0.0 else worst
+    )
+    measure = max(dist, scaled_worst)
     return _assemble(
         claim_id=claim_id,
         quantity=quantity,
         source_location=source_location,
         method=ComparisonMethod.CURVE_NORMALIZED_DISTANCE,
-        measure=dist,
-        discrepancy=f"normalized distance {dist:.4f}",
+        measure=measure,
+        discrepancy=(
+            f"normalized distance {dist:.4f}, worst point {worst:.4f} of span "
+            f"(budget {tol.partial_within:.4f})"
+        ),
         tol=tol,
         reference_kind=reference_kind,
         attribution=attribution,
@@ -739,6 +780,7 @@ def not_evaluable(
 
 __all__ = [
     "undetermined_shortfall",
+    "worst_point_deviation",
     "Attribution",
     "ComparisonMethod",
     "Fault",

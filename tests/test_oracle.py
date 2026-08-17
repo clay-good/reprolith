@@ -265,3 +265,45 @@ def test_a_class_default_tolerance_must_be_this_comparisons_default() -> None:
                               reported=100.0, predicted=124.0, tolerance=stated)
     assert assessment.verdict.value == "reproduced"
     assert assessment.tolerance_source == "paper-stated"
+
+
+def test_a_localized_miss_is_not_averaged_into_a_pass() -> None:
+    """An RMSE divides a single bad point by the sample count, and the sampler picks the count.
+
+    Measured on a 201-point one-compartment PK curve, a reconstruction whose Cmax is *twice* the
+    paper's scores a normalized distance of 0.0705 — a clean pass under the 10% curve default —
+    because 200 well-matched points absorb it. Cmax is exactly what such a paper reports, and
+    sampling more finely buys more room for the peak, so the verdict has to answer to the worst
+    point as well as to the average.
+    """
+    import math
+
+    from reprolith import worst_point_deviation
+
+    times = [i * 0.1 for i in range(201)]
+    reference = [100 * math.exp(-0.3 * t) * (1 - math.exp(-1.5 * t)) for t in times]
+    doubled_peak = list(reference)
+    peak = max(range(len(reference)), key=lambda i: reference[i])
+    doubled_peak[peak] *= 2.0
+
+    # The average alone still calls it a pass; the worst point is a full span out.
+    assert normalized_curve_distance(reference, doubled_peak) == pytest.approx(0.0705, abs=5e-4)
+    assert worst_point_deviation(reference, doubled_peak) == pytest.approx(1.0, abs=1e-3)
+
+    verdict = judge_curve(
+        claim_id="c", quantity="plasma concentration", source_location="Fig 1",
+        reference=reference, predicted=doubled_peak,
+        attribution=Attribution(
+            mode=FailureMode.UNCATEGORIZED, implicated="peak", fault=Fault.RECONSTRUCTION
+        ),
+    )
+    assert verdict.verdict is Verdict.FAILED
+    assert "worst point" in verdict.discrepancy
+
+    # A curve that is uniformly 2% high still reproduces: the guard is about localized misses,
+    # and on the committed corpus the worst point runs 2.2x-9x the RMSE ratio with both under 1e-3.
+    uniform = judge_curve(
+        claim_id="c", quantity="plasma concentration", source_location="Fig 1",
+        reference=reference, predicted=[v * 1.02 for v in reference],
+    )
+    assert uniform.verdict is Verdict.REPRODUCED

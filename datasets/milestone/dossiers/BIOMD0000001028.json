@@ -11,321 +11,397 @@
   "equations": [
     {
       "expression": "ModelValue_2 * 0.191",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "QMuscle"
     },
     {
       "expression": "ModelValue_2 * 0.201",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "QRemainder"
     },
     {
       "expression": "129.16 * (mIntestineLumen / IntestineLumen) * Compartment_0 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgIntestineLumen"
     },
     {
       "expression": "129.16 * (mStomachLumen / StomachLumen) * Compartment_18 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgStomachLumen"
     },
     {
       "expression": "ModelValue_2 * 0.046",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "QLiverArtery"
     },
     {
       "expression": "ModelValue_2 * 0.011",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "QStomach"
     },
     {
       "expression": "ModelValue_2 * 0.064",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "QPortalVein"
     },
     {
       "expression": "ModelValue_2 * 0.106",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "QIntestineVascular"
     },
     {
       "expression": "ModelValue_34 + ModelValue_35 + ModelValue_36",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "QPortalVeinOut"
     },
     {
       "expression": "ModelValue_46 + ModelValue_33",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "QLiverOut"
     },
     {
       "expression": "ModelValue_1 * 0.0257",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "Liver"
     },
     {
       "expression": "129.16 * (mLiver / Liver) * Compartment_1 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgLiver"
     },
     {
       "expression": "ModelValue_1 * 0.00146",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "KidneyPlasma"
     },
     {
       "expression": "ModelValue_1 * 0.233",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "Remainder"
     },
     {
       "expression": "ModelValue_1 * 0.0321",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "PlasmaVenous"
     },
     {
       "expression": "129.16 * (mPlasmaVenous / PlasmaVenous) * Compartment_4 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgVenousPlasma"
     },
     {
       "expression": "ModelValue_1 * 0.005",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "Heart"
     },
     {
       "expression": "ModelValue_1 * 0.4",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "Muscle"
     },
     {
       "expression": "ModelValue_1 * 0.02",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "Brain"
     },
     {
       "expression": "129.16 * (mBrain / Brain) * Compartment_9 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgBrain"
     },
     {
       "expression": "129.16 * (mHeart / Heart) * Compartment_7 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgHeart"
     },
     {
       "expression": "129.16 * (mKidneyPlasma / KidneyPlasma) * Compartment_2 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgKidneyPlasma"
     },
     {
       "expression": "129.16 * (mRemainder / Remainder) * Compartment_3 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgRemainder"
     },
     {
       "expression": "mPlasmaArterial / PlasmaArterial",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mArterialPlasma__kidney"
     },
     {
       "expression": "ModelValue_1 * 0.215",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "Adipose"
     },
     {
       "expression": "129.16 * (mAdipose / Adipose) * Compartment_10 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgAdipose"
     },
     {
       "expression": "ModelValue_1 * 0.0107",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "PlasmaArterial"
     },
     {
       "expression": "129.16 * (mPlasmaArterial / PlasmaArterial) * Compartment_11 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgArterialPlasma"
     },
     {
       "expression": "ModelValue_1 * 0.0076",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "Lung"
     },
     {
       "expression": "129.16 * (mLung / Lung) * Compartment_12 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgLung"
     },
     {
       "expression": "ModelValue_1 * 0.0028",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "PortalVein"
     },
     {
       "expression": "ModelValue_1 * 0.0021",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "Stomach"
     },
     {
       "expression": "129.16 * (mStomach / Stomach) * Compartment_14 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgStomach"
     },
     {
       "expression": "ModelValue_1 * 0.0012",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "Enterocytes"
     },
     {
       "expression": "129.16 * (mEnterocytes / Enterocytes) * Compartment_15 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgEnterocytes"
     },
     {
       "expression": "ModelValue_1 * 0.00146",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "KidneyTissue"
     },
     {
       "expression": "129.16 * Compartment_16 * (mKidneyTissue / KidneyTissue) / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgKidneyTissues"
     },
     {
       "expression": "ModelValue_1 * 0.009",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "IntestineVascular"
     },
     {
       "expression": "((mEnterocytes / Enterocytes) * Compartment_15 + Compartment_17 * (mIntestineVascular / IntestineVascular)) / (Compartment_15 + Compartment_17)",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mIntestineTotal"
     },
     {
       "expression": "129.16 * (mIntestineVascular / IntestineVascular) * Compartment_17 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgIntestineVascular"
     },
     {
       "expression": "ModelValue_1 * 0.0314",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "RBC"
     },
     {
       "expression": "129.16 * (mRBC / RBC) * Compartment_19 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgRBC"
     },
     {
       "expression": "ModelValue_1 * 0.00146",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "KidneyTubular"
     },
     {
       "expression": "(Compartment_2 * (mKidneyPlasma / KidneyPlasma) + Compartment_16 * (mKidneyTissue / KidneyTissue) + Compartment_20 * (mKidneyTubular / KidneyTubular)) / (Compartment_2 + Compartment_16 + Compartment_20)",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mKidneyTotal"
     },
     {
       "expression": "129.16 * Compartment_20 * (mKidneyTubular / KidneyTubular) / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgKidneyTubular"
     },
     {
       "expression": "ModelValue_2 * 0.052",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "QAdipose"
     },
     {
       "expression": "ModelValue_2 * 0.114",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "QBrain"
     },
     {
       "expression": "ModelValue_2 * 0.04",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "QHeart"
     },
     {
       "expression": "ModelValue_2 * 0.175",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "QKidney"
     },
     {
       "expression": "129.16 * (mMuscle / Muscle) * Compartment_8 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgMuscle"
     },
     {
       "expression": "129.16 * (mPortalVein / PortalVein) * Compartment_13 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgPortalVein"
     },
     {
       "expression": "129.16 * (mUrineExternal / Urine) * Compartment_5 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgUrineSum"
     },
     {
       "expression": "129.16 * (mFeces / Feces) * Compartment_6 / 1000000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgFeces"
     },
     {
       "expression": "ModelValue_56 * 87339",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "_13_4__KidneyPlasma____KidneyTissue"
     },
     {
       "expression": "ModelValue_56 * 3000",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "_13_5__KidneyTissue____KidneyTubular"
     },
     {
       "expression": "mgKidneyTubular + mgKidneyPlasma + mgKidneyTissues",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgKidneyTotal"
     },
     {
       "expression": "mgIntestineVascular + mgEnterocytes",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "mgIntestineTotal"
     },
     {
       "expression": "70 / 0.032",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "IntestineSurffaceCoefficient"
     },
     {
       "expression": "ModelValue_55 * ModelValue_61 * 1271",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "_03_2__IntestineLumen____Enterocytes__PMAT_OCT3__Vf"
     },
     {
       "expression": "ModelValue_55 * ModelValue_61 * 495",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "_03_3__Enterocytes____IntestineVascular__OCT1__Vmax"
     },
     {
       "expression": "ModelValue_55 * ModelValue_61 * 19.2",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "_03_4__IntestineLumen____IntestineVascular__Saturable"
     },
     {
       "expression": "ModelValue_55 * ModelValue_61 * 0.14",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "_03_6__IntestineLumen____Enterocytes__Diffusion__Coefficient"
     },
     {
       "expression": "ModelValue_55 * ModelValue_61 * 0.26",
+      "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "_03_7__IntestineLumen____IntestineVascular__Diffusion__Coefficient"
     }
   ],
-  "gaps": [],
+  "gaps": [
+    {
+      "detail": "the artifact carries 1 event(s) \u2014 a state change at a moment in time, usually a dose \u2014 which this dossier cannot represent; a model rebuilt from it alone runs without them",
+      "element": "events",
+      "kind": "dosing",
+      "load_bearing": true
+    },
+    {
+      "detail": "32 initialAssignment(s) override initial values at the start of the run; the initial conditions recorded here are the stated ones, not the assigned ones",
+      "element": "initial assignments",
+      "kind": "initial-condition",
+      "load_bearing": true
+    }
+  ],
   "initial_conditions": [
     {
       "confidence": "quoted",
