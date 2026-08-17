@@ -113,11 +113,18 @@ def seed_candidates(
     be lawfully obtained is admitted but moved to ``BLOCKED`` on access grounds — not left as
     claimable work it cannot yet become, and not marked failed. Returns a :class:`SeedingReport` so
     the pass is auditable.
+
+    Several candidates in one pass can be the same paper — the catalog resolves them to a single
+    entry — so access is decided per *entry*, once the whole batch has been screened: an entry is
+    blocked only when no candidate that reached it could supply the model. Deciding candidate by
+    candidate left a paper blocked because one source could not lawfully supply it while another in
+    the same pass could, with nothing to ever unblock it. Each resolved entry appears once in the
+    report for the same reason.
     """
-    seeded: list[str] = []
-    retained: list[str] = []
     set_aside: list[tuple[str, str]] = []
-    blocked: list[str] = []
+    # Per resolved entry, in first-seen order: the name to report it under, whether every candidate
+    # that reached it was merely retained, and whether every one of them was blocked on access.
+    admitted: dict[int, dict[str, Any]] = {}
 
     for candidate in candidates:
         result = screen_candidate(candidate)
@@ -126,15 +133,26 @@ def seed_candidates(
             continue
 
         entry = catalog.add(Identifiers(title=candidate.title), model_class, source=source)
-        (retained if result.outcome is Screening.RETAIN else seeded).append(candidate.title)
+        record = admitted.setdefault(
+            id(entry), {"title": candidate.title, "retained": True, "blocked": True}
+        )
+        record["retained"] &= result.outcome is Screening.RETAIN
+        record["blocked"] &= result.blocked_on_access
+        record["entry"] = entry
 
-        if result.blocked_on_access and entry.state is LifecycleState.QUEUED:
+    seeded: list[str] = []
+    retained: list[str] = []
+    blocked: list[str] = []
+    for record in admitted.values():
+        entry = record["entry"]
+        (retained if record["retained"] else seeded).append(record["title"])
+        if record["blocked"] and entry.state is LifecycleState.QUEUED:
             entry.transition(LifecycleState.INGESTING, at=at, actor=actor,
                              reason="attempt to obtain the model from its source")
             entry.transition(LifecycleState.BLOCKED, at=at, actor=actor,
                              reason="the required model cannot be lawfully obtained",
                              missing_inputs=("model artifact (licence/access restricted)",))
-            blocked.append(candidate.title)
+            blocked.append(record["title"])
 
     return SeedingReport(
         seeded=tuple(seeded), retained=tuple(retained),

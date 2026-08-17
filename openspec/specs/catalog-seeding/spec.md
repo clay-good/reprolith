@@ -81,6 +81,14 @@ redistribute, because credibility with the community depends on it.
 - **AND** an entry whose required inputs cannot be lawfully obtained is marked `blocked` on
   access grounds, not `failed`
 
+#### Scenario: Access is decided per paper, not per source
+
+- **WHEN** several candidates in one seeding pass are the same paper, and at least one of their
+  sources can lawfully supply the model
+- **THEN** the entry they resolve to is not blocked, and it appears once in the seeding report
+- **AND** deciding source by source would leave the paper blocked on the restricted source while
+  the one that could supply it sits in the same pass, with nothing left to unblock it
+
 #### Scenario: No scope creep into patient or personal data
 
 - **WHEN** a source could carry patient-level or personally identifying data

@@ -50,3 +50,44 @@ def test_every_seeded_entry_links_back_to_its_source() -> None:
     seed_candidates(catalog, _candidates(), source="preprint-feed", model_class=ModelClass.ODE_PKPD)
     for entry in catalog.entries:
         assert "preprint-feed" in entry.sources
+
+
+def test_one_unobtainable_source_does_not_block_a_paper_another_can_supply() -> None:
+    # Two sources describe the same paper, so the catalog resolves them to one entry. Deciding
+    # access candidate by candidate blocked that entry on the restricted source and left nothing to
+    # ever unblock it, even though the open-access source in the same pass could supply the model.
+    catalog = Catalog()
+    report = seed_candidates(
+        catalog,
+        [
+            Candidate(title="Same paper", source="publisher", licence="restricted",
+                      contains_model=True, has_targetable_claim=True, model_obtainable=False),
+            Candidate(title="Same paper", source="repository", licence="cc-by",
+                      contains_model=True, has_targetable_claim=True),
+        ],
+        source="mixed-feed", model_class=ModelClass.ODE_PKPD,
+    )
+    assert len(catalog.entries) == 1
+    entry = catalog.entries[0]
+    assert entry.state is not LifecycleState.BLOCKED
+    assert entry.is_claimable(0.0)
+    assert report.blocked_on_access == ()
+    # One resolved entry is one line in the report, not one per candidate that reached it.
+    assert report.seeded == ("Same paper",)
+    assert report.retained == ()
+
+
+def test_a_paper_no_source_can_supply_is_still_blocked() -> None:
+    catalog = Catalog()
+    report = seed_candidates(
+        catalog,
+        [
+            Candidate(title="Locked paper", source="publisher", licence="restricted",
+                      contains_model=True, has_targetable_claim=True, model_obtainable=False),
+            Candidate(title="Locked paper", source="mirror", licence="restricted",
+                      contains_model=True, has_targetable_claim=True, model_obtainable=False),
+        ],
+        source="mixed-feed", model_class=ModelClass.ODE_PKPD,
+    )
+    assert report.blocked_on_access == ("Locked paper",)
+    assert catalog.entries[0].state is LifecycleState.BLOCKED
