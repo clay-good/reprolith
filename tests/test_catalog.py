@@ -409,3 +409,35 @@ def test_a_saved_catalog_holding_one_paper_twice_is_refused() -> None:
     saved["entries"].append(json.loads(json.dumps(saved["entries"][0])))
     with pytest.raises(ValueError, match="two entries for"):
         Catalog.from_dict(saved)
+
+
+def test_a_labelled_entry_keeps_the_identity_its_dataset_gave_it() -> None:
+    """Identifiers are an unverified assertion; a labelled entry's key must not follow one.
+
+    The agreement report keys each labelled entry by the identifiers it carries, so a submission
+    that added a DOI to a labelled accession would republish that entry's blind result under an
+    identifier of the submitter's choosing — and a bridging submission would transplant the label
+    onto an unrelated paper.
+    """
+    from reprolith import AmbiguousMerge, GroundTruth, Identifiers, ModelClass, OverallVerdict
+
+    catalog = Catalog()
+    labelled = catalog.add(
+        Identifiers(title="Mager 2005", accession="BIOMD0000000765"),
+        ModelClass.ODE_PKPD,
+        ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source="BioModels curation"),
+    )
+    catalog.add(Identifiers(title="Unrelated", doi="10.9999/attacker"), ModelClass.ODE_PKPD)
+
+    # Widening the labelled entry directly, with an identifier no other entry carries.
+    with pytest.raises(AmbiguousMerge, match="identity is fixed"):
+        catalog.add(Identifiers(title="Mager 2005", doi="10.9999/unclaimed"), ModelClass.ODE_PKPD)
+    # Bridging an unlabelled paper into it.
+    with pytest.raises(AmbiguousMerge, match="transplant the label"):
+        catalog.add(Identifiers(title="Unrelated", accession="BIOMD0000000765"), ModelClass.ODE_PKPD)
+    assert labelled.identifiers.doi is None
+
+    # An idempotent resubmit of the identifiers it already carries still resolves to it.
+    assert catalog.add(
+        Identifiers(title="Mager 2005", accession="BIOMD0000000765"), ModelClass.ODE_PKPD
+    ) is labelled

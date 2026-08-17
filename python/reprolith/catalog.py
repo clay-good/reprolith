@@ -454,6 +454,15 @@ class Catalog:
         the "same paper resolves to a single entry" invariant holds even across the bridge. That
         collapse raises :class:`AmbiguousMerge` if it would discard recorded work (see
         :meth:`_absorb`). Raises ``ValueError`` if the candidate carries no usable identifier.
+
+        An entry carrying a ground-truth label has a **frozen identity**: a candidate may resolve
+        to it, but may not add identifiers it does not already carry, and nothing folds into it.
+        Identifiers are an unverified assertion — anyone who can submit a paper can claim one — and
+        the agreement report keys each labelled entry by the identifiers it carries. Without this,
+        a submission naming a labelled accession alongside an unrelated DOI republished that
+        entry's blind result under an identifier of the submitter's choosing, and a bridging
+        submission could transplant the label onto a different paper entirely. Correcting a
+        labelled entry's identity is a curation decision, made against the dataset it came from.
         """
         if not identifiers.keys():
             raise ValueError(
@@ -469,6 +478,14 @@ class Catalog:
             for other in matches:
                 if other is not canonical:
                     self._absorb(canonical, other)
+            if canonical.ground_truth is not None:
+                new_keys = set(identifiers.keys()) - set(canonical.identifiers.keys())
+                if new_keys:
+                    raise AmbiguousMerge(
+                        f"candidate would add {sorted(new_keys)} to a ground-truth-labelled entry "
+                        f"({canonical.identifiers.title!r}); a labelled entry's identity is fixed "
+                        "by the dataset that labelled it, not by a submission"
+                    )
             canonical.identifiers = canonical.identifiers.merged_with(identifiers)
             if canonical.model_class is ModelClass.UNASSIGNED:
                 canonical.model_class = model_class
@@ -555,9 +572,16 @@ class Catalog:
     ) -> CatalogEntry | None:
         """Lease the highest-priority claimable entry to ``requester``, or ``None`` if none.
 
-        The lease holds until ``at + seconds``; concurrent requesters do not collide because a
-        claimed entry stops being claimable until its lease expires (spec: model-catalog —
-        "Never-empty prioritized queue").
+        The lease holds until ``at + seconds``; requesters sharing this catalog object do not
+        collide, because a claimed entry stops being claimable until its lease expires (spec:
+        model-catalog — "Never-empty prioritized queue").
+
+        The lease lives in memory, so that guarantee is **per process**. Two agents running their
+        own MCP servers over the same ``catalog.json`` each load it once at startup and rewrite the
+        whole file on every mutation: both can be handed the same entry, and the later write wins
+        over the earlier one's lease and history. Serializing agents across processes needs a lock
+        around a re-read of the file, which this catalog does not attempt — run one server per
+        catalog, or coordinate outside it.
         """
         pool = self.claimable(at, model_class=model_class)
         if not pool:
@@ -596,6 +620,12 @@ class Catalog:
         fields the winner left unset move over, and the loser is removed — including its own
         index keys, so nothing points at a dropped entry.
         """
+        if winner.ground_truth is not None:
+            raise AmbiguousMerge(
+                f"candidate bridges {loser.identifiers.title!r} into the ground-truth-labelled "
+                f"entry {winner.identifiers.title!r}; folding an unlabelled paper into a labelled "
+                "one would transplant the label, so reconcile by hand"
+            )
         if loser.history:
             raise AmbiguousMerge(
                 f"candidate bridges a worked entry ({loser.identifiers.title!r}) into "

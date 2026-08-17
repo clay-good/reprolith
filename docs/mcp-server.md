@@ -67,8 +67,17 @@ catalog (as `reprolith-mcp` does):
 | Tool | Arguments | Effect |
 |---|---|---|
 | `submit_paper` | `title` (required), `doi`/`pubmed_id`/`accession`/`model_class` | Adds a candidate paper as a queued `ode-pkpd` entry and reports what changed. Submitting the same paper again resolves to the existing entry — never a duplicate — and the change is persisted. |
-| `claim_work` | `requester` (required), `model_class`, `lease_seconds` (default 3600) | Claims the next best claimable entry and leases it to the requester, so concurrent agents don't collide. Ground-truth-labelled work is offered first; an expired lease returns the entry to the pool. Returns the leased entry or that there is no eligible work. |
+| `claim_work` | `requester` (required), `model_class`, `lease_seconds` (default 3600) | Claims the next best claimable entry and leases it to the requester, so agents sharing one server don't collide. Ground-truth-labelled work is offered first; an expired lease returns the entry to the pool. Returns the leased entry or that there is no eligible work. |
 | `release_work` | `accession`, `requester` | Releases a claimed entry back to the queue. Only the lease holder may release it. |
+
+### What the lease is and is not
+
+The lease is a coordination hint inside one server process, not a lock and not an authorization
+check. `requester` is a name the caller supplies, so any agent can release another's lease by
+naming it, and an expired lease is re-offered without telling the original holder. Two agents
+running their own `reprolith-mcp` processes over the same `catalog.json` will each load it at
+startup and rewrite it whole on every mutation, so both can be handed the same entry and the later
+write wins. Run one server per catalog, or coordinate outside Reprolith.
 
 ## Example
 

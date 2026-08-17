@@ -41,9 +41,16 @@ Because two independent integrators are already in play, the class also exercise
 `simulation-oracle` **engine-independence** requirement: `reprolith.corroborate_curve` runs a
 species curve under both the pinned COPASI engine and libRoadRunner (CVODE) and reports whether the
 verdict is *engine-independent* (the trajectories agree within tolerance) or *engine-sensitive*
-(they diverge, which would flag `ENGINE_SENSITIVITY` rather than pass on one solver). All six
-cross-validation models are engine-independent (`tests/test_corroboration.py`), so no kinetic
-verdict here rests on a single solver's quirk. Needs the `engine` and `corroborate` extras.
+(they diverge). All six cross-validation models are engine-independent
+(`tests/test_corroboration.py`), so no kinetic verdict here rests on a single solver's quirk.
+Needs the `engine` and `corroborate` extras.
+
+Read that as a **result about these six models, not a gate on the certificates**. The milestone
+script writes its certificates first and runs corroboration afterwards into a separate
+`corroboration.json`; a divergence would be reported there, but it does not currently downgrade a
+verdict, add a `ClaimAssessment`, or flag `ENGINE_SENSITIVITY` on the certificate. Binding the two
+is open work. What corroboration does *not* do is fail open: a missing second engine raises
+`EngineUnavailable` and misaligned grids raise, so an absent engine can never read as agreement.
 
 ## Scope and honesty
 

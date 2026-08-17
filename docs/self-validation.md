@@ -40,10 +40,10 @@ follow end to end, all regenerable from the repository alone.
   `flux_variability_analysis(loopless=True)` reaction-for-reaction on E. coli core — **pFBA**,
   whose minimized total flux matches COBRApy's `pfba` on the same model, and the **production
   envelope**, whose acetate-vs-growth frontier reproduces COBRApy's `production_envelope` point for
-  point. Kinetic verdicts
-  are additionally shown **engine-independent** — every model
-  reproduces identically under COPASI and libRoadRunner (`corroborate_curve`), so no verdict rests
-  on one solver's quirk.
+  point. Kinetic verdicts are additionally shown **engine-independent** — every model reproduces
+  identically under COPASI and libRoadRunner (`corroborate_curve`, reported alongside the
+  certificates rather than gating them; see `docs/kinetic-class.md`), so no verdict rests on one
+  solver's quirk.
 - **The same contracts throughout.** All six classes flow through one catalog lifecycle, one
   agreement report, one certificate format, and one inescapable scope flag — the generalization is
   demonstrated, not asserted. The logical class proves the point hardest: a third, discrete oracle
