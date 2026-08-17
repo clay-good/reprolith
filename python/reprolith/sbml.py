@@ -155,6 +155,7 @@ def ingest_fbc_sbml(sbml: str) -> FbaModel:
     model = document.getModel()
     if model is None:
         raise ValueError("the artifact is not readable SBML")
+    _refuse_unreadable_document(document)
     fbc = model.getPlugin("fbc")
     if fbc is None:
         raise ValueError("the model declares no fbc (constraint-based) package")
@@ -166,10 +167,14 @@ def ingest_fbc_sbml(sbml: str) -> FbaModel:
     ]
     row_of = {sid: i for i, sid in enumerate(species)}
     reactions = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
-    params = {
-        model.getParameter(i).getId(): model.getParameter(i).getValue()
-        for i in range(model.getNumParameters())
-    }
+    # A parameter with no value reads as NaN, which becomes a NaN flux bound and surfaces much
+    # later as an unbounded LP blamed on the model rather than on the bound nobody set.
+    params = {}
+    for i in range(model.getNumParameters()):
+        parameter = model.getParameter(i)
+        if not parameter.isSetValue():
+            continue
+        params[parameter.getId()] = parameter.getValue()
 
     stoich = [[0.0] * len(reactions) for _ in species]
     lower: list[float] = []
@@ -187,6 +192,12 @@ def ingest_fbc_sbml(sbml: str) -> FbaModel:
         plugin = reaction.getPlugin("fbc")
         if plugin is None or not plugin.isSetLowerFluxBound() or not plugin.isSetUpperFluxBound():
             raise ValueError(f"reaction {reaction.getId()} is missing an fbc flux bound")
+        for bound_id in (plugin.getLowerFluxBound(), plugin.getUpperFluxBound()):
+            if bound_id not in params:
+                raise ValueError(
+                    f"reaction {reaction.getId()} names flux bound parameter {bound_id!r}, "
+                    "which the model does not declare"
+                )
         low_value = params[plugin.getLowerFluxBound()]
         high_value = params[plugin.getUpperFluxBound()]
         lower.append(low_value)
@@ -210,6 +221,15 @@ def ingest_fbc_sbml(sbml: str) -> FbaModel:
         # constructs. (The FROG/biomass models this targets all maximize.)
         raise ValueError(
             f"unsupported fbc objective type {objective_type!r}: only 'maximize' is supported"
+        )
+    unknown = sorted(set(coefficients) - set(reactions))
+    if unknown:
+        # Dropping the term would leave an all-zero (or partial) objective that optimizes to zero
+        # and matches a reported zero exactly — a clean "reproduced" for a model whose objective
+        # was never read. A misspelled or stale reaction id is the likely cause, and it is exactly
+        # what the caller needs told.
+        raise ValueError(
+            f"the active objective names reaction(s) the model does not contain: {unknown}"
         )
     objective = [coefficients.get(rid, 0.0) for rid in reactions]
 
@@ -417,6 +437,7 @@ def ingest_qual_sbml(sbml: str) -> BooleanNetwork:
     model = document.getModel()
     if model is None:
         raise ValueError("the artifact is not readable SBML")
+    _refuse_unreadable_document(document)
     qual = model.getPlugin("qual")
     if qual is None:
         raise ValueError("the model declares no qual (logical) package")
@@ -597,11 +618,31 @@ def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[i
     if model is None:
         raise ValueError("the artifact is not readable SBML")
 
+    _refuse_unreadable_document(document)
+    _refuse_unrepresentable_constructs(model, kind="a stochastic reaction network")
+
     species = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
     index_of = {sid: i for i, sid in enumerate(species)}
     initial: list[int] = []
     for i in range(model.getNumSpecies()):
-        amount = model.getSpecies(i).getInitialAmount()
+        spec = model.getSpecies(i)
+        # A boundary species is held fixed by SBML's own semantics; this SSA has one state vector,
+        # so a reaction consuming it would deplete a pool the artifact says never depletes — a
+        # different model, silently. Refusing keeps the promise this module already makes about
+        # rate laws: reinterpretation is never silent.
+        if spec.getBoundaryCondition() or spec.getConstant():
+            raise ValueError(
+                f"species {spec.getId()!r} is a boundary or constant species, which this SSA "
+                "cannot hold fixed while reactions reference it; the run would deplete a pool the "
+                "model says is held constant"
+            )
+        if not spec.getHasOnlySubstanceUnits():
+            raise ValueError(
+                f"species {spec.getId()!r} is specified in concentration units "
+                "(hasOnlySubstanceUnits is false); the SSA needs molecule counts, and reading its "
+                "amount verbatim would misread every rate law that scales with volume"
+            )
+        amount = spec.getInitialAmount()
         rounded = round(amount)
         if abs(amount - rounded) > 1e-9:
             raise ValueError(
@@ -637,6 +678,60 @@ def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[i
         reactions.append(Reaction(rate=rate, reactants=reactants, products=products))
 
     return species, reactions, initial
+
+
+def _refuse_unrepresentable_constructs(model: Any, *, kind: str) -> None:
+    """Refuse an artifact carrying model constructs this ingester does not read.
+
+    Each of these changes what the model *does* — an initial assignment overrides the initial
+    value, a rule gives a variable dynamics of its own, an event doses at a moment in time, a
+    conversion factor rescales every amount, a non-constant stoichiometry varies as the run
+    proceeds. Ingesting the reactions and dropping the rest produces a model the artifact never
+    described, and nothing downstream can tell. The rule this module already applies to rate laws
+    applies here too: what cannot be represented is refused, not quietly left out.
+    """
+    unsupported: list[str] = []
+    if model.getNumInitialAssignments():
+        unsupported.append("initialAssignment (it overrides the stated initial values)")
+    if model.getNumRules():
+        unsupported.append("rules (they give a variable dynamics of its own)")
+    if model.getNumEvents():
+        unsupported.append("events (they change the state at a moment in time — dosing, most often)")
+    if model.isSetConversionFactor():
+        unsupported.append("a model conversionFactor (it rescales every amount)")
+    for j in range(model.getNumReactions()):
+        rxn = model.getReaction(j)
+        refs = [rxn.getReactant(k) for k in range(rxn.getNumReactants())]
+        refs += [rxn.getProduct(k) for k in range(rxn.getNumProducts())]
+        if any(ref.isSetConstant() and not ref.getConstant() for ref in refs):
+            unsupported.append(f"a non-constant stoichiometry in reaction {rxn.getId()!r}")
+            break
+    if unsupported:
+        raise ValueError(
+            f"this artifact cannot be ingested as {kind}: it uses "
+            + "; ".join(unsupported)
+            + ". Reprolith refuses rather than running a model the artifact does not describe."
+        )
+
+
+def _refuse_unreadable_document(document: Any) -> None:
+    """Refuse a document libSBML reports as fatally invalid, rather than running it anyway.
+
+    Fatal severity only. Real-world SBML routinely carries warnings and non-fatal errors and still
+    describes exactly one model — refusing those would block artifacts the field actually ships. A
+    fatal error means libSBML could not make sense of the document's structure, so whatever the
+    ingester reads out of it afterwards is not the artifact's model.
+    """
+    fatal = [
+        document.getError(i)
+        for i in range(document.getNumErrors())
+        if document.getError(i).getSeverity() >= 3  # LIBSBML_SEV_FATAL
+    ]
+    if fatal:
+        raise ValueError(
+            f"the artifact is not valid SBML ({len(fatal)} error(s)); the first is: "
+            f"{fatal[0].getMessage().strip()}"
+        )
 
 
 __all__ = [

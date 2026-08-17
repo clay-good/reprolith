@@ -175,3 +175,63 @@ def test_lint_stochastic_inline_verdict_and_mcp_registration() -> None:
     assert result.verdict is Verdict.REPRODUCED
     assert result.method == "scalar-relative-error"
     assert result.scope.machine == "reproducible-not-correct-not-clinical"
+
+
+def test_constructs_the_ssa_cannot_represent_are_refused_not_dropped() -> None:
+    """Each of these changes what the model does; ingesting the reactions alone runs a different one."""
+    header = (
+        '<?xml version="1.0"?>'
+        '<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1">'
+        '<model id="m">'
+        '<listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>'
+    )
+    math_ns = 'xmlns="http://www.w3.org/1998/Math/MathML"'
+
+    def species(boundary: str = "false", substance_units: str = "true") -> str:
+        return (
+            "<listOfSpecies>"
+            f'<species id="S" compartment="c" initialAmount="100" '
+            f'hasOnlySubstanceUnits="{substance_units}" boundaryCondition="{boundary}" constant="false"/>'
+            '<species id="P" compartment="c" initialAmount="0" hasOnlySubstanceUnits="true" '
+            'boundaryCondition="false" constant="false"/>'
+            "</listOfSpecies>"
+        )
+
+    reaction = (
+        '<listOfReactions><reaction id="R" reversible="false">'
+        '<listOfReactants><speciesReference species="S" stoichiometry="1" constant="true"/></listOfReactants>'
+        '<listOfProducts><speciesReference species="P" stoichiometry="1" constant="true"/></listOfProducts>'
+        f"<kineticLaw><math {math_ns}><apply><times/><ci>k</ci><ci>S</ci></apply></math>"
+        '<listOfLocalParameters><localParameter id="k" value="0.1"/></listOfLocalParameters>'
+        "</kineticLaw></reaction></listOfReactions>"
+    )
+    tail = "</model></sbml>"
+
+    # A boundary species is held fixed by SBML; this SSA would deplete it.
+    with pytest.raises(ValueError, match="boundary or constant species"):
+        ingest_stochastic_sbml(header + species(boundary="true") + reaction + tail)
+    # Concentration semantics would misread every rate law that scales with volume.
+    with pytest.raises(ValueError, match="concentration units"):
+        ingest_stochastic_sbml(header + species(substance_units="false") + reaction + tail)
+    # An initial assignment overrides the stated initial amount.
+    assignment = (
+        '<listOfInitialAssignments><initialAssignment symbol="S">'
+        f"<math {math_ns}><cn>500</cn></math>"
+        "</initialAssignment></listOfInitialAssignments>"
+    )
+    with pytest.raises(ValueError, match="initialAssignment"):
+        ingest_stochastic_sbml(header + species() + assignment + reaction + tail)
+    # An event is how a PK/PD model doses — the single most load-bearing element it has.
+    event = (
+        '<listOfEvents><event id="e" useValuesFromTriggerTime="true">'
+        f'<trigger initialValue="false" persistent="true"><math {math_ns}><true/></math></trigger>'
+        '<listOfEventAssignments><eventAssignment variable="S">'
+        f"<math {math_ns}><cn>1000</cn></math>"
+        "</eventAssignment></listOfEventAssignments></event></listOfEvents>"
+    )
+    with pytest.raises(ValueError, match="events"):
+        ingest_stochastic_sbml(header + species() + reaction + event + tail)
+
+    # The same network without any of them still ingests.
+    names, reactions, initial = ingest_stochastic_sbml(header + species() + reaction + tail)
+    assert names == ["S", "P"] and initial == [100, 0] and len(reactions) == 1

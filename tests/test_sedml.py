@@ -195,3 +195,31 @@ def test_an_adopted_recipe_is_engine_independent_end_to_end() -> None:
         model, recipe.observables[0], duration=recipe.duration, steps=recipe.steps
     )
     assert result.stable
+
+
+def test_a_model_inheriting_changes_one_link_up_is_skipped_too() -> None:
+    # A model defined as source="#other" inherits that model's listOfChanges, so a task over it
+    # runs at overridden values the recipe cannot name — exactly the case already refused when the
+    # changes sit on the model itself, one link further out.
+    sedml = """<?xml version="1.0"?>
+    <sedML xmlns="http://sed-ml.org/sed-ml/level1/version4">
+      <listOfModels>
+        <model id="base" source="model.xml" language="urn:sedml:language:sbml"/>
+        <model id="A" source="#base" language="urn:sedml:language:sbml">
+          <listOfChanges>
+            <changeAttribute target="/sbml:sbml/sbml:model/sbml:listOfParameters/sbml:parameter[@id='k']"
+                             newValue="99"/>
+          </listOfChanges>
+        </model>
+        <model id="B" source="#A" language="urn:sedml:language:sbml"/>
+      </listOfModels>
+      <listOfSimulations>
+        <uniformTimeCourse id="s0" outputStartTime="0" outputEndTime="10" numberOfSteps="100"/>
+      </listOfSimulations>
+      <listOfTasks>
+        <task id="t_base" modelReference="base" simulationReference="s0"/>
+        <task id="t_on_A" modelReference="A" simulationReference="s0"/>
+        <task id="t_on_B" modelReference="B" simulationReference="s0"/>
+      </listOfTasks>
+    </sedML>"""
+    assert [r.task_id for r in parse_sedml_recipes(sedml)] == ["t_base"]

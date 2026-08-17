@@ -19,7 +19,7 @@ from reprolith import (  # noqa: E402
 )
 
 
-def _tiny_fbc_sbml(*, objective_type: str = "maximize") -> str:
+def _tiny_fbc_sbml(*, objective_type: str = "maximize", objective_reaction: str = "v_out") -> str:
     """A minimal fbc-v2 model: v_in -> A -> v_out, v_in bounded to 8, objective on v_out.
 
     Built with libsbml itself so the ingest is validated against the library's own writer rather
@@ -75,7 +75,7 @@ def _tiny_fbc_sbml(*, objective_type: str = "maximize") -> str:
     objective.setType(objective_type)
     model.getPlugin("fbc").setActiveObjectiveId("obj")
     flux_objective = objective.createFluxObjective()
-    flux_objective.setReaction("v_out")
+    flux_objective.setReaction(objective_reaction)
     flux_objective.setCoefficient(1.0)
 
     return str(libsbml.writeSBMLToString(document))
@@ -110,3 +110,9 @@ def test_minimize_objective_is_refused_not_solved_with_the_wrong_sign() -> None:
     # (like other unsupported constructs) rather than hand back a wrong verdict.
     with pytest.raises(ValueError, match="only 'maximize' is supported"):
         ingest_fbc_sbml(_tiny_fbc_sbml(objective_type="minimize"))
+
+
+def test_an_objective_naming_a_reaction_the_model_lacks_is_refused() -> None:
+    """Dropping the term leaves an objective that optimizes to zero and matches a reported zero."""
+    with pytest.raises(ValueError, match="does not contain"):
+        ingest_fbc_sbml(_tiny_fbc_sbml(objective_reaction="v_biomass"))

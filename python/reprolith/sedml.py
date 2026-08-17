@@ -76,6 +76,7 @@ def parse_sedml_recipes(sedml: str) -> list[SimulationRecipe]:
     repeated: dict[str, str] = {}  # repeatedTask id -> the base task it wraps, if it changes nothing
     modified_models: set[str] = set()  # models the document defines by overriding another
 
+    derived_from: dict[str, str | None] = {}
     for element in root.iter():
         name = _localname(element.tag)
         if name == "uniformTimeCourse":
@@ -87,9 +88,16 @@ def parse_sedml_recipes(sedml: str) -> list[SimulationRecipe]:
                 )
         elif name == "model":
             model_id = element.get("id")
+            source = element.get("source", "")
             changes = any(_localname(c.tag) == "listOfChanges" and len(c) for c in element)
             if model_id and changes:
                 modified_models.add(model_id)
+            if model_id:
+                # A model deriving from another (source="#other") inherits that model's changes,
+                # so a change one link up is still a change to what this task runs. Recorded here
+                # and resolved after the whole document is read, because a derived model may be
+                # declared before the one it derives from.
+                derived_from[model_id] = source[1:] if source.startswith("#") else None
         elif name == "dataGenerator":
             # Only a data generator's variables are plotted quantities. Scanning every `variable`
             # in the document would also pick up the ones inside a setValue or computeChange, which
@@ -129,11 +137,22 @@ def parse_sedml_recipes(sedml: str) -> list[SimulationRecipe]:
     for task_ref, ids in observables.items():
         resolved.setdefault(repeated.get(task_ref, task_ref), []).extend(ids)
 
+    def carries_overrides(model_id: str) -> bool:
+        """True when this model, or any model it derives from, is defined by overriding another."""
+        seen: set[str] = set()
+        current: str | None = model_id
+        while current is not None and current not in seen:
+            if current in modified_models:
+                return True
+            seen.add(current)
+            current = derived_from.get(current)
+        return False
+
     recipes: list[SimulationRecipe] = []
     for task_id, model_ref, sim_ref in tasks:
         if sim_ref not in simulations:
             continue  # not a uniform time course — nothing single-runnable to adopt
-        if model_ref in modified_models:
+        if carries_overrides(model_ref):
             continue  # the recipe cannot name the overrides, so it cannot describe this run
         duration, steps, output_start = simulations[sim_ref]
         species = tuple(dict.fromkeys(resolved.get(task_id, [])))  # unique, document order
