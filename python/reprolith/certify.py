@@ -222,6 +222,13 @@ class EstimationClaim:
     paper's stated estimation over the shipped raw data — is the deferred, engine-dependent half,
     exactly as the simulator is for a scalar claim, so this glue takes an already-``recovered``
     value. ``shortfall`` supplies the root cause a non-pass estimation verdict requires.
+
+    ``protocol`` records how the estimate was recovered — the objective, the optimizer, the starting
+    values, the dataset. A re-fit is sensitive to all four (which is why the estimation tolerance is
+    wider than a simulation scalar's), so without them a reader cannot repeat the re-fit, and
+    ``recovered == reported`` is an unconditional clean pass with no evidence behind it. The
+    ``UNSTATED_ESTIMATION_METHOD`` and ``UNSTATED_STARTING_VALUES`` failure modes name exactly what
+    this field carries.
     """
 
     claim_id: str
@@ -232,6 +239,7 @@ class EstimationClaim:
     tolerance: Tolerance | None = None
     assumption_qualified: bool = False
     shortfall: Attribution | None = field(default=None)
+    protocol: str | None = None
 
 
 def certify_estimation(
@@ -247,17 +255,23 @@ def certify_estimation(
     :func:`reprolith.judge_estimation`, so every verdict is recorded at the estimation
     reproduction level and reported separately from simulation. Needs no engine extra — the
     re-derived estimates are supplied, the re-fitter being the deferred half.
+
+    Each assessment carries the claim's estimation ``protocol`` when it states one, because an
+    estimation verdict rests on how the re-fit was run as much as on the number it produced.
     """
     assessments = [
-        judge_estimation(
-            claim_id=claim.claim_id,
-            quantity=claim.quantity,
-            source_location=claim.source_location,
-            reported=claim.reported,
-            recovered=claim.recovered,
-            tolerance=claim.tolerance,
-            attribution=claim.shortfall,
-            assumption_qualified=claim.assumption_qualified,
+        replace(
+            judge_estimation(
+                claim_id=claim.claim_id,
+                quantity=claim.quantity,
+                source_location=claim.source_location,
+                reported=claim.reported,
+                recovered=claim.recovered,
+                tolerance=claim.tolerance,
+                attribution=claim.shortfall,
+                assumption_qualified=claim.assumption_qualified,
+            ),
+            protocol=claim.protocol,
         )
         for claim in claims
     ]

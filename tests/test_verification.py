@@ -152,3 +152,24 @@ def test_pin_change_flags_certificates_for_review() -> None:
     # After the pin advances to 4.47, only the 4.46 certificate is stale and needs re-review.
     stale = certificates_needing_review(ledger, EnginePin(engine="copasi", version="4.47"))
     assert [c.engine_pin.version for c in stale] == ["4.46"]
+
+
+def test_a_decided_item_cannot_be_quietly_replaced() -> None:
+    """Otherwise an expert's decision ends up attached to a question they never saw."""
+    import pytest
+
+    queue = VerificationQueue()
+    item = VerificationItem(
+        id="v1", question="is the dose the salt form?", best_estimate="free base",
+        basis="the model's input is free base", depends_on=("c1",),
+    )
+    queue.add(item)
+    queue.decide("v1", VerificationDecision(kind="confirm", expert="a reviewer", rationale="agreed"))
+    queue.add(item)  # re-adding the same question is a no-op, not a problem
+
+    changed = VerificationItem(
+        id="v1", question="is the dose per kg?", best_estimate="total",
+        basis="the table header", depends_on=("c1",),
+    )
+    with pytest.raises(ValueError, match="already carries an expert decision"):
+        queue.add(changed)

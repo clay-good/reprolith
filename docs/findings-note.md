@@ -98,6 +98,33 @@ BioModels ids — ingested and simulated cleanly with no further fixes. Across 6
 engine either runs to a finite result or honestly blocks, which indicates it already generalises
 beyond PK/PD toward the kinetic (systems-biology ODE) class the roadmap picks up next.
 
+## Known limits of the distributional oracle
+
+Measured, not estimated — a deep-audit pass ran the population path over a realistic population-PK
+envelope (lognormal CV 30% on clearance and volume, 12 sample times, P5/P50/P95 bands, the default
+0.15/0.35 band-distance tolerance, 200 replicates per cell):
+
+| Ensemble size | False-fail rate on a *correct* model | Pass rate for a clearance 10% too high |
+|---|---|---|
+| 20 | 80% | 16% |
+| 100 | 21% | 69% |
+| 1000 | 0% | 100% |
+
+Two things follow, and neither is a bug in the code. Below ~50 subjects the verdict is dominated
+by Monte-Carlo noise, so a correct reproduction routinely reads as failed — fail-safe, but noisy.
+At large ensembles the fixed 0.15 default is simply below the power needed to reject a 10% error,
+so it passes every time. **The oracle's operating point is set by the ensemble size**, and the
+tolerance is not a function of it. Until that is addressed, a population claim's ensemble size and
+seed must be read as part of its verdict; `PopulationClaim.protocol` now carries them into the
+certificate for exactly that reason.
+
+Related: `ensemble_percentile_bands` feeds `judge_distribution`, but for small integer counts the
+pairing does not work. Each band is normalized by its own *temporal* span, so an SSA envelope whose
+P5 band runs (3,4,5,5,5) has a span of 2, and a one-molecule sampling wobble is a normalized
+distance of 0.5 — an outright failure. Measured on the immigration-death network, the identical
+correct model reproduces 0/60 times at n=12 and 1/60 at n=150. Nothing false-certifies, but the
+documented integration is not usable at those counts.
+
 ## Status and what remains
 
 The engine and one real reproduction are done. The full blind run over the 31-entry set (task

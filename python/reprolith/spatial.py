@@ -388,6 +388,15 @@ def certify_spatial(
     A claim must describe a run of at least one step. A zero-step run returns the initial profile,
     which is an input to the reconstruction rather than evidence about it, so judging it against a
     reported profile would certify a simulation that never ran.
+
+    **The boundary condition is an unconditional assumption of this class.** Every solver here
+    imposes zero-flux (Neumann) boundaries; there is no Dirichlet, absorbing, or periodic option, and
+    a claim carries no boundary field to state one. So a paper whose model has a different boundary
+    is being run under a condition it did not specify. ``spatial_dossier`` records an unstated
+    boundary as a load-bearing gap, but this front-end takes claims rather than a dossier and cannot
+    see it: when the reported profile's boundary is anything other than zero-flux, or the paper does
+    not state one and the domain is narrow enough for it to matter, the caller must set the claim's
+    ``assumption_qualified`` so the certificate is downgraded rather than reading as a clean pass.
     """
     assessments = []
     for claim in claims:

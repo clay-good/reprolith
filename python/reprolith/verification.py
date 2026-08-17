@@ -90,7 +90,18 @@ class VerificationQueue:
         return len(self._items)
 
     def add(self, item: VerificationItem) -> None:
-        """Queue a load-bearing uncertainty for review."""
+        """Queue a load-bearing uncertainty for review.
+
+        Re-adding an id that already carries a decision is refused. Silently replacing it would
+        leave an expert's decision attached to a question they never saw, and since a decided item
+        is no longer pending, the changed question would never come back for review. Queue the new
+        question under its own id.
+        """
+        if item.id in self._decisions and self._items.get(item.id) != item:
+            raise ValueError(
+                f"item {item.id!r} already carries an expert decision; queue a changed question "
+                "under a new id rather than replacing the one that was decided"
+            )
         self._items[item.id] = item
 
     def get(self, item_id: str) -> VerificationItem | None:
