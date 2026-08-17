@@ -11,8 +11,12 @@ nothing with curve-matching or linear programming.
 - [`catalog.json`](catalog.json) — the nine entries, each tagged `logical`, carrying a ground-truth
   label (`reproduced`) withheld from the verdict path, advanced to `certified`.
 - [`certificates/`](certificates/) — one machine- and human-readable certificate per model. Each
-  certifies a single claim, judged by `attractor-set-match`: for the small networks, that Reprolith
-  reproduces the independent **attractor count** (fixed points *and* cyclic attractors — the two
+  certifies a single claim. The six small networks are judged by `attractor-signature-match` — the
+  weaker of the two comparisons, and named so: it checks the attractor **count and periods**, which
+  is all a reference reporting counts can support, and two networks can agree on both while sharing
+  no state. The three large signalling networks are judged by `attractor-set-match` against the
+  steady states themselves. Concretely: for the small networks, that Reprolith reproduces the
+  independent **attractor count** (fixed points *and* cyclic attractors — the two
   synthetic networks contribute synchronous limit cycles); for the three large signalling networks —
   the 60-node **leukemia**, 53-node **MAPK cancer cell-fate** (Grieco et al. 2013), and 44-node
   **guard-cell ABA** networks — that it reproduces the **steady-state count** via the scalable SAT

@@ -33,7 +33,7 @@ from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Gap, GapKind, ModelArtifact, Parameter
 from .fba import FbaModel, judge_objective
 from .model import Certificate, EnginePin, PaperIdentity
-from .oracle import Attribution, ReferenceKind, Tolerance
+from .oracle import Attribution, ReferenceKind, Tolerance, undetermined_shortfall
 
 #: The field-standard flux unit; the unit every medium uptake limit is recorded in.
 FLUX_UNIT = "mmol/gDW/h"
@@ -186,7 +186,10 @@ def certify_constraint_based(
             upper=model.upper,
             tolerance=tolerance,
             assumption_qualified=medium_assumed,
-            attribution=attributions.get(claim.id),
+            # Without a fallback cause an objective that misses raises instead of certifying,
+            # so this path could publish a reproduction or nothing at all — and the class's
+            # agreement rate could not have come out any other way.
+            attribution=attributions.get(claim.id) or undetermined_shortfall(claim.quantity),
         )
         for claim in dossier.targetable_claims()
     ]

@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Drosophila melanogaster segment polarity, single cell (Albert & Othmer 2003)
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 9427024e455d)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 7146611d27ba)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

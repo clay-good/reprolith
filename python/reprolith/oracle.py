@@ -390,6 +390,27 @@ def _require_default_is_the_default(
         )
 
 
+def undetermined_shortfall(quantity: str) -> Attribution:
+    """The root cause for a non-pass whose cause has not been determined.
+
+    A partial or failed verdict must carry an attribution, which is right: a certificate that says
+    "did not reproduce" and nothing else tells the field nothing. But the requirement was enforced
+    by *raising* when a caller supplied none, and a class front-end that has no cause to supply
+    then cannot publish a true negative at all — its only outcomes are a pass or a traceback, and
+    the agreement rate it reports is guaranteed rather than measured.
+
+    So an unattributed shortfall is recorded as one: ``uncategorized`` (the catalogue's own escape
+    hatch, which flags the set to be extended) against the claim's quantity, with the fault
+    hypothesis pointing at the *reconstruction*. That direction is deliberate — Reprolith does not
+    accuse a manuscript of an error it has not diagnosed, and the humble hypothesis is that the
+    thing it built is what fell short. A caller that knows better supplies its own attribution and
+    this is never reached.
+    """
+    return Attribution(
+        mode=FailureMode.UNCATEGORIZED, implicated=quantity, fault=Fault.RECONSTRUCTION
+    )
+
+
 def _assemble(
     *,
     claim_id: str,
@@ -682,6 +703,7 @@ def not_evaluable(
 
 
 __all__ = [
+    "undetermined_shortfall",
     "Attribution",
     "ComparisonMethod",
     "Fault",

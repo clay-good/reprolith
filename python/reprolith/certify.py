@@ -31,6 +31,7 @@ from .oracle import (
     judge_distribution,
     judge_estimation,
     judge_scalar,
+    undetermined_shortfall,
 )
 
 
@@ -136,7 +137,11 @@ def certify_model(
                 predicted=predicted,
                 reference_kind=claim.reference_kind,
                 tolerance=claim.tolerance,
-                attribution=claim.shortfall,
+                # A claim that misses carries a cause even when the caller named none, so a
+                # shortfall is published as `not-reproduced` instead of raising. Dataset claims
+                # never carry one (`Claim.from_record` does not parse it), which made a miss on
+                # the blind set a crash rather than the honest verdict it had earned.
+                attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
                 assumption_qualified=claim.assumption_qualified,
             )
         )
@@ -201,7 +206,7 @@ def certify_curves(
                 predicted=values,
                 reference_kind=claim.reference_kind,
                 tolerance=claim.tolerance,
-                attribution=claim.shortfall,
+                attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
                 assumption_qualified=claim.assumption_qualified,
             )
         )

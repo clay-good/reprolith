@@ -21,7 +21,7 @@ from dataclasses import dataclass, field, replace
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Gap, GapKind, Parameter
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
-from .oracle import Attribution, Tolerance, judge_curve
+from .oracle import Attribution, Tolerance, judge_curve, undetermined_shortfall
 from .pins import algorithm_revision
 
 
@@ -440,7 +440,11 @@ def certify_spatial(
                     reference=claim.reference,
                     predicted=predicted,
                     tolerance=claim.tolerance,
-                    attribution=claim.shortfall,
+                    # A profile that genuinely misses used to raise here rather than certify:
+                    # the judge requires a root cause for a non-pass and this front-end supplied
+                    # none, so the only outcomes it could publish were a pass and a traceback —
+                    # and the class's agreement rate was guaranteed rather than measured.
+                    attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
                     assumption_qualified=claim.assumption_qualified,
                 ),
                 # The discretization is the run (spec: spatial-class — "the spatial step, time

@@ -169,6 +169,26 @@ needless re-run of a dependency-free solver costs seconds; a missed one publishe
 current code would not produce. A test holds the corpus to it: a committed certificate carrying an
 older revision than the code fails, and the fix is re-running that class's milestone script.
 
+## An agreement rate that could not have come out any other way
+
+The oracle refuses a bare non-pass: a `partial` or `failed` verdict must carry a root cause, or the
+certificate tells the field nothing. The rule was enforced by *raising* when no cause was supplied
+— and the callers that matter supply none. `Claim.from_record` does not parse a shortfall at all
+(the dataset claims are the reproducing case), and neither the spatial nor the constraint-based
+milestone script passes one. So those runs had exactly two possible outcomes: a clean pass, or a
+traceback. Measured on the published configurations: the spatial class certifies a diffusivity 40%
+wrong as `reproduced` and raises past that, and the `iNF517` growth rate raises at a 20%
+overstatement. The 3/3 and 8/8 agreement rates in the milestone artifacts were structurally
+guaranteed rather than measured.
+
+An unattributed shortfall is now recorded as one — `uncategorized`, the catalogue's own escape
+hatch, against the claim's quantity, with the fault hypothesis pointing at the reconstruction
+rather than at the manuscript, because Reprolith does not accuse a paper of an error it has not
+diagnosed. Every class front-end uses it, so a genuine miss is published as `not-reproduced` with a
+cause attached instead of vanishing into an exception. Tests now perturb a correct reproduction in
+each class until it is wrong and assert the certificate says so; the stochastic and logical classes
+already discriminated, and now the other four do too.
+
 ## A qualification that names nothing, and a number with nothing behind it
 
 Two flags were carrying weight they could not support.
