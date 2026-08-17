@@ -46,3 +46,44 @@ def test_registry_lists_every_class_and_certificate() -> None:
         assert f'data-class="{model_class}"' in html
     # The scope statement travels with the published registry and cannot be emptied.
     assert "clinical" in html.lower()
+
+
+def test_a_published_card_carries_its_gaps_and_its_stable_identifier() -> None:
+    """A qualified result must not be one click away from the reason it was qualified."""
+    from reprolith import (
+        Assumption,
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+        certificate_digest,
+        render_registry,
+    )
+
+    cert = build_certificate(
+        paper=PaperIdentity(title="A qualified paper", doi="10.1/q"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(
+            claim_id="c1", quantity="Cmax", verdict=Verdict.REPRODUCED,
+            source_location="Table 1", assumption_qualified=True,
+        )],
+        assumptions=[Assumption(
+            id="a1", description="the salt form of the stated dose", chosen="free base",
+            basis="the model's dose input is free base", load_bearing=True,
+        )],
+    )
+    html = render_registry([("ode-pkpd", cert)])
+    assert certificate_digest(cert) in html  # addressable by the identifier every surface takes
+    assert "what was missing" in html
+    assert "the salt form of the stated dose" in html
+
+    # A clean reproduction has nothing missing, so it carries no gap block.
+    clean = build_certificate(
+        paper=PaperIdentity(title="A clean paper", doi="10.1/c"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(
+            claim_id="c1", quantity="Cmax", verdict=Verdict.REPRODUCED, source_location="Table 1",
+        )],
+    )
+    assert "what was missing" not in render_registry([("ode-pkpd", clean)])

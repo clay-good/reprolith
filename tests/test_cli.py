@@ -221,3 +221,15 @@ def test_package_is_runnable_as_a_module() -> None:
     from reprolith.cli import main
 
     assert entry.main is main
+
+
+def test_every_read_command_accepts_the_documented_json_flag(tmp_path, capsys):
+    """The docs promise --json on any read command; three of them used to exit 2 on it."""
+    repo, digest = _write_repo(tmp_path)
+    for argv in (
+        ["presubmission", digest], ["dossier", "ACC1"], ["bundle", "ACC1"],
+        ["catalog"], ["backlog"], ["self-validation"], ["certificate", digest],
+        ["verdict", digest], ["gaps", digest], ["status", "ACC1"], ["certificates-for", "ACC1"],
+    ):
+        assert run(["--data-dir", str(repo), *argv, "--json"]) == 0, argv
+        json.loads(capsys.readouterr().out)  # and what it prints is really JSON

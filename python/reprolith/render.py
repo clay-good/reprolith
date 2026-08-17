@@ -297,14 +297,18 @@ def render_registry(
     """A self-contained, browsable HTML registry of certificates (spec: certificate-publication).
 
     ``entries`` pairs each certificate with its model class (the class lives on the catalog entry,
-    not the certificate). The page lists every certificate with its status badge, per-verdict claim
-    counts, and gap summary, grouped so a non-expert can navigate it, and carries the scope
-    statement inescapably. Verdicts keep the badge colours' honesty rule — a qualified or partial
+    not the certificate). Each card carries the status badge, the per-verdict claim counts, the
+    certificate's content digest (its stable identifier — the string every read surface takes), and
+    the honesty payload: what was missing, and each load-bearing assumption Reprolith had to supply.
+    A published qualified result that showed only a badge and a title would put the reader one step
+    away from the reason it was qualified, which is the one thing the registry exists to carry.
+    Grouped so a non-expert can navigate it, and the scope statement travels inescapably. Verdicts keep the badge colours' honesty rule — a qualified or partial
     result is never rendered green — so no browsing path collapses a qualified result into a clean
     success ("No silent green"). Filter controls for model class and overall verdict are inline and
     degrade gracefully: with scripting off, every entry stays visible. (Source is shown per entry;
     freshness needs run timestamps the certificate content omits, so it is not a filter here.)
     """
+    from .canonical import content_hash
     from .scope import Scope
 
     rows = list(entries)
@@ -322,6 +326,16 @@ def render_registry(
             if cert.paper.to_dict().get(k)
         )
         count_line = ", ".join(f"{k}={counts[k]}" for k in counts if counts[k])
+        digest = content_hash(cert.content())
+        gaps = "".join(
+            f"<li>{html.escape(item['needs'])}</li>" for item in gap_items(cert)
+        )
+        gap_block = (
+            f'<details class="gaps"><summary>what was missing '
+            f'({len(gap_items(cert))})</summary><ul>{gaps}</ul></details>'
+            if gaps
+            else ""
+        )
         cards.append(
             f'<article class="entry" data-class="{html.escape(model_class)}" '
             f'data-verdict="{verdict}">'
@@ -331,6 +345,8 @@ def render_registry(
             f'{" · " + html.escape(ids) if ids else ""}</p>'
             f'<p class="verdict v-{verdict}">{verdict}</p>'
             f'<p class="counts">{html.escape(count_line) if count_line else "no evaluable claims"}</p>'
+            f'{gap_block}'
+            f'<p class="digest"><code>{html.escape(digest)}</code></p>'
             f"</article>"
         )
 
@@ -352,6 +368,9 @@ def render_registry(
         ".entry h3{margin:.4rem 0}.meta{color:#666;font-size:.9rem;margin:.2rem 0}"
         ".verdict{font-weight:600}.v-reproduced{color:#3a3}.v-partially-reproduced{color:#a80}"
         ".v-not-reproduced{color:#c33}.v-blocked{color:#777}.counts{color:#444;font-size:.9rem}"
+        ".gaps{margin:.4rem 0;font-size:.9rem}.gaps summary{cursor:pointer;color:#a80}"
+        ".gaps ul{margin:.3rem 0 .3rem 1.2rem;color:#444}"
+        ".digest{margin:.3rem 0 0;font-size:.75rem;color:#888;word-break:break-all}"
         ".track-record{margin:1rem 0;padding:1rem;border:1px solid #ddd;border-radius:8px;background:#fafafa}"
         ".track-record h2{margin:.2rem 0}.tr-note{color:#555;max-width:48rem;font-size:.9rem}"
         ".track-record table{border-collapse:collapse;margin-top:.5rem}"

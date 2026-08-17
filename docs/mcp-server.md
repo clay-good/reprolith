@@ -48,6 +48,7 @@ qualifications.
 | `presubmission` | `digest` | Author-facing pre-submission check: readiness + prioritized fix list |
 | `certificates_for` | `title`/`doi`/… | Digests of every certificate for a paper, newest first |
 | `backlog_health` | — | Backlog depth by state, class, and difficulty, and the labelled mix |
+| `self_validation` | — | The blind track record per class: matched / abstained / other, aggregate only |
 | `dossier` | `accession` | The ingested dossier — extracted model structure |
 | `bundle` | `accession` | The reconstruction bundle — model, recipe, assumptions |
 | `lint` | `sbml`, `species`, `reference`, `duration`, `steps` | A deterministic per-claim verdict for an ODE model curve (needs the engine extra) |
@@ -56,7 +57,7 @@ qualifications.
 | `lint_estimation` | `reported`, `recovered` | A deterministic verdict on a re-derived parameter estimate vs a reported one, at the estimation tolerance (pure, no extra) |
 | `lint_distribution` | `reported`, `predicted` | A deterministic verdict on a simulated percentile envelope vs a reported one, worst-band governed (pure, no extra) |
 | `lint_stochastic` | `sbml`, `species`, `reported_mean`, `duration`, `trajectories`, `seed` | A deterministic verdict on an SBML reaction network's mean species count via a pinned Gillespie SSA (needs the engine extra) |
-| `lint_diffusion` | `initial`, `reference`, `diffusivity`, `dx`, `dt`, `steps` | A deterministic verdict on a 1-D diffusion profile vs a reported one, by curve distance (pure, no extra) |
+| `lint_diffusion` | `initial`, `reference`, `diffusivity`, `dx`, `dt`, `steps`, `decay` (optional) | A deterministic verdict on a 1-D diffusion profile vs a reported one, by curve distance (pure, no extra) |
 
 ## Effectful tool
 

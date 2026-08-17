@@ -229,6 +229,9 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     def add_json(p: argparse.ArgumentParser) -> None:
+        # Every read command takes --json, including the three whose only form is already the raw
+        # object: the flag is the documented way to ask any command for what an agent receives, and
+        # a command that rejected it would make that promise false.
         p.add_argument("--json", action="store_true", help="emit the raw JSON an agent receives")
 
     def add_identifier(p: argparse.ArgumentParser) -> None:
@@ -277,6 +280,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("presubmission", help="the author-facing pre-submission report for a digest")
     p.add_argument("digest", help="the certificate's content digest")
+    add_json(p)
     p.set_defaults(func=_cmd_presubmission)
 
     p = sub.add_parser("certificates-for", help="every certificate digest issued for a paper")
@@ -286,10 +290,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("dossier", help="the ingested dossier for an accession")
     p.add_argument("accession", help="the entry accession")
+    add_json(p)
     p.set_defaults(func=_cmd_dossier)
 
     p = sub.add_parser("bundle", help="the reconstruction bundle for an accession")
     p.add_argument("accession", help="the entry accession")
+    add_json(p)
     p.set_defaults(func=_cmd_bundle)
 
     return parser

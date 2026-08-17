@@ -22,4 +22,10 @@ discretization (spatial step, time step, diffusivity), never the label, and the 
 makes it byte-reproducible. The verdicts are clean **reproduced** — a spatial reproduction is
 deterministic, so unlike the stochastic class it carries no sampling qualification.
 
+One honest limit on how independent these three systems are: each picks its time step as a fixed
+fraction of the stability limit (`dt = 0.4·dx²/D`), so the reference variance `2·D·steps·dt` works
+out to `0.8·dx²·steps` — the diffusivity cancels. The three entries differ in mass, initial
+variance, and step count, but they do not independently exercise three diffusivities. They are a
+real test of the solver against closed-form mathematics; they are not three independent draws.
+
 Regenerate with `python scripts/run_spatial_milestone.py` (no extras, no network).
