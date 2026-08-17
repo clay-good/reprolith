@@ -66,7 +66,7 @@ def _cmd_backlog(query: ReprolithQuery, args: argparse.Namespace) -> int:
     if args.json:
         _print_json(health)
         return 0
-    print(f"Backlog: {health['total']} entries "
+    print(f"Backlog: {health['total']} entries, {health['claimable']} claimable now "
           f"({health['labelled']} labelled, {health['unlabelled']} unlabelled)")
     for heading, key in (("By state", "by_state"), ("By class", "by_class"),
                          ("By difficulty", "by_difficulty")):

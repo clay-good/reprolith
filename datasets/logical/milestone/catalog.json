@@ -5,7 +5,7 @@
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
-        "source": "CANA 1.0.0 (Correia et al. 2018): 11 attractors"
+        "source": "CANA 1.0.0 (Correia et al. 2018): 11 attractors, periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]"
       },
       "history": [
         {
@@ -74,7 +74,7 @@
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
-        "source": "CANA 1.0.0 (Correia et al. 2018): 10 attractors"
+        "source": "CANA 1.0.0 (Correia et al. 2018): 10 attractors, periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]"
       },
       "history": [
         {
@@ -143,7 +143,7 @@
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
-        "source": "CANA 1.0.0 (Correia et al. 2018): 1 attractors"
+        "source": "CANA 1.0.0 (Correia et al. 2018): 1 attractors, periods [1]"
       },
       "history": [
         {
@@ -212,7 +212,7 @@
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
-        "source": "CANA 1.0.0 (Correia et al. 2018): 2 attractors"
+        "source": "CANA 1.0.0 (Correia et al. 2018): 2 attractors, periods [2, 6]"
       },
       "history": [
         {
@@ -281,7 +281,7 @@
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
-        "source": "CANA 1.0.0 (Correia et al. 2018): 10 attractors"
+        "source": "CANA 1.0.0 (Correia et al. 2018): 10 attractors, periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]"
       },
       "history": [
         {
@@ -350,7 +350,7 @@
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
-        "source": "CANA 1.0.0 (Correia et al. 2018): 6 attractors"
+        "source": "CANA 1.0.0 (Correia et al. 2018): 6 attractors, periods [1, 1, 1, 1, 2, 2]"
       },
       "history": [
         {

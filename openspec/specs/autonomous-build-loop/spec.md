@@ -10,6 +10,29 @@ It is how Reprolith is built and operated with a human setting direction rather 
 every step. Its defining discipline: it advances on everything it is confident about and never
 silently commits a low-confidence, load-bearing choice.
 
+## What carries each requirement today
+
+The loop is a *process* a coding agent runs, not a module. No code drives it, so most
+requirements below are carried by the agent and are checkable only in the record it leaves —
+the git history, the certificates, and the CI runs. Two are carried by code and genuinely
+enforced: the acceptance gates (CI runs `ruff`, `mypy`, `pytest`, and `openspec validate
+--specs --strict` on every push) and the honesty invariants (derived in
+`reprolith.certificate.derive_overall`, re-derived again when a stored certificate is loaded).
+
+Two are **not** carried by anything yet, and the requirement text below describes the intent
+rather than the behavior:
+
+- *Load-bearing uncertainty is escalated.* The verification queue's shapes exist
+  (`reprolith.VerificationQueue`), and a certificate resting on a queued item is correctly
+  qualified — but no code path opens an item, so escalation is done by the agent in prose, in
+  the gap report and the assumptions list.
+- *Repeated failure is parked.* There is no attempt counter anywhere; a failed unit is not
+  retried because the agent moves on, not because anything bounds it.
+
+Neither gap can produce a wrong certificate — an unescalated uncertainty still travels as a
+load-bearing assumption, which downgrades the verdict on its own — but the requirements are
+stated here as goals, and a reader should not take them as implemented machinery.
+
 ## Requirements
 
 ### Requirement: Goal-directed work selection

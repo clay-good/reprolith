@@ -544,16 +544,23 @@ class Catalog:
         pool.sort(key=lambda entry: _difficulty_rank(entry.difficulty))
         return pool
 
-    def backlog_health(self) -> dict[str, Any]:
+    def backlog_health(self, at: float = 0.0) -> dict[str, Any]:
         """Report the state of the backlog so the never-runs-out guarantee is observable.
 
         Counts entries by lifecycle state, model class, and difficulty, and the labelled-versus-
         unlabelled mix — the signals a seeder watches to decide when to bring a new source online
         (spec: catalog-seeding — "Backlog health is reportable").
+
+        ``claimable`` is reported alongside ``total`` because they answer different questions and
+        the shipped catalog makes the difference stark: 31 entries, of which 0 can be handed to a
+        requester (30 are blocked on a missing manuscript claim, 1 is certified). A "backlog" of
+        31 reads as work available when there is none, so the number a seeder actually needs is
+        published next to it. ``at`` is the time leases are judged against.
         """
         labelled = sum(1 for e in self._entries if e.ground_truth is not None)
         return {
             "total": len(self._entries),
+            "claimable": len(self.claimable(at)),
             "by_state": dict(Counter(e.state.value for e in self._entries)),
             "by_class": dict(Counter(e.model_class.value for e in self._entries)),
             "by_difficulty": dict(Counter(e.difficulty or "unassessed" for e in self._entries)),

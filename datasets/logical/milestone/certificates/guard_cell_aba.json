@@ -3,11 +3,11 @@
     {
       "assumption_qualified": false,
       "claim_id": "guard_cell_aba-fixed_points",
-      "discrepancy": "reproduced 16 vs the independent 16",
+      "discrepancy": "reproduced 16 with periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] vs the independent 16 with periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
-      "method": "attractor-set-match",
+      "method": "attractor-signature-match",
       "quantity": "steady-state (fixed-point) count",
       "reference_kind": "numeric",
       "root_cause": null,

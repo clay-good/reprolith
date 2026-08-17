@@ -36,6 +36,10 @@ class ComparisonMethod(str, Enum):
     DISTRIBUTION_BAND_DISTANCE = "distribution-band-distance"
     FINGERPRINT_COMPARISON = "fingerprint-comparison"
     ATTRACTOR_SET_MATCH = "attractor-set-match"
+    # Weaker than a set match, and named so: two networks can agree on how many attractors they
+    # have, and on the length of each, while sharing not one state between them. A reference that
+    # reports counts and periods rather than the attractors themselves can only support this.
+    ATTRACTOR_SIGNATURE_MATCH = "attractor-signature-match"
 
 
 class ReferenceKind(str, Enum):

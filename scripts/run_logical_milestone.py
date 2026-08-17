@@ -67,12 +67,15 @@ def main() -> None:
     for key in sorted(reference["models"]):
         entry = reference["models"][key]
         plans.append((key, entry["rules"], entry["citation"], "attractors",
-                      entry["n_attractors"], "attractor count",
-                      f"{reference['_source']}: {entry['n_attractors']} attractors"))
+                      (entry["n_attractors"], sorted(entry["attractor_periods"])),
+                      "attractor signature (count and periods)",
+                      f"{reference['_source']}: {entry['n_attractors']} attractors, "
+                      f"periods {sorted(entry['attractor_periods'])}"))
     for key in sorted(scalable["models"]):
         entry = scalable["models"][key]
         plans.append((key, entry["rules"], entry["citation"], "fixed_points",
-                      entry["n_fixed_points"], "steady-state (fixed-point) count",
+                      (entry["n_fixed_points"], [1] * entry["n_fixed_points"]),
+                      "steady-state (fixed-point) count",
                       f"{scalable['_source']}: {entry['n_fixed_points']} fixed points"))
 
     for key, rules, citation, kind, expected, quantity, source in plans:
@@ -83,15 +86,25 @@ def main() -> None:
         )
         # Certify blind: only the model rules and the independent count are inputs, never the label.
         net = parse_boolean_network(rules)
-        found = len(net.attractors()) if kind == "attractors" else len(net.fixed_points())
+        # Compare the whole signature the independent reference supports — how many attractors,
+        # and the length of each — not the count alone. Agreeing on a count while disagreeing on
+        # every period is not a reproduction, and a certificate that says "set match" while
+        # comparing one integer claims more than it checked.
+        if kind == "attractors":
+            attractors = net.attractors()
+            found = (len(attractors), sorted(len(a) for a in attractors))
+        else:
+            fixed = net.fixed_points()
+            found = (len(fixed), [1] * len(fixed))
         matched = found == expected
         assessment = assess_match(
             claim_id=f"{key}-{kind}",
             quantity=quantity,
             source_location=citation,
             matched=matched,
-            method=ComparisonMethod.ATTRACTOR_SET_MATCH,
-            discrepancy=f"reproduced {found} vs the independent {expected}",
+            method=ComparisonMethod.ATTRACTOR_SIGNATURE_MATCH,
+            discrepancy=f"reproduced {found[0]} with periods {found[1]} vs "
+                        f"the independent {expected[0]} with periods {expected[1]}",
             attribution=None if matched else Attribution(
                 mode=FailureMode.UNSPECIFIED_UPDATE_SCHEME,
                 implicated=quantity, fault=Fault.RECONSTRUCTION,

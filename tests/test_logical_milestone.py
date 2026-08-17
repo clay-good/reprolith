@@ -47,8 +47,10 @@ def test_every_committed_certificate_is_a_reproduced_attractor_verdict() -> None
         )
         assert content["overall"] == "reproduced"
         assert content["scope"]["machine"] == "reproducible-not-correct-not-clinical"
-        # Judged by the discrete attractor oracle, not a curve or scalar metric.
-        assert content["assessments"][0]["method"] == "attractor-set-match"
+        # Judged by the discrete attractor oracle, not a curve or scalar metric — and named for
+        # what the independent reference supports: how many attractors and each one's period,
+        # not the attractor states themselves.
+        assert content["assessments"][0]["method"] == "attractor-signature-match"
 
 
 def test_the_catalog_recorded_every_entry_as_a_certified_logical_model() -> None:
