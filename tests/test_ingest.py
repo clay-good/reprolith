@@ -80,3 +80,71 @@ def test_ingests_parameter_state_variables() -> None:
     # A rate-rule-target is a state variable, not also listed as a constant parameter.
     assert not ({"M", "T", "BR"} & {p.name for p in dossier.parameters})
     assert dossier.validate() == []
+
+
+# --- the rule kind and the unit convention survive the round trip ------------------
+
+_ASSIGNMENT_MODEL = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+ <model id="m">
+  <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+  <listOfSpecies>
+   <species id="X" compartment="c" initialAmount="10" hasOnlySubstanceUnits="true"
+            boundaryCondition="false" constant="false"/>
+   <species id="Y" compartment="c" initialAmount="0" hasOnlySubstanceUnits="true"
+            boundaryCondition="false" constant="false"/>
+  </listOfSpecies>
+  <listOfParameters><parameter id="k" value="0.5" constant="true"/></listOfParameters>
+  <listOfRules>
+   <rateRule variable="X"><math xmlns="http://www.w3.org/1998/Math/MathML">
+     <apply><times/><apply><minus/><ci>k</ci></apply><ci>X</ci></apply></math></rateRule>
+   <assignmentRule variable="Y"><math xmlns="http://www.w3.org/1998/Math/MathML">
+     <apply><times/><cn>2</cn><ci>X</ci></apply></math></assignmentRule>
+  </listOfRules>
+ </model>
+</sbml>"""
+
+
+def _concentration_model(size: str) -> str:
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+ <model id="m">
+  <listOfCompartments><compartment id="c" size="{size}" constant="true"/></listOfCompartments>
+  <listOfSpecies>
+   <species id="X" compartment="c" initialConcentration="4" hasOnlySubstanceUnits="false"
+            boundaryCondition="false" constant="false"/>
+  </listOfSpecies>
+  <listOfParameters><parameter id="k" value="0.5" constant="true"/></listOfParameters>
+  <listOfRules>
+   <rateRule variable="X"><math xmlns="http://www.w3.org/1998/Math/MathML">
+     <apply><times/><apply><minus/><ci>k</ci></apply><ci>X</ci></apply></math></rateRule>
+  </listOfRules>
+ </model>
+</sbml>"""
+
+
+def test_an_assignment_rule_is_not_rebuilt_as_a_rate_rule() -> None:
+    # Y = 2X is an observable, not a state that grows at 2X: rebuilding it as a rate rule
+    # would run a different model than the artifact describes.
+    from reprolith.dossier import EquationKind
+
+    dossier = ingest_sbml(_ASSIGNMENT_MODEL, entry="10.1/x")
+    kinds = {e.target: e.kind for e in dossier.equations}
+    assert kinds == {"X": EquationKind.RATE, "Y": EquationKind.ASSIGNMENT}
+
+    rebuilt = build_model_sbml(dossier)
+    assert '<assignmentRule variable="Y">' in rebuilt
+    assert '<rateRule variable="X">' in rebuilt
+    assert '<rateRule variable="Y">' not in rebuilt
+
+
+def test_a_concentration_in_a_unit_compartment_is_the_amount_it_states() -> None:
+    dossier = ingest_sbml(_concentration_model("1"), entry="10.1/x")
+    assert [(p.name, p.value) for p in dossier.initial_conditions] == [("X", 4.0)]
+
+
+def test_a_concentration_in_a_non_unit_compartment_is_refused() -> None:
+    # Reconstruction is amount-based in a unit compartment; reading 4 mM in a 2 L compartment
+    # as an amount of 4 would silently rebuild a different model.
+    with pytest.raises(ValueError, match="unit compartment"):
+        ingest_sbml(_concentration_model("2"), entry="10.1/x")

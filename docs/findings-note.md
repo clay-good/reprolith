@@ -125,6 +125,32 @@ distance of 0.5 — an outright failure. Measured on the immigration-death netwo
 correct model reproduces 0/60 times at n=12 and 1/60 at n=150. Nothing false-certifies, but the
 documented integration is not usable at those counts.
 
+## What a model loses on the way in, and what it no longer loses
+
+Artifact intake (`ingest_sbml`) and reconstruction (`build_model_sbml`) are two halves of a round
+trip, and anything the dossier in between cannot express is a model silently rebuilt into a
+different one. Two such losses were found by auditing the round trip against the repo's own
+datasets, and both are closed:
+
+- **Rule kind.** An extracted equation recorded only a target and an expression, so an assignment
+  rule (`Y = 2X`, an observable) and a rate rule (`dY/dt = 2X`, a state that grows) were the same
+  dossier entry — and reconstruction emitted every one of them as a rate rule. The rebuilt model
+  ran, produced finite output, and could be certified against the paper. Equations now carry their
+  kind, reconstruction emits the kind it was given, and a parameter an equation determines is
+  emitted non-constant instead of frozen at its initial value with its rule dropped.
+- **Amount versus concentration.** A species may state its initial value either way, and the two
+  agree only in a unit compartment. Adopt-and-verify read the initial *amount* unconditionally, so
+  on a concentration-stated model it compared every species against an unset field: 3 of the 6
+  shipped kinetic datasets reported a full set of mismatches against their own source file (and in
+  Level 3 the unset field reads NaN, so a real mismatch could never be reported at all). Both
+  sides now read the value in the convention the model states it in; a concentration in a
+  compartment reconstruction cannot represent is refused at intake rather than recorded as an
+  amount wrong by that volume.
+
+The general lesson is the one the refusal pattern elsewhere in the codebase already encodes: an
+intake path that cannot represent a construct must say so. Silently flattening it produces a model
+that is runnable, plausible, and not the one the artifact described.
+
 ## Status and what remains
 
 The engine and one real reproduction are done. The full blind run over the 31-entry set (task

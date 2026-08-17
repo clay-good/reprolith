@@ -20,7 +20,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from .dossier import Dossier, Equation, ExtractionConfidence, ModelArtifact, Parameter
+from .dossier import (
+    Dossier,
+    Equation,
+    EquationKind,
+    ExtractionConfidence,
+    ModelArtifact,
+    Parameter,
+)
 from .engine import EngineUnavailable
 
 
@@ -35,13 +42,47 @@ def _libsbml() -> Any:
     return libsbml
 
 
+def _initial_amount(model: Any, species: Any) -> float | None:
+    """The species' stated initial value as an amount, or ``None`` when it states none.
+
+    A species may state its initial value as an amount or as a concentration, and the two are
+    the same number only in a compartment of size 1. Reconstruction
+    (:func:`reprolith.build_model_sbml`) is amount-based in a unit compartment, so a
+    concentration stated in a compartment of any other size would be rebuilt as an amount off
+    by that volume — and the model's own rules, written in concentration terms, off with it.
+    That is refused here rather than silently converted, since converting the value alone would
+    still leave the equations describing something other than the source model.
+    """
+    if species.isSetInitialAmount():
+        return float(species.getInitialAmount())
+    if not species.isSetInitialConcentration():
+        return None
+    compartment = model.getCompartment(species.getCompartment())
+    size = compartment.getSize() if compartment is not None and compartment.isSetSize() else None
+    if size is None:
+        raise ValueError(
+            f"species {species.getId()!r} states an initial concentration but its compartment "
+            f"{species.getCompartment()!r} states no size, so the amount it stands for is unknown"
+        )
+    if size != 1.0:
+        raise ValueError(
+            f"species {species.getId()!r} states an initial concentration in compartment "
+            f"{species.getCompartment()!r} of size {size}; reconstruction is amount-based in a "
+            "unit compartment and cannot represent this model without rewriting its equations"
+        )
+    return float(species.getInitialConcentration())
+
+
 def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file") -> Dossier:
     """Parse a shipped SBML model into a dossier of its structure.
 
     ``entry`` is the catalog-entry key the dossier belongs to; ``source_label`` names the file
     for provenance. Dynamic (non-constant, non-boundary) species become state variables with
     their initial conditions; valued parameters become parameters; rate and assignment rules
-    become equations. Units come from the SBML where stated, and fall back to ``dimensionless``.
+    become equations, each recording which kind of rule it was so reconstruction rebuilds the
+    same model. Units come from the SBML where stated, and fall back to ``dimensionless``. A
+    species stating a concentration in a compartment that is not unit-sized is refused rather
+    than read as an amount (see :func:`_initial_amount`).
     """
     libsbml = _libsbml()
     document = libsbml.readSBMLFromString(sbml)
@@ -56,12 +97,8 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
         species = model.getSpecies(i)
         if species.getConstant() or species.getBoundaryCondition():
             continue  # a fixed input, not a dynamic state variable
-        value = (
-            species.getInitialAmount()
-            if species.isSetInitialAmount()
-            else species.getInitialConcentration()
-        )
-        if value is None or (not species.isSetInitialAmount() and not species.isSetInitialConcentration()):
+        value = _initial_amount(model, species)
+        if value is None:
             continue  # no stated initial value; a reconstruction gap, not a fabricated one
         state_variables.append(species.getId())
         initial_conditions.append(
@@ -114,6 +151,7 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
                 target=rule.getVariable(),
                 expression=str(libsbml.formulaToL3String(math)),
                 source_location=source,
+                kind=EquationKind.RATE if rule.isRate() else EquationKind.ASSIGNMENT,
             )
         )
 

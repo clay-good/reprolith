@@ -17,6 +17,7 @@ from .dossier import (
     Dossier,
     DossierClaim,
     Equation,
+    EquationKind,
     ExtractionConfidence,
     Gap,
     GapKind,
@@ -123,7 +124,9 @@ def dossier_from_dict(record: dict[str, Any]) -> Dossier:
         entry=record["entry"],
         state_variables=tuple(record["state_variables"]),
         equations=tuple(
-            Equation(target=e["target"], expression=e["expression"], source_location=e["source_location"])
+            Equation(target=e["target"], expression=e["expression"],
+                     source_location=e["source_location"],
+                     kind=EquationKind(e.get("kind", EquationKind.RATE.value)))
             for e in record["equations"]
         ),
         parameters=tuple(_parameter_from(p) for p in record["parameters"]),

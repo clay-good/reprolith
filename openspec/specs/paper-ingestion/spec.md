@@ -67,6 +67,21 @@ what it has to work with.
 - **AND** an existing valid model artifact is preserved as a candidate starting point for
   reconstruction, not overwritten
 
+#### Scenario: An equation keeps the kind of equation it is
+
+- **WHEN** an ingested artifact states that a variable's value is given by an expression
+  (an assignment) rather than its rate of change (a rate equation)
+- **THEN** the extracted equation records which of the two it is
+- **AND** reconstruction rebuilds it as that kind, because `Y = 2X` and `dY/dt = 2X` are
+  different models and a rebuild that confuses them runs a model the artifact never described
+
+#### Scenario: A stated concentration is not read as an amount
+
+- **WHEN** an artifact states a species' initial value as a concentration
+- **THEN** ingestion reads it as the amount it stands for in its compartment
+- **AND** a concentration whose compartment size reconstruction cannot represent is refused,
+  rather than recorded as an amount that is wrong by that volume
+
 #### Scenario: Unit normalization
 
 - **WHEN** parameters and variables carry units

@@ -18,7 +18,7 @@ import operator
 from collections.abc import Callable, Container, Mapping
 from typing import Any
 
-from .dossier import Dossier
+from .dossier import Dossier, EquationKind
 from .engine import EngineUnavailable
 from .fba import FbaModel
 from .logical import BooleanNetwork, parse_boolean_network
@@ -41,8 +41,12 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
 
     Requires that every state variable has an initial condition and a governing equation — a
     reconstruction that lacks either cannot be built and is blocked, not silently completed, so
-    a clear error names what is missing. Parameter units are carried in the dossier for
-    provenance but are not yet emitted as SBML unit definitions (an MVP simplification).
+    a clear error names what is missing. Each equation is emitted as the kind of rule it was
+    extracted as: a rate equation becomes a rate rule, an assignment equation becomes an
+    assignment rule (``Y = 2X`` is not ``dY/dt = 2X``), and a parameter an equation determines
+    is emitted non-constant. An equation targeting something the model does not declare is
+    refused rather than dropped. Parameter units are carried in the dossier for provenance but
+    are not yet emitted as SBML unit definitions (an MVP simplification).
     """
     libsbml = _libsbml()
 
@@ -56,6 +60,13 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
         raise ValueError(f"cannot build: state variables without a rate equation: {missing_eqs}")
     if not dossier.state_variables:
         raise ValueError("cannot build: the dossier declares no state variables")
+    declared = set(dossier.state_variables) | {p.name for p in dossier.parameters}
+    undeclared = sorted(t for t in equations if t not in declared)
+    if undeclared:
+        raise ValueError(
+            "cannot build: equations for variables the dossier does not declare: "
+            f"{undeclared}"
+        )
 
     document = libsbml.SBMLDocument(level, version)
     model = document.createModel()
@@ -79,17 +90,28 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
         sbml_parameter = model.createParameter()
         sbml_parameter.setId(parameter.name)
         sbml_parameter.setValue(float(parameter.value))
-        sbml_parameter.setConstant(True)
+        # A parameter an equation determines varies over the run; emitting it constant would
+        # drop that equation and freeze it at its initial value.
+        sbml_parameter.setConstant(parameter.name not in equations)
 
-    for name in dossier.state_variables:
-        equation = equations[name]
+    # State variables first, in their declared order, so a dossier whose equations only govern
+    # state variables emits byte-identical SBML to before equations carried a kind.
+    ordered = [equations[name] for name in dossier.state_variables] + [
+        e for e in dossier.equations if e.target not in set(dossier.state_variables)
+    ]
+    for equation in ordered:
         math = libsbml.parseL3Formula(equation.expression)
         if math is None:
             raise ValueError(
-                f"could not parse the rate expression for {name!r}: {equation.expression!r}"
+                f"could not parse the rate expression for {equation.target!r}: "
+                f"{equation.expression!r}"
             )
-        rule = model.createRateRule()
-        rule.setVariable(name)
+        rule = (
+            model.createAssignmentRule()
+            if equation.kind is EquationKind.ASSIGNMENT
+            else model.createRateRule()
+        )
+        rule.setVariable(equation.target)
         rule.setMath(math)
 
     errors = _fatal_errors(document, libsbml)
@@ -104,8 +126,14 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
     When reconstruction adopts a shipped model, it must still confirm the model matches the
     manuscript rather than silently trusting the artifact over the paper (spec:
     ``model-reconstruction`` — "Shipped model does not match the dossier"). This parses the
-    model's parameters and initial amounts and reports each value that disagrees with the
+    model's parameters and initial values and reports each value that disagrees with the
     dossier beyond ``rel_tol``. An empty list means no disagreement was found.
+
+    A species' initial value is read in the convention the model states it in: a model stating
+    concentrations sets no initial *amount*, and reading the unset field instead reports every
+    species as a mismatch against 0 (or, in Level 3, compares against NaN and so can never
+    report a real one). A species stating neither is not compared at all, since there is no
+    stated value to disagree with.
     """
     libsbml = _libsbml()
     document = libsbml.readSBMLFromString(sbml)
@@ -117,10 +145,18 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
         model.getParameter(i).getId(): model.getParameter(i).getValue()
         for i in range(model.getNumParameters())
     }
-    sbml_ics = {
-        model.getSpecies(i).getId(): model.getSpecies(i).getInitialAmount()
-        for i in range(model.getNumSpecies())
-    }
+    sbml_ics: dict[str, float] = {}
+    for i in range(model.getNumSpecies()):
+        species = model.getSpecies(i)
+        if species.isSetInitialAmount():
+            sbml_ics[species.getId()] = float(species.getInitialAmount())
+        elif species.isSetInitialConcentration():
+            compartment = model.getCompartment(species.getCompartment())
+            if compartment is None or not compartment.isSetSize():
+                continue  # the amount this concentration stands for is unknown; nothing to compare
+            sbml_ics[species.getId()] = float(
+                species.getInitialConcentration() * compartment.getSize()
+            )
 
     mismatches: list[str] = []
     for parameter in dossier.parameters:

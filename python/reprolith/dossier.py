@@ -102,6 +102,19 @@ class Gap:
         }
 
 
+class EquationKind(str, Enum):
+    """Whether an equation gives a variable's *rate of change* or its *value*.
+
+    The distinction is load-bearing: ``dY/dt = 2X`` and ``Y = 2X`` are different models, so an
+    equation that loses its kind on the way through the dossier is rebuilt as a different model
+    than the one the source stated. Rate is the default because the dossier's original and
+    still most common content is an ODE right-hand side.
+    """
+
+    RATE = "rate"  # dTarget/dt = expression
+    ASSIGNMENT = "assignment"  # target = expression, at all times
+
+
 @dataclass(frozen=True)
 class Equation:
     """An extracted governing equation for a state variable or observable."""
@@ -109,13 +122,19 @@ class Equation:
     target: str
     expression: str
     source_location: str
+    kind: EquationKind = EquationKind.RATE
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        record = {
             "target": self.target,
             "expression": self.expression,
             "source_location": self.source_location,
         }
+        if self.kind is not EquationKind.RATE:
+            # Omitted at the default so every dossier written before equations carried a kind
+            # keeps its exact bytes, and with them its content digest.
+            record["kind"] = self.kind.value
+        return record
 
 
 @dataclass(frozen=True)
