@@ -95,3 +95,15 @@ def test_same_pin_recertification_is_deterministic() -> None:
     a = _cert("4.43", supersedes=prior)
     b = _cert("4.43", supersedes=prior)
     assert certificate_digest(a) == certificate_digest(b)
+
+
+def test_a_lineage_walk_terminates_even_on_an_injected_cycle() -> None:
+    """A cycle cannot arise through issue(), but this walk is the kind that hangs if one does."""
+    from dataclasses import replace
+
+    ledger = CertificateLedger()
+    cert = _cert("4.46")
+    ledger.issue(cert)
+    looping = replace(cert, supersedes=certificate_digest(cert))
+    ledger._by_digest[certificate_digest(cert)] = looping  # inject past issue()
+    assert len(ledger.chain(looping)) <= 2

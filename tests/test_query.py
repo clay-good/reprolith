@@ -180,3 +180,47 @@ def test_the_track_record_publishes_its_numbers_without_the_answer_key() -> None
         "classes": 1, "labelled_entries": 1, "agreements": 0,
         "abstentions": 1, "other_disagreements": 0,
     }
+
+
+def _paper_cert(title, verdict, supersedes=None):
+    return build_certificate(
+        paper=PaperIdentity(title=title, doi="10.1/x"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(
+            claim_id="c1", quantity="Cmax", verdict=verdict, source_location="T1",
+            root_cause=None if verdict is Verdict.REPRODUCED else "the paper omits clearance",
+        )],
+        supersedes=supersedes,
+    )
+
+
+def test_a_superseded_verdict_is_never_served_as_the_current_answer() -> None:
+    """A reader holding a digest — the identity the project asks people to cite — must be told."""
+    from reprolith import Catalog, CertificateLedger, certificate_digest
+
+    ledger = CertificateLedger()
+    old = _paper_cert("One paper", Verdict.REPRODUCED)
+    ledger.issue(old)
+    new = _paper_cert("One paper", Verdict.FAILED, supersedes=old)
+    ledger.issue(new)
+    query = ReprolithQuery(Catalog(), ledger)
+
+    assert query.verdict(certificate_digest(old))["superseded_by"] == certificate_digest(new)
+    assert query.certificate(certificate_digest(old))["superseded_by"] == certificate_digest(new)
+    assert query.verdict(certificate_digest(new))["superseded_by"] is None
+
+
+def test_the_current_certificate_leads_even_when_a_middle_link_was_never_published() -> None:
+    """Without the missing link, the superseded root looks like a head; order must not be arbitrary."""
+    from reprolith import Catalog, CertificateLedger, certificate_digest
+
+    root = _paper_cert("One paper", Verdict.REPRODUCED)
+    middle = _paper_cert("One paper", Verdict.FAILED, supersedes=root)
+    current = _paper_cert("One paper", Verdict.FAILED, supersedes=middle)
+    for order in ((root, current), (current, root)):
+        ledger = CertificateLedger()
+        for cert in order:
+            ledger.issue(cert)
+        digests = ReprolithQuery(Catalog(), ledger).certificates_for(title="One paper")
+        # The deeper chain leads, whichever order the ledger happens to hold them in.
+        assert digests[0] == certificate_digest(current), order

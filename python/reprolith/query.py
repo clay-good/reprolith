@@ -185,10 +185,16 @@ class ReprolithQuery:
         """The scope-qualified verdict for a digest — never a bare boolean.
 
         Returns the overall verdict, per-claim verdicts, per-verdict counts, the names of
-        any assumption-qualified claims, and the inescapable scope flag, as one object.
+        any assumption-qualified claims, the inescapable scope flag, and ``superseded_by`` — the
+        digest of the correction that replaced this certificate, when there is one, so a stale
+        verdict never travels as the current answer.
         """
         cert = self._ledger.get(digest)
-        return self._verdict_view(cert) if cert is not None else None
+        if cert is None:
+            return None
+        view = self._verdict_view(cert)
+        view["superseded_by"] = self.superseded_by(digest)
+        return view
 
     def gaps(self, digest: str) -> list[dict[str, Any]] | None:
         """The structured "what was missing" report for a digest, or ``None``."""
@@ -213,8 +219,27 @@ class ReprolithQuery:
         pubmed_id: str | None = None,
         accession: str | None = None,
     ) -> list[str]:
-        """Digests of every certificate issued for a paper, newest certification first."""
-        wanted = Identifiers(title=title or "", doi=doi, pubmed_id=pubmed_id, accession=accession)
+        """Digests of every certificate issued for a paper, newest certification first.
+
+        An ``accession`` is resolved through the catalog first: a certificate is keyed by the
+        paper's title/doi/pubmed and carries no accession, so matching one directly would always
+        come back empty — silently reporting "no certificates" for a paper that has one.
+
+        Heads are ordered by how far down a supersession chain they sit, deepest first, rather
+        than by whatever order the ledger happens to hold them in. Insertion order is arbitrary
+        (loading a directory sorts by digest filename), and two situations put more than one head
+        in the list: a diamond, and a chain whose middle link was never published — in which case
+        the superseded root looks like a head, because nothing in the ledger says otherwise. With
+        arbitrary order, position 0 could be a superseded verdict while the current one sat below
+        it, under a heading that promises newest first.
+        """
+        if accession is not None and not (title or doi or pubmed_id):
+            entry = self._catalog.find(Identifiers(title="", accession=accession))
+            if entry is None:
+                return []
+            ids = entry.identifiers
+            title, doi, pubmed_id = ids.title, ids.doi, ids.pubmed_id
+        wanted = Identifiers(title=title or "", doi=doi, pubmed_id=pubmed_id)
         keys = wanted.keys()
         matched = {
             digest: cert
@@ -222,17 +247,40 @@ class ReprolithQuery:
             if self._paper_keys(cert).intersection(keys)
         }
         superseded = {c.supersedes for c in matched.values() if c.supersedes is not None}
-        # A head is a matched certificate nothing else supersedes; walk each head's chain
-        # (newest first) and keep the digests that belong to this paper.
+        heads = [(d, c) for d, c in matched.items() if d not in superseded]
+        heads.sort(key=lambda item: -self._lineage_depth(item[1]))
         ordered: list[str] = []
-        for head_digest, cert in matched.items():
-            if head_digest in superseded:
-                continue
+        for _, cert in heads:
             for link in self._ledger.chain(cert):
                 digest = certificate_digest(link)
                 if digest in matched and digest not in ordered:
                     ordered.append(digest)
         return ordered
+
+    def _lineage_depth(self, cert: Certificate) -> int:
+        """How deep this certificate's lineage runs, counting a link the ledger does not hold.
+
+        A chain whose middle was never published truncates, so length alone cannot separate the
+        current certificate from the superseded root it appears to sit beside: both walk one step.
+        Counting the unresolved link puts the deeper lineage first, which is the one a reader means
+        by "newest".
+        """
+        lineage = self._ledger.chain(cert)
+        oldest = lineage[-1]
+        return len(lineage) + (1 if oldest.supersedes is not None else 0)
+
+    def superseded_by(self, digest: str) -> str | None:
+        """The digest of the certificate that supersedes this one, or ``None`` if it is current.
+
+        A certificate records the one it supersedes, but nothing in the stored content points
+        forward — so a reader holding a digest (the identity the project asks people to cite) had
+        no way to learn that a correction had since flipped the verdict. The ledger holds every
+        link needed to answer it, so every certificate view carries it.
+        """
+        for other_digest, cert in self._ledger.items():
+            if cert.supersedes == digest:
+                return other_digest
+        return None
 
     # --- internal view builders (single source: the stored Certificate) ------------
 
@@ -258,6 +306,7 @@ class ReprolithQuery:
         view = cert.content()
         view["verdict"] = self._verdict_view(cert)
         view["gaps"] = gap_items(cert)
+        view["superseded_by"] = self.superseded_by(certificate_digest(cert))
         return view
 
     @staticmethod

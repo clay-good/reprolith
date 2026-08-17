@@ -70,14 +70,21 @@ class CertificateLedger:
         """The supersession lineage of ``cert``, newest first, back to the root.
 
         Walks ``supersedes`` links through the ledger. Stops at the first predecessor not
-        present (a truncated history is reported as what is retained, not an error).
+        present (a truncated history is reported as what is retained, not an error), and at a
+        digest already seen — a cycle needs a hash fixed point and so cannot arise through
+        :meth:`issue`, but this walk is the kind that hangs forever if one is ever injected, and
+        the dossier lineage in ``revision.py`` is guarded the same way.
         """
         lineage: list[Certificate] = [cert]
+        seen = {certificate_digest(cert)}
         current = cert
         while current.supersedes is not None:
+            if current.supersedes in seen:
+                break
             prior = self._by_digest.get(current.supersedes)
             if prior is None:
                 break
+            seen.add(current.supersedes)
             lineage.append(prior)
             current = prior
         return tuple(lineage)
