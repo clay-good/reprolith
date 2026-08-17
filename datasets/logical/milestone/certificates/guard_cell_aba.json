@@ -3,23 +3,23 @@
     {
       "assumption_qualified": false,
       "claim_id": "guard_cell_aba-fixed_points",
-      "discrepancy": "reproduced 16 with periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] vs the independent 16 with periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]",
+      "discrepancy": "reproduced 16 fixed points, set digest b19c8579ee8a\u2026 vs the independent 16, b19c8579ee8a\u2026",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
-      "method": "attractor-signature-match",
-      "quantity": "steady-state (fixed-point) count",
+      "method": "attractor-set-match",
+      "quantity": "steady-state (fixed-point) set",
       "reference_kind": "numeric",
       "root_cause": null,
       "source_location": "Guard-cell abscisic-acid signalling; via Cell Collective (Helikar et al. 2012)",
-      "tolerance": "reproduced<=0, partial<=0 (class-default)",
+      "tolerance": "exact match on the fixed-point set (SHA-256 of the sorted states)",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
     }
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": null,
+    "algorithm": "synchronous-update, sat-fixed-points (z3 5.0.0)",
     "engine": "reprolith-logical",
     "version": "0.0.1"
   },

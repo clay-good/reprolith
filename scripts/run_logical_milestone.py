@@ -19,6 +19,7 @@ the repo root:
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections import Counter
 from pathlib import Path
@@ -27,7 +28,6 @@ from reprolith import (
     Attribution,
     Catalog,
     ComparisonMethod,
-    EnginePin,
     FailureMode,
     Fault,
     GroundTruth,
@@ -36,7 +36,6 @@ from reprolith import (
     OverallVerdict,
     PaperIdentity,
     RunMetadata,
-    __version__,
     assess_match,
     build_certificate,
     certificate_digest,
@@ -44,6 +43,14 @@ from reprolith import (
     render_human,
     run_test_set,
 )
+from reprolith.logical import solver_pin
+
+
+def _fixed_point_digest(net, fixed) -> str:
+    """SHA-256 of the fixed-point set, in the convention the committed reference publishes."""
+    encoded = sorted("".join(str(state[n]) for n in net.nodes) for state in fixed)
+    return hashlib.sha256("\n".join(encoded).encode("utf-8")).hexdigest()
+
 
 REPO = Path(__file__).resolve().parents[1]
 LOG = REPO / "datasets" / "logical"
@@ -54,7 +61,11 @@ def main() -> None:
     scalable = json.loads(
         (LOG / "cross_validation" / "scalable_fixed_points.json").read_text(encoding="utf-8")
     )
-    pin = EnginePin(engine="reprolith-logical", version=__version__)  # exact analysis, no external solver
+    # The pin names the update scheme every number here was computed under (the same network has
+    # different cyclic attractors under asynchronous updating) and, for the large networks, the SAT
+    # solver that actually found their fixed points.
+    pin = solver_pin()
+    sat_pin = solver_pin(sat=True)
     catalog = Catalog()
     certified = {}
 
@@ -69,16 +80,22 @@ def main() -> None:
         plans.append((key, entry["rules"], entry["citation"], "attractors",
                       (entry["n_attractors"], sorted(entry["attractor_periods"])),
                       "attractor signature (count and periods)",
+                      "the attractor count and every period",
                       f"{reference['_source']}: {entry['n_attractors']} attractors, "
                       f"periods {sorted(entry['attractor_periods'])}"))
     for key in sorted(scalable["models"]):
         entry = scalable["models"][key]
+        # The reference publishes the SHA-256 of the fixed-point set itself, so compare that: a
+        # count alone is satisfied by any network with the same number of steady states, and
+        # single-rule inversions of these very models keep the count while sharing not one state.
         plans.append((key, entry["rules"], entry["citation"], "fixed_points",
-                      (entry["n_fixed_points"], [1] * entry["n_fixed_points"]),
-                      "steady-state (fixed-point) count",
-                      f"{scalable['_source']}: {entry['n_fixed_points']} fixed points"))
+                      (entry["n_fixed_points"], entry["fixed_points_sha256"]),
+                      "steady-state (fixed-point) set",
+                      "the fixed-point set (SHA-256 of the sorted states)",
+                      f"{scalable['_source']}: {entry['n_fixed_points']} fixed points, "
+                      f"set digest {entry['fixed_points_sha256'][:12]}…"))
 
-    for key, rules, citation, kind, expected, quantity, source in plans:
+    for key, rules, citation, kind, expected, quantity, exact_on, source in plans:
         catalog.add(
             Identifiers(title=citation, accession=key),
             ModelClass.LOGICAL,
@@ -93,18 +110,28 @@ def main() -> None:
         if kind == "attractors":
             attractors = net.attractors()
             found = (len(attractors), sorted(len(a) for a in attractors))
+            method = ComparisonMethod.ATTRACTOR_SIGNATURE_MATCH
+            discrepancy = (f"reproduced {found[0]} attractors with periods {found[1]} vs "
+                           f"the independent {expected[0]} with periods {expected[1]}")
+            entry_pin = pin
         else:
             fixed = net.fixed_points()
-            found = (len(fixed), [1] * len(fixed))
+            found = (len(fixed), _fixed_point_digest(net, fixed))
+            # A set digest is a set match, not a signature match — say so, and pin the solver that
+            # produced it: these networks are past the enumeration ceiling and are solved by z3.
+            method = ComparisonMethod.ATTRACTOR_SET_MATCH
+            discrepancy = (f"reproduced {found[0]} fixed points, set digest {found[1][:12]}… vs "
+                           f"the independent {expected[0]}, {expected[1][:12]}…")
+            entry_pin = sat_pin
         matched = found == expected
         assessment = assess_match(
             claim_id=f"{key}-{kind}",
             quantity=quantity,
             source_location=citation,
             matched=matched,
-            method=ComparisonMethod.ATTRACTOR_SIGNATURE_MATCH,
-            discrepancy=f"reproduced {found[0]} with periods {found[1]} vs "
-                        f"the independent {expected[0]} with periods {expected[1]}",
+            method=method,
+            exact_on=exact_on,
+            discrepancy=discrepancy,
             attribution=None if matched else Attribution(
                 mode=FailureMode.UNSPECIFIED_UPDATE_SCHEME,
                 implicated=quantity, fault=Fault.RECONSTRUCTION,
@@ -112,7 +139,7 @@ def main() -> None:
         )
         certified[key] = build_certificate(
             paper=PaperIdentity(title=citation, doi=""),
-            engine_pin=pin,
+            engine_pin=entry_pin,
             assessments=[assessment],
         )
 

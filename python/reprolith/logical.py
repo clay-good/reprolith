@@ -423,6 +423,28 @@ def _z3() -> Any:
     return z3
 
 
+def solver_pin(*, scheme: UpdateScheme = UpdateScheme.SYNCHRONOUS, sat: bool = False) -> EnginePin:
+    """The pin naming what actually computed a logical result, and under which update scheme.
+
+    Two things a logical certificate needs and could not previously state. The update scheme is a
+    load-bearing modelling choice this module already treats as a first-class gap — the same
+    network has different cyclic attractors under synchronous and asynchronous updating, so a
+    certificate that omits it names a number a third party cannot reproduce. And a network past
+    :data:`MAX_ENUMERABLE_NODES` is not solved by this module's enumeration at all but by z3, whose
+    version belongs on the certificate for the same reason the FBA class reads its scipy version:
+    a published certificate names the software that solved it.
+    """
+    from . import __version__  # local: the package imports this module while initializing
+
+    algorithm = f"{scheme.value}-update, "
+    if sat:
+        z3 = _z3()
+        algorithm += f"sat-fixed-points (z3 {z3.get_version_string()})"
+    else:
+        algorithm += "exhaustive-state-enumeration"
+    return EnginePin(engine="reprolith-logical", version=__version__, algorithm=algorithm)
+
+
 def _translate_boolean_ast(node: ast.AST, symbols: Mapping[str, Any], ops: Mapping[str, Any]) -> Any:
     """Translate an allow-listed Boolean AST into a backend expression via ``ops``.
 
@@ -712,5 +734,6 @@ __all__ = [
     "judge_steady_state",
     "logical_dossier",
     "parse_boolean_network",
+    "solver_pin",
     "validate_logical",
 ]

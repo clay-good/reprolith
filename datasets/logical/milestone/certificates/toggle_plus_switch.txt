@@ -1,11 +1,11 @@
 REPRODUCTION CERTIFICATE — A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch
-Engine pin: reprolith-logical 0.0.1
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
 
 CLAIMS
-  [toggle_plus_switch-attractors] attractor signature (count and periods): reproduced (source A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch via attractor-signature-match, tol=reproduced<=0, partial<=0 (class-default))
+  [toggle_plus_switch-attractors] attractor signature (count and periods): reproduced (source A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch via attractor-signature-match, tol=exact match on the attractor count and every period)
 
 SCOPE
   This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

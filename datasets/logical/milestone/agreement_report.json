@@ -53,21 +53,21 @@
       "agree": true,
       "entry": "guard_cell_aba",
       "expected": "reproduced",
-      "source": "sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0: 16 fixed points"
+      "source": "sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0: 16 fixed points, set digest b19c8579ee8a\u2026"
     },
     {
       "actual": "reproduced",
       "agree": true,
       "entry": "leukemia",
       "expected": "reproduced",
-      "source": "sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0: 71 fixed points"
+      "source": "sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0: 71 fixed points, set digest e37a90b7bc27\u2026"
     },
     {
       "actual": "reproduced",
       "agree": true,
       "entry": "mapk_cancer",
       "expected": "reproduced",
-      "source": "sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0: 12 fixed points"
+      "source": "sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0: 12 fixed points, set digest 90613385f4a0\u2026"
     }
   ],
   "total": 9

@@ -3,7 +3,7 @@
     {
       "assumption_qualified": false,
       "claim_id": "thaliana-attractors",
-      "discrepancy": "reproduced 10 with periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1] vs the independent 10 with periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]",
+      "discrepancy": "reproduced 10 attractors with periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1] vs the independent 10 with periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
@@ -12,14 +12,14 @@
       "reference_kind": "numeric",
       "root_cause": null,
       "source_location": "Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006)",
-      "tolerance": "reproduced<=0, partial<=0 (class-default)",
+      "tolerance": "exact match on the attractor count and every period",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
     }
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": null,
+    "algorithm": "synchronous-update, exhaustive-state-enumeration",
     "engine": "reprolith-logical",
     "version": "0.0.1"
   },

@@ -238,3 +238,24 @@ def test_a_tolerance_may_not_call_itself_a_class_default_unless_it_is_one() -> N
     # The same width is fine when it is declared as the judgment call it is.
     wide = Tolerance(10.0, 10.0, ToleranceSource.REVIEWER_OVERRIDE, rationale="order-of-magnitude check")
     assert wide.label().endswith("(reviewer-override)")
+
+
+def test_a_class_default_tolerance_must_be_this_comparisons_default() -> None:
+    # Tolerance alone can only check membership in the flat set of every documented default, so the
+    # widest pair in the table (a digitized-figure population envelope) could be adopted by a plain
+    # numeric scalar claim: a 24% relative error certified `reproduced` under a provenance reading
+    # `class-default`, which is exactly the escape the rationale requirement exists to close.
+    import pytest
+    from reprolith.oracle import Tolerance, ToleranceSource, judge_scalar
+
+    widest = Tolerance(0.25, 0.50, ToleranceSource.CLASS_DEFAULT)
+    with pytest.raises(ValueError, match="not the class default"):
+        judge_scalar(claim_id="c1", quantity="Cmax", source_location="Table 1",
+                     reported=100.0, predicted=124.0, tolerance=widest)
+    # The same width is fine once it is declared for what it is, with a reason.
+    stated = Tolerance(0.25, 0.50, ToleranceSource.PAPER_STATED,
+                       rationale="the paper reports Cmax to one significant figure")
+    assessment = judge_scalar(claim_id="c1", quantity="Cmax", source_location="Table 1",
+                              reported=100.0, predicted=124.0, tolerance=stated)
+    assert assessment.verdict.value == "reproduced"
+    assert assessment.tolerance_source == "paper-stated"

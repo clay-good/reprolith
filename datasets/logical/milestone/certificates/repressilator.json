@@ -3,7 +3,7 @@
     {
       "assumption_qualified": false,
       "claim_id": "repressilator-attractors",
-      "discrepancy": "reproduced 2 with periods [2, 6] vs the independent 2 with periods [2, 6]",
+      "discrepancy": "reproduced 2 attractors with periods [2, 6] vs the independent 2 with periods [2, 6]",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
@@ -12,14 +12,14 @@
       "reference_kind": "numeric",
       "root_cause": null,
       "source_location": "Three-gene repressilator ring \u2014 a synchronous limit cycle, no fixed point",
-      "tolerance": "reproduced<=0, partial<=0 (class-default)",
+      "tolerance": "exact match on the attractor count and every period",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
     }
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": null,
+    "algorithm": "synchronous-update, exhaustive-state-enumeration",
     "engine": "reprolith-logical",
     "version": "0.0.1"
   },

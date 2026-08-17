@@ -48,9 +48,20 @@ def test_every_committed_certificate_is_a_reproduced_attractor_verdict() -> None
         assert content["overall"] == "reproduced"
         assert content["scope"]["machine"] == "reproducible-not-correct-not-clinical"
         # Judged by the discrete attractor oracle, not a curve or scalar metric — and named for
-        # what the independent reference supports: how many attractors and each one's period,
-        # not the attractor states themselves.
-        assert content["assessments"][0]["method"] == "attractor-signature-match"
+        # exactly what the independent reference supports. A small model's reference gives the
+        # attractor count and each period (a signature, weaker than a set match); a large model's
+        # gives the SHA-256 of the fixed-point set itself, which is a set match. Neither may claim
+        # the other's strength, and the tolerance column says which projection was compared rather
+        # than printing a zero that reads as an exact match of the whole quantity.
+        assessment = content["assessments"][0]
+        assert assessment["method"] in ("attractor-signature-match", "attractor-set-match")
+        assert assessment["tolerance"].startswith("exact match on ")
+        if assessment["method"] == "attractor-set-match":
+            assert "fixed-point set" in assessment["tolerance"]
+        # The update scheme every number was computed under is on the pin: the same network has
+        # different cyclic attractors asynchronously, so a certificate omitting it names a result
+        # a third party cannot reproduce.
+        assert content["engine_pin"]["algorithm"].startswith("synchronous-update")
 
 
 def test_the_catalog_recorded_every_entry_as_a_certified_logical_model() -> None:

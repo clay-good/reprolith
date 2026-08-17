@@ -355,6 +355,41 @@ def verdict_for(measure: float, tol: Tolerance) -> Verdict:
     return Verdict.FAILED
 
 
+def _require_default_is_the_default(
+    tol: Tolerance,
+    method: ComparisonMethod,
+    reference_kind: ReferenceKind,
+    level: ReproductionLevel,
+) -> None:
+    """Refuse a ``class-default`` tolerance that is not *this* comparison's documented default.
+
+    :class:`Tolerance` can only check membership in the flat set of every documented pair, because
+    it does not know which comparison it is for. That is not enough: the widest pair in the table
+    (a digitized-figure population envelope, 0.25/0.50) is a documented default, so a plain numeric
+    scalar claim could adopt it and certify a 24% relative error as ``reproduced`` under a
+    provenance reading ``class-default`` — the exact escape the rationale requirement exists to
+    close. Here both the method and the reference kind are known, so the default is exactly one
+    pair. An exact comparison (an attractor signature, a FROG fingerprint) has no entry in the
+    table and is held to 0/0.
+    """
+    if tol.source is not ToleranceSource.CLASS_DEFAULT:
+        return
+    if level is ReproductionLevel.ESTIMATION:
+        expected: Tolerance | None = _ESTIMATION_DEFAULT
+    else:
+        expected = _DEFAULTS.get((method, reference_kind))
+    allowed = (
+        (expected.reproduced_within, expected.partial_within) if expected else (0.0, 0.0)
+    )
+    if (tol.reproduced_within, tol.partial_within) != allowed:
+        raise ValueError(
+            f"{(tol.reproduced_within, tol.partial_within)} is not the class default for "
+            f"{method.value} against a {reference_kind.value} reference (that is {allowed}); "
+            "a different width is a paper-stated or reviewer-override choice and must state "
+            "its rationale"
+        )
+
+
 def _assemble(
     *,
     claim_id: str,
@@ -368,7 +403,9 @@ def _assemble(
     attribution: Attribution | None,
     assumption_qualified: bool,
     level: ReproductionLevel = ReproductionLevel.SIMULATION,
+    tolerance_label: str | None = None,
 ) -> ClaimAssessment:
+    _require_default_is_the_default(tol, method, reference_kind, level)
     verdict = verdict_for(measure, tol)
     if verdict in (Verdict.PARTIAL, Verdict.FAILED):
         if attribution is None:
@@ -385,7 +422,7 @@ def _assemble(
         source_location=source_location,
         level=level,
         method=method.value,
-        tolerance=tol.label(),
+        tolerance=tolerance_label or tol.label(),
         tolerance_source=tol.source.value,
         discrepancy=discrepancy,
         root_cause=root_cause,
@@ -589,6 +626,7 @@ def assess_match(
     reference_kind: ReferenceKind = ReferenceKind.NUMERIC,
     attribution: Attribution | None = None,
     assumption_qualified: bool = False,
+    exact_on: str | None = None,
 ) -> ClaimAssessment:
     """Assemble a pass/fail assessment for a comparison that is a match-or-not, not a scalar error.
 
@@ -597,9 +635,15 @@ def assess_match(
     the shared assessment contract — ``matched`` reproduces, otherwise it fails — so such a verdict
     carries the same tolerance provenance and attribution invariant as a scalar one. A non-match
     still requires an ``attribution``.
+
+    ``exact_on`` names *what* agreed exactly, and is how the certificate should state it. Without
+    it the tolerance renders as ``reproduced<=0, partial<=0``, which a reader takes for an exact
+    match of the whole quantity — but a boolean comparison is only ever exact on the projection it
+    compared, and a zero written in the tolerance column cannot say which projection that was.
     """
     tol = Tolerance(0.0, 0.0, ToleranceSource.CLASS_DEFAULT)
     return _assemble(
+        tolerance_label=f"exact match on {exact_on}" if exact_on else None,
         claim_id=claim_id,
         quantity=quantity,
         source_location=source_location,

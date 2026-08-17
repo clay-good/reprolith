@@ -1,11 +1,11 @@
 REPRODUCTION CERTIFICATE — Budding yeast cell-cycle network (Li et al. 2004)
-Engine pin: reprolith-logical 0.0.1
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
 
 CLAIMS
-  [budding_yeast-attractors] attractor signature (count and periods): reproduced (source Budding yeast cell-cycle network (Li et al. 2004) via attractor-signature-match, tol=reproduced<=0, partial<=0 (class-default))
+  [budding_yeast-attractors] attractor signature (count and periods): reproduced (source Budding yeast cell-cycle network (Li et al. 2004) via attractor-signature-match, tol=exact match on the attractor count and every period)
 
 SCOPE
   This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.
