@@ -81,6 +81,8 @@ depends on the variability model and the sampling.
   assumptions the manuscript often under-specifies
 - **AND** the qualification is only lifted when the paper fully specifies the variability model
   and the sampling is made deterministic
+- **AND** the qualification names what it qualifies: the sampling the bands came from is recorded
+  as a load-bearing assumption, so the downgrade is never a flag pointing at nothing
 
 #### Scenario: Distributional tolerance provenance
 
@@ -110,6 +112,14 @@ simulation verdict so the two levels are never conflated.
   is distinguishable from simulation-level verdicts on the same paper
 - **AND** a recovered estimate is compared to the paper's reported estimate within a declared
   tolerance, with the same attribution and provenance discipline as any other verdict
+
+#### Scenario: A supplied estimate states how it was recovered
+
+- **WHEN** an estimate is judged that Reprolith was handed rather than re-derived itself
+- **THEN** the claim states the estimation protocol behind it — the objective, the optimizer, the
+  starting values, and the dataset — and is refused without one
+- **AND** the protocol travels on the assessment, because a re-fit nobody can repeat is not
+  evidence and a recovered value equal to the reported one proves nothing on its own
 
 #### Scenario: Estimation tolerance reflects re-fit sensitivity
 

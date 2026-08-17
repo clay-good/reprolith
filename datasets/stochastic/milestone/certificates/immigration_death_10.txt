@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Immigration-death process (k=10, γ=1) — Poisson stationary mean
-Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev 6242eca9451c)
+Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev 275731c931fb)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
@@ -9,8 +9,13 @@ CLAIMS
   [immigration_death_10-mean] mean copy number: reproduced [assumption-qualified] (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       sampling: SSA ensemble: 400 trajectories to t=40, seed 20260807
 
+ASSUMPTIONS (supplied by Reprolith, not the paper)
+  [ssa-sampling-immigration_death_10-mean] the mean judged here is the average of an ensemble Reprolith sampled, not a number the paper's own run produced -> SSA ensemble: 400 trajectories to t=40, seed 20260807 [load-bearing]
+      basis: a finite ensemble's mean differs from the model's true mean by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible (attributed to reprolith)
+
 WHAT WAS MISSING
   [immigration_death_10-mean] mean copy number: reproduced only under an assumption Reprolith supplied, not a clean pass
+  the mean judged here is the average of an ensemble Reprolith sampled, not a number the paper's own run produced — Reprolith assumed SSA ensemble: 400 trajectories to t=40, seed 20260807 (a finite ensemble's mean differs from the model's true mean by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible)
 
 SCOPE
   This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

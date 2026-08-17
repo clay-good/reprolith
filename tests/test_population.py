@@ -190,6 +190,7 @@ def test_certify_population_assembles_a_qualified_certificate() -> None:
             PopulationClaim(
                 claim_id="env", quantity="concentration envelope",
                 reported=_REF, predicted=_perturb(_REF, 1.02), source_location="Fig 5",
+                protocol="virtual population: 1000 subjects, seed 7",
             ),
         ],
     )
@@ -197,6 +198,12 @@ def test_certify_population_assembles_a_qualified_certificate() -> None:
     assert cert.assessments[0].assumption_qualified is True
     # A reproduced-but-qualified population figure cannot earn a clean overall verdict.
     assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+    # And the qualification names what it is qualifying: the sampling behind the bands, on the
+    # record as a load-bearing assumption rather than a flag pointing at nothing.
+    assumption = cert.assumptions[0]
+    assert assumption.id == "population-sampling-env"
+    assert assumption.chosen == "virtual population: 1000 subjects, seed 7"
+    assert assumption.load_bearing is True
 
 
 def test_qualified_population_reproduction_yields_partial_certificate() -> None:
@@ -256,11 +263,10 @@ def test_a_population_verdict_records_the_ensemble_it_rests_on() -> None:
     assert cert.assessments[0].protocol == "virtual population: 500 subjects, seed 20260816"
     assert cert.assessments[0].to_dict()["protocol"] == claim.protocol
 
-    # Omitted, the field stays absent from the stored content — no new key on existing certificates.
-    plain = certify_population(
-        paper=PaperIdentity(title="P", doi="10.1/x"),
-        engine_pin=EnginePin(engine="copasi", version="4.46"),
-        claims=[PopulationClaim(claim_id="p1", quantity="q", reported=_REF, predicted=_REF,
-                                source_location="Fig 3")],
-    )
-    assert "protocol" not in plain.assessments[0].to_dict()
+    # Omitting it is refused where the claim is built. Reprolith does not simulate the population
+    # here — the bands are handed in — so the sampling is the only evidence on the certificate that
+    # a run produced them, and `predicted == reported` would otherwise publish a reproduction of a
+    # population nobody can re-draw.
+    with pytest.raises(ValueError, match="states no protocol"):
+        PopulationClaim(claim_id="p1", quantity="q", reported=_REF, predicted=_REF,
+                        source_location="Fig 3", protocol="  ")

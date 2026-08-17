@@ -403,7 +403,33 @@ def certify_stochastic(
     re-run is not evidence: the seed and trajectory count are what make this class's verdicts
     byte-reproducible (spec: "A pinned seed is part of the protocol"), and recording them is also
     what makes a seed that merely happened to agree visible to a reader.
+
+    A qualified claim's qualification is also written down as an
+    :class:`~reprolith.model.Assumption` naming that sampling. The flag on its own says "this
+    reproduction rests on an assumption Reprolith supplied" while listing none, which reads to
+    anyone outside this class like a missing record rather than the class's real caveat: the
+    ensemble is Reprolith's choice, and the verdict moves with it.
     """
+    claims = tuple(claims)
+    sampling = tuple(
+        Assumption(
+            id=f"ssa-sampling-{claim.claim_id}",
+            description=(
+                "the mean judged here is the average of an ensemble Reprolith sampled, not a "
+                "number the paper's own run produced"
+            ),
+            chosen=_protocol(claim),
+            basis=(
+                "a finite ensemble's mean differs from the model's true mean by sampling noise of "
+                "a size the trajectory count sets, so the verdict moves with the count and the "
+                "seed; both are pinned here to make it byte-reproducible"
+            ),
+            load_bearing=True,
+            alternatives=("a different seed", "a larger ensemble"),
+        )
+        for claim in claims
+        if claim.assumption_qualified
+    )
     assessments = []
     for claim in claims:
         ensemble = ensemble_final_counts(
@@ -437,7 +463,7 @@ def certify_stochastic(
         assessments.append(replace(assessment, protocol=_protocol(claim)))
     return build_certificate(
         paper=paper, engine_pin=engine_pin,
-        assessments=assessments, assumptions=tuple(assumptions),
+        assessments=assessments, assumptions=(*assumptions, *sampling),
     )
 
 

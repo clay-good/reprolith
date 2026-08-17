@@ -12,6 +12,13 @@ from reprolith.engine import NonFiniteSimulation, require_finite
 
 _CLAIMS = Path(__file__).parent.parent / "datasets" / "pkpd_claims.json"
 
+# An estimation claim must state how its estimate was recovered: this glue does not run the re-fit,
+# so the objective, optimizer, starting values, and dataset are the only evidence one happened.
+_PROTOCOL = (
+    "maximum likelihood, Nelder-Mead from the paper's Table 2 initial estimates, "
+    "over the shipped plasma dataset"
+)
+
 
 def test_require_finite_passes_finite_and_rejects_inf_nan() -> None:
     # A diverging/too-stiff model yields inf/nan; require_finite signals that so the entry can
@@ -93,10 +100,12 @@ def test_certify_estimation_records_a_distinct_estimation_verdict() -> None:
             EstimationClaim(
                 claim_id="cl", quantity="CL/F estimate", reported=3.20, recovered=3.30,
                 source_location="Table 3",
+                protocol=_PROTOCOL,
             ),
             EstimationClaim(
                 claim_id="vc", quantity="Vc estimate", reported=10.0, recovered=18.0,
                 source_location="Table 3",
+                protocol=_PROTOCOL,
                 shortfall=Attribution(
                     mode=FailureMode.LOCAL_OPTIMUM, implicated="central volume",
                     fault=Fault.RECONSTRUCTION,
@@ -109,3 +118,15 @@ def test_certify_estimation_records_a_distinct_estimation_verdict() -> None:
     assert verdicts["cl"] is Verdict.REPRODUCED  # ~3% inside the 10% estimation default
     assert verdicts["vc"] is Verdict.FAILED
     assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+    assert all(a.protocol == _PROTOCOL for a in cert.assessments)
+
+
+def test_an_estimation_claim_that_states_no_protocol_is_refused() -> None:
+    """A re-fit nobody can repeat is not evidence, and `recovered == reported` proves nothing."""
+    from reprolith import EstimationClaim
+
+    with pytest.raises(ValueError, match="states no protocol"):
+        EstimationClaim(
+            claim_id="cl", quantity="CL/F estimate", reported=3.2, recovered=3.2,
+            source_location="Table 3", protocol="",
+        )

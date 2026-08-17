@@ -169,6 +169,25 @@ needless re-run of a dependency-free solver costs seconds; a missed one publishe
 current code would not produce. A test holds the corpus to it: a committed certificate carrying an
 older revision than the code fails, and the fix is re-running that class's milestone script.
 
+## A qualification that names nothing, and a number with nothing behind it
+
+Two flags were carrying weight they could not support.
+
+The stochastic and population classes qualify every verdict they issue, correctly: the mean of an
+ensemble and the shape of an envelope both move with the sampling that produced them. But
+`assumption_qualified` reads as "this reproduced only because of an assumption Reprolith supplied",
+and the certificates listed none — a reader saw a downgrade with no cause attached, which is
+indistinguishable from a bookkeeping slip. Both classes now record the sampling itself as a
+load-bearing assumption, with the ensemble or the subject count and seed as the value chosen and
+"a different seed" among the alternatives, so the qualification points at something.
+
+The estimation and population glue does not run the thing it certifies — the re-fit and the virtual
+population are the deferred halves, so the recovered estimate and the simulated bands are handed in.
+That made the protocol the only evidence on the certificate that a run happened at all, and it was
+optional: a caller could pass `recovered == reported` with no objective, optimizer, starting values,
+or dataset stated and publish a clean estimation pass with nothing behind it. Both claim types now
+refuse a blank protocol where the claim is built, the way an engine pin refuses a missing version.
+
 ## Known limits the audits found and left in place
 
 Recorded rather than fixed, because each needs a design change rather than a patch, and none
@@ -209,11 +228,10 @@ can produce a certificate that claims more than it checked:
   the only executing test skips in every job, and what CI actually checks is that a committed
   JSON file says `true`. That file records no engine versions, so its staleness cannot be detected
   either.
-- **An estimation or population certificate is built from numbers the caller supplies**, with no
-  run of its own, yet accepts any engine pin — so it can name an engine that is not installed.
-- **A stochastic certificate's assumption-qualified flag names no assumption.** The flag carries
-  the class's real caveat (the verdict depends on the seed and ensemble size, which the protocol
-  now records), but it reads as "an assumption Reprolith supplied" with none listed.
+- **An estimation or population certificate accepts any engine pin.** Both are built from numbers
+  the caller supplies, with no run of their own, so the pin can name an engine that is not
+  installed. Validating it needs engine dispatch, which does not exist; what the claim *can* be
+  held to — the protocol behind the supplied number — it now is.
 - The curve oracle's RMSE can average a localized peak miss into a pass, and `relative_error`
   against an exactly-zero reference falls back to an absolute comparison judged at a relative
   tolerance. Both are long-standing, both documented, neither exhibited by any committed

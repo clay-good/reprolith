@@ -37,6 +37,8 @@ sampling is pinned, not left to chance.
   and the duration — in the certificate's own content and in its human rendering
 - **AND** this is what makes the result checkable rather than merely asserted: a reader can re-run
   it exactly, and a seed that happened to agree can no longer pass without leaving a record
+- **AND** the sampling is also recorded as the load-bearing assumption the qualified verdict rests
+  on, so the certificate's qualification names its cause instead of listing none
 
 #### Scenario: An ensemble too small to resolve the claim abstains
 

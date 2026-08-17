@@ -246,6 +246,13 @@ def test_certify_stochastic_produces_a_qualified_reproduced_certificate() -> Non
     # Reproduced but qualified by the sampling dependence -> the certificate cannot round up to clean.
     assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
     assert cert.scope.machine  # the scope flag travels with a stochastic certificate too
+    # The qualification names what it qualifies. A flag reading "this rests on an assumption
+    # Reprolith supplied" while listing none is indistinguishable from a missing record; the
+    # ensemble is the assumption, and it is on the certificate as one.
+    assumption = cert.assumptions[0]
+    assert assumption.id == "ssa-sampling-A-mean"
+    assert assumption.chosen == "SSA ensemble: 400 trajectories to t=40, seed 20260807"
+    assert assumption.load_bearing is True and assumption.attributed_to == "reprolith"
 
 
 def test_stochastic_dossier_records_species_reactions_and_sampling_gap() -> None:

@@ -236,10 +236,22 @@ class EstimationClaim:
     reported: float
     recovered: float
     source_location: str
+    protocol: str
     tolerance: Tolerance | None = None
     assumption_qualified: bool = False
     shortfall: Attribution | None = field(default=None)
-    protocol: str | None = None
+
+    def __post_init__(self) -> None:
+        # Refused rather than defaulted: this glue does not run the re-fit, so the protocol is the
+        # only evidence on the certificate that one happened at all. Without it a caller can hand
+        # in ``recovered == reported`` and publish an unqualified clean estimation pass that no
+        # reader can repeat and nothing in the record contradicts.
+        if not self.protocol.strip():
+            raise ValueError(
+                f"estimation claim {self.claim_id!r} states no protocol; an estimate Reprolith "
+                "did not re-derive itself is only evidence alongside the objective, optimizer, "
+                "starting values, and dataset it came from"
+            )
 
 
 def certify_estimation(
@@ -306,11 +318,23 @@ class PopulationClaim:
     reported: tuple[PercentileBand, ...]
     predicted: tuple[PercentileBand, ...]
     source_location: str
+    protocol: str
     tolerance: Tolerance | None = None
     reference_kind: ReferenceKind = ReferenceKind.NUMERIC
     assumption_qualified: bool = True
     shortfall: Attribution | None = field(default=None)
-    protocol: str | None = None
+
+    def __post_init__(self) -> None:
+        # Refused rather than defaulted, for the reason an estimation claim's is: this glue does not
+        # simulate the population, so the sampling is the only evidence the bands came from a run.
+        # An envelope's verdict moves with its ensemble size, so without it a reader cannot tell a
+        # reproduction from a subject count chosen until one appeared.
+        if not self.protocol.strip():
+            raise ValueError(
+                f"population claim {self.claim_id!r} states no protocol; bands Reprolith did not "
+                "simulate itself are only evidence alongside the number of subjects and the seed "
+                "they were drawn under"
+            )
 
 
 def certify_population(
@@ -328,9 +352,32 @@ def certify_population(
     certificate. Needs no engine extra: the simulated bands are supplied, the population
     simulation being the deferred half.
 
-    Each assessment carries the claim's sampling ``protocol`` when it states one, because a
-    distributional verdict rests on the ensemble that produced the bands as much as on the model.
+    Each assessment carries the claim's sampling ``protocol``, because a distributional verdict
+    rests on the ensemble that produced the bands as much as on the model — and each qualified
+    claim's qualification is written down as an :class:`~reprolith.model.Assumption` naming that
+    sampling, so a reader of the certificate can see *what* the flag is qualifying rather than only
+    that something was.
     """
+    claims = tuple(claims)  # read twice below: once for the assumptions, once for the judgments
+    sampling = tuple(
+        Assumption(
+            id=f"population-sampling-{claim.claim_id}",
+            description=(
+                "the percentile bands judged here came from a virtual population Reprolith "
+                "reconstructed and sampled, not from the paper's own run"
+            ),
+            chosen=claim.protocol,
+            basis=(
+                "an envelope's verdict moves with its subject count and seed, and the "
+                "between-subject variability model behind it is a reconstruction choice a "
+                "manuscript often under-specifies"
+            ),
+            load_bearing=True,
+            alternatives=("a different subject count", "a different sampling seed"),
+        )
+        for claim in claims
+        if claim.assumption_qualified
+    )
     assessments = [
         replace(
             judge_distribution(
@@ -352,7 +399,7 @@ def certify_population(
         paper=paper,
         engine_pin=engine_pin,
         assessments=assessments,
-        assumptions=tuple(assumptions),
+        assumptions=(*assumptions, *sampling),
     )
 
 
