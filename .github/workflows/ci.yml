@@ -60,6 +60,25 @@ jobs:
       - name: Tests (pytest, extra-backed included)
         run: pytest -q
 
+  # Cross-engine corroboration needs a *second* registered engine (libRoadRunner) alongside COPASI,
+  # and no other job installs it — so its tests skipped everywhere and what CI actually checked was
+  # that a committed JSON file said `true`. This job runs them. One interpreter: the point is that
+  # two independent engines agree on a trajectory, which does not vary by Python version, and
+  # libRoadRunner ships wheels for fewer versions than the rest of the matrix.
+  corroborate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install with the engine and corroborate extras
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,engine,corroborate]"
+      - name: Tests (cross-engine corroboration)
+        run: pytest -q tests/test_corroboration.py
+
   specs:
     runs-on: ubuntu-latest
     steps:
