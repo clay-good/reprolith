@@ -540,3 +540,29 @@ def test_lint_steady_state_refuses_an_oversized_network_instead_of_wedging() -> 
         "rules": {"A": "!B", "B": "!A"}, "reported": {"A": 1, "B": 0},
     })
     assert not is_error and ok["verdict"] == "reproduced"
+
+
+def test_a_submitted_paper_without_a_class_is_unassigned_not_ode_pkpd() -> None:
+    # Defaulting put every unclassified paper on the ODE pathway and made it the answer to a
+    # claim_work(model_class="ode-pkpd") request.
+    from reprolith.catalog import Catalog
+    from reprolith.mcp_server import submit_paper
+
+    catalog = Catalog()
+    result = submit_paper(catalog, {"title": "A Boolean model of the yeast cell cycle"})
+    assert result["entry"]["model_class"] == "unassigned"
+
+
+def test_a_lease_must_be_a_real_span_of_time() -> None:
+    import pytest
+    from reprolith.catalog import Catalog, Identifiers
+    from reprolith.mcp_server import claim_work
+
+    catalog = Catalog()
+    catalog.add(Identifiers(title="Paper A", accession="ACC-A"))
+    for bad in (-1, 0, float("nan"), 1e18):
+        with pytest.raises(ValueError, match="lease_seconds"):
+            claim_work(catalog, {"requester": "agent-1", "lease_seconds": bad}, at=1000.0)
+    # A sound lease still holds the entry against a second requester.
+    assert claim_work(catalog, {"requester": "agent-1", "lease_seconds": 60}, at=1000.0)["claimed"]
+    assert claim_work(catalog, {"requester": "agent-2"}, at=1010.0)["claimed"] is False

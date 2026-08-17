@@ -291,6 +291,13 @@ def _track_record_banner(self_validation: dict[str, Any]) -> str:
         '<p class="tr-note">How each class’s blind verdicts matched independently-established '
         "ground truth. An <em>abstention</em> (a “blocked” verdict — insufficient "
         "information) is shown apart from a wrong verdict; no single blended rate conflates them.</p>"
+        '<p class="tr-note"><strong>What these numbers do and do not establish.</strong> Where a '
+        "class’s entries all carry the same expected verdict, “always answer that verdict” would "
+        "score the same, so the number is evidence of agreement with an independent "
+        "implementation and of abstaining when the evidence is missing — not of telling a "
+        "reproducible result from an irreproducible one. The PK/PD label is BioModels’ curation "
+        "status, which is also readable from the accession prefix, so read its row the same way. "
+        "Each dataset states its own caveat in full.</p>"
         "<table><thead><tr><th>class</th><th>matched</th><th>abstained</th><th>other</th>"
         f"<th>of total</th></tr></thead><tbody>{''.join(rows)}</tbody><tfoot>{foot}</tfoot></table>"
         "</section>"

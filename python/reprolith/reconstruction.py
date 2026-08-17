@@ -115,14 +115,31 @@ class ReconstructionBundle:
         """The assumptions whose choice plausibly changes a claim's outcome."""
         return tuple(a for a in self.assumptions if a.load_bearing)
 
+    def unmatched_steps(self, dossier: Dossier) -> tuple[str, ...]:
+        """Recipe or non-reconstructable entries naming a claim this dossier does not state.
+
+        The converse of :meth:`uncovered_claims`, and the half that was missing: coverage was
+        only ever checked from the dossier's side, so a recipe built against a different paper —
+        or against claims nobody extracted — reported full coverage, and a dossier with no
+        targetable claims at all reported full coverage of nothing.
+        """
+        stated = {c.id for c in dossier.targetable_claims()}
+        named = [s.claim_id for s in self.recipe] + [n.claim_id for n in self.non_reconstructable]
+        return tuple(sorted({cid for cid in named if cid not in stated}))
+
     def uncovered_claims(self, dossier: Dossier) -> tuple[str, ...]:
         """Targetable dossier claims that neither the recipe nor the non-reconstructable list covers."""
         accounted = {s.claim_id for s in self.recipe} | {n.claim_id for n in self.non_reconstructable}
         return tuple(c.id for c in dossier.targetable_claims() if c.id not in accounted)
 
     def covers(self, dossier: Dossier) -> bool:
-        """True when every targetable claim has a recipe step or a recorded reason it cannot."""
-        return not self.uncovered_claims(dossier)
+        """True when the recipe and the dossier's targetable claims are the same set.
+
+        Both directions: every targetable claim has a recipe step or a recorded reason it cannot,
+        *and* every step names a claim the dossier actually states. A bundle whose steps match
+        nothing in the dossier does not cover it, however few claims are left uncovered.
+        """
+        return not self.uncovered_claims(dossier) and not self.unmatched_steps(dossier)
 
     def validate(self) -> list[str]:
         """Structural problems that make the bundle ill-formed; empty when well-formed."""

@@ -29,6 +29,29 @@ from .render import claim_counts, gap_items
 from .supersession import CertificateLedger
 
 
+def _label_basis(report: dict[str, Any]) -> str:
+    """What a class's agreement number can and cannot establish, derived from its own labels.
+
+    A class whose entries all carry one and the same label cannot be scored for discriminative
+    skill — "always answer <that label>" scores 100% — so its number establishes agreement with
+    an independent implementation and the discipline of abstaining, and nothing about telling
+    reproducible work from irreproducible work. Reading it as the latter is the misreading the
+    dataset caveats warn about, so the number does not travel without this line attached.
+    """
+    expected = {key.partition("->")[0] for key in report.get("confusion", {})}
+    if len(expected) <= 1:
+        return (
+            "every labelled entry in this class carries one and the same verdict, so this number "
+            "establishes agreement with an independent implementation and abstention discipline "
+            "— not the "
+            "ability to tell a reproducible result from an irreproducible one"
+        )
+    return (
+        "the labels in this class are not all one verdict; read the dataset's own caveat for how "
+        "they were assigned before reading this number as discriminative skill"
+    )
+
+
 def self_validation_summary(agreement_reports: dict[str, dict[str, Any]]) -> dict[str, Any]:
     """The blind self-validation track record from per-class committed agreement reports.
 
@@ -44,10 +67,16 @@ def self_validation_summary(agreement_reports: dict[str, dict[str, Any]]) -> dic
     The rows stay in the committed report files, where a reviewer auditing the record can read
     them; they do not travel over the agent-facing surfaces.
     """
-    agreement_reports = {
-        model_class: {k: v for k, v in report.items() if k != "per_entry"}
-        for model_class, report in agreement_reports.items()
-    }
+    published: dict[str, dict[str, Any]] = {}
+    for model_class, report in agreement_reports.items():
+        # `agreement_rate` counts an abstention as a disagreement, so PK/PD's 30 honest
+        # abstentions publish as a rate of 0.0 — the one reading the whole track record exists
+        # to prevent. The split replaces it, per class and not only in the total.
+        entry = {k: v for k, v in report.items() if k not in ("per_entry", "agreement_rate")}
+        entry.update(summarize_report(report))
+        entry["label_basis"] = _label_basis(report)
+        published[model_class] = entry
+    agreement_reports = published
     splits = [summarize_report(r) for r in agreement_reports.values()]
     agreements = sum(s["matched"] for s in splits)
     total = sum(s["total"] for s in splits)

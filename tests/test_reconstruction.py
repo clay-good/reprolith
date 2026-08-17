@@ -134,3 +134,19 @@ def test_validate_flags_duplicate_assumption_and_recipe_ids() -> None:
     problems = bundle.validate()
     assert any("duplicate assumption id" in p for p in problems)
     assert any("duplicate recipe claim: C1" in p for p in problems)
+
+
+def test_a_recipe_naming_claims_the_dossier_does_not_state_does_not_cover_it() -> None:
+    # Coverage was only ever checked from the dossier's side, so a recipe built against another
+    # paper — or a dossier with no targetable claims at all — reported full coverage of nothing.
+    from reprolith import Dossier, EnginePin, RecipeStep, ReconstructionBundle
+
+    bundle = ReconstructionBundle(
+        entry="10.1/x",
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        recipe=(RecipeStep(claim_id="Cmax-500mg", protocol="500 mg PO", output="C_p",
+                           time_span="0-24 h"),),
+    )
+    empty = Dossier(entry="10.1/x")
+    assert bundle.unmatched_steps(empty) == ("Cmax-500mg",)
+    assert bundle.covers(empty) is False

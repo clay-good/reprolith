@@ -329,7 +329,9 @@ def submit_paper(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
         accession=arguments.get("accession"),
     )
     existing = catalog.find(identifiers)
-    entry = catalog.add(identifiers, ModelClass(arguments.get("model_class", "ode-pkpd")))
+    # An omitted class is unassigned, not ODE PK/PD: defaulting put every unclassified paper on
+    # the ODE pathway and made it the answer to a claim_work(model_class="ode-pkpd") request.
+    entry = catalog.add(identifiers, ModelClass(arguments.get("model_class") or "unassigned"))
     return {
         "created": existing is None,
         "resolved_to_existing": existing is not None,
@@ -343,7 +345,7 @@ def claim_work(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dic
     entry = catalog.claim_next(
         arguments["requester"],
         at=at,
-        seconds=float(arguments.get("lease_seconds", 3600.0)),
+        seconds=_bounded_lease(arguments.get("lease_seconds", 3600.0)),
         model_class=model_class,
     )
     if entry is None:
@@ -388,6 +390,8 @@ _MAX_LINT_NODES = 14
 # integral of its propensities over the duration, so a large one is unbounded work even with the
 # trajectory count capped, and the stdio loop is single-threaded.
 _MAX_LINT_DURATION = 1.0e6
+# A lease is a coordination hint an agent holds while it works; a week is far past any run.
+_MAX_LEASE_SECONDS = 7 * 24 * 3600.0
 
 
 def _bounded_duration(value: Any, *, name: str = "duration") -> float:
@@ -398,6 +402,22 @@ def _bounded_duration(value: Any, *, name: str = "duration") -> float:
             f"{_MAX_LINT_DURATION:g}; got {value!r}"
         )
     return duration
+
+
+def _bounded_lease(value: Any) -> float:
+    """A lease has to be a real span of time.
+
+    A non-positive lease expires the instant it is granted, so the entry is immediately re-offered
+    and two agents work the same paper — the collision the lease exists to prevent. An unbounded
+    one lets a single client hold the whole queue effectively forever.
+    """
+    seconds = float(value)
+    if not math.isfinite(seconds) or seconds <= 0.0 or seconds > _MAX_LEASE_SECONDS:
+        raise ValueError(
+            f"lease_seconds must be a positive finite number of seconds, at most "
+            f"{_MAX_LEASE_SECONDS:g} (one week); got {value!r}"
+        )
+    return seconds
 
 
 def _bounded_count(value: Any, *, name: str, ceiling: int) -> int:
