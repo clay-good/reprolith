@@ -28,6 +28,7 @@ from .oracle import (
     judge_scalar,
     not_evaluable,
 )
+from .pins import algorithm_revision
 
 # A gene–protein–reaction rule: either a single gene label, or a boolean node — a
 # ``("and", (child, ...))`` / ``("or", (child, ...))`` tuple — over sub-rules. This is the exact
@@ -130,7 +131,16 @@ def solver_pin() -> EnginePin:
         raise EngineUnavailable(
             "the LP backend is not installed; install the 'fba' extra (pip install 'reprolith[fba]')"
         ) from exc
-    return EnginePin(engine="scipy-linprog", version=str(scipy.__version__), algorithm="highs")
+    # scipy's version moves when the LP backend does, but the analysis layer above it — the FVA
+    # bounds, the pFBA two-stage program, the essentiality sweep, the FROG fingerprint — is this
+    # package, and its version has never moved. Naming its revision is what lets the freshness
+    # check see a fix to any of that (see :func:`reprolith.pins.algorithm_revision`).
+    revision = algorithm_revision("fba", "oracle")
+    return EnginePin(
+        engine="scipy-linprog",
+        version=str(scipy.__version__),
+        algorithm=f"highs (reprolith-fba rev {revision})",
+    )
 
 
 def _milp() -> Any:

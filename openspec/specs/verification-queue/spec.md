@@ -100,3 +100,12 @@ shifts.
 - **THEN** the affected items are re-opened for re-validation and the certificates that depend on
   them are flagged as needing review
 - **AND** nothing is treated as permanently settled merely because it was once confirmed
+
+#### Scenario: The solver is Reprolith itself
+
+- **WHEN** a class's result is computed by this package rather than by an external engine, and that
+  code changes
+- **THEN** the pin recorded on its certificates names a revision of that code, so the changed
+  solver produces a different pin and every certificate it invalidates is flagged for review
+- **AND** a published certificate that names an older revision is regenerated rather than kept,
+  because its number is not the one the current code produces

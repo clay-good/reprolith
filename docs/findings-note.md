@@ -151,6 +151,24 @@ The general lesson is the one the refusal pattern elsewhere in the codebase alre
 intake path that cannot represent a construct must say so. Silently flattening it produces a model
 that is runnable, plausible, and not the one the artifact described.
 
+## When the solver is Reprolith, the certificate says which Reprolith
+
+Re-verification fires when a certificate's engine pin differs from the current one. That works for
+the classes an external engine computes — COPASI's version moves, scipy's moves — but four classes
+are computed by this package: the SSA, the finite-difference solver, the attractor enumerator, and
+the constraint-based analysis layer above the LP call. Their pins carried a package version that has
+never been bumped, so the freshness check compared two identical pins: fixing the sampler, the
+discretization, or the class-default tolerance table left every certificate that fix invalidated
+looking current, and the whole committed corpus of 23 pure-Python certificates was unflaggable.
+
+Those pins now name a *revision*: a digest over the source of the solver and of the oracle it judges
+through (`reprolith.pins.algorithm_revision`), since a class-default tolerance decides what the
+solver's numbers mean as much as the solver does. It is deliberately blunt — a digest of file bytes,
+so a docstring edit moves it too, and nothing depends on a human remembering to bump a constant. A
+needless re-run of a dependency-free solver costs seconds; a missed one publishes a number the
+current code would not produce. A test holds the corpus to it: a committed certificate carrying an
+older revision than the code fails, and the fix is re-running that class's milestone script.
+
 ## Known limits the audits found and left in place
 
 Recorded rather than fixed, because each needs a design change rather than a patch, and none
@@ -187,11 +205,6 @@ can produce a certificate that claims more than it checked:
   where the claims differ by dose, and the 779.9 mg figure survives only as prose in the assumption
   block. Re-running at hourly output — the only resolution the published recipe supports — adds
   about 4.4% to the Cmax metric, which is most of the 5% tolerance.
-- **The pure-Python classes' pin is a package version that has never moved.** Re-verification is
-  triggered by a certificate's pin differing from the current one; four of six classes pin
-  `reprolith 0.0.1`, so a change to the SSA, the finite-difference solver, or the attractor
-  enumerator leaves every affected certificate looking fresh. (The logical pin now names its
-  update scheme and z3 version, which moves that class's certificates when the solver does.)
 - **Cross-engine corroboration never runs anywhere automatic.** No CI job installs the extra, so
   the only executing test skips in every job, and what CI actually checks is that a committed
   JSON file says `true`. That file records no engine versions, so its staleness cannot be detected

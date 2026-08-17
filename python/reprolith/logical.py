@@ -27,6 +27,7 @@ from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, ModelArtifact
 from .model import Assumption, Certificate, ClaimAssessment, EnginePin, PaperIdentity
 from .oracle import Attribution, ComparisonMethod, ReferenceKind, assess_match
+from .pins import algorithm_revision
 
 # A network state as node values in sorted-node order, so states hash and sort deterministically.
 State = tuple[int, ...]
@@ -442,6 +443,11 @@ def solver_pin(*, scheme: UpdateScheme = UpdateScheme.SYNCHRONOUS, sat: bool = F
         algorithm += f"sat-fixed-points (z3 {z3.get_version_string()})"
     else:
         algorithm += "exhaustive-state-enumeration"
+    # The enumerator, the rule compiler, and the attractor comparison are this package, and the
+    # package version has never moved — so before this, fixing any of them left every certificate
+    # the fix invalidates comparing equal to the current pin and reading as fresh. On the SAT path
+    # z3's version moves, but the translation into z3 and the verdict rule still do not.
+    algorithm += f" (rev {algorithm_revision('logical', 'oracle')})"
     return EnginePin(engine="reprolith-logical", version=__version__, algorithm=algorithm)
 
 

@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": null,
+    "algorithm": "explicit-forward-euler-finite-difference (rev fdf9d2c3d499)",
     "engine": "reprolith-fd",
     "version": "0.0.1"
   },

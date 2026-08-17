@@ -18,7 +18,6 @@ from pathlib import Path
 
 from reprolith import (
     Catalog,
-    EnginePin,
     GroundTruth,
     Identifiers,
     ModelClass,
@@ -27,13 +26,13 @@ from reprolith import (
     Reaction,
     RunMetadata,
     StochasticClaim,
-    __version__,
     certificate_digest,
     certify_stochastic,
     render_human,
     run_test_set,
 )
 from reprolith.persistence import prune_certificate_directory
+from reprolith.stochastic import solver_pin
 
 REPO = Path(__file__).resolve().parents[1]
 STO = REPO / "datasets" / "stochastic"
@@ -74,7 +73,9 @@ _SYSTEMS = {
 
 
 def main() -> None:
-    pin = EnginePin(engine="reprolith-ssa", version=__version__)
+    # Names the SSA's own revision, so a change to the sampler re-opens these certificates for
+    # review instead of leaving them looking fresh under a package version that never moves.
+    pin = solver_pin()
     catalog = Catalog()
     certified = {}
 

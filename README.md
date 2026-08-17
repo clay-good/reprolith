@@ -24,6 +24,9 @@ guessing — just: *does the described model produce the shown result?*
 - **A "what was missing" list.** When a paper can't be reproduced, you get the exact
   parameter, unit, or condition it left out — the thing the field actually needs to fix.
 - **Standard, runnable artifacts.** The rebuilt model ships in open formats anyone can re-run.
+- **A verdict that expires.** Every certificate names the software that computed it — including,
+  for the classes Reprolith solves itself, the revision of that code — so changing a solver flags
+  every certificate it invalidates instead of leaving them looking current.
 
 ## What it is *not*
 

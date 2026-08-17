@@ -22,6 +22,7 @@ from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Gap, GapKind, Parameter
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import Attribution, Tolerance, judge_curve
+from .pins import algorithm_revision
 
 
 def _diffusion_number(
@@ -369,6 +370,27 @@ class SpatialClaim:
     tolerance: Tolerance | None = None
     assumption_qualified: bool = False
     shortfall: Attribution | None = field(default=None)
+
+
+def solver_pin() -> EnginePin:
+    """The :class:`~reprolith.model.EnginePin` for this module's solver, at its current revision.
+
+    The finite-difference solver is this package, so the pin's version is the package's — and that
+    version has never moved, which left the freshness check comparing two identical pins and every
+    certificate a solver fix invalidates looking current. The algorithm field therefore names the
+    revision of the code that computed the profile (see
+    :func:`reprolith.pins.algorithm_revision`); it moves whenever this module or the curve oracle it
+    judges through does. The scheme is named too, because an explicit scheme's stability limit is
+    part of what a reader needs to repeat the run.
+    """
+    from . import __version__  # local: the package imports this module while initializing
+
+    revision = algorithm_revision("spatial", "oracle")
+    return EnginePin(
+        engine="reprolith-fd",
+        version=__version__,
+        algorithm=f"explicit-forward-euler-finite-difference (rev {revision})",
+    )
 
 
 def certify_spatial(

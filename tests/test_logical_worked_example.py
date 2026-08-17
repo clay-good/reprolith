@@ -14,7 +14,6 @@ import pytest
 pytest.importorskip("libsbml", reason="the engine extra (python-libsbml) is not installed")
 
 from reprolith import (  # noqa: E402
-    EnginePin,
     LogicalClaim,
     PaperIdentity,
     RunMetadata,
@@ -25,6 +24,7 @@ from reprolith import (  # noqa: E402
     judge_attractor_set,
     render_human,
 )
+from reprolith.logical import solver_pin  # noqa: E402
 
 _WD = Path(__file__).parent.parent / "datasets" / "logical" / "worked_example"
 _TOGGLE_RULES = {"A": "!B", "B": "!A"}
@@ -35,7 +35,10 @@ def _certificate() -> str:
         paper=PaperIdentity(
             title="Toggle switch — a two-gene mutual-repression circuit", doi="10.0/toggle"
         ),
-        engine_pin=EnginePin(engine="reprolith-logical", version="0.0.1"),
+        # The solver is this package, so the pin names the revision of the code that enumerated
+        # these states (see reprolith.pins): a change to the enumerator or the judge moves it, and
+        # this artifact has to be regenerated rather than kept under a version that never moves.
+        engine_pin=solver_pin(),
         claims=[
             LogicalClaim(claim_id="ss_on", quantity="A-ON steady state", rules=_TOGGLE_RULES,
                          reported={"A": 1, "B": 0}, source_location="Fig 1a"),

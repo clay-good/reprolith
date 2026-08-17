@@ -18,7 +18,6 @@ from pathlib import Path
 
 from reprolith import (
     Catalog,
-    EnginePin,
     GroundTruth,
     Identifiers,
     ModelClass,
@@ -26,7 +25,6 @@ from reprolith import (
     PaperIdentity,
     RunMetadata,
     SpatialClaim,
-    __version__,
     certificate_digest,
     certify_spatial,
     gaussian_profile,
@@ -34,6 +32,7 @@ from reprolith import (
     run_test_set,
 )
 from reprolith.persistence import prune_certificate_directory
+from reprolith.spatial import solver_pin
 
 REPO = Path(__file__).resolve().parents[1]
 SPA = REPO / "datasets" / "spatial"
@@ -52,7 +51,9 @@ _SYSTEMS = {
 
 
 def main() -> None:
-    pin = EnginePin(engine="reprolith-fd", version=__version__)
+    # Names the finite-difference solver's own revision, so a change to it re-opens these
+    # certificates for review instead of leaving them looking fresh under an unmoving version.
+    pin = solver_pin()
     catalog = Catalog()
     certified = {}
 

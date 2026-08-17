@@ -35,6 +35,7 @@ from .oracle import (
     judge_scalar,
     not_evaluable,
 )
+from .pins import algorithm_revision
 
 
 @dataclass(frozen=True)
@@ -357,6 +358,26 @@ def _sampling_cannot_resolve(
             f"{trajectories} trajectories is too few to tell a reproduction from sampling noise"
         ),
         reference_kind=ReferenceKind.NUMERIC,
+    )
+
+
+def solver_pin() -> EnginePin:
+    """The :class:`~reprolith.model.EnginePin` for this module's SSA, at its current revision.
+
+    The solver is this package, so the pin's version is the package's — and that version has never
+    moved. Freshness is decided by comparing a certificate's pin to the current one, so the SSA
+    could be fixed without a single certificate it invalidates being flagged for re-verification.
+    The algorithm field therefore names the revision of the code that computed the ensemble (see
+    :func:`reprolith.pins.algorithm_revision`), which moves whenever this module or the oracle it
+    judges through does.
+    """
+    from . import __version__  # local: the package imports this module while initializing
+
+    revision = algorithm_revision("stochastic", "oracle")
+    return EnginePin(
+        engine="reprolith-ssa",
+        version=__version__,
+        algorithm=f"gillespie-direct-method (rev {revision})",
     )
 
 
