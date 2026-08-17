@@ -507,6 +507,21 @@ matched; for another, five of eight sampled edits do. The method name says `attr
 match` and its docstring says what that is weaker than, but the certificate does not report how
 many other networks would have passed the same check.
 
+## Five figures of a number the machine cannot reproduce
+
+The corroboration artifact recorded each cross-engine distance to five significant figures, which
+reads as a measurement. It is not one. Two engines that agree differ by a difference of nearly-equal
+numbers, so the pinned engine's own last-place wobble — about 1e-11 relative, and not deterministic
+across repeated calls — is amplified into the leading digits. Measured over three regenerations of
+the committed corpus, five of six models reproduce their distance exactly and one moves by 8%; the
+value committed for that model was not among the three a re-run produced. So the file could not be
+regenerated even on the same machine, and the digits that moved were being published as evidence.
+
+The distance is now published as a bound rounded *up* to one significant figure. Rounding up is the
+direction that stays honest: the number never states better agreement than was measured. The file
+regenerates byte-identically now, and a test checks the bound really does bound the live distance on
+every committed model, so a genuine drift toward the tolerance would still show.
+
 ## A class that could refuse but never fail
 
 The spatial milestone ran at a diffusion number of 0.4 against an explicit scheme stable to 0.5.
@@ -576,13 +591,14 @@ can produce a certificate that claims more than it checked:
   the bundle, the artifact whose job is to describe how to re-run it, still is not.
   Re-running at hourly output — the only resolution the published recipe supports — adds
   about 4.4% to the Cmax metric, which is most of the 5% tolerance.
-- **Cross-engine corroboration is not reproducible run to run, because the engine is not.**
-  Repeated `simulate` calls on one model in one process alternate between two results with call
-  parity — a last-place difference, but a real one, against a docstring promising byte-identical
-  series. It is why regenerating the corroboration file moves distances that no code change
-  touched (2.08e-05 to 2.38e-05 on one model), and it means the corroborated curve is not
-  bit-for-bit the certified one. Four of the seven engine-backed models show it. The suspect is
-  COPASI's global container state, and finding out needs its own investigation, not a patch.
+- **The pinned engine is not bit-identical across repeated calls in one process.** `simulate`
+  alternates between two results with call parity — about 1e-11 relative, on four of the seven
+  engine-backed models — against a docstring promising byte-identical series. Datamodel lifecycle
+  is not the cause: adding and removing one per call (what the code does) alternates, never
+  removing them settles after two calls, and reusing a single datamodel is worse still, giving
+  five distinct results in six calls. It is inside COPASI. No certificate is affected — a
+  discrepancy is recorded to four decimals and the wobble is eight orders below that — but the
+  published *corroboration* distances were, and that is fixed below.
 - **The certified engine version is whatever the machine last resolved.** The engine extra names a
   floor, so a certificate pinning `copasi 4.46.300` can be regenerated under a different version
   without anything objecting — the pin is recorded, never dispatched on. This is not theoretical:

@@ -14,6 +14,7 @@ extras and imports them lazily.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from .engine import ENGINE as _COPASI_ENGINE
@@ -34,8 +35,30 @@ class EngineCorroboration:
         verdict = "engine-independent" if self.stable else "engine-sensitive"
         return (
             f"{self.species}: {self.engines[0]} vs {self.engines[1]} normalized distance "
-            f"{self.distance:.4g} -> {verdict}"
+            f"at most {self.distance_bound():.0e} -> {verdict}"
         )
+
+    def distance_bound(self) -> float:
+        """The distance rounded *up* to one significant figure — what is safe to publish.
+
+        The distance between two engines that agree is a difference of nearly-equal numbers, so
+        its leading digits are the engines' own last-place noise amplified. COPASI is not
+        bit-identical across repeated calls in one process (a period-2 alternation at about 1e-11
+        relative, present on four of the six committed kinetic models), and on one of them that
+        moved the published distance by 8% — so a five-figure distance in a committed artifact
+        reads as a measurement and is not reproducible even on the same machine.
+
+        Rounding up rather than to nearest keeps the number honest under the only reading that
+        matters: it never states better agreement than was measured.
+        """
+        if not math.isfinite(self.distance) or self.distance <= 0.0:
+            return self.distance
+        exponent = math.floor(math.log10(self.distance))
+        scale = 10.0**exponent
+        # Re-parsed from its own one-figure rendering, so the published number is the short
+        # decimal it prints as rather than the binary noise of ceil-times-scale (3e-05, not
+        # 3.0000000000000004e-05).
+        return float(f"{math.ceil(self.distance / scale) * scale:.0e}")
 
 
 def corroborate_curve(

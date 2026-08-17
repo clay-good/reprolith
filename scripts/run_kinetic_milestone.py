@@ -118,7 +118,10 @@ def main() -> None:
         )
         corroboration[spec["id"]] = {
             "engines": list(result.engines),
-            "distance": round(result.distance, 9),
+            # Published as a bound, not a measurement: COPASI is not bit-identical across
+            # repeated calls, and the distance between two agreeing engines amplifies that noise
+            # — five figures of it were not regenerable on the same machine.
+            "distance_at_most": result.distance_bound(),
             "engine_independent": result.stable,
         }
     (milestone / "corroboration.json").write_text(

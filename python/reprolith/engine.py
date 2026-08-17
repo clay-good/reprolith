@@ -84,9 +84,17 @@ def simulate(
     """Simulate an SBML model under the pinned engine and return a ``species`` time course.
 
     Runs a deterministic time course over ``[0, duration]`` at ``steps`` uniform intervals and
-    returns ``(times, values)`` for the named species. Deterministic: the same SBML and
-    arguments return byte-identical series, so the result can feed the oracle as a
-    reproducible reconstruction output.
+    returns ``(times, values)`` for the named species — a deterministic *method*, not a stochastic
+    one, so the result can feed the oracle as a reproducible reconstruction output.
+
+    It is not bit-identical, and this used to claim it was. Repeated calls on one model in one
+    process alternate between two series with call parity, differing by about 1e-11 relative, on
+    four of the six committed kinetic models. The cause is inside the engine, not in how this
+    function manages its datamodel: adding and removing one per call alternates, never removing
+    them settles after two calls, and reusing a single datamodel gives five distinct results in
+    six calls. Nothing downstream reports at that precision — a certificate's discrepancy is four
+    decimals — but a caller publishing raw engine output should round to a precision the engine
+    reproduces, the way :meth:`reprolith.corroboration.EngineCorroboration.distance_bound` does.
     """
     _require_advancing_run(duration, steps)
     copasi = _copasi()
