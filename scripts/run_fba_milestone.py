@@ -28,7 +28,6 @@ from pathlib import Path
 from reprolith import (
     Catalog,
     DossierClaim,
-    EnginePin,
     GroundTruth,
     Identifiers,
     ModelArtifact,
@@ -40,13 +39,16 @@ from reprolith import (
     constraint_based_dossier,
     run_test_set,
 )
+from reprolith.fba import solver_pin
 from reprolith.persistence import dossier_from_dict
 
 REPO = Path(__file__).resolve().parents[1]
 CB = REPO / "datasets" / "constraint_based"
 CROSS = CB / "cross_validation"
-# A stable, solver-independent pin: the FROG fingerprint is portable, so the LP backend is metadata.
-PIN = EnginePin(engine="scipy-highs", version="linprog-highs", algorithm="simplex")
+# The FROG fingerprint is portable, so a verdict here should not move with the LP backend — but the
+# certificate still has to name the software that produced it, read from the installed scipy rather
+# than asserted, so a third party knows what solved these programs.
+PIN = solver_pin()
 
 
 def _e_coli_core() -> tuple[Identifiers, GroundTruth, object, str]:

@@ -19,9 +19,9 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "simplex",
-    "engine": "scipy-highs",
-    "version": "linprog-highs"
+    "algorithm": "highs",
+    "engine": "scipy-linprog",
+    "version": "1.13.1"
   },
   "gap_report": [],
   "overall": "reproduced",

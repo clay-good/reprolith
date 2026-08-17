@@ -26,6 +26,7 @@ from reprolith import (
     PaperIdentity,
     RunMetadata,
     SpatialClaim,
+    __version__,
     certificate_digest,
     certify_spatial,
     gaussian_profile,
@@ -50,7 +51,7 @@ _SYSTEMS = {
 
 
 def main() -> None:
-    pin = EnginePin(engine="reprolith-fd", version="0.0.1")
+    pin = EnginePin(engine="reprolith-fd", version=__version__)
     catalog = Catalog()
     certified = {}
 

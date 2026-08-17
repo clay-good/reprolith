@@ -105,6 +105,16 @@ class Fault(str, Enum):
     RECONSTRUCTION = "reconstruction"
 
 
+# The documented class-default thresholds, listed here rather than derived from the table below
+# because the table is built out of Tolerance instances that this validation runs against.
+_DEFAULT_THRESHOLDS = frozenset(
+    {
+        (0.05, 0.15), (0.15, 0.30), (0.10, 0.25), (0.20, 0.40), (0.15, 0.35), (0.25, 0.50),
+        (0.0, 0.0),  # an exact match (an attractor set, a FROG fingerprint) has no slack to declare
+    }
+)
+
+
 @dataclass(frozen=True)
 class Tolerance:
     """A declared pass/partial threshold with its provenance.
@@ -113,6 +123,11 @@ class Tolerance:
     ``partial_within`` is ``partial``; above it is ``failed``. Any non-default tolerance must
     state a rationale — a paper-stated precision or a reviewer's reason — so no threshold is a
     magic number.
+
+    A tolerance may only *call itself* a class default if its thresholds are one of the documented
+    defaults below. Otherwise the rationale requirement is trivially escaped: declare any width you
+    like as ``class-default``, and the certificate reports a 900% error as reproduced under a
+    provenance that reads like a considered decision nobody has to justify.
     """
 
     reproduced_within: float
@@ -125,6 +140,13 @@ class Tolerance:
             raise ValueError("require 0 <= reproduced_within <= partial_within")
         if self.source is not ToleranceSource.CLASS_DEFAULT and not (self.rationale or "").strip():
             raise ValueError(f"a {self.source.value} tolerance must state a rationale")
+        thresholds = (self.reproduced_within, self.partial_within)
+        if self.source is ToleranceSource.CLASS_DEFAULT and thresholds not in _DEFAULT_THRESHOLDS:
+            raise ValueError(
+                f"{thresholds} is not one of the documented class defaults; a tolerance this "
+                "wide or narrow is a paper-stated or reviewer-override choice and must state "
+                "its rationale"
+            )
 
     def label(self) -> str:
         return (

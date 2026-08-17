@@ -27,6 +27,7 @@ from reprolith import (
     Reaction,
     RunMetadata,
     StochasticClaim,
+    __version__,
     certificate_digest,
     certify_stochastic,
     render_human,
@@ -67,7 +68,7 @@ _SYSTEMS = {
 
 
 def main() -> None:
-    pin = EnginePin(engine="reprolith-ssa", version="0.0.1")
+    pin = EnginePin(engine="reprolith-ssa", version=__version__)
     catalog = Catalog()
     certified = {}
 

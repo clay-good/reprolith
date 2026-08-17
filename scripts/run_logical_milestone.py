@@ -36,6 +36,7 @@ from reprolith import (
     OverallVerdict,
     PaperIdentity,
     RunMetadata,
+    __version__,
     assess_match,
     build_certificate,
     certificate_digest,
@@ -53,7 +54,7 @@ def main() -> None:
     scalable = json.loads(
         (LOG / "cross_validation" / "scalable_fixed_points.json").read_text(encoding="utf-8")
     )
-    pin = EnginePin(engine="reprolith-logical", version="0.0.1")  # exact analysis, no external solver
+    pin = EnginePin(engine="reprolith-logical", version=__version__)  # exact analysis, no external solver
     catalog = Catalog()
     certified = {}
 

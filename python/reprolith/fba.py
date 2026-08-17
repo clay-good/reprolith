@@ -18,7 +18,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, TypeVar, Union
 
-from .model import ClaimAssessment
+from .model import ClaimAssessment, EnginePin
 from .oracle import (
     Attribution,
     ComparisonMethod,
@@ -112,6 +112,25 @@ def _linprog() -> Any:
             "install with pip install 'reprolith[fba]'"
         ) from exc
     return linprog
+
+
+def solver_pin() -> EnginePin:
+    """The :class:`~reprolith.model.EnginePin` for the installed LP backend.
+
+    Read from the installed scipy rather than asserted, so a published certificate names the
+    software that actually solved its programs. ``highs`` is what every call here requests, which
+    leaves scipy free to pick dual simplex or interior point — so that is what the algorithm field
+    says, rather than claiming a choice this code does not make.
+    """
+    from .engine import EngineUnavailable
+
+    try:
+        import scipy
+    except ImportError as exc:  # pragma: no cover - exercised only without the extra
+        raise EngineUnavailable(
+            "the LP backend is not installed; install the 'fba' extra (pip install 'reprolith[fba]')"
+        ) from exc
+    return EnginePin(engine="scipy-linprog", version=str(scipy.__version__), algorithm="highs")
 
 
 def _milp() -> Any:

@@ -227,3 +227,14 @@ def test_a_diverged_band_governs_the_envelope_instead_of_being_skipped() -> None
     distance, worst = band_envelope_distance(ref, predicted)
     assert math.isnan(distance)  # never a clean 0.0, and never the -1.0 sentinel
     assert worst.percentile == 95.0
+
+
+def test_a_tolerance_may_not_call_itself_a_class_default_unless_it_is_one() -> None:
+    """Otherwise the rationale requirement is trivially escaped by relabelling the provenance."""
+    from reprolith import Tolerance, ToleranceSource
+
+    with pytest.raises(ValueError, match="not one of the documented class defaults"):
+        Tolerance(10.0, 10.0, ToleranceSource.CLASS_DEFAULT)
+    # The same width is fine when it is declared as the judgment call it is.
+    wide = Tolerance(10.0, 10.0, ToleranceSource.REVIEWER_OVERRIDE, rationale="order-of-magnitude check")
+    assert wide.label().endswith("(reviewer-override)")
