@@ -44,6 +44,7 @@ from reprolith import (
     run_test_set,
 )
 from reprolith.logical import solver_pin
+from reprolith.persistence import prune_certificate_directory
 
 
 def _fixed_point_digest(net, fixed) -> str:
@@ -149,6 +150,7 @@ def main() -> None:
 
     milestone = LOG / "milestone"
     (milestone / "certificates").mkdir(parents=True, exist_ok=True)
+    prune_certificate_directory(milestone / "certificates", certified)
     run = RunMetadata(created_at="2026-08-07T00:00:00Z", actor="logical-milestone", tool_version="0.0.1")
     for key, cert in certified.items():
         (milestone / "certificates" / f"{key}.json").write_text(

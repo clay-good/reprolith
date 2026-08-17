@@ -7,32 +7,38 @@ registry must be rebuilt. Reading JSON needs no extras, so it runs in the core C
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-from reprolith import certificate_from_content, render_registry
-from reprolith.mcp_server import milestone_agreement_reports
+from reprolith import render_registry
+from reprolith.mcp_server import milestone_agreement_reports, milestone_certificate_dirs
 from reprolith.query import self_validation_summary
 
 _REPO = Path(__file__).parent.parent
 _REGISTRY = _REPO / "datasets" / "registry.html"
-_SOURCES = {
-    "ode-pkpd": _REPO / "datasets" / "milestone" / "certificates",
-    "constraint-based": _REPO / "datasets" / "constraint_based" / "milestone" / "certificates",
-    "kinetic": _REPO / "datasets" / "kinetic" / "milestone" / "certificates",
-    "logical": _REPO / "datasets" / "logical" / "milestone" / "certificates",
-    "stochastic": _REPO / "datasets" / "stochastic" / "milestone" / "certificates",
-    "spatial": _REPO / "datasets" / "spatial" / "milestone" / "certificates",
-}
+_SOURCES = milestone_certificate_dirs()
+
+
+def _collect() -> list:
+    """The builder's own collection step, imported rather than re-implemented.
+
+    This guard had its own copy, without the digest de-duplication or the cross-class check the
+    builder does — so a duplicated certificate file made the builder correctly publish one card
+    while this test demanded two, turning CI red with no rebuild that could fix it.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "_build_registry", _REPO / "scripts" / "build_registry.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.collect()
 
 
 def _rebuild() -> str:
-    entries = []
-    for model_class, directory in _SOURCES.items():
-        for path in sorted(directory.glob("*.json")):
-            entries.append((model_class, certificate_from_content(json.loads(path.read_text()))))
     self_validation = self_validation_summary(milestone_agreement_reports())
-    return render_registry(entries, self_validation=self_validation)
+    return render_registry(_collect(), self_validation=self_validation)
 
 
 def test_committed_registry_matches_the_milestone_certificates() -> None:
@@ -87,3 +93,22 @@ def test_a_published_card_carries_its_gaps_and_its_stable_identifier() -> None:
         )],
     )
     assert "what was missing" not in render_registry([("ode-pkpd", clean)])
+
+
+def test_the_builder_refuses_to_publish_a_class_that_is_missing() -> None:
+    # A missing directory globs to nothing, so a class whose milestone had not been run simply
+    # vanished from the page: exit 0, no warning, and a smaller published track record asserted
+    # as the truth (57 labelled entries instead of 60, in the run that found this).
+    import importlib.util
+
+    import pytest
+
+    spec = importlib.util.spec_from_file_location(
+        "_build_registry_missing", _REPO / "scripts" / "build_registry.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module._SOURCES = dict(module._SOURCES, spatial=_REPO / "datasets" / "no_such_class")
+    with pytest.raises(FileNotFoundError, match="spatial"):
+        module.collect()

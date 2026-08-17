@@ -6,6 +6,7 @@ OVERALL: reproduced
 
 CLAIMS
   [diffusion_D2-profile] diffused concentration profile: reproduced (source closed-form via curve-normalized-distance, tol=reproduced<=0.1, partial<=0.25 (class-default))
+      sampling: 1-D finite difference: D=2, dx=0.2, dt=0.008, 400 steps, zero-flux (Neumann) boundaries
 
 SCOPE
   This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

@@ -281,10 +281,15 @@ def _track_record_banner(self_validation: dict[str, Any]) -> str:
             f"<td>{s['abstained']}</td><td>{s['other']}</td><td>{s['total']}</td></tr>"
         )
     o = self_validation.get("overall", {})
+    # Coerced to int like the per-class row above, not interpolated raw: these are the only four
+    # values on the page that reach the HTML without passing through escaping, and a count is a
+    # number or it is nothing.
+    totals = [int(o.get(key, 0)) for key in
+              ("agreements", "abstentions", "other_disagreements", "labelled_entries")]
     foot = (
-        f"<tr class=\"tr-total\"><td>overall</td><td>{o.get('agreements', 0)}</td>"
-        f"<td>{o.get('abstentions', 0)}</td><td>{o.get('other_disagreements', 0)}</td>"
-        f"<td>{o.get('labelled_entries', 0)}</td></tr>"
+        '<tr class="tr-total"><td>overall</td>'
+        + "".join(f"<td>{value}</td>" for value in totals)
+        + "</tr>"
     )
     return (
         '<section class="track-record"><h2>Blind self-validation</h2>'

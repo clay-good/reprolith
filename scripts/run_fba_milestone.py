@@ -40,7 +40,7 @@ from reprolith import (
     run_test_set,
 )
 from reprolith.fba import solver_pin
-from reprolith.persistence import dossier_from_dict
+from reprolith.persistence import dossier_from_dict, prune_certificate_directory
 
 REPO = Path(__file__).resolve().parents[1]
 CB = REPO / "datasets" / "constraint_based"
@@ -121,6 +121,7 @@ def main() -> None:
     )
     certs = milestone / "certificates"
     certs.mkdir(exist_ok=True)
+    prune_certificate_directory(certs, certified)
     for accession, cert in certified.items():
         (certs / f"{accession}.json").write_text(
             json.dumps(cert.content(), indent=2, sort_keys=True) + "\n"

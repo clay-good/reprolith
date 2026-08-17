@@ -26,6 +26,7 @@ from reprolith import (
     run_test_set,
     seed_catalog,
 )
+from reprolith.persistence import prune_certificate_directory
 
 REPO = Path(__file__).resolve().parents[1]
 DATASETS = REPO / "datasets"
@@ -48,6 +49,7 @@ def main() -> None:
     # (design goal 3) without recomputing it — e.g. loaded into the MCP server's ledger.
     cert_dir = DATASETS / "milestone" / "certificates"
     cert_dir.mkdir(exist_ok=True)
+    prune_certificate_directory(cert_dir, certified)
     for accession, cert in certified.items():
         (cert_dir / f"{accession}.json").write_text(
             json.dumps(cert.content(), indent=2, sort_keys=True) + "\n"

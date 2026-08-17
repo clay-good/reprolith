@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Gap, GapKind, Parameter
@@ -410,15 +410,28 @@ def certify_spatial(
             steps=claim.steps, decay=claim.decay,
         )
         assessments.append(
-            judge_curve(
-                claim_id=claim.claim_id,
-                quantity=claim.quantity,
-                source_location=claim.source_location,
-                reference=claim.reference,
-                predicted=predicted,
-                tolerance=claim.tolerance,
-                attribution=claim.shortfall,
-                assumption_qualified=claim.assumption_qualified,
+            replace(
+                judge_curve(
+                    claim_id=claim.claim_id,
+                    quantity=claim.quantity,
+                    source_location=claim.source_location,
+                    reference=claim.reference,
+                    predicted=predicted,
+                    tolerance=claim.tolerance,
+                    attribution=claim.shortfall,
+                    assumption_qualified=claim.assumption_qualified,
+                ),
+                # The discretization is the run (spec: spatial-class — "the spatial step, time
+                # step, and diffusivity are recorded as part of the claim's protocol"). Every
+                # plausible alternative grid gives a different distance, so without this the
+                # number on the certificate cannot be re-derived from it. The boundary is stated
+                # too because this class has exactly one and a reader cannot see that anywhere else.
+                protocol=(
+                    f"1-D finite difference: D={claim.diffusivity:g}, dx={claim.dx:g}, "
+                    f"dt={claim.dt:g}, {claim.steps} steps"
+                    + (f", decay={claim.decay:g}" if claim.decay else "")
+                    + ", zero-flux (Neumann) boundaries"
+                ),
             )
         )
     return build_certificate(

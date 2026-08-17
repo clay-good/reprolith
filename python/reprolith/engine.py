@@ -153,11 +153,18 @@ def simulate_with_roadrunner(
     The independent-engine counterpart of :func:`simulate`, with the same ``(times, values)`` shape
     and the same uniform grid over ``[0, duration]``, so the two engines' outputs are directly
     comparable for cross-engine corroboration. Needs the ``corroborate`` extra (libRoadRunner).
+
+    The selection is ``[species]``, the **concentration**, because :func:`simulate` reads COPASI's
+    concentration data. A bare species id in libRoadRunner is the amount, so the two engines were
+    reporting different physical quantities: identical for the compartment size of 1 every
+    committed model happens to have, and off by exactly the volume for any model with a real
+    compartment. That made a perfectly engine-independent model look engine-sensitive, and would
+    have minted reference curves in the wrong units.
     """
     _require_advancing_run(duration, steps)
     roadrunner = _roadrunner()
     runner = roadrunner.RoadRunner(sbml)
-    runner.timeCourseSelections = ["time", species]
+    runner.timeCourseSelections = ["time", f"[{species}]"]
     result = runner.simulate(0.0, float(duration), int(steps) + 1)
     times = tuple(float(duration) * i / int(steps) for i in range(len(result)))
     values = tuple(float(row[1]) for row in result)

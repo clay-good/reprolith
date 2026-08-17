@@ -10,6 +10,8 @@ otherwise hold only for certificates built in-process and not for the ones read 
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from pathlib import Path
 from typing import Any
 
 from .certificate import derive_overall
@@ -182,4 +184,27 @@ def bundle_from_dict(record: dict[str, Any]) -> ReconstructionBundle:
     )
 
 
-__all__ = ["bundle_from_dict", "certificate_from_content", "dossier_from_dict"]
+__all__ = [
+    "bundle_from_dict",
+    "certificate_from_content",
+    "dossier_from_dict",
+    "prune_certificate_directory",
+]
+
+
+def prune_certificate_directory(directory: Path, keep: Iterable[str]) -> list[str]:
+    """Delete published certificate files for entries a regenerating run did not produce.
+
+    A milestone runner writes one ``<key>.json`` (and ``.txt``) per entry and never cleared what
+    was there before, so an entry withdrawn from a reference set stayed published: the next
+    registry build listed it and counted it, while the self-validation report beside it did not —
+    the published set and its own denominator disagreeing, with no error anywhere. Returns the
+    stems removed, so a run can say what it withdrew.
+    """
+    kept = set(keep)
+    removed = []
+    for path in sorted(directory.glob("*")):
+        if path.suffix in (".json", ".txt") and path.stem not in kept:
+            path.unlink()
+            removed.append(path.stem)
+    return sorted(set(removed))

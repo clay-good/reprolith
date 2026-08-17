@@ -45,7 +45,15 @@ verdict is *engine-independent* (the trajectories agree within tolerance) or *en
 (`tests/test_corroboration.py`), so no kinetic verdict here rests on a single solver's quirk.
 Needs the `engine` and `corroborate` extras.
 
-Read that as a **result about these six models, not a gate on the certificates**. The milestone
+Read it as **one measurement stated twice, not two independent confirmations**. The reference
+curve each certificate is judged against *is* a libRoadRunner trajectory
+(`scripts/regenerate_kinetic_references.py`), so the certified comparison is already COPASI
+against libRoadRunner. Corroboration then measures the same two engines again, at a tighter
+tolerance (2% rather than the class default 10%) — a stricter restatement, not a second signal.
+Corroboration adds genuinely new information only where the reference comes from the paper rather
+than from the corroborating engine.
+
+Read it also as a **result about these six models, not a gate on the certificates**. The milestone
 script writes its certificates first and runs corroboration afterwards into a separate
 `corroboration.json`; a divergence would be reported there, but it does not currently downgrade a
 verdict, add a `ClaimAssessment`, or flag `ENGINE_SENSITIVITY` on the certificate. Binding the two

@@ -13,6 +13,7 @@ extras and no network. Writes `datasets/registry.html`. Run from the repo root:
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from reprolith import certificate_digest, certificate_from_content, render_registry
 from reprolith.mcp_server import milestone_agreement_reports, milestone_certificate_dirs
@@ -25,6 +26,7 @@ from reprolith.query import self_validation_summary
 # checkout's certificates and written into another's.
 _SOURCES = milestone_certificate_dirs()
 _DATASETS = _SOURCES["ode-pkpd"].parents[1]  # .../datasets
+_HERE = Path(__file__).resolve().parents[1] / "datasets"
 
 
 def collect() -> list[tuple[str, object]]:
@@ -38,9 +40,21 @@ def collect() -> list[tuple[str, object]]:
     entries: list[tuple[str, object]] = []
     seen: dict[str, str] = {}  # digest -> the class it was first collected under
     for model_class, directory in _SOURCES.items():
+        # A missing directory globs to nothing, so a class whose milestone had not been run simply
+        # vanished from the page — exit 0, no warning, and a smaller published track record
+        # asserted as the truth. A class this builder knows about must be there.
+        if not directory.is_dir():
+            raise FileNotFoundError(
+                f"no milestone certificates for the {model_class!r} class at {directory}; "
+                "run that class's milestone script rather than publishing a page without it"
+            )
         for path in sorted(directory.glob("*.json")):
-            content = json.loads(path.read_text(encoding="utf-8"))
-            certificate = certificate_from_content(content)
+            try:
+                content = json.loads(path.read_text(encoding="utf-8"))
+                certificate = certificate_from_content(content)
+            except (ValueError, KeyError) as exc:
+                # Otherwise a stray or truncated file fails anonymously, with nothing naming it.
+                raise ValueError(f"{path} is not a readable certificate: {exc}") from exc
             digest = certificate_digest(certificate)
             if digest in seen:
                 if seen[digest] != model_class:
@@ -55,6 +69,16 @@ def collect() -> list[tuple[str, object]]:
 
 
 def main() -> None:
+    # The certificates come from the imported package's datasets directory. In a worktree with the
+    # package resolved from another checkout, that is not this script's repository — and the page
+    # was written there, silently rewriting a different checkout's registry and leaving this one
+    # stale. Publish only when the two agree, and say so plainly when they do not.
+    if _DATASETS != _HERE:
+        raise SystemExit(
+            f"reprolith is imported from {_DATASETS}, but this script lives in {_HERE}. "
+            f'Run it with PYTHONPATH="{_HERE.parent / "python"}" so the page is built from, '
+            "and written to, one checkout."
+        )
     entries = collect()
     # The blind self-validation track record, built from the same committed agreement reports the
     # CLI/MCP surfaces summarize (no certificate ledger to load), so the browsable registry's

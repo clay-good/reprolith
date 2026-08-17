@@ -33,6 +33,7 @@ from reprolith import (
     render_human,
     run_test_set,
 )
+from reprolith.persistence import prune_certificate_directory
 
 REPO = Path(__file__).resolve().parents[1]
 STO = REPO / "datasets" / "stochastic"
@@ -97,6 +98,7 @@ def main() -> None:
 
     milestone = STO / "milestone"
     (milestone / "certificates").mkdir(parents=True, exist_ok=True)
+    prune_certificate_directory(milestone / "certificates", certified)
     run = RunMetadata(created_at="2026-08-07T00:00:00Z", actor="stochastic-milestone", tool_version="0.0.1")
     for key, cert in certified.items():
         (milestone / "certificates" / f"{key}.json").write_text(

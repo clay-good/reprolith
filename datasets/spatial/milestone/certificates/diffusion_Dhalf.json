@@ -8,6 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "curve-normalized-distance",
+      "protocol": "1-D finite difference: D=0.5, dx=0.2, dt=0.032, 600 steps, zero-flux (Neumann) boundaries",
       "quantity": "diffused concentration profile",
       "reference_kind": "numeric",
       "root_cause": null,

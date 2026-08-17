@@ -675,12 +675,23 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
     if name == "lint":
         from .linter import lint_curve
 
+        reference = tuple(_bounded_length(arguments["reference"], name="reference"))
+        steps = _bounded_count(arguments["steps"], name="steps", ceiling=_MAX_LINT_ITERATIONS)
+        # The linter requires one reference point per sample and refuses a mismatch — but only
+        # after simulating, so a two-element reference bought a million-step time course: measured
+        # at 1.7 GB of peak memory on the single-threaded server, from one entirely legal request.
+        # Checking the lengths agree first costs nothing and caps the run at the reference's size.
+        if len(reference) != steps + 1:
+            raise ValueError(
+                f"reference has {len(reference)} points but {steps} steps samples {steps + 1}; "
+                "they must match"
+            )
         result = lint_curve(
             arguments["sbml"],
             arguments["species"],
-            reference=tuple(_bounded_length(arguments["reference"], name="reference")),
+            reference=reference,
             duration=_bounded_duration(arguments["duration"]),
-            steps=_bounded_count(arguments["steps"], name="steps", ceiling=_MAX_LINT_ITERATIONS),
+            steps=steps,
         )
         return result.to_dict()
     if name == "lint_steady_state":

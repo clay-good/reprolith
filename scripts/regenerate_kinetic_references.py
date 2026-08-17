@@ -34,7 +34,10 @@ def main() -> None:
     for spec in doc["models"]:
         xml = (KIN / f"{spec['id']}.xml").read_text(encoding="utf-8")
         runner = roadrunner.RoadRunner(xml)
-        runner.timeCourseSelections = ["time", spec["species"]]
+        # The concentration, matching what COPASI's getConcentrationData returns on the other side
+        # of the comparison. A bare species id here is the amount, which differs by the compartment
+        # volume — identical only because every committed model has size 1.
+        runner.timeCourseSelections = ["time", f"[{spec['species']}]"]
         result = runner.simulate(0, spec["duration"], spec["steps"] + 1)
         spec["curve"] = [round(float(row[1]), 6) for row in result]
         spec["reference_tool"] = f"libRoadRunner {roadrunner.__version__} (CVODE)"

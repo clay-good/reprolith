@@ -158,3 +158,18 @@ def test_a_stored_verdict_that_does_not_follow_from_its_evidence_is_refused() ->
     content["overall"] = "reproduced"
     with pytest.raises(ValueError, match="does not follow"):
         certificate_from_content(content)
+
+
+def test_pruning_withdraws_a_certificate_the_run_no_longer_produces(tmp_path) -> None:
+    # A milestone runner writes one file per entry and never cleared what was there before, so an
+    # entry withdrawn from a reference set stayed published — counted by the registry while the
+    # self-validation report beside it did not count it.
+    from reprolith.persistence import prune_certificate_directory
+
+    for stem in ("kept", "withdrawn"):
+        (tmp_path / f"{stem}.json").write_text("{}", encoding="utf-8")
+        (tmp_path / f"{stem}.txt").write_text("", encoding="utf-8")
+    (tmp_path / "notes.md").write_text("", encoding="utf-8")
+
+    assert prune_certificate_directory(tmp_path, {"kept"}) == ["withdrawn"]
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["kept.json", "kept.txt", "notes.md"]

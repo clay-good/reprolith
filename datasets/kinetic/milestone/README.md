@@ -39,9 +39,11 @@ the reference comes from an independent simulator, not from COPASI.
 
 ## Files
 
-Every entry is additionally **engine-independent**: the same trajectory under both COPASI and
-libRoadRunner (6/6), so no verdict here rests on a single solver's quirk — see
-[`corroboration.json`](corroboration.json).
+Every entry is **engine-independent**: the same trajectory under both COPASI and libRoadRunner
+(6/6), so no verdict here rests on a single solver's quirk — see
+[`corroboration.json`](corroboration.json). Note this is the certified comparison restated at a
+tighter tolerance, not a second independent one: the reference curve each certificate is judged
+against is itself a libRoadRunner trajectory.
 
 | File | What it is |
 |---|---|
