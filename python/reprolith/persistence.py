@@ -156,7 +156,8 @@ def dossier_from_dict(record: dict[str, Any]) -> Dossier:
         ),
         gaps=tuple(
             Gap(element=g["element"], kind=GapKind(g["kind"]), detail=g["detail"],
-                load_bearing=g["load_bearing"])
+                load_bearing=g["load_bearing"],
+                carried_by_artifact=g.get("carried_by_artifact", False))
             for g in record["gaps"]
         ),
         artifacts=tuple(

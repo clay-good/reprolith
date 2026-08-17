@@ -92,14 +92,23 @@ class Gap:
     kind: GapKind
     detail: str
     load_bearing: bool = False
+    #: Whether the shipped model file still carries this element, so adopt-and-verify closes it.
+    #: A reaction network the dossier does not record is missing from the *dossier* and present in
+    #: the artifact; a medium the paper never stated is missing from both. The gap is equally real
+    #: either way — it is what a rebuild-from-dossier loses — but only the second makes a paper
+    #: harder to reproduce, and `estimate_difficulty` is asked exactly that question.
+    carried_by_artifact: bool = False
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        record: dict[str, Any] = {
             "element": self.element,
             "kind": self.kind.value,
             "detail": self.detail,
             "load_bearing": self.load_bearing,
         }
+        if self.carried_by_artifact:
+            record["carried_by_artifact"] = True
+        return record
 
 
 class EquationKind(str, Enum):
@@ -259,9 +268,15 @@ def estimate_difficulty(dossier: Dossier) -> str:
     """
     has_runnable_model = any(a.validates for a in dossier.artifacts)
     has_structure = bool(dossier.equations or dossier.state_variables) or has_runnable_model
-    if dossier.load_bearing_gaps() or len(dossier.gaps) > 3 or not has_structure:
+    # A gap the shipped model still carries is closed by running that model, so it does not make
+    # the paper harder to reproduce — it makes the dossier a worse standalone description. Counting
+    # those collapsed the estimate: once intake began recording the reaction network it reads past,
+    # every SBML entry scored `high`, and an estimate that is constant routes nothing.
+    outstanding = [g for g in dossier.gaps if not (has_runnable_model and g.carried_by_artifact)]
+    load_bearing = [g for g in outstanding if g.load_bearing]
+    if load_bearing or len(outstanding) > 3 or not has_structure:
         return "high"
-    if has_runnable_model and not dossier.gaps:
+    if has_runnable_model and not outstanding:
         return "low"
     return "medium"
 

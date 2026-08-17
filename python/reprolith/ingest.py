@@ -204,6 +204,7 @@ def _unstated_units(values: tuple[Parameter, ...]) -> tuple[Gap, ...]:
             f"({shown}); their magnitudes are recorded, their units are not"
         ),
         load_bearing=True,
+        carried_by_artifact=True,
     ),)
 
 
@@ -236,6 +237,7 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
                 "law of motion, and a model rebuilt from the dossier alone does not move"
             ),
             load_bearing=True,
+            carried_by_artifact=True,
         ))
     volumes = [
         model.getCompartment(i) for i in range(model.getNumCompartments())
@@ -257,6 +259,7 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
                 "in a single compartment of size 1"
             ),
             load_bearing=True,
+            carried_by_artifact=True,
         ))
     if model.getNumFunctionDefinitions():
         gaps.append(Gap(
@@ -268,6 +271,7 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
                 "cannot be evaluated from this dossier"
             ),
             load_bearing=True,
+            carried_by_artifact=True,
         ))
     if model.getNumEvents():
         gaps.append(Gap(

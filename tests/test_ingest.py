@@ -187,8 +187,11 @@ def test_a_reaction_network_is_recorded_as_a_gap_not_read_past() -> None:
     reaction_gaps = [g for g in dossier.gaps if g.element == "reaction network"]
     assert len(reaction_gaps) == 1
     assert reaction_gaps[0].kind is GapKind.EQUATION and reaction_gaps[0].load_bearing
-    # And a dossier missing every law of motion is no longer advertised as the easy case.
-    assert estimate_difficulty(dossier) != "low"
+    # The gap is real and load-bearing for anything rebuilt from the dossier alone — but the
+    # shipped model still carries the reactions, so adopt-and-verify closes it and the advisory
+    # difficulty is unchanged. What must never happen again is the gap going unrecorded.
+    assert reaction_gaps[0].carried_by_artifact
+    assert estimate_difficulty(dossier) == "low"
 
 
 def test_an_unstated_unit_is_recorded_as_missing_rather_than_called_dimensionless() -> None:

@@ -390,18 +390,21 @@
   ],
   "gaps": [
     {
+      "carried_by_artifact": true,
       "detail": "the artifact's dynamics are 35 reaction(s), which this dossier records no equation for; the state variables listed here have no stated law of motion, and a model rebuilt from the dossier alone does not move",
       "element": "reaction network",
       "kind": "equation",
       "load_bearing": true
     },
     {
+      "carried_by_artifact": true,
       "detail": "21 of 21 compartment(s) are not unit-sized (IntestineLumen=500, Liver=1799, KidneyPlasma=102.2, Remainder=16310, PlasmaVenous=2247); the dossier records no compartment, and a model rebuilt from it places every species in a single compartment of size 1",
       "element": "compartment volumes",
       "kind": "other",
       "load_bearing": true
     },
     {
+      "carried_by_artifact": true,
       "detail": "4 functionDefinition(s) are referenced by the model's own expressions and are not recorded here, so an equation that calls one cannot be evaluated from this dossier",
       "element": "function definitions",
       "kind": "equation",
@@ -420,6 +423,7 @@
       "load_bearing": true
     },
     {
+      "carried_by_artifact": true,
       "detail": "81 of 115 extracted values state no unit in the artifact (Compartment_0, Compartment_1, Compartment_10, Compartment_11, Compartment_12, \u2026); their magnitudes are recorded, their units are not",
       "element": "units",
       "kind": "unit",

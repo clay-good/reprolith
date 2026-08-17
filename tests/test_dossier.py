@@ -170,3 +170,32 @@ def test_difficulty_counts_an_adopted_model_as_structure() -> None:
         gaps=(Gap(element="EX_glc", kind=GapKind.MEDIUM, detail="unstated", load_bearing=True),),
     )
     assert estimate_difficulty(blocked) == "high"
+
+
+def test_a_gap_the_shipped_model_still_carries_does_not_make_a_paper_harder() -> None:
+    """Difficulty asks how hard a paper is to reproduce, not how complete its dossier is.
+
+    Once intake began recording the reaction network it reads past, every SBML entry carried a
+    load-bearing gap and scored `high` — and an estimate that is constant routes nothing. A
+    reaction network is missing from the dossier and present in the artifact, so adopt-and-verify
+    closes it; a dosing event is where reproduction actually fails, so it still counts.
+    """
+    from reprolith import Gap, GapKind, ModelArtifact, estimate_difficulty
+    from reprolith.dossier import Dossier
+
+    model = ModelArtifact(filename="m.xml", detected_format="sbml", validates=True)
+    structural = Gap(element="reaction network", kind=GapKind.EQUATION, detail="d",
+                     load_bearing=True, carried_by_artifact=True)
+    dosing = Gap(element="events", kind=GapKind.DOSING, detail="d", load_bearing=True)
+
+    carried = Dossier(entry="e", artifacts=(model,), state_variables=("A",), gaps=(structural,))
+    assert estimate_difficulty(carried) == "low"
+    assert carried.load_bearing_gaps()  # still recorded, still load-bearing
+
+    dosed = Dossier(entry="e", artifacts=(model,), state_variables=("A",), gaps=(structural, dosing))
+    assert estimate_difficulty(dosed) == "high"
+
+    # And with no runnable model, nothing is closed by adopting one.
+    no_model = Dossier(entry="e", state_variables=("A",), gaps=(structural,))
+    assert estimate_difficulty(no_model) == "high"
+    assert "carried_by_artifact" not in dosing.to_dict()  # omitted at its default
