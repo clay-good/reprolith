@@ -443,3 +443,25 @@ def test_negative_initial_counts_and_out_of_order_sample_times_are_refused() -> 
             2, decay, [10, 0], [0.0, 5.0, 1.0], species=0,
             percentiles=[50.0], trajectories=2, seed=1,
         )
+
+
+def test_a_seed_that_misses_certifies_honestly_instead_of_raising() -> None:
+    # A claim supplying no root-cause attribution used to raise when its verdict was not
+    # reproduced, so a seed that happened to miss crashed the run rather than producing the
+    # not-reproduced certificate it had earned — and a class that can only ever emit a clean
+    # verdict or a stack trace has a self-validation record that means nothing.
+    from reprolith import EnginePin, PaperIdentity, Reaction, StochasticClaim, certify_stochastic
+
+    reactions = [Reaction(10.0, (), ((0, 1),)), Reaction(1.0, ((0, 1),), ())]  # mean 10 at steady state
+    verdicts = set()
+    for seed in range(1, 41):
+        cert = certify_stochastic(
+            paper=PaperIdentity(title="t", doi=""), engine_pin=EnginePin(engine="reprolith-ssa", version="1"),
+            n_species=1, reactions=reactions, initial=[0],
+            claims=[StochasticClaim(claim_id="m", quantity="mean count", species=0,
+                                    reported_mean=10.0, source_location="closed form",
+                                    duration=40.0, trajectories=400, seed=seed)],
+        )
+        verdicts.add(cert.overall.value)
+    # Both outcomes occur across seeds, and neither raises.
+    assert verdicts == {"partially-reproduced", "not-reproduced"}

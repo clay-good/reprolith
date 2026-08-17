@@ -40,6 +40,12 @@ class EnginePin:
     version: str
     algorithm: str | None = None
 
+    def __post_init__(self) -> None:
+        # A pin naming no engine or no version pins nothing, and a bundle carrying one passed
+        # validation clean while promising that anyone can re-run it and get these numbers.
+        if not self.engine.strip() or not self.version.strip():
+            raise ValueError("an engine pin needs both an engine and a version")
+
     def to_dict(self) -> dict[str, Any]:
         return {"engine": self.engine, "version": self.version, "algorithm": self.algorithm}
 

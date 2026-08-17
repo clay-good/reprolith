@@ -151,6 +151,37 @@ The general lesson is the one the refusal pattern elsewhere in the codebase alre
 intake path that cannot represent a construct must say so. Silently flattening it produces a model
 that is runnable, plausible, and not the one the artifact described.
 
+## Known limits the audits found and left in place
+
+Recorded rather than fixed, because each needs a design change rather than a patch, and none
+can produce a certificate that claims more than it checked:
+
+- **A certificate does not record whether the model was author-supplied or rebuilt.** The
+  reconstruction bundle records it (`ModelOrigin`), and so do the mismatches it found and the
+  claims it could not run — but nothing maps a bundle to a certificate, and `Certificate` has no
+  field for any of it. The model-reconstruction spec asks for the origin on the certificate. The
+  honesty that matters does travel: a load-bearing assumption downgrades the verdict wherever it
+  is recorded.
+- **The engine pin is declared, not dispatched on.** `certify_model` runs COPASI whatever pin it
+  is handed; a pin naming another engine would be published without ever having run. The pin is
+  now required to name an engine and a version, but validating it against the engine that
+  actually ran needs engine dispatch, which does not exist.
+- **The certified tolerance is far looser than the agreement achieved.** The constraint-based
+  certificates carry the 5% class default while agreeing with COBRApy to about 1e-14, so a 3%
+  mis-stated medium — the class's own first-named failure mode — passes as a clean reproduction.
+  Tightening it is a recalibration of the whole tolerance table, not a local change.
+- **A stochastic certificate's assumption-qualified flag names no assumption.** The flag carries
+  the class's real caveat (the verdict depends on the seed and ensemble size, which the protocol
+  now records), but it reads as "an assumption Reprolith supplied" with none listed.
+- **Work that has been done cannot be recorded as done.** An agent claims an entry under a lease
+  and issues a certificate, but no surface transitions the entry, so at lease expiry the same
+  unit is handed out again. Likewise nothing releases a `blocked` entry back to the queue,
+  though the state machine permits it.
+- The curve oracle's RMSE can average a localized peak miss into a pass, and `relative_error`
+  against an exactly-zero reference falls back to an absolute comparison judged at a relative
+  tolerance. Both are long-standing, both documented, neither exhibited by any committed
+  certificate.
+
 ## Status and what remains
 
 The engine and one real reproduction are done. The full blind run over the 31-entry set (task

@@ -23,7 +23,7 @@ from dataclasses import dataclass, field, replace
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, Parameter
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
-from .oracle import Attribution, PercentileBand, Tolerance, judge_scalar
+from .oracle import Attribution, FailureMode, Fault, PercentileBand, Tolerance, judge_scalar
 
 
 @dataclass(frozen=True)
@@ -339,7 +339,16 @@ def certify_stochastic(
             reported=claim.reported_mean,
             predicted=mean,
             tolerance=claim.tolerance,
-            attribution=claim.shortfall,
+            # A failed verdict must carry a root cause, and a claim that supplies none used to
+            # raise instead of certifying — so a seed that happened to miss crashed the run
+            # rather than producing the honest not-reproduced certificate it had earned. The
+            # class's own default cause is the sampling the verdict rests on; a caller who knows
+            # better supplies its own.
+            attribution=claim.shortfall or Attribution(
+                mode=FailureMode.FINITE_ENSEMBLE_SAMPLING,
+                implicated=claim.quantity,
+                fault=Fault.RECONSTRUCTION,
+            ),
             assumption_qualified=claim.assumption_qualified,
         )
         assessments.append(

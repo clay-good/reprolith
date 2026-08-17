@@ -94,6 +94,10 @@ class FailureMode(str, Enum):
     UNSPECIFIED_UPDATE_SCHEME = "unspecified-update-scheme"
     AMBIGUOUS_LOGIC_RULE = "ambiguous-or-missing-logic-rule"
     UNSPECIFIED_INITIAL_STATE = "unspecified-initial-state-or-inputs"
+    # Stochastic (SSA) root causes: a mean judged from a finite ensemble misses by chance at a
+    # rate the ensemble size sets, which is a cause of the shortfall and not a fault in either
+    # the paper or the model.
+    FINITE_ENSEMBLE_SAMPLING = "finite-ensemble-sampling-noise"
     # Escape hatch for a failure fitting none of the above (spec: "recorded as uncategorized").
     UNCATEGORIZED = "uncategorized"
 
