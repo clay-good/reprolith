@@ -68,8 +68,13 @@ reprolith certificate <digest>       # the full certificate, human-readable
 reprolith verdict <digest>           # the scope-qualified verdict, never a bare boolean
 reprolith gaps <digest>              # the "what was missing" report
 reprolith status <accession>         # a paper's lifecycle status and history
+reprolith certificates-for <id>      # every certificate digest for one paper, newest first
 reprolith self-validation            # the blind track record, per class and overall
 ```
+
+`certificates-for` takes `--by title|doi|pubmed-id|accession`, and it is how you reach the classes
+the catalog does not list: the catalog is the PK/PD work queue, while the ledger carries all six
+classes' published certificates. The certificate and verdict commands take the digest it returns.
 
 Add `--json` to any read command to get the exact object an agent receives over MCP. Run
 `reprolith --help` for the full command list.

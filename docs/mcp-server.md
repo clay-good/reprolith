@@ -2,8 +2,10 @@
 
 Reprolith exposes its catalog, certificates, and reproducibility engine to AI agents over the
 Model Context Protocol, so an agent can call it mid-workflow as a deterministic reproducibility
-oracle. The server is read-only plus an inline linter: every tool returns data and changes no
-state, and every verdict travels with its scope flag and qualifications.
+oracle. Most of the surface is read-only plus an inline linter — those tools return data and change
+no state — and a smaller set of effectful tools closes an agent's work loop by claiming, recording,
+and requeueing entries (see "Effectful tools" below). Every verdict travels with its scope flag and
+qualifications, whichever surface it leaves by.
 
 ## Run it
 
