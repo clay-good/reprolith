@@ -26,7 +26,13 @@ from typing import Any
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, ModelArtifact
 from .model import Assumption, Certificate, ClaimAssessment, EnginePin, PaperIdentity
-from .oracle import Attribution, ComparisonMethod, ReferenceKind, assess_match
+from .oracle import (
+    Attribution,
+    ComparisonMethod,
+    ReferenceKind,
+    assess_match,
+    undetermined_shortfall,
+)
 from .pins import algorithm_revision
 
 # A network state as node values in sorted-node order, so states hash and sort deterministically.
@@ -712,7 +718,9 @@ def certify_logical(
             source_location=claim.source_location,
             reported=claim.reported,
             network=parse_boolean_network(claim.rules),
-            attribution=claim.shortfall,
+            # A miss the caller did not categorize is published as uncategorized rather
+            # than raised, so this front-end can say a network did not reproduce.
+            attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
             assumption_qualified=claim.assumption_qualified,
         )
         for claim in claims

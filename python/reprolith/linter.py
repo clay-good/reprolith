@@ -34,6 +34,7 @@ from .oracle import (
     normalized_curve_distance,
     relative_error,
     verdict_for,
+    worst_point_deviation,
 )
 from .scope import Scope
 
@@ -79,6 +80,55 @@ def _not_evaluable(method: ComparisonMethod, tolerance: Tolerance) -> LintResult
     )
 
 
+def _curve_lint(reference: Sequence[float], predicted: Sequence[float], tol: Tolerance) -> LintResult:
+    """Judge a curve the way :func:`reprolith.judge_curve` does — average *and* worst point.
+
+    The inline linter and the certificate path have to answer the same question the same way: an
+    agent gates its work on the linter and then publishes through the judge, so a rule that lives
+    in only one of them means the linter green-lights a reconstruction the certificate refuses. The
+    worst-point rule was added to the judge alone, and a doubled peak that the judge calls
+    `not-reproduced` linted as a clean pass on a 201-point curve.
+    """
+    distance = normalized_curve_distance(reference, predicted)
+    worst = worst_point_deviation(reference, predicted)
+    scaled_worst = (
+        worst * (tol.reproduced_within / tol.partial_within) if tol.partial_within > 0.0 else worst
+    )
+    return LintResult(
+        verdict=verdict_for(max(distance, scaled_worst), tol),
+        method=ComparisonMethod.CURVE_NORMALIZED_DISTANCE.value,
+        discrepancy=(
+            f"normalized distance {distance:.4f}, worst point {worst:.4f} of span "
+            f"(pass budget {tol.partial_within:.4f})"
+        ),
+        tolerance=tol.label(),
+    )
+
+
+def _reported_zero_lint(
+    reported: float, predicted: float, method: ComparisonMethod, tol: Tolerance
+) -> LintResult | None:
+    """Abstain on a reported zero with no scale, the way :func:`reprolith.judge_scalar` does.
+
+    A lethality claim — the canonical constraint-based claim shape — reports zero, and
+    :func:`relative_error` raises without the scale that zero is relative to. The judge turns that
+    into an abstention; the linter propagated the exception, so an agent linting the claim got a
+    server error where the certificate would have said "not evaluable, and here is what it needs".
+    """
+    if reported == 0.0 and predicted != 0.0:
+        return LintResult(
+            verdict=Verdict.NOT_EVALUABLE,
+            method=method.value,
+            discrepancy=(
+                f"the reported value is zero and the run gives {predicted:.6g}, so there is no "
+                "magnitude to judge a relative error against; state the scale the claim is zero "
+                "relative to (e.g. the unperturbed value)"
+            ),
+            tolerance=tol.label(),
+        )
+    return None
+
+
 def lint_curve(
     sbml: str,
     species: str,
@@ -107,13 +157,7 @@ def lint_curve(
     )
     if not _all_finite(reference, predicted):
         return _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol)
-    distance = normalized_curve_distance(reference, predicted)
-    return LintResult(
-        verdict=verdict_for(distance, tol),
-        method=ComparisonMethod.CURVE_NORMALIZED_DISTANCE.value,
-        discrepancy=f"normalized distance {distance:.4f}",
-        tolerance=tol.label(),
-    )
+    return _curve_lint(reference, predicted, tol)
 
 
 def lint_objective(
@@ -151,6 +195,11 @@ def lint_objective(
     tol = tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind)
     if not _all_finite((reported, predicted)):
         return _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol)
+    unscaled_zero = _reported_zero_lint(
+        reported, predicted, ComparisonMethod.SCALAR_RELATIVE_ERROR, tol
+    )
+    if unscaled_zero is not None:
+        return unscaled_zero
     error = relative_error(reported, predicted)
     return LintResult(
         verdict=verdict_for(error, tol),
@@ -262,13 +311,7 @@ def lint_diffusion(
     tol = tolerance or default_tolerance(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind)
     if not _all_finite(reference, predicted):
         return _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol)
-    distance = normalized_curve_distance(reference, predicted)
-    return LintResult(
-        verdict=verdict_for(distance, tol),
-        method=ComparisonMethod.CURVE_NORMALIZED_DISTANCE.value,
-        discrepancy=f"normalized distance {distance:.4f}",
-        tolerance=tol.label(),
-    )
+    return _curve_lint(reference, predicted, tol)
 
 
 def lint_steady_state(
@@ -330,6 +373,11 @@ def lint_estimation(
     tol = tolerance or estimation_default_tolerance()
     if not _all_finite((reported, recovered)):
         return _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol)
+    unscaled_zero = _reported_zero_lint(
+        reported, recovered, ComparisonMethod.SCALAR_RELATIVE_ERROR, tol
+    )
+    if unscaled_zero is not None:
+        return unscaled_zero
     error = relative_error(reported, recovered)
     return LintResult(
         verdict=verdict_for(error, tol),

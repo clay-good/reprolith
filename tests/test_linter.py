@@ -84,3 +84,4 @@ def test_a_non_finite_input_abstains_rather_than_reporting_the_paper_wrong() -> 
     nan = float("nan")
     assert lint_estimation(reported=1.0, recovered=nan).verdict is Verdict.NOT_EVALUABLE
     assert lint_estimation(reported=1.0, recovered=1.02).verdict is Verdict.REPRODUCED
+

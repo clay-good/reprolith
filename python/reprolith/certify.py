@@ -94,18 +94,28 @@ def _metric(times: Sequence[float], values: Sequence[float], metric: str) -> flo
 
 
 def _run_protocol(
-    *, duration: float, steps: int, overrides: tuple[tuple[str, float], ...] = ()
+    *,
+    duration: float,
+    steps: int,
+    read: str,
+    overrides: tuple[tuple[str, float], ...] = (),
 ) -> str:
     """Describe the run a time-course judgment rests on, for the certificate's protocol field.
 
-    A simulated number is a function of the window it was run over and how finely it was sampled:
-    a metric read off a vanishingly short run is the initial condition, and an AUC or a curve
-    distance moves with the sample count. The parameter overrides are here too, because a claim's
-    dose is what distinguishes one run of the same model from another.
+    A simulated number is a function of four things, and the protocol names all four: the window it
+    was run over, how finely it was sampled, what was read out of the trajectory, and any parameter
+    the claim moved. A metric read off a vanishingly short run is the initial condition; an AUC and
+    a curve distance both move with the sample count; and two claims on one model that read a
+    different species — or the same species by peak rather than by area — are otherwise identical
+    here while disagreeing about the answer.
+
+    Values are written at full precision rather than rounded for display: a reader who re-runs with
+    the printed number has to get the number that was run, and six significant figures is enough to
+    print two distinct doses identically.
     """
-    stated = f"duration={duration:g}, steps={steps}"
+    stated = f"duration={duration!r}, steps={int(steps)}, read={read}"
     if overrides:
-        stated += ", overrides: " + ", ".join(f"{name}={value:g}" for name, value in overrides)
+        stated += ", overrides: " + ", ".join(f"{name}={value!r}" for name, value in overrides)
     return stated
 
 
@@ -116,10 +126,25 @@ def _apply_overrides(sbml: str, overrides: tuple[tuple[str, float], ...]) -> str
 
     document = libsbml.readSBMLFromString(sbml)
     model = document.getModel()
+    # A parameter a rule or an initial assignment determines is recomputed by the solver, so
+    # setting its value here changes nothing — and the protocol would then publish an override the
+    # run never had. Refused for the same reason an unknown parameter is: an override that does not
+    # take is a claim about a run that did not happen.
+    determined = {
+        model.getRule(i).getVariable() for i in range(model.getNumRules())
+    } | {
+        model.getInitialAssignment(i).getSymbol()
+        for i in range(model.getNumInitialAssignments())
+    }
     for name, value in overrides:
         parameter = model.getParameter(name)
         if parameter is None:
             raise ValueError(f"parameter {name!r} is not in the model")
+        if name in determined:
+            raise ValueError(
+                f"parameter {name!r} is determined by a rule or initial assignment, so overriding "
+                "its value has no effect on the run; override the quantity that determines it"
+            )
         parameter.setValue(float(value))
     return str(libsbml.writeSBMLToString(document))
 
@@ -167,7 +192,10 @@ def certify_model(
             replace(
                 assessment,
                 protocol=_run_protocol(
-                    duration=duration, steps=steps, overrides=claim.parameter_overrides
+                    duration=duration,
+                    steps=steps,
+                    read=f"{claim.species} {claim.metric}",
+                    overrides=claim.parameter_overrides,
                 ),
             )
         )
@@ -245,6 +273,7 @@ def certify_curves(
                 protocol=_run_protocol(
                     duration=claim.duration,
                     steps=claim.steps,
+                    read=f"{claim.species} curve",
                     overrides=claim.parameter_overrides,
                 ),
             )
@@ -324,7 +353,10 @@ def certify_estimation(
                 reported=claim.reported,
                 recovered=claim.recovered,
                 tolerance=claim.tolerance,
-                attribution=claim.shortfall,
+                # The same fallback the simulation front-ends carry: a shortfall the caller
+                # did not categorize is published as uncategorized, not raised. Without it
+                # this path could emit only a clean pass or a traceback.
+                attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
                 assumption_qualified=claim.assumption_qualified,
             ),
             protocol=claim.protocol,
@@ -432,7 +464,10 @@ def certify_population(
                 predicted=claim.predicted,
                 reference_kind=claim.reference_kind,
                 tolerance=claim.tolerance,
-                attribution=claim.shortfall,
+                # The same fallback the simulation front-ends carry: a shortfall the caller
+                # did not categorize is published as uncategorized, not raised. Without it
+                # this path could emit only a clean pass or a traceback.
+                attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
                 assumption_qualified=claim.assumption_qualified,
             ),
             protocol=claim.protocol,

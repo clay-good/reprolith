@@ -148,7 +148,9 @@ def test_a_time_course_certificate_records_the_run_behind_each_number(
                       source_location="Table 1",
                       parameter_overrides=(("Dose_mg", 779.9),))],
     )
-    assert scalar.assessments[0].protocol == "duration=10, steps=10, overrides: Dose_mg=779.9"
+    assert scalar.assessments[0].protocol == (
+        "duration=10.0, steps=10, read=C cmax, overrides: Dose_mg=779.9"
+    )
 
     curve = certify_curves(
         "<sbml/>", paper=paper, engine_pin=pin,
@@ -156,9 +158,9 @@ def test_a_time_course_certificate_records_the_run_behind_each_number(
                            reference=tuple(5.0 for _ in times), source_location="Fig 1",
                            duration=10.0, steps=10)],
     )
-    assert curve.assessments[0].protocol == "duration=10, steps=10"
+    assert curve.assessments[0].protocol == "duration=10.0, steps=10, read=C curve"
     # It travels into the published content, so a reader holding the file can re-run it.
-    assert curve.content()["assessments"][0]["protocol"] == "duration=10, steps=10"
+    assert curve.content()["assessments"][0]["protocol"] == "duration=10.0, steps=10, read=C curve"
 
 
 def test_an_estimation_claim_that_states_no_protocol_is_refused() -> None:
@@ -170,3 +172,52 @@ def test_an_estimation_claim_that_states_no_protocol_is_refused() -> None:
             claim_id="cl", quantity="CL/F estimate", reported=3.2, recovered=3.2,
             source_location="Table 3", protocol="",
         )
+
+
+def test_an_override_the_run_would_ignore_is_refused_rather_than_published(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A parameter a rule determines is recomputed by the solver, so setting it changes nothing.
+
+    The protocol would then name an override the run never had — the certificate asserting a
+    condition it did not hold. The metformin model has such parameters (its assignment-rule blood
+    flows); moving one by fifteen orders of magnitude left the Cmax untouched.
+    """
+    from reprolith import Claim, EnginePin, PaperIdentity, certify_model
+    from reprolith.certify import _apply_overrides
+
+    rule_model = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="ruled">
+    <listOfParameters>
+      <parameter id="k" value="1" constant="true"/>
+      <parameter id="derived" value="2" constant="false"/>
+    </listOfParameters>
+    <listOfRules>
+      <assignmentRule variable="derived">
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><ci> k </ci></math>
+      </assignmentRule>
+    </listOfRules>
+  </model>
+</sbml>"""
+    with pytest.raises(ValueError, match="determined by a rule"):
+        _apply_overrides(rule_model, (("derived", 5.0),))
+    # A parameter nothing determines is still overridable, and an unknown one still refused.
+    assert "5" in _apply_overrides(rule_model, (("k", 5.0),))
+    with pytest.raises(ValueError, match="not in the model"):
+        _apply_overrides(rule_model, (("absent", 5.0),))
+
+    # And the protocol prints the value that was run, at full precision — six significant figures
+    # printed two distinct doses identically.
+    times = tuple(float(i) for i in range(3))
+    monkeypatch.setattr("reprolith.certify.simulate", lambda *a, **k: (times, (1.0, 1.0, 1.0)))
+    monkeypatch.setattr("reprolith.certify._apply_overrides", lambda sbml, overrides: sbml)
+    cert = certify_model(
+        "<sbml/>", paper=PaperIdentity(title="p", doi="10.0/x"),
+        engine_pin=EnginePin(engine="test-engine", version="0.0.0"), duration=2.0, steps=2,
+        claims=[Claim(claim_id="c", quantity="q", species="C", reported=1.0,
+                      source_location="Table 1",
+                      parameter_overrides=(("dose", 389.9200009),))],
+    )
+    assert "dose=389.9200009" in cert.assessments[0].protocol
+    assert "read=C cmax" in cert.assessments[0].protocol

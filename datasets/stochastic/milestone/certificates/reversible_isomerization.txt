@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Reversible isomerization A<->B (N=50, kf=3, kr=1) — binomial equilibrium mean
-Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev c488ab4e4305)
+Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev 3e2f81d4362c)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
@@ -7,7 +7,7 @@ OVERALL: partially-reproduced
 
 CLAIMS
   [reversible_isomerization-mean] mean copy number: reproduced [assumption-qualified] (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
-      sampling: SSA ensemble: 400 trajectories to t=30, seed 1234
+      protocol: SSA ensemble: 400 trajectories to t=30, seed 1234
 
 ASSUMPTIONS (supplied by Reprolith, not the paper)
   [ssa-sampling-reversible_isomerization-mean] the mean judged here is the average of an ensemble Reprolith sampled, not a number the paper's own run produced -> SSA ensemble: 400 trajectories to t=30, seed 1234 [load-bearing]

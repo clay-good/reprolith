@@ -8,7 +8,7 @@
     ]
   },
   "BIOMD0000000010": {
-    "distance": 3.17e-07,
+    "distance": 3.52e-07,
     "engine_independent": true,
     "engines": [
       "copasi",
@@ -32,7 +32,7 @@
     ]
   },
   "BIOMD0000000051": {
-    "distance": 2.51e-06,
+    "distance": 2.248e-06,
     "engine_independent": true,
     "engines": [
       "copasi",

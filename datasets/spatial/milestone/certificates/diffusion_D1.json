@@ -3,7 +3,7 @@
     {
       "assumption_qualified": false,
       "claim_id": "diffusion_D1-profile",
-      "discrepancy": "normalized distance 0.0001, worst point 0.0004 of span (budget 0.2500)",
+      "discrepancy": "normalized distance 0.0001, worst point 0.0004 of span (pass budget 0.2500)",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "explicit-forward-euler-finite-difference (rev 61954de6f2df)",
+    "algorithm": "explicit-forward-euler-finite-difference (rev a9b52bf32796)",
     "engine": "reprolith-fd",
     "version": "0.0.1"
   },

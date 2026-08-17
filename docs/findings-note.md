@@ -354,6 +354,80 @@ byte-identical; the seven time-course certificates re-digest, and the metformin 
 distinguishable from each other in the published file. The rendered certificate labels it
 `protocol` rather than `sampling`, since a window is not a seed.
 
+## A dossier that recorded everything about a model except how it moves
+
+Artifact intake reads species, parameters, and rules, and rules become equations — so on a
+rule-based PK/PD model the dossier carries most of the model, which is what its docstring claims.
+A reaction-based model is the other case, and it is the common one: its laws of motion are its
+reactions, and the ingester never read one. The MAPK cascade's dossier recorded eight state
+variables, zero equations, and zero gaps. The shipped metformin dossier lists sixty-three
+equations, none of which governs any of its twenty-one state variables — they are observables and
+compartment volumes. Simulating exactly what that dossier describes gives a plasma curve that is
+identically zero, against the 6.07 the certificate is about.
+
+Nothing wrong was ever simulated, because reconstruction refuses to build a model whose state
+variables have no rate equation — the fail-safe held for every one of the nine shipped models. But
+the artifact was still misdescribed, and one surface believed it: difficulty estimation reads the
+gap list, so a dossier missing every law of motion was published in the catalog as `low`, defined
+as "a valid shipped model and no gaps: adopt-and-verify with nothing to assume". A reaction network
+is now recorded as a load-bearing gap, as are function definitions the model's own expressions
+call, and the difficulty follows.
+
+## Two surfaces that could only agree by luck
+
+The inline linter is what an agent gates its workflow on; the judge is what publishes. They ran the
+same comparison until a rule was added to one of them. The worst-point rule that closed the
+doubled-peak hole went into `judge_curve` alone, so the same doubled peak on the same 201-point
+curve was `not-reproduced` at the certificate and a clean pass at the linter. Both curve linters
+now judge through the rule the judge uses.
+
+The reported-zero abstention had drifted the same way. `judge_scalar` abstains and names what the
+claim needs; the linter called `relative_error` directly, which raises without a scale — so an
+agent linting a lethality claim, the canonical constraint-based claim shape, got a server error
+where the certificate would have said "not evaluable, and here is what it needs". `judge_estimation`
+had the same hole on its own path.
+
+## Front-ends that could publish a pass or a traceback
+
+The ninth pass found that a class front-end which raises on an uncategorized miss can only ever
+emit a clean pass or an exception, and fixed four of them. Three were missed: the estimation, the
+population, and the logical front-ends all pass the claim's `shortfall` straight through, and all
+three take claims whose `shortfall` defaults to `None`. Each now falls back to the uncategorized
+attribution the others use, with the fault hypothesis pointing at the reconstruction. No published
+number was affected — the logical milestone attributes its own non-matches, and neither the
+estimation nor the population path produces anything committed — but a class that cannot say a
+result did not reproduce is not a class that has checked anything.
+
+Alongside them, the pre-submission report was reading its own priority-1 blocker as nothing at all:
+the overall rule drops abstentions before deciding, by design, so a certificate with one clean pass
+and one un-judgeable claim is `reproduced` — and the report announced "every claim reproduces
+cleanly under the pinned engine" directly above a fix list whose first entry was "a reproducer
+cannot evaluate this claim". It looks for itself now. An abstained estimation claim was also being
+filed at simulation level, so the never-green estimation badge and the estimation fix list did not
+see it.
+
+## What the terminal was allowed to leave out
+
+The read surfaces keep paying. Three qualifications the code deliberately computes were reaching
+the JSON view and the published registry page but not the terminal:
+
+- **A superseded verdict read as the current one.** `verdict` computes `superseded_by` precisely so
+  a withdrawn answer never travels as the live one, and the gap report prints it — the verdict
+  command and the human certificate did not. The registry has warned about it since the sixth pass,
+  so the terminal was the last surface where a corrected certificate looked current.
+- **The self-validation table published six near-perfect scores with no caveat.** `label_basis`
+  exists because a class whose entries all carry one label cannot be scored for discriminative
+  skill — "always answer that label" scores 100%. It reaches the JSON and the registry banner; the
+  human table printed the numbers alone.
+- **A mistyped `--data-dir` invented a repository.** A missing `catalog.json` falls back to seeding
+  a fresh catalog, which is right for a first run in an empty directory — but the fallback also
+  answered a path that does not exist, and a path that is a regular file, with a confident thirty-
+  one-entry queue and a claimable backlog. The bootstrap case still works; a directory that is not
+  there is now an error naming the path.
+
+`certificates-for` also could not distinguish "this paper has no certificate" from "there is no
+such paper", while every other identifier-taking command exits 1 on the second.
+
 ## Known limits the audits found and left in place
 
 Recorded rather than fixed, because each needs a design change rather than a patch, and none
@@ -409,10 +483,36 @@ can produce a certificate that claims more than it checked:
   the bundle, the artifact whose job is to describe how to re-run it, still is not.
   Re-running at hourly output — the only resolution the published recipe supports — adds
   about 4.4% to the Cmax metric, which is most of the 5% tolerance.
-- **Cross-engine corroboration never runs anywhere automatic.** No CI job installs the extra, so
-  the only executing test skips in every job, and what CI actually checks is that a committed
-  JSON file says `true`. That file records no engine versions, so its staleness cannot be detected
-  either.
+- **Cross-engine corroboration is not reproducible run to run, because the engine is not.**
+  Repeated `simulate` calls on one model in one process alternate between two results with call
+  parity — a last-place difference, but a real one, against a docstring promising byte-identical
+  series. It is why regenerating the corroboration file moves distances that no code change
+  touched (2.08e-05 to 2.38e-05 on one model), and it means the corroborated curve is not
+  bit-for-bit the certified one. Four of the seven engine-backed models show it. The suspect is
+  COPASI's global container state, and finding out needs its own investigation, not a patch.
+- **The certified engine version is whatever the machine last resolved.** The engine extra names a
+  floor, so a certificate pinning `copasi 4.46.300` can be regenerated under a different version
+  without anything objecting — the pin is recorded, never dispatched on. This is not theoretical:
+  an upstream release published and then yanked as incompatible was installed by CI in that
+  window, and every engine job aborted inside the simulator. That release is now excluded by name,
+  which is a patch for one version, not for the class of problem.
+- **A published bundle still cannot re-run the run it describes, and now says less than the
+  certificate does.** The certificate records the window, the sample count, the readout, and the
+  dose; `RecipeStep` records none of them, so running the metformin bundle strictly as published
+  gives both claims the same 6.07 and fails the 1000 mg one. The bundle's `mismatches: []` is also
+  never computed — the milestone script does not call the comparison — so "checked and agreed" and
+  "never checked" are the same published value. And `covers()`, which exists to stop a bundle
+  overstating what it addresses, is called from nowhere: on the shipped pair it returns false.
+- **An intake unit is fabricated where the source states none.** `Parameter` documents its own
+  invariant — "an unstated unit is a Gap, not a value" — and intake fills an unstated unit with
+  `dimensionless`: 81 of the 94 parameters in the shipped metformin dossier, including blood flows
+  and a glomerular filtration rate, recorded at `quoted` confidence. The 13 that do state units
+  cite model-local ids (`unit_0`) the dossier does not carry, so they are unresolvable from the
+  dossier alone. Compartments are dropped entirely and reconstruction assumes unit size, which the
+  refusal path catches for concentration-stated species and not for amount-stated ones.
+- **The committed corroboration file records no engine versions**, so its staleness cannot be
+  detected. A CI job does now install the extra and run the cross-engine tests against live
+  engines, so what CI checks is no longer only that a committed JSON says `true`.
 - **An estimation or population certificate accepts any engine pin.** Both are built from numbers
   the caller supplies, with no run of their own, so the pin can name an engine that is not
   installed. Validating it needs engine dispatch, which does not exist; what the claim *can* be

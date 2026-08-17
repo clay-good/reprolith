@@ -363,6 +363,7 @@ def _non_finite_abstention(
     quantity: str,
     source_location: str,
     reference_kind: ReferenceKind,
+    level: ReproductionLevel = ReproductionLevel.SIMULATION,
 ) -> ClaimAssessment | None:
     """Abstain when any value feeding the comparison is non-finite, else ``None``.
 
@@ -381,6 +382,7 @@ def _non_finite_abstention(
         source_location=source_location,
         reason="the reconstruction produced non-finite output; the run did not converge to a comparable value",
         reference_kind=reference_kind,
+        level=level,
     )
 
 
@@ -584,10 +586,27 @@ def judge_estimation(
     abstention = _non_finite_abstention(
         (reported, recovered), claim_id=claim_id, quantity=quantity,
         source_location=source_location, reference_kind=ReferenceKind.NUMERIC,
+        level=ReproductionLevel.ESTIMATION,
     )
     if abstention is not None:
         return abstention
     tol = tolerance or _ESTIMATION_DEFAULT
+    if reported == 0.0 and recovered != 0.0:
+        # The same abstention `judge_scalar` makes: a reported zero has no magnitude for a
+        # relative tolerance, and an estimation claim can report one (a rate constant a paper
+        # fits to zero). Without this the judge raised where its sibling abstains.
+        return not_evaluable(
+            claim_id=claim_id,
+            quantity=quantity,
+            source_location=source_location,
+            reason=(
+                f"the reported estimate is zero and the re-fit recovered {recovered:.6g}, so there "
+                "is no magnitude to judge a relative error against; the claim needs the scale it "
+                "is zero relative to before a verdict means anything"
+            ),
+            reference_kind=ReferenceKind.NUMERIC,
+            level=ReproductionLevel.ESTIMATION,
+        )
     err = relative_error(reported, recovered)
     return _assemble(
         claim_id=claim_id,
@@ -648,8 +667,12 @@ def judge_curve(
         method=ComparisonMethod.CURVE_NORMALIZED_DISTANCE,
         measure=measure,
         discrepancy=(
+            # Named as the *pass* budget, because that is what it is: a worst point under it
+            # contributes a clean pass, and one above it is judged on the same partial/failed
+            # scale as the average. Calling it "the budget" read as a bound the verdict honoured,
+            # so a `partial` could report a worst point of 0.62 against a "budget" of 0.25.
             f"normalized distance {dist:.4f}, worst point {worst:.4f} of span "
-            f"(budget {tol.partial_within:.4f})"
+            f"(pass budget {tol.partial_within:.4f})"
         ),
         tol=tol,
         reference_kind=reference_kind,
@@ -761,11 +784,16 @@ def not_evaluable(
     source_location: str,
     reason: str,
     reference_kind: ReferenceKind = ReferenceKind.DIGITIZED_FIGURE,
+    level: ReproductionLevel = ReproductionLevel.SIMULATION,
 ) -> ClaimAssessment:
     """Abstain on a claim whose reference is unusable, rather than guess a pass or fail.
 
     Used when there is no numeric data and no digitizable figure to compare against; the
     abstention keeps the agreement metric meaningful (design D2).
+
+    ``level`` travels because an abstention is still a claim of a kind: an estimation claim that
+    could not be judged was being filed at simulation level, so the surfaces that treat estimation
+    separately — the never-green badge, the machine summary, the gap report — did not see it.
     """
     return ClaimAssessment(
         claim_id=claim_id,
@@ -775,6 +803,7 @@ def not_evaluable(
         discrepancy=None,
         root_cause=reason,
         reference_kind=reference_kind.value,
+        level=level,
     )
 
 

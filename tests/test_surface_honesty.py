@@ -167,3 +167,113 @@ def test_a_lint_result_omits_the_protocol_key_when_there_is_no_sampling() -> Non
     assert "protocol" not in deterministic.to_dict()
     sampled = replace(deterministic, protocol="SSA ensemble: 400 trajectories to t=40, seed 1")
     assert sampled.to_dict()["protocol"].startswith("SSA ensemble")
+
+
+def test_the_curve_linter_and_the_curve_judge_answer_the_same_question() -> None:
+    """An agent gates on the linter and publishes through the judge; they must not disagree.
+
+    The worst-point rule landed in the judge alone, so a reconstruction whose peak is twice the
+    paper's — the miss an RMSE over many samples averages away — was refused by `judge_curve` and
+    green-lit by `lint_curve`, on the same numbers.
+    """
+    from reprolith import judge_curve
+    from reprolith.linter import _curve_lint
+    from reprolith.oracle import ComparisonMethod, ReferenceKind, default_tolerance
+
+    reference = tuple(1.0 for _ in range(201))
+    doubled_peak = tuple(2.0 if i == 100 else 1.0 for i in range(201))
+    tol = default_tolerance(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, ReferenceKind.NUMERIC)
+
+    linted = _curve_lint(reference, doubled_peak, tol)
+    judged = judge_curve(
+        claim_id="c", quantity="a curve with one doubled point", source_location="Fig 1",
+        reference=reference, predicted=doubled_peak,
+        attribution=Attribution(mode=FailureMode.UNCATEGORIZED, implicated="the peak",
+                                fault=Fault.RECONSTRUCTION),
+    )
+    assert linted.verdict is judged.verdict is not Verdict.REPRODUCED
+    assert "worst point" in linted.discrepancy
+
+
+def test_a_reported_zero_abstains_at_the_linter_as_it_does_at_the_judge() -> None:
+    """A lethality claim reports zero, and a relative error against zero is undefined.
+
+    The judge abstains and names what the claim needs; the linter raised, so the agent-facing
+    surface answered the canonical constraint-based claim shape with a server error.
+    """
+    from reprolith.linter import lint_estimation
+
+    abstained = lint_estimation(reported=0.0, recovered=0.05)
+    assert abstained.verdict is Verdict.NOT_EVALUABLE
+    assert "zero" in abstained.discrepancy
+    # An exactly-zero recovery is exact agreement and still passes without a scale.
+    assert lint_estimation(reported=0.0, recovered=0.0).verdict is Verdict.REPRODUCED
+
+
+def test_ready_to_submit_is_withheld_when_a_claim_could_not_be_evaluated() -> None:
+    """The fix list ranks an abstention first; the readiness line said everything reproduced.
+
+    `derive_overall` drops abstentions before deciding, by design, so a certificate with one clean
+    pass and one un-judgeable claim is `reproduced` — and this report has to look for itself.
+    """
+    from reprolith import presubmission_report
+
+    cert = build_certificate(
+        paper=_PAPER, engine_pin=_PIN,
+        assessments=[
+            _assessment(Verdict.REPRODUCED),
+            replace(_assessment(Verdict.NOT_EVALUABLE), claim_id="c2", root_cause="no reference"),
+        ],
+    )
+    report = presubmission_report(cert)
+    assert report["ready_to_submit"] is False
+    assert "every claim reproduces cleanly" not in report["readiness"]
+    assert report["fix_list"][0]["claim_id"] == "c2"
+
+
+def test_every_class_front_end_can_publish_a_miss_it_was_not_handed_a_cause_for() -> None:
+    """A front-end that raises on an uncategorized miss can only ever emit a pass or a traceback.
+
+    Four classes learned this in an earlier pass; the estimation, population, and logical
+    front-ends were missed, and each of them takes claims whose `shortfall` defaults to None.
+    """
+    from reprolith import (
+        EstimationClaim,
+        LogicalClaim,
+        OverallVerdict,
+        PercentileBand,
+        PopulationClaim,
+        certify_estimation,
+        certify_logical,
+        certify_population,
+    )
+
+    protocol = "least squares, Nelder-Mead from Table 2, over the shipped dataset"
+    estimation = certify_estimation(
+        paper=_PAPER, engine_pin=_PIN,
+        claims=[EstimationClaim(claim_id="cl", quantity="CL/F", reported=3.2, recovered=9.9,
+                                source_location="Table 3", protocol=protocol)],
+    )
+    assert estimation.overall is OverallVerdict.NOT_REPRODUCED
+    assert estimation.assessments[0].root_cause == "uncategorized"
+    assert estimation.assessments[0].fault_hypothesis == "reconstruction"  # never a bare accusation
+
+    bands = (PercentileBand(percentile=50, curve=(1.0, 2.0, 3.0)),)
+    wrong = (PercentileBand(percentile=50, curve=(9.0, 9.0, 9.0)),)
+    population = certify_population(
+        paper=_PAPER, engine_pin=_PIN,
+        claims=[PopulationClaim(claim_id="p", quantity="P50 envelope", reported=bands,
+                                predicted=wrong, source_location="Fig 4",
+                                protocol="500 subjects, seed 7")],
+    )
+    assert population.overall is OverallVerdict.NOT_REPRODUCED
+    assert population.assessments[0].root_cause == "uncategorized"
+
+    logical = certify_logical(
+        paper=_PAPER, engine_pin=_PIN,
+        claims=[LogicalClaim(claim_id="fp", quantity="the reported steady state",
+                             rules={"A": "!B", "B": "!A"}, reported={"A": 1, "B": 1},
+                             source_location="Fig 2")],
+    )
+    assert logical.overall is OverallVerdict.NOT_REPRODUCED
+    assert logical.assessments[0].root_cause == "uncategorized"

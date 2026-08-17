@@ -85,10 +85,15 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
     # An estimation-level claim is the same kind of overstatement: re-fitting a parameter from data
     # is a weaker result than running the described model, so "every claim reproduces cleanly under
     # the pinned engine" is not something this report may say about it.
+    # And a claim nobody could evaluate is the fix list's own priority 1, so a report that ranks it
+    # first while announcing "every claim reproduces cleanly" contradicts itself in two lines. The
+    # overall rule drops abstentions before deciding, by design, so `reproduced` does not imply
+    # every claim was judged — this report has to look for itself.
     estimation = estimation_claims(cert)
     ready = (
         cert.overall is OverallVerdict.REPRODUCED
         and not any(a.assumption_qualified for a in cert.assessments)
+        and not any(a.verdict is Verdict.NOT_EVALUABLE for a in cert.assessments)
         and not cert.gap_report
         and not estimation
     )
