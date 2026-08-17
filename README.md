@@ -18,7 +18,9 @@ guessing — just: *does the described model produce the shown result?*
 
 ## What you get
 
-- **A per-result verdict, not a vibe.** Every figure and reported number is checked on its own.
+- **A per-result verdict, not a vibe.** Every figure and reported number is checked on its own —
+  a curve has to match on average *and* at its worst point, so a doubled peak cannot average
+  itself into a pass.
 - **Honest by construction.** If a result only reproduced because Reprolith had to assume a
   missing value, the certificate says so. It never takes credit for its own guesses.
 - **A "what was missing" list.** When a paper can't be reproduced, you get the exact

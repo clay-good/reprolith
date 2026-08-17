@@ -26,8 +26,11 @@ python scripts/run_kinetic_milestone.py
 Each label is held on the catalog entry but withheld from the verdict path, which sees only the
 model and the reference curve. The certificate is produced by simulating the model under Reprolith's
 pinned COPASI engine and comparing the trajectory to the reference with the shared `judge_curve`
-oracle (normalized distance), so each agreement is a genuine blind match — and non-circular, since
-the reference comes from an independent simulator, not from COPASI.
+oracle — a normalized RMSE over the curve *and* a bound on its worst single point, so a localized
+miss cannot be averaged into a pass — meaning each agreement is a genuine blind match, and
+non-circular, since the reference comes from an independent simulator, not from COPASI. Both
+numbers are on each certificate; across these six models the worst point runs 2.2x to 9x the RMSE
+ratio, with both under 1e-3.
 
 ## What this demonstrates
 
