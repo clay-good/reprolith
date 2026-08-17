@@ -113,7 +113,9 @@ With the extra installed the full loop runs end to end: a dossier compiles to SB
 ([`reprolith.simulate`](python/reprolith/engine.py)), is judged by the oracle, and produces a
 scope-flagged certificate. The blind PK/PD self-validation set lives in
 [`datasets/pkpd_test_set.json`](datasets/pkpd_test_set.json), labelled from BioModels'
-curation status.
+curation status — which is also the accession prefix, so read that run as evidence of abstention
+discipline (30 abstentions, zero wrong verdicts) rather than of blind classification skill; the
+dataset and [docs/self-validation.md](docs/self-validation.md) both spell out why.
 
 Constraint-based (FBA) models reproduce a different kind of claim — an optimization outcome, not
 a time course — so they get their own oracle behind the optional **`fba`** extra (scipy's linear

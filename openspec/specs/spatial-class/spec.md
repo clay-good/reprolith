@@ -28,6 +28,16 @@ byte-reproducible under its pinned discretization.
 - **AND** a discretization that violates the solver's stability condition is rejected with a clear
   error rather than producing a diverging profile
 
+#### Scenario: A run that cannot advance is refused, not reported
+
+- **WHEN** a spatial run is asked for with a discretization whose per-step update cannot change the
+  profile — a zero or subnormal time step, a zero diffusivity, or a grid spacing so large the
+  diffusion number underflows — or with a negative diffusivity, decay, or grid spacing
+- **THEN** the run is refused with an error naming the offending input, rather than returning the
+  initial profile as if it were a result
+- **AND** a spatial claim is refused unless it evolves the profile by at least one step, because a
+  reported profile near the initial condition would otherwise certify a simulation that never ran
+
 ### Requirement: Spatial dossier shape
 
 A spatial dossier SHALL capture the elements that determine the spatial dynamics.

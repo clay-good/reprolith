@@ -68,6 +68,17 @@ because overstating reproducibility would betray the entire purpose.
 - **THEN** the badge and the registry entry render it as visibly distinct from an unqualified
   reproduction, and the qualification is one click away
 - **AND** no rendering path can collapse a qualified result into a plain "reproduced" state
+- **AND** a certificate whose claims were reproduced at estimation level renders as distinct from a
+  simulation reproduction on every surface — never green, and never described as a clean pass
+
+#### Scenario: A published certificate is escaped and self-consistent
+
+- **WHEN** a certificate contributed by someone else is published to the registry
+- **THEN** every value interpolated into the page — including the scope statement carried in the
+  badge — is escaped, so a certificate cannot inject markup into the public page
+- **AND** a stored certificate whose overall verdict does not follow from its own assessments and
+  assumptions is refused on load rather than published, so the honesty invariants hold for a
+  certificate read off disk and not only for one built in process
 
 ### Requirement: Publication carries the scope statement
 
