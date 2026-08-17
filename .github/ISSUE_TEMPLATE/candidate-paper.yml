@@ -1,7 +1,7 @@
 name: Candidate paper
 description: Nominate a published model worth reproducing and adding to the catalog.
 title: "[candidate] <paper title or model>"
-labels: ["candidate", "triage"]
+labels: []
 body:
   - type: input
     id: paper
@@ -19,6 +19,8 @@ body:
         - constraint-based
         - kinetic
         - logical
+        - stochastic
+        - spatial
         - other / unassigned
     validations:
       required: true

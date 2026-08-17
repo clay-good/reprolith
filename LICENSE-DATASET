@@ -1,10 +1,16 @@
 Reprolith produced data — Creative Commons Attribution 4.0 International (CC BY 4.0)
 ====================================================================================
 
-This license covers the DATA Reprolith produces and stores: reproduction
-certificates, catalog entries, dossiers, reconstruction bundles, and the public
-certificate registry. The Reprolith source code is licensed separately under the
-MIT License (see LICENSE).
+This license covers the DATA REPROLITH ITSELF PRODUCES: reproduction
+certificates, catalog entries, dossiers, reconstruction bundles, agreement
+reports, and the public certificate registry. The Reprolith source code is
+licensed separately under the MIT License (see LICENSE).
+
+It does NOT cover the third-party model files and reference data redistributed
+under datasets/ — those keep their upstream licenses, and some of them are more
+restrictive than this one. In particular the BiGG genome-scale models are for
+academic and non-profit use only. See datasets/THIRD-PARTY-NOTICES.md for the
+per-source list before redistributing or building on anything under datasets/.
 
 You are free to:
 

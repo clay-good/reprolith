@@ -20,9 +20,9 @@
 
 <!-- For a corrected value: the right value and its source. For code: what you verified. -->
 
-## Gates (must pass — CI enforces these)
+## Gates (must pass — CI runs these on every PR)
 
-- [ ] `openspec validate --strict` passes (specs stay consistent)
+- [ ] `openspec validate --specs --strict` passes (specs stay consistent)
 - [ ] `ruff check .` passes
 - [ ] `mypy` passes
 - [ ] `pytest -q` passes

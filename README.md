@@ -185,6 +185,16 @@ All six classes are measured blind against independently-established ground trut
 machinery — [docs/self-validation.md](docs/self-validation.md) is the one-look evidence summary.
 
 Reprolith gets better when people who know the science validate its judgment. When it isn't sure
-about a load-bearing value, it opens a **verification issue** with its best estimate — confirming
-or correcting one is the most valuable thing you can do here. See
-[CONTRIBUTING.md](CONTRIBUTING.md).
+about a load-bearing value it records the value, marks the result as resting on it, and reports it
+in the certificate's gap report — confirming or correcting one is the most valuable thing you can
+do here. Those questions are raised as issues **by hand** today, from the verification template;
+wiring the queue to GitHub automatically is unbuilt. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Licensing
+
+The code is MIT ([LICENSE](LICENSE)). The data Reprolith *produces* — certificates, catalog
+entries, dossiers, bundles, agreement reports, the registry page — is CC BY 4.0
+([LICENSE-DATASET](LICENSE-DATASET)), so cite it if you build on it. The third-party model files
+redistributed under `datasets/` keep their own upstream licenses, and some are more restrictive:
+the BiGG genome-scale models are academic and non-profit use only. See
+[datasets/THIRD-PARTY-NOTICES.md](datasets/THIRD-PARTY-NOTICES.md) before redistributing.

@@ -1,9 +1,10 @@
 name: Verification request
 description: >-
   A load-bearing value Reprolith is not confident about. Confirm, correct, or reject it.
-  (Reprolith opens most of these automatically; you can also open one by hand.)
+  (Opened by hand today — Reprolith records these values in its certificates' gap reports and
+  assumption lists, but nothing files them as issues automatically yet.)
 title: "[verify] <short description of the value in question>"
-labels: ["verification", "pending-verification"]
+labels: []
 body:
   - type: markdown
     attributes:
@@ -57,6 +58,8 @@ body:
         - constraint-based
         - kinetic
         - logical
+        - stochastic
+        - spatial
         - other / unassigned
     validations:
       required: true

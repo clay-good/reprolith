@@ -34,16 +34,23 @@ def derive_overall(
     The rule, stated plainly:
 
     * nothing evaluable (empty, or every claim ``not-evaluable``) -> ``blocked``;
-    * every evaluable claim ``reproduced``, none assumption-qualified, and no load-bearing
-      assumption on the record -> ``reproduced``;
+    * every evaluable claim ``reproduced``, none assumption-qualified, and no load-bearing or
+      awaiting-verification assumption on the record -> ``reproduced``;
     * every evaluable claim ``reproduced`` but at least one assumption-qualified, *or* a
-      load-bearing assumption present -> ``partially-reproduced`` (either forbids a clean pass);
+      load-bearing assumption present, *or* an assumption still awaiting expert verification ->
+      ``partially-reproduced`` (any of the three forbids a clean pass);
     * some but not all evaluable claims ``reproduced`` -> ``partially-reproduced``;
     * no evaluable claim ``reproduced`` -> ``not-reproduced``.
 
     The load-bearing-assumption downgrade is enforced here, not only through each claim's
     ``assumption_qualified`` flag, so a caller cannot slip a load-bearing guess past the clean
     pass by handing the assumption to ``build_certificate`` while leaving the claim unqualified.
+
+    An assumption carrying a ``verification_item`` is a value queued for an expert to confirm, and
+    the verification-queue spec requires a result resting on one to be reported as qualified until
+    that decision comes back. Nothing sets the field today, so this changes no existing
+    certificate — but the rule belongs with the other two rather than waiting for the first caller
+    that would need it.
     """
     evaluable = [a for a in assessments if a.verdict is not Verdict.NOT_EVALUABLE]
     if not evaluable:
@@ -54,7 +61,8 @@ def derive_overall(
     if len(reproduced) == len(evaluable):
         qualified = any(a.assumption_qualified for a in reproduced)
         load_bearing = any(a.load_bearing for a in assumptions)
-        if qualified or load_bearing:
+        awaiting = any(a.verification_item for a in assumptions)
+        if qualified or load_bearing or awaiting:
             return OverallVerdict.PARTIALLY_REPRODUCED
         return OverallVerdict.REPRODUCED
 

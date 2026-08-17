@@ -5,8 +5,12 @@ results. It gets better in two ways, and **both need people who know the science
 
 1. **Validate its judgment.** When Reprolith is not confident about a load-bearing value — a
    shaky extraction, an assumption it had to make, a verdict near its tolerance — it records its
-   best estimate and opens a **verification issue**. Confirming, correcting, or rejecting these
-   is the single most valuable thing an expert can do here.
+   best estimate and marks the result as resting on it. Confirming, correcting, or rejecting those
+   values is the single most valuable thing an expert can do here. **Today you open that
+   verification issue by hand** using the template: Reprolith's queue exists as a library
+   (`reprolith.VerificationQueue`) but nothing wires it to GitHub yet, so nothing is filed
+   automatically. Every certificate's gap report and assumption list is where to look for what
+   needs checking — `reprolith gaps <digest>` prints it.
 2. **Grow and correct the catalog.** Propose a paper to reproduce, add a ground-truth
    reproducibility label, or fix a mis-extraction — as a pull request.
 
@@ -18,8 +22,9 @@ depends on it. If you know the modeling, you can decide.
 
 - **Verification issues** are Reprolith's questions to you. Answer in the issue: confirm,
   correct (with the right value and a source), or reject (with why). Your decision, your name,
-  and your rationale become the record — and a correction triggers re-verification of everything
-  that depended on it.
+  and your rationale become the record. Re-verification of what depended on a corrected value is
+  the intent (`reprolith.reverify_dependents` implements it), but it is not automated yet — a
+  merged correction triggers nothing on its own today.
 - **Pull requests** are how any change to the data or code lands. Reference the issue a PR
   resolves. The same automated gates run on every PR, whether it comes from a human or from
   Reprolith's own build loop — nobody gets a lower bar.
@@ -29,9 +34,9 @@ depends on it. If you know the modeling, you can decide.
 
 ## The gates every change must pass
 
-A change can only reach `main` if it passes, as required checks:
+CI runs all of these on every pull request, from a human or from Reprolith's own build loop:
 
-- `openspec validate --strict` — the specs stay consistent.
+- `openspec validate --specs --strict` — the specs stay consistent.
 - `ruff check` — lint.
 - `mypy` — types.
 - `pytest` — tests, including the honesty invariants (determinism, inescapable scope,
@@ -46,7 +51,7 @@ mypy
 pytest -q
 ```
 
-(Spec validation uses the OpenSpec CLI: `npx @fission-ai/openspec validate --strict`.)
+(Spec validation uses the OpenSpec CLI: `npx @fission-ai/openspec validate --specs --strict`.)
 
 ## Extending a self-validation set
 
@@ -77,7 +82,7 @@ and in CI, and a change that erodes them fails the gates by design.
 
 ## Ways to start
 
-- Answer an open **verification issue** labelled `pending-verification`.
+- Answer an open **verification issue** (opened from the `verification` issue template).
 - Open a **candidate paper** issue to nominate a model worth reproducing.
 - Pick up a task from `openspec/changes/` or an item from
   `openspec/initiatives/catalog-backlog/roadmap.md`.

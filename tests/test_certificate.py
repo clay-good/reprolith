@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from reprolith import (
     Assumption,
     ClaimAssessment,
@@ -120,3 +122,18 @@ def test_build_certificate_downgrades_on_load_bearing_assumption_only() -> None:
     )
     assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
     assert presubmission_report(cert)["ready_to_submit"] is False
+
+
+def test_a_value_still_awaiting_expert_verification_withholds_a_clean_pass() -> None:
+    """The verification-queue spec: a result resting on a queued value is reported as qualified."""
+    queued = Assumption(
+        id="a1", description="the dose's salt form", chosen="free base",
+        basis="the model's dose input is free base", load_bearing=False,
+        verification_item="VQ-1",
+    )
+    clean = ClaimAssessment(
+        claim_id="c1", quantity="Cmax", verdict=Verdict.REPRODUCED, source_location="Table 1",
+    )
+    assert derive_overall([clean], [queued]) is OverallVerdict.PARTIALLY_REPRODUCED
+    # The same assumption, already decided, does not withhold anything.
+    assert derive_overall([clean], [replace(queued, verification_item=None)]) is OverallVerdict.REPRODUCED
