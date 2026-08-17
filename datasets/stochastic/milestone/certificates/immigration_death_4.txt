@@ -7,6 +7,10 @@ OVERALL: partially-reproduced
 
 CLAIMS
   [immigration_death_4-mean] mean copy number: reproduced [assumption-qualified] (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      sampling: SSA ensemble: 400 trajectories to t=40, seed 11
+
+WHAT WAS MISSING
+  [immigration_death_4-mean] mean copy number: reproduced only under an assumption Reprolith supplied, not a clean pass
 
 SCOPE
   This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

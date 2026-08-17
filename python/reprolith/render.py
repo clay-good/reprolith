@@ -188,6 +188,9 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
             f"  [{a['claim_id']}] {a['quantity']}: {a['verdict']}{level}{qualified}"
             f" (source {a['source_location']}{method}{tol})"
         )
+        if a.get("protocol"):
+            # A sampled judgment's number is only re-runnable with the sampling that produced it.
+            lines.append(f"      sampling: {a['protocol']}")
     lines.append("")
 
     if content["assumptions"]:

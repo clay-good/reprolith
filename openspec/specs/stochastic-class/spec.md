@@ -30,6 +30,14 @@ sampling is pinned, not left to chance.
 - **AND** the certificate's determinism invariant holds via the pinned seed exactly as the
   deterministic classes hold it via the pinned engine
 
+#### Scenario: The certificate states the sampling behind each number
+
+- **WHEN** a certificate reports a sampled result
+- **THEN** the claim carries the protocol that produced it — the seed, the number of trajectories,
+  and the duration — in the certificate's own content and in its human rendering
+- **AND** this is what makes the result checkable rather than merely asserted: a reader can re-run
+  it exactly, and a seed that happened to agree can no longer pass without leaving a record
+
 ### Requirement: Stochastic dossier shape
 
 A stochastic dossier SHALL capture the elements that determine the network's stochastic dynamics.

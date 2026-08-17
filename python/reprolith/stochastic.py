@@ -18,7 +18,7 @@ from __future__ import annotations
 import math
 import random
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, Parameter
@@ -295,6 +295,11 @@ def certify_stochastic(
     shared scalar oracle, then the certificate is built by the same rule and scope flag as every
     other class. Verdicts are assumption-qualified by default because a stochastic reproduction
     depends on the sampling (seed and trajectory count). Needs no engine extra — the SSA is pure.
+
+    Each assessment carries the sampling protocol it rests on, because a sampled number nobody can
+    re-run is not evidence: the seed and trajectory count are what make this class's verdicts
+    byte-reproducible (spec: "A pinned seed is part of the protocol"), and recording them is also
+    what makes a seed that merely happened to agree visible to a reader.
     """
     assessments = []
     for claim in claims:
@@ -303,16 +308,23 @@ def certify_stochastic(
             duration=claim.duration, trajectories=claim.trajectories, seed=claim.seed,
         )
         mean, _ = species_mean_variance(ensemble, claim.species)
+        assessment = judge_scalar(
+            claim_id=claim.claim_id,
+            quantity=claim.quantity,
+            source_location=claim.source_location,
+            reported=claim.reported_mean,
+            predicted=mean,
+            tolerance=claim.tolerance,
+            attribution=claim.shortfall,
+            assumption_qualified=claim.assumption_qualified,
+        )
         assessments.append(
-            judge_scalar(
-                claim_id=claim.claim_id,
-                quantity=claim.quantity,
-                source_location=claim.source_location,
-                reported=claim.reported_mean,
-                predicted=mean,
-                tolerance=claim.tolerance,
-                attribution=claim.shortfall,
-                assumption_qualified=claim.assumption_qualified,
+            replace(
+                assessment,
+                protocol=(
+                    f"SSA ensemble: {claim.trajectories} trajectories to t={claim.duration:g}, "
+                    f"seed {claim.seed}"
+                ),
             )
         )
     return build_certificate(

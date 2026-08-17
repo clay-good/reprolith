@@ -55,6 +55,7 @@ def _assessment_from(record: dict[str, Any]) -> ClaimAssessment:
         fault_hypothesis=record["fault_hypothesis"],
         reference_kind=record["reference_kind"],
         assumption_qualified=record["assumption_qualified"],
+        protocol=record.get("protocol"),  # present only on a sampled judgment
     )
 
 

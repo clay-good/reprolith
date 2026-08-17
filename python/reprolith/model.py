@@ -82,6 +82,11 @@ class ClaimAssessment:
     ``assumption_qualified`` records that this claim reproduced only because of a
     load-bearing assumption; the overall-verdict rule uses it to forbid an
     unqualified full reproduction.
+
+    ``protocol`` records the sampling a stochastic judgment rests on — the seed, the number of
+    trajectories, the duration. Without it a reader cannot re-run the number the certificate
+    reports, and a seed that happened to agree leaves no trace. It is omitted from the certificate's
+    content when unset, so a deterministic claim's record is unchanged.
     """
 
     claim_id: str
@@ -98,9 +103,10 @@ class ClaimAssessment:
     fault_hypothesis: str | None = None
     reference_kind: str | None = None
     assumption_qualified: bool = False
+    protocol: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        record: dict[str, Any] = {
             "claim_id": self.claim_id,
             "quantity": self.quantity,
             "verdict": self.verdict.value,
@@ -116,6 +122,11 @@ class ClaimAssessment:
             "reference_kind": self.reference_kind,
             "assumption_qualified": self.assumption_qualified,
         }
+        if self.protocol is not None:
+            # Only sampled judgments carry one, so a deterministic claim's content — and every
+            # digest already published for one — stays exactly as it was.
+            record["protocol"] = self.protocol
+        return record
 
 
 @dataclass(frozen=True)

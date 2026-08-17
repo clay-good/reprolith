@@ -384,3 +384,34 @@ def test_gillespie_max_events_bounds_a_runaway_trajectory() -> None:
     # The default (None) preserves the unbounded library contract for a normal, finite run.
     final = gillespie(1, birth, [0], duration=0.01, rng=random.Random(1))
     assert final[0] >= 0
+
+
+def test_a_stochastic_certificate_records_the_sampling_that_produced_it() -> None:
+    # A sampled number nobody can re-run is not evidence: the certificate reported a discrepancy
+    # with no seed, trajectory count, or duration anywhere in it, so a third party could not
+    # reproduce the figure and a seed that merely happened to agree left no trace. The spec asks
+    # for the seed and trajectory count as part of the claim's protocol.
+    from reprolith import EnginePin, PaperIdentity, StochasticClaim, certify_stochastic
+
+    reactions = _immigration_death(10.0, 1.0)
+    cert = certify_stochastic(
+        paper=PaperIdentity(title="Immigration-death", doi="10.1/imm"),
+        engine_pin=EnginePin(engine="reprolith-ssa", version="0.0.1"),
+        n_species=1, reactions=reactions, initial=[0],
+        claims=[StochasticClaim(
+            claim_id="c1", quantity="mean copy number", source_location="closed-form",
+            species=0, reported_mean=10.0, duration=40.0, trajectories=400, seed=20260807,
+        )],
+    )
+    protocol = cert.assessments[0].protocol
+    assert protocol is not None
+    assert "400" in protocol and "20260807" in protocol and "40" in protocol
+    assert cert.content()["assessments"][0]["protocol"] == protocol
+
+    # A deterministic class carries no protocol, and its content keeps the shape it always had —
+    # so no previously published certificate is re-digested by this field existing.
+    plain = judge_scalar(
+        claim_id="c1", quantity="AUC", source_location="Table 1", reported=1.0, predicted=1.0,
+    )
+    assert plain.protocol is None
+    assert "protocol" not in plain.to_dict()

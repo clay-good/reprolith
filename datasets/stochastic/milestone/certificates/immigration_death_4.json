@@ -8,6 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
+      "protocol": "SSA ensemble: 400 trajectories to t=40, seed 11",
       "quantity": "mean copy number",
       "reference_kind": "numeric",
       "root_cause": null,
