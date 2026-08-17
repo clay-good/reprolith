@@ -240,14 +240,29 @@ def estimation_default_tolerance() -> Tolerance:
     return _ESTIMATION_DEFAULT
 
 
-def relative_error(reported: float, predicted: float) -> float:
+def relative_error(reported: float, predicted: float, *, zero_scale: float | None = None) -> float:
     """Relative error of ``predicted`` against the ``reported`` value.
 
-    Normalized by the reported magnitude; when the reported value is exactly zero, falls back
-    to the absolute difference so a nonzero prediction is not divided away.
+    Normalized by the reported magnitude. A reported value of exactly zero has no magnitude to
+    normalize by, so it needs a ``zero_scale`` — the size the claim is zero *relative to* (a
+    wild-type growth rate, the numerical width of a pinned flux interval). With one, the error is
+    the prediction as a fraction of that scale; without one, the comparison is not defined and the
+    caller is expected to abstain rather than compare (:func:`judge_scalar` does).
+
+    It used to fall back to the bare absolute difference, which silently made the verdict a
+    function of the claim's units: a knockout the paper calls lethal, against a model growing at
+    0.05 1/h, read as a 0.05 "relative error" and certified as reproduced — while the identical
+    claim stated in 1/day failed. A unitless tolerance cannot be compared against a raw magnitude.
     """
     if reported == 0.0:
-        return abs(predicted)
+        if predicted == 0.0:
+            return 0.0  # exact agreement needs no scale
+        if zero_scale is None or zero_scale == 0.0:
+            raise ValueError(
+                "a reported value of zero has no magnitude to judge a relative error against; "
+                "state the scale it is zero relative to (zero_scale)"
+            )
+        return abs(predicted) / abs(zero_scale)
     return abs(predicted - reported) / abs(reported)
 
 
@@ -465,11 +480,19 @@ def judge_scalar(
     tolerance: Tolerance | None = None,
     attribution: Attribution | None = None,
     assumption_qualified: bool = False,
+    zero_scale: float | None = None,
 ) -> ClaimAssessment:
     """Judge a scalar PK/PD metric (AUC, Cmax, clearance, half-life, …) by relative error.
 
     Uses the documented class default when ``tolerance`` is unset. A ``partial`` or ``failed``
     outcome requires an ``attribution`` (category + implicated element + fault hypothesis).
+
+    A *reported zero* — a knockout the paper calls lethal, a flux it says carries nothing — has no
+    magnitude for a relative tolerance to mean anything against. An exactly-zero prediction is exact
+    agreement and passes; anything else is judged as a fraction of ``zero_scale``, the size the
+    claim is zero relative to, and without that scale the claim abstains. It used to fall back to
+    the absolute difference, which made the verdict depend on the claim's units: a model growing at
+    0.05 1/h passed a lethality claim as a "5% error", and the same claim in 1/day failed.
     """
     abstention = _non_finite_abstention(
         (reported, predicted), claim_id=claim_id, quantity=quantity,
@@ -478,7 +501,19 @@ def judge_scalar(
     if abstention is not None:
         return abstention
     tol = tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind)
-    err = relative_error(reported, predicted)
+    if reported == 0.0 and predicted != 0.0 and zero_scale is None:
+        return not_evaluable(
+            claim_id=claim_id,
+            quantity=quantity,
+            source_location=source_location,
+            reason=(
+                f"the reported value is zero and the run gives {predicted:.6g}, so there is no "
+                "magnitude to judge a relative error against; the claim needs the scale it is "
+                "zero relative to (e.g. the unperturbed value) before a verdict means anything"
+            ),
+            reference_kind=reference_kind,
+        )
+    err = relative_error(reported, predicted, zero_scale=zero_scale)
     return _assemble(
         claim_id=claim_id,
         quantity=quantity,

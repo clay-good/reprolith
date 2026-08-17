@@ -69,7 +69,13 @@ def test_known_good_curve_reproduces_and_perturbed_fails() -> None:
 
 def test_comparison_helpers_are_correct() -> None:
     assert relative_error(100.0, 110.0) == pytest.approx(0.10)
-    assert relative_error(0.0, 3.0) == 3.0  # zero reference falls back to absolute
+    # A reported zero has no magnitude to normalize by. Exact agreement passes; anything else is
+    # judged against the scale the claim is zero relative to, and refuses without one — an
+    # absolute fallback made the verdict a function of the claim's units.
+    assert relative_error(0.0, 0.0) == 0.0
+    assert relative_error(0.0, 3.0, zero_scale=60.0) == pytest.approx(0.05)
+    with pytest.raises(ValueError, match="no magnitude"):
+        relative_error(0.0, 3.0)
     assert normalized_curve_distance([0.0, 10.0], [0.0, 10.0]) == 0.0
     assert normalized_curve_distance([0.0, 10.0], [1.0, 11.0]) == pytest.approx(0.1)
 

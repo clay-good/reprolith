@@ -169,6 +169,21 @@ needless re-run of a dependency-free solver costs seconds; a missed one publishe
 current code would not produce. A test holds the corpus to it: a committed certificate carrying an
 older revision than the code fails, and the fix is re-running that class's milestone script.
 
+## A lethal knockout judged in whatever units it happened to use
+
+The scalar judge divided by the reported magnitude and, when that magnitude was exactly zero, fell
+back to the bare absolute difference — a raw number compared against a unitless tolerance. The
+verdict was then a function of the claim's units. A knockout a paper calls lethal, against a model
+still growing at 0.05 1/h — about 6% of wild-type — read as a "5% relative error" and certified as
+reproduced; the identical claim stated in 1/day failed. This is reachable from the constraint-based
+front end and from the inline linter an agent gates on, and a reported zero is the *standard* form
+of the lethality claim that class exists to check.
+
+A reported zero now needs the scale it is zero relative to. An exactly-zero prediction is exact
+agreement and passes without one. Anything else is judged as a fraction of that declared scale, and
+a claim that states none abstains, naming what it needs — the abstention discipline the rest of the
+oracle already follows.
+
 ## Recording work that was not done
 
 The write surface closes the loop: an agent claims a queued paper, reproduces it, publishes a
