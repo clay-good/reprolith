@@ -8,6 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "attractor-set-match",
+      "protocol": "44 nodes, SAT search (2^44 states is beyond exhaustive enumeration)",
       "quantity": "steady-state (fixed-point) set",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -19,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "synchronous-update, sat-fixed-points (z3 5.0.0) (rev e1dd0a01afa7)",
+    "algorithm": "synchronous-update, sat-fixed-points (z3 5.0.0) (rev 3910b4e45219)",
     "engine": "reprolith-logical",
     "version": "0.0.1"
   },

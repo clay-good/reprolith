@@ -39,7 +39,7 @@ class EngineCorroboration:
         )
 
     def distance_bound(self) -> float:
-        """The distance rounded *up* to one significant figure — what is safe to publish.
+        """The distance rounded *up* to the next power of ten — what is safe to publish.
 
         The distance between two engines that agree is a difference of nearly-equal numbers, so
         its leading digits are the engines' own last-place noise amplified. COPASI is not
@@ -53,12 +53,12 @@ class EngineCorroboration:
         """
         if not math.isfinite(self.distance) or self.distance <= 0.0:
             return self.distance
-        exponent = math.floor(math.log10(self.distance))
-        scale = 10.0**exponent
-        # Re-parsed from its own one-figure rendering, so the published number is the short
-        # decimal it prints as rather than the binary noise of ceil-times-scale (3e-05, not
-        # 3.0000000000000004e-05).
-        return float(f"{math.ceil(self.distance / scale) * scale:.0e}")
+        # One significant figure was not coarse enough: the distance also moves between machines
+        # (a committed 4e-07 bound was exceeded on CI at 4.55e-07, with different engine builds),
+        # so the published granularity is the decade. It still says what the number is for —
+        # agreement three to five orders below the tolerance — without pretending to digits no
+        # second machine reproduces.
+        return float(f"{10.0 ** math.ceil(math.log10(self.distance)):.0e}")
 
 
 def corroborate_curve(

@@ -57,3 +57,19 @@ def test_the_catalog_recorded_every_entry_as_certified() -> None:
         # The ground-truth label is retained on the durable entry (it is only withheld from the
         # verdict path's blind view, not from the persisted record).
         assert entry["ground_truth"]["expected"] == "reproduced"
+
+
+def test_every_published_objective_states_the_medium_it_was_solved_under() -> None:
+    """An FBA optimum is a function of its medium, and the medium is this class's own first
+    failure mode — so a growth rate published without one cannot be re-derived from the
+    certificate. The sampled classes record their sampling; this is the same statement for a
+    class whose sampling is a set of uptake limits.
+    """
+    for path in sorted((_MILESTONE / "certificates").glob("*.json")):
+        content = json.loads(path.read_text(encoding="utf-8"))
+        for assessment in content["assessments"]:
+            protocol = assessment["protocol"]
+            assert protocol.startswith("medium: ")
+            assert "maximize: " in protocol
+            # A model run on its distributed bounds says exactly that, rather than saying nothing.
+            assert "<=" in protocol or "none stated by the paper" in protocol

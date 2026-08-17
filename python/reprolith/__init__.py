@@ -117,6 +117,7 @@ from .logical import (
     judge_steady_state,
     logical_dossier,
     parse_boolean_network,
+    search_protocol,
     validate_logical,
 )
 from .mcp_server import handle_request, serve_stdio
@@ -399,6 +400,7 @@ __all__ = [
     "normalized_curve_distance",
     "not_evaluable",
     "parse_boolean_network",
+    "search_protocol",
     "parse_sedml_recipes",
     "presubmission_report",
     "relative_error",

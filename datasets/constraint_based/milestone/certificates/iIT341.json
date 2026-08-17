@@ -8,6 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
+      "protocol": "medium: the model's own distributed bounds (none stated by the paper); maximize: R_BIOMASS_HP_published",
       "quantity": "maximal growth rate on the distributed medium",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -19,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "highs (reprolith-fba rev dc7a84dcb58a)",
+    "algorithm": "highs (reprolith-fba rev f895acb199cf)",
     "engine": "scipy-linprog",
     "version": "1.13.1"
   },

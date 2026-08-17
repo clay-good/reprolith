@@ -1,13 +1,15 @@
 REPRODUCTION CERTIFICATE — Toggle switch — a two-gene mutual-repression circuit
   doi=10.0/toggle
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev e1dd0a01afa7)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 3910b4e45219)
 
 OVERALL: reproduced
   claims by verdict: reproduced=2, partial=0, failed=0, not-evaluable=0
 
 CLAIMS
   [ss_on] A-ON steady state: reproduced (source Fig 1a via attractor-set-match, tol=reproduced<=0, partial<=0 (class-default))
+      protocol: 2 nodes, exhaustive enumeration of all 2^2 states
   [ss_off] A-OFF steady state: reproduced (source Fig 1b via attractor-set-match, tol=reproduced<=0, partial<=0 (class-default))
+      protocol: 2 nodes, exhaustive enumeration of all 2^2 states
 
 SCOPE
   This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

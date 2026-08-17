@@ -517,10 +517,30 @@ the committed corpus, five of six models reproduce their distance exactly and on
 value committed for that model was not among the three a re-run produced. So the file could not be
 regenerated even on the same machine, and the digits that moved were being published as evidence.
 
-The distance is now published as a bound rounded *up* to one significant figure. Rounding up is the
-direction that stays honest: the number never states better agreement than was measured. The file
-regenerates byte-identically now, and a test checks the bound really does bound the live distance on
-every committed model, so a genuine drift toward the tolerance would still show.
+The distance is now published as a bound rounded *up*, which is the direction that stays honest: the
+number never states better agreement than was measured. The granularity took two attempts, and the
+second one is the more interesting result. One significant figure survived the repeated-call wobble
+here and was exceeded on CI — a bound of 4e-07 taken on this machine against a live 4.55e-07 there —
+because the distance moves between *machines* too, with different engine builds. So the published
+granularity is the decade. It still says what the number is for, agreement three to five orders
+below the tolerance, without asserting digits no second machine reproduces. The test that caught it
+is the one that stays: the committed bound must bound the live distance on every committed model, so
+genuine drift toward the tolerance still fails loudly.
+
+## Every class now states what its number rests on
+
+The protocol field started as a PK/PD and kinetic fix, and two classes still published nothing.
+A constraint-based optimum is a function of its medium — the thing this class names as its own
+first failure mode — so a growth rate certified without one could not be re-derived from the
+certificate. The eight published FBA certificates now state the bounds they were solved under and
+the reaction maximized, including the honest case: *the model's own distributed bounds (none stated
+by the paper)*. The nine logical certificates state the search: how many nodes, and whether the
+state space was walked exhaustively or handed to a solver, which is what tells a reader which of
+the two paths produced the number.
+
+The logical milestone does not route through the class front-end, so the rule lives in one shared
+helper that both call — the same drift that put the worst-point rule in the judge and not the
+linter, avoided this time by construction rather than by a later audit.
 
 ## A class that could refuse but never fail
 

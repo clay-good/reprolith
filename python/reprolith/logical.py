@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import ast
 from collections.abc import Callable, Container, Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from itertools import product
 from typing import Any
@@ -696,6 +696,18 @@ def logical_dossier(
     return dossier
 
 
+def search_protocol(nodes: int) -> str:
+    """How much of the state space a logical verdict rests on.
+
+    The update scheme and the solver are already on the pin; this is the size of the space and
+    whether it was walked exhaustively or searched. A reader can tell from it which of the two
+    paths produced the number, and how much of the network the check actually saw.
+    """
+    if nodes <= MAX_ENUMERABLE_NODES:
+        return f"{nodes} nodes, exhaustive enumeration of all 2^{nodes} states"
+    return f"{nodes} nodes, SAT search (2^{nodes} states is beyond exhaustive enumeration)"
+
+
 def certify_logical(
     *,
     paper: PaperIdentity,
@@ -725,6 +737,13 @@ def certify_logical(
         )
         for claim in claims
     ]
+    # What was actually searched. The update scheme and the solver are on the pin already; the
+    # size of the state space and whether it was enumerated or solved are what tell a reader
+    # which of the two the number came from, and how much of the network the check saw.
+    assessments = [
+        replace(a, protocol=search_protocol(len(claim.rules)))
+        for a, claim in zip(assessments, claims)
+    ]
     return build_certificate(
         paper=paper,
         engine_pin=engine_pin,
@@ -735,6 +754,7 @@ def certify_logical(
 
 __all__ = [
     "MAX_ENUMERABLE_NODES",
+    "search_protocol",
     "MAX_SAT_FIXED_POINTS",
     "BooleanNetwork",
     "LogicalClaim",

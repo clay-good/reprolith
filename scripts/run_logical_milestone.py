@@ -22,6 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 
 from reprolith import (
@@ -42,6 +43,7 @@ from reprolith import (
     parse_boolean_network,
     render_human,
     run_test_set,
+    search_protocol,
 )
 from reprolith.logical import solver_pin
 from reprolith.persistence import prune_certificate_directory
@@ -138,6 +140,9 @@ def main() -> None:
                 implicated=quantity, fault=Fault.RECONSTRUCTION,
             ),
         )
+        # The same rule the class front-end uses, from the same helper, so the milestone and
+        # `certify_logical` cannot drift about what a logical verdict rests on.
+        assessment = replace(assessment, protocol=search_protocol(len(net.nodes)))
         certified[key] = build_certificate(
             paper=PaperIdentity(title=citation, doi=""),
             engine_pin=entry_pin,

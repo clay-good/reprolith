@@ -28,6 +28,7 @@ dependency-free.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Gap, GapKind, ModelArtifact, Parameter
@@ -140,6 +141,25 @@ def _gap_report(dossier: Dossier) -> tuple[str, ...]:
     )
 
 
+def _medium_protocol(medium: Sequence[Parameter], model: FbaModel) -> str:
+    """The bounds and objective a constraint-based number was actually solved under.
+
+    An FBA optimum is a function of its medium, and the medium is the thing this class names as
+    its own first failure mode — so a growth rate published without one cannot be re-derived from
+    the certificate. The other sampled classes record the sampling behind their number; this is
+    the same statement for a class whose "sampling" is a set of uptake limits.
+    """
+    stated = (
+        ", ".join(f"{p.name}<={p.value:g} {p.unit}" for p in medium)
+        if medium
+        else "the model's own distributed bounds (none stated by the paper)"
+    )
+    maximized = ", ".join(
+        model.reaction_ids[i] for i, c in enumerate(model.objective) if c
+    ) or "no reaction"
+    return f"medium: {stated}; maximize: {maximized}"
+
+
 def certify_constraint_based(
     dossier: Dossier,
     *,
@@ -193,6 +213,8 @@ def certify_constraint_based(
         )
         for claim in dossier.targetable_claims()
     ]
+    protocol = _medium_protocol(dossier.parameters, model)
+    assessments = [replace(a, protocol=protocol) for a in assessments]
     return build_certificate(
         paper=paper,
         engine_pin=engine_pin,
