@@ -33,11 +33,21 @@ def self_validation_summary(agreement_reports: dict[str, dict[str, Any]]) -> dic
     """The blind self-validation track record from per-class committed agreement reports.
 
     Pure function of the reports, so it can be built without loading the certificate ledger (the
-    registry builder uses it directly). ``by_class`` is the reports verbatim; ``overall`` splits
-    the labelled entries into matched / abstentions / other via
-    :func:`reprolith.agreement.summarize_report`, which never counts an abstention as a wrong
-    verdict. The three partition ``labelled_entries`` exactly.
+    registry builder uses it directly). ``overall`` splits the labelled entries into matched /
+    abstentions / other via :func:`reprolith.agreement.summarize_report`, which never counts an
+    abstention as a wrong verdict. The three partition ``labelled_entries`` exactly.
+
+    ``by_class`` carries each report's aggregate numbers but **not** its ``per_entry`` rows. Those
+    rows pair an accession with its ground-truth label, and the same accessions sit in the live
+    work queue — so publishing them here would hand a reproducing agent the answer key for the
+    paper it is about to work on, defeating the blind protocol the whole track record rests on.
+    The rows stay in the committed report files, where a reviewer auditing the record can read
+    them; they do not travel over the agent-facing surfaces.
     """
+    agreement_reports = {
+        model_class: {k: v for k, v in report.items() if k != "per_entry"}
+        for model_class, report in agreement_reports.items()
+    }
     splits = [summarize_report(r) for r in agreement_reports.values()]
     agreements = sum(s["matched"] for s in splits)
     total = sum(s["total"] for s in splits)

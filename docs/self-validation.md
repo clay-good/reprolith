@@ -69,6 +69,27 @@ It deliberately reports no single blended agreement rate: an *abstention* (a `bl
 insufficient information) is counted apart from a wrong verdict, so the PK/PD run's 30 honest
 abstentions are never dressed up as agreement or misread as error.
 
+The per-entry rows behind these numbers stay in the committed report files and are not published
+through the read surface. They pair an accession with its ground-truth label, and those same
+accessions sit in the live work queue — publishing them would hand a reproducing agent the answer
+key for the paper it is about to claim.
+
+### What these numbers do and do not establish
+
+Read them as evidence about **abstention discipline**, not classification skill.
+
+- The PK/PD labels are BioModels curation status, and curation status *is* the accession prefix —
+  so "starts with `BIOMD` → reproduced" scores 31/31 on that set. The accession travels with the
+  blind entry, so an agent guessing from the prefix would outscore honest work. What the PK/PD run
+  shows is that Reprolith abstained on 30 of 31 entries and got zero verdicts wrong.
+- Five of the six classes carry a single constant label (every entry `reproduced`, or every entry
+  `partially-reproduced`), so "always answer reproduced" would score 100% on them. Their value is
+  that an *independent implementation* — COBRApy, libRoadRunner, CANA — computed the same numbers,
+  which is a check on the simulator, not a discrimination test.
+
+Establishing blind discriminative skill needs a label source independent of the identifier, and a
+set with real label variance. Reprolith does not have one yet, and does not claim to.
+
 ## Closed-form reproductions (the simulators themselves)
 
 The table above is blind agreement with *independent tools* on *real* models. Underneath it, each

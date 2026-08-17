@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from reprolith import (
     Catalog,
     CertificateLedger,
@@ -146,3 +148,35 @@ def test_certificates_for_lists_lineage_newest_first() -> None:
     d2 = ledger.issue(v2)
     query = ReprolithQuery(catalog, ledger)
     assert query.certificates_for(doi="10.1/x") == [d2, d1]
+
+
+def test_the_track_record_publishes_its_numbers_without_the_answer_key() -> None:
+    """The blindness rule is about the label's value, wherever it appears — not one field name.
+
+    A committed agreement report pairs each accession with its ground-truth label, and those
+    accessions are the same ones sitting in the live work queue. Published verbatim, the track
+    record would hand a reproducing agent the answer for the paper it is about to claim.
+    """
+    from reprolith.query import self_validation_summary
+
+    reports = {
+        "ode-pkpd": {
+            "per_entry": [
+                {"entry": "BIOMD0000000765", "expected": "reproduced", "actual": "blocked",
+                 "agree": False},
+            ],
+            "total": 1, "agreements": 0, "disagreements": 1, "agreement_rate": 0.0,
+            "confusion": {"reproduced->blocked": 1},
+        }
+    }
+    summary = self_validation_summary(reports)
+    serialized = json.dumps(summary)
+    assert "BIOMD0000000765" not in serialized
+    assert "expected" not in serialized
+    # The aggregate track record survives intact, abstention counted as abstention.
+    assert summary["by_class"]["ode-pkpd"]["total"] == 1
+    assert summary["by_class"]["ode-pkpd"]["confusion"] == {"reproduced->blocked": 1}
+    assert summary["overall"] == {
+        "classes": 1, "labelled_entries": 1, "agreements": 0,
+        "abstentions": 1, "other_disagreements": 0,
+    }
