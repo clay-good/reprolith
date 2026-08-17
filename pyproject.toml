@@ -40,7 +40,11 @@ dev = ["pytest>=7.0", "ruff>=0.4", "mypy>=1.8"]
 # Optional on purpose: the core stays dependency-free and the required-checks gate does not
 # need it. Install with `pip install -e ".[engine]"` to build SBML from a dossier and run
 # the simulation-backed tests and reconstructions.
-engine = ["python-copasi>=4.42", "python-libsbml>=5.20"]
+# 4.47.309 is excluded because it is broken for this use and its author yanked it ("Incompatibity
+# with 4.46"): every simulation raises `TypeError: CCopasiTask_initialize, argument 2 of type
+# 'int'`, and the process aborts on `std::bad_alloc` under load. A yank is not always enough — CI
+# resolved it anyway on one interpreter after the yank — so it is named here.
+engine = ["python-copasi>=4.42,!=4.47.309", "python-libsbml>=5.20"]
 # The constraint-based (FBA) oracle's linear-programming solver. Optional, like the engine.
 fba = ["scipy>=1.7", "numpy>=1.20"]  # numpy is imported directly, not only through scipy
 # The scalable fixed-point solver for the logical class: a SAT solver (z3) that finds a large
