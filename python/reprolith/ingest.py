@@ -190,6 +190,31 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
     instead of quietly leaving the dose out.
     """
     gaps: list[Gap] = []
+    if model.getNumReactions():
+        # The largest thing this path reads past, and for a reaction-based model it is the model:
+        # the rules it does read are observables and volumes, so a dossier of a 10-reaction
+        # cascade records eight state variables and nothing that moves any of them.
+        gaps.append(Gap(
+            element="reaction network",
+            kind=GapKind.EQUATION,
+            detail=(
+                f"the artifact's dynamics are {model.getNumReactions()} reaction(s), which this "
+                "dossier records no equation for; the state variables listed here have no stated "
+                "law of motion, and a model rebuilt from the dossier alone does not move"
+            ),
+            load_bearing=True,
+        ))
+    if model.getNumFunctionDefinitions():
+        gaps.append(Gap(
+            element="function definitions",
+            kind=GapKind.EQUATION,
+            detail=(
+                f"{model.getNumFunctionDefinitions()} functionDefinition(s) are referenced by the "
+                "model's own expressions and are not recorded here, so an equation that calls one "
+                "cannot be evaluated from this dossier"
+            ),
+            load_bearing=True,
+        ))
     if model.getNumEvents():
         gaps.append(Gap(
             element="events",

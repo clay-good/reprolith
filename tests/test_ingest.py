@@ -169,3 +169,23 @@ def test_constructs_the_dossier_cannot_represent_are_recorded_as_load_bearing_ga
     assert "dosing" in kinds  # the oral dose is an event
     assert "initial-condition" in kinds  # 32 initial assignments override the stated values
     assert all(gap.load_bearing for gap in dossier.gaps)
+
+
+def test_a_reaction_network_is_recorded_as_a_gap_not_read_past() -> None:
+    """The dossier's own dynamics are the largest thing this path does not carry.
+
+    Rules become equations, so the ingester looked complete on a rule-based PK/PD model — but a
+    reaction-based model's laws of motion live in its reactions, and none of them were read or
+    recorded. A ten-reaction cascade produced eight state variables, zero equations, and zero
+    gaps, which `estimate_difficulty` then published as "low: a valid shipped model and no gaps".
+    """
+    from reprolith import GapKind, estimate_difficulty, ingest_sbml
+
+    mapk = (Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.xml")
+    dossier = ingest_sbml(mapk.read_text(encoding="utf-8"), entry="BIOMD0000000010")
+    assert dossier.state_variables  # it does record the states
+    reaction_gaps = [g for g in dossier.gaps if g.element == "reaction network"]
+    assert len(reaction_gaps) == 1
+    assert reaction_gaps[0].kind is GapKind.EQUATION and reaction_gaps[0].load_bearing
+    # And a dossier missing every law of motion is no longer advertised as the easy case.
+    assert estimate_difficulty(dossier) != "low"

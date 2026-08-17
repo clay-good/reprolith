@@ -390,6 +390,18 @@
   ],
   "gaps": [
     {
+      "detail": "the artifact's dynamics are 35 reaction(s), which this dossier records no equation for; the state variables listed here have no stated law of motion, and a model rebuilt from the dossier alone does not move",
+      "element": "reaction network",
+      "kind": "equation",
+      "load_bearing": true
+    },
+    {
+      "detail": "4 functionDefinition(s) are referenced by the model's own expressions and are not recorded here, so an equation that calls one cannot be evaluated from this dossier",
+      "element": "function definitions",
+      "kind": "equation",
+      "load_bearing": true
+    },
+    {
       "detail": "the artifact carries 1 event(s) \u2014 a state change at a moment in time, usually a dose \u2014 which this dossier cannot represent; a model rebuilt from it alone runs without them",
       "element": "events",
       "kind": "dosing",
