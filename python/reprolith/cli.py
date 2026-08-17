@@ -98,6 +98,12 @@ def _cmd_self_validation(query: ReprolithQuery, args: argparse.Namespace) -> int
           f"{o['other_disagreements']} other, over {o['labelled_entries']} labelled entries "
           f"across {o['classes']} classes")
     print("  (an abstention is a 'blocked' verdict — insufficient information — not a wrong verdict)")
+    # The number does not travel without what it can establish. The JSON view and the registry
+    # banner both carry `label_basis`; a reader at a terminal was seeing six near-perfect class
+    # scores with the one line that says what they are not attached to nothing.
+    print("\n  WHAT THESE NUMBERS ESTABLISH")
+    for label in sorted(by_class):
+        print(f"  {label}: {by_class[label]['label_basis']}")
     return 0
 
 
@@ -138,6 +144,13 @@ def _cmd_certificate(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"unknown digest: {args.digest}", file=sys.stderr)
         return 1
     print(render_human(cert, _NO_RUN))
+    # `render_human` is a pure function of one certificate, so it can only name what this one
+    # supersedes, never what superseded it. The CLI holds the ledger and already reports the
+    # forward link in `--json`; printing it here keeps the terminal from serving a withdrawn
+    # certificate as the current answer, the way the registry page already does.
+    replacement = query.superseded_by(args.digest)
+    if replacement:
+        print(f"\nSUPERSEDED — a later certificate replaced this one: {replacement}")
     return 0
 
 
@@ -155,6 +168,10 @@ def _cmd_verdict(query: ReprolithQuery, args: argparse.Namespace) -> int:
     if view["assumption_qualified_claims"]:
         print("  assumption-qualified: " + ", ".join(view["assumption_qualified_claims"]))
     print(f"  scope: {view['scope']['human']}")
+    if view["superseded_by"]:
+        # The gap report and the JSON view both carry it; without it here the terminal is the one
+        # published surface where a verdict a correction already replaced reads as the current one.
+        print(f"  superseded by: {view['superseded_by']}")
     return 0
 
 
@@ -195,6 +212,12 @@ def _cmd_certificates_for(query: ReprolithQuery, args: argparse.Namespace) -> in
         _print_json(digests)
         return 0
     if not digests:
+        # "this paper has no certificate" and "there is no such paper" are different answers, and
+        # every other identifier-taking command exits 1 on the second. Only say the first when the
+        # paper is actually known.
+        if query.status(**_identifier_kwargs(args)) is None:
+            print(f"unknown paper: {args.by}={args.identifier}", file=sys.stderr)
+            return 1
         print("(no certificates for this paper)")
         return 0
     for d in digests:
@@ -310,7 +333,13 @@ def run(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.data_dir is not None:
         # An explicit --data-dir means "read exactly this state" — no cross-class aggregation.
-        query, _catalog = load_repository(args.data_dir)
+        try:
+            query, _catalog = load_repository(args.data_dir)
+        except FileNotFoundError as unreadable:
+            # A mistyped path is the ordinary failure here (the README tells a reader to point an
+            # installed copy at a checkout), so it gets a message, not a traceback.
+            print(str(unreadable), file=sys.stderr)
+            return 1
     else:
         # The default view aggregates every class's published milestone certificates, so a
         # verdict from any of the six classes is reachable, not just the PK/PD one.

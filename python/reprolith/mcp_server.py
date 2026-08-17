@@ -1074,6 +1074,16 @@ def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[R
     from .seed import seed_catalog
 
     directory = Path(data_dir)
+    if not directory.is_dir():
+        # A missing catalog inside a real directory is a first run, and seeding it is right. A
+        # directory that does not exist — or a path that is a file — is a mistyped `--data-dir`,
+        # and the seeded fallback answered it with a confident, fabricated repository: 31 queued
+        # entries and a claimable backlog, for a path holding nothing.
+        raise FileNotFoundError(
+            f"no such data directory: {directory} — `--data-dir` must name a directory holding "
+            "catalog.json, certificates/, dossiers/, and bundles/ (an existing but empty "
+            "directory is a valid first run)"
+        )
     catalog_file = directory / "catalog.json"
     if catalog_file.is_file():
         catalog = Catalog.from_dict(json.loads(catalog_file.read_text(encoding="utf-8")))  # the run's real progress
