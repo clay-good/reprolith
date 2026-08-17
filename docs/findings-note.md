@@ -322,6 +322,33 @@ refuse a blank protocol where the claim is built, the way an engine pin refuses 
 Recorded rather than fixed, because each needs a design change rather than a patch, and none
 can produce a certificate that claims more than it checked:
 
+- **The curve threshold is a different standard on every curve, measured.** The distance is an
+  RMSE over the reference's span, so the systematic error admitted at the 10% default depends
+  entirely on shape: 15.6% on a sigmoid, 23.2% on a one-compartment bolus, 43.7% on a decaying
+  exponential, 75.3% on a sharp Gaussian peak. A reconstruction with a half-life 25% short of the
+  paper's scores 0.0797 and certifies as reproduced.
+- **Peak masking grows with the sample count, and the reconstructor picks the sample count.** A
+  single-point error passes whenever it is under `0.10·√N` times the reference range: half the range
+  at 25 samples, the whole range at 100, three times it at 1000. On a 201-point PK curve, a Cmax
+  predicted at *twice* the true value scores 0.0705 and reads as reproduced — and Cmax is what a
+  PK paper reports. A per-point guard alongside the RMSE is the fix, and it is a recalibration of
+  every curve verdict rather than a patch.
+- **The curve judge is far more permissive than the scalar judge on the same models.** Over 4,000
+  lognormal perturbations of a one-compartment oral PK model at σ=0.2, 70.0% of models passed as
+  curve claims while 14.7% passed as scalar AUC claims, and 34% of the curve-passers had AUC or
+  Cmax wrong by more than 20%. Which verdict a reconstruction earns depends on how the paper
+  phrased its result. (The judge does not falsely accuse: 10% iid noise on a correct curve produced
+  zero false failures in 2,000 trials.)
+- **The catalog grows without bound from the MCP boundary.** `submit_paper` and the
+  `blocked → queued → blocked` cycle both append unboundedly, and every mutation rewrites the whole
+  catalog: 2,000 submissions took 44 s and produced a 769 KiB file both surfaces read at startup.
+  No false certificate, but a shared server is wedgeable by a patient caller.
+- **A pinned-at-zero flux and a huge-but-finite value still have edges.** `normalized_curve_distance`
+  raises `OverflowError` rather than abstaining once squaring overflows (predicted ≳ 1e155), and an
+  all-zero reference has a subnormal cliff where 1e-165 reads as an exact match and 1e-160 as a
+  failure. Neither is reachable from a class front-end today: the spatial solver refuses the
+  discretizations that would produce them, and a diverging ODE reaches infinity and abstains.
+
 - **A certificate does not record whether the model was author-supplied or rebuilt.** The
   reconstruction bundle records it (`ModelOrigin`), and so do the mismatches it found and the
   claims it could not run — but nothing maps a bundle to a certificate, and `Certificate` has no
