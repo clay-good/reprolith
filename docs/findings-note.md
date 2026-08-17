@@ -373,6 +373,16 @@ as "a valid shipped model and no gaps: adopt-and-verify with nothing to assume".
 is now recorded as a load-bearing gap, as are function definitions the model's own expressions
 call, and the difficulty follows.
 
+Recording it truthfully then broke the one surface that reads the gap list. Every SBML entry now
+carried a load-bearing gap, so the advisory difficulty estimate scored all of them `high` — the
+spread across the shipped models inverted from eight `low` and one `high` to the reverse — and an
+estimate that is constant routes nothing, which is the only thing it is for. The distinction that
+fixes it is the one the honest record needs anyway: a reaction network is missing from the
+*dossier* and present in the *artifact*, so adopt-and-verify closes it, while a medium the paper
+never stated is missing from both. A gap now says which it is, difficulty ignores the first kind
+when the shipped model validates, and the spread is back where it was — with a dosing event still
+counting, because that is where reproduction actually fails.
+
 Two smaller fabrications went with it. A unit the model does not state was being filled in as
 `dimensionless` — 81 of the 115 values in the metformin dossier, including hepatic blood flows and
 a glomerular filtration rate, all at `quoted` confidence — though `Parameter` says in its own
@@ -457,16 +467,70 @@ unrun check are different claims about a paper, so the field distinguishes them 
 milestone records the comparison as unchecked with its reason — the dossier was ingested from the
 very file it would be compared against, so the result could only ever be empty.
 
+## How wrong a result has to be before each class says so, measured
+
+The tolerances had been described but never measured as a set. Perturbing a real shipped
+reproduction until its published verdict changes gives the number each class actually enforces,
+beside the agreement it actually achieves:
+
+| Class | Perturbed quantity | Agreement unperturbed | Still `reproduced` at | First non-pass |
+|---|---|---|---|---|
+| constraint-based | glucose uptake bound, *E. coli* core | rel. err 0 | ±3% | +5% → partial |
+| ode-pkpd scalar | metformin dose | 2.2% | +8% / −3% | +10% → partial |
+| kinetic curve | rate constant, five models | ≤ 2e-5 | ×1.001 to ×2.0 | ×1.01 to none found |
+| spatial | diffusivity | 1.5e-4 | ×1.5 | ×2.0 → partial |
+| stochastic | rate constant | 0.6–2.3% | ×1.05 to ×1.20 | ×1.08 to ×1.30 |
+| logical | one dropped negation | exact | — | 3 of 6 models: no edit changes the verdict |
+
+Three things in that table are worth stating plainly.
+
+**The curve judge's effective tolerance is 25% of span, not 10%.** The verdict is now the stricter
+of an RMSE at 10% and a worst point at 25%, and the worst-point statistic binds whenever the error
+is concentrated in under about a sixth of the samples — so on four of five curve shapes even a
+*systematic* error is decided by the worst point, at 24.8% to 25.0%. The doubled-peak regression
+that motivated the rule is closed at every sample count (it scored 0.0705 and passed at 201
+points; it now fails at 25, 101, 201, and 1001), and sample-count gaming is closed with it: the
+single-point allowance used to grow as 0.10·√N and is now flat. But a Cmax 25% wrong still passes
+as a *curve* claim, while the same Cmax as a *scalar* claim gets 5% — a factor of five that depends
+only on how the paper phrased its result. Tightening the worst point to the pass threshold was
+measured and rejected: at coarse per-point noise it fails correct work about half the time, where
+the present budget never does (0 false failures in 15,000 trials up to 5% per-point noise, three
+orders coarser than any real integrator).
+
+**A rate constant can be twice its stated value and still reproduce**, because the certified
+species is insensitive to it. The verdict is about one time-course, not about the model, and
+nothing on the certificate scopes it that way.
+
+**A logical certificate can attest to a signature that does not identify the network.** For one
+published model, all 42 single-literal edits produce the same attractor signature the certificate
+matched; for another, five of eight sampled edits do. The method name says `attractor-signature-
+match` and its docstring says what that is weaker than, but the certificate does not report how
+many other networks would have passed the same check.
+
+## A class that could refuse but never fail
+
+The spatial milestone ran at a diffusion number of 0.4 against an explicit scheme stable to 0.5.
+That left so little headroom that a diffusivity only 25% larger than stated was *refused as an
+unstable discretization* rather than judged — so for the one quantity the class exists to
+reproduce, the published configuration could emit a pass or a refusal and nothing else. It is the
+same defect the ninth pass found in the verdict path, arriving through the solver's guard instead.
+
+The published grid now runs at 0.2 with twice the steps, which keeps the elapsed time and the
+physical scenario identical and still certifies 3/3. A diffusivity twice the stated one now
+publishes `not-reproduced` where it used to raise, and a test holds the class to it.
+
 ## Known limits the audits found and left in place
 
 Recorded rather than fixed, because each needs a design change rather than a patch, and none
 can produce a certificate that claims more than it checked:
 
-- **The curve threshold is a different standard on every curve, measured.** The distance is an
-  RMSE over the reference's span, so the systematic error admitted at the 10% default depends
-  entirely on shape: 15.6% on a sigmoid, 23.2% on a one-compartment bolus, 43.7% on a decaying
-  exponential, 75.3% on a sharp Gaussian peak. A reconstruction with a half-life 25% short of the
-  paper's scores 0.0797 and certifies as reproduced.
+- **The curve threshold is a different standard on every curve** — though much less so than it
+  was. The RMSE is taken over the reference's span, so what it admits depends on shape: measured
+  before the worst-point rule existed, 15.6% systematic error on a sigmoid, 23.2% on a
+  one-compartment bolus, 43.7% on a decaying exponential, 75.3% on a sharp Gaussian peak. Now that
+  the worst point also governs, the same measurement gives 14.9% on the sigmoid and 24.8–25.0% on
+  the other three, because the worst point binds first there. The spread is a factor of 1.7 rather
+  than 4.8, and the ceiling is the 25%-of-span figure above.
 - **The curve judge is far more permissive than the scalar judge on the same models.** Over 4,000
   lognormal perturbations of a one-compartment oral PK model at σ=0.2, 70.0% of models passed as
   curve claims while 14.7% passed as scalar AUC claims, and 34% of the curve-passers had AUC or

@@ -43,10 +43,14 @@ _CENTERS = tuple(-_L + i * _DX for i in range(_N))
 
 # Each system: diffusivity, initial variance, total mass, and step count. The reported profile is the
 # exact analytical Gaussian at the elapsed time — the closed-form ground truth.
+#: The explicit scheme is stable to 0.5; the milestone runs at less than half of that so a
+#: perturbed diffusivity still runs and can be judged instead of refused.
+_DIFFUSION_NUMBER = 0.2
+
 _SYSTEMS = {
-    "diffusion_D1": {"title": "1-D diffusion of a Gaussian (D=1)", "D": 1.0, "var0": 1.0, "mass": 10.0, "steps": 500},
-    "diffusion_D2": {"title": "1-D diffusion of a Gaussian (D=2)", "D": 2.0, "var0": 1.5, "mass": 7.0, "steps": 400},
-    "diffusion_Dhalf": {"title": "1-D diffusion of a Gaussian (D=0.5)", "D": 0.5, "var0": 2.0, "mass": 5.0, "steps": 600},
+    "diffusion_D1": {"title": "1-D diffusion of a Gaussian (D=1)", "D": 1.0, "var0": 1.0, "mass": 10.0, "steps": 1000},
+    "diffusion_D2": {"title": "1-D diffusion of a Gaussian (D=2)", "D": 2.0, "var0": 1.5, "mass": 7.0, "steps": 800},
+    "diffusion_Dhalf": {"title": "1-D diffusion of a Gaussian (D=0.5)", "D": 0.5, "var0": 2.0, "mass": 5.0, "steps": 1200},
 }
 
 
@@ -59,7 +63,13 @@ def main() -> None:
 
     for key in sorted(_SYSTEMS):
         s = _SYSTEMS[key]
-        dt = 0.4 * _DX * _DX / s["D"]  # below the explicit stability limit
+        # The diffusion number is 0.2, not the 0.4 this used to run at, and the step count doubles
+        # to keep the elapsed time — and so the physical scenario — the same. At 0.4 the published
+        # configuration sat so near the explicit scheme's 0.5 limit that a diffusivity only 25% too
+        # large was *refused as an unstable discretization* rather than judged, so the one quantity
+        # this class exists to reproduce could not be got wrong loudly enough to be published as a
+        # failure. With headroom, a wrong D produces a verdict.
+        dt = _DIFFUSION_NUMBER * _DX * _DX / s["D"]
         elapsed = s["steps"] * dt
         initial = tuple(gaussian_profile(_CENTERS, mass=s["mass"], variance=s["var0"]))
         reference = tuple(gaussian_profile(_CENTERS, mass=s["mass"], variance=s["var0"] + 2 * s["D"] * elapsed))

@@ -177,3 +177,32 @@ def test_a_curve_and_a_scalar_claim_that_miss_are_published_rather_than_raised(
     )
     assert curve.overall is OverallVerdict.NOT_REPRODUCED
     assert curve.assessments[0].root_cause == "uncategorized"
+
+
+def test_a_wrong_diffusivity_is_judged_rather_than_refused_at_the_published_settings() -> None:
+    """The quantity the spatial class exists to reproduce has to be able to come out wrong.
+
+    The milestone used to run at a diffusion number of 0.4 against an explicit scheme stable to
+    0.5, so a diffusivity only 25% larger than stated was refused as an unstable discretization
+    instead of judged — the class could publish a refusal, never a failure, for the one number it
+    is about. The published grid now leaves headroom, so a wrong D produces a verdict.
+    """
+    steps, dt = 1000, 0.2 * _DX * _DX / 1.0  # the milestone's own discretization
+    exact = 1.0 + 2 * 1.0 * (steps * dt)
+
+    def certify(diffusivity: float) -> OverallVerdict:
+        cert = certify_spatial(
+            paper=PaperIdentity(title="1-D diffusion of a Gaussian", doi=""),
+            engine_pin=spatial_pin(),
+            claims=[SpatialClaim(
+                claim_id="profile", quantity="diffused concentration profile",
+                initial=tuple(gaussian_profile(_CENTERS, mass=10.0, variance=1.0)),
+                reference=tuple(gaussian_profile(_CENTERS, mass=10.0, variance=exact)),
+                source_location="closed-form", diffusivity=diffusivity,
+                dx=_DX, dt=dt, steps=steps,
+            )],
+        )
+        return cert.overall
+
+    assert certify(1.0) is OverallVerdict.REPRODUCED
+    assert certify(2.0) is OverallVerdict.NOT_REPRODUCED  # judged, not refused
