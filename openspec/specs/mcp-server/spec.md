@@ -124,6 +124,29 @@ agents or humans.
 - **AND** an expired or abandoned lease returns the item to the queue with partial work
   preserved
 
+#### Scenario: A finished reproduction leaves the queue
+
+- **WHEN** an agent records that a claimed entry is done, naming the certificate it published
+- **THEN** the entry advances to the lifecycle state that certificate's verdict implies, the
+  moves are recorded with the recording agent and the reason, and the lease is dropped
+- **AND** the entry is no longer offered as claimable work, so a completed unit is never
+  handed out again at lease expiry
+
+#### Scenario: A recorded outcome cannot exceed its evidence
+
+- **WHEN** an agent records a result
+- **THEN** the outcome state is derived from the named certificate's own verdict rather than
+  asserted by the caller
+- **AND** a certificate whose paper identity contradicts the entry's is refused, so one
+  paper's result is never filed under another's accession
+- **AND** the reply carries the blind entry view, never a ground-truth label
+
+#### Scenario: A blocked entry returns to the queue when its missing input arrives
+
+- **WHEN** the input a blocked entry was waiting on becomes available and a requester says so
+- **THEN** the entry returns to `queued` with the reason recorded, and becomes claimable again
+- **AND** an entry that is not blocked is refused rather than silently moved
+
 ### Requirement: Parity with the human surface
 
 The MCP server SHALL not become a divergent second implementation of Reprolith's contracts.

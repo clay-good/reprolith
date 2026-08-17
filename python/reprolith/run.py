@@ -36,7 +36,7 @@ def _paper_of(entry: CatalogEntry) -> PaperIdentity:
     return PaperIdentity(title=ids.title, doi=ids.doi, pubmed_id=ids.pubmed_id)
 
 
-def _require_same_paper(entry: CatalogEntry, certificate: Certificate, key: str) -> None:
+def require_same_paper(entry: CatalogEntry, certificate: Certificate, key: str) -> None:
     """Refuse a certificate keyed to an entry that is not the paper the certificate is about.
 
     The mapping is keyed by accession-or-title, but the certificate carries its own paper
@@ -132,12 +132,15 @@ def advance_to_outcome(
     at: str,
     actor: str,
     blocked_reason: str = NO_CLAIMS_REASON,
+    reason: str = "blind run",
 ) -> None:
     """Walk a queued entry to the lifecycle state matching its run outcome, recording each move.
 
     ``reproduced``/``partially-reproduced`` end at ``certified``; ``not-reproduced`` at
     ``failed``; ``blocked`` at ``blocked`` with the missing input. Only advances an entry still
-    in ``queued`` (a re-run does not double-record).
+    in ``queued`` (a re-run does not double-record). ``reason`` is recorded on every move, so a
+    result recorded by an agent through the MCP surface is distinguishable in the history from
+    one produced by the blind run.
     """
     if entry.state is not LifecycleState.QUEUED:
         return
@@ -150,7 +153,7 @@ def advance_to_outcome(
         path = _TO_CERTIFIED
     for state in path:
         missing = (blocked_reason,) if state is LifecycleState.BLOCKED else ()
-        entry.transition(state, at=at, actor=actor, reason="blind run", missing_inputs=missing)
+        entry.transition(state, at=at, actor=actor, reason=reason, missing_inputs=missing)
 
 
 def run_test_set(
@@ -177,7 +180,7 @@ def run_test_set(
         key = entry.identifiers.accession or entry.identifiers.title
         certificate = certified.get(key)
         if certificate is not None:
-            _require_same_paper(entry, certificate, key)
+            require_same_paper(entry, certificate, key)
         else:
             certificate = blocked_certificate(_paper_of(entry), engine_pin, reason=blocked_reason)
         certificates.append(certificate)
@@ -194,5 +197,6 @@ __all__ = [
     "blocked_certificate",
     "certified_from_claims",
     "load_claims_dataset",
+    "require_same_paper",
     "run_test_set",
 ]

@@ -59,16 +59,35 @@ qualifications.
 | `lint_stochastic` | `sbml`, `species`, `reported_mean`, `duration`, `trajectories`, `seed` | A deterministic verdict on an SBML reaction network's mean species count via a pinned Gillespie SSA (needs the engine extra) |
 | `lint_diffusion` | `initial`, `reference`, `diffusivity`, `dx`, `dt`, `steps`, `decay` (optional) | A deterministic verdict on a 1-D diffusion profile vs a reported one, by curve distance (pure, no extra) |
 
-## Effectful tool
+## Effectful tools
 
 Kept separate from the read-only tools, and offered only when the server runs with a mutable
 catalog (as `reprolith-mcp` does):
 
 | Tool | Arguments | Effect |
 |---|---|---|
-| `submit_paper` | `title` (required), `doi`/`pubmed_id`/`accession`/`model_class` | Adds a candidate paper as a queued `ode-pkpd` entry and reports what changed. Submitting the same paper again resolves to the existing entry — never a duplicate — and the change is persisted. |
-| `claim_work` | `requester` (required), `model_class`, `lease_seconds` (default 3600) | Claims the next best claimable entry and leases it to the requester, so agents sharing one server don't collide. Ground-truth-labelled work is offered first; an expired lease returns the entry to the pool. Returns the leased entry or that there is no eligible work. |
+| `submit_paper` | `title` (required), `doi`/`pubmed_id`/`accession`/`model_class` | Adds a candidate paper as a queued entry (unassigned class unless `model_class` is given) and reports what changed. Submitting the same paper again resolves to the existing entry — never a duplicate — and the change is persisted. |
+| `claim_work` | `requester` (required), `model_class`, `lease_seconds` (default 3600) | Claims the next best claimable entry and leases it to the requester, so agents sharing one server don't collide. Readier (lower-difficulty) work is offered first; ground truth is deliberately not a ranking key, and an expired lease returns the entry to the pool. Returns the leased entry or that there is no eligible work. |
 | `release_work` | `accession`, `requester` | Releases a claimed entry back to the queue. Only the lease holder may release it. |
+| `record_result` | `accession`, `requester`, `digest` (all required), `at` | Records that the entry's reproduction is done. Walks it to `certified`, `failed`, or `blocked` — the state comes from the named certificate's verdict, never from the caller — records each move with the recording agent and the certificate digest, and drops the lease. The entry stops being offered as work. |
+| `requeue_entry` | `accession`, `requester`, `reason` (all required), `at` | Returns a `blocked` entry to the queue because the input it was waiting on is now available. The reason is recorded in the entry's history. |
+
+### The work loop
+
+An agent's cycle closes with `record_result`:
+
+1. `claim_work` — leased the next entry.
+2. Do the reproduction and publish a certificate (the digest is its identity).
+3. `record_result` with that digest — the entry advances to `certified`, `failed`, or
+   `blocked`, and leaves the claimable pool for good.
+
+Skipping step 3 is what makes an agent loop spin: the entry stays `queued`, and the same unit is
+handed out again the moment the lease expires. Two things are not the agent's to assert. The
+outcome state is read from the certificate's own verdict, so a certificate that says
+`not-reproduced` records a `failed` entry however the caller describes it; and the certificate
+must be about the entry's paper — checked on DOI and PubMed ID, so one paper's result can never
+be filed under another's accession. A blocked entry gets its missing input recorded from the
+certificate's gap report, and `requeue_entry` is how it comes back once that input arrives.
 
 ### What the lease is and is not
 

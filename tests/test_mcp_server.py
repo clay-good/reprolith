@@ -566,3 +566,147 @@ def test_a_lease_must_be_a_real_span_of_time() -> None:
     # A sound lease still holds the entry against a second requester.
     assert claim_work(catalog, {"requester": "agent-1", "lease_seconds": 60}, at=1000.0)["claimed"]
     assert claim_work(catalog, {"requester": "agent-2"}, at=1010.0)["claimed"] is False
+
+
+# --- recording completed work (spec: mcp-server, "Work that has been done is recorded") -------
+
+
+def _recording_fixture() -> tuple[Catalog, ReprolithQuery, str]:
+    """A queued entry plus a published certificate for that same paper."""
+    catalog = Catalog()
+    catalog.add(Identifiers(title="Paper A", doi="10.1/a", accession="ACC-A"), ModelClass.ODE_PKPD)
+    ledger = CertificateLedger()
+    digest = ledger.issue(build_certificate(
+        paper=PaperIdentity(title="Paper A", doi="10.1/a"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(claim_id="c1", quantity="AUC", verdict=Verdict.REPRODUCED,
+                                     source_location="Table 1")],
+    ))
+    return catalog, ReprolithQuery(catalog, ledger), digest
+
+
+def _effectful(query, catalog, name, arguments, *, at=0.0):
+    resp = handle_request(query, {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                  "params": {"name": name, "arguments": arguments}},
+                          catalog=catalog, now=lambda: at)
+    result = resp["result"]
+    is_error = result.get("isError", False)
+    text = result["content"][0]["text"]
+    return (text if is_error else json.loads(text)), is_error
+
+
+def test_recording_a_result_takes_the_entry_out_of_the_queue() -> None:
+    # Without this the loop never closed: an agent claimed an entry, published a certificate,
+    # and the entry stayed queued — handed out again at lease expiry.
+    catalog, query, digest = _recording_fixture()
+    claimed, _ = _effectful(query, catalog, "claim_work",
+                            {"requester": "agent-1", "lease_seconds": 60})
+    assert claimed["claimed"]
+
+    done, is_error = _effectful(query, catalog, "record_result",
+                                {"accession": "ACC-A", "requester": "agent-1", "digest": digest})
+    assert not is_error
+    assert done["recorded"] and done["state"] == "certified" and done["overall"] == "reproduced"
+    # No longer claimable, by anyone, even once the lease would have expired.
+    again, _ = _effectful(query, catalog, "claim_work", {"requester": "agent-2"}, at=1e9)
+    assert again == {"claimed": False, "reason": "no eligible work"}
+    # The pathway is recorded, not inferred, and names who recorded it.
+    history = query.status(accession="ACC-A")["history"]
+    assert [t["to_state"] for t in history][-1] == "certified"
+    assert history[-1]["actor"] == "agent-1" and digest in history[-1]["reason"]
+    # The reply is the blind view: recording work never reveals a ground-truth label.
+    assert "ground_truth" not in json.dumps(done)
+
+
+def test_a_recorded_result_cannot_claim_more_than_its_certificate() -> None:
+    catalog, query, digest = _recording_fixture()
+    ledger = query._ledger
+    failed = ledger.issue(build_certificate(
+        paper=PaperIdentity(title="Paper A", doi="10.1/a"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(claim_id="c1", quantity="AUC",
+                                     verdict=Verdict.FAILED, source_location="Table 1",
+                                     root_cause="parameter mismatch")],
+    ))
+    done, _ = _effectful(query, catalog, "record_result",
+                         {"accession": "ACC-A", "requester": "a", "digest": failed})
+    # The state comes from the certificate's verdict, never from the caller.
+    assert done["recorded"] and done["state"] == "failed"
+    assert digest != failed
+
+
+def test_recording_refuses_another_papers_certificate() -> None:
+    catalog, query, _ = _recording_fixture()
+    other = query._ledger.issue(build_certificate(
+        paper=PaperIdentity(title="Paper B", doi="10.2/b"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(claim_id="c1", quantity="AUC", verdict=Verdict.REPRODUCED,
+                                     source_location="Table 1")],
+    ))
+    text, is_error = _effectful(query, catalog, "record_result",
+                                {"accession": "ACC-A", "requester": "a", "digest": other})
+    assert is_error and "different paper" in text
+    assert catalog.find(Identifiers(title="", accession="ACC-A")).state.value == "queued"
+
+
+def test_recording_refuses_an_unknown_certificate_a_non_holder_and_a_repeat() -> None:
+    catalog, query, digest = _recording_fixture()
+    unknown, _ = _effectful(query, catalog, "record_result",
+                            {"accession": "ACC-A", "requester": "a", "digest": "deadbeef"})
+    assert unknown == {"recorded": False, "reason": "unknown certificate"}
+    missing, _ = _effectful(query, catalog, "record_result",
+                            {"accession": "NOPE", "requester": "a", "digest": digest})
+    assert missing == {"recorded": False, "reason": "unknown entry"}
+
+    _effectful(query, catalog, "claim_work", {"requester": "agent-1", "lease_seconds": 60})
+    held, _ = _effectful(query, catalog, "record_result",
+                         {"accession": "ACC-A", "requester": "agent-2", "digest": digest})
+    assert held == {"recorded": False, "reason": "not the lease holder"}
+    # An expired lease is not a hold, so the work can still be recorded.
+    done, _ = _effectful(query, catalog, "record_result",
+                         {"accession": "ACC-A", "requester": "agent-2", "digest": digest}, at=1e9)
+    assert done["recorded"]
+    # Recording it twice does not double-record: it refuses rather than silently no-op.
+    twice, _ = _effectful(query, catalog, "record_result",
+                          {"accession": "ACC-A", "requester": "agent-2", "digest": digest}, at=1e9)
+    assert twice == {"recorded": False, "reason": "entry is already certified"}
+
+
+def test_a_blocked_entry_can_be_returned_to_the_queue() -> None:
+    # The lifecycle always permitted blocked -> queued; no surface performed it, so an entry
+    # blocked on a missing supplement stayed out of the backlog even once it arrived.
+    catalog, query, _ = _recording_fixture()
+    blocked = query._ledger.issue(build_certificate(
+        paper=PaperIdentity(title="Paper A", doi="10.1/a"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=(), gap_report=("the supplement with the dosing schedule is paywalled",),
+    ))
+    done, _ = _effectful(query, catalog, "record_result",
+                         {"accession": "ACC-A", "requester": "a", "digest": blocked})
+    assert done["recorded"] and done["state"] == "blocked"
+    entry = catalog.find(Identifiers(title="", accession="ACC-A"))
+    assert entry.history[-1].missing_inputs == ("the supplement with the dosing schedule is paywalled",)
+
+    back, is_error = _effectful(query, catalog, "requeue_entry",
+                                {"accession": "ACC-A", "requester": "curator",
+                                 "reason": "the author sent the dosing schedule"})
+    assert not is_error and back["requeued"] and back["state"] == "queued"
+    assert entry.history[-1].reason == "the author sent the dosing schedule"
+    claim, _ = _effectful(query, catalog, "claim_work", {"requester": "agent-9"})
+    assert claim["claimed"]
+
+
+def test_requeue_refuses_an_entry_that_is_not_blocked() -> None:
+    catalog, query, _ = _recording_fixture()
+    text, is_error = _effectful(query, catalog, "requeue_entry",
+                                {"accession": "ACC-A", "requester": "c", "reason": "why"})
+    assert is_error and "queued -> queued is not permitted" in text
+
+
+def test_recording_tools_are_refused_on_a_read_only_server() -> None:
+    query, digest = _fixture()
+    for name, args in (("record_result", {"accession": "A", "requester": "r", "digest": digest}),
+                       ("requeue_entry", {"accession": "A", "requester": "r", "reason": "x"})):
+        resp = handle_request(query, {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                      "params": {"name": name, "arguments": args}})
+        assert resp["result"]["isError"]

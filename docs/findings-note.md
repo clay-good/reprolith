@@ -173,10 +173,6 @@ can produce a certificate that claims more than it checked:
 - **A stochastic certificate's assumption-qualified flag names no assumption.** The flag carries
   the class's real caveat (the verdict depends on the seed and ensemble size, which the protocol
   now records), but it reads as "an assumption Reprolith supplied" with none listed.
-- **Work that has been done cannot be recorded as done.** An agent claims an entry under a lease
-  and issues a certificate, but no surface transitions the entry, so at lease expiry the same
-  unit is handed out again. Likewise nothing releases a `blocked` entry back to the queue,
-  though the state machine permits it.
 - The curve oracle's RMSE can average a localized peak miss into a pass, and `relative_error`
   against an exactly-zero reference falls back to an absolute comparison judged at a relative
   tolerance. Both are long-standing, both documented, neither exhibited by any committed

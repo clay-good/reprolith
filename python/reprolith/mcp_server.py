@@ -20,12 +20,14 @@ import math
 import os
 import sys
 from collections.abc import Callable, Sequence
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import IO, Any
 
-from .catalog import AmbiguousMerge, Catalog, Identifiers, IllegalTransition
-from .enums import ModelClass
+from .catalog import AmbiguousMerge, Catalog, CatalogEntry, Identifiers, IllegalTransition
+from .enums import LifecycleState, ModelClass
 from .query import ReprolithQuery
+from .run import advance_to_outcome, require_same_paper
 from .supersession import CertificateLedger
 
 PROTOCOL_VERSION = "2024-11-05"
@@ -317,6 +319,43 @@ EFFECTFUL_TOOLS: list[dict[str, Any]] = [
             "required": ["accession", "requester"],
         },
     },
+    {
+        "name": "record_result",
+        "description": (
+            "EFFECTFUL: record that a claimed entry's reproduction is done, evidenced by a "
+            "published certificate. The outcome state is read from that certificate's verdict, "
+            "never asserted by the caller, and the certificate must be for this entry's paper. "
+            "Walks the entry to certified / failed / blocked and drops the lease, so the unit is "
+            "not handed out again."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "accession": {"type": "string"},
+                "requester": {"type": "string"},
+                "digest": {"type": "string", "description": "the certificate's content digest"},
+                "at": {"type": "string", "description": "optional timestamp for the history"},
+            },
+            "required": ["accession", "requester", "digest"],
+        },
+    },
+    {
+        "name": "requeue_entry",
+        "description": (
+            "EFFECTFUL: return a blocked entry to the queue because its missing input is now "
+            "available, recording who said so and why. Only a blocked entry can be requeued."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "accession": {"type": "string"},
+                "requester": {"type": "string"},
+                "reason": {"type": "string", "description": "what is now available"},
+                "at": {"type": "string", "description": "optional timestamp for the history"},
+            },
+            "required": ["accession", "requester", "reason"],
+        },
+    },
 ]
 
 
@@ -367,6 +406,108 @@ def release_work(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
         return {"released": False, "reason": "not the lease holder"}
     entry.release_lease()
     return {"released": True}
+
+
+def _held_by_another(entry: CatalogEntry, requester: str, *, at: float) -> bool:
+    """Whether a live lease held by someone other than ``requester`` covers this entry.
+
+    An expired lease is not a hold — the entry is back in the pool — so the check is on
+    liveness, not on ``leased_to`` alone; otherwise a stale name left by an abandoned claim
+    would block the true holder from ever recording the work.
+    """
+    if entry.leased_to is None or entry.leased_to == requester:
+        return False
+    return entry.lease_expires is not None and at < entry.lease_expires
+
+
+def _history_stamp(arguments: dict[str, Any], *, at: float) -> str:
+    """The timestamp to record on a transition: the caller's, or the server clock in UTC."""
+    stated = arguments.get("at")
+    if stated:
+        return str(stated)
+    return datetime.fromtimestamp(at, tz=timezone.utc).isoformat()
+
+
+def record_result(
+    catalog: Catalog,
+    query: ReprolithQuery,
+    arguments: dict[str, Any],
+    *,
+    at: float,
+) -> dict[str, Any]:
+    """Record a claimed entry's reproduction as done, evidenced by a published certificate.
+
+    This is the step that closes the loop. Without it an agent could claim an entry, do the
+    work, and publish a certificate while the entry sat in ``queued`` — so the same unit was
+    handed out again at lease expiry, and the catalog could never say what had been finished.
+
+    Two things are deliberately not the caller's to assert. The outcome state is derived from
+    the named certificate's own verdict, so an agent cannot record a success its certificate
+    does not support; and the certificate must be about this entry's paper (checked on DOI and
+    PubMed ID, the stable identifiers), so one paper's result cannot be filed under another's
+    accession. The reply is the blind entry view, like every other surface — recording work
+    never reveals whether the entry carries a ground-truth label.
+    """
+    accession = arguments["accession"]
+    requester = arguments["requester"]
+    entry = catalog.find(Identifiers(title="", accession=accession))
+    if entry is None:
+        return {"recorded": False, "reason": "unknown entry"}
+    if _held_by_another(entry, requester, at=at):
+        return {"recorded": False, "reason": "not the lease holder"}
+    if entry.state is not LifecycleState.QUEUED:
+        # advance_to_outcome silently no-ops off ``queued``; at a surface that reads as success.
+        return {"recorded": False, "reason": f"entry is already {entry.state.value}"}
+    certificate = query.certificate_object(arguments["digest"])
+    if certificate is None:
+        return {"recorded": False, "reason": "unknown certificate"}
+    require_same_paper(entry, certificate, accession)
+
+    advance_to_outcome(
+        entry,
+        certificate.overall,
+        at=_history_stamp(arguments, at=at),
+        actor=requester,
+        blocked_reason=(
+            certificate.gap_report[0]
+            if certificate.gap_report
+            else "the certificate reports no evaluable claim"
+        ),
+        reason=f"result recorded from certificate {arguments['digest']}",
+    )
+    # The work is finished, so the lease has nothing left to coordinate.
+    entry.release_lease()
+    return {
+        "recorded": True,
+        "state": entry.state.value,
+        "overall": certificate.overall.value,
+        "certificate": arguments["digest"],
+        "entry": entry.blind().to_dict(),
+    }
+
+
+def requeue_entry(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dict[str, Any]:
+    """Return a blocked entry to the queue now that its missing input is available.
+
+    The lifecycle has always permitted ``blocked -> queued``, but no surface performed it, so an
+    entry blocked on a paywalled supplement stayed out of the backlog forever even once the
+    supplement arrived. ``reason`` says what is now available and is recorded in the history;
+    an illegal move (an entry that is not blocked) raises and is reported as a tool error.
+    """
+    entry = catalog.find(Identifiers(title="", accession=arguments["accession"]))
+    if entry is None:
+        return {"requeued": False, "reason": "unknown entry"}
+    requester = arguments["requester"]
+    if _held_by_another(entry, requester, at=at):
+        return {"requeued": False, "reason": "not the lease holder"}
+    entry.transition(
+        LifecycleState.QUEUED,
+        at=_history_stamp(arguments, at=at),
+        actor=requester,
+        reason=arguments["reason"],
+    )
+    entry.release_lease()
+    return {"requeued": True, "state": entry.state.value, "entry": entry.blind().to_dict()}
 
 
 # The lint_* tools run unbounded pure-Python loops (finite-difference steps, SSA trajectories) whose
@@ -614,6 +755,20 @@ def handle_request(
                 if catalog is None:
                     raise KeyError("release_work is not enabled on this read-only server")
                 data = release_work(catalog, arguments)
+                if on_change is not None:
+                    on_change()
+            elif name == "record_result":
+                if catalog is None:
+                    raise KeyError("record_result is not enabled on this read-only server")
+                data = record_result(
+                    catalog, query, arguments, at=(now() if now is not None else 0.0)
+                )
+                if on_change is not None:
+                    on_change()
+            elif name == "requeue_entry":
+                if catalog is None:
+                    raise KeyError("requeue_entry is not enabled on this read-only server")
+                data = requeue_entry(catalog, arguments, at=(now() if now is not None else 0.0))
                 if on_change is not None:
                     on_change()
             else:
@@ -893,7 +1048,9 @@ __all__ = [
     "load_repository",
     "milestone_agreement_reports",
     "milestone_certificate_dirs",
+    "record_result",
     "release_work",
+    "requeue_entry",
     "serve_stdio",
     "submit_paper",
 ]

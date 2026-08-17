@@ -41,7 +41,10 @@ same answers as the human-facing repository.
 The server is dependency-free (JSON-RPC over stdio, no third-party SDK) and exposes read-only
 tools — browse the catalog, get a paper's status, fetch a certificate, read its gaps, inspect a
 dossier or bundle — each delegating to the same query surface the repository uses, so a verdict
-always travels with its scope flag and qualifications. Run it with `reprolith-mcp` (after
+always travels with its scope flag and qualifications. A separate set of effectful tools closes
+an agent's work loop: claim the next entry, publish a certificate, then record the result against
+that certificate's digest so the finished unit leaves the queue. The outcome state is read from
+the certificate's own verdict, never asserted by the caller. Run it with `reprolith-mcp` (after
 `pip install -e .`); see [docs/mcp-server.md](docs/mcp-server.md) to register it in a client and
 for the tool reference.
 
