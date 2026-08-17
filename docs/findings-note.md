@@ -169,6 +169,33 @@ needless re-run of a dependency-free solver costs seconds; a missed one publishe
 current code would not produce. A test holds the corpus to it: a committed certificate carrying an
 older revision than the code fails, and the fix is re-running that class's milestone script.
 
+## What the surfaces were still allowed to say
+
+The read surfaces are where a verdict actually reaches someone, and four of them overstated:
+
+- **The pre-submission report served a withdrawn verdict.** `verdict` and `certificate` both
+  carried `superseded_by`; the report that says *"ready to submit"* did not, so an author or agent
+  gating a submission could act on a certificate a correction had already replaced. It carries it
+  now, and so does the gap report.
+- **`gaps` was the one read path returning verdicts bare.** Each gap item carries its claim's
+  verdict, and the list came back with no scope flag anywhere — the single exception to the rule
+  that no verdict leaves this surface unqualified. It is now returned wrapped, with the scope and
+  the supersession beside it.
+- **Nothing rendered supersession.** Neither the plain-text certificate nor the published registry
+  showed it, though it is part of the machine content — so a withdrawn `reproduced` and the
+  `not-reproduced` that replaced it appeared as two equal cards, green badge intact. The human
+  certificate names what it supersedes, and the registry marks the superseded card with its
+  replacement's digest.
+- **The inline stochastic linter answered where the certificate path abstains.** `certify_stochastic`
+  refuses to decide a claim whose ensemble noise is comparable to the pass threshold; the linter an
+  agent gates a workflow on judged the same number at any trajectory count and recorded no seed. On
+  a *provably correct* immigration-death model at ten trajectories, that returns a false `failed` on
+  about one seed in eight. Both paths now share one rule about what an ensemble can decide, and the
+  inline result records the sampling behind it.
+
+Also closed: an argument of the wrong shape — a list where a mapping belongs — crashed a tool
+instead of being refused, escaping a function documented as pure request-to-response.
+
 ## An agreement rate that could not have come out any other way
 
 The oracle refuses a bare non-pass: a `partial` or `failed` verdict must carry a root cause, or the

@@ -841,6 +841,7 @@ def handle_request(
             else:
                 data = dispatch_tool(query, name, arguments)
         except (
+            AttributeError,
             KeyError,
             TypeError,
             ValueError,
@@ -851,7 +852,11 @@ def handle_request(
             # Unknown tool / bad args, a length mismatch, the engine being absent or diverging
             # (EngineUnavailable and NonFiniteSimulation are RuntimeErrors), or an effectful call
             # refusing a catalog conflict (AmbiguousMerge/IllegalTransition) are all tool-level
-            # errors: report them to the caller rather than crash the server.
+            # errors: report them to the caller rather than crash the server. AttributeError is in
+            # the list because an argument of the wrong *shape* — a list where a mapping is
+            # expected, a dict where a string is — reaches a `.items()` or `.strip()` deep inside a
+            # judge, and a caller sending malformed JSON deserves the same honest tool-level
+            # refusal as one sending an impossible value, not an escaped exception.
             return _result(
                 request_id,
                 {"content": [{"type": "text", "text": f"error: {exc}"}], "isError": True},

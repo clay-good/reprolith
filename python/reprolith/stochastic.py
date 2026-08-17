@@ -338,26 +338,50 @@ def _sampling_cannot_resolve(
     this ensemble cannot resolve this claim, which is an abstention, not a failure. Enlarging the
     ensemble is the fix, and the reason says so.
     """
-    if variance <= 0.0 or claim.reported_mean == 0.0:
-        return None
-    tolerance = claim.tolerance or default_tolerance(
-        ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+    reason = unresolvable_ensemble_reason(
+        reported_mean=claim.reported_mean, variance=variance, trajectories=trajectories,
+        tolerance=claim.tolerance,
     )
-    sem = math.sqrt(variance / trajectories)
-    relative_sem = abs(sem / claim.reported_mean)
-    if relative_sem <= tolerance.reproduced_within / 2.0:
+    if reason is None:
         return None
     return not_evaluable(
         claim_id=claim.claim_id,
         quantity=claim.quantity,
         source_location=claim.source_location,
-        reason=(
-            f"this ensemble cannot resolve the claim: its standard error is "
-            f"{relative_sem:.1%} of the reported mean, against a "
-            f"{tolerance.reproduced_within:.0%} pass threshold; "
-            f"{trajectories} trajectories is too few to tell a reproduction from sampling noise"
-        ),
+        reason=reason,
         reference_kind=ReferenceKind.NUMERIC,
+    )
+
+
+def unresolvable_ensemble_reason(
+    *,
+    reported_mean: float,
+    variance: float,
+    trajectories: int,
+    tolerance: Tolerance | None = None,
+) -> str | None:
+    """Why this ensemble cannot decide this claim, or ``None`` when it can.
+
+    The rule both stochastic paths share — the certificate path above, and the inline linter, which
+    judges the same kind of number for an agent about to gate a workflow on it. Whether an ensemble
+    can resolve a claim is a property of the ensemble and the threshold, not of which surface asked,
+    so the two must not be able to disagree: at ten trajectories a provably correct
+    immigration-death model misses its 5% claim on most seeds, and a linter answering ``failed``
+    there is a false accusation an agent acts on immediately.
+    """
+    if variance <= 0.0 or reported_mean == 0.0:
+        return None
+    tol = tolerance or default_tolerance(
+        ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+    )
+    relative_sem = abs(math.sqrt(variance / trajectories) / reported_mean)
+    if relative_sem <= tol.reproduced_within / 2.0:
+        return None
+    return (
+        f"this ensemble cannot resolve the claim: its standard error is "
+        f"{relative_sem:.1%} of the reported mean, against a "
+        f"{tol.reproduced_within:.0%} pass threshold; "
+        f"{trajectories} trajectories is too few to tell a reproduction from sampling noise"
     )
 
 
@@ -602,6 +626,8 @@ __all__ = [
     "ensemble_percentile_bands",
     "gillespie",
     "gillespie_at_times",
+    "solver_pin",
     "species_mean_variance",
     "time_to_extinction",
+    "unresolvable_ensemble_reason",
 ]

@@ -225,10 +225,22 @@ class ReprolithQuery:
         view["superseded_by"] = self.superseded_by(digest)
         return view
 
-    def gaps(self, digest: str) -> list[dict[str, Any]] | None:
-        """The structured "what was missing" report for a digest, or ``None``."""
+    def gaps(self, digest: str) -> dict[str, Any] | None:
+        """The structured "what was missing" report for a digest, or ``None``.
+
+        Returned wrapped rather than as a bare list, because each gap item carries its claim's
+        verdict, and this surface promises that no verdict leaves it without the scope flag beside
+        it. A caller reading `"verdict": "reproduced"` off a gap item was reading a verdict with
+        nothing qualifying it.
+        """
         cert = self._ledger.get(digest)
-        return gap_items(cert) if cert is not None else None
+        if cert is None:
+            return None
+        return {
+            "gaps": gap_items(cert),
+            "scope": cert.scope.to_dict(),
+            "superseded_by": self.superseded_by(digest),
+        }
 
     def presubmission(self, digest: str) -> dict[str, Any] | None:
         """The author-facing pre-submission report for a digest, or ``None``.
@@ -236,9 +248,17 @@ class ReprolithQuery:
         Re-presents the certificate as a readiness signal plus a prioritized fix list for an
         author to run on their own model before publishing (spec: ``presubmission-check``). It
         recomputes no verdict — the report is derived from the stored certificate.
+
+        Carries ``superseded_by`` for the same reason :meth:`verdict` does, and with more at stake:
+        this report says "ready to submit", and a certificate that has since been corrected must
+        not be what an author acts on.
         """
         cert = self._ledger.get(digest)
-        return presubmission_report(cert) if cert is not None else None
+        if cert is None:
+            return None
+        report = presubmission_report(cert)
+        report["superseded_by"] = self.superseded_by(digest)
+        return report
 
     def certificates_for(
         self,

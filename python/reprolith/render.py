@@ -208,6 +208,11 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
         lines.append(f"  {ids}")
     algo = f" / {pin['algorithm']}" if pin.get("algorithm") else ""
     lines.append(f"Engine pin: {pin['engine']} {pin['version']}{algo}")
+    if content.get("supersedes"):
+        # Part of the machine content, so the two renderings have to agree on it: a certificate
+        # that replaced an earlier one says which, or a reader comparing the two cannot tell which
+        # is the correction.
+        lines.append(f"Supersedes: {content['supersedes']}")
     lines.append("")
 
     lines.append(f"OVERALL: {summary['overall']}")
@@ -333,6 +338,15 @@ def render_registry(
     from .scope import Scope
 
     rows = list(entries)
+    # A certificate another one replaced must not read as a current result: the registry holds both
+    # records, and two equal cards — the withdrawn one still wearing its badge — is exactly how a
+    # corrected verdict keeps being cited. The replacements name what they replaced, so the
+    # superseded set is derivable from the page's own contents.
+    superseded = {
+        cert.supersedes: content_hash(cert.content())
+        for _, cert in rows
+        if cert.supersedes is not None
+    }
     # The page-wide disclaimer is the scope statement itself, not whichever certificate happens
     # to sort first: one contributed file must not be able to reword the disclaimer every other
     # entry on the page is published under.
@@ -360,9 +374,18 @@ def render_registry(
             if gaps
             else ""
         )
+        replaced_by = superseded.get(digest)
+        superseded_block = (
+            f'<p class="superseded">superseded — a later certificate replaced this one: '
+            f'<code>{html.escape(replaced_by)}</code></p>'
+            if replaced_by
+            else ""
+        )
         cards.append(
-            f'<article class="entry" data-class="{html.escape(model_class)}" '
-            f'data-verdict="{verdict}">'
+            f'<article class="entry{" superseded" if replaced_by else ""}" '
+            f'data-class="{html.escape(model_class)}" '
+            f'data-verdict="{verdict}" data-superseded="{"yes" if replaced_by else "no"}">'
+            f'{superseded_block}'
             f'<div class="badge">{render_badge(cert)}</div>'
             f'<h3>{html.escape(cert.paper.title)}</h3>'
             f'<p class="meta">{html.escape(model_class)}'
@@ -395,6 +418,9 @@ def render_registry(
         ".gaps{margin:.4rem 0;font-size:.9rem}.gaps summary{cursor:pointer;color:#a80}"
         ".gaps ul{margin:.3rem 0 .3rem 1.2rem;color:#444}"
         ".digest{margin:.3rem 0 0;font-size:.75rem;color:#888;word-break:break-all}"
+        ".entry.superseded{border-color:#c33;background:#fff8f8;opacity:.85}"
+        ".superseded{margin:0 0 .4rem;color:#c33;font-weight:600;font-size:.9rem}"
+        ".superseded code{font-weight:400;word-break:break-all}"
         ".track-record{margin:1rem 0;padding:1rem;border:1px solid #ddd;border-radius:8px;background:#fafafa}"
         ".track-record h2{margin:.2rem 0}.tr-note{color:#555;max-width:48rem;font-size:.9rem}"
         ".track-record table{border-collapse:collapse;margin-top:.5rem}"

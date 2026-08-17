@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from .engine import simulate
@@ -47,15 +47,22 @@ class LintResult:
     discrepancy: str
     tolerance: str
     scope: Scope = Scope()
+    #: The sampling a sampled check rests on (seed, ensemble size, duration). A deterministic
+    #: check has none and omits the key; a sampled one without it reports a number the caller
+    #: cannot re-run, which is the same hole the certificate path closed.
+    protocol: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        record: dict[str, Any] = {
             "verdict": self.verdict.value,
             "method": self.method,
             "discrepancy": self.discrepancy,
             "tolerance": self.tolerance,
             "scope": self.scope.to_dict(),
         }
+        if self.protocol is not None:
+            record["protocol"] = self.protocol
+        return record
 
 
 def _all_finite(*series: Sequence[float]) -> bool:
@@ -174,26 +181,53 @@ def lint_stochastic(
     ``max_events`` bounds the per-trajectory SSA work (see :func:`reprolith.stochastic.gillespie`);
     the MCP boundary passes a finite ceiling so a large ``duration`` or rate cannot wedge the server.
 
+    Two things this shares with the certificate path, because a caller gating a workflow on an
+    inline verdict needs them at least as much as a reader of a certificate does. The result records
+    the sampling protocol that produced it, so the number can be re-run. And an ensemble whose own
+    noise is too large to decide the claim abstains rather than answering: at ten trajectories a
+    provably correct immigration-death model fails its 5% claim on most seeds, so a confident
+    `failed` there is a false accusation, and a confident `reproduced` is luck the caller cannot
+    see.
+
     Needs the ``engine`` extra (python-libsbml for ingestion); the SSA itself is pure.
     """
     from .sbml import ingest_stochastic_sbml
-    from .stochastic import ensemble_final_counts, species_mean_variance
+    from .stochastic import (
+        ensemble_final_counts,
+        species_mean_variance,
+        unresolvable_ensemble_reason,
+    )
 
     names, reactions, initial = ingest_stochastic_sbml(sbml)
     ensemble = ensemble_final_counts(
         len(names), reactions, initial, duration=duration, trajectories=trajectories, seed=seed,
         max_events=max_events,
     )
-    mean, _ = species_mean_variance(ensemble, species)
+    mean, variance = species_mean_variance(ensemble, species)
     tol = tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC)
+    protocol = f"SSA ensemble: {trajectories} trajectories to t={duration:g}, seed {seed}"
     if not _all_finite((reported_mean, mean)):
-        return _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol)
+        return replace(
+            _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol), protocol=protocol
+        )
+    unresolvable = unresolvable_ensemble_reason(
+        reported_mean=reported_mean, variance=variance, trajectories=trajectories, tolerance=tol,
+    )
+    if unresolvable is not None:
+        return LintResult(
+            verdict=Verdict.NOT_EVALUABLE,
+            method=ComparisonMethod.SCALAR_RELATIVE_ERROR.value,
+            discrepancy=unresolvable,
+            tolerance=tol.label(),
+            protocol=protocol,
+        )
     error = relative_error(reported_mean, mean)
     return LintResult(
         verdict=verdict_for(error, tol),
         method=ComparisonMethod.SCALAR_RELATIVE_ERROR.value,
         discrepancy=f"relative error {error:.4f} (mean {mean:.4g} vs reported {reported_mean:.4g})",
         tolerance=tol.label(),
+        protocol=protocol,
     )
 
 

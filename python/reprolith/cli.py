@@ -159,13 +159,14 @@ def _cmd_verdict(query: ReprolithQuery, args: argparse.Namespace) -> int:
 
 
 def _cmd_gaps(query: ReprolithQuery, args: argparse.Namespace) -> int:
-    items = query.gaps(args.digest)
-    if items is None:
+    report = query.gaps(args.digest)
+    if report is None:
         print(f"unknown digest: {args.digest}", file=sys.stderr)
         return 1
     if args.json:
-        _print_json(items)
+        _print_json(report)
         return 0
+    items = report["gaps"]
     if not items:
         print("(no gaps — nothing was missing)")
         return 0
@@ -173,6 +174,9 @@ def _cmd_gaps(query: ReprolithQuery, args: argparse.Namespace) -> int:
     for g in items:
         where = f"[{g['claim_id']}] {g['quantity']}: " if g["claim_id"] else ""
         print(f"  {where}{g['needs']}")
+    print(f"  scope: {report['scope']['human']}")
+    if report["superseded_by"]:
+        print(f"  superseded by: {report['superseded_by']}")
     return 0
 
 
