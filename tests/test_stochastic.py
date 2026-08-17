@@ -465,3 +465,39 @@ def test_a_seed_that_misses_certifies_honestly_instead_of_raising() -> None:
         verdicts.add(cert.overall.value)
     # Both outcomes occur across seeds, and neither raises.
     assert verdicts == {"partially-reproduced", "not-reproduced"}
+
+
+def test_an_ensemble_too_small_to_resolve_the_claim_abstains_instead_of_failing() -> None:
+    # The tolerance is fixed; the noise around the mean is not — the caller sets it with the
+    # trajectory count. At ten trajectories a provably correct immigration-death model fails its
+    # 5% claim on most seeds, so the class published `not-reproduced` against an author whose
+    # model is exactly right. Where the ensemble's standard error is comparable to the pass
+    # threshold, "this ensemble cannot resolve the claim" is the true statement.
+    from reprolith import EnginePin, PaperIdentity
+    from reprolith.stochastic import Reaction, StochasticClaim, certify_stochastic
+
+    reactions = [
+        Reaction(rate=6.0, reactants=(), products=((0, 1),)),
+        Reaction(rate=1.5, reactants=((0, 1),), products=()),
+    ]  # stationary mean 4, exactly
+    pin = EnginePin(engine="reprolith-ssa", version="0.0.1")
+
+    def certify(trajectories: int, seed: int):
+        return certify_stochastic(
+            paper=PaperIdentity(title="Immigration-death"),
+            engine_pin=pin, n_species=1, reactions=reactions, initial=[0],
+            claims=[StochasticClaim(
+                claim_id="mean", quantity="mean copy number", source_location="closed-form",
+                species=0, reported_mean=4.0, duration=40.0,
+                trajectories=trajectories, seed=seed,
+            )],
+        )
+
+    thin = certify(10, seed=7)
+    assert thin.assessments[0].verdict.value == "not-evaluable"
+    assert "cannot resolve" in (thin.assessments[0].root_cause or "")
+    # The sampling that could not resolve it is still recorded, so the fix is visible.
+    assert "10 trajectories" in (thin.assessments[0].protocol or "")
+    # A big enough ensemble judges the claim normally.
+    thick = certify(1600, seed=11)
+    assert thick.assessments[0].verdict.value == "reproduced"

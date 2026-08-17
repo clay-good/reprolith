@@ -58,7 +58,12 @@ _SYSTEMS = {
     "immigration_death_4": {
         "title": "Immigration-death process (k=6, γ=1.5) — Poisson stationary mean",
         "n_species": 1, "reactions": _immigration_death(6.0, 1.5), "initial": [0],
-        "species": 0, "reported_mean": 4.0, "duration": 40.0, "trajectories": 400, "seed": 11,
+        # 1,600 rather than 400: a Poisson mean of 4 has the largest relative spread in this set, and
+        # at 400 trajectories the ensemble's standard error is 2.6% of the reported mean against a
+        # 5% pass threshold — noise of that size cannot tell a reproduction from a miss, so the
+        # class now abstains there rather than publishing either verdict. Four times the ensemble
+        # brings the standard error to 1.3% and costs two seconds.
+        "species": 0, "reported_mean": 4.0, "duration": 40.0, "trajectories": 1600, "seed": 11,
     },
     "reversible_isomerization": {
         "title": "Reversible isomerization A<->B (N=50, kf=3, kr=1) — binomial equilibrium mean",

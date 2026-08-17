@@ -24,9 +24,12 @@ from collections import Counter
 from pathlib import Path
 
 from reprolith import (
+    Attribution,
     Catalog,
     CurveClaim,
     EnginePin,
+    FailureMode,
+    Fault,
     GroundTruth,
     Identifiers,
     ModelClass,
@@ -71,6 +74,16 @@ def main() -> None:
                 source_location=spec["source"],
                 duration=spec["duration"],
                 steps=spec["steps"],
+                # A partial or failed verdict must carry a root cause, and a claim supplying none
+                # raises instead of certifying — so this blind run had exactly two outcomes, 6/6 or
+                # a traceback, and its published agreement rate was structurally guaranteed rather
+                # than measured. The class's own default cause is a reconstruction that does not
+                # match the reference trajectory; a matching curve never reads it.
+                shortfall=Attribution(
+                    mode=FailureMode.UNCATEGORIZED,
+                    implicated=spec["species"],
+                    fault=Fault.RECONSTRUCTION,
+                ),
             )],
         )
 

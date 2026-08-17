@@ -22,8 +22,19 @@ from dataclasses import dataclass, field, replace
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, Parameter
-from .model import Assumption, Certificate, EnginePin, PaperIdentity
-from .oracle import Attribution, FailureMode, Fault, PercentileBand, Tolerance, judge_scalar
+from .model import Assumption, Certificate, ClaimAssessment, EnginePin, PaperIdentity
+from .oracle import (
+    Attribution,
+    ComparisonMethod,
+    FailureMode,
+    Fault,
+    PercentileBand,
+    ReferenceKind,
+    Tolerance,
+    default_tolerance,
+    judge_scalar,
+    not_evaluable,
+)
 
 
 @dataclass(frozen=True)
@@ -302,6 +313,53 @@ class StochasticClaim:
     shortfall: Attribution | None = field(default=None)
 
 
+def _protocol(claim: StochasticClaim) -> str:
+    """The sampling a stochastic assessment rests on, in the form the certificate records."""
+    return (
+        f"SSA ensemble: {claim.trajectories} trajectories to t={claim.duration:g}, "
+        f"seed {claim.seed}"
+    )
+
+
+def _sampling_cannot_resolve(
+    claim: StochasticClaim, variance: float, trajectories: int
+) -> ClaimAssessment | None:
+    """Abstain when the ensemble's own noise is too large to decide the claim, else ``None``.
+
+    The tolerance is a fixed threshold; the noise around the mean is not — the caller sets it with
+    the trajectory count. At ten trajectories a *provably correct* immigration-death model fails
+    its 5% claim on 25 of 40 seeds, so the class publishes ``not-reproduced`` against an author
+    whose model is exactly right. The root cause recorded is honest (finite-ensemble sampling), but
+    the headline is a false accusation, and no reader reads past the headline.
+
+    So when the standard error of the mean is more than half the pass threshold — the regime where
+    a correct model routinely misses and a wrong one routinely passes — the honest verdict is that
+    this ensemble cannot resolve this claim, which is an abstention, not a failure. Enlarging the
+    ensemble is the fix, and the reason says so.
+    """
+    if variance <= 0.0 or claim.reported_mean == 0.0:
+        return None
+    tolerance = claim.tolerance or default_tolerance(
+        ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+    )
+    sem = math.sqrt(variance / trajectories)
+    relative_sem = abs(sem / claim.reported_mean)
+    if relative_sem <= tolerance.reproduced_within / 2.0:
+        return None
+    return not_evaluable(
+        claim_id=claim.claim_id,
+        quantity=claim.quantity,
+        source_location=claim.source_location,
+        reason=(
+            f"this ensemble cannot resolve the claim: its standard error is "
+            f"{relative_sem:.1%} of the reported mean, against a "
+            f"{tolerance.reproduced_within:.0%} pass threshold; "
+            f"{trajectories} trajectories is too few to tell a reproduction from sampling noise"
+        ),
+        reference_kind=ReferenceKind.NUMERIC,
+    )
+
+
 def certify_stochastic(
     *,
     paper: PaperIdentity,
@@ -331,7 +389,11 @@ def certify_stochastic(
             n_species, reactions, initial,
             duration=claim.duration, trajectories=claim.trajectories, seed=claim.seed,
         )
-        mean, _ = species_mean_variance(ensemble, claim.species)
+        mean, variance = species_mean_variance(ensemble, claim.species)
+        unresolvable = _sampling_cannot_resolve(claim, variance, len(ensemble))
+        if unresolvable is not None:
+            assessments.append(replace(unresolvable, protocol=_protocol(claim)))
+            continue
         assessment = judge_scalar(
             claim_id=claim.claim_id,
             quantity=claim.quantity,
@@ -351,15 +413,7 @@ def certify_stochastic(
             ),
             assumption_qualified=claim.assumption_qualified,
         )
-        assessments.append(
-            replace(
-                assessment,
-                protocol=(
-                    f"SSA ensemble: {claim.trajectories} trajectories to t={claim.duration:g}, "
-                    f"seed {claim.seed}"
-                ),
-            )
-        )
+        assessments.append(replace(assessment, protocol=_protocol(claim)))
     return build_certificate(
         paper=paper, engine_pin=engine_pin,
         assessments=assessments, assumptions=tuple(assumptions),

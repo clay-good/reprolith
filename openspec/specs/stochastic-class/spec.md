@@ -38,6 +38,15 @@ sampling is pinned, not left to chance.
 - **AND** this is what makes the result checkable rather than merely asserted: a reader can re-run
   it exactly, and a seed that happened to agree can no longer pass without leaving a record
 
+#### Scenario: An ensemble too small to resolve the claim abstains
+
+- **WHEN** the ensemble's standard error is comparable to the claim's pass threshold
+- **THEN** the claim is `not-evaluable` — this ensemble cannot tell a reproduction from sampling
+  noise — rather than `failed`, and the reason names the standard error, the threshold, and the
+  trajectory count
+- **AND** this prevents publishing a wrong verdict against a model that is exactly right, which a
+  small ensemble produces on most seeds
+
 ### Requirement: Stochastic dossier shape
 
 A stochastic dossier SHALL capture the elements that determine the network's stochastic dynamics.
