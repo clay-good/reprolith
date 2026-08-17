@@ -18,7 +18,7 @@ import html
 from collections.abc import Iterable
 from typing import Any
 
-from .enums import Verdict
+from .enums import ReproductionLevel, Verdict
 from .model import Certificate, RunMetadata
 
 
@@ -28,6 +28,17 @@ def claim_counts(cert: Certificate) -> dict[str, int]:
     for a in cert.assessments:
         counts[a.verdict.value] += 1
     return counts
+
+
+def estimation_claims(cert: Certificate) -> list[str]:
+    """The claims reproduced at estimation level rather than by simulation.
+
+    Simulation reproduction — run the described model, check the shown output — is the primary
+    target; an estimation reproduction re-fits parameters from data and is a weaker result about a
+    different question. The spec requires the two never be conflated, so every surface that
+    summarizes a certificate reads this one list rather than deciding for itself.
+    """
+    return [a.claim_id for a in cert.assessments if a.level is ReproductionLevel.ESTIMATION]
 
 
 def gap_items(cert: Certificate) -> list[dict[str, Any]]:
@@ -69,6 +80,20 @@ def gap_items(cert: Certificate) -> list[dict[str, Any]]:
                 "needs": needs,
             }
         )
+    for claim_id in estimation_claims(cert):
+        a = next(x for x in cert.assessments if x.claim_id == claim_id)
+        if a.verdict is not Verdict.REPRODUCED:
+            continue  # already listed above with its own shortfall
+        items.append(
+            {
+                "claim_id": a.claim_id,
+                "quantity": a.quantity,
+                "verdict": a.verdict.value,
+                "source_location": a.source_location,
+                "needs": "reproduced at estimation level (parameters re-fit from data); "
+                         "simulation reproduction of this claim was not demonstrated",
+            }
+        )
     for asm in cert.assumptions:
         if not asm.load_bearing:
             continue
@@ -101,6 +126,7 @@ def render_machine(cert: Certificate, run: RunMetadata) -> dict[str, Any]:
             "assumption_qualified_claims": [
                 a.claim_id for a in cert.assessments if a.assumption_qualified
             ],
+            "estimation_claims": estimation_claims(cert),
         },
         "gaps": gap_items(cert),
     }
@@ -120,9 +146,12 @@ _BADGE_COLOR = {
 def render_badge(cert: Certificate) -> str:
     """A self-contained SVG status badge for a certificate (spec: certificate-publication).
 
-    The colour reflects the overall verdict and reserves green for an unqualified reproduction,
-    so a qualified or partial result can never render as a clean success. The scope statement
-    travels in the badge's title and cannot be emptied.
+    The colour reflects the overall verdict and reserves green for an unqualified *simulation*
+    reproduction, so neither a qualified result nor one obtained by re-fitting parameters can
+    render as a clean success. The label says "reproduced (estimation)" when any claim was judged
+    at estimation level, because a green badge reading "reproduced" is exactly the conflation the
+    two levels exist to prevent. The scope statement travels in the badge's title and cannot be
+    emptied.
 
     The scope text comes from the certificate, which may have been contributed by someone else,
     so it is escaped: this badge is embedded raw into the public registry page, and an SVG
@@ -130,6 +159,9 @@ def render_badge(cert: Certificate) -> str:
     """
     verdict = cert.overall.value
     color = _BADGE_COLOR[verdict]
+    if estimation_claims(cert):
+        verdict = f"{verdict} (estimation)"
+        color = _BADGE_COLOR["partially-reproduced"]  # never green: no simulation reproduction shown
     label = "reprolith"
     label_w = len(label) * 7 + 10
     value_w = len(verdict) * 7 + 10

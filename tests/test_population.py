@@ -237,3 +237,30 @@ def test_lint_abstains_rather_than_judging_a_diverged_run() -> None:
     reported = [{"percentile": 50, "curve": [1.0, 2.0, 3.0]}]
     predicted = [{"percentile": 50, "curve": [nan, nan, nan]}]
     assert lint_distribution(reported, predicted).verdict is Verdict.NOT_EVALUABLE
+
+
+def test_a_population_verdict_records_the_ensemble_it_rests_on() -> None:
+    """An envelope's verdict moves with its sample size, so the sampling must travel with it."""
+    from reprolith import EnginePin, PaperIdentity, PopulationClaim, certify_population
+
+    claim = PopulationClaim(
+        claim_id="p1", quantity="plasma concentration envelope",
+        reported=_REF, predicted=_REF, source_location="Fig 3",
+        protocol="virtual population: 500 subjects, seed 20260816",
+    )
+    cert = certify_population(
+        paper=PaperIdentity(title="P", doi="10.1/x"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        claims=[claim],
+    )
+    assert cert.assessments[0].protocol == "virtual population: 500 subjects, seed 20260816"
+    assert cert.assessments[0].to_dict()["protocol"] == claim.protocol
+
+    # Omitted, the field stays absent from the stored content — no new key on existing certificates.
+    plain = certify_population(
+        paper=PaperIdentity(title="P", doi="10.1/x"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        claims=[PopulationClaim(claim_id="p1", quantity="q", reported=_REF, predicted=_REF,
+                                source_location="Fig 3")],
+    )
+    assert "protocol" not in plain.assessments[0].to_dict()

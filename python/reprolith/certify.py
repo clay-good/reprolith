@@ -16,7 +16,7 @@ Uses the optional ``engine`` extra (COPASI to run, libsbml to apply parameter ov
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from .certificate import build_certificate
@@ -279,6 +279,12 @@ class PopulationClaim:
     the already-``predicted`` bands. ``assumption_qualified`` defaults to ``True`` because a
     population reproduction depends on the reconstructed variability model and the sampling, so its
     verdict is qualified unless the paper fully specifies both.
+
+    ``protocol`` records the sampling the bands came from — how many subjects were simulated and
+    under what seed. An envelope's verdict moves with its ensemble size (a correct model reads as
+    failed at twenty subjects, and a wrong one passes at a thousand), so without the protocol a
+    reader cannot tell a reproduction from a sample size chosen until one appeared. The stochastic
+    class records the same thing for the same reason.
     """
 
     claim_id: str
@@ -290,6 +296,7 @@ class PopulationClaim:
     reference_kind: ReferenceKind = ReferenceKind.NUMERIC
     assumption_qualified: bool = True
     shortfall: Attribution | None = field(default=None)
+    protocol: str | None = None
 
 
 def certify_population(
@@ -306,18 +313,24 @@ def certify_population(
     qualified by default — so a reproduced population figure yields a partially-reproduced
     certificate. Needs no engine extra: the simulated bands are supplied, the population
     simulation being the deferred half.
+
+    Each assessment carries the claim's sampling ``protocol`` when it states one, because a
+    distributional verdict rests on the ensemble that produced the bands as much as on the model.
     """
     assessments = [
-        judge_distribution(
-            claim_id=claim.claim_id,
-            quantity=claim.quantity,
-            source_location=claim.source_location,
-            reference=claim.reported,
-            predicted=claim.predicted,
-            reference_kind=claim.reference_kind,
-            tolerance=claim.tolerance,
-            attribution=claim.shortfall,
-            assumption_qualified=claim.assumption_qualified,
+        replace(
+            judge_distribution(
+                claim_id=claim.claim_id,
+                quantity=claim.quantity,
+                source_location=claim.source_location,
+                reference=claim.reported,
+                predicted=claim.predicted,
+                reference_kind=claim.reference_kind,
+                tolerance=claim.tolerance,
+                attribution=claim.shortfall,
+                assumption_qualified=claim.assumption_qualified,
+            ),
+            protocol=claim.protocol,
         )
         for claim in claims
     ]

@@ -82,8 +82,9 @@ def test_fix_list_is_ordered_by_impact() -> None:
         _cert([partial, _reproduced("ok"), blind, failed], assumptions=[asm], gap_report=["note X"])
     )
     kinds_priorities = [(i["kind"], i["priority"]) for i in report["fix_list"]]
-    # not-evaluable(1) < failed(2) < partial(3) < assumption(4) < note(5); reproduced excluded.
-    assert [p for _, p in kinds_priorities] == [1, 2, 3, 4, 5]
+    # not-evaluable(1) < failed(2) < partial(3) < level(4) < assumption(5) < note(6); a cleanly
+    # reproduced simulation claim is excluded.
+    assert [p for _, p in kinds_priorities] == [1, 2, 3, 5, 6]
     assert report["fix_list"][0]["claim_id"] == "blind"
     assert report["fix_list"][1]["claim_id"] == "fail"
     assert report["fix_list"][1]["fix"] == "dose units (mg vs mg/kg)"
@@ -175,3 +176,31 @@ def test_a_certificate_carrying_a_gap_note_is_not_ready_to_submit() -> None:
     )
     assert report["ready_to_submit"] is False
     assert report["fix_list"]
+
+
+def test_an_estimation_reproduction_never_reads_as_a_clean_simulation_pass() -> None:
+    """Re-fitting a parameter is a weaker result than running the described model.
+
+    The two reproduction levels exist so they are never conflated, but every derived surface —
+    badge colour, machine summary, gap report, readiness — keyed on the verdict alone, so a
+    certificate where no simulation was ever run rendered green and said READY TO SUBMIT.
+    """
+    from reprolith import ClaimAssessment, ReproductionLevel, Verdict, render_badge
+    from reprolith.render import estimation_claims, gap_items
+
+    cert = _cert([
+        ClaimAssessment(
+            claim_id="e1", quantity="clearance", verdict=Verdict.REPRODUCED,
+            source_location="Table 2", level=ReproductionLevel.ESTIMATION,
+        )
+    ])
+    assert cert.overall is OverallVerdict.REPRODUCED  # the claim did reproduce, at its own level
+    assert estimation_claims(cert) == ["e1"]
+    assert "#4c1" not in render_badge(cert)  # green is reserved for a simulation reproduction
+    assert "estimation" in render_badge(cert)
+    assert [g["claim_id"] for g in gap_items(cert)] == ["e1"]
+
+    report = presubmission_report(cert)
+    assert report["ready_to_submit"] is False
+    assert "every claim reproduces cleanly" not in report["readiness"]
+    assert [i["kind"] for i in report["fix_list"]] == ["level"]

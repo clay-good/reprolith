@@ -7,8 +7,8 @@ as a readiness signal plus a prioritized "fix this before you submit" list.
 
 Two honesty properties are inherited, not re-derived: the per-claim and overall verdicts and the
 scope statement come straight from the certificate (:func:`presubmission_report` never recomputes
-a verdict), and the ready-to-submit signal is green only for an unqualified full reproduction, so
-a partial or assumption-qualified result can never look ready.
+a verdict), and the ready-to-submit signal is green only for an unqualified full *simulation*
+reproduction, so a partial, assumption-qualified, or estimation-level result can never look ready.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from typing import Any
 
 from .enums import OverallVerdict, Verdict
 from .model import Certificate
+from .render import estimation_claims
 
 # Impact buckets for the fix list, most urgent first. A claim a reproducer cannot even evaluate
 # outranks a wrong one; a wrong one outranks a partial; a load-bearing value the author left for
@@ -26,8 +27,9 @@ _CLAIM_PRIORITY = {
     Verdict.FAILED: 2,
     Verdict.PARTIAL: 3,
 }
-_ASSUMPTION_PRIORITY = 4
-_NOTE_PRIORITY = 5
+_LEVEL_PRIORITY = 4
+_ASSUMPTION_PRIORITY = 5
+_NOTE_PRIORITY = 6
 
 _READINESS = {
     OverallVerdict.REPRODUCED: (
@@ -45,6 +47,13 @@ _READINESS = {
         "missing inputs in the fix list."
     ),
 }
+
+# Every claim reproduced, but something else withholds a clean pass — a recorded gap, or a claim
+# reproduced at estimation level rather than by simulation. The verdict alone would read as ready.
+_REPRODUCED_BUT_NOT_READY = (
+    "Not yet ready: every claim reproduces, but not cleanly — see the fix list for what a "
+    "reproducer would still have to supply or re-derive."
+)
 
 
 def _claim_issue_and_fix(assessment: Any) -> tuple[str, str]:
@@ -73,10 +82,15 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
     # A gap report is a record of something the artifact did not state, so a certificate carrying
     # one is not ready however clean its verdicts read — otherwise the report says READY TO SUBMIT
     # above a list of things to fix first, which is the promise in this docstring broken out loud.
+    # An estimation-level claim is the same kind of overstatement: re-fitting a parameter from data
+    # is a weaker result than running the described model, so "every claim reproduces cleanly under
+    # the pinned engine" is not something this report may say about it.
+    estimation = estimation_claims(cert)
     ready = (
         cert.overall is OverallVerdict.REPRODUCED
         and not any(a.assumption_qualified for a in cert.assessments)
         and not cert.gap_report
+        and not estimation
     )
 
     actions: list[dict[str, Any]] = []
@@ -93,6 +107,23 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
                 "source_location": a.source_location,
                 "issue": issue,
                 "fix": fix,
+            }
+        )
+    for claim_id in estimation:
+        a = next(x for x in cert.assessments if x.claim_id == claim_id)
+        if a.verdict is not Verdict.REPRODUCED:
+            continue  # already in the fix list with its own shortfall
+        actions.append(
+            {
+                "priority": _LEVEL_PRIORITY,
+                "kind": "level",
+                "claim_id": a.claim_id,
+                "quantity": a.quantity,
+                "source_location": a.source_location,
+                "issue": "this claim was reproduced by re-fitting parameters, not by running the "
+                         "described model",
+                "fix": "state the parameter values and conditions needed to simulate this claim "
+                       "directly, so a reproducer need not re-fit it",
             }
         )
     for asm in cert.assumptions:
@@ -128,7 +159,8 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
     return {
         "overall": cert.overall.value,
         "ready_to_submit": ready,
-        "readiness": _READINESS[cert.overall],
+        "readiness": _READINESS[cert.overall] if ready or cert.overall is not OverallVerdict.REPRODUCED
+        else _REPRODUCED_BUT_NOT_READY,
         "per_claim": [a.to_dict() for a in cert.assessments],
         "fix_list": actions,
         "scope": cert.scope.to_dict(),
