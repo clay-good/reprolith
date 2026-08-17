@@ -577,6 +577,21 @@ def requeue_entry(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> 
         return {"requeued": False, "reason": "not the lease holder"}
     if entry.state is not LifecycleState.BLOCKED:
         return {"requeued": False, "reason": f"entry is {entry.state.value}, not blocked"}
+    # An entry starts queued with no transition recorded, so every transition *into* queued is a
+    # requeue.
+    requeues = sum(1 for t in entry.history if t.to_state is LifecycleState.QUEUED)
+    if requeues >= _MAX_REQUEUES:
+        # blocked -> queued -> blocked is a free cycle, and each lap appends transitions to a
+        # history nothing bounds: fifty laps grew one entry's record to 150 transitions and the
+        # catalog file every surface reads at startup to 37 KiB. An entry that has been requeued
+        # this many times is not waiting on a missing input any more; it needs a curator.
+        return {
+            "requeued": False,
+            "reason": (
+                f"this entry has already been requeued {requeues} times; it needs review rather "
+                "than another cycle through the queue"
+            ),
+        }
     entry.transition(
         LifecycleState.QUEUED,
         at=_history_stamp(arguments, at=at),
@@ -593,6 +608,9 @@ def requeue_entry(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> 
 # iteration counts and grid sizes that drive those loops; the in-process library API
 # (``reprolith.linter``) stays unbounded for trusted callers. The ceilings are generous — far above
 # any real inline sanity check — and exist only to turn a pathological request into a clean error.
+#: How many times a blocked entry may be returned to the queue before it needs a curator instead.
+#: The cycle is otherwise free and unbounded, and every lap is written into a history nothing prunes.
+_MAX_REQUEUES = 5
 _MAX_LINT_ITERATIONS = 1_000_000
 _MAX_LINT_POINTS = 100_000
 # Some loops cost the product of two bounded arguments — a grid of points advanced over a number of
@@ -939,7 +957,19 @@ def load_certificates(ledger: CertificateLedger, directory: Path | str) -> int:
     loaded = 0
     if path.is_dir():
         for file in sorted(path.glob("*.json")):
-            ledger.issue(certificate_from_content(json.loads(file.read_text(encoding="utf-8"))))
+            try:
+                content = json.loads(file.read_text(encoding="utf-8"))
+                ledger.issue(certificate_from_content(content))
+            except (KeyError, TypeError, ValueError) as exc:
+                # Not skipped: a file that cannot be read is a certificate the surfaces would
+                # publish a corpus without, and quietly serving a smaller track record is the
+                # failure mode this project exists to avoid. But it must say *which* file — the
+                # bare KeyError from inside the loader named neither the path nor the field, and
+                # it aborted the whole server at startup with a traceback.
+                raise ValueError(
+                    f"{file} is not a readable certificate ({type(exc).__name__}: {exc}); a "
+                    "certificate directory must contain only certificates this version can read"
+                ) from exc
             loaded += 1
     return loaded
 

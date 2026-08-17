@@ -901,3 +901,32 @@ def test_a_recorded_history_is_stamped_by_the_server_not_the_caller() -> None:
     assert "at" not in tools["record_result"]["inputSchema"]["properties"]
     assert "at" not in tools["requeue_entry"]["inputSchema"]["properties"]
 
+
+
+def test_an_entry_cannot_cycle_through_the_queue_forever() -> None:
+    """blocked -> queued -> blocked is a free cycle, and every lap grows a history nothing prunes.
+
+    Fifty laps grew one entry's record to 150 transitions and the catalog file both surfaces read
+    at startup to 37 KiB. An entry requeued this many times is not waiting on a missing input any
+    more.
+    """
+    catalog, query, _ = _recording_fixture()
+    blocked = query._ledger.issue(build_certificate(
+        paper=PaperIdentity(title="Paper A", doi="10.1/a"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=(), gap_report=("the supplement is paywalled",),
+    ))
+    outcomes = []
+    for _ in range(7):
+        _claim(query, catalog, "a")
+        _effectful(query, catalog, "record_result",
+                   {"accession": "ACC-A", "requester": "a", "digest": blocked})
+        back, _ = _effectful(query, catalog, "requeue_entry",
+                             {"accession": "ACC-A", "requester": "a", "reason": "it arrived"})
+        outcomes.append(back["requeued"])
+        if not back["requeued"]:
+            assert "needs review" in back["reason"]
+            break
+    assert outcomes[0] is True and outcomes[-1] is False
+    entry = catalog.find(Identifiers(title="", accession="ACC-A"))
+    assert len(entry.history) < 40  # bounded, not one-fifty-per-fifty-laps

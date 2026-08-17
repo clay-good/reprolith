@@ -349,10 +349,11 @@ can produce a certificate that claims more than it checked:
   Cmax wrong by more than 20%. Which verdict a reconstruction earns depends on how the paper
   phrased its result. (The judge does not falsely accuse: 10% iid noise on a correct curve produced
   zero false failures in 2,000 trials.)
-- **The catalog grows without bound from the MCP boundary.** `submit_paper` and the
-  `blocked → queued → blocked` cycle both append unboundedly, and every mutation rewrites the whole
-  catalog: 2,000 submissions took 44 s and produced a 769 KiB file both surfaces read at startup.
-  No false certificate, but a shared server is wedgeable by a patient caller.
+- **The catalog grows without bound from submissions.** Every mutation rewrites the whole file, so
+  cost is quadratic in the number of entries: 2,000 submissions took 44 s and produced a 769 KiB
+  file both surfaces read at startup. The free `blocked → queued → blocked` cycle is now capped at
+  five requeues per entry, but nothing bounds submission itself, and rate-limiting a shared server
+  is a deployment concern rather than an engine one.
 - **A pinned-at-zero flux and a huge-but-finite value still have edges.** `normalized_curve_distance`
   raises `OverflowError` rather than abstaining once squaring overflows (predicted ≳ 1e155), and an
   all-zero reference has a subnormal cliff where 1e-165 reads as an exact match and 1e-160 as a
