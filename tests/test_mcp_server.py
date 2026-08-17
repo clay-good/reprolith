@@ -22,7 +22,12 @@ from reprolith import (
     handle_request,
     serve_stdio,
 )
-from reprolith.mcp_server import TOOL_DEFINITIONS, load_certificates, load_dossiers
+from reprolith.mcp_server import (
+    EFFECTFUL_TOOLS,
+    TOOL_DEFINITIONS,
+    load_certificates,
+    load_dossiers,
+)
 from reprolith.seed import seed_catalog
 
 
@@ -585,6 +590,14 @@ def _recording_fixture() -> tuple[Catalog, ReprolithQuery, str]:
     return catalog, ReprolithQuery(catalog, ledger), digest
 
 
+def _claim(query, catalog, requester, *, at=0.0):
+    """Take the lease before recording: a result is a claim that *this* requester did the work."""
+    claimed, _ = _effectful(query, catalog, "claim_work",
+                            {"requester": requester, "lease_seconds": 3600}, at=at)
+    assert claimed["claimed"], claimed
+    return claimed
+
+
 def _effectful(query, catalog, name, arguments, *, at=0.0):
     resp = handle_request(query, {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
                                   "params": {"name": name, "arguments": arguments}},
@@ -628,6 +641,7 @@ def test_a_recorded_result_cannot_claim_more_than_its_certificate() -> None:
                                      verdict=Verdict.FAILED, source_location="Table 1",
                                      root_cause="parameter mismatch")],
     ))
+    _claim(query, catalog, "a")
     done, _ = _effectful(query, catalog, "record_result",
                          {"accession": "ACC-A", "requester": "a", "digest": failed})
     # The state comes from the certificate's verdict, never from the caller.
@@ -643,6 +657,7 @@ def test_recording_refuses_another_papers_certificate() -> None:
         assessments=[ClaimAssessment(claim_id="c1", quantity="AUC", verdict=Verdict.REPRODUCED,
                                      source_location="Table 1")],
     ))
+    _claim(query, catalog, "a")
     text, is_error = _effectful(query, catalog, "record_result",
                                 {"accession": "ACC-A", "requester": "a", "digest": other})
     assert is_error and "different paper" in text
@@ -651,6 +666,12 @@ def test_recording_refuses_another_papers_certificate() -> None:
 
 def test_recording_refuses_an_unknown_certificate_a_non_holder_and_a_repeat() -> None:
     catalog, query, digest = _recording_fixture()
+    unclaimed, _ = _effectful(query, catalog, "record_result",
+                              {"accession": "ACC-A", "requester": "a", "digest": digest})
+    # Recording asserts that this requester did the work, so an unclaimed entry is refused:
+    # otherwise any caller could file a result against a unit they never took.
+    assert unclaimed == {"recorded": False, "reason": "not the lease holder"}
+    _claim(query, catalog, "a")
     unknown, _ = _effectful(query, catalog, "record_result",
                             {"accession": "ACC-A", "requester": "a", "digest": "deadbeef"})
     assert unknown == {"recorded": False, "reason": "unknown certificate"}
@@ -662,7 +683,13 @@ def test_recording_refuses_an_unknown_certificate_a_non_holder_and_a_repeat() ->
     held, _ = _effectful(query, catalog, "record_result",
                          {"accession": "ACC-A", "requester": "agent-2", "digest": digest})
     assert held == {"recorded": False, "reason": "not the lease holder"}
-    # An expired lease is not a hold, so the work can still be recorded.
+    # An expired lease is not a hold — the entry is back in the pool — but recording is the claim
+    # that this requester did the work, so the agent that finished it takes the lease and records
+    # under it rather than filing against a unit nobody holds.
+    stale, _ = _effectful(query, catalog, "record_result",
+                          {"accession": "ACC-A", "requester": "agent-2", "digest": digest}, at=1e9)
+    assert stale == {"recorded": False, "reason": "not the lease holder"}
+    _claim(query, catalog, "agent-2", at=1e9)
     done, _ = _effectful(query, catalog, "record_result",
                          {"accession": "ACC-A", "requester": "agent-2", "digest": digest}, at=1e9)
     assert done["recorded"]
@@ -681,6 +708,7 @@ def test_a_blocked_entry_can_be_returned_to_the_queue() -> None:
         engine_pin=EnginePin(engine="copasi", version="4.46"),
         assessments=(), gap_report=("the supplement with the dosing schedule is paywalled",),
     ))
+    _claim(query, catalog, "a")
     done, _ = _effectful(query, catalog, "record_result",
                          {"accession": "ACC-A", "requester": "a", "digest": blocked})
     assert done["recorded"] and done["state"] == "blocked"
@@ -719,6 +747,7 @@ def test_a_recorded_failure_cannot_be_laundered_into_a_certification() -> None:
         assessments=[ClaimAssessment(claim_id="c1", quantity="AUC", verdict=Verdict.FAILED,
                                      source_location="Table 1", root_cause="parameter mismatch")],
     ))
+    _claim(query, catalog, "a")
     done, _ = _effectful(query, catalog, "record_result",
                          {"accession": "ACC-A", "requester": "a", "digest": failed})
     assert done["state"] == "failed"
@@ -750,6 +779,7 @@ def test_a_certificate_must_positively_identify_the_entrys_paper() -> None:
                                      source_location="Table 1")],
     ))
     query = ReprolithQuery(catalog, ledger)
+    _claim(query, catalog, "a")
     text, is_error = _effectful(query, catalog, "record_result",
                                 {"accession": "ATTACK-1", "requester": "a", "digest": digest})
     assert is_error and "names no identifier this entry carries" in text
@@ -757,6 +787,7 @@ def test_a_certificate_must_positively_identify_the_entrys_paper() -> None:
     # A title is a sufficient witness when nothing stronger exists on either side — it is the
     # one identifier every record carries — and normalization makes it robust to case/spacing.
     catalog.add(Identifiers(title="  zake2021 - PBPK MODEL of  metformin ", accession="OK-1"))
+    _claim(query, catalog, "a")  # the new entry is the only unleased one left
     done, is_error = _effectful(query, catalog, "record_result",
                                 {"accession": "OK-1", "requester": "a", "digest": digest})
     assert not is_error and done["recorded"]
@@ -771,6 +802,7 @@ def test_a_superseded_certificate_is_not_recordable() -> None:
                                      source_location="Table 1", root_cause="parameter mismatch")],
         supersedes=query.certificate_object(digest),
     ))
+    _claim(query, catalog, "a")
     stale, _ = _effectful(query, catalog, "record_result",
                           {"accession": "ACC-A", "requester": "a", "digest": digest})
     assert stale == {"recorded": False,
@@ -843,3 +875,29 @@ def test_a_saved_catalog_that_contradicts_itself_is_refused() -> None:
     for corrupt in (state_without_history, blocked_without_inputs, unusable_lease):
         with pytest.raises(ValueError):
             C.from_dict(corrupt)
+
+
+def test_a_recorded_history_is_stamped_by_the_server_not_the_caller() -> None:
+    """The record of when a paper was certified was free text the recorder supplied.
+
+    `at` was taken verbatim, unparsed, so a caller could date the entire pathway to any year it
+    liked — and a reader has no way to tell a recorded timestamp from an asserted one.
+    """
+    catalog, query, digest = _recording_fixture()
+    _claim(query, catalog, "a", at=1_000_000.0)
+    done, _ = _effectful(
+        query, catalog, "record_result",
+        {"accession": "ACC-A", "requester": "a", "digest": digest, "at": "1999-01-01T00:00:00+00:00"},
+        at=1_000_000.0,
+    )
+    assert done["recorded"]
+    entry = catalog.find(Identifiers(title="", accession="ACC-A"))
+    stamps = {t.at for t in entry.history}
+    assert "1999-01-01T00:00:00+00:00" not in stamps
+    assert all(t.at.startswith("1970-01-12") for t in entry.history[-6:])  # the server clock
+
+    # And the parameter is gone from the advertised schema, so nothing invites the attempt.
+    tools = {t["name"]: t for t in EFFECTFUL_TOOLS}
+    assert "at" not in tools["record_result"]["inputSchema"]["properties"]
+    assert "at" not in tools["requeue_entry"]["inputSchema"]["properties"]
+

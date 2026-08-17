@@ -324,7 +324,8 @@ EFFECTFUL_TOOLS: list[dict[str, Any]] = [
         "name": "record_result",
         "description": (
             "EFFECTFUL: record that a claimed entry's reproduction is done, evidenced by a "
-            "published certificate. The outcome state is read from that certificate's verdict, "
+            "published certificate. Requires holding a live lease on the entry (claim it first). "
+            "The outcome state is read from that certificate's verdict, "
             "never asserted by the caller, and the certificate must be for this entry's paper. "
             "Walks the entry to certified / failed / blocked and drops the lease, so the unit is "
             "not handed out again."
@@ -335,7 +336,6 @@ EFFECTFUL_TOOLS: list[dict[str, Any]] = [
                 "accession": {"type": "string"},
                 "requester": {"type": "string"},
                 "digest": {"type": "string", "description": "the certificate's content digest"},
-                "at": {"type": "string", "description": "optional timestamp for the history"},
             },
             "required": ["accession", "requester", "digest"],
         },
@@ -352,7 +352,6 @@ EFFECTFUL_TOOLS: list[dict[str, Any]] = [
                 "accession": {"type": "string"},
                 "requester": {"type": "string"},
                 "reason": {"type": "string", "description": "what is now available"},
-                "at": {"type": "string", "description": "optional timestamp for the history"},
             },
             "required": ["accession", "requester", "reason"],
         },
@@ -440,6 +439,13 @@ def _held_by_another(entry: CatalogEntry, requester: str, *, at: float) -> bool:
     return entry.lease_expires is not None and at < entry.lease_expires
 
 
+def _holds_the_lease(entry: CatalogEntry, requester: str, *, at: float) -> bool:
+    """Whether ``requester`` holds a live lease on this entry."""
+    if entry.leased_to != requester:
+        return False
+    return entry.lease_expires is not None and at < entry.lease_expires
+
+
 def _require_positive_identity(entry: CatalogEntry, certificate: Certificate) -> None:
     """Refuse a certificate that cannot be shown to be about this entry's paper.
 
@@ -467,10 +473,13 @@ def _require_positive_identity(entry: CatalogEntry, certificate: Certificate) ->
 
 
 def _history_stamp(arguments: dict[str, Any], *, at: float) -> str:
-    """The timestamp to record on a transition: the caller's, or the server clock in UTC."""
-    stated = arguments.get("at")
-    if stated:
-        return str(stated)
+    """The timestamp to record on a transition: always the server clock, in UTC.
+
+    It used to accept the caller's ``at`` verbatim, unvalidated and unparsed, so a recorded result
+    could stamp its whole pathway with any date — the history that says when a paper was certified
+    was free text supplied by whoever recorded it. A caller has no way to know when the server
+    wrote the record, and no reason to be the one asserting it, so the parameter is ignored.
+    """
     return datetime.fromtimestamp(at, tz=timezone.utc).isoformat()
 
 
@@ -499,11 +508,17 @@ def record_result(
     entry = catalog.find(Identifiers(title="", accession=accession))
     if entry is None:
         return {"recorded": False, "reason": "unknown entry"}
-    if _held_by_another(entry, requester, at=at):
-        return {"recorded": False, "reason": "not the lease holder"}
     if entry.state is not LifecycleState.QUEUED:
         # advance_to_outcome silently no-ops off ``queued``; at a surface that reads as success.
+        # Checked before the lease so a second recording of finished work is told what actually
+        # happened — recording releases the lease, so the holder check would otherwise answer
+        # "not the lease holder" for an entry that is already certified.
         return {"recorded": False, "reason": f"entry is already {entry.state.value}"}
+    if not _holds_the_lease(entry, requester, at=at):
+        # Not merely "nobody else holds it": recording is the claim that *this* requester did the
+        # work, and an unclaimed entry lets any caller file a result — including one built from
+        # another paper's certificate — against a unit they never took. Claim it first.
+        return {"recorded": False, "reason": "not the lease holder"}
     certificate = query.certificate_object(arguments["digest"])
     if certificate is None:
         return {"recorded": False, "reason": "unknown certificate"}

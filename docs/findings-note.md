@@ -169,6 +169,22 @@ needless re-run of a dependency-free solver costs seconds; a missed one publishe
 current code would not produce. A test holds the corpus to it: a committed certificate carrying an
 older revision than the code fails, and the fix is re-running that class's milestone script.
 
+## Recording work that was not done
+
+The write surface closes the loop: an agent claims a queued paper, reproduces it, publishes a
+certificate, and records the result so the unit is not handed out again. Two of its checks were
+weaker than they read.
+
+Recording required only that *nobody else* held the lease, so an unclaimed entry could be recorded
+by any caller — including one who had just submitted a paper whose title matched another class's
+certificate, filing a genome-scale FBA result under a PK/PD accession. Recording is the claim that
+this requester did this work, so it now requires holding a live lease; the state check runs first,
+so a second recording of finished work is still told that the entry is already certified.
+
+And the timestamp on every transition was the caller's own string, taken verbatim and unparsed —
+the record of when a paper was certified was free text supplied by whoever recorded it. It is the
+server clock now, and the parameter is gone from the advertised schema.
+
 ## What the surfaces were still allowed to say
 
 The read surfaces are where a verdict actually reaches someone, and four of them overstated:
