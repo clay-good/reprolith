@@ -438,6 +438,25 @@ the JSON view and the published registry page but not the terminal:
 `certificates-for` also could not distinguish "this paper has no certificate" from "there is no
 such paper", while every other identifier-taking command exits 1 on the second.
 
+## The artifact whose job is re-runnability could not re-run anything
+
+A reconstruction bundle exists so someone else can run what was certified, and the shipped one was
+strictly less informative than the certificate beside it. `RecipeStep` recorded a claim id, a
+protocol string, an output, and a time span — no sample count, no parameter override, no metric —
+so metformin's two steps were identical where the claims differ by dose. Running the bundle exactly
+as published gave both claims the 500 mg answer, failing the 1000 mg one by a factor of two, and
+the 779.9 mg free-base figure survived only as prose in the assumption block, attached to no claim.
+
+The recipe now carries the three things that make one run differ from another, each omitted from
+the record at its default so a recipe stating none is written exactly as before. A test runs the
+metformin recipe and nothing else, and lands on both of the paper's reported values.
+
+Its mismatch list was a second version of the same problem: `"mismatches": []` was published for a
+comparison nobody had run, because the milestone script never called it. An empty list and an
+unrun check are different claims about a paper, so the field distinguishes them now, and the
+milestone records the comparison as unchecked with its reason — the dossier was ingested from the
+very file it would be compared against, so the result could only ever be empty.
+
 ## Known limits the audits found and left in place
 
 Recorded rather than fixed, because each needs a design change rather than a patch, and none
@@ -506,18 +525,10 @@ can produce a certificate that claims more than it checked:
   an upstream release published and then yanked as incompatible was installed by CI in that
   window, and every engine job aborted inside the simulator. That release is now excluded by name,
   which is a patch for one version, not for the class of problem.
-- **A published bundle still cannot re-run the run it describes, and now says less than the
-  certificate does.** The certificate records the window, the sample count, the readout, and the
-  dose; `RecipeStep` records none of them, so running the metformin bundle strictly as published
-  gives both claims the same 6.07 and fails the 1000 mg one. And `covers()`, which exists to stop
-  a bundle overstating what it addresses, is called from nowhere: on the shipped pair it returns
-  false, because the claims come from the claims dataset rather than from the dossier the bundle
-  names as its source.
-
-  What *was* fixed here is the bundle's mismatch list. It published `[]` for a comparison that had
-  never run, and "checked and agreed" is not the same artifact as "never checked" — the field now
-  distinguishes them, and the milestone records the comparison as unchecked, because a dossier
-  ingested from the same file it would be compared against can only ever come back empty.
+- **`covers()`, which exists to stop a bundle overstating what it addresses, is called from
+  nowhere.** On the shipped pair it returns false, because the claims come from the claims dataset
+  rather than from the dossier the bundle names as its source. The honest-coverage machinery an
+  earlier pass added is dead code on the shipped data.
 - **The units a dossier does carry are unresolvable from the dossier.** The parameters that state
   a unit cite model-local ids (`unit_0`, `unit_1`), and the dossier carries no unit definitions, so
   "389.92 unit_0" needs the original file to read. (A unit the model states *nothing* for is no

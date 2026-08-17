@@ -28,14 +28,21 @@
   "recipe": [
     {
       "claim_id": "Cmax-500mg",
+      "metric": "cmax",
       "output": "mPlasmaVenous",
       "protocol": "Table 4, Zaharenko dataset (reported 6.2 nmol/mL)",
+      "steps": 480,
       "time_span": "0-24.0"
     },
     {
       "claim_id": "Cmax-1000mg",
+      "metric": "cmax",
       "output": "mPlasmaVenous",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
       "protocol": "Chung dataset (reported 11.2 nmol/mL)",
+      "steps": 480,
       "time_span": "0-24.0"
     }
   ],

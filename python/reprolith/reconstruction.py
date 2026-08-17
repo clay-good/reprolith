@@ -65,20 +65,41 @@ def close_gap(
 
 @dataclass(frozen=True)
 class RecipeStep:
-    """How to run one targetable claim's scenario to produce the quantity it asserts."""
+    """How to run one targetable claim's scenario to produce the quantity it asserts.
+
+    A recipe exists to be re-run, so it has to carry what makes one run differ from another:
+    ``steps`` is the sample count (an area and a peak both move with it), ``parameter_overrides``
+    are the values this claim sets before running (a dose is what distinguishes two claims on one
+    model), and ``metric`` names what is read out of the trajectory. Without them the shipped
+    metformin bundle's two steps were identical where the claims differ by dose, and re-running it
+    as published gave both the 500 mg answer.
+
+    All three are omitted from the record at their defaults, so a recipe that states none is
+    written exactly as it was before they existed.
+    """
 
     claim_id: str
     protocol: str
     output: str
     time_span: str
+    steps: int | None = None
+    parameter_overrides: tuple[tuple[str, float], ...] = ()
+    metric: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        record: dict[str, Any] = {
             "claim_id": self.claim_id,
             "protocol": self.protocol,
             "output": self.output,
             "time_span": self.time_span,
         }
+        if self.steps is not None:
+            record["steps"] = self.steps
+        if self.parameter_overrides:
+            record["parameter_overrides"] = {n: v for n, v in self.parameter_overrides}
+        if self.metric is not None:
+            record["metric"] = self.metric
+        return record
 
 
 @dataclass(frozen=True)

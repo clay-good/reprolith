@@ -84,9 +84,15 @@ def main() -> None:
         catalog_entry = catalog.find(Identifiers(title="", accession=accession))
         if catalog_entry is not None:
             catalog_entry.difficulty = estimate_difficulty(dossier)
+        # The recipe carries what makes one run differ from another — the sample count, the dose,
+        # and the metric read out — so the bundle can re-run the claims it describes. Without them
+        # its two steps were identical where the claims differ by dose, and re-running the bundle
+        # as published gave the 500 mg answer to both.
         recipe = tuple(
             RecipeStep(claim_id=(c := Claim.from_record(rec)).claim_id, protocol=c.source_location,
-                       output=c.species, time_span=f"0-{entry['duration']}")
+                       output=c.species, time_span=f"0-{entry['duration']}",
+                       steps=int(entry.get("steps", 480)),
+                       parameter_overrides=c.parameter_overrides, metric=c.metric)
             for rec in entry["claims"]
         )
         bundle = ReconstructionBundle(

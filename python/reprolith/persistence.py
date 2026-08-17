@@ -167,6 +167,20 @@ def dossier_from_dict(record: dict[str, Any]) -> Dossier:
     )
 
 
+def _recipe_step_from(record: dict[str, Any]) -> RecipeStep:
+    """A recipe step from its record, with the overrides read back as an ordered pair list."""
+    overrides = record.get("parameter_overrides", {})
+    return RecipeStep(
+        claim_id=record["claim_id"],
+        protocol=record["protocol"],
+        output=record["output"],
+        time_span=record["time_span"],
+        steps=record.get("steps"),
+        parameter_overrides=tuple((k, float(v)) for k, v in overrides.items()),
+        metric=record.get("metric"),
+    )
+
+
 def bundle_from_dict(record: dict[str, Any]) -> ReconstructionBundle:
     """Reconstruct a :class:`~reprolith.reconstruction.ReconstructionBundle` from its dict."""
     model = record["model"]
@@ -176,7 +190,7 @@ def bundle_from_dict(record: dict[str, Any]) -> ReconstructionBundle:
         engine_pin=EnginePin(engine=pin["engine"], version=pin["version"], algorithm=pin["algorithm"]),
         model=ModelArtifact(**model) if model else None,
         origin=ModelOrigin(record["origin"]),
-        recipe=tuple(RecipeStep(**s) for s in record["recipe"]),
+        recipe=tuple(_recipe_step_from(s) for s in record["recipe"]),
         assumptions=tuple(_assumption_from(a) for a in record["assumptions"]),
         non_reconstructable=tuple(NonReconstructable(**n) for n in record["non_reconstructable"]),
         mismatches=(

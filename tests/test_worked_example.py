@@ -130,3 +130,38 @@ def test_two_claim_certificate_via_certify_model() -> None:
     verdicts = {a.claim_id: (a.verdict, a.assumption_qualified) for a in cert.assessments}
     assert verdicts["Cmax-500mg"] == (Verdict.REPRODUCED, False)  # clean
     assert verdicts["Cmax-1000mg"] == (Verdict.REPRODUCED, True)  # qualified
+
+
+def test_the_published_bundle_can_re_run_the_claims_it_describes() -> None:
+    """The bundle is the artifact whose job is re-runnability, and it could not.
+
+    `RecipeStep` carried no sample count, no parameter override, and no metric, so the two steps
+    were identical where the claims differ by dose: running the bundle strictly as published gave
+    the 500 mg answer to both, and the 779.9 mg free-base figure survived only as prose in the
+    assumption block. This runs the recipe and nothing else, and checks it lands on the paper's
+    two reported values.
+    """
+    import json
+
+    from reprolith import simulate
+    from reprolith.certify import _apply_overrides, _metric
+    from reprolith.persistence import bundle_from_dict
+
+    root = Path(__file__).parent.parent / "datasets"
+    bundle = bundle_from_dict(
+        json.loads((root / "milestone" / "bundles" / "BIOMD0000001028.json").read_text())
+    )
+    sbml = (root / bundle.model.filename).read_text(encoding="utf-8")
+    reported = {"Cmax-500mg": 6.2, "Cmax-1000mg": 11.2}
+
+    for step in bundle.recipe:
+        model = _apply_overrides(sbml, step.parameter_overrides) if step.parameter_overrides else sbml
+        duration = float(step.time_span.split("-")[-1])
+        times, values = simulate(model, step.output, duration=duration, steps=step.steps)
+        got = _metric(times, values, step.metric)
+        assert got == pytest.approx(reported[step.claim_id], rel=0.05)
+
+    # And the two steps are no longer the same run: the dose the 1000 mg claim sets is in the recipe.
+    doses = {s.claim_id: dict(s.parameter_overrides) for s in bundle.recipe}
+    assert doses["Cmax-500mg"] == {}
+    assert doses["Cmax-1000mg"] == {"Metformin_Dose_in_Lumen_in_mg": 779.9}
