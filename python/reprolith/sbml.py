@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import operator
 from collections.abc import Callable, Container, Mapping
+from math import factorial
 from typing import Any
 
 from .dossier import Dossier, EquationKind
@@ -223,6 +224,11 @@ def ingest_fbc_sbml(sbml: str) -> FbaModel:
     if fbc is None:
         raise ValueError("the model declares no fbc (constraint-based) package")
 
+    # An LP is a steady-state snapshot: a rule, an event, or an initial assignment that moves a
+    # flux bound during (or before) the run changes the feasible space this solves over, and
+    # reading past them solves a different program than the artifact describes.
+    _refuse_unrepresentable_constructs(model, kind="a constraint-based model")
+
     species = [
         model.getSpecies(i).getId()
         for i in range(model.getNumSpecies())
@@ -237,7 +243,17 @@ def ingest_fbc_sbml(sbml: str) -> FbaModel:
         parameter = model.getParameter(i)
         if not parameter.isSetValue():
             continue
-        params[parameter.getId()] = parameter.getValue()
+        value = parameter.getValue()
+        if value != value:  # NaN: set, but not a number
+            # The skip above catches an *unset* parameter; a parameter whose value is NaN passes
+            # straight through into the bounds, and the LP solver quietly ignores a NaN bound —
+            # so the constraint the artifact states simply vanishes and the optimum is judged
+            # against a model with one fewer capacity limit.
+            raise ValueError(
+                f"parameter {parameter.getId()!r} has a NaN value; a flux bound that is not a "
+                "number is dropped by the solver, which silently removes the constraint"
+            )
+        params[parameter.getId()] = value
 
     stoich = [[0.0] * len(reactions) for _ in species]
     lower: list[float] = []
@@ -330,7 +346,16 @@ def _parse_gpr(association: Any, gene_labels: dict[str, str], libsbml: Any) -> A
         return None
     type_code = association.getTypeCode()
     if type_code == libsbml.SBML_FBC_GENEPRODUCTREF:
-        return gene_labels.get(association.getGeneProduct(), association.getGeneProduct())
+        product = association.getGeneProduct()
+        if product not in gene_labels:
+            # Falling back to the raw id invents a gene: it enters `model.genes()` and the FROG
+            # gene-deletion fingerprint as though the artifact declared it, and an essentiality
+            # result is then reported for a gene that does not exist in the model.
+            raise ValueError(
+                f"a gene-product association references {product!r}, which the model does not "
+                "declare as a gene product; the rule names a gene this artifact does not define"
+            )
+        return gene_labels[product]
     if type_code in (libsbml.SBML_FBC_AND, libsbml.SBML_FBC_OR):
         operator = "and" if type_code == libsbml.SBML_FBC_AND else "or"
         children = tuple(
@@ -659,7 +684,16 @@ def _mass_action_rate(kinetic_law: Any, reactant_powers: Mapping[str, int]) -> f
             f"raised to its stoichiometry ({expected}), but the expression is {factors}; a "
             "non-mass-action law is refused rather than reinterpreted as mass action"
         )
-    return float(rate_param.getValue())
+    # The artifact states a *deterministic* mass-action constant: the law k·∏Aᵢ^sᵢ just verified
+    # above. The SSA's propensity is the stochastic form, k·∏(Aᵢ choose sᵢ)·sᵢ! — for a
+    # dimerization, n(n−1)/2 rather than n². The two agree only after multiplying by ∏sᵢ!, and
+    # without it the sampler runs a reaction with a stoichiometry above one at a fraction of the
+    # rate the law it verified prescribes: 2A → B ingested at k tracks dA/dt = −k·A² where the
+    # artifact says −2k·A², so the ensemble reproduces a model the file never described.
+    stoichiometric_factor = 1
+    for power in reactant_powers.values():
+        stoichiometric_factor *= factorial(power)
+    return float(rate_param.getValue()) * stoichiometric_factor
 
 
 def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[int]]:
@@ -704,6 +738,16 @@ def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[i
                 f"species {spec.getId()!r} is specified in concentration units "
                 "(hasOnlySubstanceUnits is false); the SSA needs molecule counts, and reading its "
                 "amount verbatim would misread every rate law that scales with volume"
+            )
+        units = spec.getSubstanceUnits()
+        if units not in ("", "item", "dimensionless"):
+            # The SSA counts molecules. A species declared in moles is read verbatim, so 100 mol
+            # becomes 100 molecules and every noise statistic the class exists to reproduce — the
+            # Fano factor, the CV, the extinction time — is computed for a different system.
+            raise ValueError(
+                f"species {spec.getId()!r} declares substance units {units!r}; the SSA counts "
+                "molecules, so reading its amount verbatim would describe a different system "
+                "(use item/dimensionless counts)"
             )
         amount = spec.getInitialAmount()
         rounded = round(amount)

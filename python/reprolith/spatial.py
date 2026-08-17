@@ -75,6 +75,18 @@ def _diffusion_number(
             f"unstable discretization: D·dt/dx² = {alpha:.3g} must lie in [0, {limit}]; "
             "reduce dt or increase dx"
         )
+    # Diffusion and decay share one stability budget, and checking them separately spends it
+    # twice. The explicit update's amplification at the highest grid mode is 1 − (α/limit)·2 −
+    # decay·dt, so a grid with α = 0.4 (inside 0.5) and decay·dt = 0.6 (inside 1) has an
+    # amplification of −1.2 and oscillates to divergence — while staying *finite*, so nothing
+    # downstream sees a non-finite value and the profile is judged as an honest miss.
+    combined = 2.0 * alpha / limit + decay * dt
+    if combined > 2.0 + 1e-12:
+        raise ValueError(
+            f"unstable discretization: diffusion and decay together give an amplification factor "
+            f"of {1.0 - combined:.3g} at the shortest wavelength, outside [-1, 1] "
+            f"(D·dt/dx² = {alpha:.3g}, decay·dt = {decay * dt:.3g}); reduce dt"
+        )
     if must_advance and steps > 0 and 1.0 + alpha == 1.0 and 1.0 + decay * dt == 1.0:
         raise ValueError(
             f"this discretization cannot advance the profile: D·dt/dx² = {alpha:.3g} and "

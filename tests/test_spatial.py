@@ -476,3 +476,20 @@ def test_spatial_sir_reproduces_the_epidemic_wave_speed() -> None:
         predicted=speed, tolerance=tol,
     )
     assert verdict.verdict is Verdict.REPRODUCED
+
+
+def test_diffusion_and_decay_share_one_stability_budget() -> None:
+    """Checked separately, the budget is spent twice and the profile diverges while staying finite.
+
+    The explicit update's amplification at the shortest wavelength is 1 − 4α − decay·dt, so a grid
+    at α = 0.4 (inside the 0.5 diffusion limit) with decay·dt = 0.6 (inside the 1.0 decay limit)
+    amplifies by −1.2 per step. Nothing downstream can catch it: the values oscillate to huge
+    magnitudes but remain finite, so the oracle's non-finite abstention never fires and the class
+    publishes an honest-looking `not-reproduced` against a discretization it should have refused.
+    """
+    profile = [0.0] * 10 + [1.0] + [0.0] * 10
+    with pytest.raises(ValueError, match="amplification"):
+        diffuse_1d(profile, diffusivity=0.4, dx=1.0, dt=1.0, steps=30, decay=0.6)
+    # A grid inside the joint bound still runs, and stays bounded by its initial magnitude.
+    stable = diffuse_1d(profile, diffusivity=0.25, dx=1.0, dt=1.0, steps=30, decay=1.0)
+    assert max(abs(v) for v in stable) <= 1.0

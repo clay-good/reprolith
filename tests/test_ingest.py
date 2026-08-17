@@ -148,3 +148,24 @@ def test_a_concentration_in_a_non_unit_compartment_is_refused() -> None:
     # as an amount of 4 would silently rebuild a different model.
     with pytest.raises(ValueError, match="unit compartment"):
         ingest_sbml(_concentration_model("2"), entry="10.1/x")
+
+
+def test_constructs_the_dossier_cannot_represent_are_recorded_as_load_bearing_gaps() -> None:
+    """An event is the most common PK/PD construct there is, and it was dropped without a trace.
+
+    Rules become equations on this path, so most of a model survives — but an event (a dose), an
+    initial assignment (an override of the values just recorded), and a conversion factor (a
+    rescaling of every amount) do not. They are recorded rather than refused because the artifact
+    itself stays runnable: adopt-and-verify uses the author's own file. It is the dossier that
+    cannot carry them, and a reconstruction built from one now carries the gap into its certificate.
+    """
+    pytest.importorskip("libsbml")
+    from reprolith import ingest_sbml
+
+    shipped = Path(__file__).parent.parent / "datasets" / "worked_examples"
+    metformin = (shipped / "Zake2021_metformin_human_single_PO.xml").read_text(encoding="utf-8")
+    dossier = ingest_sbml(metformin, entry="BIOMD0000001028")
+    kinds = {gap.kind.value for gap in dossier.gaps}
+    assert "dosing" in kinds  # the oral dose is an event
+    assert "initial-condition" in kinds  # 32 initial assignments override the stated values
+    assert all(gap.load_bearing for gap in dossier.gaps)

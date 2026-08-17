@@ -116,3 +116,72 @@ def test_an_objective_naming_a_reaction_the_model_lacks_is_refused() -> None:
     """Dropping the term leaves an objective that optimizes to zero and matches a reported zero."""
     with pytest.raises(ValueError, match="does not contain"):
         ingest_fbc_sbml(_tiny_fbc_sbml(objective_reaction="v_biomass"))
+
+
+def _fbc_model(*, bound_value: str = 'value="1000"', extra: str = "", gpr: str = "") -> str:
+    """A one-reaction fbc model, with hooks for the constructs these tests probe."""
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core"'
+        ' xmlns:fbc="http://www.sbml.org/sbml/level3/version1/fbc/version2"'
+        ' level="3" version="1" fbc:required="false"><model fbc:strict="false">'
+        '<listOfCompartments><compartment id="c" constant="true"/></listOfCompartments>'
+        '<listOfParameters>'
+        f'<parameter id="ub" {bound_value} constant="true"/>'
+        '<parameter id="lb" value="0" constant="true"/>'
+        '</listOfParameters>'
+        '<listOfSpecies>'
+        '<species id="A" compartment="c" hasOnlySubstanceUnits="true" boundaryCondition="false"'
+        ' constant="false"/>'
+        '</listOfSpecies>'
+        f'{gpr}'
+        '<listOfReactions>'
+        '<reaction id="R" reversible="false" fbc:lowerFluxBound="lb" fbc:upperFluxBound="ub">'
+        '<listOfProducts><speciesReference species="A" stoichiometry="1" constant="true"/></listOfProducts>'
+        '</reaction></listOfReactions>'
+        f'{extra}'
+        '<fbc:listOfObjectives fbc:activeObjective="obj">'
+        '<fbc:objective fbc:id="obj" fbc:type="maximize">'
+        '<fbc:listOfFluxObjectives>'
+        '<fbc:fluxObjective fbc:reaction="R" fbc:coefficient="1"/>'
+        '</fbc:listOfFluxObjectives></fbc:objective></fbc:listOfObjectives>'
+        "</model></sbml>"
+    )
+
+
+def test_a_flux_bound_that_is_not_a_number_is_refused() -> None:
+    """A NaN bound is dropped by the solver, so the constraint the artifact states disappears."""
+    pytest.importorskip("libsbml")
+    from reprolith import ingest_fbc_sbml
+
+    with pytest.raises(ValueError, match="NaN"):
+        ingest_fbc_sbml(_fbc_model(bound_value='value="NaN"'))
+
+
+def test_a_construct_that_moves_a_flux_bound_is_refused() -> None:
+    """An LP is a steady-state snapshot; a rule or event that moves a bound changes the program."""
+    pytest.importorskip("libsbml")
+    from reprolith import ingest_fbc_sbml
+
+    with_rule = _fbc_model(
+        extra='<listOfRules><assignmentRule variable="ub">'
+              '<math xmlns="http://www.w3.org/1998/Math/MathML"><cn>3</cn></math>'
+              "</assignmentRule></listOfRules>"
+    )
+    with pytest.raises(ValueError, match="cannot be ingested"):
+        ingest_fbc_sbml(with_rule)
+
+
+def test_a_gene_rule_naming_an_undeclared_product_is_refused() -> None:
+    """Falling back to the raw id invents a gene, and it enters the deletion fingerprint as real."""
+    pytest.importorskip("libsbml")
+    from reprolith import ingest_fbc_sbml
+
+    model = _fbc_model().replace(
+        '<listOfProducts>',
+        '<fbc:geneProductAssociation><fbc:geneProductRef fbc:geneProduct="gMISSING"/>'
+        "</fbc:geneProductAssociation><listOfProducts>",
+        1,
+    )
+    with pytest.raises(ValueError, match="does not "):
+        ingest_fbc_sbml(model)

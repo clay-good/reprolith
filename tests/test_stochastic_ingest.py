@@ -158,8 +158,10 @@ def test_a_repeated_reactant_reference_ingests_at_the_same_order_as_a_stoichiome
     assert from_aggregated[0].reactants == ((0, 2),)
     assert from_repeated == from_aggregated
 
-    # And the propensity is the dimerization form n(n-1)/2, never n*n.
-    assert from_repeated[0].propensity([4, 0]) == pytest.approx(0.01 * 6)
+    # And the propensity is the dimerization form n(n-1)/2, never n*n — at the stochastic rate
+    # constant, which is the file's k times 2! so that the sampler tracks the law the file states
+    # (dX/dt = -2k·X²) rather than half of it.
+    assert from_repeated[0].propensity([4, 0]) == pytest.approx(2 * 0.01 * 6)
     assert from_repeated[0].propensity([1, 0]) == 0.0
 
 
@@ -235,3 +237,43 @@ def test_constructs_the_ssa_cannot_represent_are_refused_not_dropped() -> None:
     # The same network without any of them still ingests.
     names, reactions, initial = ingest_stochastic_sbml(header + species() + reaction + tail)
     assert names == ["S", "P"] and initial == [100, 0] and len(reactions) == 1
+
+
+def test_a_reactant_stoichiometry_above_one_carries_its_factorial_into_the_propensity() -> None:
+    """The artifact states a deterministic constant; the SSA needs the stochastic one.
+
+    For `2A -> B` under the law `k·A²`, the mean-field decay is `dA/dt = -2k·A²`, while the SSA's
+    propensity for a stoichiometry of two is `c·n(n-1)/2`. The two describe the same reaction only
+    when `c = 2k`. Ingesting `k` unchanged ran the sampler at half the rate the law it had just
+    verified prescribes — the file said one model and the ensemble reproduced another.
+    """
+    import statistics
+
+    from reprolith.stochastic import ensemble_final_counts
+
+    k, initial_a, duration = 0.001, 200, 1.0
+    model = _dimerization_model(
+        '<speciesReference species="X" stoichiometry="2" constant="true"/>',
+        "<apply><times/><ci>k</ci><apply><power/><ci>X</ci><cn type=\"integer\">2</cn></apply></apply>",
+    ).replace('value="0.01"', f'value="{k}"').replace('initialAmount="100"', f'initialAmount="{initial_a}"')
+    names, reactions, initial = ingest_stochastic_sbml(model)
+    assert reactions[0].rate == pytest.approx(2 * k)  # k · 2! for the two-X reactant
+
+    ensemble = ensemble_final_counts(
+        len(names), reactions, initial, duration=duration, trajectories=2000, seed=7
+    )
+    mean = statistics.fmean(counts[0] for counts in ensemble)
+    stated = initial_a / (1 + 2 * k * initial_a * duration)  # the artifact's own law
+    misread = initial_a / (1 + k * initial_a * duration)  # what ingesting k unchanged gave
+    assert abs(mean - stated) < abs(mean - misread)
+    assert mean == pytest.approx(stated, rel=0.02)
+
+
+def test_a_species_declared_in_moles_is_refused() -> None:
+    """The SSA counts molecules; 100 mol read as 100 molecules is a different system entirely."""
+    model = _dimerization_model(
+        '<speciesReference species="X" stoichiometry="2" constant="true"/>',
+        "<apply><times/><ci>k</ci><apply><power/><ci>X</ci><cn type=\"integer\">2</cn></apply></apply>",
+    ).replace('id="X" compartment="c"', 'id="X" substanceUnits="mole" compartment="c"', 1)
+    with pytest.raises(ValueError, match="substance units"):
+        ingest_stochastic_sbml(model)

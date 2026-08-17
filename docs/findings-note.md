@@ -169,6 +169,37 @@ needless re-run of a dependency-free solver costs seconds; a missed one publishe
 current code would not produce. A test holds the corpus to it: a committed certificate carrying an
 older revision than the code fails, and the fix is re-running that class's milestone script.
 
+## Two solvers computing a model the file did not describe
+
+The ingestion lens of the ninth audit found two places where the numbers were right for a model
+nobody had written down.
+
+**A dimerization ran at half its stated rate.** The stochastic ingester verifies a rate law
+structurally — it refuses anything that is not `k·∏Aᵢ^sᵢ` — and then handed `k` to the SSA
+unchanged. But `k` is the deterministic constant and the SSA's propensity is the stochastic form:
+for `2A → B` the sampler computes `c·n(n−1)/2` where the law says `k·A²`, and the two agree only at
+`c = 2k`. Measured on `2A → B` with `k = 0.001` from 200 molecules, the ensemble tracked
+`dA/dt = −k·A²` (mean 167) where the artifact says `dA/dt = −2k·A²` (mean 143). The constant is now
+multiplied by `∏sᵢ!`, and the ensemble lands on 143.2. Any ingested model with a reactant
+stoichiometry above one was affected.
+
+**Diffusion and decay spent one stability budget twice.** The explicit scheme's amplification at the
+shortest wavelength is `1 − 4α − k·dt`, but the two terms were bounded separately (`α ≤ 0.5`,
+`k·dt ≤ 1`). A grid at `α = 0.4` with `k·dt = 0.6` — inside both limits — amplifies by −1.2 per step
+and oscillates to divergence *while staying finite*, so the oracle's non-finite abstention never
+fires and the class publishes a confident `not-reproduced` against a discretization it should have
+refused. The joint bound is now checked.
+
+Alongside them, four ways an artifact was read past rather than refused: a flux-bound parameter whose
+value is NaN (the solver drops the bound, so the constraint simply vanishes), a gene rule naming a
+product the model never declares (the raw id became a gene, and entered the deletion fingerprint as
+real), a species declared in moles fed to a molecule-counting sampler, and rules or events that move
+a flux bound during a run the LP treats as a steady-state snapshot. The ODE dossier is the one path
+that records rather than refuses: it carries most of a model, so an event, an initial assignment, or
+a conversion factor it cannot represent is written down as a load-bearing gap. The shipped metformin
+artifact has thirty-two initial assignments and an oral-dose event, and the dossier had been silent
+about all thirty-three.
+
 ## A lethal knockout judged in whatever units it happened to use
 
 The scalar judge divided by the reported magnitude and, when that magnitude was exactly zero, fell

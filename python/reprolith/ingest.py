@@ -25,6 +25,8 @@ from .dossier import (
     Equation,
     EquationKind,
     ExtractionConfidence,
+    Gap,
+    GapKind,
     ModelArtifact,
     Parameter,
 )
@@ -168,7 +170,71 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
         parameters=tuple(parameters),
         initial_conditions=tuple(initial_conditions),
         artifacts=(artifact,),
+        gaps=_unread_constructs(model),
     )
+
+
+def _unread_constructs(model: Any) -> tuple[Gap, ...]:
+    """Record, as load-bearing gaps, the constructs this ingester reads past.
+
+    Rules become equations here, so unlike the stochastic and fbc ingesters this path can carry
+    most of a model — but not all of it. An event doses at a moment in time (the single most common
+    PK/PD construct there is), an initial assignment overrides the initial values the dossier just
+    recorded, and a conversion factor rescales every amount. Dropping any of them silently produces
+    a dossier that describes a different model than the artifact, and the shipped worked example
+    carries thirty-two initial assignments and an oral-dose event — so this is not hypothetical.
+
+    They are recorded rather than refused because the artifact itself stays usable: adopt-and-verify
+    runs the author's own file, where the constructs are still in force. It is the *dossier* that
+    cannot represent them, and a reconstruction built from one carries the gap into its certificate
+    instead of quietly leaving the dose out.
+    """
+    gaps: list[Gap] = []
+    if model.getNumEvents():
+        gaps.append(Gap(
+            element="events",
+            kind=GapKind.DOSING,
+            detail=(
+                f"the artifact carries {model.getNumEvents()} event(s) — a state change at a moment "
+                "in time, usually a dose — which this dossier cannot represent; a model rebuilt "
+                "from it alone runs without them"
+            ),
+            load_bearing=True,
+        ))
+    if model.getNumInitialAssignments():
+        gaps.append(Gap(
+            element="initial assignments",
+            kind=GapKind.INITIAL_CONDITION,
+            detail=(
+                f"{model.getNumInitialAssignments()} initialAssignment(s) override initial values at "
+                "the start of the run; the initial conditions recorded here are the stated ones, not "
+                "the assigned ones"
+            ),
+            load_bearing=True,
+        ))
+    if model.isSetConversionFactor():
+        gaps.append(Gap(
+            element="conversion factor",
+            kind=GapKind.UNIT,
+            detail=(
+                "the model declares a conversionFactor, which rescales every species amount and is "
+                "not applied here"
+            ),
+            load_bearing=True,
+        ))
+    for j in range(model.getNumReactions()):
+        rxn = model.getReaction(j)
+        refs = [rxn.getReactant(k) for k in range(rxn.getNumReactants())]
+        refs += [rxn.getProduct(k) for k in range(rxn.getNumProducts())]
+        if any(ref.isSetConstant() and not ref.getConstant() for ref in refs):
+            gaps.append(Gap(
+                element=f"stoichiometry of reaction {rxn.getId()!r}",
+                kind=GapKind.EQUATION,
+                detail="a non-constant stoichiometry varies during the run and is read here as fixed",
+                load_bearing=True,
+            ))
+            break
+    return tuple(gaps)
 
 
 __all__ = ["ingest_sbml"]
