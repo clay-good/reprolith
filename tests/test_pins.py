@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from reprolith import EnginePin, certificates_needing_review
 from reprolith.logical import solver_pin as logical_pin
 from reprolith.model import OverallVerdict, PaperIdentity
@@ -30,11 +31,23 @@ _DATASETS = Path(__file__).parent.parent / "datasets"
 # pin's revision spans. The constraint-based class is included: only the scipy half of its pin needs
 # the extra, and the revision — the part these tests are about — does not.
 _CLASSES = {
-    "stochastic": ("stochastic/milestone/certificates", ("stochastic", "oracle")),
-    "spatial": ("spatial/milestone/certificates", ("spatial", "oracle")),
-    "logical": ("logical/milestone/certificates", ("logical", "oracle")),
-    "constraint_based": ("constraint_based/milestone/certificates", ("fba", "oracle")),
+    "stochastic": (
+        "stochastic/milestone/certificates", ("stochastic", "oracle", "certificate"),
+    ),
+    "spatial": ("spatial/milestone/certificates", ("spatial", "oracle", "certificate")),
+    "logical": ("logical/milestone/certificates", ("logical", "oracle", "certificate")),
+    "constraint_based": (
+        "constraint_based/milestone/certificates",
+        ("fba", "constraint_based", "oracle", "certificate"),
+    ),
 }
+
+
+def test_a_revision_of_nothing_is_refused() -> None:
+    # sha256 of no bytes is a well-formed digest, and a pin carrying it would read as the revision
+    # of some code rather than of none.
+    with pytest.raises(ValueError, match="at least one module"):
+        algorithm_revision()
 
 
 def test_a_revision_is_a_deterministic_digest_of_the_named_sources() -> None:
@@ -48,6 +61,11 @@ def test_a_revision_spans_exactly_the_modules_it_names() -> None:
     # means the solver alone and the solver-plus-oracle are different revisions, and two classes
     # sharing the oracle still differ.
     assert algorithm_revision("stochastic") != algorithm_revision("stochastic", "oracle")
+    # And the rule that turns assessments into the headline verdict is in the path too.
+    assert (
+        algorithm_revision("stochastic", "oracle")
+        != algorithm_revision("stochastic", "oracle", "certificate")
+    )
     assert algorithm_revision("spatial", "oracle") != algorithm_revision("stochastic", "oracle")
     # Order is part of the identity, so a revision cannot be produced two ways.
     assert algorithm_revision("spatial", "oracle") != algorithm_revision("oracle", "spatial")
@@ -55,9 +73,9 @@ def test_a_revision_spans_exactly_the_modules_it_names() -> None:
 
 def test_every_pure_python_pin_names_its_solver_revision() -> None:
     for pin, modules in (
-        (stochastic_pin(), ("stochastic", "oracle")),
-        (spatial_pin(), ("spatial", "oracle")),
-        (logical_pin(), ("logical", "oracle")),
+        (stochastic_pin(), ("stochastic", "oracle", "certificate")),
+        (spatial_pin(), ("spatial", "oracle", "certificate")),
+        (logical_pin(), ("logical", "oracle", "certificate")),
     ):
         assert pin.algorithm is not None
         assert f"rev {algorithm_revision(*modules)}" in pin.algorithm
@@ -92,10 +110,13 @@ def test_every_committed_certificate_carries_the_revision_it_was_generated_under
     # this is what makes the freshness mechanism true of the corpus and not only of the code. If
     # this fails after editing a solver or the oracle, re-run that class's
     # `scripts/run_*_milestone.py` — the run is the point, not the file.
-    checked = 0
     for class_name, (directory, modules) in _CLASSES.items():
         revision = algorithm_revision(*modules)
-        for path in sorted((_DATASETS / directory).glob("*.json")):
+        published = sorted((_DATASETS / directory).glob("*.json"))
+        # Per class, not a single global floor: one class's directory going empty must not be
+        # covered by another's count, or the guard silently stops guarding that class.
+        assert published, f"{class_name} publishes no certificates to check"
+        for path in published:
             content = json.loads(path.read_text(encoding="utf-8"))
             algorithm = content["engine_pin"]["algorithm"]
             assert algorithm is not None, f"{path} names no algorithm"
@@ -103,5 +124,3 @@ def test_every_committed_certificate_carries_the_revision_it_was_generated_under
                 f"{path} was generated under an older revision of {class_name}; re-run that "
                 f"class's milestone script to re-certify it under the current solver"
             )
-            checked += 1
-    assert checked >= 20  # the four classes' committed corpus, not an empty glob

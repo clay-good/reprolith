@@ -135,7 +135,7 @@ def solver_pin() -> EnginePin:
     # bounds, the pFBA two-stage program, the essentiality sweep, the FROG fingerprint — is this
     # package, and its version has never moved. Naming its revision is what lets the freshness
     # check see a fix to any of that (see :func:`reprolith.pins.algorithm_revision`).
-    revision = algorithm_revision("fba", "oracle")
+    revision = algorithm_revision("fba", "constraint_based", "oracle", "certificate")
     return EnginePin(
         engine="scipy-linprog",
         version=str(scipy.__version__),

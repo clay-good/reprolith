@@ -15,9 +15,13 @@ re-run costs seconds for a dependency-free solver; a missed one publishes a numb
 would not produce), and it needs no human to remember to bump a constant, which is the failure this
 exists to remove.
 
-The judge is part of the computation, not a bystander: a class-default tolerance or a verdict rule
-in :mod:`reprolith.oracle` decides what the solver's numbers *mean*, so every revision below spans
-the class's solver together with the oracle it judges through.
+The judge is part of the computation, not a bystander: a class-default tolerance in
+:mod:`reprolith.oracle`, and the rule in :mod:`reprolith.certificate` that turns per-claim
+assessments into the headline verdict, decide what the solver's numbers *mean*. So a revision spans
+the whole path from the solver to the verdict — the class's solver, any analysis layer between it
+and the judge, the oracle, and the certificate rule — not the solver alone. A revision that stopped
+at the solver would leave a fix to the layer above it invisible, which is the failure this exists
+to remove.
 """
 
 from __future__ import annotations
@@ -41,6 +45,10 @@ def algorithm_revision(*modules: str) -> str:
     state the revision of the code behind it must fail loudly rather than fall back to a value
     that reads as fresh.
     """
+    if not modules:
+        # sha256 of nothing is a perfectly well-formed digest, and a pin carrying it would read as
+        # the revision of some code rather than of none at all.
+        raise ValueError("a revision must name at least one module to take the revision of")
     digest = hashlib.sha256()
     for name in modules:
         path = _HERE / f"{name}.py"

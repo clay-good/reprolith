@@ -373,7 +373,7 @@ def solver_pin() -> EnginePin:
     """
     from . import __version__  # local: the package imports this module while initializing
 
-    revision = algorithm_revision("stochastic", "oracle")
+    revision = algorithm_revision("stochastic", "oracle", "certificate")
     return EnginePin(
         engine="reprolith-ssa",
         version=__version__,
@@ -411,25 +411,7 @@ def certify_stochastic(
     ensemble is Reprolith's choice, and the verdict moves with it.
     """
     claims = tuple(claims)
-    sampling = tuple(
-        Assumption(
-            id=f"ssa-sampling-{claim.claim_id}",
-            description=(
-                "the mean judged here is the average of an ensemble Reprolith sampled, not a "
-                "number the paper's own run produced"
-            ),
-            chosen=_protocol(claim),
-            basis=(
-                "a finite ensemble's mean differs from the model's true mean by sampling noise of "
-                "a size the trajectory count sets, so the verdict moves with the count and the "
-                "seed; both are pinned here to make it byte-reproducible"
-            ),
-            load_bearing=True,
-            alternatives=("a different seed", "a larger ensemble"),
-        )
-        for claim in claims
-        if claim.assumption_qualified
-    )
+    judged: list[StochasticClaim] = []
     assessments = []
     for claim in claims:
         ensemble = ensemble_final_counts(
@@ -461,6 +443,29 @@ def certify_stochastic(
             assumption_qualified=claim.assumption_qualified,
         )
         assessments.append(replace(assessment, protocol=_protocol(claim)))
+        judged.append(claim)
+    # Only the claims a verdict was drawn from: an abstention concluded nothing, so an assumption
+    # saying its mean rests on this ensemble would describe a judgment that was never made — and,
+    # being load-bearing, would downgrade the certificate on behalf of a claim nobody judged.
+    sampling = tuple(
+        Assumption(
+            id=f"ssa-sampling-{claim.claim_id}",
+            description=(
+                "the mean judged here is the average of an ensemble Reprolith sampled, not a "
+                "number the paper's own run produced"
+            ),
+            chosen=_protocol(claim),
+            basis=(
+                "a finite ensemble's mean differs from the model's true mean by sampling noise of "
+                "a size the trajectory count sets, so the verdict moves with the count and the "
+                "seed; both are pinned here to make it byte-reproducible"
+            ),
+            load_bearing=True,
+            alternatives=("a different seed", "a larger ensemble"),
+        )
+        for claim in judged
+        if claim.assumption_qualified
+    )
     return build_certificate(
         paper=paper, engine_pin=engine_pin,
         assessments=assessments, assumptions=(*assumptions, *sampling),

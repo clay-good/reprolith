@@ -385,7 +385,7 @@ def solver_pin() -> EnginePin:
     """
     from . import __version__  # local: the package imports this module while initializing
 
-    revision = algorithm_revision("spatial", "oracle")
+    revision = algorithm_revision("spatial", "oracle", "certificate")
     return EnginePin(
         engine="reprolith-fd",
         version=__version__,

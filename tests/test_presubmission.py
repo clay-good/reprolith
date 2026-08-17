@@ -192,6 +192,7 @@ def test_an_estimation_reproduction_never_reads_as_a_clean_simulation_pass() -> 
         ClaimAssessment(
             claim_id="e1", quantity="clearance", verdict=Verdict.REPRODUCED,
             source_location="Table 2", level=ReproductionLevel.ESTIMATION,
+            protocol="maximum likelihood, Nelder-Mead, shipped dataset",
         )
     ])
     assert cert.overall is OverallVerdict.REPRODUCED  # the claim did reproduce, at its own level

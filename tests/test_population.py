@@ -8,6 +8,8 @@ the reconstructed variability model and the sampling (spec: simulation-oracle â€
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 from reprolith import (
     Attribution,
@@ -209,9 +211,14 @@ def test_certify_population_assembles_a_qualified_certificate() -> None:
 def test_qualified_population_reproduction_yields_partial_certificate() -> None:
     # A population figure that reproduces still cannot earn a clean overall verdict: the
     # qualification forbids an unqualified full reproduction (done-when: "a qualified verdict").
-    a = judge_distribution(
-        claim_id="c", quantity="concentration percentile envelope",
-        source_location="Fig 5", reference=_REF, predicted=_perturb(_REF, 1.02),
+    a = replace(
+        judge_distribution(
+            claim_id="c", quantity="concentration percentile envelope",
+            source_location="Fig 5", reference=_REF, predicted=_perturb(_REF, 1.02),
+        ),
+        # The builder refuses a distributional verdict that does not say what produced the bands,
+        # whichever route assembled it â€” see test_a_population_verdict_records_the_ensemble_it_rests_on.
+        protocol="virtual population: 250 subjects, seed 3",
     )
     cert = build_certificate(
         paper=PaperIdentity(doi="10.0/pop", title="A population PK model"),

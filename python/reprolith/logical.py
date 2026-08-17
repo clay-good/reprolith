@@ -447,7 +447,7 @@ def solver_pin(*, scheme: UpdateScheme = UpdateScheme.SYNCHRONOUS, sat: bool = F
     # package version has never moved — so before this, fixing any of them left every certificate
     # the fix invalidates comparing equal to the current pin and reading as fresh. On the SAT path
     # z3's version moves, but the translation into z3 and the verdict rule still do not.
-    algorithm += f" (rev {algorithm_revision('logical', 'oracle')})"
+    algorithm += f" (rev {algorithm_revision('logical', 'oracle', 'certificate')})"
     return EnginePin(engine="reprolith-logical", version=__version__, algorithm=algorithm)
 
 

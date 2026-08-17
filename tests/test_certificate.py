@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+import pytest
 from reprolith import (
     Assumption,
     ClaimAssessment,
@@ -137,3 +138,49 @@ def test_a_value_still_awaiting_expert_verification_withholds_a_clean_pass() -> 
     assert derive_overall([clean], [queued]) is OverallVerdict.PARTIALLY_REPRODUCED
     # The same assumption, already decided, does not withhold anything.
     assert derive_overall([clean], [replace(queued, verification_item=None)]) is OverallVerdict.REPRODUCED
+
+
+def test_a_supplied_number_verdict_without_its_protocol_is_refused_at_the_builder() -> None:
+    """The invariant lives where the other honesty rules live, not only on the claim types.
+
+    `EstimationClaim` and `PopulationClaim` refuse a blank protocol, but the judges and the builder
+    are public, so a caller can assemble the same certificate from assessments directly and publish
+    a clean estimation pass for `recovered == reported` with nothing behind it.
+    """
+    from reprolith import judge_estimation
+
+    bare = judge_estimation(
+        claim_id="cl", quantity="CL/F estimate", source_location="Table 3",
+        reported=3.2, recovered=3.2,
+    )
+    with pytest.raises(ValueError, match="protocol"):
+        build_certificate(
+            paper=PaperIdentity(title="A data-shipping paper", doi="10.0/e"),
+            engine_pin=EnginePin(engine="test-engine", version="0.0.0"),
+            assessments=[bare],
+        )
+
+    stated = replace(bare, protocol="maximum likelihood, Nelder-Mead, shipped dataset")
+    cert = build_certificate(
+        paper=PaperIdentity(title="A data-shipping paper", doi="10.0/e"),
+        engine_pin=EnginePin(engine="test-engine", version="0.0.0"),
+        assessments=[stated],
+    )
+    assert cert.assessments[0].protocol is not None
+
+
+def test_two_assumptions_under_one_id_are_refused() -> None:
+    """An assumption a verdict rests on has to be identifiable to be readable."""
+    same_id = [
+        Assumption(id="sampling", description="d", chosen="500 subjects", basis="b",
+                   load_bearing=True),
+        Assumption(id="sampling", description="d", chosen="20 subjects", basis="b",
+                   load_bearing=False),
+    ]
+    with pytest.raises(ValueError, match="appears twice"):
+        build_certificate(
+            paper=PaperIdentity(title="P", doi="10.0/a"),
+            engine_pin=EnginePin(engine="test-engine", version="0.0.0"),
+            assessments=[],
+            assumptions=same_id,
+        )

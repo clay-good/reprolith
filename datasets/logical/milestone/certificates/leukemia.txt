@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — T-LGL leukemia signalling network (Zhang et al. 2008)
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, sat-fixed-points (z3 5.0.0) (rev 7146611d27ba)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, sat-fixed-points (z3 5.0.0) (rev 707465ae8eda)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

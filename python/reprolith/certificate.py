@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 
 from .canonical import content_hash
-from .enums import OverallVerdict, Verdict
+from .enums import OverallVerdict, ReproductionLevel, Verdict
 from .model import (
     Assumption,
     Certificate,
@@ -72,6 +72,54 @@ def derive_overall(
     return OverallVerdict.NOT_REPRODUCED
 
 
+def _require_sampled_judgments_state_their_protocol(
+    assessments: Sequence[ClaimAssessment],
+) -> None:
+    """Refuse a certificate whose supplied-number verdicts do not say how they were produced.
+
+    An estimation verdict and a population-envelope verdict are both judged from numbers handed to
+    Reprolith rather than computed by it — the re-fitter and the population simulator are the
+    deferred halves — so the protocol behind them is the only evidence on the certificate that a run
+    happened at all. Without it, ``recovered == reported`` is a clean pass with nothing behind it,
+    and an envelope's verdict cannot be told apart from a subject count chosen until one appeared.
+
+    The claim types refuse a blank protocol where they are built, but that check is escapable: the
+    judges and this builder are all public, so a caller can assemble the same certificate from
+    assessments directly. The invariant belongs here, with the other two, where no path around it
+    exists.
+    """
+    for assessment in assessments:
+        if assessment.verdict is Verdict.NOT_EVALUABLE:
+            continue  # nothing was concluded, so there is no judgment resting on a protocol
+        sampled = (
+            assessment.level is ReproductionLevel.ESTIMATION
+            or assessment.method == "distribution-band-distance"
+        )
+        if sampled and not (assessment.protocol or "").strip():
+            raise ValueError(
+                f"claim {assessment.claim_id!r} is judged from numbers Reprolith did not produce "
+                "itself, so it must record the protocol behind them (the estimation method, or "
+                "the population sampling); a verdict nobody can re-derive is not evidence"
+            )
+
+
+def _require_distinct_assumption_ids(assumptions: Sequence[Assumption]) -> None:
+    """Refuse two assumptions sharing an id: one of them is unreadable on the certificate.
+
+    Ids are how an assumption is referred to — by a gap report, by a verification item, by a reader
+    tracing which guess a verdict rests on. Two entries under one id can state contradictory values
+    and different load-bearing flags, and nothing downstream can say which one qualified the result.
+    """
+    seen = set()
+    for assumption in assumptions:
+        if assumption.id in seen:
+            raise ValueError(
+                f"assumption id {assumption.id!r} appears twice; an assumption a verdict rests on "
+                "has to be identifiable, so give each one its own id"
+            )
+        seen.add(assumption.id)
+
+
 def build_certificate(
     *,
     paper: PaperIdentity,
@@ -94,6 +142,8 @@ def build_certificate(
     """
     frozen_assessments = tuple(assessments)
     frozen_assumptions = tuple(assumptions)
+    _require_sampled_judgments_state_their_protocol(frozen_assessments)
+    _require_distinct_assumption_ids(frozen_assumptions)
     return Certificate(
         paper=paper,
         engine_pin=engine_pin,

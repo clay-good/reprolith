@@ -205,7 +205,11 @@ def test_badge_colors_for_not_reproduced_and_blocked() -> None:
 def test_human_render_marks_an_estimation_level_verdict() -> None:
     from reprolith import ReproductionLevel
 
-    est = _claim(Verdict.REPRODUCED, cid="e", level=ReproductionLevel.ESTIMATION)
+    est = _claim(
+        Verdict.REPRODUCED, cid="e", level=ReproductionLevel.ESTIMATION,
+        # An estimation verdict states the re-fit behind it before it can be certified at all.
+        protocol="maximum likelihood, Nelder-Mead, shipped dataset",
+    )
     sim = _claim(Verdict.REPRODUCED, cid="s")  # default simulation level
     text = render_human(_cert([est, sim]), RUN)
     assert "[e] AUC: reproduced [estimation]" in text

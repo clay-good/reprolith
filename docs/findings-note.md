@@ -189,6 +189,26 @@ cause attached instead of vanishing into an exception. Tests now perturb a corre
 each class until it is wrong and assert the certificate says so; the stochastic and logical classes
 already discriminated, and now the other four do too.
 
+## Auditing the audit's own code
+
+The ninth pass turned five agents on the repository, and the sharpest lens was pointed at the code
+written that same day. Four of its findings were real, and all four are closed:
+
+- **A revision that stopped short of the verdict.** The freshness digest spanned each class's solver
+  and the oracle, but not the layer above them — `constraint_based.py`, which builds every
+  genome-scale certificate, and `certificate.py`, which decides the headline verdict. Renaming a
+  function in the constraint-based layer moved no pin. Revisions now span the whole path from solver
+  to verdict.
+- **A refusal that only guarded the front door.** The protocol requirement lived on the claim types,
+  and the judges and the certificate builder are both public — so the same clean estimation pass for
+  `recovered == reported` could be assembled from assessments directly. The invariant now sits in
+  `build_certificate` with the other two, where there is no path around it.
+- **An assumption for a claim nobody judged.** A stochastic claim that abstains because its ensemble
+  cannot resolve it was still given a sampling assumption saying its mean rested on that ensemble —
+  and, being load-bearing, it downgraded the certificate on behalf of a judgment never made.
+- **A guard that could go vacuous.** The corpus check counted certificates across all four classes
+  against one floor, so an empty class directory was covered by the others' count.
+
 ## A qualification that names nothing, and a number with nothing behind it
 
 Two flags were carrying weight they could not support.

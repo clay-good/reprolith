@@ -9,6 +9,8 @@ simulation-oracle — "Estimation reproduction is a distinct verdict").
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 from reprolith import (
     Attribution,
@@ -97,9 +99,13 @@ def test_estimation_verdict_is_distinguishable_in_a_mixed_certificate() -> None:
     sim = judge_scalar(
         claim_id="sim", quantity="AUC", source_location="Fig 2", reported=100.0, predicted=101.0
     )
-    est = judge_estimation(
-        claim_id="est", quantity="CL estimate", source_location="Table 3",
-        reported=3.2, recovered=3.3,
+    est = replace(
+        judge_estimation(
+            claim_id="est", quantity="CL estimate", source_location="Table 3",
+            reported=3.2, recovered=3.3,
+        ),
+        # The builder refuses an estimation verdict that does not say how the re-fit was run.
+        protocol="maximum likelihood, Nelder-Mead from the paper's starting values, shipped dataset",
     )
     cert = build_certificate(
         paper=PaperIdentity(doi="10.0/est", title="A data-shipping PK paper"),
