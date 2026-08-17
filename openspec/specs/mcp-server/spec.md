@@ -29,6 +29,14 @@ agent, so read-only use is friction-free and effectful use is deliberate.
 - **AND** submitting the same paper twice resolves to the existing catalog entry rather than
   creating a duplicate
 
+#### Scenario: A submission never edits an existing entry's identity
+
+- **WHEN** a submission carries identifiers an existing entry does not already hold
+- **THEN** the entry's identity is left unchanged and the reply says which identifiers were not
+  recorded, identically for every entry
+- **AND** the reply is the same whether or not the entry carries a ground-truth label, so
+  submitting cannot be used to discover which papers are in the graded set
+
 ### Requirement: Certificates are returned verbatim and self-describing
 
 An agent consuming a Reprolith result SHALL receive the certificate's own qualifications,
@@ -137,9 +145,18 @@ agents or humans.
 - **WHEN** an agent records a result
 - **THEN** the outcome state is derived from the named certificate's own verdict rather than
   asserted by the caller
-- **AND** a certificate whose paper identity contradicts the entry's is refused, so one
-  paper's result is never filed under another's accession
+- **AND** a certificate that does not positively identify the entry's paper is refused — an
+  identity that cannot be compared is not an identity that agrees — so one paper's result is
+  never filed under another's accession
+- **AND** a certificate that has since been superseded is refused, because the correction, not
+  the stale verdict, is the current answer
 - **AND** the reply carries the blind entry view, never a ground-truth label
+
+#### Scenario: An effectful call that cannot be persisted is rolled back
+
+- **WHEN** a mutation succeeds in memory but fails to reach durable storage
+- **THEN** the change is undone and reported as an error, so the served catalog never runs ahead
+  of the one on disk
 
 #### Scenario: A blocked entry returns to the queue when its missing input arrives
 

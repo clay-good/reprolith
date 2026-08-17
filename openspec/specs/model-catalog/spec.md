@@ -31,6 +31,12 @@ knowable without inspecting downstream artifacts.
   (human handle or agent identifier), and the reason
 - **AND** the previous state, artifacts, and certificate (if any) remain retrievable
 
+#### Scenario: A stored entry that contradicts its own record is refused
+
+- **WHEN** a saved catalog is loaded and an entry's state is not where its recorded history
+  ends, or a `blocked` entry records nothing it is blocked on, or its lease expiry is not a time
+- **THEN** loading refuses, rather than restoring a state nothing recorded
+
 #### Scenario: Blocked versus failed are distinct
 
 - **WHEN** an attempt cannot proceed because a required input is missing (no equations, no

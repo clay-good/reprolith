@@ -26,6 +26,7 @@ from typing import IO, Any
 
 from .catalog import AmbiguousMerge, Catalog, CatalogEntry, Identifiers, IllegalTransition
 from .enums import LifecycleState, ModelClass
+from .model import Certificate
 from .query import ReprolithQuery
 from .run import advance_to_outcome, require_same_paper
 from .supersession import CertificateLedger
@@ -359,8 +360,17 @@ EFFECTFUL_TOOLS: list[dict[str, Any]] = [
 ]
 
 
+_EFFECTFUL_NAMES = frozenset(tool["name"] for tool in EFFECTFUL_TOOLS)
+
+
 def submit_paper(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
-    """Add a paper to the catalog (de-duplicated) and report exactly what changed."""
+    """Add a paper to the catalog (de-duplicated) and report exactly what changed.
+
+    A submission never edits an existing entry's identity — see ``merge_identity`` on
+    :meth:`~reprolith.catalog.Catalog.add`. The identifiers that were not recorded are reported,
+    identically for every entry, so the caller learns what happened to its submission without the
+    reply distinguishing a ground-truth-labelled entry from any other.
+    """
     identifiers = Identifiers(
         title=arguments["title"],
         doi=arguments.get("doi"),
@@ -368,12 +378,22 @@ def submit_paper(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
         accession=arguments.get("accession"),
     )
     existing = catalog.find(identifiers)
+    not_recorded = (
+        sorted(kind for kind, _ in identifiers.keys() - existing.identifiers.keys())
+        if existing is not None
+        else []
+    )
     # An omitted class is unassigned, not ODE PK/PD: defaulting put every unclassified paper on
     # the ODE pathway and made it the answer to a claim_work(model_class="ode-pkpd") request.
-    entry = catalog.add(identifiers, ModelClass(arguments.get("model_class") or "unassigned"))
+    entry = catalog.add(
+        identifiers,
+        ModelClass(arguments.get("model_class") or "unassigned"),
+        merge_identity=False,
+    )
     return {
         "created": existing is None,
         "resolved_to_existing": existing is not None,
+        "identifiers_not_recorded": not_recorded,
         "entry": entry.blind().to_dict(),
     }
 
@@ -420,6 +440,32 @@ def _held_by_another(entry: CatalogEntry, requester: str, *, at: float) -> bool:
     return entry.lease_expires is not None and at < entry.lease_expires
 
 
+def _require_positive_identity(entry: CatalogEntry, certificate: Certificate) -> None:
+    """Refuse a certificate that cannot be shown to be about this entry's paper.
+
+    :func:`~reprolith.run.require_same_paper` refuses a *contradiction* on the stable
+    identifiers, which is the right rule for a curated dataset where the mapping is already
+    known. It is the wrong rule at an untrusted boundary: no entry in the shipped catalog
+    carries a DOI or a PubMed ID, so there is nothing to contradict and the check passes for
+    every certificate ever issued — any caller could file the metformin reproduction on any
+    accession they liked. Here the burden runs the other way: something must positively match.
+
+    Matching is on the same normalized ``(kind, value)`` keys de-duplication uses, so a title
+    is an acceptable witness when no stronger identifier exists on either side — it is the only
+    identifier every record carries. A title that merely differs in case or spacing still
+    matches; a different paper does not.
+    """
+    paper = certificate.paper
+    certified = Identifiers(
+        title=paper.title, doi=paper.doi, pubmed_id=paper.pubmed_id
+    ).keys()
+    if not (entry.identifiers.keys() & certified):
+        raise ValueError(
+            "that certificate names no identifier this entry carries, so it cannot be shown "
+            "to be about this paper"
+        )
+
+
 def _history_stamp(arguments: dict[str, Any], *, at: float) -> str:
     """The timestamp to record on a transition: the caller's, or the server clock in UTC."""
     stated = arguments.get("at")
@@ -461,7 +507,15 @@ def record_result(
     certificate = query.certificate_object(arguments["digest"])
     if certificate is None:
         return {"recorded": False, "reason": "unknown certificate"}
+    if query.superseded_by(arguments["digest"]) is not None:
+        # The read surface goes out of its way to say a superseded verdict is not the current
+        # answer; recording one would write that stale verdict into the catalog permanently.
+        return {
+            "recorded": False,
+            "reason": "that certificate has been superseded; record the correction instead",
+        }
     require_same_paper(entry, certificate, accession)
+    _require_positive_identity(entry, certificate)
 
     advance_to_outcome(
         entry,
@@ -491,8 +545,14 @@ def requeue_entry(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> 
 
     The lifecycle has always permitted ``blocked -> queued``, but no surface performed it, so an
     entry blocked on a paywalled supplement stayed out of the backlog forever even once the
-    supplement arrived. ``reason`` says what is now available and is recorded in the history;
-    an illegal move (an entry that is not blocked) raises and is reported as a tool error.
+    supplement arrived. ``reason`` says what is now available and is recorded in the history.
+
+    Only a ``blocked`` entry is accepted. The state machine also permits ``failed -> queued`` and
+    ``quarantined -> queued``, so leaning on it alone let a caller requeue a recorded failure and
+    then record a success over the top — laundering an honest ``failed`` into a ``certified`` at
+    will, and doing it repeatedly, since each free cycle appends transitions to a history nothing
+    bounds. It also undid a curator's quarantine, which is released after review, not on request.
+    Re-opening a ``failed`` entry is a re-verification decision (a new engine pin), not a requeue.
     """
     entry = catalog.find(Identifiers(title="", accession=arguments["accession"]))
     if entry is None:
@@ -500,6 +560,8 @@ def requeue_entry(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> 
     requester = arguments["requester"]
     if _held_by_another(entry, requester, at=at):
         return {"requeued": False, "reason": "not the lease holder"}
+    if entry.state is not LifecycleState.BLOCKED:
+        return {"requeued": False, "reason": f"entry is {entry.state.value}, not blocked"}
     entry.transition(
         LifecycleState.QUEUED,
         at=_history_stamp(arguments, at=at),
@@ -739,38 +801,32 @@ def handle_request(
         name = params.get("name", "")
         arguments = params.get("arguments") or {}
         try:
-            if name == "submit_paper":
+            if name in _EFFECTFUL_NAMES:
                 if catalog is None:
-                    raise KeyError("submit_paper is not enabled on this read-only server")
-                data = submit_paper(catalog, arguments)
+                    raise KeyError(f"{name} is not enabled on this read-only server")
+                at = now() if now is not None else 0.0
+                # Snapshot before mutating: a change that reaches memory but not disk leaves the
+                # served catalog permanently ahead of the durable one, and every later save then
+                # persists a state that was never written.
+                snapshot = catalog.to_dict()
+                if name == "submit_paper":
+                    data = submit_paper(catalog, arguments)
+                elif name == "claim_work":
+                    data = claim_work(catalog, arguments, at=at)
+                elif name == "release_work":
+                    data = release_work(catalog, arguments)
+                elif name == "record_result":
+                    data = record_result(catalog, query, arguments, at=at)
+                else:
+                    data = requeue_entry(catalog, arguments, at=at)
                 if on_change is not None:
-                    on_change()
-            elif name == "claim_work":
-                if catalog is None:
-                    raise KeyError("claim_work is not enabled on this read-only server")
-                data = claim_work(catalog, arguments, at=(now() if now is not None else 0.0))
-                if on_change is not None:
-                    on_change()
-            elif name == "release_work":
-                if catalog is None:
-                    raise KeyError("release_work is not enabled on this read-only server")
-                data = release_work(catalog, arguments)
-                if on_change is not None:
-                    on_change()
-            elif name == "record_result":
-                if catalog is None:
-                    raise KeyError("record_result is not enabled on this read-only server")
-                data = record_result(
-                    catalog, query, arguments, at=(now() if now is not None else 0.0)
-                )
-                if on_change is not None:
-                    on_change()
-            elif name == "requeue_entry":
-                if catalog is None:
-                    raise KeyError("requeue_entry is not enabled on this read-only server")
-                data = requeue_entry(catalog, arguments, at=(now() if now is not None else 0.0))
-                if on_change is not None:
-                    on_change()
+                    try:
+                        on_change()
+                    except OSError as exc:
+                        catalog.restore(snapshot)
+                        raise RuntimeError(
+                            f"the change was not persisted and has been rolled back: {exc}"
+                        ) from exc
             else:
                 data = dispatch_tool(query, name, arguments)
         except (

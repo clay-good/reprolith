@@ -386,6 +386,35 @@ class CatalogEntry:
         return entry
 
 
+def _require_coherent_entry(entry: CatalogEntry) -> None:
+    """Refuse a stored entry whose state contradicts its own record.
+
+    Loading restores state and history directly rather than replaying them, which is right — a
+    recorded lifecycle is not a fresh traversal — but it also means a hand-edited or badly merged
+    file loads whatever it says. The three things checked here are the ones a wrong value makes
+    invisible rather than noisy: a state that no transition in the history leads to (defeating
+    "transitions are recorded, never inferred"), a ``blocked`` entry with nothing recorded as
+    missing (the whole point of the state), and a lease expiry that is not a time — which is not
+    merely wrong but a permanent wedge, since every later ``claim_work`` for *any* caller raises
+    comparing it against the clock.
+    """
+    history = entry.history
+    if not history and entry.state is not LifecycleState.QUEUED:
+        raise ValueError(
+            f"the saved entry is {entry.state.value!r} with no transition recording how it got "
+            "there; a state is recorded, never inferred"
+        )
+    if history and entry.state is not history[-1].to_state:
+        raise ValueError(
+            f"the saved entry's state {entry.state.value!r} is not where its history ends "
+            f"({history[-1].to_state.value!r}); a state is recorded, never inferred"
+        )
+    if entry.state is LifecycleState.BLOCKED and not (history and history[-1].missing_inputs):
+        raise ValueError("a saved blocked entry must record what it is blocked on")
+    if entry.lease_expires is not None and not isinstance(entry.lease_expires, (int, float)):
+        raise ValueError("a saved lease expiry must be a time, or absent")
+
+
 class Catalog:
     """A collection of entries with de-duplication across identifiers.
 
@@ -421,6 +450,7 @@ class Catalog:
         catalog = cls()
         for record in data["entries"]:
             entry = CatalogEntry.from_dict(record)
+            _require_coherent_entry(entry)
             for key in entry.identifiers.keys():
                 if key in catalog._index:
                     field, value = key
@@ -432,6 +462,18 @@ class Catalog:
             catalog._reindex(entry)
         return catalog
 
+    def restore(self, data: dict[str, Any]) -> None:
+        """Replace this catalog's contents in place with a snapshot taken from :meth:`to_dict`.
+
+        Callers hold one catalog object for the life of a process, so rolling a failed mutation
+        back cannot mean handing out a different object. A write that mutates memory and then
+        fails to reach disk leaves the two permanently disagreeing — every later save persists a
+        state that was never durable — so the mutation is undone against the last good snapshot.
+        """
+        replacement = Catalog.from_dict(data)
+        self._entries = replacement._entries
+        self._index = replacement._index
+
     def add(
         self,
         identifiers: Identifiers,
@@ -440,6 +482,7 @@ class Catalog:
         difficulty: str | None = None,
         ground_truth: GroundTruth | None = None,
         source: str | None = None,
+        merge_identity: bool = True,
     ) -> CatalogEntry:
         """Add a candidate, or resolve it to the existing entry it duplicates.
 
@@ -463,6 +506,15 @@ class Catalog:
         entry's blind result under an identifier of the submitter's choosing, and a bridging
         submission could transplant the label onto a different paper entirely. Correcting a
         labelled entry's identity is a curation decision, made against the dataset it came from.
+
+        ``merge_identity=False`` resolves a candidate to its existing entry without touching that
+        entry's identity at all: no identifiers absorbed, no bridged entries folded. Callers at an
+        untrusted boundary use it, because the frozen-identity refusal above fires *only* for a
+        labelled entry — which made the refusal itself a perfect membership oracle for the graded
+        set, recoverable by submitting a junk identifier against each accession in turn. A rule
+        that applies to every entry leaks nothing, and identity-changing edits belong to curation
+        either way. Class, difficulty, and provenance still fill in where the entry left them
+        unset, so resolving a duplicate is not a no-op.
         """
         if not identifiers.keys():
             raise ValueError(
@@ -470,6 +522,14 @@ class Catalog:
                 "(a non-empty title, DOI, PubMed ID, or accession)"
             )
         matches = self._match_all(identifiers)
+        if matches and not merge_identity:
+            canonical = max(matches, key=lambda e: (len(e.history), e.ground_truth is not None))
+            if canonical.model_class is ModelClass.UNASSIGNED:
+                canonical.model_class = model_class
+            if canonical.difficulty is None:
+                canonical.difficulty = difficulty
+            _record_source(canonical, source)
+            return canonical
         if matches:
             # The richest match (most lifecycle history, then a label) is kept; the others fold
             # into it. On ties this is the earliest-inserted, preserving the prior single-match

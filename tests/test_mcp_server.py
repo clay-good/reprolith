@@ -696,11 +696,35 @@ def test_a_blocked_entry_can_be_returned_to_the_queue() -> None:
     assert claim["claimed"]
 
 
-def test_requeue_refuses_an_entry_that_is_not_blocked() -> None:
+def test_requeue_refuses_every_state_except_blocked() -> None:
+    # Leaning on the state machine alone was not enough: it permits failed -> queued and
+    # quarantined -> queued, so a caller could requeue a recorded failure and record a success
+    # over the top (laundering a verdict), or undo a curator's quarantine.
+    from reprolith.enums import LifecycleState
+
+    for state in LifecycleState:
+        catalog, query, _ = _recording_fixture()
+        entry = catalog.find(Identifiers(title="", accession="ACC-A"))
+        entry._state = state
+        result, _ = _effectful(query, catalog, "requeue_entry",
+                               {"accession": "ACC-A", "requester": "c", "reason": "why"})
+        assert result["requeued"] is (state is LifecycleState.BLOCKED), state
+
+
+def test_a_recorded_failure_cannot_be_laundered_into_a_certification() -> None:
     catalog, query, _ = _recording_fixture()
-    text, is_error = _effectful(query, catalog, "requeue_entry",
-                                {"accession": "ACC-A", "requester": "c", "reason": "why"})
-    assert is_error and "queued -> queued is not permitted" in text
+    failed = query._ledger.issue(build_certificate(
+        paper=PaperIdentity(title="Paper A", doi="10.1/a"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(claim_id="c1", quantity="AUC", verdict=Verdict.FAILED,
+                                     source_location="Table 1", root_cause="parameter mismatch")],
+    ))
+    done, _ = _effectful(query, catalog, "record_result",
+                         {"accession": "ACC-A", "requester": "a", "digest": failed})
+    assert done["state"] == "failed"
+    back, _ = _effectful(query, catalog, "requeue_entry",
+                         {"accession": "ACC-A", "requester": "a", "reason": "try again"})
+    assert back == {"requeued": False, "reason": "entry is failed, not blocked"}
 
 
 def test_recording_tools_are_refused_on_a_read_only_server() -> None:
@@ -710,3 +734,112 @@ def test_recording_tools_are_refused_on_a_read_only_server() -> None:
         resp = handle_request(query, {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
                                       "params": {"name": name, "arguments": args}})
         assert resp["result"]["isError"]
+
+
+def test_a_certificate_must_positively_identify_the_entrys_paper() -> None:
+    # Refusing only a *contradiction* on doi/pubmed is vacuous here: no entry in the shipped
+    # catalog carries either, so every certificate ever issued passed the check and any caller
+    # could file the metformin reproduction under any accession they liked.
+    catalog = Catalog()
+    catalog.add(Identifiers(title="A Paper Nobody Reproduced", accession="ATTACK-1"))
+    ledger = CertificateLedger()
+    digest = ledger.issue(build_certificate(
+        paper=PaperIdentity(title="Zake2021 - PBPK model of metformin", doi="10.1371/x"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(claim_id="c1", quantity="Cmax", verdict=Verdict.REPRODUCED,
+                                     source_location="Table 1")],
+    ))
+    query = ReprolithQuery(catalog, ledger)
+    text, is_error = _effectful(query, catalog, "record_result",
+                                {"accession": "ATTACK-1", "requester": "a", "digest": digest})
+    assert is_error and "names no identifier this entry carries" in text
+    assert catalog.find(Identifiers(title="", accession="ATTACK-1")).state.value == "queued"
+    # A title is a sufficient witness when nothing stronger exists on either side — it is the
+    # one identifier every record carries — and normalization makes it robust to case/spacing.
+    catalog.add(Identifiers(title="  zake2021 - PBPK MODEL of  metformin ", accession="OK-1"))
+    done, is_error = _effectful(query, catalog, "record_result",
+                                {"accession": "OK-1", "requester": "a", "digest": digest})
+    assert not is_error and done["recorded"]
+
+
+def test_a_superseded_certificate_is_not_recordable() -> None:
+    catalog, query, digest = _recording_fixture()
+    correction = query._ledger.issue(build_certificate(
+        paper=PaperIdentity(title="Paper A", doi="10.1/a"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(claim_id="c1", quantity="AUC", verdict=Verdict.FAILED,
+                                     source_location="Table 1", root_cause="parameter mismatch")],
+        supersedes=query.certificate_object(digest),
+    ))
+    stale, _ = _effectful(query, catalog, "record_result",
+                          {"accession": "ACC-A", "requester": "a", "digest": digest})
+    assert stale == {"recorded": False,
+                     "reason": "that certificate has been superseded; record the correction instead"}
+    current, _ = _effectful(query, catalog, "record_result",
+                            {"accession": "ACC-A", "requester": "a", "digest": correction})
+    assert current["recorded"] and current["state"] == "failed"
+
+
+def test_submitting_a_paper_reveals_nothing_about_the_graded_set() -> None:
+    # The frozen-identity refusal fired only for a labelled entry, which made submit_paper a
+    # membership oracle for the blind test set: probe each accession with a junk identifier and
+    # read the partition off which ones refuse.
+    def transcript(labelled: bool) -> list:
+        catalog = Catalog()
+        catalog.add(
+            Identifiers(title="Paper A", accession="ACC-A"), ModelClass.ODE_PKPD,
+            ground_truth=(GroundTruth(expected=OverallVerdict.REPRODUCED, source="curation")
+                          if labelled else None),
+        )
+        query = ReprolithQuery(catalog, CertificateLedger())
+        return [_effectful(query, catalog, "submit_paper",
+                           {"title": "Paper A", "pubmed_id": "probe-1"}),
+                _effectful(query, catalog, "list_catalog", {}),
+                _effectful(query, catalog, "status", {"accession": "ACC-A"})]
+
+    # Nothing an entry-level read or write returns distinguishes the two catalogs. (The aggregate
+    # labelled/unlabelled counts in backlog_health are published on purpose: they say how much of
+    # the backlog is graded, never which entries.)
+    assert transcript(labelled=True) == transcript(labelled=False)
+    # The submission still resolves to the one entry, and says what it did not record.
+    reply = transcript(labelled=True)[0][0]
+    assert reply["resolved_to_existing"] and reply["identifiers_not_recorded"] == ["pubmed_id"]
+
+
+def test_a_change_that_cannot_be_persisted_is_rolled_back() -> None:
+    # on_change() runs after the in-memory mutation; an OSError there left memory permanently
+    # ahead of disk, and every later save persisted a state that was never durable.
+    catalog, query, digest = _recording_fixture()
+
+    def refuse_to_save() -> None:
+        raise OSError(28, "No space left on device")
+
+    resp = handle_request(query, {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                  "params": {"name": "record_result",
+                                             "arguments": {"accession": "ACC-A",
+                                                           "requester": "a", "digest": digest}}},
+                          catalog=catalog, on_change=refuse_to_save, now=lambda: 0.0)
+    assert resp["result"]["isError"]
+    assert "rolled back" in resp["result"]["content"][0]["text"]
+    entry = catalog.find(Identifiers(title="", accession="ACC-A"))
+    assert entry.state.value == "queued" and entry.history == ()
+
+
+def test_a_saved_catalog_that_contradicts_itself_is_refused() -> None:
+    import pytest
+    from reprolith.catalog import Catalog as C
+
+    catalog = Catalog()
+    catalog.add(Identifiers(title="Paper A", accession="ACC-A"))
+    sound = catalog.to_dict()
+    C.from_dict(sound)  # the honest file still loads
+
+    state_without_history = json.loads(json.dumps(sound))
+    state_without_history["entries"][0]["state"] = "certified"
+    blocked_without_inputs = json.loads(json.dumps(sound))
+    blocked_without_inputs["entries"][0]["state"] = "blocked"
+    unusable_lease = json.loads(json.dumps(sound))
+    unusable_lease["entries"][0]["lease_expires"] = "soon"
+    for corrupt in (state_without_history, blocked_without_inputs, unusable_lease):
+        with pytest.raises(ValueError):
+            C.from_dict(corrupt)
