@@ -123,6 +123,10 @@ def render_badge(cert: Certificate) -> str:
     The colour reflects the overall verdict and reserves green for an unqualified reproduction,
     so a qualified or partial result can never render as a clean success. The scope statement
     travels in the badge's title and cannot be emptied.
+
+    The scope text comes from the certificate, which may have been contributed by someone else,
+    so it is escaped: this badge is embedded raw into the public registry page, and an SVG
+    ``<title>`` is not a text-only element to an HTML parser.
     """
     verdict = cert.overall.value
     color = _BADGE_COLOR[verdict]
@@ -130,7 +134,7 @@ def render_badge(cert: Certificate) -> str:
     label_w = len(label) * 7 + 10
     value_w = len(verdict) * 7 + 10
     total = label_w + value_w
-    scope = cert.scope.machine
+    scope = html.escape(cert.scope.machine)
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{total}" height="20" role="img" '
         f'aria-label="{label}: {verdict}">'

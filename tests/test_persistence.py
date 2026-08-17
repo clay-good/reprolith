@@ -134,3 +134,27 @@ def test_bundle_round_trips_through_json() -> None:
     assert reloaded.to_dict() == bundle.to_dict()
     assert reloaded.origin is ModelOrigin.AUTHOR_SUPPLIED
     assert reloaded.load_bearing_assumptions()[0].id == "k"
+
+
+def test_a_stored_verdict_that_does_not_follow_from_its_evidence_is_refused() -> None:
+    """The honesty invariants must hold for a certificate read off disk, not only one just built."""
+    import pytest
+
+    cert = build_certificate(
+        paper=PaperIdentity(title="P", doi="10.1/x"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[
+            ClaimAssessment(
+                claim_id="c1", quantity="Cmax", verdict=Verdict.REPRODUCED,
+                source_location="Table 1", assumption_qualified=True,
+            )
+        ],
+    )
+    assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+    content = cert.content()
+    assert certificate_from_content(content).overall is OverallVerdict.PARTIALLY_REPRODUCED
+
+    # Hand-edited to claim a clean pass over an assumption-qualified claim.
+    content["overall"] = "reproduced"
+    with pytest.raises(ValueError, match="does not follow"):
+        certificate_from_content(content)

@@ -2,15 +2,17 @@
 
 Every durable Reprolith artifact serializes to a plain dict via ``to_dict``/``content``; this
 module reconstructs them, so a stored certificate, dossier, or reconstruction bundle can be
-re-opened, re-served, or re-hashed without the inputs that produced it. Reconstruction is exact
-(the certificate's overall verdict, for instance, is taken from storage, not re-derived), so a
-round trip is byte-identical.
+re-opened, re-served, or re-hashed without the inputs that produced it. Reconstruction is exact,
+so a round trip is byte-identical — but not credulous: a certificate whose stored overall verdict
+does not follow from its own stored evidence is refused, because the honesty invariants would
+otherwise hold only for certificates built in-process and not for the ones read back off disk.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from .certificate import derive_overall
 from .dossier import (
     Dossier,
     DossierClaim,
@@ -73,17 +75,33 @@ def _assumption_from(record: dict[str, Any]) -> Assumption:
 
 
 def certificate_from_content(content: dict[str, Any]) -> Certificate:
-    """Reconstruct a :class:`Certificate` from the dict produced by :meth:`Certificate.content`."""
+    """Reconstruct a :class:`Certificate` from the dict produced by :meth:`Certificate.content`.
+
+    The stored overall verdict is re-derived from the stored assessments and assumptions, and a
+    file whose verdict does not follow from its own evidence is refused rather than loaded. The
+    honesty invariants are enforced when a certificate is *built*; without this check a hand-edited
+    or corrupted file could carry a clean green ``reproduced`` over assumption-qualified claims all
+    the way to the public registry, which reads certificates from disk and never rebuilds them.
+    """
     paper = content["paper"]
     pin = content["engine_pin"]
     scope = content["scope"]
+    assessments = tuple(_assessment_from(a) for a in content["assessments"])
+    assumptions = tuple(_assumption_from(a) for a in content["assumptions"])
+    stored = OverallVerdict(content["overall"])
+    derived = derive_overall(assessments, assumptions)
+    if stored is not derived:
+        raise ValueError(
+            f"certificate overall verdict {stored.value!r} does not follow from its own "
+            f"assessments and assumptions (which give {derived.value!r})"
+        )
     return Certificate(
         paper=PaperIdentity(title=paper["title"], doi=paper["doi"], pubmed_id=paper["pubmed_id"]),
         engine_pin=EnginePin(engine=pin["engine"], version=pin["version"], algorithm=pin["algorithm"]),
-        overall=OverallVerdict(content["overall"]),
+        overall=stored,
         scope=Scope(machine=scope["machine"], human=scope["human"]),
-        assessments=tuple(_assessment_from(a) for a in content["assessments"]),
-        assumptions=tuple(_assumption_from(a) for a in content["assumptions"]),
+        assessments=assessments,
+        assumptions=assumptions,
         gap_report=tuple(content["gap_report"]),
         supersedes=content.get("supersedes"),
     )

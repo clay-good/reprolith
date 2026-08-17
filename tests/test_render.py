@@ -269,3 +269,17 @@ def test_render_registry_track_record_banner_is_honest() -> None:
     # Backward compatible: with no summary, no banner (existing callers unaffected).
     assert "Blind self-validation" not in render_registry([("ode-pkpd", clean)])
     assert "clinical" in html.lower()  # scope disclaimer still present
+
+
+def test_registry_escapes_a_scope_statement_carried_in_from_a_stored_certificate() -> None:
+    """A contributed certificate must not be able to inject markup into the public registry."""
+    from reprolith import Scope, certificate_from_content, render_badge, render_registry
+
+    payload = '</title><script>alert(1)</script>'
+    cert = _cert([_claim(Verdict.REPRODUCED, cid="a")], scope=Scope(machine=payload, human="h"))
+    # Straight through the deserialize path the registry actually uses.
+    reloaded = certificate_from_content(cert.content())
+    # The page carries its own filter <script>; what must never appear is the injected one.
+    for html in (render_badge(reloaded), render_registry([("ode-pkpd", reloaded)])):
+        assert "<script>alert" not in html
+        assert "&lt;script&gt;alert" in html
