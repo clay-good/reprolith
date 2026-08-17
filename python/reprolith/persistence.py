@@ -179,7 +179,9 @@ def bundle_from_dict(record: dict[str, Any]) -> ReconstructionBundle:
         recipe=tuple(RecipeStep(**s) for s in record["recipe"]),
         assumptions=tuple(_assumption_from(a) for a in record["assumptions"]),
         non_reconstructable=tuple(NonReconstructable(**n) for n in record["non_reconstructable"]),
-        mismatches=tuple(record["mismatches"]),
+        mismatches=(
+            None if record.get("mismatches") is None else tuple(record["mismatches"])
+        ),
         source_dossier=record["source_dossier"],
     )
 

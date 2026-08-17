@@ -174,16 +174,16 @@ def test_an_estimation_claim_that_states_no_protocol_is_refused() -> None:
         )
 
 
-def test_an_override_the_run_would_ignore_is_refused_rather_than_published(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_an_override_the_run_would_ignore_is_refused_rather_than_published() -> None:
     """A parameter a rule determines is recomputed by the solver, so setting it changes nothing.
 
     The protocol would then name an override the run never had — the certificate asserting a
-    condition it did not hold. The metformin model has such parameters (its assignment-rule blood
-    flows); moving one by fifteen orders of magnitude left the Cmax untouched.
+    condition it did not hold. The shipped metformin model has such parameters (its assignment-rule
+    blood flows); moving one by fifteen orders of magnitude left the Cmax untouched.
     """
-    from reprolith import Claim, EnginePin, PaperIdentity, certify_model
+    pytest.importorskip(
+        "libsbml", reason="the optional 'engine' extra (python-libsbml) is not installed"
+    )
     from reprolith.certify import _apply_overrides
 
     rule_model = """<?xml version="1.0" encoding="UTF-8"?>
@@ -207,11 +207,21 @@ def test_an_override_the_run_would_ignore_is_refused_rather_than_published(
     with pytest.raises(ValueError, match="not in the model"):
         _apply_overrides(rule_model, (("absent", 5.0),))
 
-    # And the protocol prints the value that was run, at full precision — six significant figures
-    # printed two distinct doses identically.
+
+def test_the_protocol_prints_the_value_that_was_run_and_what_was_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Six significant figures printed two distinct doses identically, and named no readout.
+
+    A dose rounded for display is a number a reader re-running the claim does not get, and two
+    claims that differ only by peak-versus-area were indistinguishable on the certificate.
+    """
+    import reprolith.certify as certify_module
+    from reprolith import Claim, EnginePin, PaperIdentity, certify_model
+
     times = tuple(float(i) for i in range(3))
-    monkeypatch.setattr("reprolith.certify.simulate", lambda *a, **k: (times, (1.0, 1.0, 1.0)))
-    monkeypatch.setattr("reprolith.certify._apply_overrides", lambda sbml, overrides: sbml)
+    monkeypatch.setattr(certify_module, "simulate", lambda *a, **k: (times, (1.0, 1.0, 1.0)))
+    monkeypatch.setattr(certify_module, "_apply_overrides", lambda sbml, overrides: sbml)
     cert = certify_model(
         "<sbml/>", paper=PaperIdentity(title="p", doi="10.0/x"),
         engine_pin=EnginePin(engine="test-engine", version="0.0.0"), duration=2.0, steps=2,

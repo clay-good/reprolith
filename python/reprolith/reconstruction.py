@@ -22,7 +22,7 @@ dependency-heavy half, deferred; this defines the shape it targets.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
@@ -108,7 +108,10 @@ class ReconstructionBundle:
     recipe: tuple[RecipeStep, ...] = ()
     assumptions: tuple[Assumption, ...] = ()
     non_reconstructable: tuple[NonReconstructable, ...] = ()
-    mismatches: tuple[str, ...] = field(default=())
+    #: What adopt-and-verify found when the model was compared against the dossier — or ``None``
+    #: for a bundle where that comparison was never run. An empty tuple used to carry both, so a
+    #: published `"mismatches": []` read as "checked and agreed" when nothing had been checked.
+    mismatches: tuple[str, ...] | None = None
     source_dossier: str | None = None
 
     def load_bearing_assumptions(self) -> tuple[Assumption, ...]:
@@ -159,7 +162,7 @@ class ReconstructionBundle:
             "recipe": [s.to_dict() for s in self.recipe],
             "assumptions": [a.to_dict() for a in self.assumptions],
             "non_reconstructable": [n.to_dict() for n in self.non_reconstructable],
-            "mismatches": list(self.mismatches),
+            "mismatches": None if self.mismatches is None else list(self.mismatches),
             "source_dossier": self.source_dossier,
         }
 

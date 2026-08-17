@@ -17,7 +17,7 @@
     "version": "4.46.300 (Source)"
   },
   "entry": "BIOMD0000001028",
-  "mismatches": [],
+  "mismatches": null,
   "model": {
     "detected_format": "sbml",
     "filename": "worked_examples/Zake2021_metformin_human_single_PO.xml",

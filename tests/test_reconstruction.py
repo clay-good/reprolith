@@ -150,3 +150,22 @@ def test_a_recipe_naming_claims_the_dossier_does_not_state_does_not_cover_it() -
     empty = Dossier(entry="10.1/x")
     assert bundle.unmatched_steps(empty) == ("Cmax-500mg",)
     assert bundle.covers(empty) is False
+
+
+def test_a_bundle_distinguishes_no_mismatches_from_never_having_looked() -> None:
+    """`"mismatches": []` was published for a comparison that was never run.
+
+    Adopt-and-verify's whole point is to say what the adopted model and the extracted dossier
+    disagree about, so "checked and agreed" and "never checked" cannot be the same value on a
+    published artifact — and the shipped bundle was the second while reading as the first.
+    """
+    from dataclasses import replace
+
+    from reprolith import EnginePin, ReconstructionBundle
+
+    unchecked = ReconstructionBundle(entry="X", engine_pin=EnginePin(engine="e", version="1"))
+    assert unchecked.mismatches is None
+    assert unchecked.to_dict()["mismatches"] is None
+
+    agreed = replace(unchecked, mismatches=())
+    assert agreed.to_dict()["mismatches"] == []

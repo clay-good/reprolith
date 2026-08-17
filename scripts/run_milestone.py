@@ -97,6 +97,11 @@ def main() -> None:
             recipe=recipe,
             assumptions=tuple(Assumption(**a) for a in entry.get("assumptions", [])),
             source_dossier=accession,
+            # Left unchecked, and recorded as unchecked. Adopt-and-verify compares an adopted
+            # model against a dossier extracted from the *paper*; here the dossier was ingested
+            # from this very file, so the comparison can only ever come back empty and would
+            # publish a vacuous agreement as though something had been verified.
+            mismatches=None,
         )
         (bundle_dir / f"{accession}.json").write_text(
             json.dumps(bundle.to_dict(), indent=2, sort_keys=True) + "\n"

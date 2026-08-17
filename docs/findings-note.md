@@ -499,10 +499,15 @@ can produce a certificate that claims more than it checked:
 - **A published bundle still cannot re-run the run it describes, and now says less than the
   certificate does.** The certificate records the window, the sample count, the readout, and the
   dose; `RecipeStep` records none of them, so running the metformin bundle strictly as published
-  gives both claims the same 6.07 and fails the 1000 mg one. The bundle's `mismatches: []` is also
-  never computed — the milestone script does not call the comparison — so "checked and agreed" and
-  "never checked" are the same published value. And `covers()`, which exists to stop a bundle
-  overstating what it addresses, is called from nowhere: on the shipped pair it returns false.
+  gives both claims the same 6.07 and fails the 1000 mg one. And `covers()`, which exists to stop
+  a bundle overstating what it addresses, is called from nowhere: on the shipped pair it returns
+  false, because the claims come from the claims dataset rather than from the dossier the bundle
+  names as its source.
+
+  What *was* fixed here is the bundle's mismatch list. It published `[]` for a comparison that had
+  never run, and "checked and agreed" is not the same artifact as "never checked" — the field now
+  distinguishes them, and the milestone records the comparison as unchecked, because a dossier
+  ingested from the same file it would be compared against can only ever come back empty.
 - **An intake unit is fabricated where the source states none.** `Parameter` documents its own
   invariant — "an unstated unit is a Gap, not a value" — and intake fills an unstated unit with
   `dimensionless`: 81 of the 94 parameters in the shipped metformin dossier, including blood flows
