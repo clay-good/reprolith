@@ -373,6 +373,16 @@ as "a valid shipped model and no gaps: adopt-and-verify with nothing to assume".
 is now recorded as a load-bearing gap, as are function definitions the model's own expressions
 call, and the difficulty follows.
 
+Two smaller fabrications went with it. A unit the model does not state was being filled in as
+`dimensionless` — 81 of the 115 values in the metformin dossier, including hepatic blood flows and
+a glomerular filtration rate, all at `quoted` confidence — though `Parameter` says in its own
+contract that an unstated unit is a gap rather than a value. Dimensionless is not an absence but a
+physical claim, and `unit-mismatch` is a catalogued failure mode, so the magnitudes are still
+recorded and the missing units are now reported as one gap. And compartments were dropped entirely
+while reconstruction builds a single compartment of unit size: a concentration-stated species in a
+1799 mL liver was already refused at intake, but an amount-stated one passed through, and the
+dossier said nothing about the volume. It says it now.
+
 ## Two surfaces that could only agree by luck
 
 The inline linter is what an agent gates its workflow on; the judge is what publishes. They ran the
@@ -508,13 +518,10 @@ can produce a certificate that claims more than it checked:
   never run, and "checked and agreed" is not the same artifact as "never checked" — the field now
   distinguishes them, and the milestone records the comparison as unchecked, because a dossier
   ingested from the same file it would be compared against can only ever come back empty.
-- **An intake unit is fabricated where the source states none.** `Parameter` documents its own
-  invariant — "an unstated unit is a Gap, not a value" — and intake fills an unstated unit with
-  `dimensionless`: 81 of the 94 parameters in the shipped metformin dossier, including blood flows
-  and a glomerular filtration rate, recorded at `quoted` confidence. The 13 that do state units
-  cite model-local ids (`unit_0`) the dossier does not carry, so they are unresolvable from the
-  dossier alone. Compartments are dropped entirely and reconstruction assumes unit size, which the
-  refusal path catches for concentration-stated species and not for amount-stated ones.
+- **The units a dossier does carry are unresolvable from the dossier.** The parameters that state
+  a unit cite model-local ids (`unit_0`, `unit_1`), and the dossier carries no unit definitions, so
+  "389.92 unit_0" needs the original file to read. (A unit the model states *nothing* for is no
+  longer fabricated — see below.)
 - **The committed corroboration file records no engine versions**, so its staleness cannot be
   detected. A CI job does now install the extra and run the cross-engine tests against live
   engines, so what CI checks is no longer only that a committed JSON says `true`.

@@ -32,6 +32,13 @@ from .dossier import (
 )
 from .engine import EngineUnavailable
 
+#: What a parameter's unit says when the model states none. `Parameter` requires a non-empty unit,
+#: and the value itself *is* stated — so the honest record is a value whose unit is missing, plus a
+#: gap saying so. It used to read ``dimensionless``, which is not an absence but a physical claim,
+#: and a wrong one for 81 of the 94 parameters in the shipped metformin dossier: blood flows, a
+#: glomerular filtration rate, transporter maxima, all recorded at `quoted` confidence.
+UNSTATED_UNIT = "unstated"
+
 
 def _libsbml() -> Any:
     try:
@@ -82,7 +89,9 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
     for provenance. Dynamic (non-constant, non-boundary) species become state variables with
     their initial conditions; valued parameters become parameters; rate and assignment rules
     become equations, each recording which kind of rule it was so reconstruction rebuilds the
-    same model. Units come from the SBML where stated, and fall back to ``dimensionless``. A
+    same model. A unit the model does not state is recorded as *unstated* and reported as a gap,
+    never filled in with ``dimensionless`` — a hepatic blood flow is not dimensionless, and
+    ``Parameter`` says in its own contract that an unstated unit is a gap rather than a value. A
     species stating a concentration in a compartment that is not unit-sized is refused rather
     than read as an amount (see :func:`_initial_amount`).
     """
@@ -107,7 +116,7 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
             Parameter(
                 name=species.getId(),
                 value=float(value),
-                unit=species.getSubstanceUnits() or "dimensionless",
+                unit=species.getSubstanceUnits() or UNSTATED_UNIT,
                 source_location=source,
                 confidence=ExtractionConfidence.QUOTED,
             )
@@ -130,7 +139,7 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
         extracted = Parameter(
             name=parameter.getId(),
             value=float(parameter.getValue()),
-            unit=parameter.getUnits() or "dimensionless",
+            unit=parameter.getUnits() or UNSTATED_UNIT,
             source_location=source,
             confidence=ExtractionConfidence.QUOTED,
         )
@@ -170,8 +179,32 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
         parameters=tuple(parameters),
         initial_conditions=tuple(initial_conditions),
         artifacts=(artifact,),
-        gaps=_unread_constructs(model),
+        gaps=_unread_constructs(model)
+        + _unstated_units(tuple(parameters) + tuple(initial_conditions)),
     )
+
+
+def _unstated_units(values: tuple[Parameter, ...]) -> tuple[Gap, ...]:
+    """One gap for every extracted value whose unit the source does not state.
+
+    Load-bearing because `unit-mismatch` is a catalogued failure mode: a rate constant read in the
+    wrong time base reproduces nothing, and a dossier that silently calls it dimensionless gives a
+    reconstructor no reason to check. The artifact still runs as its author wrote it — this is
+    about what the *dossier* can honestly claim to have extracted.
+    """
+    unstated = sorted({v.name for v in values if v.unit == UNSTATED_UNIT})
+    if not unstated:
+        return ()
+    shown = ", ".join(unstated[:5]) + (", …" if len(unstated) > 5 else "")
+    return (Gap(
+        element="units",
+        kind=GapKind.UNIT,
+        detail=(
+            f"{len(unstated)} of {len(values)} extracted values state no unit in the artifact "
+            f"({shown}); their magnitudes are recorded, their units are not"
+        ),
+        load_bearing=True,
+    ),)
 
 
 def _unread_constructs(model: Any) -> tuple[Gap, ...]:
@@ -201,6 +234,27 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
                 f"the artifact's dynamics are {model.getNumReactions()} reaction(s), which this "
                 "dossier records no equation for; the state variables listed here have no stated "
                 "law of motion, and a model rebuilt from the dossier alone does not move"
+            ),
+            load_bearing=True,
+        ))
+    volumes = [
+        model.getCompartment(i) for i in range(model.getNumCompartments())
+    ]
+    sized = [c for c in volumes if c.isSetSize() and c.getSize() != 1.0]
+    if sized:
+        # Reconstruction builds one compartment of size 1, so a model whose species live in
+        # compartments of other sizes cannot be rebuilt as itself: every concentration is out by
+        # that volume, and `simulate` reads concentrations. A concentration-stated species in such
+        # a compartment is refused outright at intake; an amount-stated one is representable, and
+        # this is what the dossier does not carry about it.
+        named = ", ".join(f"{c.getId()}={c.getSize():g}" for c in sized[:5])
+        gaps.append(Gap(
+            element="compartment volumes",
+            kind=GapKind.OTHER,
+            detail=(
+                f"{len(sized)} of {len(volumes)} compartment(s) are not unit-sized ({named}); the "
+                "dossier records no compartment, and a model rebuilt from it places every species "
+                "in a single compartment of size 1"
             ),
             load_bearing=True,
         ))

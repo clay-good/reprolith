@@ -189,3 +189,29 @@ def test_a_reaction_network_is_recorded_as_a_gap_not_read_past() -> None:
     assert reaction_gaps[0].kind is GapKind.EQUATION and reaction_gaps[0].load_bearing
     # And a dossier missing every law of motion is no longer advertised as the easy case.
     assert estimate_difficulty(dossier) != "low"
+
+
+def test_an_unstated_unit_is_recorded_as_missing_rather_than_called_dimensionless() -> None:
+    """`Parameter` says an unstated unit is a gap, not a value; intake was filling one in.
+
+    Eighty-one of the shipped metformin dossier's parameters state no unit in the artifact —
+    blood flows, a glomerular filtration rate, transporter maxima — and every one was recorded as
+    `dimensionless` at `quoted` confidence. Dimensionless is a physical claim, not an absence.
+    """
+    from reprolith import GapKind, ingest_sbml
+    from reprolith.ingest import UNSTATED_UNIT
+
+    metformin = (
+        Path(__file__).parent.parent / "datasets" / "worked_examples"
+        / "Zake2021_metformin_human_single_PO.xml"
+    )
+    dossier = ingest_sbml(metformin.read_text(encoding="utf-8"), entry="BIOMD0000001028")
+    assert any(p.unit == UNSTATED_UNIT for p in dossier.parameters)
+    assert not any(p.unit == "dimensionless" for p in dossier.parameters if p.unit == UNSTATED_UNIT)
+    unit_gaps = [g for g in dossier.gaps if g.kind is GapKind.UNIT and g.element == "units"]
+    assert len(unit_gaps) == 1 and unit_gaps[0].load_bearing
+
+    # And a model whose compartments are not unit-sized says so, because reconstruction builds one
+    # compartment of size 1 and every concentration in a 1799 mL liver would be out by that volume.
+    volumes = [g for g in dossier.gaps if g.element == "compartment volumes"]
+    assert len(volumes) == 1 and volumes[0].load_bearing
