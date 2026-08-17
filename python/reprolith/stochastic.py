@@ -84,6 +84,18 @@ class Reaction:
             state[species] += stoich
 
 
+def _validate_run(initial: Sequence[int], duration: float) -> None:
+    """Refuse a run whose request is not a run: the sampler would return the initial state."""
+    if not math.isfinite(duration) or duration < 0.0:
+        raise ValueError(
+            f"a trajectory needs a finite, non-negative duration, not {duration!r}; a run that "
+            "cannot advance returns its initial state, which reads as a perfect reproduction"
+        )
+    negative = [i for i, count in enumerate(initial) if count < 0]
+    if negative:
+        raise ValueError(f"initial molecule counts must be non-negative; species {negative} are not")
+
+
 def gillespie(
     n_species: int,
     reactions: Sequence[Reaction],
@@ -105,7 +117,13 @@ def gillespie(
     ``max_events`` is an optional safety valve: when set, a trajectory that fires more than that many
     reactions raises ``ValueError`` rather than running unbounded. It defaults to ``None`` (unbounded)
     for trusted callers; untrusted entry points (the MCP linter) pass a finite ceiling.
+
+    A non-finite or negative ``duration``, or a negative initial count, is refused for the reason a
+    broken rate is: ``while t < duration`` is false immediately, so the run returns the initial
+    state as its result, and a claim reporting the initial condition is then judged a perfect
+    reproduction of a simulation that never advanced.
     """
+    _validate_run(initial, duration)
     state = list(initial)
     t = 0.0
     events = 0
@@ -144,9 +162,15 @@ def gillespie_at_times(
     """Run one SSA trajectory and return the species counts sampled at each time in ``times``.
 
     The SSA state is piecewise-constant between reaction firings, so each sample time reads the state
-    that holds over the interval containing it. ``times`` must be non-decreasing.
+    that holds over the interval containing it. ``times`` must be non-decreasing — a stated
+    precondition, so it is checked: a sample time before the one preceding it reads a state the
+    trajectory has already left behind, silently returning an envelope that never happened.
     """
     ordered = list(times)
+    for earlier, later in zip(ordered, ordered[1:]):
+        if later < earlier:
+            raise ValueError(f"sample times must be non-decreasing; {later} follows {earlier}")
+    _validate_run(initial, ordered[-1] if ordered else 0.0)
     state = list(initial)
     t = 0.0
     samples: list[list[int]] = []

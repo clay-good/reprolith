@@ -415,3 +415,31 @@ def test_a_stochastic_certificate_records_the_sampling_that_produced_it() -> Non
     )
     assert plain.protocol is None
     assert "protocol" not in plain.to_dict()
+
+
+def test_a_duration_the_run_cannot_advance_through_is_refused() -> None:
+    # Same failure mode as a broken rate, reached through the other caller-supplied number: with a
+    # NaN or negative duration the loop never runs, the ensemble returns the initial state, and a
+    # claim reporting the initial condition is judged a perfect reproduction of a simulation that
+    # never happened. Duration is caller-supplied at the untrusted linter boundary.
+    decay = [Reaction(rate=1.0, reactants=((0, 1),), products=((1, 1),))]
+    for bad in (float("nan"), float("inf"), -5.0):
+        with pytest.raises(ValueError, match="finite, non-negative duration"):
+            ensemble_final_counts(2, decay, [100, 0], duration=bad, trajectories=5, seed=1)
+    # A zero duration is a well-defined request for the initial state, and stays legal.
+    assert ensemble_final_counts(
+        2, decay, [100, 0], duration=0.0, trajectories=2, seed=1
+    ) == [[100, 0], [100, 0]]
+
+
+def test_negative_initial_counts_and_out_of_order_sample_times_are_refused() -> None:
+    decay = [Reaction(rate=1.0, reactants=((0, 1),), products=((1, 1),))]
+    with pytest.raises(ValueError, match="non-negative"):
+        ensemble_final_counts(2, decay, [-5, 0], duration=1.0, trajectories=2, seed=1)
+    # "times must be non-decreasing" was documented but unchecked, so a backwards sample time read
+    # a state the trajectory had already left, returning an envelope that never happened.
+    with pytest.raises(ValueError, match="non-decreasing"):
+        ensemble_percentile_bands(
+            2, decay, [10, 0], [0.0, 5.0, 1.0], species=0,
+            percentiles=[50.0], trajectories=2, seed=1,
+        )
