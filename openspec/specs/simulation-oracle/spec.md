@@ -41,6 +41,16 @@ auditable and contestable.
   metric, sampled curve distance, or qualitative shape/behavior check)
 - **AND** it records the tolerance threshold and the actual measured discrepancy
 
+#### Scenario: A simulated verdict states the run behind it
+
+- **WHEN** a claim is judged from a time course Reprolith ran
+- **THEN** the assessment records the run: the window it was simulated over, the number of
+  samples taken, and any parameter override the claim set
+- **AND** without them the published number cannot be re-derived — a vanishingly short window
+  returns the initial condition and can agree with the paper for no reason, a curve distance and
+  an area both move with the sample count, and two claims that differ only by dose are otherwise
+  indistinguishable on the certificate
+
 #### Scenario: Two levels of reproduction are distinguished
 
 - **WHEN** a claim is evaluated

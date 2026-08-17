@@ -93,6 +93,22 @@ def _metric(times: Sequence[float], values: Sequence[float], metric: str) -> flo
     raise ValueError(f"unknown metric {metric!r} (use cmax, auc, or final)")
 
 
+def _run_protocol(
+    *, duration: float, steps: int, overrides: tuple[tuple[str, float], ...] = ()
+) -> str:
+    """Describe the run a time-course judgment rests on, for the certificate's protocol field.
+
+    A simulated number is a function of the window it was run over and how finely it was sampled:
+    a metric read off a vanishingly short run is the initial condition, and an AUC or a curve
+    distance moves with the sample count. The parameter overrides are here too, because a claim's
+    dose is what distinguishes one run of the same model from another.
+    """
+    stated = f"duration={duration:g}, steps={steps}"
+    if overrides:
+        stated += ", overrides: " + ", ".join(f"{name}={value:g}" for name, value in overrides)
+    return stated
+
+
 def _apply_overrides(sbml: str, overrides: tuple[tuple[str, float], ...]) -> str:
     from .sbml import _libsbml
 
@@ -121,14 +137,16 @@ def certify_model(
     """Run each claim under the pin, judge it, and assemble the certificate.
 
     The overall verdict is derived by the certificate rule, so a certificate resting on a
-    load-bearing assumption cannot report an unqualified ``reproduced``.
+    load-bearing assumption cannot report an unqualified ``reproduced``. Each assessment records
+    the run behind it — the window, the sample count, and the claim's parameter overrides — so the
+    published number can be re-derived from the certificate alone.
     """
     assessments = []
     for claim in claims:
         model = _apply_overrides(sbml, claim.parameter_overrides) if claim.parameter_overrides else sbml
         times, values = simulate(model, claim.species, duration=duration, steps=steps)
         predicted = _metric(times, values, claim.metric)
-        assessments.append(
+        assessment = (
             judge_scalar(
                 claim_id=claim.claim_id,
                 quantity=claim.quantity,
@@ -143,6 +161,14 @@ def certify_model(
                 # the blind set a crash rather than the honest verdict it had earned.
                 attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
                 assumption_qualified=claim.assumption_qualified,
+            )
+        )
+        assessments.append(
+            replace(
+                assessment,
+                protocol=_run_protocol(
+                    duration=duration, steps=steps, overrides=claim.parameter_overrides
+                ),
             )
         )
     return build_certificate(
@@ -191,13 +217,16 @@ def certify_curves(
     The curve counterpart of :func:`certify_model`: it reproduces a whole species time-course with
     the shared curve oracle (:func:`reprolith.judge_curve`) instead of a scalar metric, and builds
     the certificate through the same rule and scope flag. Each claim carries its own ``duration``
-    and ``steps``, so the reference and the simulation are sampled at identical points.
+    and ``steps``, so the reference and the simulation are sampled at identical points, and both
+    are recorded as the assessment's protocol: a curve distance is a function of the grid it was
+    measured on, and a window short enough to return the initial condition would otherwise read as
+    a perfect reproduction with nothing in the certificate to show it.
     """
     assessments = []
     for claim in claims:
         model = _apply_overrides(sbml, claim.parameter_overrides) if claim.parameter_overrides else sbml
         _, values = simulate(model, claim.species, duration=claim.duration, steps=claim.steps)
-        assessments.append(
+        assessment = (
             judge_curve(
                 claim_id=claim.claim_id,
                 quantity=claim.quantity,
@@ -208,6 +237,16 @@ def certify_curves(
                 tolerance=claim.tolerance,
                 attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
                 assumption_qualified=claim.assumption_qualified,
+            )
+        )
+        assessments.append(
+            replace(
+                assessment,
+                protocol=_run_protocol(
+                    duration=claim.duration,
+                    steps=claim.steps,
+                    overrides=claim.parameter_overrides,
+                ),
             )
         )
     return build_certificate(

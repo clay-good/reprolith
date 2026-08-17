@@ -8,6 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "curve-normalized-distance",
+      "protocol": "duration=100, steps=200",
       "quantity": "cg6p time-course (metabolic)",
       "reference_kind": "numeric",
       "root_cause": null,

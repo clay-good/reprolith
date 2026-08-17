@@ -121,6 +121,46 @@ def test_certify_estimation_records_a_distinct_estimation_verdict() -> None:
     assert all(a.protocol == _PROTOCOL for a in cert.assessments)
 
 
+def test_a_time_course_certificate_records_the_run_behind_each_number(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A simulated metric is a function of its window, its sample count, and its dose.
+
+    Without them the published number cannot be re-derived from the certificate, and a run over a
+    vanishingly short duration returns the initial condition and reads as a clean reproduction.
+    The simulator is stubbed (the engine extra is not in the dependency-free gate); what is under
+    test is what the assessment records, not what the integrator returns.
+    """
+    import reprolith.certify as certify_module
+    from reprolith import Claim, CurveClaim, EnginePin, PaperIdentity, certify_curves, certify_model
+
+    times = tuple(float(i) for i in range(11))
+    monkeypatch.setattr(
+        certify_module, "simulate", lambda *a, **k: (times, tuple(5.0 for _ in times))
+    )
+    monkeypatch.setattr(certify_module, "_apply_overrides", lambda sbml, overrides: sbml)
+    paper = PaperIdentity(title="A paper with a dose", doi="10.0/protocol")
+    pin = EnginePin(engine="test-engine", version="0.0.0")
+
+    scalar = certify_model(
+        "<sbml/>", paper=paper, engine_pin=pin, duration=10.0, steps=10,
+        claims=[Claim(claim_id="cmax", quantity="plasma Cmax", species="C", reported=5.0,
+                      source_location="Table 1",
+                      parameter_overrides=(("Dose_mg", 779.9),))],
+    )
+    assert scalar.assessments[0].protocol == "duration=10, steps=10, overrides: Dose_mg=779.9"
+
+    curve = certify_curves(
+        "<sbml/>", paper=paper, engine_pin=pin,
+        claims=[CurveClaim(claim_id="course", quantity="plasma concentration", species="C",
+                           reference=tuple(5.0 for _ in times), source_location="Fig 1",
+                           duration=10.0, steps=10)],
+    )
+    assert curve.assessments[0].protocol == "duration=10, steps=10"
+    # It travels into the published content, so a reader holding the file can re-run it.
+    assert curve.content()["assessments"][0]["protocol"] == "duration=10, steps=10"
+
+
 def test_an_estimation_claim_that_states_no_protocol_is_refused() -> None:
     """A re-fit nobody can repeat is not evidence, and `recovered == reported` proves nothing."""
     from reprolith import EstimationClaim

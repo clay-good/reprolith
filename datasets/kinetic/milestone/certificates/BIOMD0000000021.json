@@ -8,6 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "curve-normalized-distance",
+      "protocol": "duration=72, steps=200",
       "quantity": "Cn time-course (circadian)",
       "reference_kind": "numeric",
       "root_cause": null,

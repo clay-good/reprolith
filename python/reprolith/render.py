@@ -239,8 +239,9 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
             f" (source {a['source_location']}{method}{tol})"
         )
         if a.get("protocol"):
-            # A sampled judgment's number is only re-runnable with the sampling that produced it.
-            lines.append(f"      sampling: {a['protocol']}")
+            # A judgment's number is only re-runnable with the run that produced it — the sampling
+            # for an ensemble, the window and sample count for a time course.
+            lines.append(f"      protocol: {a['protocol']}")
     lines.append("")
 
     if content["assumptions"]:

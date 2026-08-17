@@ -333,6 +333,27 @@ optional: a caller could pass `recovered == reported` with no objective, optimiz
 or dataset stated and publish a clean estimation pass with nothing behind it. Both claim types now
 refuse a blank protocol where the claim is built, the way an engine pin refuses a missing version.
 
+## A number nobody could re-run
+
+A simulated metric is a function of the run behind it, and a time-course certificate recorded none
+of that run. The sampled classes had already learned this — the stochastic and population claims
+carry their seed and their ensemble size, because a mean that agreed on one seed leaves no trace
+otherwise — but the two engine-backed front-ends, the scalar PK/PD path and the kinetic curve path,
+published a number with no window and no sample count. Three things followed. A claim run over a
+vanishingly short duration returns the initial condition, and the metric read off it can agree with
+the paper for no reason at all. An AUC and a curve distance both move with how finely the run was
+sampled, so the same reconstruction earns different numbers on different grids. And the metformin
+example's two claims differ only by dose, so on the certificate they were two identical runs
+disagreeing about the answer, with the 779.9 mg free-base figure surviving only as prose in the
+assumption block.
+
+Every assessment those two paths produce now carries the run: the window, the sample count, and any
+parameter override the claim set. The field was already on the assessment and already omitted from
+the content when unset, so the twenty-three certificates whose front-ends state no protocol are
+byte-identical; the seven time-course certificates re-digest, and the metformin claims are now
+distinguishable from each other in the published file. The rendered certificate labels it
+`protocol` rather than `sampling`, since a window is not a seed.
+
 ## Known limits the audits found and left in place
 
 Recorded rather than fixed, because each needs a design change rather than a patch, and none
@@ -381,15 +402,12 @@ can produce a certificate that claims more than it checked:
 - **A curve verdict's threshold means different things on different curves.** The curve distance
   is an RMSE divided by the reference's span, so 10% is between 5% and 54% amplitude accuracy
   depending on the curve's shape — and the certificate reports the ratio, never the normalizer.
-- **A time-course certificate does not record the run window or the sample count.** Every other
-  sampled class now carries a protocol; `certify_curves` does not, so a claim run over a
-  vanishingly short duration returns the initial condition and reads as a perfect reproduction,
-  and the published number cannot be re-derived from the certificate. The fix is a line, but it
-  re-digests the PK/PD and kinetic certificates, which regenerate only under the engine extra.
 - **The published PK/PD bundle cannot re-run the run it describes.** `RecipeStep` has no field for
   the sample count or a parameter override, so the metformin bundle's two steps are identical
-  where the claims differ by dose, and the 779.9 mg figure survives only as prose in the assumption
-  block. Re-running at hourly output — the only resolution the published recipe supports — adds
+  where the claims differ by dose. The certificate now carries both (each claim's protocol states
+  the window, the sample count, and the override), so the run is recoverable from the verdict — but
+  the bundle, the artifact whose job is to describe how to re-run it, still is not.
+  Re-running at hourly output — the only resolution the published recipe supports — adds
   about 4.4% to the Cmax metric, which is most of the 5% tolerance.
 - **Cross-engine corroboration never runs anywhere automatic.** No CI job installs the extra, so
   the only executing test skips in every job, and what CI actually checks is that a committed
@@ -399,10 +417,6 @@ can produce a certificate that claims more than it checked:
   the caller supplies, with no run of their own, so the pin can name an engine that is not
   installed. Validating it needs engine dispatch, which does not exist; what the claim *can* be
   held to — the protocol behind the supplied number — it now is.
-- The curve oracle's RMSE can average a localized peak miss into a pass, and `relative_error`
-  against an exactly-zero reference falls back to an absolute comparison judged at a relative
-  tolerance. Both are long-standing, both documented, neither exhibited by any committed
-  certificate.
 
 ## Status and what remains
 

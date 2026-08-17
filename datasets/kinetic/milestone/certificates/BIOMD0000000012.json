@@ -8,6 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "curve-normalized-distance",
+      "protocol": "duration=10000, steps=200",
       "quantity": "PX time-course (gene-regulatory)",
       "reference_kind": "numeric",
       "root_cause": null,

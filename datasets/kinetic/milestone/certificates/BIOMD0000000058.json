@@ -8,6 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "curve-normalized-distance",
+      "protocol": "duration=30, steps=200",
       "quantity": "c1 time-course (calcium-signaling)",
       "reference_kind": "numeric",
       "root_cause": null,

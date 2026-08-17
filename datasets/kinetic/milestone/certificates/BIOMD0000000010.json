@@ -8,6 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "curve-normalized-distance",
+      "protocol": "duration=4000, steps=200",
       "quantity": "MAPK_PP time-course (signaling)",
       "reference_kind": "numeric",
       "root_cause": null,

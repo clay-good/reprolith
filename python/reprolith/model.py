@@ -89,10 +89,12 @@ class ClaimAssessment:
     load-bearing assumption; the overall-verdict rule uses it to forbid an
     unqualified full reproduction.
 
-    ``protocol`` records the sampling a stochastic judgment rests on — the seed, the number of
-    trajectories, the duration. Without it a reader cannot re-run the number the certificate
-    reports, and a seed that happened to agree leaves no trace. It is omitted from the certificate's
-    content when unset, so a deterministic claim's record is unchanged.
+    ``protocol`` records the run behind the judgment — for a sampled claim the seed and the number
+    of trajectories, for a time-course claim the run window, the sample count, and any parameter
+    override the claim set. Without it a reader cannot re-run the number the certificate reports: a
+    seed that happened to agree leaves no trace, and a duration short enough to return the initial
+    condition reads as a perfect reproduction. It is omitted from the certificate's content when
+    unset, so a claim whose front-end states none is recorded exactly as before.
     """
 
     claim_id: str
@@ -129,8 +131,8 @@ class ClaimAssessment:
             "assumption_qualified": self.assumption_qualified,
         }
         if self.protocol is not None:
-            # Only sampled judgments carry one, so a deterministic claim's content — and every
-            # digest already published for one — stays exactly as it was.
+            # Only a judgment whose front-end states a protocol carries one, so a claim built
+            # without one — and every digest already published for it — stays exactly as it was.
             record["protocol"] = self.protocol
         return record
 
