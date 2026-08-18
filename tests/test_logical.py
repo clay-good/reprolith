@@ -387,3 +387,24 @@ def test_logical_dossier_rejects_a_rule_referencing_an_unknown_node() -> None:
     with pytest.raises(ValueError, match="unknown node"):
         logical_dossier("bad", rules={"A": "!Z"}, source_location="Fig 1",
                         update_scheme=UpdateScheme.SYNCHRONOUS)
+
+
+def test_certify_logical_accepts_a_generator_of_claims() -> None:
+    """The claims are iterated twice; a generator used to be exhausted by the first pass.
+
+    The second pass attaches the search protocol, so it silently emptied the assessment list and
+    published an earned `not-reproduced` as a blocked certificate that had evaluated nothing.
+    """
+    from reprolith import EnginePin, OverallVerdict, PaperIdentity
+    from reprolith.logical import LogicalClaim, certify_logical
+
+    claims = [
+        LogicalClaim(claim_id="ss", quantity="steady state", rules={"A": "!B", "B": "!A"},
+                     reported={"A": 1, "B": 1}, source_location="Fig 1"),
+    ]
+    pin = EnginePin(engine="reprolith-logical", version="0.0.1", algorithm="synchronous-update")
+    paper = PaperIdentity(title="toggle", doi="10.0/t")
+    from_list = certify_logical(paper=paper, engine_pin=pin, claims=claims)
+    from_generator = certify_logical(paper=paper, engine_pin=pin, claims=iter(claims))
+    assert from_generator.overall is from_list.overall is OverallVerdict.NOT_REPRODUCED
+    assert len(from_generator.assessments) == len(from_list.assessments) == 1

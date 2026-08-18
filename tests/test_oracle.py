@@ -307,3 +307,41 @@ def test_a_localized_miss_is_not_averaged_into_a_pass() -> None:
         reference=reference, predicted=[v * 1.02 for v in reference],
     )
     assert uniform.verdict is Verdict.REPRODUCED
+
+
+def test_a_population_envelope_is_judged_by_its_worst_point_too() -> None:
+    """The rule that closed the doubled-peak hole for curves had never reached envelopes.
+
+    A band distance is an RMSE, so a localized miss is divided by the sample count — and the band
+    tolerance is *wider* than a curve's, so the hole was larger here: the same 201-point doubled
+    peak that `judge_curve` calls `failed` certified as a clean population reproduction.
+    """
+    import math
+
+    from reprolith.oracle import PercentileBand, band_worst_point, judge_distribution
+
+    reference = tuple(math.exp(-(((i - 40) / 20) ** 2)) for i in range(201))
+    predicted = tuple(v * 2 if i == 40 else v for i, v in enumerate(reference))
+    assert band_worst_point(
+        [PercentileBand(50.0, reference)], [PercentileBand(50.0, predicted)]
+    ) == pytest.approx(1.0, abs=1e-3)
+    assessment = judge_distribution(
+        claim_id="c", quantity="median concentration", source_location="Fig 3",
+        reference=[PercentileBand(50.0, reference)],
+        predicted=[PercentileBand(50.0, predicted)],
+        attribution=Attribution(
+            mode=FailureMode.UNSPECIFIED_POPULATION_SAMPLING, implicated="the peak",
+            fault=Fault.RECONSTRUCTION,
+        ),
+    )
+    assert assessment.verdict is Verdict.FAILED
+    assert "worst point" in assessment.discrepancy
+
+
+def test_an_infinite_zero_scale_abstains_rather_than_certifying() -> None:
+    """A scale the error is divided by is as load-bearing as the prediction itself."""
+    assessment = judge_scalar(
+        claim_id="c", quantity="growth rate of a lethal knockout", source_location="Table 2",
+        reported=0.0, predicted=5.0, zero_scale=float("inf"),
+    )
+    assert assessment.verdict is Verdict.NOT_EVALUABLE

@@ -167,6 +167,10 @@ def _cmd_verdict(query: ReprolithQuery, args: argparse.Namespace) -> int:
     print("  claims by verdict: " + ", ".join(f"{k}={counts[k]}" for k in counts))
     if view["assumption_qualified_claims"]:
         print("  assumption-qualified: " + ", ".join(view["assumption_qualified_claims"]))
+    if view["estimation_claims"]:
+        # Every other rendering flags it — the badge never goes green, the human render prints
+        # [estimation], pre-submission refuses ready-to-submit. This summary read as a clean pass.
+        print("  reproduced only at estimation level: " + ", ".join(view["estimation_claims"]))
     print(f"  scope: {view['scope']['human']}")
     if view["superseded_by"]:
         # The gap report and the JSON view both carry it; without it here the terminal is the one
@@ -185,12 +189,15 @@ def _cmd_gaps(query: ReprolithQuery, args: argparse.Namespace) -> int:
         return 0
     items = report["gaps"]
     if not items:
+        # Falling straight out here was the one published path that printed a result with no scope
+        # flag beside it — and "nothing was missing" is exactly the line that must not stand alone
+        # when a correction has already replaced the verdict it belongs to.
         print("(no gaps — nothing was missing)")
-        return 0
-    print("WHAT WAS MISSING")
-    for g in items:
-        where = f"[{g['claim_id']}] {g['quantity']}: " if g["claim_id"] else ""
-        print(f"  {where}{g['needs']}")
+    else:
+        print("WHAT WAS MISSING")
+        for g in items:
+            where = f"[{g['claim_id']}] {g['quantity']}: " if g["claim_id"] else ""
+            print(f"  {where}{g['needs']}")
     print(f"  scope: {report['scope']['human']}")
     if report["superseded_by"]:
         print(f"  superseded by: {report['superseded_by']}")
@@ -343,8 +350,21 @@ def run(argv: list[str] | None = None) -> int:
     else:
         # The default view aggregates every class's published milestone certificates, so a
         # verdict from any of the six classes is reachable, not just the PK/PD one.
-        query, _catalog = load_repository(default_data_dir(), aggregate=True)
-    result: int = args.func(query, args)
+        try:
+            query, _catalog = load_repository(default_data_dir(), aggregate=True)
+        except FileNotFoundError as unreadable:
+            # default_data_dir() composes a message written for a human running an installed copy
+            # outside a checkout; only the --data-dir branch was showing it to them.
+            print(str(unreadable), file=sys.stderr)
+            return 1
+    try:
+        result: int = args.func(query, args)
+    except ValueError as refused:
+        # The query layer refuses rather than publishes when committed state does not add up (an
+        # agreement report whose counters cannot partition, for one). MCP reports that as a tool
+        # error; the terminal raised a traceback for the same state.
+        print(str(refused), file=sys.stderr)
+        return 1
     return result
 
 

@@ -723,6 +723,10 @@ def certify_logical(
     the logical class (spec: logical-class — "Shared contracts carry the new class"). Needs no
     engine extra; the attractor analysis is exact and pure.
     """
+    # Materialized before use: the claims are iterated twice below (once to judge, once to attach
+    # the protocol), and a generator is exhausted by the first pass — the zip then yielded nothing
+    # and an earned not-reproduced was published as an empty, blocked certificate.
+    claims = tuple(claims)
     assessments = [
         judge_steady_state(
             claim_id=claim.claim_id,

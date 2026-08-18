@@ -26,9 +26,9 @@ def _claim(verdict: Verdict, *, cid: str, qualified: bool = False, **kw: object)
     )
 
 
-def _cert(assessments, **kw):
+def _cert(assessments, paper=None, **kw):
     return build_certificate(
-        paper=PaperIdentity(title="Two-compartment PK model", doi="10.1/x"),
+        paper=paper or PaperIdentity(title="Two-compartment PK model", doi="10.1/x"),
         engine_pin=EnginePin(engine="biosimulators/copasi", version="4.42"),
         assessments=assessments,
         **kw,
@@ -281,13 +281,17 @@ def test_registry_escapes_a_scope_statement_carried_in_from_a_stored_certificate
     from reprolith import Scope, certificate_from_content, render_badge, render_registry
 
     payload = '</title><script>alert(1)</script>'
-    cert = _cert([_claim(Verdict.REPRODUCED, cid="a")], scope=Scope(machine=payload, human="h"))
-    # The deserialize path the registry actually uses refuses the file outright: the scope is
-    # fixed text, so a stored certificate carrying any other wording never loads at all.
+    # There is no longer any way to attach such a scope to a certificate: the text is fixed at the
+    # type, so a reworded scope cannot be minted in memory any more than it can be loaded from a
+    # file. Both refusals are asserted, because they close different doors.
+    with pytest.raises(ValueError, match="fixed text and cannot be reworded"):
+        Scope(machine=payload, human="h")
+    stored = _cert([_claim(Verdict.REPRODUCED, cid="a")]).content()
+    stored["scope"] = {"machine": payload, "human": "h"}
     with pytest.raises(ValueError, match="scope statement that is not Reprolith's"):
-        certificate_from_content(cert.content())
-    # And in memory, where a caller can hand render a Scope of its own, the markup is escaped and
-    # the page-wide disclaimer stays Reprolith's rather than the certificate's.
+        certificate_from_content(stored)
+    # The remaining caller-controlled strings still cannot inject markup into the public page.
+    cert = _cert([_claim(Verdict.REPRODUCED, cid="a")], paper=PaperIdentity(title=payload))
     for html in (render_badge(cert), render_registry([("ode-pkpd", cert)])):
         assert "<script>alert" not in html
     page = render_registry([("ode-pkpd", cert)])

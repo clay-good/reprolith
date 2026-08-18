@@ -29,6 +29,16 @@ class Scope:
     def __post_init__(self) -> None:
         if not self.machine.strip() or not self.human.strip():
             raise ValueError("scope statement cannot be empty")
+        if (self.machine, self.human) != (SCOPE_MACHINE, SCOPE_HUMAN):
+            # Not emptiable was never the whole invariant: a scope reworded to
+            # "clinically validated" is worse than a missing one, and it travels through every
+            # read surface — the badge, the registry, the human render, the query. The load path
+            # already refused a stored certificate that reworded it; construction refused nothing,
+            # so a caller could mint one in memory. The text is fixed, so this is the type.
+            raise ValueError(
+                "the scope statement is fixed text and cannot be reworded; a certificate that "
+                "says something else about its own scope is not a Reprolith certificate"
+            )
 
     def to_dict(self) -> dict[str, Any]:
         return {"machine": self.machine, "human": self.human}

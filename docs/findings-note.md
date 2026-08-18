@@ -1,8 +1,9 @@
 # Bootstrap findings note (preliminary)
 
 What the ODE PK/PD bootstrap has shown so far. Every claim here traces to committed code, the
-labelled test set, or the metformin worked-example certificate. It is preliminary: one paper
-has been certified end to end; the full blind run over the test set is still ahead.
+labelled test set, or the metformin worked-example certificate. It is preliminary in a narrower
+sense than it once was: the full blind run over the 31-entry set is done and committed, but one
+paper is certified end to end and the other thirty abstained for want of extracted claims.
 
 ## What was built
 
@@ -643,8 +644,9 @@ can produce a certificate that claims more than it checked:
 
 ## Status and what remains
 
-The engine and one real reproduction are done. The full blind run over the 31-entry set (task
-7.1), the agreement report against ground truth, and the complete milestone artifact (8.1) and
-findings (8.2) all wait on the same thing finding 2 names: a scaled way to extract each paper's
-targetable claims. The metformin example shows that, given a claim, the rest of the pipeline
-delivers an honest, root-caused verdict.
+The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
+artifact (8.1), this note (8.2), and the discipline-loop record (7.3, 7.4) are all done and
+committed. What remains is what finding 2 names: a scaled way to extract each paper's targetable
+claims (tasks 2.1-2.3). Thirty of the thirty-one entries abstained for want of exactly that, so
+verdict *accuracy* across the set is still unestablished — the metformin example shows only that,
+given a claim, the rest of the pipeline delivers an honest, root-caused verdict.

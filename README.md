@@ -2,7 +2,7 @@
 
 **Point it at a modeling paper. Get back proof of whether the model reproduces its own results.**
 
-More than half of published biomedical models can't be reproduced from the information in
+About half of published biomedical models can't be reproduced from the information in
 their own paper. Reprolith rebuilds the model from the paper, re-runs it, and checks the
 output against the paper's own figures and tables — then hands you a **certificate**:
 reproduced, partially, or not — for each result, with the reason.
@@ -47,7 +47,7 @@ The server is dependency-free (JSON-RPC over stdio, no third-party SDK) and expo
 tools — browse the catalog, get a paper's status, fetch a certificate, read its gaps, inspect a
 dossier or bundle — each delegating to the same query surface the repository uses, so a verdict
 always travels with its scope flag and qualifications. A separate set of effectful tools closes
-an agent's work loop: claim the next entry, publish a certificate, then record the result against
+an agent's work loop: claim the next entry, then record the result against
 that certificate's digest so the finished unit leaves the queue. The outcome state is read from
 the certificate's own verdict, never asserted by the caller. Run it with `reprolith-mcp` (after
 `pip install -e .`); see [docs/mcp-server.md](docs/mcp-server.md) to register it in a client and

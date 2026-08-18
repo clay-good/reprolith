@@ -464,10 +464,13 @@ def certify_spatial(
                 # plausible alternative grid gives a different distance, so without this the
                 # number on the certificate cannot be re-derived from it. The boundary is stated
                 # too because this class has exactly one and a reader cannot see that anywhere else.
+                # Printed in full precision, not :g — a reader who re-runs with the printed
+                # number has to get the number that was run, and a stability-derived dt is rarely
+                # six significant figures (0.0026666666666666674 printed as 0.00266667).
                 protocol=(
-                    f"1-D finite difference: D={claim.diffusivity:g}, dx={claim.dx:g}, "
-                    f"dt={claim.dt:g}, {claim.steps} steps"
-                    + (f", decay={claim.decay:g}" if claim.decay else "")
+                    f"1-D finite difference: D={claim.diffusivity!r}, dx={claim.dx!r}, "
+                    f"dt={claim.dt!r}, {claim.steps} steps"
+                    + (f", decay={claim.decay!r}" if claim.decay else "")
                     + ", zero-flux (Neumann) boundaries"
                 ),
             )

@@ -1,12 +1,12 @@
 REPRODUCTION CERTIFICATE — 1-D diffusion of a Gaussian (D=0.5)
-Engine pin: reprolith-fd 0.0.1 / explicit-forward-euler-finite-difference (rev 571d86fe9036)
+Engine pin: reprolith-fd 0.0.1 / explicit-forward-euler-finite-difference (rev 498225bd61c4)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
 
 CLAIMS
   [diffusion_Dhalf-profile] diffused concentration profile: reproduced (source closed-form via curve-normalized-distance, tol=reproduced<=0.1, partial<=0.25 (class-default))
-      protocol: 1-D finite difference: D=0.5, dx=0.2, dt=0.016, 1200 steps, zero-flux (Neumann) boundaries
+      protocol: 1-D finite difference: D=0.5, dx=0.2, dt=0.016000000000000004, 1200 steps, zero-flux (Neumann) boundaries
 
 SCOPE
   This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

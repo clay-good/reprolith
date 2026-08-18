@@ -18,11 +18,13 @@ surface"). The transport binding (the actual MCP tool definitions) wraps this re
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from .agreement import summarize_report
 from .catalog import Catalog, CatalogEntry, Identifiers
 from .determinism import certificate_digest
+from .enums import ReproductionLevel, Verdict
 from .model import Certificate
 from .presubmission import presubmission_report
 from .render import claim_counts, gap_items
@@ -165,9 +167,15 @@ class ReprolithQuery:
         )
         return view
 
-    def backlog_health(self) -> dict[str, Any]:
-        """Report backlog depth by state, class, and difficulty, and the labelled mix."""
-        return self._catalog.backlog_health()
+    def backlog_health(self, at: float | None = None) -> dict[str, Any]:
+        """Report backlog depth by state, class, and difficulty, and the labelled mix.
+
+        ``at`` is the time leases are judged against, defaulting to now. It used to default to the
+        catalog's own ``at=0.0``, which is before every real lease timestamp — so an expired lease
+        still counted as blocking and "claimable now" under-reported work the effectful surface
+        would hand out on the very next request, permanently, since leases persist.
+        """
+        return self._catalog.backlog_health(time.time() if at is None else at)
 
     def self_validation(self) -> dict[str, Any]:
         """Reprolith's blind self-validation track record, per model class and overall.
@@ -347,6 +355,15 @@ class ReprolithQuery:
             "claims": [a.to_dict() for a in cert.assessments],
             "assumption_qualified_claims": [
                 a.claim_id for a in cert.assessments if a.assumption_qualified
+            ],
+            # An estimation-level pass is a re-fit that recovered the paper's number, not a
+            # simulation that reproduced its result — derive_overall deliberately does not consult
+            # the level, so without this the summary's three fields read as a clean simulation
+            # pass while every other rendering (badge, human render, pre-submission) flags it.
+            "estimation_claims": [
+                a.claim_id
+                for a in cert.assessments
+                if a.level is ReproductionLevel.ESTIMATION and a.verdict is not Verdict.FAILED
             ],
             "scope": cert.scope.to_dict(),
         }

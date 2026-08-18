@@ -49,22 +49,37 @@ def test_loop_notes_disagreement_needs_a_stage() -> None:
     with pytest.raises(ValueError, match="responsible stage"):
         LoopNote(
             id="n", kind=NoteKind.DISAGREEMENT, subjects=("E1",), basis=NoteBasis.OBSERVED,
-            note="", evidence=("README.md",),
+            note="a written explanation", evidence=("README.md",),
         )
+
+
+def test_a_blank_explanation_is_refused() -> None:
+    with pytest.raises(ValueError, match="no written explanation"):
+        LoopNote(
+            id="n", kind=NoteKind.FAILURE_MODE, subjects=("uncategorized",),
+            basis=NoteBasis.SPEC, note="   ", evidence=("README.md",),
+        )
+
+
+def test_two_reports_disagreeing_on_one_entry_are_refused() -> None:
+    """Entry ids are not unique across classes; a shared id must not borrow another class's note."""
+    report = {"per_entry": [{"entry": "BIOMD0000001028", "agree": False}]}
+    with pytest.raises(ValueError, match="same entry"):
+        disagreement_subjects([*committed_reports(), report])
 
 
 def test_loop_notes_need_evidence() -> None:
     with pytest.raises(ValueError, match="cites no evidence"):
         LoopNote(
             id="n", kind=NoteKind.FAILURE_MODE, subjects=("uncategorized",),
-            basis=NoteBasis.SPEC, note="", evidence=(),
+            basis=NoteBasis.SPEC, note="a written explanation", evidence=(),
         )
 
 
 def test_load_refuses_duplicate_ids(tmp_path: Path) -> None:
     record = {
         "id": "dup", "kind": "failure-mode", "subjects": ["uncategorized"], "basis": "spec",
-        "note": "", "evidence": ["README.md"],
+        "note": "text", "evidence": ["README.md"],
     }
     path = tmp_path / "notes.json"
     path.write_text(json.dumps({"notes": [record, record]}), encoding="utf-8")
@@ -84,7 +99,7 @@ def test_a_note_explaining_nothing_is_a_failure() -> None:
     """A subject that no longer exists — a renamed mode, a departed entry — is flagged too."""
     orphan = LoopNote(
         id="orphan", kind=NoteKind.FAILURE_MODE, subjects=("mode-that-was-renamed",),
-        basis=NoteBasis.SPEC, note="", evidence=("README.md",),
+        basis=NoteBasis.SPEC, note="a written explanation", evidence=("README.md",),
     )
     audit = audit_loop_notes([*load_loop_notes(NOTES), orphan], committed_reports(), base_dir=REPO)
     assert audit.orphaned == ("failure-mode:mode-that-was-renamed",)
@@ -94,7 +109,7 @@ def test_evidence_must_exist_in_the_repository() -> None:
     """A citation nobody can follow is an assertion, which is what the record replaces."""
     invented = LoopNote(
         id="invented", kind=NoteKind.FAILURE_MODE, subjects=("uncategorized",),
-        basis=NoteBasis.SPEC, note="", evidence=("docs/a-file-that-does-not-exist.md",),
+        basis=NoteBasis.SPEC, note="a written explanation", evidence=("docs/a-file-that-does-not-exist.md",),
     )
     audit = audit_loop_notes([invented], committed_reports(), base_dir=REPO)
     assert audit.missing_evidence == ("invented:docs/a-file-that-does-not-exist.md",)

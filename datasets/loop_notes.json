@@ -117,7 +117,7 @@
         "engine-algorithm-sensitivity"
       ],
       "basis": "measured",
-      "note": "The only catalogued mode with a measurement behind it rather than a requirement. Every kinetic model in the committed corpus was run under two independently-implemented engines (COPASI and libRoadRunner/CVODE) and the normalized trajectory distances came out three to five orders of magnitude below the curve tolerance, so no committed verdict is engine-sensitive and the mode has never been attributed. What the measurement establishes is the opposite of a failure: the category exists so that a distance which does cross has somewhere honest to land, and the committed bounds are re-checked against a live run so genuine drift toward the tolerance fails loudly.",
+      "note": "The only catalogued mode with a measurement behind it rather than a requirement. Every kinetic model in the committed corpus was run under two independently-implemented engines (COPASI and libRoadRunner/CVODE), and the published distance bounds run from 1e-06 to 1e-03 \u2014 two to five orders of magnitude below the 0.10 curve tolerance, and at least an order below the 2% the corroboration check itself enforces. So no committed verdict is engine-sensitive and the mode has never been attributed. What the measurement establishes is the opposite of a failure: the category exists so that a distance which does cross has somewhere honest to land, and the committed bounds are re-checked against a live run so genuine drift toward the tolerance fails loudly.",
       "evidence": [
         "python/reprolith/corroboration.py",
         "datasets/kinetic/milestone/corroboration.json",
@@ -196,9 +196,11 @@
         "uncategorized"
       ],
       "basis": "spec",
-      "note": "The escape hatch the spec requires: a shortfall fitting none of the catalogued causes is recorded as uncategorized, which flags the set to be extended rather than letting a verdict be filed under the nearest wrong cause. Its presence in a certificate is a signal about this catalogue, not about the paper.",
+      "note": "The escape hatch every class spec requires \u2014 ode-pkpd, constraint-based, and logical each say a shortfall fitting none of the catalogued causes is recorded as uncategorized, which flags the set to be extended rather than letting a verdict be filed under the nearest wrong cause. Its presence in a certificate is a signal about this catalogue, not about the paper.",
       "evidence": [
-        "openspec/specs/simulation-oracle/spec.md",
+        "openspec/specs/ode-pkpd-class/spec.md",
+        "openspec/specs/constraint-based-class/spec.md",
+        "openspec/specs/logical-class/spec.md",
         "python/reprolith/oracle.py",
         "tests/test_surface_honesty.py"
       ]
@@ -281,9 +283,10 @@
         "exact-match"
       ],
       "basis": "observed",
-      "note": "Zero slack, and the only default that is observed in committed certificates rather than argued for. A discrete result has no tolerance to declare: the logical class publishes 'exact match on the attractor count and every period' on all nine milestone certificates, and the FBA class holds its FROG cross-validation to 1e-6, which is numerical noise rather than a reproduction budget. The zero pair is admitted by the threshold check precisely so an exact comparison does not have to invent slack it does not use.",
+      "note": "Zero slack, and the only default that is observed in committed certificates rather than argued for. A discrete result has no tolerance to declare, and the logical milestone shows two strengths of it: six of the nine certificates publish 'exact match on the attractor count and every period', while the three large signalling networks \u2014 whose state spaces are far past enumeration \u2014 publish 'exact match on the fixed-point set (SHA-256 of the sorted states)', which is the weaker projection of fixed points only. The FBA class holds its FROG cross-validation to 1e-6, which is numerical noise rather than a reproduction budget. The zero pair is admitted by the threshold check precisely so an exact comparison does not have to invent slack it does not use.",
       "evidence": [
         "datasets/logical/milestone/certificates/budding_yeast.json",
+        "datasets/logical/milestone/certificates/leukemia.json",
         "python/reprolith/logical.py",
         "python/reprolith/fba.py",
         "docs/fba-oracle.md"

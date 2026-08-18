@@ -13,7 +13,7 @@ import pytest
 
 pytest.importorskip("COPASI", reason="the optional 'engine' extra (python-copasi) is not installed")
 
-from reprolith import Verdict, lint_curve  # noqa: E402
+from reprolith import Tolerance, ToleranceSource, Verdict, lint_curve  # noqa: E402
 
 ONE_COMPARTMENT_SBML = """<?xml version="1.0" encoding="UTF-8"?>
 <sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
@@ -85,3 +85,32 @@ def test_a_non_finite_input_abstains_rather_than_reporting_the_paper_wrong() -> 
     assert lint_estimation(reported=1.0, recovered=nan).verdict is Verdict.NOT_EVALUABLE
     assert lint_estimation(reported=1.0, recovered=1.02).verdict is Verdict.REPRODUCED
 
+
+
+def test_the_linter_refuses_the_tolerance_the_judge_refuses() -> None:
+    """Same question, same answer: an agent cannot gate on a verdict the certificate would refuse.
+
+    The widest documented pair (the digitized-figure population default) is a `class-default`
+    tolerance, so `Tolerance` alone accepts it for any comparison. The judge checks the method too;
+    the linter checked nothing, and passed a 24% relative error as reproduced.
+    """
+    from reprolith.linter import lint_estimation
+
+    widest = Tolerance(0.25, 0.50, ToleranceSource.CLASS_DEFAULT)
+    with pytest.raises(ValueError, match="is not the class default"):
+        lint_estimation(reported=1.0, recovered=1.24, tolerance=widest)
+
+
+def test_the_linter_judges_an_envelope_by_its_worst_point_too() -> None:
+    """The envelope worst-point rule reaches the linter in the same commit as the judge."""
+    import math
+
+    from reprolith.linter import lint_distribution
+
+    reference = [math.exp(-(((i - 40) / 20) ** 2)) for i in range(201)]
+    predicted = [v * 2 if i == 40 else v for i, v in enumerate(reference)]
+    result = lint_distribution(
+        [{"percentile": 50.0, "curve": reference}], [{"percentile": 50.0, "curve": predicted}]
+    )
+    assert result.verdict is Verdict.FAILED
+    assert "worst point" in result.discrepancy

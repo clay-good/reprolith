@@ -328,6 +328,40 @@ def worst_point_deviation(reference: Sequence[float], predicted: Sequence[float]
     return worst / span
 
 
+def _paired_bands(
+    reference: Sequence[PercentileBand], predicted: Sequence[PercentileBand]
+) -> tuple[dict[float, PercentileBand], dict[float, PercentileBand]]:
+    """Index two envelopes by percentile, refusing anything the comparison cannot align."""
+    if not reference or not predicted:
+        raise ValueError("both envelopes need at least one percentile band")
+    ref_by_pct = {b.percentile: b for b in reference}
+    pred_by_pct = {b.percentile: b for b in predicted}
+    if len(ref_by_pct) != len(reference) or len(pred_by_pct) != len(predicted):
+        raise ValueError("percentiles within an envelope must be distinct")
+    if ref_by_pct.keys() != pred_by_pct.keys():
+        raise ValueError("reference and predicted envelopes must cover the same percentiles")
+    return ref_by_pct, pred_by_pct
+
+
+def band_worst_point(
+    reference: Sequence[PercentileBand], predicted: Sequence[PercentileBand]
+) -> float:
+    """The largest single-point gap over every band, as a fraction of that band's span.
+
+    The envelope's version of :func:`worst_point_deviation`, and needed for the same reason: a
+    band distance is an RMSE, so a localized miss is divided by the sample count, and the sample
+    count is the reconstruction's own choice. The band tolerance is *wider* than a curve's, so the
+    hole was larger here than the one the curve rule closed — a 201-point envelope whose median
+    peak was twice the paper's scored 0.0705 against a 0.15 pass threshold and certified as a
+    clean population reproduction.
+    """
+    ref_by_pct, pred_by_pct = _paired_bands(reference, predicted)
+    return max(
+        worst_point_deviation(ref_by_pct[pct].curve, pred_by_pct[pct].curve)
+        for pct in sorted(ref_by_pct)
+    )
+
+
 def band_envelope_distance(
     reference: Sequence[PercentileBand], predicted: Sequence[PercentileBand]
 ) -> tuple[float, PercentileBand]:
@@ -346,14 +380,7 @@ def band_envelope_distance(
     the band that failed and report the best-matched tail instead, inverting the rule this function
     exists to enforce.
     """
-    if not reference or not predicted:
-        raise ValueError("both envelopes need at least one percentile band")
-    ref_by_pct = {b.percentile: b for b in reference}
-    pred_by_pct = {b.percentile: b for b in predicted}
-    if len(ref_by_pct) != len(reference) or len(pred_by_pct) != len(predicted):
-        raise ValueError("percentiles within an envelope must be distinct")
-    if ref_by_pct.keys() != pred_by_pct.keys():
-        raise ValueError("reference and predicted envelopes must cover the same percentiles")
+    ref_by_pct, pred_by_pct = _paired_bands(reference, predicted)
     worst_distance: float | None = None
     worst_band = reference[0]
     for pct in sorted(ref_by_pct):
@@ -411,7 +438,7 @@ def verdict_for(measure: float, tol: Tolerance) -> Verdict:
     return Verdict.FAILED
 
 
-def _require_default_is_the_default(
+def require_documented_default(
     tol: Tolerance,
     method: ComparisonMethod,
     reference_kind: ReferenceKind,
@@ -482,7 +509,7 @@ def _assemble(
     level: ReproductionLevel = ReproductionLevel.SIMULATION,
     tolerance_label: str | None = None,
 ) -> ClaimAssessment:
-    _require_default_is_the_default(tol, method, reference_kind, level)
+    require_documented_default(tol, method, reference_kind, level)
     verdict = verdict_for(measure, tol)
     if verdict in (Verdict.PARTIAL, Verdict.FAILED):
         if attribution is None:
@@ -536,7 +563,11 @@ def judge_scalar(
     0.05 1/h passed a lethality claim as a "5% error", and the same claim in 1/day failed.
     """
     abstention = _non_finite_abstention(
-        (reported, predicted), claim_id=claim_id, quantity=quantity,
+        # zero_scale divides the comparison when the reported value is zero, so a non-finite scale
+        # makes the verdict as meaningless as a non-finite prediction: an infinite scale drove the
+        # error to zero and certified a lethality claim as reproduced against a growing model.
+        (reported, predicted) if zero_scale is None else (reported, predicted, zero_scale),
+        claim_id=claim_id, quantity=quantity,
         source_location=source_location, reference_kind=reference_kind,
     )
     if abstention is not None:
@@ -732,13 +763,23 @@ def judge_distribution(
         ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, reference_kind
     )
     distance, worst_band = band_envelope_distance(reference, predicted)
+    # Both statistics, exactly as a curve is judged: the worst-matched band's average agreement,
+    # and the worst single point anywhere in the envelope, rescaled onto the pass threshold so one
+    # number governs. Without this a doubled median peak averaged itself into a clean pass.
+    worst = band_worst_point(reference, predicted)
+    scaled_worst = (
+        worst * (tol.reproduced_within / tol.partial_within) if tol.partial_within > 0.0 else worst
+    )
     return _assemble(
         claim_id=claim_id,
         quantity=quantity,
         source_location=source_location,
         method=ComparisonMethod.DISTRIBUTION_BAND_DISTANCE,
-        measure=distance,
-        discrepancy=f"worst band {worst_band.label()} normalized distance {distance:.4f}",
+        measure=max(distance, scaled_worst),
+        discrepancy=(
+            f"worst band {worst_band.label()} normalized distance {distance:.4f}, worst point "
+            f"{worst:.4f} of span (pass budget {tol.partial_within:.4f})"
+        ),
         tol=tol,
         reference_kind=reference_kind,
         attribution=attribution,
@@ -831,6 +872,7 @@ __all__ = [
     "ToleranceSource",
     "assess_match",
     "band_envelope_distance",
+    "band_worst_point",
     "default_tolerance",
     "default_tolerance_table",
     "estimation_default_tolerance",
@@ -841,5 +883,6 @@ __all__ = [
     "normalized_curve_distance",
     "not_evaluable",
     "relative_error",
+    "require_documented_default",
     "verdict_for",
 ]

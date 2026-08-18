@@ -369,6 +369,17 @@ def unresolvable_ensemble_reason(
     immigration-death model misses its 5% claim on most seeds, and a linter answering ``failed``
     there is a false accusation an agent acts on immediately.
     """
+    if trajectories < 2:
+        # Zero variance means "this ensemble resolves the claim" only when the ensemble is big
+        # enough to have measured one. A single trajectory has a population variance of 0 by
+        # construction, so the guard below was skipped exactly where the sampling noise is
+        # largest: one draw from an exactly-correct model published `reproduced` on 6 of 40 seeds
+        # and `failed` on 27, while every ensemble size from 2 upward honestly abstained.
+        return (
+            f"this ensemble cannot resolve the claim: {trajectories} trajector"
+            f"{'y' if trajectories == 1 else 'ies'} is a single draw, whose spread is zero by "
+            "construction rather than measured, so it cannot tell a reproduction from noise"
+        )
     if variance <= 0.0 or reported_mean == 0.0:
         return None
     tol = tolerance or default_tolerance(

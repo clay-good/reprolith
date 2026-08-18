@@ -233,3 +233,25 @@ def test_every_read_command_accepts_the_documented_json_flag(tmp_path, capsys):
     ):
         assert run(["--data-dir", str(repo), *argv, "--json"]) == 0, argv
         json.loads(capsys.readouterr().out)  # and what it prints is really JSON
+
+
+def test_gaps_prints_the_scope_even_when_nothing_was_missing(capsys, tmp_path) -> None:
+    """"Nothing was missing" was the one published line that stood alone, without its scope."""
+    cert = build_certificate(
+        paper=PaperIdentity(title="clean", doi="10.0/c"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[
+            ClaimAssessment(claim_id="AUC", quantity="area under curve",
+                            verdict=Verdict.REPRODUCED, source_location="Table 1"),
+        ],
+    )
+    digest = certificate_digest(cert)
+    (tmp_path / "catalog.json").write_text('{"entries": []}', encoding="utf-8")
+    (tmp_path / "certificates").mkdir()
+    (tmp_path / "certificates" / f"{digest}.json").write_text(
+        json.dumps(cert.content(), indent=2, sort_keys=True), encoding="utf-8"
+    )
+    assert run(["--data-dir", str(tmp_path), "gaps", digest]) == 0
+    out = capsys.readouterr().out
+    assert "nothing was missing" in out
+    assert "no claim about biological correctness" in out

@@ -22,17 +22,19 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 from .engine import simulate
-from .enums import Verdict
+from .enums import ReproductionLevel, Verdict
 from .oracle import (
     ComparisonMethod,
     PercentileBand,
     ReferenceKind,
     Tolerance,
     band_envelope_distance,
+    band_worst_point,
     default_tolerance,
     estimation_default_tolerance,
     normalized_curve_distance,
     relative_error,
+    require_documented_default,
     verdict_for,
     worst_point_deviation,
 )
@@ -64,6 +66,24 @@ class LintResult:
         if self.protocol is not None:
             record["protocol"] = self.protocol
         return record
+
+
+def _checked(
+    tol: Tolerance,
+    method: ComparisonMethod,
+    reference_kind: ReferenceKind = ReferenceKind.NUMERIC,
+    level: ReproductionLevel = ReproductionLevel.SIMULATION,
+) -> Tolerance:
+    """Hold a linted tolerance to the same provenance rule the certifying judge holds it to.
+
+    The judge refuses a ``class-default`` pair that is not *this* comparison's documented default,
+    because the widest pair in the table would otherwise certify a 24% error under a provenance
+    reading ``class-default``. The linter checked nothing, so an agent could gate its work on a
+    verdict the certificate would refuse to publish — the same linter-versus-judge drift, one
+    table row over.
+    """
+    require_documented_default(tol, method, reference_kind, level)
+    return tol
 
 
 def _all_finite(*series: Sequence[float]) -> bool:
@@ -152,8 +172,9 @@ def lint_curve(
             f"reference has {len(reference)} points but the model was sampled at "
             f"{len(predicted)}; sample the reference at the same {steps + 1} points"
         )
-    tol = tolerance or default_tolerance(
-        ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind
+    tol = _checked(
+        tolerance or default_tolerance(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind),
+        ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind,
     )
     if not _all_finite(reference, predicted):
         return _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol)
@@ -192,7 +213,10 @@ def lint_objective(
             )
         lower[model.reaction_index(reaction_id)] = -abs(uptake)
     predicted = solve_objective(model.stoichiometry, model.objective, lower, model.upper)
-    tol = tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind)
+    tol = _checked(
+        tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind),
+        ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind,
+    )
     if not _all_finite((reported, predicted)):
         return _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol)
     unscaled_zero = _reported_zero_lint(
@@ -253,7 +277,12 @@ def lint_stochastic(
         max_events=max_events,
     )
     mean, variance = species_mean_variance(ensemble, species)
-    tol = tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC)
+    tol = _checked(
+        tolerance or default_tolerance(
+            ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+        ),
+        ComparisonMethod.SCALAR_RELATIVE_ERROR,
+    )
     protocol = f"SSA ensemble: {trajectories} trajectories to t={duration:g}, seed {seed}"
     if not _all_finite((reported_mean, mean)):
         return replace(
@@ -308,7 +337,10 @@ def lint_diffusion(
     if steps < 1:
         raise ValueError("steps must be at least 1: a zero-step run returns the initial profile")
     predicted = diffuse_1d(initial, diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, decay=decay)
-    tol = tolerance or default_tolerance(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind)
+    tol = _checked(
+        tolerance or default_tolerance(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind),
+        ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind,
+    )
     if not _all_finite(reference, predicted):
         return _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol)
     return _curve_lint(reference, predicted, tol)
@@ -370,7 +402,11 @@ def lint_estimation(
     simulation scalar's because a re-fit is sensitive to the optimizer and its starting values.
     Deterministic and dependency-free — the same pair always yields the same scope-flagged verdict.
     """
-    tol = tolerance or estimation_default_tolerance()
+    tol = _checked(
+        tolerance or estimation_default_tolerance(),
+        ComparisonMethod.SCALAR_RELATIVE_ERROR,
+        level=ReproductionLevel.ESTIMATION,
+    )
     if not _all_finite((reported, recovered)):
         return _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol)
     unscaled_zero = _reported_zero_lint(
@@ -406,8 +442,11 @@ def lint_distribution(
     """
     ref_bands = tuple(PercentileBand(float(b["percentile"]), tuple(b["curve"])) for b in reported)
     pred_bands = tuple(PercentileBand(float(b["percentile"]), tuple(b["curve"])) for b in predicted)
-    tol = tolerance or default_tolerance(
-        ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, reference_kind
+    tol = _checked(
+        tolerance or default_tolerance(
+            ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, reference_kind
+        ),
+        ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, reference_kind,
     )
     if not _all_finite(
         [v for band in ref_bands for v in band.curve],
@@ -415,10 +454,17 @@ def lint_distribution(
     ):
         return _not_evaluable(ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, tol)
     distance, worst_band = band_envelope_distance(ref_bands, pred_bands)
+    worst = band_worst_point(ref_bands, pred_bands)
+    scaled_worst = (
+        worst * (tol.reproduced_within / tol.partial_within) if tol.partial_within > 0.0 else worst
+    )
     return LintResult(
-        verdict=verdict_for(distance, tol),
+        verdict=verdict_for(max(distance, scaled_worst), tol),
         method=ComparisonMethod.DISTRIBUTION_BAND_DISTANCE.value,
-        discrepancy=f"worst band {worst_band.label()} normalized distance {distance:.4f}",
+        discrepancy=(
+            f"worst band {worst_band.label()} normalized distance {distance:.4f}, worst point "
+            f"{worst:.4f} of span (pass budget {tol.partial_within:.4f})"
+        ),
         tolerance=tol.label(),
     )
 

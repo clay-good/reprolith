@@ -15,7 +15,7 @@ extras and imports them lazily.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .engine import ENGINE as _COPASI_ENGINE
 from .engine import ROADRUNNER_ENGINE, simulate, simulate_with_roadrunner
@@ -73,19 +73,27 @@ def corroborate_curve(
 
     Simulates ``species`` over ``[0, duration]`` at ``steps`` intervals under both COPASI and
     libRoadRunner (same grid, so the curves align), then measures their normalized distance. A
-    distance at or below ``rel_tol`` means the two independent engines agree — the curve is the
-    model's behavior, not one solver's; above it, the result is engine-sensitive and should be
-    flagged rather than trusted to a single engine.
+    published distance bound at or below ``rel_tol`` means the two independent engines agree — the
+    curve is the model's behavior, not one solver's; above it, the result is engine-sensitive and
+    should be flagged rather than trusted to a single engine. The criterion is applied to the
+    *published* bound rather than the raw distance, so the record and its verdict never disagree.
     """
     _, copasi_values = simulate(sbml, species, duration=duration, steps=steps)
     _, roadrunner_values = simulate_with_roadrunner(sbml, species, duration=duration, steps=steps)
     distance = normalized_curve_distance(copasi_values, roadrunner_values)
-    return EngineCorroboration(
+    result = EngineCorroboration(
         species=species,
         engines=(_COPASI_ENGINE, ROADRUNNER_ENGINE),
         distance=distance,
-        stable=distance <= rel_tol,
+        stable=False,
     )
+    # The verdict answers to the number that is published, not the one that was measured. The
+    # artifact records the distance rounded *up* to the next decade, so a raw 0.011 was published
+    # as "at most 1e-01 -> engine-independent" against a 0.02 criterion — a record that contradicts
+    # itself on its face. Judging the bound keeps the two in step and errs toward engine-sensitive,
+    # which is the safe direction. Every committed model measures at most 1e-03, so no published
+    # verdict moves.
+    return replace(result, stable=result.distance_bound() <= rel_tol)
 
 
 __all__ = ["EngineCorroboration", "corroborate_curve"]

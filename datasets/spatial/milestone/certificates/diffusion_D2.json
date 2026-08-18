@@ -8,7 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "curve-normalized-distance",
-      "protocol": "1-D finite difference: D=2, dx=0.2, dt=0.004, 800 steps, zero-flux (Neumann) boundaries",
+      "protocol": "1-D finite difference: D=2.0, dx=0.2, dt=0.004000000000000001, 800 steps, zero-flux (Neumann) boundaries",
       "quantity": "diffused concentration profile",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "explicit-forward-euler-finite-difference (rev 571d86fe9036)",
+    "algorithm": "explicit-forward-euler-finite-difference (rev 498225bd61c4)",
     "engine": "reprolith-fd",
     "version": "0.0.1"
   },

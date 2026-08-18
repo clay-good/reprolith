@@ -96,6 +96,11 @@ class LoopNote:
             # A note with nowhere to check it is an assertion, which is what this record exists
             # to replace.
             raise ValueError(f"loop note {self.id!r} cites no evidence")
+        if not self.note.strip():
+            # The written explanation is the whole artifact. A blank one covers its subjects and
+            # passes the audit while explaining nothing, which is the failure this record exists
+            # to make impossible.
+            raise ValueError(f"loop note {self.id!r} has no written explanation")
         if self.kind is NoteKind.DISAGREEMENT and (self.stage is None or self.resolution is None):
             raise ValueError(
                 f"loop note {self.id!r} explains a disagreement, so it must name the responsible "
@@ -158,12 +163,22 @@ def disagreement_subjects(reports: Iterable[Mapping[str, Any]]) -> tuple[str, ..
     An abstention is a disagreement (``run.py``'s blocked path), so it needs a note like any
     other: "we abstained, and here is why" is exactly the explanation the loop owes.
     """
-    subjects = [
-        str(row["entry"])
-        for report in reports
-        for row in report.get("per_entry", [])
-        if not row.get("agree", False)
-    ]
+    subjects: list[str] = []
+    for report in reports:
+        for row in report.get("per_entry", []):
+            if row.get("agree", False):
+                continue
+            entry = str(row["entry"])
+            if entry in subjects:
+                # Entry ids are not globally unique across classes — PK/PD and kinetic both draw
+                # from the BioModels id space. Two reports disagreeing on the same id would be
+                # covered by whichever note named it first, so one class's disagreement could be
+                # "explained" by a note about another class entirely. Refuse instead.
+                raise ValueError(
+                    f"two agreement reports disagree on the same entry {entry!r}; a note naming "
+                    "it cannot say which class it explains"
+                )
+            subjects.append(entry)
     return tuple(sorted(subjects))
 
 

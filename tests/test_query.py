@@ -224,3 +224,57 @@ def test_the_current_certificate_leads_even_when_a_middle_link_was_never_publish
         digests = ReprolithQuery(Catalog(), ledger).certificates_for(title="One paper")
         # The deeper chain leads, whichever order the ledger happens to hold them in.
         assert digests[0] == certificate_digest(current), order
+
+
+def test_an_estimation_level_pass_is_visible_in_the_verdict_summary() -> None:
+    """The summary must not read as a clean simulation pass when the claim was re-fitted.
+
+    `derive_overall` deliberately ignores the reproduction level, so `overall`, `claim_counts`,
+    and `assumption_qualified_claims` all look clean for an estimation-level reproduction. Every
+    other rendering flags it; this one silently did not.
+    """
+    from reprolith import (
+        Certificate,
+        ClaimAssessment,
+        ComparisonMethod,
+        EnginePin,
+        PaperIdentity,
+        ReferenceKind,
+        ReproductionLevel,
+        Verdict,
+        build_certificate,
+    )
+    from reprolith.query import ReprolithQuery
+
+    assessment = ClaimAssessment(
+        claim_id="k_el", quantity="elimination rate", source_location="Table 1",
+        verdict=Verdict.REPRODUCED, method=ComparisonMethod.SCALAR_RELATIVE_ERROR,
+        discrepancy="relative error 0.0100", tolerance="reproduced<=0.1, partial<=0.25",
+        tolerance_source="class-default", reference_kind=ReferenceKind.NUMERIC,
+        level=ReproductionLevel.ESTIMATION,
+        protocol="Nelder-Mead least squares from the paper's stated starting values",
+    )
+    cert: Certificate = build_certificate(
+        paper=PaperIdentity(title="re-fitted", doi="10.0/e"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[assessment],
+    )
+    view = ReprolithQuery._verdict_view(cert)
+    assert view["overall"] == "reproduced"
+    assert view["estimation_claims"] == ["k_el"]
+
+
+def test_backlog_health_judges_leases_against_now_not_the_epoch() -> None:
+    """An expired lease used to block a claimable entry forever, in both published surfaces."""
+    import time
+
+    from reprolith.catalog import Catalog, Identifiers, ModelClass
+    from reprolith.query import ReprolithQuery
+    from reprolith.supersession import CertificateLedger
+
+    catalog = Catalog()
+    catalog.add(Identifiers(title="a paper", accession="ACC0"), model_class=ModelClass.ODE_PKPD)
+    claimed = catalog.claim_next("agentA", at=time.time() - 10_000, seconds=10)
+    assert claimed is not None
+    query = ReprolithQuery(catalog=catalog, ledger=CertificateLedger())
+    assert query.backlog_health()["claimable"] == len(catalog.claimable(time.time()))

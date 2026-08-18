@@ -508,3 +508,18 @@ def test_an_ensemble_too_small_to_resolve_the_claim_abstains_instead_of_failing(
     # A big enough ensemble judges the claim normally.
     thick = certify(1600, seed=11)
     assert thick.assessments[0].verdict.value == "reproduced"
+
+
+def test_a_single_trajectory_cannot_resolve_a_claim() -> None:
+    """Zero variance means "resolvable" only when the ensemble was big enough to measure one.
+
+    One draw has a population variance of 0 by construction, so the standard-error guard was
+    skipped exactly where the sampling noise is largest: an exactly-correct model published
+    `reproduced` or `failed` by seed lottery, while every ensemble size from 2 upward abstained.
+    """
+    from reprolith.stochastic import unresolvable_ensemble_reason
+
+    reason = unresolvable_ensemble_reason(variance=0.0, reported_mean=10.0, trajectories=1)
+    assert reason is not None and "single draw" in reason
+    # A genuinely resolvable ensemble is still resolvable.
+    assert unresolvable_ensemble_reason(variance=8.9, reported_mean=10.0, trajectories=1000) is None

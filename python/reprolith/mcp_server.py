@@ -277,8 +277,8 @@ EFFECTFUL_TOOLS: list[dict[str, Any]] = [
     {
         "name": "submit_paper",
         "description": (
-            "EFFECTFUL: add a candidate paper to the catalog as a queued ode-pkpd entry. "
-            "Submitting the same paper again resolves to the existing entry, never a duplicate."
+            "EFFECTFUL: add a candidate paper to the catalog as a queued entry. Submitting the "
+            "same paper again resolves to the existing entry, never a duplicate."
         ),
         "inputSchema": {
             "type": "object",
@@ -287,7 +287,10 @@ EFFECTFUL_TOOLS: list[dict[str, Any]] = [
                 "doi": {"type": "string"},
                 "pubmed_id": {"type": "string"},
                 "accession": {"type": "string"},
-                "model_class": {"type": "string", "description": "default 'ode-pkpd'"},
+                "model_class": {
+                    "type": "string",
+                    "description": "the paper's model class; omitted means 'unassigned'",
+                },
             },
             "required": ["title"],
         },

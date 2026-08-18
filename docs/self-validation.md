@@ -28,9 +28,11 @@ follow end to end, all regenerable from the repository alone.
   leukemia, MAPK cancer cell-fate, guard-cell ABA — up to a 2⁶⁰ space) have their steady states
   found by SAT and cross-validated against an independent SAT solver (Reprolith's z3 vs the
   reference's sympy), each verified to be a genuine fixed point.
-- **Depth beyond a single number.** FBA cross-validates all three FROG components (objective,
-  flux-variability, gene/reaction deletion) across eight models up to genome scale (iJO1366, 2583
-  reactions) and spanning bacteria, a pathogen, and a eukaryote, plus **synthetic lethality** — its
+- **Depth beyond a single number.** FBA cross-validates the FROG **objective** across all eight
+  models up to genome scale (iJO1366, 2583 reactions), spanning bacteria, a pathogen, and a
+  eukaryote; the other two FROG components are cross-validated on fewer models — flux variability
+  on two (E. coli core and iIT341) and gene/reaction deletion on E. coli core — plus **synthetic
+  lethality** — its
   double-deletion analysis reproduces COBRApy pair-for-pair on E. coli core, both at reaction level
   (`double_reaction_deletion`, all 111 synthetic-lethal reaction pairs) and gene level
   (`double_gene_deletion`, all 53 synthetic-lethal gene pairs through the GPR rules) — an epistasis

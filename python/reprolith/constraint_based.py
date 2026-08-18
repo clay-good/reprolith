@@ -150,7 +150,9 @@ def _medium_protocol(medium: Sequence[Parameter], model: FbaModel) -> str:
     the same statement for a class whose "sampling" is a set of uptake limits.
     """
     stated = (
-        ", ".join(f"{p.name}<={p.value:g} {p.unit}" for p in medium)
+        # Full precision for the same reason the ODE protocol uses it: the bound printed here is
+        # the bound the LP was solved under, and a re-run from a rounded one is a different run.
+        ", ".join(f"{p.name}<={p.value!r} {p.unit}" for p in medium)
         if medium
         else "the model's own distributed bounds (none stated by the paper)"
     )

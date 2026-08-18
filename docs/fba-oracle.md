@@ -209,9 +209,11 @@ and `gene_essentiality` recovers its essential-gene set — including the indepe
 essential enolase (`b2779`) — computed from the model's own GPR rules.
 
 Beyond the one core model, a [cross-validation set](../datasets/constraint_based/cross_validation/)
-checks the ingester on structural variety: three diverse genome-scale models (*H. pylori*, *T.
-maritima*, *L. lactis*; 554–754 reactions) whose growth rate the independent COBRApy implementation
-computes are reproduced by `ingest_fbc_sbml` + `solve_objective` to six digits — a non-circular
+checks the ingester on structural variety: seven genome-scale models (*E. coli* iAF1260 and
+iJO1366, *M. tuberculosis* iEK1008, *H. pylori* iIT341, *T. maritima* iLJ478, *S. cerevisiae*
+iMM904, *L. lactis* iNF517; 554–2583 reactions) whose growth rate the independent COBRApy
+implementation computes are reproduced by `ingest_fbc_sbml` + `solve_objective` to a relative
+1e-5 — a non-circular
 cross-tool check where a stoichiometry-, bound-, or objective-parsing bug would surface. The
 [milestone blind run](../datasets/constraint_based/milestone/) folds eight real BiGG models — the
 documented core model plus seven genome-scale reconstructions (*E. coli* iAF1260 and iJO1366,
