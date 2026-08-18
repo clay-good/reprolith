@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from reprolith import (
     Catalog,
     ClaimAssessment,
@@ -115,3 +116,36 @@ def test_advance_maps_not_reproduced_to_failed() -> None:
     assert entry.state is LifecycleState.FAILED
     # A failed attempt ran to completion, so it records no missing input.
     assert all(not t.missing_inputs for t in entry.history)
+
+
+def test_a_certificate_for_another_paper_is_refused_when_no_side_states_an_identifier() -> None:
+    """Five of the six classes certify models with no DOI and no PubMed ID.
+
+    The guard compared doi/pubmed only when *both* sides stated one, so for 29 of the 30 published
+    certificates it compared nothing: a certificate filed under the wrong accession was accepted in
+    silence, scored against that other paper's ground-truth label, and the run still reported full
+    agreement. The title is the only thing left that tells the two apart.
+    """
+    from reprolith import Certificate, EnginePin, OverallVerdict, PaperIdentity, Scope
+    from reprolith.catalog import Catalog, Identifiers, ModelClass
+    from reprolith.run import require_same_paper
+
+    catalog = Catalog()
+    entry = catalog.add(Identifiers(title="Kholodenko2000 MAPK cascade", accession="BIOMD10"),
+                        ModelClass.KINETIC)
+    other = Certificate(
+        paper=PaperIdentity(title="Elowitz2000 repressilator", doi=""),
+        engine_pin=EnginePin(engine="e", version="1"),
+        overall=OverallVerdict.BLOCKED, scope=Scope(), assessments=(), assumptions=(),
+    )
+    with pytest.raises(ValueError, match="different paper"):
+        require_same_paper(entry, other, "BIOMD10")
+
+    # …and the variation the doi-only rule existed to tolerate still passes: one record naming the
+    # paper more fully than the other is one paper, not two.
+    fuller = Certificate(
+        paper=PaperIdentity(title="Kholodenko2000 MAPK cascade (oscillatory signaling)", doi=""),
+        engine_pin=EnginePin(engine="e", version="1"),
+        overall=OverallVerdict.BLOCKED, scope=Scope(), assessments=(), assumptions=(),
+    )
+    require_same_paper(entry, fuller, "BIOMD10")

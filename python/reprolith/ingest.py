@@ -121,7 +121,11 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
             Parameter(
                 name=species.getId(),
                 value=float(value),
-                unit=species.getSubstanceUnits() or UNSTATED_UNIT,
+                # SBML L3 makes `<model substanceUnits=...>` the default for every species that
+                # omits the attribute, so reading only the species attribute reported a unit the
+                # model does state as absent — a load-bearing gap whose own text asserted something
+                # false about the artifact, and a difficulty of "high" for a fully specified model.
+                unit=species.getSubstanceUnits() or model.getSubstanceUnits() or UNSTATED_UNIT,
                 source_location=source,
                 confidence=ExtractionConfidence.QUOTED,
             )
@@ -186,8 +190,76 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
         artifacts=(artifact,),
         gaps=_unread_constructs(model)
         + _unstated_initial_values(tuple(unstated_ics))
+        + _unresolved_symbols(
+            model,
+            equations=tuple(equations),
+            declared=set(state_variables) | {p.name for p in parameters},
+        )
         + _unstated_units(tuple(parameters) + tuple(initial_conditions)),
     )
+
+
+def _rule_names(model: Any, target: str) -> set[str]:
+    """Every plain identifier a rule's math refers to (not `time`, not function names)."""
+    libsbml = _libsbml()
+    names: set[str] = set()
+    for i in range(model.getNumRules()):
+        rule = model.getRule(i)
+        if rule.getVariable() != target or rule.getMath() is None:
+            continue
+        stack = [rule.getMath()]
+        while stack:
+            node = stack.pop()
+            if node.getType() == libsbml.AST_NAME:
+                names.add(node.getName())
+            stack.extend(node.getChild(k) for k in range(node.getNumChildren()))
+    return names
+
+
+def _unresolved_symbols(
+    model: Any, *, equations: tuple[Equation, ...], declared: set[str]
+) -> tuple[Gap, ...]:
+    """Record what the dossier's own equations refer to but the dossier does not carry.
+
+    :func:`build_model_sbml` already refuses an equation targeting something undeclared — but only
+    on the way *out*, and only for targets. On the way *in*, a species marked ``constant`` or
+    ``boundaryCondition`` is skipped as "a fixed input", which is right for a true fixed input and
+    wrong for the two shapes that look like one: a boundary species with its own rate rule (a state
+    variable by any other name) and a constant species a rule reads (a stated value). Either way its
+    value left the dossier with no gap behind it, so the gap report said nothing was missing, the
+    difficulty estimate said "a valid shipped model and no gaps", and adopt-and-verify — which
+    never rebuilds, so never reaches the way-out check — reported agreement over half a model.
+
+    Compartments are left to the compartment gap in :func:`_unread_constructs` rather than reported
+    twice; a compartment carrying its own dynamics is a rule *target*, which this still catches.
+    """
+    compartments = {model.getCompartment(i).getId() for i in range(model.getNumCompartments())}
+    resolvable = declared | {e.target for e in equations} | compartments
+    unresolved = {
+        name
+        for equation in equations
+        for name in _rule_names(model, equation.target)
+        if name not in resolvable
+    }
+    dynamics = {e.target for e in equations if e.kind is EquationKind.RATE} - declared
+    missing = sorted(unresolved | dynamics)
+    if not missing:
+        return ()
+    shown = ", ".join(missing[:5]) + (", …" if len(missing) > 5 else "")
+    return (Gap(
+        element="undeclared model elements",
+        kind=GapKind.PARAMETER,
+        detail=(
+            f"{len(missing)} element(s) the model's own rules depend on are not carried by this "
+            f"dossier ({shown}) — a species held constant or at the boundary, or a variable with "
+            "an equation of motion but no declaration; a model rebuilt from this dossier is not "
+            "the model in the artifact"
+        ),
+        load_bearing=True,
+        # The artifact still holds them, so running the author's own file closes this — but the
+        # dossier, the reconstruction, and anything read off them do not.
+        carried_by_artifact=True,
+    ),)
 
 
 def _unstated_initial_values(names: tuple[str, ...]) -> tuple[Gap, ...]:

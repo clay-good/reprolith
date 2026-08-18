@@ -120,6 +120,28 @@ def require_distinct_assumption_ids(assumptions: Sequence[Assumption]) -> None:
         seen.add(assumption.id)
 
 
+def require_stated_cause(assessments: Iterable[ClaimAssessment]) -> None:
+    """Refuse a non-pass verdict that names no reason for it.
+
+    The judges enforce this at the moment they decide — a partial or failed verdict must carry a
+    root cause — but the builder and the load path did not, so a hand-edited or contributed
+    certificate could say `failed` with `root_cause`, `implicated`, and `fault_hypothesis` all
+    null. The reader is then told, by `render.gap_items`, that the claim had no evaluable output —
+    a reason invented for a claim the certificate says *was* evaluated and missed. The public
+    registry reads certificates off disk and never rebuilds them, which is the same door
+    :func:`require_stated_protocol` and :func:`require_distinct_assumption_ids` were hoisted to.
+    """
+    for assessment in assessments:
+        if assessment.verdict not in (Verdict.PARTIAL, Verdict.FAILED):
+            continue
+        if not (assessment.root_cause or assessment.implicated or assessment.fault_hypothesis):
+            raise ValueError(
+                f"claim {assessment.claim_id!r} is published as {assessment.verdict.value!r} with "
+                "no root cause, implicated element, or fault hypothesis; a miss this certificate "
+                "asserts has to say what missed"
+            )
+
+
 def build_certificate(
     *,
     paper: PaperIdentity,
@@ -143,6 +165,7 @@ def build_certificate(
     frozen_assessments = tuple(assessments)
     frozen_assumptions = tuple(assumptions)
     require_stated_protocol(frozen_assessments)
+    require_stated_cause(frozen_assessments)
     require_distinct_assumption_ids(frozen_assumptions)
     return Certificate(
         paper=paper,

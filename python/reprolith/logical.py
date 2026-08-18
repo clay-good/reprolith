@@ -708,6 +708,58 @@ def search_protocol(nodes: int) -> str:
     return f"{nodes} nodes, SAT search (2^{nodes} states is beyond exhaustive enumeration)"
 
 
+def solver_pin_for(
+    *, nodes: int, scheme: UpdateScheme = UpdateScheme.SYNCHRONOUS
+) -> EnginePin:
+    """The pin for a network of this size — which path ran is a fact, not a caller's choice.
+
+    :func:`solver_pin` takes ``sat`` from the caller, and a caller who passes the wrong one
+    publishes a certificate whose pin contradicts its own protocol line: "every one of 2^25 states
+    was walked" over a space z3 searched, with z3's version nowhere on it. The node count already
+    decides the path (:data:`MAX_ENUMERABLE_NODES`), so read it from the network rather than asking.
+    """
+    return solver_pin(scheme=scheme, sat=nodes > MAX_ENUMERABLE_NODES)
+
+
+def _pin_names_sat(engine_pin: EnginePin) -> bool:
+    """Whether a pin says the SAT path produced the number, by the token :func:`solver_pin` writes.
+
+    A pin with no algorithm names no path, so it does not name this one — and for a network that
+    needs z3 that silence is itself the overclaim the caller is refused for.
+    """
+    return "sat-fixed-points" in (engine_pin.algorithm or "")
+
+
+def require_pin_matches_path(engine_pin: EnginePin, *, node_counts: Iterable[int]) -> None:
+    """Refuse a pin that does not name the path the networks actually took.
+
+    The protocol line on each assessment says which of the two paths ran; the pin says which
+    software ran. Nothing made them agree, so a hand-built pin could announce exhaustive
+    enumeration of a state space z3 searched — the stronger claim, and the false one. Raises rather
+    than correcting, because the pin also carries a version this module must not invent.
+    """
+    counts = tuple(node_counts)
+    if not counts:
+        return
+    needs_sat = tuple(n > MAX_ENUMERABLE_NODES for n in counts)
+    if len(set(needs_sat)) > 1:
+        raise ValueError(
+            "these claims span both the enumeration and the SAT path, and one pin cannot name "
+            "both; certify them separately, each under its own solver_pin_for(nodes=...)"
+        )
+    if needs_sat[0] and not _pin_names_sat(engine_pin):
+        raise ValueError(
+            f"a network past {MAX_ENUMERABLE_NODES} nodes is solved by z3, not by enumeration, "
+            f"but the pin says {engine_pin.algorithm!r}; use solver_pin_for(nodes=...)"
+        )
+    if not needs_sat[0] and _pin_names_sat(engine_pin):
+        raise ValueError(
+            f"the pin names the SAT solver ({engine_pin.algorithm!r}) but every network here is "
+            f"within {MAX_ENUMERABLE_NODES} nodes and was enumerated exhaustively; "
+            "use solver_pin_for(nodes=...)"
+        )
+
+
 def certify_logical(
     *,
     paper: PaperIdentity,
@@ -727,6 +779,10 @@ def certify_logical(
     # the protocol), and a generator is exhausted by the first pass — the zip then yielded nothing
     # and an earned not-reproduced was published as an empty, blocked certificate.
     claims = tuple(claims)
+    # The pin has to name the path these networks actually take before any of them is judged: the
+    # protocol line below says which path ran, and a pin that disagrees with it publishes two
+    # contradictory accounts of how one number was computed.
+    require_pin_matches_path(engine_pin, node_counts=[len(claim.rules) for claim in claims])
     assessments = [
         judge_steady_state(
             claim_id=claim.claim_id,
@@ -772,6 +828,8 @@ __all__ = [
     "judge_steady_state",
     "logical_dossier",
     "parse_boolean_network",
+    "require_pin_matches_path",
     "solver_pin",
+    "solver_pin_for",
     "validate_logical",
 ]

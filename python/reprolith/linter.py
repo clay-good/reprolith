@@ -288,6 +288,14 @@ def lint_stochastic(
         return replace(
             _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol), protocol=protocol
         )
+    # An extinction claim reports zero, and `relative_error` raises without the scale it is zero
+    # relative to. Its two siblings, `lint_objective` and `lint_estimation`, turn that into an
+    # abstention; this one propagated the exception through the MCP boundary as a server error.
+    unscaled_zero = _reported_zero_lint(
+        reported_mean, mean, ComparisonMethod.SCALAR_RELATIVE_ERROR, tol
+    )
+    if unscaled_zero is not None:
+        return replace(unscaled_zero, protocol=protocol)
     unresolvable = unresolvable_ensemble_reason(
         reported_mean=reported_mean, variance=variance, trajectories=trajectories, tolerance=tol,
     )

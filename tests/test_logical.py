@@ -408,3 +408,67 @@ def test_certify_logical_accepts_a_generator_of_claims() -> None:
     from_generator = certify_logical(paper=paper, engine_pin=pin, claims=iter(claims))
     assert from_generator.overall is from_list.overall is OverallVerdict.NOT_REPRODUCED
     assert len(from_generator.assessments) == len(from_list.assessments) == 1
+
+
+def test_certify_logical_refuses_a_pin_that_does_not_name_the_path_taken() -> None:
+    """A pin is a claim about what ran, and nothing used to check it against what did.
+
+    A network past `MAX_ENUMERABLE_NODES` is solved by z3, not by walking 2ⁿ states — but
+    `certify_logical` took whatever pin the caller passed, so a hand-built `solver_pin()` published
+    a certificate announcing "exhaustive enumeration of all 2^25 states" over a space z3 searched,
+    with z3's version nowhere on it, one line from a protocol field saying the opposite.
+    """
+    from reprolith import PaperIdentity
+    from reprolith.logical import (
+        MAX_ENUMERABLE_NODES,
+        LogicalClaim,
+        certify_logical,
+        solver_pin,
+        solver_pin_for,
+    )
+
+    n = MAX_ENUMERABLE_NODES + 5
+    nodes = [f"N{i}" for i in range(n)]
+    rules = {node: node for node in nodes}  # every node holds its own value: 2ⁿ fixed points
+    claim = LogicalClaim(claim_id="ss", quantity="steady state", rules=rules,
+                         reported=dict.fromkeys(nodes, 1), source_location="Fig 1")
+    paper = PaperIdentity(title="big", doi="10.0/b")
+
+    with pytest.raises(ValueError, match="solved by z3"):
+        certify_logical(paper=paper, engine_pin=solver_pin(), claims=[claim])
+
+    small = LogicalClaim(claim_id="ss", quantity="steady state", rules={"A": "!B", "B": "!A"},
+                         reported={"A": 1, "B": 0}, source_location="Fig 1")
+    with pytest.raises(ValueError, match="enumerated exhaustively"):
+        certify_logical(paper=paper, engine_pin=solver_pin_for(nodes=n), claims=[small])
+
+
+def test_certify_logical_refuses_claims_spanning_both_paths_under_one_pin() -> None:
+    """One pin cannot truthfully name two paths, so the mix is refused rather than half-described."""
+    from reprolith import PaperIdentity
+    from reprolith.logical import (
+        MAX_ENUMERABLE_NODES,
+        LogicalClaim,
+        certify_logical,
+        solver_pin,
+    )
+
+    nodes = [f"N{i}" for i in range(MAX_ENUMERABLE_NODES + 5)]
+    claims = [
+        LogicalClaim(claim_id="small", quantity="steady state", rules={"A": "!B", "B": "!A"},
+                     reported={"A": 1, "B": 0}, source_location="Fig 1"),
+        LogicalClaim(claim_id="big", quantity="steady state", rules={n: n for n in nodes},
+                     reported=dict.fromkeys(nodes, 1), source_location="Fig 2"),
+    ]
+    with pytest.raises(ValueError, match="span both"):
+        certify_logical(paper=PaperIdentity(title="mixed", doi="10.0/m"),
+                        engine_pin=solver_pin(), claims=claims)
+
+
+def test_solver_pin_for_reads_the_path_off_the_network_size() -> None:
+    """The path is a fact about the network, so the caller never has to get `sat=` right."""
+    from reprolith.logical import MAX_ENUMERABLE_NODES, solver_pin_for
+
+    assert "exhaustive-state-enumeration" in solver_pin_for(nodes=MAX_ENUMERABLE_NODES).algorithm
+    big = solver_pin_for(nodes=MAX_ENUMERABLE_NODES + 1)
+    assert "sat-fixed-points" in big.algorithm and "z3" in big.algorithm

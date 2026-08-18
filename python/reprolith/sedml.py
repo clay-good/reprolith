@@ -59,7 +59,16 @@ def parse_sedml_recipes(sedml: str) -> list[SimulationRecipe]:
       document's own figure depends on the overrides;
     * a ``repeatedTask`` that scans a range or applies a ``setValue`` — the document describes
       several runs at several parameter values, and folding them into one run at the model's
-      default value reproduces an arm the document never plotted.
+      default value reproduces an arm the document never plotted;
+    * a time course whose ``initialTime`` or ``outputStartTime`` is not zero. ``numberOfSteps``
+      spans ``[outputStartTime, outputEndTime]``, not ``[0, outputEndTime]``, and a recipe is
+      adopted and run verbatim as ``simulate(duration=recipe.duration, steps=recipe.steps)`` —
+      so pairing the document's step count with its end time silently changed the sampling
+      interval. Measured on a document sampling ``t = 40…60`` in 20 intervals: the recipe said
+      dt = 3.0 where the document said dt = 1.0, and a model reproducing its reference *exactly*
+      linted `failed` at a normalized distance of 4.07. ``initialTime`` was never read at all.
+      Neither is expressible in one ``(duration, steps)`` pair, so the task is skipped rather than
+      described wrongly.
 
     A ``repeatedTask`` that merely wraps a subtask without changing anything still resolves to that
     subtask, so its observables attach to the runnable recipe. Raises ``ValueError`` if the text is
@@ -82,10 +91,12 @@ def parse_sedml_recipes(sedml: str) -> list[SimulationRecipe]:
         if name == "uniformTimeCourse":
             sim_id = element.get("id")
             end_time, num_steps = element.get("outputEndTime"), element.get("numberOfSteps")
+            initial_time = float(element.get("initialTime", "0"))
+            output_start = float(element.get("outputStartTime", "0"))
+            if initial_time != 0.0 or output_start != 0.0:
+                continue  # not runnable verbatim as (duration, steps); see the docstring
             if sim_id is not None and end_time is not None and num_steps is not None:
-                simulations[sim_id] = (
-                    float(end_time), int(num_steps), float(element.get("outputStartTime", "0")),
-                )
+                simulations[sim_id] = (float(end_time), int(num_steps), output_start)
         elif name == "model":
             model_id = element.get("id")
             source = element.get("source", "")

@@ -49,6 +49,22 @@ def summarize_report(report: dict[str, Any]) -> dict[str, int]:
             f"the agreement report does not partition: total={total}, agreements={matched}, "
             f"abstentions={abstained} — matched and abstained cannot exceed the labelled entries"
         )
+    # The confusion rows are the report's own account of what happened, so they are checked against
+    # the counters rather than only alongside them. The guard above catches an inflated abstention
+    # count and used to let an inflated `agreements` through untouched: 55 matching rows and 45
+    # wrong verdicts published as 100 agreements and zero disagreements, off one edited integer.
+    if confusion:
+        rows = sum(int(count) for count in confusion.values())
+        agreeing = sum(
+            int(count) for key, count in confusion.items()
+            if key.partition("->")[0] == key.partition("->")[2]
+        )
+        if rows != total or agreeing != matched:
+            raise ValueError(
+                f"the agreement report contradicts its own confusion rows: total={total} and "
+                f"agreements={matched}, but the rows record {rows} entries of which {agreeing} "
+                "match their label"
+            )
     return {"total": total, "matched": matched, "abstained": abstained, "other": total - matched - abstained}
 
 

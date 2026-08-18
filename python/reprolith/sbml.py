@@ -224,6 +224,35 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
                 f"initial condition {ic.name}: dossier {ic.value} != model "
                 f"{comparable_ics[ic.name]}"
             )
+    # …and the other direction, for the model's *state*. Every check above walks dossier -> model,
+    # so a species present in the model and absent from the dossier was never looked at: a dossier
+    # missing half a model's state returned no mismatch at all, which
+    # `ReconstructionBundle.mismatches` publishes as "checked and agreed". The way in was guarded
+    # and the way out was not.
+    #
+    # Scoped to species, and only for a model this ingester reads as rules. Parameters are excluded
+    # because a curated model's local reaction parameters number in the hundreds and a rules-only
+    # dossier is not claiming to carry them; a model built from *reactions* is excluded outright
+    # because its dossier already carries the `reaction network` gap saying so. Reporting either
+    # here would bury the one thing this sweep is for under 119 lines of wolf-crying.
+    if model.getNumReactions():
+        return mismatches
+    stated_by_dossier = (
+        {p.name for p in dossier.parameters}
+        | {ic.name for ic in dossier.initial_conditions}
+        | set(dossier.state_variables)
+        # An *assignment* target is a derived observable — fully determined by the other values,
+        # so a stored initial amount for it is redundant and reporting it would cry wolf. A *rate*
+        # target is not: it needs an initial value, and a rate target the dossier carries no value
+        # for is exactly the state variable that went missing.
+        | {e.target for e in dossier.equations if e.kind is EquationKind.ASSIGNMENT}
+    )
+    for name, value in sorted(sbml_ics.items()):
+        if name not in stated_by_dossier:
+            mismatches.append(
+                f"{name}: a species the model gives an initial value ({value}) but the dossier "
+                "does not state"
+            )
     return mismatches
 
 
@@ -801,8 +830,21 @@ def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[i
         product_powers: dict[str, int] = {}
         for k in range(rxn.getNumProducts()):
             ref = rxn.getProduct(k)
+            # Rounded silently, this deleted a "0.5 B" product from the network entirely and let a
+            # negative stoichiometry drive counts to -297. The reactant side is already protected —
+            # `_mass_action_rate` refuses a power that does not match the kinetic law — and this
+            # ingester already refuses a non-integer *initial* amount for the same reason. Fractional
+            # stoichiometry is ordinary in real models; the SSA cannot represent it, so it is
+            # refused rather than rounded into a different network.
+            stated = ref.getStoichiometry()
+            if not (stated > 0 and abs(stated - round(stated)) <= 1e-9):
+                raise ValueError(
+                    f"reaction {rxn.getId()!r} produces {stated!r} of {ref.getSpecies()!r}: the "
+                    "SSA needs discrete molecule counts, so a product stoichiometry must be a "
+                    "positive whole number"
+                )
             product_powers[ref.getSpecies()] = product_powers.get(ref.getSpecies(), 0) + int(
-                round(ref.getStoichiometry())
+                round(stated)
             )
         products = tuple((index_of[sid], stoich) for sid, stoich in product_powers.items())
         rate = _mass_action_rate(rxn.getKineticLaw(), reactant_powers)

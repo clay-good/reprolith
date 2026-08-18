@@ -12,7 +12,13 @@ follow end to end, all regenerable from the repository alone.
 | **Generic-kinetic (ODE)** | **6/6** blind agreement across six network types | libRoadRunner (independent CVODE) reference trajectories | [`datasets/kinetic/milestone/`](../datasets/kinetic/milestone/) |
 | **Logical (Boolean)** | **9/9** blind agreement (incl. three 44–60-node models at scale) | CANA attractor signatures — how many attractors and the period of each, which is what the reference records; not the attractor states themselves (small models) + the SHA-256 of the fixed-point **set** an independent SAT solver found (the large signalling networks). Every certificate states the update scheme its numbers were computed under | [`datasets/logical/milestone/`](../datasets/logical/milestone/) |
 | **Stochastic (SSA)** | **3/3** blind agreement | Closed-form Poisson / binomial means (analytical) | [`datasets/stochastic/milestone/`](../datasets/stochastic/milestone/) |
-| **Spatial (reaction-diffusion)** | **3/3** blind agreement | Closed-form Gaussian diffusion (analytical) | [`datasets/spatial/milestone/`](../datasets/spatial/milestone/) |
+| **Spatial (reaction-diffusion)** | **3/3** blind agreement, every one `partially-reproduced` | Closed-form Gaussian diffusion (analytical) | [`datasets/spatial/milestone/`](../datasets/spatial/milestone/) |
+
+Two rows read `partially-reproduced` where the profile or the mean matches its analytical target
+exactly, and that is the point: the stochastic class samples an ensemble Reprolith chose, and the
+spatial class runs every profile under a zero-flux boundary Reprolith imposes rather than one the
+paper stated. Both are load-bearing assumptions, both are named on the certificate, and a class
+does not get to publish a clean pass for a result resting on its own choice.
 
 ## What makes each row honest
 

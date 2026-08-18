@@ -20,9 +20,17 @@ RUN = RunMetadata(created_at="2026-08-03T00:00:00Z", actor="agent-1", tool_versi
 
 
 def _claim(verdict: Verdict, *, cid: str, qualified: bool = False, **kw: object) -> ClaimAssessment:
+    # A non-pass verdict carries a root cause, because the builder now refuses one that does not —
+    # the judges have always required it, and a hand-assembled certificate saying "failed" with no
+    # reason let `render.gap_items` invent one ("no evaluable output") for a claim that was in fact
+    # evaluated and missed.
+    cause: dict[str, object] = (
+        {} if verdict in (Verdict.REPRODUCED, Verdict.NOT_EVALUABLE) or "root_cause" in kw
+        else {"root_cause": "uncategorized"}
+    )
     return ClaimAssessment(
         claim_id=cid, quantity="AUC", verdict=verdict, source_location="Fig 2",
-        assumption_qualified=qualified, **kw,
+        assumption_qualified=qualified, **cause, **kw,
     )
 
 

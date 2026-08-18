@@ -20,6 +20,7 @@ import math
 import os
 import sys
 from collections.abc import Callable, Sequence
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import IO, Any
@@ -564,10 +565,14 @@ def record_result(
     )
     # The work is finished, so the lease has nothing left to coordinate.
     entry.release_lease()
+    # The outcome travels the way every other verdict-bearing tool returns one — through the
+    # query's own view, so it carries the scope flag and the assumption-qualified claims. The bare
+    # `overall` string this used to return was the one verdict on the server stripped of both.
     return {
         "recorded": True,
         "state": entry.state.value,
         "overall": certificate.overall.value,
+        "verdict": query.verdict(arguments["digest"]),
         "certificate": arguments["digest"],
         "entry": entry.blind().to_dict(),
     }
@@ -826,6 +831,7 @@ def handle_request(
     catalog: Catalog | None = None,
     on_change: Callable[[], None] | None = None,
     now: Callable[[], float] | None = None,
+    guard: Callable[[], AbstractContextManager[None]] | None = None,
 ) -> dict[str, Any] | None:
     """Handle one JSON-RPC request; return the response, or ``None`` for a notification.
 
@@ -835,6 +841,15 @@ def handle_request(
     persist it, and ``now`` supplies the wall-clock time leasing needs (injected so the library
     stays deterministic). Without a catalog the server is read-only and effectful calls are
     refused.
+
+    ``guard`` supplies a context manager held across the whole read-modify-write of an effectful
+    call — acquired before the mutation, released after ``on_change`` has persisted it. It exists
+    because stdio MCP spawns one server process per client by construction, so "concurrent
+    requesters" means concurrent *processes*, each mutating a catalog it loaded once at startup and
+    rewriting the whole file: two agents were handed the same unit, and one agent's unrelated
+    `submit_paper` erased another's recorded certification along with all six of its transitions,
+    leaving the two live surfaces and the CLI giving three different answers for one entry's state.
+    :func:`main` supplies a file lock that also re-reads the catalog under it.
     """
     if not isinstance(request, dict):
         # A well-formed JSON value that isn't an object (a bare number, string, list, or null)
@@ -867,28 +882,30 @@ def handle_request(
                 if catalog is None:
                     raise KeyError(f"{name} is not enabled on this read-only server")
                 at = now() if now is not None else 0.0
+                held = guard() if guard is not None else nullcontext()
                 # Snapshot before mutating: a change that reaches memory but not disk leaves the
                 # served catalog permanently ahead of the durable one, and every later save then
                 # persists a state that was never written.
-                snapshot = catalog.to_dict()
-                if name == "submit_paper":
-                    data = submit_paper(catalog, arguments)
-                elif name == "claim_work":
-                    data = claim_work(catalog, arguments, at=at)
-                elif name == "release_work":
-                    data = release_work(catalog, arguments)
-                elif name == "record_result":
-                    data = record_result(catalog, query, arguments, at=at)
-                else:
-                    data = requeue_entry(catalog, arguments, at=at)
-                if on_change is not None:
-                    try:
-                        on_change()
-                    except OSError as exc:
-                        catalog.restore(snapshot)
-                        raise RuntimeError(
-                            f"the change was not persisted and has been rolled back: {exc}"
-                        ) from exc
+                with held:
+                    snapshot = catalog.to_dict()
+                    if name == "submit_paper":
+                        data = submit_paper(catalog, arguments)
+                    elif name == "claim_work":
+                        data = claim_work(catalog, arguments, at=at)
+                    elif name == "release_work":
+                        data = release_work(catalog, arguments)
+                    elif name == "record_result":
+                        data = record_result(catalog, query, arguments, at=at)
+                    else:
+                        data = requeue_entry(catalog, arguments, at=at)
+                    if on_change is not None:
+                        try:
+                            on_change()
+                        except OSError as exc:
+                            catalog.restore(snapshot)
+                            raise RuntimeError(
+                                f"the change was not persisted and has been rolled back: {exc}"
+                            ) from exc
             else:
                 data = dispatch_tool(query, name, arguments)
         except (
@@ -930,6 +947,7 @@ def serve_stdio(
     catalog: Catalog | None = None,
     on_change: Callable[[], None] | None = None,
     now: Callable[[], float] | None = None,
+    guard: Callable[[], AbstractContextManager[None]] | None = None,
 ) -> None:
     """Serve over newline-delimited JSON-RPC on stdio (effectful tools if ``catalog`` given)."""
     reader = reader or sys.stdin
@@ -947,7 +965,7 @@ def serve_stdio(
             continue
         try:
             response = handle_request(
-                query, request, catalog=catalog, on_change=on_change, now=now
+                query, request, catalog=catalog, on_change=on_change, now=now, guard=guard
             )
         except Exception as exc:  # noqa: BLE001 - a handler bug must not wedge the server
             request_id = request.get("id") if isinstance(request, dict) else None
@@ -1161,10 +1179,38 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - stdio
 
     milestone = Path(args.data_dir) if args.data_dir is not None else default_data_dir()
     catalog_file = milestone / "catalog.json"
-    query, catalog = load_repository(milestone, aggregate=True)
+    # The same rule the CLI applies (cli.py): an explicit --data-dir means "read exactly this
+    # state". Aggregating regardless served every class's committed milestone certificates out of
+    # a directory that did not contain them — and since the aggregate ledger is what record_result
+    # validates a digest against, an agent could certify an entry with a certificate the operator's
+    # own data directory has never held, leaving a human at the CLI a citation they cannot resolve.
+    query, catalog = load_repository(milestone, aggregate=args.data_dir is None)
 
     def save() -> None:
         write_json_atomically(catalog_file, catalog.to_dict())
+
+    @contextmanager
+    def guard() -> Any:
+        """Hold an exclusive lock on the catalog file, and re-read it, across one mutation.
+
+        A stdio MCP server is one process per client, and each one mutated a catalog it loaded at
+        startup and then rewrote the whole file — so a second server's unrelated write silently
+        reverted the first's, and the two live surfaces and the CLI gave three different answers
+        for one entry's state. The lock serializes the read-modify-write; re-reading under it is
+        what makes the mutation apply to the current state rather than to a startup snapshot.
+        """
+        import fcntl
+
+        with open(catalog_file, "r+", encoding="utf-8") as handle:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            try:
+                handle.seek(0)
+                text = handle.read()
+                if text.strip():
+                    catalog.restore(json.loads(text))
+                yield
+            finally:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
     import time
 
@@ -1172,6 +1218,7 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - stdio
         query,
         catalog=catalog,
         on_change=save,
+        guard=guard,
         now=time.time,
     )
 

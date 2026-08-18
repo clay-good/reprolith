@@ -359,13 +359,20 @@ def band_worst_point(
     # Returns the band it came from as well, because the worst *point* and the worst *average*
     # need not be in the same band: naming one band beside the other's number told a reader the
     # governing miss was somewhere it was not.
-    return max(
-        (
-            (worst_point_deviation(ref_by_pct[pct].curve, pred_by_pct[pct].curve), ref_by_pct[pct])
-            for pct in sorted(ref_by_pct)
-        ),
-        key=lambda pair: pair[0],
-    )
+    #
+    # NaN-first, for the reason :func:`band_envelope_distance` spells out and this function was
+    # missing: every comparison against NaN is false, so `max` steps over the diverged band and
+    # returns the best-matched one — publishing a clean `0.0000` next to the NaN its twin reports.
+    worst: float | None = None
+    worst_band = reference[0]
+    for pct in sorted(ref_by_pct):
+        deviation = worst_point_deviation(ref_by_pct[pct].curve, pred_by_pct[pct].curve)
+        if worst is None or math.isnan(deviation) or deviation > worst:
+            worst, worst_band = deviation, ref_by_pct[pct]
+        if math.isnan(worst):
+            break
+    assert worst is not None  # the envelopes are non-empty and cover the same percentiles
+    return worst, worst_band
 
 
 def band_envelope_distance(
@@ -579,7 +586,9 @@ def judge_scalar(
     if abstention is not None:
         return abstention
     tol = tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind)
-    if reported == 0.0 and predicted != 0.0 and zero_scale is None:
+    # `zero_scale=0.0` is a scale that cannot normalize anything, so it says the same thing as
+    # stating none — and it used to raise where its sibling abstained, over the same claim.
+    if reported == 0.0 and predicted != 0.0 and not zero_scale:
         return not_evaluable(
             claim_id=claim_id,
             quantity=quantity,

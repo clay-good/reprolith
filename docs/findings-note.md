@@ -766,6 +766,80 @@ can produce a certificate that claims more than it checked:
   installed. Validating it needs engine dispatch, which does not exist; what the claim *can* be
   held to — the protocol behind the supplied number — it now is.
 
+## What a certificate was allowed to say about how it was computed
+
+The thirteenth audit pass ran six independent lenses over the engine, each required to measure its
+findings rather than argue them. The recurring shape this time was a *second* account of the same
+run that nothing forced to agree with the first — and, where two accounts existed, the stronger one
+was the false one.
+
+- **A logical certificate could announce exhaustive enumeration of a space z3 searched.** The pin
+  is a claim about what ran and the assessment protocol is another, and `certify_logical` took
+  whichever pin the caller passed: a 25-node network published "exhaustive enumeration of all 2^25
+  states" one line from a protocol field saying the state space was beyond enumeration, with z3's
+  version nowhere on the certificate. The path is a fact about the network's size, so it is read
+  off the network now (`solver_pin_for`) and a pin that disagrees is refused.
+- **The freshness mechanism did not cover the code that decides which number is judged.** For the
+  two classes whose solver is external, the pin's revision spanned the oracle and the certificate
+  rule but not `engine.py` (the sampling grid, the species column) or `certify.py` (the metric
+  derivation). Measured: a one-line change inside `_metric` flipped both metformin claims from
+  `reproduced` (relative error 0.0216 / 0.0045) to `failed` (0.84 / 0.84) while the pin stayed
+  byte-identical and `certificates_needing_review` returned zero. Every other class already pinned
+  its own analysis layer.
+- **The spatial class published clean passes for runs under its own boundary condition.** Its
+  docstring called the zero-flux boundary "an unconditional assumption of this class" and left the
+  qualification to the caller, who never set it — so a shipped milestone certificate read
+  `reproduced` with no assumption block, while the stochastic class took the analogous downgrade
+  for its ensemble. On a domain 2.2 standard deviations wide the walls alone cost 23% of the pass
+  budget, and at 1.7 the class published `not-reproduced` blaming the paper. Qualified by default
+  now, with a load-bearing `spatial-boundary-*` assumption, and the milestone's own ground-truth
+  label says `partially-reproduced` so dropping the qualification reads as a disagreement rather
+  than as a better number.
+- **A reaction term turned a stable-looking grid into finite garbage.** `react_diffuse_1d` accepted
+  the pure-diffusion limit of 0.5, where the shortest-wavelength amplification is −1 and the even
+  and odd grid points decouple. Measured on Fisher-KPP: correct through α = 0.45, and at α = 0.48
+  every value finite and in range with a front speed of −0.005 against an analytic 2.19 — a
+  confident `failed`, blamed on the paper, caused by a time step the engine accepted. The
+  reaction-bearing solvers are held to 0.4 now, and `front_position` refuses a non-finite profile
+  instead of reporting the first crossing among the nodes that survived.
+- **The guard that identified a paper compared nothing for 29 of the 30 published certificates.**
+  `require_same_paper` compared DOI and PubMed ID only when both sides stated one, and five of the
+  six classes certify models that state neither. Filing one kinetic model's certificate under
+  another's accession was accepted in silence and scored against that paper's label, and the run
+  still reported 6/6. Titles are compared now when nothing stronger exists on either side, loosely
+  enough that "E. coli core" and "E. coli core metabolic model" still pass.
+
+Four more were the same door the twelfth pass named — a check on the way in and not the way out, or
+the reverse. `build_certificate` and the load path accepted a `failed` verdict with no root cause,
+which `render.gap_items` then explained as "no evaluable output" for a claim the certificate says
+was evaluated and missed. `summarize_report` refused an inflated abstention count and never checked
+the confusion rows it had already parsed, so 55 matches and 45 wrong verdicts published as "100
+matched, 0 other of 100" off one edited integer. `compare_sbml_to_dossier` walked dossier to model
+only, so a boundary species carrying its own rate rule vanished from the dossier and adopt-and-verify
+— which never rebuilds, so never reaches the way-out refusal — reported agreement over half a model.
+And the SSA ingester refused a fractional *initial* amount while silently rounding a fractional
+*product* stoichiometry, deleting a "0.5 B" product from the network entirely.
+
+Smaller, all measured: `time_to_extinction` returned its own time cap as an extinction time (a
+process that never goes extinct reported a mean of 9.13 against a true 39.2); percentile envelopes
+had no resolvability guard, so a provably correct model published `failed` on 96 of 100 seeds at
+three trajectories; SED-ML paired `numberOfSteps` with `outputEndTime` as though it were a duration
+from zero, so a model reproducing its reference exactly linted `failed` at a normalized distance of
+4.07; `band_worst_point` used a plain `max`, which steps over the NaN band its twin reports; the
+MCP server aggregated every class's certificates regardless of `--data-dir`, so an agent could
+certify against a certificate the operator's directory never held; `record_result` was the one
+verdict on the server returned without its scope; and two stdio server processes over one data
+directory handed out the same unit, with one server's unrelated `submit_paper` erasing another's
+recorded certification and all six of its transitions.
+
+Three findings were confirmed and documented rather than fixed, because the honest fix is a
+contract change and no certificate this repo publishes reads them: the LP dual is not unique at a
+degenerate optimum (20 of 72 shadow prices on *E. coli* core are not determined by the optimum, and
+the conserved-moiety pools are reported as 0.0 with the dual unbounded), pFBA's individual fluxes
+have alternate optima of their own, and the FVA rescue path relaxes the floor in a way that turns
+93 pinned reactions into 8 — converting an earned failure into a silent abstention. Each now says
+so where a caller reads it.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

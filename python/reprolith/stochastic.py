@@ -235,9 +235,38 @@ def ensemble_percentile_bands(
     The stochastic counterpart of a population figure: each requested percentile becomes a
     :class:`~reprolith.oracle.PercentileBand` of that species' count across the ensemble at each
     sample time, ready for :func:`reprolith.judge_distribution`. Deterministic in ``seed``.
+
+    An ensemble too small to resolve the bands it is asked for is refused, the way the scalar path
+    refuses one too small to resolve a mean (:data:`_SPREAD_IS_EVIDENCE`). Two ways it can be too
+    small, both measured on a provably correct model: below ~30 trajectories the envelope is
+    dominated by sampling noise, and a model whose mean is exactly right published `failed` on 96
+    of 100 seeds at three trajectories; and a percentile needs about ``100/min(p, 100-p)``
+    trajectories before it is a percentile at all rather than the observed min or max wearing a
+    label — at one trajectory, P1, P50 and P99 are the same number reported three times as an
+    "envelope". Neither can be caught downstream: :func:`judge_distribution` receives bare bands
+    and never learns the ensemble size.
     """
     if trajectories < 1:
         raise ValueError("need at least one trajectory")
+    # The request itself is checked before the ensemble size, so a malformed run is refused for
+    # the reason it is malformed rather than for being too small to resolve.
+    ordered = sorted(times)
+    if list(times) != ordered:
+        raise ValueError("times must be non-decreasing")
+    _validate_run(initial, ordered[-1] if ordered else 0.0)
+    if trajectories < _SPREAD_IS_EVIDENCE:
+        raise ValueError(
+            f"{trajectories} trajectories cannot resolve a percentile envelope: below "
+            f"{_SPREAD_IS_EVIDENCE} the spread is the sampling, not the model, and a correct "
+            "model is published as a failure"
+        )
+    for percentile in percentiles:
+        tail = min(percentile, 100.0 - percentile)
+        if tail > 0.0 and trajectories * tail < 100.0:
+            raise ValueError(
+                f"the P{percentile:g} band needs about {math.ceil(100.0 / tail)} trajectories to "
+                f"be a percentile rather than the observed extreme; {trajectories} were run"
+            )
     rng = random.Random(seed)
     # per_time[t] is the list of this species' counts across the ensemble at sample time t.
     per_time: list[list[int]] = [[] for _ in times]
@@ -528,10 +557,17 @@ def time_to_extinction(
 ) -> float:
     """The first time ``species`` reaches zero along one SSA trajectory (its extinction time).
 
-    Runs the direct method until the species count hits zero (or ``max_time`` / an absorbing state
-    with no further reactions). The extinction time of a small population is a first-passage
-    observable central to population dynamics — extinction of small populations, loss of a
-    drug-resistant clone. Deterministic in ``rng``.
+    Runs the direct method until the species count hits zero. The extinction time of a small
+    population is a first-passage observable central to population dynamics — extinction of small
+    populations, loss of a drug-resistant clone. Deterministic in ``rng``.
+
+    A run that ends without the species reaching zero — the ``max_time`` cap, or an absorbing state
+    with no further reactions — returns ``inf``, because it observed no extinction. Returning ``t``
+    made a censored run indistinguishable from a first passage, so a cap silently became the answer:
+    an immigration-death process that never goes extinct reported a mean "extinction time" of 9.13
+    at ``max_time=10`` against a true 39.2, and a network where the species can never reach zero
+    returned a confident finite time on all 2000 runs and certified as reproduced. ``inf``
+    poisons an average rather than flattering it, which is the direction this class errs in.
     """
     state = list(initial)
     t = 0.0
@@ -548,7 +584,7 @@ def time_to_extinction(
             if cumulative >= threshold:
                 reaction.apply(state)
                 break
-    return t
+    return t if state[species] == 0 else float("inf")
 
 
 def fano_factor(ensemble: Sequence[Sequence[int]], species: int) -> float:

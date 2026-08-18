@@ -17,6 +17,7 @@ from typing import Any
 from .certificate import (
     derive_overall,
     require_distinct_assumption_ids,
+    require_stated_cause,
     require_stated_protocol,
 )
 from .dossier import (
@@ -110,6 +111,7 @@ def certificate_from_content(content: dict[str, Any]) -> Certificate:
     # id, loaded clean while build_certificate refuses both — and the public registry reads
     # certificates from disk and never rebuilds them.
     require_stated_protocol(assessments)
+    require_stated_cause(assessments)
     require_distinct_assumption_ids(assumptions)
     stored = OverallVerdict(content["overall"])
     derived = derive_overall(assessments, assumptions)
@@ -228,11 +230,15 @@ def prune_certificate_directory(directory: Path, keep: Iterable[str]) -> list[st
     registry build listed it and counted it, while the self-validation report beside it did not —
     the published set and its own denominator disagreeing, with no error anywhere. Returns the
     stems removed, so a run can say what it withdrew.
+
+    The badge goes with them. Withdrawing the certificate and its render while leaving the ``.svg``
+    behind left a standalone, embeddable verdict — "reprolith: partially-reproduced" — for a
+    certificate no longer published: the same failure this function closes, one suffix over.
     """
     kept = set(keep)
     removed = []
     for path in sorted(directory.glob("*")):
-        if path.suffix in (".json", ".txt") and path.stem not in kept:
+        if path.suffix in (".json", ".txt", ".svg") and path.stem not in kept:
             path.unlink()
             removed.append(path.stem)
     return sorted(set(removed))

@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev a41fec2b6956)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 381dfec427d1)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

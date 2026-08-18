@@ -2,30 +2,30 @@
   "agreement_rate": 1.0,
   "agreements": 3,
   "confusion": {
-    "reproduced->reproduced": 3
+    "partially-reproduced->partially-reproduced": 3
   },
   "disagreements": 0,
   "per_entry": [
     {
-      "actual": "reproduced",
+      "actual": "partially-reproduced",
       "agree": true,
       "entry": "diffusion_D1",
-      "expected": "reproduced",
-      "source": "closed-form Gaussian diffusion"
+      "expected": "partially-reproduced",
+      "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
     },
     {
-      "actual": "reproduced",
+      "actual": "partially-reproduced",
       "agree": true,
       "entry": "diffusion_D2",
-      "expected": "reproduced",
-      "source": "closed-form Gaussian diffusion"
+      "expected": "partially-reproduced",
+      "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
     },
     {
-      "actual": "reproduced",
+      "actual": "partially-reproduced",
       "agree": true,
       "entry": "diffusion_Dhalf",
-      "expected": "reproduced",
-      "source": "closed-form Gaussian diffusion"
+      "expected": "partially-reproduced",
+      "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
     }
   ],
   "total": 3

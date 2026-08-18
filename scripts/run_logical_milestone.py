@@ -45,7 +45,7 @@ from reprolith import (
     run_test_set,
     search_protocol,
 )
-from reprolith.logical import solver_pin
+from reprolith.logical import require_pin_matches_path, solver_pin, solver_pin_for
 from reprolith.persistence import prune_certificate_directory
 
 
@@ -68,7 +68,6 @@ def main() -> None:
     # different cyclic attractors under asynchronous updating) and, for the large networks, the SAT
     # solver that actually found their fixed points.
     pin = solver_pin()
-    sat_pin = solver_pin(sat=True)
     catalog = Catalog()
     certified = {}
 
@@ -116,7 +115,6 @@ def main() -> None:
             method = ComparisonMethod.ATTRACTOR_SIGNATURE_MATCH
             discrepancy = (f"reproduced {found[0]} attractors with periods {found[1]} vs "
                            f"the independent {expected[0]} with periods {expected[1]}")
-            entry_pin = pin
         else:
             fixed = net.fixed_points()
             found = (len(fixed), _fixed_point_digest(net, fixed))
@@ -125,7 +123,6 @@ def main() -> None:
             method = ComparisonMethod.ATTRACTOR_SET_MATCH
             discrepancy = (f"reproduced {found[0]} fixed points, set digest {found[1][:12]}… vs "
                            f"the independent {expected[0]}, {expected[1][:12]}…")
-            entry_pin = sat_pin
         matched = found == expected
         assessment = assess_match(
             claim_id=f"{key}-{kind}",
@@ -143,6 +140,12 @@ def main() -> None:
         # The same rule the class front-end uses, from the same helper, so the milestone and
         # `certify_logical` cannot drift about what a logical verdict rests on.
         assessment = replace(assessment, protocol=search_protocol(len(net.nodes)))
+        # Which path ran is a fact about the network's size, not a choice made per entry here.
+        entry_pin = solver_pin_for(nodes=len(net.nodes))
+        # This script builds certificates directly rather than through `certify_logical`, so it
+        # runs that front-end's pin check itself: a pin naming exhaustive enumeration over a state
+        # space z3 searched is the one claim here that would read stronger than what ran.
+        require_pin_matches_path(entry_pin, node_counts=[len(net.nodes)])
         certified[key] = build_certificate(
             paper=PaperIdentity(title=citation, doi=""),
             engine_pin=entry_pin,

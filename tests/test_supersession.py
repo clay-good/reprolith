@@ -19,7 +19,11 @@ def _cert(version: str, verdict: Verdict = Verdict.REPRODUCED, supersedes=None):
         paper=PaperIdentity(title="One-compartment PK model", doi="10.1/x"),
         engine_pin=EnginePin(engine="biosimulators/copasi", version=version),
         assessments=[
-            ClaimAssessment(claim_id="c1", quantity="AUC", verdict=verdict, source_location="Fig 1")
+            ClaimAssessment(
+                claim_id="c1", quantity="AUC", verdict=verdict, source_location="Fig 1",
+                # A non-pass verdict names a cause; the builder refuses one that does not.
+                root_cause=None if verdict is Verdict.REPRODUCED else "uncategorized",
+            )
         ],
         supersedes=supersedes,
     )

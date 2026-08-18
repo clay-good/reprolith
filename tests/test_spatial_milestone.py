@@ -20,14 +20,23 @@ def test_agreement_report_shows_a_blind_full_agreement() -> None:
     assert report["agreements"] == report["total"]
     assert report["agreement_rate"] == 1.0
     for entry in report["per_entry"]:
-        assert entry["expected"] == "reproduced" and entry["actual"] == "reproduced"
+        # `partially-reproduced` on both sides: the profile matches the closed form exactly, and
+        # the certificate is still downgraded because this class runs every claim under a zero-flux
+        # boundary Reprolith imposes rather than one the paper stated. The label says so too, so a
+        # run that dropped the qualification reads as a disagreement, not as a better number.
+        assert entry["expected"] == "partially-reproduced"
+        assert entry["actual"] == "partially-reproduced"
         assert entry["agree"] is True
 
 
 def test_every_certificate_is_a_reproduced_curve_verdict() -> None:
     for key in _EXPECTED:
         content = json.loads((_MILESTONE / "certificates" / f"{key}.json").read_text(encoding="utf-8"))
-        assert content["overall"] == "reproduced"
+        # Every claim reproduces; the certificate is qualified by the class's own boundary
+        # assumption, which is load-bearing and named in the certificate.
+        assert content["overall"] == "partially-reproduced"
+        assert [a["verdict"] for a in content["assessments"]] == ["reproduced"]
+        assert [a["id"] for a in content["assumptions"]] == [f"spatial-boundary-{key}-profile"]
         assert content["scope"]["machine"] == "reproducible-not-correct-not-clinical"
         # A spatial profile is judged by the shared curve oracle.
         assert content["assessments"][0]["method"] == "curve-normalized-distance"

@@ -44,9 +44,20 @@ def require_same_paper(entry: CatalogEntry, certificate: Certificate, key: str) 
     result under another accession *and* score it against that other paper's ground-truth
     label — a false certificate and a corrupted agreement number from one dataset edit.
 
-    Compared on the stable identifiers only. A title is prose, and one paper is legitimately
-    titled two ways in two records ("E. coli core" and "E. coli core metabolic model"), so a
-    title check would refuse honest data; a DOI or PubMed ID that disagrees is another paper.
+    Compared on the stable identifiers where there are any. A title is prose, and one paper is
+    legitimately titled two ways in two records ("E. coli core" and "E. coli core metabolic
+    model"), so a title check cannot be the primary rule; a DOI or PubMed ID that disagrees is
+    another paper.
+
+    But five of the six classes certify models that carry no DOI and no PubMed ID, which left this
+    guard vacuous for all but one of the published certificates — a swapped pair was accepted in
+    silence and scored against the other paper's label, and the agreement report still read 6/6.
+    So when neither side states any stable identifier at all, the titles are the only thing left that
+    distinguishes the two papers, and they are compared — but loosely, exactly as loosely as the
+    paragraph above requires. The legitimate variation is one record naming the paper more fully
+    than the other ("E. coli core" and "E. coli core metabolic model"), so one title containing the
+    other is accepted. Two titles with no such relation are two papers: the measured swap
+    ("Elowitz2000 repressilator" filed under Kholodenko's accession) shares nothing and is refused.
     """
     stated = _paper_of(entry)
     certified_paper = certificate.paper
@@ -56,6 +67,24 @@ def require_same_paper(entry: CatalogEntry, certificate: Certificate, key: str) 
             raise ValueError(
                 f"certificate filed under {key!r} is for a different paper: entry {field} "
                 f"{ours!r} but certificate {field} {theirs!r}"
+            )
+    # Only when *neither* side states anything stronger. If either one carries a DOI or PubMed ID
+    # the title is not the last thing left, and on the MCP path the positive-identity rule — which
+    # demands a shared identifier rather than merely refusing a contradiction — is the one that
+    # should speak.
+    either_states_an_identifier = any(
+        getattr(stated, field) or getattr(certified_paper, field)
+        for field in ("doi", "pubmed_id")
+    )
+    if not either_states_an_identifier and stated.title and certified_paper.title:
+        ours, theirs = " ".join(stated.title.lower().split()), " ".join(
+            certified_paper.title.lower().split()
+        )
+        if ours not in theirs and theirs not in ours:
+            raise ValueError(
+                f"certificate filed under {key!r} is for a different paper: neither side states a "
+                f"DOI or PubMed ID, and neither title names the other — entry {stated.title!r} but "
+                f"certificate {certified_paper.title!r}"
             )
 
 

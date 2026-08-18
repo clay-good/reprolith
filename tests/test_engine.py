@@ -61,7 +61,7 @@ def test_engine_pin_reports_the_pinned_engine() -> None:
     # An external solver carries its own version, but the judge that decides what its numbers mean
     # is this package: a class-default tolerance or a change to the verdict rule invalidates these
     # certificates too, and used to leave them looking fresh.
-    assert f"judge rev {algorithm_revision('oracle', 'certificate')}" in pin.algorithm
+    assert f"judge rev {algorithm_revision('engine', 'certify', 'oracle', 'certificate')}" in pin.algorithm
 
 
 def test_unknown_species_is_rejected() -> None:

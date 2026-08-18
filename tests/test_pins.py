@@ -43,8 +43,13 @@ _CLASSES = {
     # The two classes whose *solver* is an external engine still have a Reprolith judge, and a
     # tolerance or verdict-rule change invalidates their certificates exactly as it does the
     # self-solved ones. Their pins carry the judge's revision beside the engine's own version.
-    "ode-pkpd": ("milestone/certificates", ("oracle", "certificate")),
-    "kinetic": ("kinetic/milestone/certificates", ("oracle", "certificate")),
+    # …and the two Reprolith modules between the solver and the judge: `engine` picks the grid and
+    # the species column, `certify` derives the metric. Either can change the number being judged
+    # without the solver's version or the verdict rule moving.
+    "ode-pkpd": ("milestone/certificates", ("engine", "certify", "oracle", "certificate")),
+    "kinetic": (
+        "kinetic/milestone/certificates", ("engine", "certify", "oracle", "certificate"),
+    ),
 }
 
 

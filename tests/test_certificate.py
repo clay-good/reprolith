@@ -17,13 +17,20 @@ from reprolith import (
 )
 
 
-def _claim(verdict: Verdict, *, qualified: bool = False, cid: str = "c") -> ClaimAssessment:
+def _claim(
+    verdict: Verdict, *, qualified: bool = False, cid: str = "c", root_cause: str | None = None
+) -> ClaimAssessment:
+    # A partial or failed verdict names a cause: the builder refuses one that does not, the same
+    # way the judges always have.
+    if root_cause is None and verdict in (Verdict.PARTIAL, Verdict.FAILED):
+        root_cause = "uncategorized"
     return ClaimAssessment(
         claim_id=cid,
         quantity="q",
         verdict=verdict,
         source_location="loc",
         assumption_qualified=qualified,
+        root_cause=root_cause,
     )
 
 

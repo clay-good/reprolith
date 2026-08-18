@@ -21,7 +21,14 @@ from dataclasses import dataclass, field, replace
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Gap, GapKind, Parameter
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
-from .oracle import Attribution, Tolerance, judge_curve, undetermined_shortfall
+from .oracle import (
+    Attribution,
+    ReferenceKind,
+    Tolerance,
+    judge_curve,
+    not_evaluable,
+    undetermined_shortfall,
+)
 from .pins import algorithm_revision
 
 
@@ -149,12 +156,21 @@ def react_diffuse_1d(
     Solves ``∂u/∂t = D ∂²u/∂x² + f(u)`` with the same explicit forward-time centered-space scheme as
     :func:`diffuse_1d`, where ``reaction`` is the local rate ``f(u)`` — e.g. logistic growth
     ``r·u·(1−u)`` for the Fisher-KPP invasion/growth-front model. Zero-flux boundaries, deterministic,
-    and subject to the same diffusion stability limit (the reaction term's own stability is the
-    caller's to keep, e.g. by a small ``dt``). The reaction moves the profile on its own, so a
-    zero diffusion number is a legitimate reaction-only run here.
+    and subject to a *tighter* diffusion stability limit than pure diffusion: 0.4, not 0.5. At α
+    near 0.5 the explicit update's amplification at the shortest wavelength approaches −1, so it
+    stops smoothing and the even and odd grid points decouple. Pure diffusion still converges
+    there; a reaction term feeds the resulting comb, and the profile becomes garbage that stays
+    entirely *finite* — so no non-finite abstention downstream can see it. Measured on Fisher-KPP
+    (D=1, r=1.2): correct through α = 0.45, and at α = 0.48 every value finite and in range with a
+    front speed of −0.005 against an analytic 2.19, which the judge then publishes as a confident
+    `failed` blamed on the paper. 0.4 is the strictest limit that admits every result this repo
+    validates (the two-species Turing dispersion relation runs there) and it keeps the shortest-
+    wavelength amplification at −0.6 rather than −1. The reaction's own stability past that is
+    still the caller's to keep, e.g. by a small ``dt``. The reaction moves the profile on its own,
+    so a zero diffusion number is a legitimate reaction-only run here.
     """
     alpha = _diffusion_number(
-        diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, limit=0.5, must_advance=False,
+        diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, limit=0.4, must_advance=False,
     )
     current = list(profile)
     n = len(current)
@@ -249,11 +265,12 @@ def react_diffuse_2species(
     Solves the activator-inhibitor system ``u_t = Du u_xx + f(u,v)``, ``v_t = Dv v_xx + g(u,v)`` with
     the shared explicit scheme and zero-flux boundaries. This is the machinery behind Turing patterns
     (morphogenesis, pigmentation) and other multi-species spatial models. ``reaction_u``/``reaction_v``
-    are the local rates ``f`` and ``g``. Deterministic; both species must satisfy the diffusion
-    stability limit.
+    are the local rates ``f`` and ``g``. Deterministic; both species must satisfy the same tighter
+    (0.4) stability limit :func:`react_diffuse_1d` explains — a reaction term feeds the node-to-node
+    oscillation an α near 0.5 stops damping, and the result is finite, plausible, and wrong.
     """
-    au = _diffusion_number(diffusivity=du, dx=dx, dt=dt, steps=steps, limit=0.5, must_advance=False)
-    av = _diffusion_number(diffusivity=dv, dx=dx, dt=dt, steps=steps, limit=0.5, must_advance=False)
+    au = _diffusion_number(diffusivity=du, dx=dx, dt=dt, steps=steps, limit=0.4, must_advance=False)
+    av = _diffusion_number(diffusivity=dv, dx=dx, dt=dt, steps=steps, limit=0.4, must_advance=False)
     cu, cv = list(u), list(v)
     n = len(cu)
     if n < 2 or len(cv) != n:
@@ -276,7 +293,17 @@ def front_position(profile: Sequence[float], *, dx: float, level: float = 0.5) -
 
     The front location of a traveling wave — used to measure a front's speed between two times.
     Returns ``None`` when the profile never crosses the level.
+
+    A non-finite value is refused rather than scanned past. Every comparison against NaN is false,
+    so a diverged profile with NaN nodes silently reported the first crossing among its surviving
+    ones — reducing a run that blew up to a plausible finite scalar, before any non-finite
+    abstention downstream could see it.
     """
+    if any(not math.isfinite(value) for value in profile):
+        raise ValueError(
+            "the profile carries a non-finite value: a diverged run has no front position, and "
+            "scanning past it would report one from the nodes that happened to survive"
+        )
     for i in range(len(profile) - 1):
         if profile[i] >= level >= profile[i + 1]:
             span = profile[i] - profile[i + 1]
@@ -380,7 +407,11 @@ class SpatialClaim:
     steps: int
     decay: float = 0.0
     tolerance: Tolerance | None = None
-    assumption_qualified: bool = False
+    # Defaults to True, as `StochasticClaim` does, and for the same reason: this class imposes a
+    # boundary condition the paper did not choose, so every verdict rests on a value Reprolith
+    # supplied. Off by default it was never set by any caller, and the shipped milestone published
+    # `reproduced` with no assumption block for a run whose walls are Reprolith's own.
+    assumption_qualified: bool = True
     shortfall: Attribution | None = field(default=None)
 
 
@@ -428,21 +459,39 @@ def certify_spatial(
     a claim carries no boundary field to state one. So a paper whose model has a different boundary
     is being run under a condition it did not specify. ``spatial_dossier`` records an unstated
     boundary as a load-bearing gap, but this front-end takes claims rather than a dossier and cannot
-    see it: when the reported profile's boundary is anything other than zero-flux, or the paper does
-    not state one and the domain is narrow enough for it to matter, the caller must set the claim's
-    ``assumption_qualified`` so the certificate is downgraded rather than reading as a clean pass.
+    see it — so the qualification is on by default and each qualified claim gets a load-bearing
+    ``spatial-boundary-*`` assumption, exactly as the stochastic class does for its ensemble. Left to
+    the caller it was never set, and the class published clean passes for runs whose walls are
+    Reprolith's own. A caller certifying a genuinely unbounded claim can clear it per claim.
     """
     assessments = []
+    qualified = []
     for claim in claims:
         if claim.steps < 1:
             raise ValueError(
                 f"claim {claim.claim_id!r} asks for {claim.steps} steps: a spatial claim must "
                 "evolve the profile by at least one step to be evidence about the model"
             )
-        predicted = diffuse_1d(
-            claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
-            steps=claim.steps, decay=claim.decay,
-        )
+        try:
+            predicted = diffuse_1d(
+                claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
+                steps=claim.steps, decay=claim.decay,
+            )
+        except ValueError as unstable:
+            # An unstable discretization genuinely cannot be run — but raising discarded the whole
+            # certificate, including the honest verdicts of every sibling claim, and made the class
+            # systematically silent at the top of the error range (a diffusivity wrong enough to
+            # break the grid was un-certifiable rather than not-reproduced). "This protocol cannot
+            # decide this claim" is an abstention, which is what the stochastic class already does
+            # when its sampling cannot resolve a mean.
+            assessments.append(not_evaluable(
+                claim_id=claim.claim_id,
+                quantity=claim.quantity,
+                source_location=claim.source_location,
+                reason=str(unstable),
+                reference_kind=ReferenceKind.NUMERIC,
+            ))
+            continue
         assessments.append(
             replace(
                 judge_curve(
@@ -475,9 +524,36 @@ def certify_spatial(
                 ),
             )
         )
+        # Only the claims a verdict was actually drawn from, as the stochastic class does: an
+        # assumption attached to an abstention would describe a judgment nobody made, and being
+        # load-bearing it would downgrade the certificate on that claim's behalf.
+        if claim.assumption_qualified:
+            qualified.append(claim)
+    # The counterpart of the stochastic class's `ssa-sampling-*` block. The boundary is named in
+    # each assessment's protocol, but a protocol line does not downgrade a verdict and does not
+    # reach the "what was missing" report — so a wall Reprolith chose could push a claim to
+    # `failed` and the certificate would attribute the miss to the paper.
+    boundary = tuple(
+        Assumption(
+            id=f"spatial-boundary-{claim.claim_id}",
+            description=(
+                "the profile judged here was evolved under a boundary condition Reprolith "
+                "imposes, not one the paper stated"
+            ),
+            chosen="zero-flux (Neumann) boundaries",
+            basis=(
+                "this solver has exactly one boundary condition and a claim carries no field to "
+                "state another, so on a domain narrow enough for the walls to matter the distance "
+                "moves with a choice the paper did not make"
+            ),
+            load_bearing=True,
+            alternatives=("Dirichlet (fixed value)", "absorbing", "periodic", "an unbounded domain"),
+        )
+        for claim in qualified
+    )
     return build_certificate(
         paper=paper, engine_pin=engine_pin,
-        assessments=assessments, assumptions=tuple(assumptions),
+        assessments=assessments, assumptions=(*assumptions, *boundary),
     )
 
 

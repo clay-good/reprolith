@@ -196,7 +196,11 @@ binomial equilibrium — with a 3/3 [milestone blind run](datasets/stochastic/mi
 **Spatial reaction-diffusion (PDE) models** are the sixth class: the reproducible result is a
 concentration profile over space, so a pure-Python finite-difference solver feeds the same curve
 oracle, self-validated non-circularly against the exact analytical diffusion solution (a Gaussian
-whose variance grows by 2·D·t) with a 3/3 [milestone blind run](datasets/spatial/milestone/).
+whose variance grows by 2·D·t) with a 3/3 [milestone blind run](datasets/spatial/milestone/). Every
+spatial certificate reads *partially* reproduced even where the profile matches the closed form
+exactly: this solver imposes a zero-flux boundary the paper never stated, so the verdict rests on a
+choice Reprolith made and says so — the same qualification the stochastic class carries for its
+ensemble.
 
 All six classes are measured blind against independently-established ground truth on the same
 machinery — [docs/self-validation.md](docs/self-validation.md) is the one-look evidence summary.

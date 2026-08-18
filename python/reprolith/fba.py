@@ -209,6 +209,17 @@ def shadow_prices(
     variables on the steady-state constraints (metabolite shadow prices) and on the reaction bounds
     (reduced costs), both expressed as sensitivities of the *maximized* objective. Raises
     :class:`InfeasibleFba` if the problem is not solvable. Needs the ``fba`` extra (scipy).
+
+    **The dual of a degenerate optimum is not unique, and this returns one member of the optimal
+    dual set.** The class applies the abstain-under-alternate-optima rule to the primal
+    (:func:`judge_flux`); the dual is its neighbour and had no such rule. Measured on e_coli_core,
+    20 of 72 metabolite shadow prices are not determined by the optimum — M_succ_e is reported at
+    −0.0484 out of a range [−0.0522, −0.0484], and the conserved-moiety pools (ATP, NADH, NADPH,
+    Q8H2) are reported as 0.0 with the dual unbounded, because only the pool combination is
+    identified. On a two-binding-bound toy chain the reported reduced cost of 1.0 sits against a
+    true ∂Z/∂bound of 0.0. So a single dual here is evidence, not a determined sensitivity: no
+    certificate this repo publishes reads one, and any future judge over it must abstain where the
+    optimal dual set is not a point.
     """
     linprog = _linprog()
     result = linprog(
@@ -497,8 +508,16 @@ def _extreme_at_optimum(
     differ across platforms — can call an otherwise-solvable reaction infeasible. When that
     happens, retry once with the floor relaxed by a tolerance negligible against the reported
     flux. This rescues only the knife-edge reactions; every reaction that already solves is left
-    byte-identical, so a hypersensitive flux (one pinned to zero at the exact optimum) never
-    drifts.
+    byte-identical.
+
+    What it does *not* preserve is the pin. A reaction pinned to zero at the exact optimum can drift
+    off zero at the relaxed floor — measured on e_coli_core, 38 of 95 such reactions drift, by up to
+    ~200x the relaxation itself (R_PPCK: 0 → 1.96e-04 against a 1e-6 floor slack), and the count of
+    pinned reactions falls from 93 to 8. That matters because :func:`judge_flux` reads a pinned
+    reaction as a real verdict and a wide interval as ``not_evaluable``, which the certificate then
+    drops — so a rescue can turn an earned failure into a silent abstention. The rescue fires only
+    when the exact-floor LP fails, which is platform-dependent, so this is a conditional path; the
+    honest reading of a rescued interval is that its bounds come from two different floors.
     """
     result = linprog(c=select, A_ub=a_ub, b_ub=[-floor], A_eq=a_eq, b_eq=b_eq, bounds=bounds, method="highs")
     if result.success:
@@ -753,8 +772,14 @@ def parsimonious_fluxes(
     A two-stage LP (Lewis et al. 2010): first find the optimum, then, among all flux vectors that
     still reach (a ``fraction_of_optimum`` of) it, choose the one minimizing total flux. Total flux
     is linearized with per-reaction auxiliaries aᵢ ≥ |vᵢ|, so the whole thing stays a single LP.
-    Unlike a raw optimal vector, this one is canonical — the biologically-motivated tie-break among
-    alternate optima. Raises :class:`InfeasibleFba` if unsolvable. Needs the ``fba`` extra (scipy).
+    The *total* flux is canonical — it is the value of a minimization, so every pFBA solution has
+    it — and that is what the cross-validation against COBRApy pins. The individual fluxes are not:
+    pFBA has alternate optima of its own, and two parallel routes of equal length leave a reaction
+    free across its whole range at the pFBA minimum (measured: R1 free over [0, 10] with the total
+    held at 30, reported as a determined 10.0). So read ``fluxes`` as *a* minimal-total solution,
+    not *the* one, and do not certify an individual pFBA flux without a variability check of the
+    kind :func:`judge_flux` applies to plain FVA. Raises :class:`InfeasibleFba` if unsolvable.
+    Needs the ``fba`` extra (scipy).
     """
     linprog = _linprog()
     n = len(objective)

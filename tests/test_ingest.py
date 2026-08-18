@@ -264,3 +264,127 @@ def test_package_content_this_path_cannot_read_is_a_gap_but_layout_is_not() -> N
     )
     shipped = ingest_sbml(metformin.read_text(encoding="utf-8"), entry="m", source_label="s")
     assert not [g for g in shipped.gaps if g.element == "package content"]
+
+
+_BOUNDARY_STATE_MODEL = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+ <model id="m">
+  <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+  <listOfSpecies>
+   <species id="S" compartment="c" initialAmount="0" hasOnlySubstanceUnits="true"
+            substanceUnits="mole" boundaryCondition="false" constant="false"/>
+   <species id="Input" compartment="c" initialAmount="100" hasOnlySubstanceUnits="true"
+            substanceUnits="mole" boundaryCondition="true" constant="false"/>
+  </listOfSpecies>
+  <listOfUnitDefinitions>
+   <unitDefinition id="per_second">
+    <listOfUnits><unit kind="second" exponent="-1" scale="0" multiplier="1"/></listOfUnits>
+   </unitDefinition>
+  </listOfUnitDefinitions>
+  <listOfParameters>
+   <parameter id="k" value="0.5" units="per_second" constant="true"/>
+  </listOfParameters>
+  <listOfRules>
+   <rateRule variable="S"><math xmlns="http://www.w3.org/1998/Math/MathML">
+     <apply><times/><ci>k</ci><ci>Input</ci></apply></math></rateRule>
+   <rateRule variable="Input"><math xmlns="http://www.w3.org/1998/Math/MathML">
+     <apply><times/><apply><minus/><ci>k</ci></apply><ci>Input</ci></apply></math></rateRule>
+  </listOfRules>
+ </model>
+</sbml>"""
+
+
+_CONSTANT_SPECIES_MODEL = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+ <model id="m">
+  <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+  <listOfSpecies>
+   <species id="S" compartment="c" initialAmount="0" hasOnlySubstanceUnits="true"
+            boundaryCondition="false" constant="false"/>
+   <species id="Fixed" compartment="c" initialAmount="7" hasOnlySubstanceUnits="true"
+            boundaryCondition="false" constant="true"/>
+  </listOfSpecies>
+  <listOfParameters><parameter id="k" value="0.5" constant="true"/></listOfParameters>
+  <listOfRules>
+   <rateRule variable="S"><math xmlns="http://www.w3.org/1998/Math/MathML">
+     <apply><times/><ci>k</ci><ci>Fixed</ci></apply></math></rateRule>
+  </listOfRules>
+ </model>
+</sbml>"""
+
+
+def test_a_boundary_species_with_its_own_rate_rule_is_a_gap_not_a_silence() -> None:
+    """`constant` or `boundaryCondition` was read as "a fixed input", which two shapes are not.
+
+    A boundary species carrying its own rate rule is a state variable by any other name. Skipping
+    it dropped half this model's state from the dossier while every honesty surface read clean: no
+    gap, difficulty "low" (documented as "a valid shipped model and no gaps"), and adopt-and-verify
+    — which never rebuilds, so never reaches `build_model_sbml`'s way-out check — reporting
+    agreement. The way-in check now names what the dossier does not carry.
+    """
+    from reprolith.dossier import estimate_difficulty
+    from reprolith.ingest import ingest_sbml
+    from reprolith.sbml import compare_sbml_to_dossier
+
+    dossier = ingest_sbml(_BOUNDARY_STATE_MODEL, entry="e", source_label="m.xml")
+    assert dossier.state_variables == ("S",)
+    gap = next(g for g in dossier.gaps if g.element == "undeclared model elements")
+    assert "Input" in gap.detail and gap.load_bearing
+    # Every unit here is stated, so this is the new gap doing the work and not the units gap:
+    # delete the check and this test goes back to passing for the wrong reason.
+    assert not [g for g in dossier.gaps if g.element == "units"]
+    # `estimate_difficulty` still says "low", and that is correct rather than a hole: the gap is
+    # `carried_by_artifact`, and adopt-and-verify runs the author's own file, where `Input` is
+    # still in force. The surface that must not stay silent is the one adopt-and-verify actually
+    # reads — the model/dossier comparison — and it no longer does.
+    assert estimate_difficulty(dossier) == "low"
+    assert [m for m in compare_sbml_to_dossier(_BOUNDARY_STATE_MODEL, dossier) if "Input" in m]
+
+
+def test_a_constant_species_a_rule_reads_is_a_gap_not_a_silence() -> None:
+    """The sibling shape: a value the rules depend on that leaves the dossier without a trace."""
+    from reprolith.ingest import ingest_sbml
+
+    dossier = ingest_sbml(_CONSTANT_SPECIES_MODEL, entry="e", source_label="m.xml")
+    gap = next(g for g in dossier.gaps if g.element == "undeclared model elements")
+    assert "Fixed" in gap.detail and gap.load_bearing
+
+
+def test_a_fully_declared_model_reports_no_undeclared_element_gap() -> None:
+    """The check must not cry wolf: every shipped model resolves, and so must this one."""
+    from reprolith.ingest import ingest_sbml
+
+    dossier = ingest_sbml(_ASSIGNMENT_MODEL, entry="e", source_label="m.xml")
+    assert not [g for g in dossier.gaps if g.element == "undeclared model elements"]
+
+
+def test_a_model_element_the_dossier_never_states_is_a_mismatch_not_a_silence() -> None:
+    """`compare_sbml_to_dossier` walked dossier -> model only, so what the dossier lost was invisible.
+
+    Adopt-and-verify never rebuilds, so it never reaches `build_model_sbml`'s way-out refusal; its
+    one check was this comparison, which reported `[]` for a dossier carrying half a model — and
+    `ReconstructionBundle.mismatches` publishes `[]` as "checked and agreed".
+    """
+    from reprolith.ingest import ingest_sbml
+    from reprolith.sbml import compare_sbml_to_dossier
+
+    for model in (_BOUNDARY_STATE_MODEL, _CONSTANT_SPECIES_MODEL):
+        dossier = ingest_sbml(model, entry="e", source_label="m.xml")
+        assert [m for m in compare_sbml_to_dossier(model, dossier) if "does not state" in m]
+    # …and it stays quiet on a model the dossier fully carries.
+    fully_stated = ingest_sbml(_ASSIGNMENT_MODEL, entry="e", source_label="m.xml")
+    assert compare_sbml_to_dossier(_ASSIGNMENT_MODEL, fully_stated) == []
+
+
+def test_a_model_level_substance_unit_is_read_as_stated() -> None:
+    """SBML L3 defaults a species' substance unit from the model; reading only the species
+    attribute called a stated unit absent, and published a load-bearing gap whose own text
+    asserted something false about the artifact."""
+    from reprolith.ingest import ingest_sbml
+
+    model = _ASSIGNMENT_MODEL.replace('<model id="m">', '<model id="m" substanceUnits="mole">')
+    dossier = ingest_sbml(model, entry="e", source_label="m.xml")
+    assert all(ic.unit == "mole" for ic in dossier.initial_conditions)
+    # The species no longer appear in the units gap; `k`, which really does state none, still does.
+    units_gap = next(g for g in dossier.gaps if g.element == "units")
+    assert "X" not in units_gap.detail and "Y" not in units_gap.detail

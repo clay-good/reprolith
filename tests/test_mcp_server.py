@@ -950,3 +950,84 @@ def test_an_entry_with_no_accession_is_not_handed_out_as_work() -> None:
     # And it is genuinely back in the pool rather than silently leased.
     assert catalog.claimable(1000.0)
     assert release_work(catalog, {"accession": "", "requester": "agentA"})["released"] is False
+
+
+def test_record_result_returns_the_verdict_with_its_scope_not_a_bare_string() -> None:
+    """The one effectful reply that carried a verdict used to carry it stripped of everything else.
+
+    Every read tool returns a verdict through `ReprolithQuery`, where the "never a bare verdict"
+    invariant lives. `record_result` built its own reply, so the moment an agent finished a unit it
+    was handed `"overall": "partially-reproduced"` with no scope flag and no note that the result
+    rested on an assumption Reprolith supplied.
+    """
+    catalog, query, digest = _recording_fixture()
+    _effectful(query, catalog, "claim_work", {"requester": "agent-1", "lease_seconds": 60})
+
+    done, is_error = _effectful(query, catalog, "record_result",
+                                {"accession": "ACC-A", "requester": "agent-1", "digest": digest})
+    assert not is_error and done["recorded"]
+    assert done["verdict"] == query.verdict(digest)
+    assert done["verdict"]["scope"]["machine"]
+    assert done["verdict"]["overall"] == done["overall"]
+
+
+def test_an_explicit_data_dir_is_read_exactly_as_given_on_both_surfaces() -> None:
+    """`--data-dir X` must mean the same thing to an agent as it does to a human at a terminal.
+
+    The server aggregated every class's committed milestone certificates regardless of the flag, so
+    pointing it at an empty directory still reported six classes and 60 labelled entries — and
+    since the aggregate ledger is what `record_result` validates a digest against, an agent could
+    certify an entry against a certificate the operator's directory has never held.
+    """
+    import tempfile
+    from unittest.mock import patch
+
+    from reprolith.mcp_server import main
+
+    with tempfile.TemporaryDirectory() as tmp:
+        sandbox = Path(tmp)
+        (sandbox / "catalog.json").write_text(json.dumps(Catalog().to_dict()), encoding="utf-8")
+        (sandbox / "certificates").mkdir()
+        seen: dict[str, object] = {}
+
+        def capture(query, *, catalog, on_change, now, guard=None):  # noqa: ANN001
+            seen["digests"] = tuple(query._ledger.items())
+
+        with patch("reprolith.mcp_server.serve_stdio", capture):
+            main(["--data-dir", str(sandbox)])
+        assert seen["digests"] == (), "an empty data dir must serve an empty ledger"
+
+
+def test_an_effectful_call_applies_to_the_current_catalog_not_a_startup_snapshot() -> None:
+    """stdio MCP is one server process per client, so "concurrent requesters" means processes.
+
+    Each server mutated a catalog it loaded once at startup and rewrote the whole file, so two
+    agents were handed the same unit and one agent's unrelated `submit_paper` erased another's
+    recorded certification along with all six of its transitions — the two live surfaces and the
+    CLI then gave three different answers for one entry's state. The guard is held across the whole
+    read-modify-write and re-reads the catalog under it, so a mutation applies to what is on disk.
+    """
+    from contextlib import contextmanager
+
+    catalog, query, _ = _recording_fixture()
+    # What another server process wrote while this one was idle: the entry is already leased.
+    elsewhere = Catalog.from_dict(catalog.to_dict())
+    elsewhere.find(Identifiers(title="", accession="ACC-A")).lease(
+        "agent-elsewhere", at=0.0, seconds=3600
+    )
+    other_process_state = elsewhere.to_dict()
+
+    @contextmanager
+    def guard():
+        catalog.restore(other_process_state)  # what re-reading the file under the lock does
+        yield
+
+    resp = handle_request(
+        query,
+        {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+         "params": {"name": "claim_work", "arguments": {"requester": "agent-late"}}},
+        catalog=catalog, now=lambda: 0.0, guard=guard,
+    )
+    claimed = json.loads(resp["result"]["content"][0]["text"])
+    assert claimed == {"claimed": False, "reason": "no eligible work"}
+    assert catalog.find(Identifiers(title="", accession="ACC-A")).leased_to == "agent-elsewhere"

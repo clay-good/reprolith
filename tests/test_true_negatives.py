@@ -67,7 +67,12 @@ def _spatial_certificate(reference_variance: float) -> tuple[OverallVerdict, Ver
 def test_the_spatial_class_reproduces_the_closed_form_it_is_validated_against() -> None:
     exact = 1.0 + 2 * 1.0 * (500 * 0.4 * _DX * _DX)  # var0 + 2·D·t
     overall, verdict, root_cause = _spatial_certificate(exact)
-    assert (overall, verdict, root_cause) == (OverallVerdict.REPRODUCED, Verdict.REPRODUCED, None)
+    # The claim itself reproduces exactly. The certificate still says `partially-reproduced`,
+    # because this class runs every profile under a zero-flux boundary Reprolith imposes and the
+    # paper did not state — the same downgrade the stochastic class takes for its ensemble. A
+    # class does not get to publish a clean pass for a result resting on its own choice.
+    assert (verdict, root_cause) == (Verdict.REPRODUCED, None)
+    assert overall is OverallVerdict.PARTIALLY_REPRODUCED
 
 
 def test_a_spatial_profile_that_misses_is_published_rather_than_raised() -> None:
@@ -204,5 +209,8 @@ def test_a_wrong_diffusivity_is_judged_rather_than_refused_at_the_published_sett
         )
         return cert.overall
 
-    assert certify(1.0) is OverallVerdict.REPRODUCED
+    # `partially-reproduced`, not `reproduced`: the boundary condition is Reprolith's own
+    # assumption and every spatial claim is qualified by it. What this test is about is the other
+    # end — that a wrong D is *judged* rather than refused as an unstable discretization.
+    assert certify(1.0) is OverallVerdict.PARTIALLY_REPRODUCED
     assert certify(2.0) is OverallVerdict.NOT_REPRODUCED  # judged, not refused

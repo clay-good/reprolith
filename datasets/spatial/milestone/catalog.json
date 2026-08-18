@@ -3,9 +3,9 @@
     {
       "difficulty": null,
       "ground_truth": {
-        "expected": "reproduced",
+        "expected": "partially-reproduced",
         "note": null,
-        "source": "closed-form Gaussian diffusion"
+        "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
       },
       "history": [
         {
@@ -72,9 +72,9 @@
     {
       "difficulty": null,
       "ground_truth": {
-        "expected": "reproduced",
+        "expected": "partially-reproduced",
         "note": null,
-        "source": "closed-form Gaussian diffusion"
+        "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
       },
       "history": [
         {
@@ -141,9 +141,9 @@
     {
       "difficulty": null,
       "ground_truth": {
-        "expected": "reproduced",
+        "expected": "partially-reproduced",
         "note": null,
-        "source": "closed-form Gaussian diffusion"
+        "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
       },
       "history": [
         {

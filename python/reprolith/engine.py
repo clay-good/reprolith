@@ -63,10 +63,18 @@ def _judge_revision() -> str:
     invalidated every COPASI and libRoadRunner certificate while leaving them looking fresh —
     the same failure :mod:`reprolith.pins` was written to remove, applied to the four classes
     Reprolith solves itself but not to the two it does not.
+
+    It spans the glue as well as the judge. Between an external solver and the verdict rule sit two
+    Reprolith modules that decide *which number is judged*: this one resolves the sampling grid and
+    the species column (it once returned amounts where concentrations were meant — off by exactly
+    the compartment volume), and :mod:`reprolith.certify` derives Cmax, AUC and final value from the
+    trajectory. A change to either can flip a verdict without moving the solver's version or the
+    judge's revision, which left every affected certificate reading fresh. Every self-solved class
+    already pins its own analysis layer this way; these two now do too.
     """
     from .pins import algorithm_revision
 
-    return algorithm_revision("oracle", "certificate")
+    return algorithm_revision("engine", "certify", "oracle", "certificate")
 
 
 def engine_pin() -> EnginePin:

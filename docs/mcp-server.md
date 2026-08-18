@@ -92,6 +92,19 @@ so one paper's result can never be filed under another's accession. A blocked en
 missing input recorded from the certificate's gap report, and `requeue_entry` is how it comes
 back once that input arrives.
 
+### Several servers, one data directory
+
+A stdio MCP server is one process per client, so "concurrent agents" usually means concurrent
+*server processes* over the same `--data-dir`. Each effectful call takes an exclusive lock on
+`catalog.json` and re-reads it under that lock, so the mutation applies to what is on disk rather
+than to the snapshot the process loaded at startup. Without it, two servers handed out the same
+unit, and one server's unrelated `submit_paper` silently reverted another's recorded certification
+along with every transition behind it — leaving the two live surfaces and the CLI giving three
+different answers for one entry's state.
+
+The lock covers the catalog: the queue, the leases, and the lifecycle history. Published
+certificates are immutable and read-only, so they need none.
+
 ### What the lease is and is not
 
 The lease is a coordination hint inside one server process, not a lock and not an authorization

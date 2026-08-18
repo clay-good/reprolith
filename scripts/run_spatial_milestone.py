@@ -76,7 +76,16 @@ def main() -> None:
         catalog.add(
             Identifiers(title=s["title"], accession=key),
             ModelClass.SPATIAL,
-            ground_truth=GroundTruth(expected=OverallVerdict.REPRODUCED, source="closed-form Gaussian diffusion"),
+            # `partially-reproduced`, not `reproduced`: the profile matches the closed form
+            # exactly, and the certificate is still downgraded because this class runs every claim
+            # under a zero-flux boundary Reprolith imposes and the paper did not state — the same
+            # load-bearing qualification the stochastic class carries for its ensemble. The label
+            # states what an honest verdict here looks like, so a run that dropped the
+            # qualification would show up as a disagreement rather than as a better number.
+            ground_truth=GroundTruth(
+                expected=OverallVerdict.PARTIALLY_REPRODUCED,
+                source="closed-form Gaussian diffusion (under Reprolith's own boundary condition)",
+            ),
         )
         certified[key] = certify_spatial(
             paper=PaperIdentity(title=s["title"], doi=""),

@@ -47,7 +47,8 @@ def _write_repo(tmp_path: Path) -> tuple[Path, str]:
             ClaimAssessment(claim_id="AUC", quantity="area under curve", verdict=Verdict.REPRODUCED,
                             source_location="Table 1"),
             ClaimAssessment(claim_id="Cmax", quantity="peak concentration", verdict=Verdict.FAILED,
-                            source_location="Fig 2", discrepancy="off by 40%"),
+                            source_location="Fig 2", discrepancy="off by 40%",
+                            root_cause="parameter-value-mismatch"),
         ],
         assumptions=[Assumption(id="a1", description="dose is the salt form", chosen="free base",
                                 basis="convention", attributed_to="reprolith", load_bearing=True)],
@@ -107,7 +108,10 @@ def test_gaps_report(tmp_path, capsys):
     assert run(["--data-dir", str(repo), "gaps", digest]) == 0
     out = capsys.readouterr().out
     assert "WHAT WAS MISSING" in out
-    assert "off by 40%" in out
+    # The root cause, not the discrepancy: the gap report names *why* a claim missed, and every
+    # certificate a judge produces carries one (the builder now refuses a non-pass without it), so
+    # this fixture previously fell through to the discrepancy only by being unrealistic.
+    assert "parameter-value-mismatch" in out
 
 
 def test_backlog_health(tmp_path, capsys):
