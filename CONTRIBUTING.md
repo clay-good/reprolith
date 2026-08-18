@@ -40,7 +40,13 @@ CI runs all of these on every pull request, from a human or from Reprolith's own
 - `ruff check` — lint.
 - `mypy` — types.
 - `pytest` — tests, including the honesty invariants (determinism, inescapable scope,
-  assumption-qualification).
+  assumption-qualification) and the discipline-loop record.
+
+The last one catches people out, so it is worth naming: adding a failure mode, adding a default
+tolerance, or producing a blind verdict that disagrees with its ground-truth label all require a
+written note in [`datasets/loop_notes.json`](datasets/loop_notes.json) saying what put it there,
+with at least one citation quoting the words it is cited for. `tests/test_loop_notes.py` fails
+until there is one. See [`docs/discipline-loop.md`](docs/discipline-loop.md).
 
 Run them locally before opening a PR:
 
