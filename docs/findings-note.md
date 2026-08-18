@@ -555,11 +555,62 @@ The published grid now runs at 0.2 with twice the steps, which keeps the elapsed
 physical scenario identical and still certifies 3/3. A diffusivity twice the stated one now
 publishes `not-reproduced` where it used to raise, and a test holds the class to it.
 
+## The rules that reached one surface and not its neighbour
+
+The eleventh audit pass found the same shape of defect three more times: a rule added where it was
+first needed, and never carried to the surface beside it.
+
+- **The worst-point rule never reached population envelopes.** A doubled peak that `judge_curve`
+  calls `failed` certified as `reproduced` when the identical 201 samples were submitted as a P50
+  band, because a band was judged by its RMSE alone. The hole was *larger* here than the one the
+  curve rule closed, since the band tolerance is wider: at 201 samples a single point could miss by
+  about 2.1x the whole span and still pass.
+- **The linter never checked tolerance provenance.** The judge refuses a `class-default` pair that
+  is not that comparison's documented default; the linter accepted any of them, so the widest pair
+  in the table certified a 24% relative error as reproduced under a provenance reading
+  `class-default` — the third linter-versus-judge drift the audits have found.
+- **The scope statement was fixed on the way in and not on the way out.** A stored certificate that
+  reworded it never loaded, but nothing stopped a caller minting `Scope(machine=
+  "clinically-validated", …)` in memory, and the badge rendered it. It is fixed at the type now.
+
+Three more were single-surface bugs of the same family: a one-trajectory SSA ensemble bypassed its
+own under-power guard (zero variance reads as "resolvable", but one draw has zero variance by
+construction — an exactly-correct model then published `reproduced` on 6 of 40 seeds and `failed`
+on 27); `certify_logical` consumed its claims iterable twice, so a generator published an earned
+`not-reproduced` as an empty `blocked` certificate; and the cross-engine record judged the raw
+distance while publishing it rounded up to the next decade, so a measured 0.011 would have read
+"at most 1e-01 -> engine-independent" against a 0.02 criterion.
+
+## What the discipline-loop record does not check
+
+The record ([`discipline-loop.md`](discipline-loop.md)) audits that every disagreement, failure
+mode, and default tolerance has a written note, that no note explains a subject that no longer
+exists, and that every citation is a path in the repository. Three things it still cannot check,
+all found by auditing it the day it landed:
+
+- **A citation that exists but does not say what the note says it says.** Path existence is the
+  whole test, so a note citing a directory, or the wrong spec file, passes. One of the seventeen
+  notes did exactly that and was corrected by hand.
+- **The two default tolerances that are not in the keyed table** — the estimation level's and the
+  zero-slack exact match — are named as literals rather than derived from the code, so a third
+  non-keyed default would need no note and the gate would stay green. The current set is complete:
+  every `CLASS_DEFAULT` tolerance in the package is one of the six table rows, the estimation
+  default, or the zero pair.
+- **Whether a note is true.** Three claims in the first seventeen notes were wrong on the day they
+  were written — a quoted tolerance attributed to all nine logical certificates when six carry it,
+  a cross-engine headroom stated as three-to-five orders when the measured range is two-to-five,
+  and a spec citation pointing at the wrong file. The gate caught none of them; an audit did.
+
 ## Known limits the audits found and left in place
 
 Recorded rather than fixed, because each needs a design change rather than a patch, and none
 can produce a certificate that claims more than it checked:
 
+- **An entry with no accession is queued but not workable.** `submit_paper` needs only a title,
+  while `release_work` and `record_result` address an entry by accession, so such an entry could be
+  leased and then neither finished nor handed back. It is now refused at claim time with that
+  reason rather than stranded, but the catalog still accepts the submission, because a genuinely
+  new paper may have no accession yet.
 - **The curve threshold is a different standard on every curve** — though much less so than it
   was. The RMSE is taken over the reference's span, so what it admits depends on shape: measured
   before the worst-point rule existed, 15.6% systematic error on a sigmoid, 23.2% on a

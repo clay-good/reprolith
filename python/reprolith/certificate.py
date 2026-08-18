@@ -126,7 +126,7 @@ def build_certificate(
     engine_pin: EnginePin,
     assessments: Iterable[ClaimAssessment],
     assumptions: Iterable[Assumption] = (),
-    gap_report: Iterable[str] = (),
+    gap_report: Sequence[str] = (),
     scope: Scope | None = None,
     supersedes: Certificate | None = None,
 ) -> Certificate:

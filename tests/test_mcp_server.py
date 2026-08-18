@@ -930,3 +930,23 @@ def test_an_entry_cannot_cycle_through_the_queue_forever() -> None:
     assert outcomes[0] is True and outcomes[-1] is False
     entry = catalog.find(Identifiers(title="", accession="ACC-A"))
     assert len(entry.history) < 40  # bounded, not one-fifty-per-fifty-laps
+
+
+def test_an_entry_with_no_accession_is_not_handed_out_as_work() -> None:
+    """A leased entry the surface cannot address again is a strand, not a work unit.
+
+    `submit_paper` needs only a title, and both `release_work` and `record_result` resolve an
+    entry by accession — so such an entry could be claimed and then neither finished nor handed
+    back, stranding until the lease expired and it was offered again, indefinitely.
+    """
+    from reprolith.catalog import Catalog, Identifiers, ModelClass
+    from reprolith.mcp_server import claim_work, release_work
+
+    catalog = Catalog()
+    catalog.add(Identifiers(title="a paper with no accession"), model_class=ModelClass.ODE_PKPD)
+    claimed = claim_work(catalog, {"requester": "agentA"}, at=1000.0)
+    assert claimed["claimed"] is False
+    assert "no accession" in claimed["reason"]
+    # And it is genuinely back in the pool rather than silently leased.
+    assert catalog.claimable(1000.0)
+    assert release_work(catalog, {"accession": "", "requester": "agentA"})["released"] is False

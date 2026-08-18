@@ -411,6 +411,21 @@ def claim_work(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dic
     )
     if entry is None:
         return {"claimed": False, "reason": "no eligible work"}
+    if not entry.identifiers.accession:
+        # release_work and record_result both address an entry by accession, so an entry without
+        # one is a work unit that can be leased and then neither finished nor handed back — it
+        # simply strands until the lease expires and is offered again. submit_paper will happily
+        # create one (only a title is required), so refuse the lease rather than hand out work
+        # whose completion the surface cannot accept.
+        entry.release_lease()
+        return {
+            "claimed": False,
+            "reason": (
+                "the next entry carries no accession, and release_work and record_result address "
+                "an entry by accession — it cannot be finished or released once claimed; add an "
+                "accession to it before it can be worked"
+            ),
+        }
     return {
         "claimed": True,
         "entry": entry.blind().to_dict(),
