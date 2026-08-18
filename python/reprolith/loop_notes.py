@@ -77,6 +77,44 @@ class Resolution(str, Enum):
 
 
 @dataclass(frozen=True)
+class Citation:
+    """A place to check a note, and optionally the words it is cited for.
+
+    A bare path only proves the file exists, which is not the same as its saying what the note
+    says it says: one of the first seventeen notes cited a spec that does not contain the
+    requirement it attributed to it, and the audit passed. ``quotes`` are literal substrings that
+    must appear in the file, so a citation can be held to its content and not only its address.
+    """
+
+    path: str
+    quotes: tuple[str, ...] = ()
+
+    @classmethod
+    def from_record(cls, record: Any) -> Citation:
+        if isinstance(record, str):
+            return cls(path=record)
+        return cls(
+            path=str(record["path"]),
+            quotes=tuple(str(q) for q in record.get("quotes", ())),
+        )
+
+    def to_dict(self) -> Any:
+        return self.path if not self.quotes else {"path": self.path, "quotes": list(self.quotes)}
+
+    def unmet(self, root: Path) -> list[str]:
+        """The ways this citation fails to hold: a missing file, or words that are not in it."""
+        target = root / self.path
+        if not target.exists():
+            return [f"{self.path} (missing)"]
+        if not self.quotes:
+            return []
+        if not target.is_file():
+            return [f"{self.path} (a directory cannot be quoted)"]
+        text = target.read_text(encoding="utf-8")
+        return [f"{self.path}: {q!r}" for q in self.quotes if q not in text]
+
+
+@dataclass(frozen=True)
 class LoopNote:
     """One written note: what it explains, what it rests on, and where to check it."""
 
@@ -85,7 +123,7 @@ class LoopNote:
     subjects: tuple[str, ...]
     basis: NoteBasis
     note: str
-    evidence: tuple[str, ...]
+    evidence: tuple[Citation, ...]
     stage: LoopStage | None = None
     resolution: Resolution | None = None
 
@@ -96,6 +134,14 @@ class LoopNote:
             # A note with nowhere to check it is an assertion, which is what this record exists
             # to replace.
             raise ValueError(f"loop note {self.id!r} cites no evidence")
+        if not any(c.quotes for c in self.evidence):
+            # At least one citation has to be held to its content. Without it a note can point at
+            # a directory, or at the wrong file, and the audit only ever learns that the path
+            # exists.
+            raise ValueError(
+                f"loop note {self.id!r} cites no evidence it can be held to: at least one "
+                "citation must quote the words it is cited for"
+            )
         if not self.note.strip():
             # The written explanation is the whole artifact. A blank one covers its subjects and
             # passes the audit while explaining nothing, which is the failure this record exists
@@ -117,7 +163,7 @@ class LoopNote:
             subjects=tuple(str(s) for s in record["subjects"]),
             basis=NoteBasis(record["basis"]),
             note=str(record["note"]),
-            evidence=tuple(str(e) for e in record["evidence"]),
+            evidence=tuple(Citation.from_record(e) for e in record["evidence"]),
             stage=LoopStage(stage) if stage else None,
             resolution=Resolution(resolution) if resolution else None,
         )
@@ -129,7 +175,7 @@ class LoopNote:
             "subjects": list(self.subjects),
             "basis": self.basis.value,
             "note": self.note,
-            "evidence": list(self.evidence),
+            "evidence": [c.to_dict() for c in self.evidence],
             "stage": self.stage.value if self.stage else None,
             "resolution": self.resolution.value if self.resolution else None,
         }
@@ -227,7 +273,8 @@ def audit_loop_notes(
 
     Three ways the record can be wrong, all of them silent without this: something that needs a
     note has none; a note explains a subject that no longer exists (a renamed failure mode, an
-    entry that left the set); a note cites evidence that is not in the repository.
+    entry that left the set); a note cites evidence that is not in the repository, or that does
+    not contain the words it was cited for.
     """
     required = required_subjects(reports)
     covered: dict[NoteKind, set[str]] = {kind: set() for kind in NoteKind}
@@ -246,10 +293,10 @@ def audit_loop_notes(
     )
     root = Path(base_dir)
     missing_evidence = sorted(
-        f"{note.id}:{path}"
+        f"{note.id}:{unmet}"
         for note in notes
-        for path in note.evidence
-        if not (root / path).exists()
+        for citation in note.evidence
+        for unmet in citation.unmet(root)
     )
     return LoopNoteAudit(
         uncovered=tuple(uncovered),
@@ -260,6 +307,7 @@ def audit_loop_notes(
 
 __all__ = [
     "ESTIMATION_LEVEL",
+    "Citation",
     "EXACT_MATCH",
     "LoopNote",
     "LoopNoteAudit",

@@ -121,6 +121,7 @@ from .logical import (
     validate_logical,
 )
 from .loop_notes import (
+    Citation,
     LoopNote,
     LoopNoteAudit,
     LoopStage,
@@ -249,6 +250,7 @@ from .verification import (
 __version__ = "0.0.1"
 
 __all__ = [
+    "Citation",
     "AgreementReport",
     "Assumption",
     "Attribution",

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from reprolith.loop_notes import (
+    Citation,
     LoopNote,
     NoteBasis,
     NoteKind,
@@ -49,7 +50,7 @@ def test_loop_notes_disagreement_needs_a_stage() -> None:
     with pytest.raises(ValueError, match="responsible stage"):
         LoopNote(
             id="n", kind=NoteKind.DISAGREEMENT, subjects=("E1",), basis=NoteBasis.OBSERVED,
-            note="a written explanation", evidence=("README.md",),
+            note="a written explanation", evidence=(Citation("README.md", ("Reprolith",)),),
         )
 
 
@@ -57,7 +58,7 @@ def test_a_blank_explanation_is_refused() -> None:
     with pytest.raises(ValueError, match="no written explanation"):
         LoopNote(
             id="n", kind=NoteKind.FAILURE_MODE, subjects=("uncategorized",),
-            basis=NoteBasis.SPEC, note="   ", evidence=("README.md",),
+            basis=NoteBasis.SPEC, note="   ", evidence=(Citation("README.md", ("Reprolith",)),),
         )
 
 
@@ -79,7 +80,7 @@ def test_loop_notes_need_evidence() -> None:
 def test_load_refuses_duplicate_ids(tmp_path: Path) -> None:
     record = {
         "id": "dup", "kind": "failure-mode", "subjects": ["uncategorized"], "basis": "spec",
-        "note": "text", "evidence": ["README.md"],
+        "note": "text", "evidence": [{"path": "README.md", "quotes": ["Reprolith"]}],
     }
     path = tmp_path / "notes.json"
     path.write_text(json.dumps({"notes": [record, record]}), encoding="utf-8")
@@ -99,7 +100,7 @@ def test_a_note_explaining_nothing_is_a_failure() -> None:
     """A subject that no longer exists — a renamed mode, a departed entry — is flagged too."""
     orphan = LoopNote(
         id="orphan", kind=NoteKind.FAILURE_MODE, subjects=("mode-that-was-renamed",),
-        basis=NoteBasis.SPEC, note="a written explanation", evidence=("README.md",),
+        basis=NoteBasis.SPEC, note="a written explanation", evidence=(Citation("README.md", ("Reprolith",)),),
     )
     audit = audit_loop_notes([*load_loop_notes(NOTES), orphan], committed_reports(), base_dir=REPO)
     assert audit.orphaned == ("failure-mode:mode-that-was-renamed",)
@@ -109,10 +110,31 @@ def test_evidence_must_exist_in_the_repository() -> None:
     """A citation nobody can follow is an assertion, which is what the record replaces."""
     invented = LoopNote(
         id="invented", kind=NoteKind.FAILURE_MODE, subjects=("uncategorized",),
-        basis=NoteBasis.SPEC, note="a written explanation", evidence=("docs/a-file-that-does-not-exist.md",),
+        basis=NoteBasis.SPEC, note="a written explanation", evidence=(Citation("docs/a-file-that-does-not-exist.md", ("anything",)),),
     )
     audit = audit_loop_notes([invented], committed_reports(), base_dir=REPO)
-    assert audit.missing_evidence == ("invented:docs/a-file-that-does-not-exist.md",)
+    assert audit.missing_evidence == ("invented:docs/a-file-that-does-not-exist.md (missing)",)
+
+
+def test_a_citation_must_contain_the_words_it_is_cited_for() -> None:
+    """Path existence is not content: a note can otherwise cite the wrong file and pass."""
+    misquoted = LoopNote(
+        id="misquoted", kind=NoteKind.FAILURE_MODE, subjects=("uncategorized",),
+        basis=NoteBasis.SPEC, note="text",
+        evidence=(Citation("README.md", ("a sentence the README does not contain",)),),
+    )
+    audit = audit_loop_notes([misquoted], committed_reports(), base_dir=REPO)
+    assert audit.missing_evidence == (
+        "misquoted:README.md: 'a sentence the README does not contain'",
+    )
+
+
+def test_a_note_must_cite_something_it_can_be_held_to() -> None:
+    with pytest.raises(ValueError, match="cites no evidence it can be held to"):
+        LoopNote(
+            id="unanchored", kind=NoteKind.FAILURE_MODE, subjects=("uncategorized",),
+            basis=NoteBasis.SPEC, note="text", evidence=(Citation("README.md"),),
+        )
 
 
 def test_required_subjects_track_the_catalogue_not_a_restatement() -> None:

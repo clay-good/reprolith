@@ -6,11 +6,12 @@ supposed to carry a written explanation. Both are claims about process, and pros
 cannot keep them true. This is the machine-checked version.
 
 [`datasets/loop_notes.json`](../datasets/loop_notes.json) holds the notes. Each one names what it
-explains, what it rests on, and where to check it; `tests/test_loop_notes.py` audits them against
-the artifacts — every disagreeing entry in every committed agreement report, every `FailureMode`,
+explains, what it rests on, and where to check it — at least one citation quoting the words it is
+cited for, so a note that points at the wrong file fails rather than passing on the strength of the
+path existing. `tests/test_loop_notes.py` audits the notes against the artifacts — every disagreeing entry in every committed agreement report, every `FailureMode`,
 and every default tolerance. A new disagreement with no note, a new failure mode nobody justified,
-a note whose subject no longer exists, or a citation that is not in the repository is a gate
-failure rather than a quiet omission.
+a note whose subject no longer exists, or a citation that is missing — or that does not contain
+what it was cited for — is a gate failure rather than a quiet omission.
 
 ## What a note rests on
 

@@ -42,7 +42,12 @@
       "evidence": [
         "datasets/milestone/agreement_report.json",
         "datasets/milestone/README.md",
-        "python/reprolith/run.py",
+        {
+          "path": "python/reprolith/run.py",
+          "quotes": [
+            "no machine-checkable claims extracted from the shipped model artifact"
+          ]
+        },
         "openspec/changes/bootstrap-ode-pkpd-mvp/tasks.md"
       ]
     },
@@ -57,7 +62,14 @@
       "resolution": "explained",
       "note": "The one certified PK/PD entry disagrees upward: the label is a binary reproduced, and Reprolith published partially-reproduced. Both claims matched well inside tolerance (relative error 0.0216 and 0.0045), but the 1000 mg claim rests on a load-bearing salt-form assumption Reprolith had to make itself, and an assumption-qualified assessment cannot carry a clean reproduced overall. Explained, not fixed: down-grading the verdict is the honesty invariant working, and the binary label has no way to express it.",
       "evidence": [
-        "datasets/milestone/certificates/BIOMD0000001028.json",
+        {
+          "path": "datasets/milestone/certificates/BIOMD0000001028.json",
+          "quotes": [
+            "\"id\": \"dose-salt-form\"",
+            "\"load_bearing\": true",
+            "\"overall\": \"partially-reproduced\""
+          ]
+        },
         "datasets/milestone/README.md",
         "datasets/worked_examples"
       ]
@@ -73,7 +85,12 @@
       "basis": "spec",
       "note": "The three PK/PD root causes are required by the ode-pkpd-class spec ('Known PK/PD failure modes are first-class'), not drawn from a disagreement: the blind run abstained on thirty of thirty-one entries and certified the thirty-first, so no PK/PD verdict has yet attributed a shortfall to any of them. unit-mismatch is the one with a load-bearing consequence already: it is why ingestion captures a quantity's units instead of reading past them, since a rate constant read in the wrong unit reproduces a different model entirely.",
       "evidence": [
-        "openspec/specs/ode-pkpd-class/spec.md",
+        {
+          "path": "openspec/specs/ode-pkpd-class/spec.md",
+          "quotes": [
+            "Known PK/PD failure modes are first-class"
+          ]
+        },
         "python/reprolith/oracle.py",
         "python/reprolith/ingest.py",
         "tests/test_presubmission.py"
@@ -89,7 +106,12 @@
       "basis": "spec",
       "note": "Required by the simulation-oracle spec ('Population-specific failure modes'). No population claim has been certified, so neither has been emitted by a run; both are exercised only against constructed cases. They stay in the catalogue because a population envelope that does not say how subjects varied cannot be re-simulated at all, which is a missing input rather than a mismatch.",
       "evidence": [
-        "openspec/specs/simulation-oracle/spec.md",
+        {
+          "path": "openspec/specs/simulation-oracle/spec.md",
+          "quotes": [
+            "Population-specific failure modes"
+          ]
+        },
         "python/reprolith/oracle.py",
         "tests/test_population.py"
       ]
@@ -105,7 +127,12 @@
       "basis": "spec",
       "note": "Required by the simulation-oracle spec ('Estimation-specific failure modes'). A re-fit is sensitive to the optimizer, its objective, its starting values, and the data, and these three name the first three; no estimation-level claim has been certified, so none has been emitted. They are the reason the estimation level carries its own wider default tolerance rather than borrowing the simulation scalar's.",
       "evidence": [
-        "openspec/specs/simulation-oracle/spec.md",
+        {
+          "path": "openspec/specs/simulation-oracle/spec.md",
+          "quotes": [
+            "Estimation-specific failure modes"
+          ]
+        },
         "python/reprolith/certify.py",
         "tests/test_estimation.py"
       ]
@@ -120,7 +147,14 @@
       "note": "The only catalogued mode with a measurement behind it rather than a requirement. Every kinetic model in the committed corpus was run under two independently-implemented engines (COPASI and libRoadRunner/CVODE), and the published distance bounds run from 1e-06 to 1e-03 \u2014 two to five orders of magnitude below the 0.10 curve tolerance, and at least an order below the 2% the corroboration check itself enforces. So no committed verdict is engine-sensitive and the mode has never been attributed. What the measurement establishes is the opposite of a failure: the category exists so that a distance which does cross has somewhere honest to land, and the committed bounds are re-checked against a live run so genuine drift toward the tolerance fails loudly.",
       "evidence": [
         "python/reprolith/corroboration.py",
-        "datasets/kinetic/milestone/corroboration.json",
+        {
+          "path": "datasets/kinetic/milestone/corroboration.json",
+          "quotes": [
+            "\"engine_independent\": true",
+            "\"distance_at_most\": 0.001",
+            "\"distance_at_most\": 1e-06"
+          ]
+        },
         "docs/kinetic-class.md",
         "docs/findings-note.md"
       ]
@@ -136,7 +170,13 @@
       "note": "Both are class-agnostic and neither has been emitted. The metformin entry is the nearest real instance of assumption dependence \u2014 its 1000 mg claim rests on a salt-form assumption Reprolith made itself, and the overall verdict is qualified down to partially-reproduced because of it \u2014 but the assessment records no attribution, because the claim reproduced. apparent-manuscript-error has deliberately never been asserted: calling a published number wrong needs more than a mismatch Reprolith cannot otherwise explain.",
       "evidence": [
         "python/reprolith/oracle.py",
-        "datasets/milestone/certificates/BIOMD0000001028.json",
+        {
+          "path": "datasets/milestone/certificates/BIOMD0000001028.json",
+          "quotes": [
+            "\"load_bearing\": true",
+            "\"root_cause\": null"
+          ]
+        },
         "tests/test_fba.py"
       ]
     },
@@ -152,7 +192,12 @@
       "basis": "spec",
       "note": "Required by the constraint-based-class spec ('Known constraint-based failure modes are first-class'). The class ran 8/8 blind agreement, so none has been emitted by a verdict. Two of them already shape the class's design rather than only its failure reporting: an unspecified medium is why a growth rate published without one cannot be re-derived at all, and alternate optima are why the FROG cross-validation compares flux *variability* intervals instead of a single optimal flux vector that a different LP solver would report differently.",
       "evidence": [
-        "openspec/specs/constraint-based-class/spec.md",
+        {
+          "path": "openspec/specs/constraint-based-class/spec.md",
+          "quotes": [
+            "Known constraint-based failure modes are first-class"
+          ]
+        },
         "python/reprolith/constraint_based.py",
         "python/reprolith/fba.py",
         "docs/fba-oracle.md"
@@ -169,7 +214,12 @@
       "basis": "spec",
       "note": "Required by the logical-class spec ('Catalogued root causes'). The class ran 9/9 blind agreement, so none has been emitted. The first has already changed the artifact: because a synchronous and an asynchronous run of the same network have different attractors, every logical certificate states the update scheme its numbers were computed under, so a paper that never stated one is visible on the certificate rather than only in a failure.",
       "evidence": [
-        "openspec/specs/logical-class/spec.md",
+        {
+          "path": "openspec/specs/logical-class/spec.md",
+          "quotes": [
+            "Known logical failure modes are first-class"
+          ]
+        },
         "python/reprolith/logical.py",
         "docs/logical-class.md",
         "datasets/logical/milestone/certificates"
@@ -184,7 +234,12 @@
       "basis": "spec",
       "note": "The stochastic class's own default cause: an SSA mean judged from a finite ensemble can miss by chance at a rate the ensemble size sets, which is a property of the measurement and not a fault in the paper. It exists because a stochastic claim that supplied no root cause used to raise rather than certify, so a seed that happened to miss crashed the run instead of publishing the honest not-reproduced certificate it had earned. No committed certificate carries it: the three milestone means landed at 0.6-2.3% relative error, inside tolerance.",
       "evidence": [
-        "python/reprolith/stochastic.py",
+        {
+          "path": "python/reprolith/stochastic.py",
+          "quotes": [
+            "FailureMode.FINITE_ENSEMBLE_SAMPLING"
+          ]
+        },
         "datasets/stochastic/milestone/certificates",
         "docs/findings-note.md"
       ]
@@ -198,7 +253,12 @@
       "basis": "spec",
       "note": "The escape hatch every class spec requires \u2014 ode-pkpd, constraint-based, and logical each say a shortfall fitting none of the catalogued causes is recorded as uncategorized, which flags the set to be extended rather than letting a verdict be filed under the nearest wrong cause. Its presence in a certificate is a signal about this catalogue, not about the paper.",
       "evidence": [
-        "openspec/specs/ode-pkpd-class/spec.md",
+        {
+          "path": "openspec/specs/ode-pkpd-class/spec.md",
+          "quotes": [
+            "recorded as uncategorized"
+          ]
+        },
         "openspec/specs/constraint-based-class/spec.md",
         "openspec/specs/logical-class/spec.md",
         "python/reprolith/oracle.py",
@@ -214,7 +274,13 @@
       "basis": "measured",
       "note": "5% reproduced / 15% partial. Measured by perturbing the one shipped PK/PD reproduction until its published verdict changed: the metformin dose still reproduces at +8% and -3%, and first drops to partial at +10%, against an unperturbed agreement of 2.2%. So the pass threshold sits above the agreement actually achieved and below the first perturbation that breaks it. The FBA class exercises the same pair on a real model: E. coli core's growth rate still reproduces at a +/-3% glucose uptake bound and goes partial at +5%.",
       "evidence": [
-        "docs/findings-note.md",
+        {
+          "path": "docs/findings-note.md",
+          "quotes": [
+            "| ode-pkpd scalar | metformin dose | 2.2% | +8% / \u22123% | +10% \u2192 partial |",
+            "| constraint-based | glucose uptake bound, *E. coli* core | rel. err 0 | \u00b13% | +5% \u2192 partial |"
+          ]
+        },
         "datasets/milestone/certificates/BIOMD0000001028.json",
         "python/reprolith/oracle.py"
       ]
@@ -228,7 +294,13 @@
       "basis": "measured",
       "note": "10% reproduced / 25% partial on the RMSE, but the measured budget is not 10%: the verdict is the stricter of the RMSE and a worst-point check at 25% of the reference span, and the worst-point statistic binds whenever the error concentrates in under about a sixth of the samples \u2014 so on four of five curve shapes even a systematic error is decided at 24.8-25.0%. The rule exists because a doubled peak once averaged itself into a pass; it now fails at 25, 101, 201, and 1001 sample points, and the single-point allowance is flat rather than growing as the square root of the sample count, which closed sample-count gaming with it. Tightening the worst point to the pass threshold was measured and rejected: at coarse per-point noise it fails correct work about half the time, where the present budget produced 0 false failures in 15,000 trials up to 5% per-point noise.",
       "evidence": [
-        "docs/findings-note.md",
+        {
+          "path": "docs/findings-note.md",
+          "quotes": [
+            "The curve judge's effective tolerance is 25% of span, not 10%",
+            "0 false failures in 15,000 trials"
+          ]
+        },
         "python/reprolith/oracle.py",
         "tests/test_oracle.py"
       ]
@@ -243,7 +315,12 @@
       "basis": "spec",
       "note": "Both are the numeric pair widened (to 15%/30% and 20%/40%) to absorb the added uncertainty of reading a value off a plot. Declared, not measured: no certified claim has yet used a digitized-figure reference, so nothing has exercised the widening. The certificate reports the reference kind alongside the tolerance, so a reader can see which of the two a verdict was judged under.",
       "evidence": [
-        "python/reprolith/oracle.py",
+        {
+          "path": "python/reprolith/oracle.py",
+          "quotes": [
+            "ReferenceKind.DIGITIZED_FIGURE"
+          ]
+        },
         "openspec/specs/simulation-oracle/spec.md"
       ]
     },
@@ -257,7 +334,12 @@
       "basis": "spec",
       "note": "15%/35% numeric and 25%/50% digitized, wider than a single deterministic trajectory's because a population envelope is judged by its worst-matched percentile band and carries the Monte-Carlo sampling error of a simulated population. Required by the simulation-oracle spec ('Distributional tolerance provenance') and not yet measured: no population claim has been certified.",
       "evidence": [
-        "openspec/specs/simulation-oracle/spec.md",
+        {
+          "path": "openspec/specs/simulation-oracle/spec.md",
+          "quotes": [
+            "Distributional tolerance provenance"
+          ]
+        },
         "python/reprolith/oracle.py",
         "tests/test_population.py"
       ]
@@ -271,7 +353,12 @@
       "basis": "spec",
       "note": "10%/25%, keyed by reproduction level rather than comparison method: re-fitting parameters from raw data is sensitive to the optimizer, its starting values, the objective, and the dataset, so a recovered estimate cannot be held to the tolerance of a scalar read out of a fixed model. Declared, not measured \u2014 no estimation-level claim has been certified.",
       "evidence": [
-        "python/reprolith/oracle.py",
+        {
+          "path": "python/reprolith/oracle.py",
+          "quotes": [
+            "_ESTIMATION_DEFAULT = Tolerance(0.10, 0.25, ToleranceSource.CLASS_DEFAULT)"
+          ]
+        },
         "python/reprolith/certify.py",
         "openspec/specs/simulation-oracle/spec.md"
       ]
@@ -285,8 +372,18 @@
       "basis": "observed",
       "note": "Zero slack, and the only default that is observed in committed certificates rather than argued for. A discrete result has no tolerance to declare, and the logical milestone shows two strengths of it: six of the nine certificates publish 'exact match on the attractor count and every period', while the three large signalling networks \u2014 whose state spaces are far past enumeration \u2014 publish 'exact match on the fixed-point set (SHA-256 of the sorted states)', which is the weaker projection of fixed points only. The FBA class holds its FROG cross-validation to 1e-6, which is numerical noise rather than a reproduction budget. The zero pair is admitted by the threshold check precisely so an exact comparison does not have to invent slack it does not use.",
       "evidence": [
-        "datasets/logical/milestone/certificates/budding_yeast.json",
-        "datasets/logical/milestone/certificates/leukemia.json",
+        {
+          "path": "datasets/logical/milestone/certificates/budding_yeast.json",
+          "quotes": [
+            "exact match on the attractor count and every period"
+          ]
+        },
+        {
+          "path": "datasets/logical/milestone/certificates/leukemia.json",
+          "quotes": [
+            "exact match on the fixed-point set (SHA-256 of the sorted states)"
+          ]
+        },
         "python/reprolith/logical.py",
         "python/reprolith/fba.py",
         "docs/fba-oracle.md"

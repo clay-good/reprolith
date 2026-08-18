@@ -588,9 +588,10 @@ mode, and default tolerance has a written note, that no note explains a subject 
 exists, and that every citation is a path in the repository. Three things it still cannot check,
 all found by auditing it the day it landed:
 
-- **A citation that exists but does not say what the note says it says.** Path existence is the
-  whole test, so a note citing a directory, or the wrong spec file, passes. One of the seventeen
-  notes did exactly that and was corrected by hand.
+- ~~**A citation that exists but does not say what the note says it says.**~~ Fixed the same day
+  it was found: a citation may now carry the literal words it is cited for, every note must have at
+  least one such anchored citation, and the audit reads the file. One of the seventeen notes had
+  cited a spec that does not contain the requirement it attributed to it.
 - **The two default tolerances that are not in the keyed table** — the estimation level's and the
   zero-slack exact match — are named as literals rather than derived from the code, so a third
   non-keyed default would need no note and the gate would stay green. The current set is complete:
