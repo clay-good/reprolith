@@ -889,6 +889,38 @@ reverting each one and watching the suite stay green apart from the source-hash 
 any edit including a comment. Every fix in both batches now has a test that fails when the fix is
 removed.
 
+### And the audit of that
+
+A third pass over the fixes-to-the-fixes found twelve more. Three of them were the same mistake
+wearing different clothes, and it is worth naming precisely: **the reaction-stability probe
+evaluated the caller's function at values the run never visits.** Widening the sampled range by 10%
+to anticipate a growing profile meant probing below zero, and so a reaction carrying an ordinary
+non-negativity check raised, the probe swallowed the exception, and the entire guard was skipped —
+the pathological grid it had just been written to refuse came straight back, admitted. The same
+widening sent `u**0.5` complex and crashed the solver, and on a uniform profile at large magnitude
+the widening fell below one ulp and the sample step divided by zero. The probe stays inside the
+profile's own closed range now, does not swallow anything, and handles growth the way the run does
+— by re-checking when the profile leaves the range already checked, which also closes the case
+where a profile grows into a stiffer region than the one it started in.
+
+A fourth of the same family: the two-species probe held the partner species at `0.0`, a value the
+run never visits, and a slope that is identically zero there — `g(0, v)` for a Brusselator, any
+mass-action `−k·u·v` — reported no reaction at all. Measured, that admitted `dt·|∂f/∂u| = 3.0` and
+returned 1.1e15 against a converged 2.3e-66. It probes at the partner's real extremes now.
+
+The rest: the model-to-dossier sweep's new restriction read the set of needed values off the
+*dossier's* surviving equations, so a state variable the dossier lost entirely — which takes its
+equation with it — was never in the set, and the silence it was written to close reopened. A
+read-only data directory made the lock's sidecar unopenable, and `PermissionError` escaped the
+handler where the previous code returned a clean rolled-back tool error. The pin/protocol check
+required the pin to name the *wrong* path, leaving the easier hand edit — deleting the solver, so
+the pin names no path at all — loading clean. And the title rule compared token *sets*, so word
+order was free: "Effect of insulin on glucose uptake" matched "Effect of glucose on insulin uptake".
+
+Three passes, forty-six findings, and the shape of the last two is the same: **a fix is a claim,
+and the claim is worth what its measurement is worth.** None of the second- or third-round defects
+were found by reasoning about the code. All of them were found by running it.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

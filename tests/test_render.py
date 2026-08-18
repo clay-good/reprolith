@@ -304,3 +304,25 @@ def test_registry_escapes_a_scope_statement_carried_in_from_a_stored_certificate
         assert "<script>alert" not in html
     page = render_registry([("ode-pkpd", cert)])
     assert "no claim about biological correctness" in page  # Reprolith's wording, not the file's
+
+
+def test_the_gap_report_names_a_cause_the_certificate_actually_carries() -> None:
+    """It fell straight through to "no evaluable output" for a claim that *was* evaluated.
+
+    `implicated` and `fault_hypothesis` are causes; reading only `root_cause` invented an
+    abstention's reason for a miss. Whitespace is not a cause either, and this renders verdicts
+    `require_stated_cause` does not police, so the stripping has to happen here too.
+    """
+    from reprolith.render import gap_items
+
+    # A failed claim cannot reach here without a root cause any more — the builder refuses it —
+    # so the fallback is exercised on the verdicts `require_stated_cause` does not police.
+    implicated_only = _cert([_claim(Verdict.NOT_EVALUABLE, cid="a", implicated="elimination rate")])
+    assert gap_items(implicated_only)[0]["needs"] == "elimination rate"
+
+    blank = _cert([_claim(Verdict.NOT_EVALUABLE, cid="b", root_cause="   ",
+                          discrepancy="off by 40%")])
+    assert gap_items(blank)[0]["needs"] == "off by 40%"
+
+    nothing = _cert([_claim(Verdict.NOT_EVALUABLE, cid="c")])
+    assert gap_items(nothing)[0]["needs"] == "evaluable output or reference data for this claim"

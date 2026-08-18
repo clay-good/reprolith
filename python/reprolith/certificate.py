@@ -140,9 +140,10 @@ def require_stated_cause(assessments: Iterable[ClaimAssessment]) -> None:
         # is not a cause either: a root cause of "   " printed as "   ".
         if not (assessment.root_cause or "").strip():
             raise ValueError(
-                f"claim {assessment.claim_id!r} is published as {assessment.verdict.value!r} with "
-                "no root cause, implicated element, or fault hypothesis; a miss this certificate "
-                "asserts has to say what missed"
+                f"claim {assessment.claim_id!r} is published as {assessment.verdict.value!r} "
+                "with no root cause; a miss this certificate asserts has to say what missed, and "
+                "an implicated element or a fault hypothesis alone is not what the gap report "
+                "prints"
             )
 
 

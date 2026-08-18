@@ -223,3 +223,23 @@ def test_a_model_inheriting_changes_one_link_up_is_skipped_too() -> None:
       </listOfTasks>
     </sedML>"""
     assert [r.task_id for r in parse_sedml_recipes(sedml)] == ["t_base"]
+
+
+def test_an_unreadable_time_course_attribute_is_reported_as_unparseable_sedml() -> None:
+    """One error type for an unreadable document — on every attribute, not two of the four."""
+    import pytest
+    from reprolith.sedml import parse_sedml_recipes
+
+    template = """<?xml version="1.0" encoding="UTF-8"?>
+<sedML xmlns="http://sed-ml.org/sed-ml/level1/version3" level="1" version="3">
+ <listOfSimulations>
+  <uniformTimeCourse id="s1" initialTime="{initial}" outputStartTime="{start}"
+                     outputEndTime="{end}" numberOfSteps="{steps}"/>
+ </listOfSimulations>
+</sedML>"""
+    good = {"initial": "0", "start": "0", "end": "10", "steps": "10"}
+    assert parse_sedml_recipes(template.format(**good)) == []  # no tasks, but it parses
+
+    for attribute in ("initial", "start", "end", "steps"):
+        with pytest.raises(ValueError, match="not parseable SED-ML"):
+            parse_sedml_recipes(template.format(**{**good, attribute: "abc"}))

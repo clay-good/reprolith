@@ -268,11 +268,16 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
     # `boundaryCondition` species on purpose, so reporting every one of them made a rules-only model
     # with an unread fixed input — an ordinary PK/PD shape — permanently unable to return "no
     # disagreement". What matters is a value the equations *need* and the dossier does not carry.
-    needed = {
-        name
-        for equation in dossier.equations
-        for name in _rule_names_in(model, equation.target)
-    } | {e.target for e in dossier.equations}
+    # Read off the *model*, not off the dossier's surviving equations. Sourcing it from the
+    # dossier made the check blind in exactly the case it exists for: a state variable the dossier
+    # lost entirely takes its equation with it, so its name was never in `needed` and the sweep
+    # reported nothing — "checked and agreed" over a dossier carrying half a model, again.
+    model_rule_targets = {
+        model.getRule(i).getVariable() for i in range(model.getNumRules())
+    }
+    needed = set(model_rule_targets)
+    for target in model_rule_targets:
+        needed |= _rule_names_in(model, target)
     for name, value in sorted(sbml_ics.items()):
         if name in needed and name not in stated_by_dossier:
             mismatches.append(

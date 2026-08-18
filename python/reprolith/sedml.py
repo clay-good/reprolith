@@ -95,14 +95,17 @@ def parse_sedml_recipes(sedml: str) -> list[SimulationRecipe]:
             try:
                 initial_time = float(element.get("initialTime", "0"))
                 output_start = float(element.get("outputStartTime", "0"))
+                # Converted here too: this module's contract is one error type for an unreadable
+                # document, and wrapping two attributes while their neighbours still raised a bare
+                # float()/int() failure is the contract reaching one line and not the next.
+                end_seconds = float(end_time) if end_time is not None else None
+                step_count = int(num_steps) if num_steps is not None else None
             except ValueError as unreadable:
-                # This module's contract is one error type for an unreadable document; an
-                # unparseable attribute must not escape as a bare float() failure.
                 raise ValueError(f"not parseable SED-ML: {unreadable}") from unreadable
             if initial_time != 0.0 or output_start != 0.0:
                 continue  # not runnable verbatim as (duration, steps); see the docstring
-            if sim_id is not None and end_time is not None and num_steps is not None:
-                simulations[sim_id] = (float(end_time), int(num_steps), output_start)
+            if sim_id is not None and end_seconds is not None and step_count is not None:
+                simulations[sim_id] = (end_seconds, step_count, output_start)
         elif name == "model":
             model_id = element.get("id")
             source = element.get("source", "")

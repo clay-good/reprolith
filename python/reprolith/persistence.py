@@ -99,19 +99,22 @@ def _require_pin_agrees_with_protocol(
     names_enumeration = "exhaustive-state-enumeration" in algorithm
     for assessment in assessments:
         protocol = assessment.protocol or ""
-        # The markers are the exact phrases `logical.search_protocol` writes, and the SAT one is
-        # tested first: its sentence *contains* the words "exhaustive enumeration" (as the thing the
-        # state space is beyond), so a looser enumeration marker matches both.
-        if "SAT search" in protocol and names_enumeration and not names_sat:
+        # The pin must *positively* name the path the protocol states. Requiring it to name the
+        # wrong one left the easier hand edit open: deleting "sat-fixed-points (z3 …)" leaves a pin
+        # naming no path at all, which loaded clean while the builder refuses exactly that.
+        # The markers are the phrases `logical.search_protocol` writes, and the SAT sentence
+        # contains the words "exhaustive enumeration" (as the thing the space is beyond), so it is
+        # tested first and the enumeration marker is the longer, unambiguous phrase.
+        if "SAT search" in protocol and not names_sat:
             raise ValueError(
-                f"claim {assessment.claim_id!r} records a SAT search but the pin says "
-                f"{algorithm!r}: a certificate cannot claim exhaustive enumeration of a state "
-                "space it searched"
+                f"claim {assessment.claim_id!r} records a SAT search but the pin ({algorithm!r}) "
+                "does not name the solver that ran it: a certificate cannot leave the software "
+                "that searched a state space off the record, or claim to have enumerated it"
             )
-        if "exhaustive enumeration of all" in protocol and names_sat and not names_enumeration:
+        if "exhaustive enumeration of all" in protocol and not names_enumeration:
             raise ValueError(
-                f"claim {assessment.claim_id!r} records exhaustive enumeration but the pin names "
-                f"the SAT solver ({algorithm!r})"
+                f"claim {assessment.claim_id!r} records exhaustive enumeration but the pin "
+                f"({algorithm!r}) does not say so"
             )
 
 

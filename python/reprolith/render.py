@@ -74,12 +74,15 @@ def gap_items(cert: Certificate) -> list[dict[str, Any]]:
         # abstention sentence told a reader a claim had no evaluable output when the certificate
         # says it was evaluated and missed. `presubmission._claim_issue_and_fix` already reads all
         # three; this is the same rule on the neighbouring surface.
-        needs = (
-            a.root_cause
-            or a.implicated
-            or a.fault_hypothesis
-            or a.discrepancy
-            or "evaluable output or reference data for this claim"
+        # Stripped, and for every verdict this renders: `require_stated_cause` only strips for
+        # partial and failed, so a whitespace root cause on a not-evaluable claim printed as "   ".
+        needs = next(
+            (
+                (text or "").strip()
+                for text in (a.root_cause, a.implicated, a.fault_hypothesis, a.discrepancy)
+                if (text or "").strip()
+            ),
+            "evaluable output or reference data for this claim",
         )
         items.append(
             {

@@ -349,3 +349,19 @@ def test_an_infinite_zero_scale_abstains_rather_than_certifying() -> None:
         reported=0.0, predicted=5.0, zero_scale=float("inf"),
     )
     assert assessment.verdict is Verdict.NOT_EVALUABLE
+
+
+def test_worst_point_deviation_does_not_step_over_a_diverged_point() -> None:
+    """`max` compares false against NaN, so the largest *surviving* gap was returned as the worst.
+
+    Fixing this in `band_worst_point` alone only moved the same bug one level down, into the
+    helper it calls — and this function is exported, so a caller outside the judges (which
+    pre-screen for non-finite values) got a clean number for a run that blew up.
+    """
+    from reprolith.oracle import worst_point_deviation
+
+    nan = float("nan")
+    for reference in ((nan, 1.0, 2.0), (1.0, nan, 2.0), (1.0, 2.0, nan)):
+        assert math.isnan(worst_point_deviation(reference, (0.0, 0.0, 0.0)))
+    assert math.isnan(worst_point_deviation((1.0, 2.0, 3.0), (1.0, nan, 3.0)))
+    assert worst_point_deviation((1.0, 2.0, 3.0), (1.0, 2.5, 3.0)) == 0.25

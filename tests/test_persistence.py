@@ -288,8 +288,13 @@ def test_a_stored_pin_that_contradicts_its_own_protocol_is_refused() -> None:
     content = honest.content()
     assert certificate_from_content(content).overall is honest.overall
 
+    # Swapping the pin to the other path is refused…
     content["engine_pin"]["algorithm"] = "synchronous-update, exhaustive-state-enumeration"
-    with pytest.raises(ValueError, match="cannot claim exhaustive enumeration"):
+    with pytest.raises(ValueError, match="does not name the solver that ran it"):
+        certificate_from_content(content)
+    # …and so is the easier edit: deleting the solver, leaving a pin that names no path at all.
+    content["engine_pin"]["algorithm"] = "synchronous-update"
+    with pytest.raises(ValueError, match="does not name the solver that ran it"):
         certificate_from_content(content)
 
 

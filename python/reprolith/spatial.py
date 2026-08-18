@@ -120,14 +120,23 @@ def _reaction_stability(
     alpha: float,
     dt: float,
     samples: int = 33,
-) -> None:
+    checked: tuple[float, float] | None = None,
+) -> tuple[float, float]:
     """Refuse a step whose diffusion *and reaction* together leave the stable amplification band.
 
     The explicit update's amplification at the shortest wavelength is ``1 − 4α − dt·f′``, so the
     reaction has to be budgeted against the same [−1, 1] band the diffusion number is checked in —
     the way :func:`_diffusion_number` already budgets a linear decay. ``f′`` is not known
-    symbolically here, so it is estimated by differencing ``f`` across the profile's own value
-    range (widened, because a growing profile leaves the range it started in).
+    symbolically here, so it is estimated by differencing ``f`` across the values the profile
+    actually holds.
+
+    Sampled *inside* the profile's own closed range, never outside it. Widening the probe to
+    anticipate growth meant evaluating the caller's reaction at values the run never visits, and
+    three things followed: a reaction with an ordinary non-negativity check raised, and the probe
+    swallowed the exception and skipped the whole guard; ``u**0.5`` went complex and crashed the
+    solver; and a uniform profile at large magnitude produced a widening below one ulp, so the
+    sample step was zero. Growth is handled by re-checking as the profile grows (see
+    :func:`_react_step`), which is what the run actually does, rather than by guessing how far.
 
     An estimate is enough because the failure is not marginal: outside the band the even and odd
     grid points decouple and the profile becomes a comb, which is finite, in range, and wrong by
@@ -135,23 +144,26 @@ def _reaction_stability(
     """
     finite = [v for v in values if math.isfinite(v)]
     if not finite or dt == 0.0:
-        return
+        return checked if checked is not None else (0.0, 0.0)
     lo, hi = min(finite), max(finite)
-    span = hi - lo
-    # Widened, because a growing profile leaves the range it started in — but only slightly:
-    # widening far past the profile samples `f` where the run never goes, and for a logistic term
-    # that doubles the slope bound and refuses discretizations measured to be correct.
-    lo, hi = lo - 0.1 * span - 1e-9, hi + 0.1 * span + 1e-9
-    step = (hi - lo) / (samples - 1)
+    if checked is not None:  # a re-check covers the union, so a shrinking profile stays covered
+        lo, hi = min(lo, checked[0]), max(hi, checked[1])
+    if hi == lo:
+        # A uniform profile still has a slope through it; difference over a step scaled to the
+        # value's own magnitude, since a fixed epsilon vanishes at 1e9 and swamps the value at 1e-9.
+        step = max(abs(lo), 1.0) * 1e-6
+        probes = [lo, lo + step]
+    else:
+        step = (hi - lo) / (samples - 1)
+        probes = [lo + i * step for i in range(samples)]
     slope = 0.0
-    for i in range(samples - 1):
-        left, right = lo + i * step, lo + (i + 1) * step
-        try:
-            rise = reaction(right) - reaction(left)
-        except (ArithmeticError, ValueError):
-            return  # a reaction undefined off the profile tells us nothing about the profile
+    for left, right in zip(probes, probes[1:]):
+        # No exception handling here on purpose: every probe is a value the profile holds, so a
+        # reaction that cannot be evaluated at one of them cannot be run either, and the error
+        # belongs to the caller rather than being turned into a silently skipped check.
+        rise = reaction(right) - reaction(left)
         if math.isfinite(rise):
-            slope = max(slope, abs(rise) / step)
+            slope = max(slope, abs(rise) / (right - left))
     combined = 4.0 * alpha + dt * slope
     if combined > 2.0 + 1e-12:
         raise UnstableDiscretization(
@@ -159,6 +171,7 @@ def _reaction_stability(
             f"{1.0 - combined:.3g} at the shortest wavelength, outside [-1, 1] "
             f"(D·dt/dx² = {alpha:.3g}, dt·|f'| = {dt * slope:.3g}); reduce dt or dx"
         )
+    return lo, hi
 
 
 def diffuse_1d(
@@ -240,7 +253,11 @@ def react_diffuse_1d(
     n = len(current)
     if n < 2:
         raise ValueError("need at least two grid points")
-    _reaction_stability(current, reaction, alpha=alpha, dt=dt)
+    # Re-checked whenever the profile leaves the range already checked, because a profile that
+    # grows into a stiffer region of the reaction was admitted on the strength of where it started:
+    # a run entering a region with dt·|f′| = 3.6 produced a spurious comb oscillating between 10.26
+    # and 10.70 where the true steady state is flat at 10.25 — a pattern manufactured by the step.
+    checked_lo, checked_hi = _reaction_stability(current, reaction, alpha=alpha, dt=dt)
     for _ in range(steps):
         nxt = current[:]
         for i in range(n):
@@ -248,6 +265,11 @@ def react_diffuse_1d(
             right = current[i + 1] if i < n - 1 else current[i]
             nxt[i] = current[i] + alpha * (left - 2.0 * current[i] + right) + dt * reaction(current[i])
         current = nxt
+        finite = [v for v in current if math.isfinite(v)]
+        if finite and (min(finite) < checked_lo or max(finite) > checked_hi):
+            checked_lo, checked_hi = _reaction_stability(
+                current, reaction, alpha=alpha, dt=dt, checked=(checked_lo, checked_hi)
+            )
     return current
 
 
@@ -341,8 +363,17 @@ def react_diffuse_2species(
     n = len(cu)
     if n < 2 or len(cv) != n:
         raise ValueError("u and v must have the same length, at least two grid points")
-    _reaction_stability(cu, lambda x: reaction_u(x, 0.0), alpha=au, dt=dt)
-    _reaction_stability(cv, lambda x: reaction_v(0.0, x), alpha=av, dt=dt)
+    # Probed at the partner species' own extremes, not at 0.0: a value the run never visits can
+    # report a slope of zero where the true one is large — `g(0, v)` is identically zero for a
+    # Brusselator, and any mass-action `-k·u·v` vanishes there. Measured, holding the partner at
+    # 0.0 admitted dt·|∂f/∂u| = 3.0 and the run returned 1.1e15 against a converged 2.3e-66.
+    def _held(f: Callable[[float, float], float], partner: float, *, first: bool) -> Callable[[float], float]:
+        return (lambda x: f(x, partner)) if first else (lambda x: f(partner, x))
+
+    for partner_v in (min(cv), max(cv)):
+        _reaction_stability(cu, _held(reaction_u, partner_v, first=True), alpha=au, dt=dt)
+    for partner_u in (min(cu), max(cu)):
+        _reaction_stability(cv, _held(reaction_v, partner_u, first=False), alpha=av, dt=dt)
     for _ in range(steps):
         nu, nv = cu[:], cv[:]
         for i in range(n):

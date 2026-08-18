@@ -911,6 +911,10 @@ def handle_request(
         except (
             AttributeError,
             KeyError,
+            # The catalog lives on a filesystem that can refuse: a read-only data directory made
+            # the guard's sidecar unopenable, and PermissionError escaped the handler entirely
+            # where the previous code returned a clean "not persisted, rolled back" tool error.
+            OSError,
             TypeError,
             ValueError,
             RuntimeError,

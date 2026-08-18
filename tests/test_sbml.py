@@ -151,3 +151,46 @@ def test_adopt_and_verify_compares_what_it_says_it_compared() -> None:
     assert any("parameter c" in m and "42.0" in m for m in mismatches)      # a compartment size
     assert any("initial condition A" in m and "100.0" in m for m in mismatches)  # parameter-held IC
     assert any("initial condition Z" in m and "not present" in m for m in mismatches)
+
+
+def test_a_state_variable_the_dossier_lost_entirely_is_reported() -> None:
+    """The reverse sweep read `needed` off the dossier, so what the dossier lost was invisible.
+
+    A lost state variable takes its equation with it, so its name was never in the set of things
+    the dossier's own equations depend on — and the comparison reported nothing, which
+    `ReconstructionBundle.mismatches` publishes as "checked and agreed" over half a model. The set
+    comes off the model's rules now.
+    """
+    from dataclasses import replace
+
+    from reprolith.ingest import ingest_sbml
+    from reprolith.sbml import compare_sbml_to_dossier
+
+    model = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+ <model id="m">
+  <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+  <listOfSpecies>
+   <species id="X" compartment="c" initialAmount="10" hasOnlySubstanceUnits="true"
+            substanceUnits="mole" boundaryCondition="false" constant="false"/>
+   <species id="Y" compartment="c" initialAmount="7" hasOnlySubstanceUnits="true"
+            substanceUnits="mole" boundaryCondition="false" constant="false"/>
+  </listOfSpecies>
+  <listOfRules>
+   <rateRule variable="X"><math xmlns="http://www.w3.org/1998/Math/MathML">
+     <apply><minus/><ci>X</ci></apply></math></rateRule>
+   <rateRule variable="Y"><math xmlns="http://www.w3.org/1998/Math/MathML">
+     <apply><minus/><ci>Y</ci></apply></math></rateRule>
+  </listOfRules>
+ </model>
+</sbml>"""
+    dossier = ingest_sbml(model, entry="e", source_label="m.xml")
+    assert compare_sbml_to_dossier(model, dossier) == []
+
+    lost = replace(
+        dossier,
+        state_variables=tuple(v for v in dossier.state_variables if v != "Y"),
+        equations=tuple(e for e in dossier.equations if e.target != "Y"),
+        initial_conditions=tuple(i for i in dossier.initial_conditions if i.name != "Y"),
+    )
+    assert [m for m in compare_sbml_to_dossier(model, lost) if "Y" in m]

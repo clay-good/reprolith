@@ -43,6 +43,15 @@ def _title_tokens(title: str) -> list[str]:
     )]
 
 
+def _is_word_subsequence(inner: list[str], outer: list[str]) -> bool:
+    """Whether ``inner``'s words appear in ``outer`` contiguously and in order."""
+    if len(inner) > len(outer):
+        return False
+    return any(
+        outer[i:i + len(inner)] == inner for i in range(len(outer) - len(inner) + 1)
+    )
+
+
 def require_same_paper(entry: CatalogEntry, certificate: Certificate, key: str) -> None:
     """Refuse a certificate keyed to an entry that is not the paper the certificate is about.
 
@@ -63,7 +72,7 @@ def require_same_paper(entry: CatalogEntry, certificate: Certificate, key: str) 
     only thing left that distinguishes the two papers, and they are compared, but loosely, exactly
     as loosely as the paragraph above requires. The legitimate variation is one record naming the
     paper more fully than the other ("E. coli core" and "E. coli core metabolic model"), so one
-    title whose words are all contained in the other is accepted. Two titles with no such relation
+    title whose words appear in the other, contiguously and in order, is accepted. Two titles with no such relation
     are two papers: the measured swap ("Elowitz2000 repressilator" filed under Kholodenko's
     accession) shares nothing and is refused, and so is an empty title, which witnesses nothing.
     """
@@ -84,12 +93,15 @@ def require_same_paper(entry: CatalogEntry, certificate: Certificate, key: str) 
         for field in ("doi", "pubmed_id")
     )
     if not compared_an_identifier:
-        # Tokens, not raw substrings: "a" is inside every title, and an empty title is not a
-        # witness to anything. Word-level containment still accepts the variation the doi-only rule
-        # existed to tolerate — one record naming the paper more fully than the other.
-        ours = set(_title_tokens(stated.title))
-        theirs = set(_title_tokens(certified_paper.title))
-        if not ours or not theirs or not (ours <= theirs or theirs <= ours):
+        # Whole words, in order. Raw substrings accept a title of "a"; a token *set* accepts any
+        # reordering, so "Effect of insulin on glucose uptake" matched "Effect of glucose on
+        # insulin uptake" — two different papers. Order-preserving word containment refuses both
+        # and still accepts the variation the doi-only rule existed to tolerate: one record naming
+        # the paper more fully than the other. An empty title witnesses nothing.
+        ours = _title_tokens(stated.title)
+        theirs = _title_tokens(certified_paper.title)
+        contained = _is_word_subsequence(ours, theirs) or _is_word_subsequence(theirs, ours)
+        if not ours or not theirs or not contained:
             raise ValueError(
                 f"certificate filed under {key!r} is for a different paper: no DOI or PubMed ID is "
                 f"stated on both sides, and neither title names the other — entry "
