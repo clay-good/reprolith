@@ -59,6 +59,29 @@ pytest -q
 
 (Spec validation uses the OpenSpec CLI: `npx @fission-ai/openspec validate --specs --strict`.)
 
+## If you add a guard, measure it
+
+A guard is a claim about what cannot happen, and it is worth exactly what its measurement is worth.
+Four consecutive audit rounds over this repo found 26, 17, 12 and 12 defects — and every round after
+the first found them *in the previous round's fixes*, all of them invisible to the gates above. So
+when you add a check, a refusal, or a stability rule:
+
+- **Measure the thing it refuses.** Show the number it was wrong by before, and after. A guard
+  justified by reasoning rather than by a run is the shape that keeps failing here.
+- **Write a test that fails when the fix is removed.** Revert your own change and watch it go red.
+  Four guards shipped in one batch had no test at all, and the suite stayed green without them.
+- **Apply the rule to every path, including the ones you are adding in the same commit.** The
+  sharpest failure in this history is a guard whose own new branch broke the invariant stated in
+  its docstring three lines above.
+- **Prefer one function called from every layer** over one check per layer. A rule enforced in the
+  builder, the load path, and a class front-end separately ended up with three implementations and
+  two answers about the same certificate.
+- **A guard that is too strict is a defect too.** A stability limit tightened to a safe-looking
+  constant broke a validated Turing dispersion relation; the measured answer was different from the
+  cautious one.
+
+[`docs/findings-note.md`](docs/findings-note.md) records what each round found, with the numbers.
+
 ## Extending a self-validation set
 
 The constraint-based and generic-kinetic classes validate Reprolith non-circularly against an
