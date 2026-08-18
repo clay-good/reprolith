@@ -445,3 +445,38 @@ def test_a_labelled_entry_keeps_the_identity_its_dataset_gave_it() -> None:
     assert catalog.add(
         Identifiers(title="Mager 2005", accession="BIOMD0000000765"), ModelClass.ODE_PKPD
     ) is labelled
+
+
+def test_a_saved_history_the_lifecycle_forbids_is_refused() -> None:
+    """Only the history's endpoint was checked, so a fabricated hop loaded as a full lifecycle."""
+    import pytest
+    from reprolith.catalog import Catalog
+
+    def saved(history: list[dict], state: str) -> dict:
+        return {
+            "entries": [
+                {
+                    "identifiers": {"title": "p", "doi": "", "pubmed_id": "", "accession": "ACC1"},
+                    "model_class": "ode-pkpd",
+                    "state": state,
+                    "history": history,
+                    "difficulty": None,
+                    "ground_truth": None,
+                    "leased_to": None,
+                    "lease_expires": None,
+                    "requeues": 0,
+                }
+            ]
+        }
+
+    def move(a: str, b: str, at: str) -> dict:
+        return {"from_state": a, "to_state": b, "at": at, "actor": "x", "reason": "r",
+                "missing_inputs": []}
+
+    with pytest.raises(ValueError, match="transition the lifecycle forbids"):
+        Catalog.from_dict(saved([move("queued", "certified", "2026-01-01")], "certified"))
+    with pytest.raises(ValueError, match="does not chain"):
+        Catalog.from_dict(saved(
+            [move("queued", "ingesting", "2026-01-01"), move("verifying", "certified", "1999-01-01")],
+            "certified",
+        ))

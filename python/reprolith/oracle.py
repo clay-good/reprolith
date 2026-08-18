@@ -345,7 +345,7 @@ def _paired_bands(
 
 def band_worst_point(
     reference: Sequence[PercentileBand], predicted: Sequence[PercentileBand]
-) -> float:
+) -> tuple[float, PercentileBand]:
     """The largest single-point gap over every band, as a fraction of that band's span.
 
     The envelope's version of :func:`worst_point_deviation`, and needed for the same reason: a
@@ -356,9 +356,15 @@ def band_worst_point(
     clean population reproduction.
     """
     ref_by_pct, pred_by_pct = _paired_bands(reference, predicted)
+    # Returns the band it came from as well, because the worst *point* and the worst *average*
+    # need not be in the same band: naming one band beside the other's number told a reader the
+    # governing miss was somewhere it was not.
     return max(
-        worst_point_deviation(ref_by_pct[pct].curve, pred_by_pct[pct].curve)
-        for pct in sorted(ref_by_pct)
+        (
+            (worst_point_deviation(ref_by_pct[pct].curve, pred_by_pct[pct].curve), ref_by_pct[pct])
+            for pct in sorted(ref_by_pct)
+        ),
+        key=lambda pair: pair[0],
     )
 
 
@@ -766,7 +772,7 @@ def judge_distribution(
     # Both statistics, exactly as a curve is judged: the worst-matched band's average agreement,
     # and the worst single point anywhere in the envelope, rescaled onto the pass threshold so one
     # number governs. Without this a doubled median peak averaged itself into a clean pass.
-    worst = band_worst_point(reference, predicted)
+    worst, worst_point_band = band_worst_point(reference, predicted)
     scaled_worst = (
         worst * (tol.reproduced_within / tol.partial_within) if tol.partial_within > 0.0 else worst
     )
@@ -778,7 +784,8 @@ def judge_distribution(
         measure=max(distance, scaled_worst),
         discrepancy=(
             f"worst band {worst_band.label()} normalized distance {distance:.4f}, worst point "
-            f"{worst:.4f} of span (pass budget {tol.partial_within:.4f})"
+            f"{worst:.4f} of span in {worst_point_band.label()} "
+            f"(pass budget {tol.partial_within:.4f})"
         ),
         tol=tol,
         reference_kind=reference_kind,

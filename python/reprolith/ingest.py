@@ -104,13 +104,18 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
     source = f"{source_label}"
     state_variables: list[str] = []
     initial_conditions: list[Parameter] = []
+    unstated_ics: list[str] = []
     for i in range(model.getNumSpecies()):
         species = model.getSpecies(i)
         if species.getConstant() or species.getBoundaryCondition():
             continue  # a fixed input, not a dynamic state variable
         value = _initial_amount(model, species)
         if value is None:
-            continue  # no stated initial value; a reconstruction gap, not a fabricated one
+            # No stated initial value: never fabricated, but it used to vanish with no gap either
+            # — the dossier then listed an equation of motion for a state variable it did not
+            # declare, and reported no gap at all. A missing required element is a Gap.
+            unstated_ics.append(species.getId())
+            continue
         state_variables.append(species.getId())
         initial_conditions.append(
             Parameter(
@@ -180,8 +185,34 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
         initial_conditions=tuple(initial_conditions),
         artifacts=(artifact,),
         gaps=_unread_constructs(model)
+        + _unstated_initial_values(tuple(unstated_ics))
         + _unstated_units(tuple(parameters) + tuple(initial_conditions)),
     )
+
+
+def _unstated_initial_values(names: tuple[str, ...]) -> tuple[Gap, ...]:
+    """Record the dynamic species the artifact states no initial value for.
+
+    Such a species is dropped from ``state_variables`` and ``initial_conditions`` rather than
+    given a fabricated starting point, which is right — but it used to be dropped in silence, so
+    the dossier could carry a rate rule for a variable it never declared and still report no gap
+    at all. The value is missing from the artifact as well as the dossier, so adopting the
+    author's file does not close it.
+    """
+    if not names:
+        return ()
+    shown = ", ".join(sorted(names)[:5]) + (", …" if len(names) > 5 else "")
+    return (Gap(
+        element="initial values",
+        kind=GapKind.INITIAL_CONDITION,
+        detail=(
+            f"{len(names)} dynamic species state no initial amount or concentration in the "
+            f"artifact ({shown}); they are not recorded as state variables here, and a model "
+            "rebuilt from this dossier does not contain them"
+        ),
+        load_bearing=True,
+        carried_by_artifact=False,
+    ),)
 
 
 def _unstated_units(values: tuple[Parameter, ...]) -> tuple[Gap, ...]:
@@ -204,8 +235,21 @@ def _unstated_units(values: tuple[Parameter, ...]) -> tuple[Gap, ...]:
             f"({shown}); their magnitudes are recorded, their units are not"
         ),
         load_bearing=True,
-        carried_by_artifact=True,
+        # Not carried by the artifact — this gap exists *because* the artifact states no unit, so
+        # adopting the author's file closes nothing. Flagged the other way it was discounted out of
+        # the difficulty estimate entirely, and models whose every extracted unit is unknown scored
+        # "a valid shipped model and no gaps" while unit-mismatch is a catalogued failure mode.
+        carried_by_artifact=False,
     ),)
+
+
+#: SBML L3 packages that carry model semantics this core path does not read. `layout` and `render`
+#: are deliberately absent: they describe how to *draw* a model, so a dossier that ignores them
+#: loses nothing about its dynamics, and recording them would be a gap that cries wolf — the
+#: shipped metformin model declares `layout` and is otherwise fully read.
+_SEMANTIC_PACKAGES = frozenset(
+    {"fbc", "qual", "comp", "multi", "arrays", "distrib", "spatial", "groups", "req"}
+)
 
 
 def _unread_constructs(model: Any) -> tuple[Gap, ...]:
@@ -224,6 +268,63 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
     instead of quietly leaving the dose out.
     """
     gaps: list[Gap] = []
+    packages = sorted(
+        {
+            name
+            for i in range(model.getNumPlugins())
+            if (plugin := model.getPlugin(i)) is not None
+            and (name := plugin.getPackageName()) in _SEMANTIC_PACKAGES
+        }
+    )
+    if packages:
+        # An SBML L3 package holds the model's actual content for the classes that use one, and
+        # this core path reads none of it: the repository's own SBML-qual toggle switch ingested
+        # to a completely empty dossier — no state variables, no equations, and no gaps — that
+        # then rated as "a valid shipped model with nothing to assume". The fbc and qual ingesters
+        # refuse a model that declares no package; this is the same statement in reverse.
+        gaps.append(Gap(
+            element="package content",
+            kind=GapKind.EQUATION,
+            detail=(
+                f"the artifact declares the SBML L3 package(s) {', '.join(packages)}, "
+                "whose content this dossier does not read; the class-specific ingester "
+                "(ingest_fbc_sbml, ingest_qual_sbml) is the one that reads it"
+            ),
+            load_bearing=True,
+            carried_by_artifact=True,
+        ))
+    algebraic = sum(
+        1 for i in range(model.getNumRules())
+        if not (model.getRule(i).isRate() or model.getRule(i).isAssignment())
+    )
+    if algebraic:
+        gaps.append(Gap(
+            element="algebraic rules",
+            kind=GapKind.EQUATION,
+            detail=(
+                f"{algebraic} algebraicRule(s) constrain the system and produce no equation here; "
+                "a model rebuilt from this dossier is unconstrained by them"
+            ),
+            load_bearing=True,
+            carried_by_artifact=True,
+        ))
+    unsized = [
+        c for c in (model.getCompartment(i) for i in range(model.getNumCompartments()))
+        if not c.isSetSize()
+    ]
+    if unsized:
+        # Reconstruction fills in 1.0 for a compartment with no stated size, which is a value the
+        # artifact never gave. Only compartments with a stated non-unit size were being recorded.
+        gaps.append(Gap(
+            element="compartment sizes",
+            kind=GapKind.OTHER,
+            detail=(
+                f"{len(unsized)} compartment(s) state no size ({', '.join(c.getId() for c in unsized[:5])}); "
+                "a model rebuilt from this dossier gives them size 1, a value the artifact never states"
+            ),
+            load_bearing=True,
+            carried_by_artifact=False,
+        ))
     if model.getNumReactions():
         # The largest thing this path reads past, and for a reaction-based model it is the model:
         # the rules it does read are observables and volumes, so a dossier of a 10-reaction
@@ -283,6 +384,7 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
                 "from it alone runs without them"
             ),
             load_bearing=True,
+            carried_by_artifact=True,
         ))
     if model.getNumInitialAssignments():
         gaps.append(Gap(
@@ -294,6 +396,7 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
                 "the assigned ones"
             ),
             load_bearing=True,
+            carried_by_artifact=True,
         ))
     if model.isSetConversionFactor():
         gaps.append(Gap(
@@ -304,6 +407,7 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
                 "not applied here"
             ),
             load_bearing=True,
+            carried_by_artifact=True,
         ))
     for j in range(model.getNumReactions()):
         rxn = model.getReaction(j)
@@ -315,6 +419,7 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
                 kind=GapKind.EQUATION,
                 detail="a non-constant stoichiometry varies during the run and is read here as fixed",
                 load_bearing=True,
+                carried_by_artifact=True,
             ))
             break
     return tuple(gaps)

@@ -177,6 +177,22 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
                 species.getInitialConcentration() * compartment.getSize()
             )
 
+    # A compartment's size is a value the dossier can state (a volume of distribution is the most
+    # common PK dossier parameter), so it belongs beside the parameters rather than only in the
+    # set of names that exist: matching one used to silence the "not present" branch without ever
+    # reaching a value comparison, and a dossier volume disagreeing with the model's was reported
+    # as agreement.
+    sbml_sizes: dict[str, float] = {}
+    for i in range(model.getNumCompartments()):
+        compartment = model.getCompartment(i)
+        if compartment.isSetSize():
+            sbml_sizes[compartment.getId()] = float(compartment.getSize())
+
+    # An initial condition can be held as a parameter plus a rate rule — the PK/PD idiom this
+    # ingester supports on purpose — so a dossier IC has to be looked for among the parameters too.
+    # Comparing against species alone meant a hundred-fold disagreement in a dose read as agreement.
+    comparable_ics = {**sbml_params, **sbml_sizes, **sbml_ics}
+
     known = {model.getSpecies(i).getId() for i in range(model.getNumSpecies())}
     known |= {model.getCompartment(i).getId() for i in range(model.getNumCompartments())}
     known |= set(sbml_params)
@@ -188,17 +204,25 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
                 f"parameter {parameter.name}: stated by the dossier ({parameter.value}) but "
                 "not present in the model"
             )
-        elif parameter.name in sbml_params and _differs(
-            parameter.value, sbml_params[parameter.name], rel_tol
-        ):
-            mismatches.append(
-                f"parameter {parameter.name}: dossier {parameter.value} != model "
-                f"{sbml_params[parameter.name]}"
-            )
+        else:
+            stated = {**sbml_params, **sbml_sizes}.get(parameter.name)
+            if stated is not None and _differs(parameter.value, stated, rel_tol):
+                mismatches.append(
+                    f"parameter {parameter.name}: dossier {parameter.value} != model {stated}"
+                )
     for ic in dossier.initial_conditions:
-        if ic.name in sbml_ics and _differs(ic.value, sbml_ics[ic.name], rel_tol):
+        if ic.name not in comparable_ics:
+            # "No disagreement" has to mean the values were compared, so a dossier initial
+            # condition with no counterpart anywhere in the model is reported rather than passed
+            # over — the parameter branch above already reports its own version of this.
             mismatches.append(
-                f"initial condition {ic.name}: dossier {ic.value} != model {sbml_ics[ic.name]}"
+                f"initial condition {ic.name}: stated by the dossier ({ic.value}) but not "
+                "present in the model"
+            )
+        elif _differs(ic.value, comparable_ics[ic.name], rel_tol):
+            mismatches.append(
+                f"initial condition {ic.name}: dossier {ic.value} != model "
+                f"{comparable_ics[ic.name]}"
             )
     return mismatches
 

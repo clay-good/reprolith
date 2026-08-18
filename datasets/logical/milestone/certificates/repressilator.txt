@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Three-gene repressilator ring — a synchronous limit cycle, no fixed point
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 216555e12c8a)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev a41fec2b6956)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

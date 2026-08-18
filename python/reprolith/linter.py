@@ -454,7 +454,7 @@ def lint_distribution(
     ):
         return _not_evaluable(ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, tol)
     distance, worst_band = band_envelope_distance(ref_bands, pred_bands)
-    worst = band_worst_point(ref_bands, pred_bands)
+    worst, worst_point_band = band_worst_point(ref_bands, pred_bands)
     scaled_worst = (
         worst * (tol.reproduced_within / tol.partial_within) if tol.partial_within > 0.0 else worst
     )
@@ -463,7 +463,8 @@ def lint_distribution(
         method=ComparisonMethod.DISTRIBUTION_BAND_DISTANCE.value,
         discrepancy=(
             f"worst band {worst_band.label()} normalized distance {distance:.4f}, worst point "
-            f"{worst:.4f} of span (pass budget {tol.partial_within:.4f})"
+            f"{worst:.4f} of span in {worst_point_band.label()} "
+            f"(pass budget {tol.partial_within:.4f})"
         ),
         tolerance=tol.label(),
     )

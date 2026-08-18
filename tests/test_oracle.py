@@ -322,9 +322,13 @@ def test_a_population_envelope_is_judged_by_its_worst_point_too() -> None:
 
     reference = tuple(math.exp(-(((i - 40) / 20) ** 2)) for i in range(201))
     predicted = tuple(v * 2 if i == 40 else v for i, v in enumerate(reference))
-    assert band_worst_point(
+    worst, band = band_worst_point(
         [PercentileBand(50.0, reference)], [PercentileBand(50.0, predicted)]
-    ) == pytest.approx(1.0, abs=1e-3)
+    )
+    # The band is returned with the number: the worst point and the worst average need not be in
+    # the same band, and naming one beside the other's value misplaces the miss.
+    assert worst == pytest.approx(1.0, abs=1e-3)
+    assert band.label() == "P50"
     assessment = judge_distribution(
         claim_id="c", quantity="median concentration", source_location="Fig 3",
         reference=[PercentileBand(50.0, reference)],

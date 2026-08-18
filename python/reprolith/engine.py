@@ -54,9 +54,28 @@ def engine_version() -> str:
     return str(_copasi().CVersion.VERSION.getVersion())
 
 
+def _judge_revision() -> str:
+    """The revision of the code that decides what this engine's numbers mean.
+
+    An external engine carries its own version, so the solver half of the pin already moves when
+    the solver does. The judge half did not: a class-default tolerance in :mod:`reprolith.oracle`
+    and the rule in :mod:`reprolith.certificate` decide the verdict, and changing either
+    invalidated every COPASI and libRoadRunner certificate while leaving them looking fresh —
+    the same failure :mod:`reprolith.pins` was written to remove, applied to the four classes
+    Reprolith solves itself but not to the two it does not.
+    """
+    from .pins import algorithm_revision
+
+    return algorithm_revision("oracle", "certificate")
+
+
 def engine_pin() -> EnginePin:
     """The :class:`~reprolith.model.EnginePin` for the installed pinned engine."""
-    return EnginePin(engine=ENGINE, version=engine_version(), algorithm=ALGORITHM)
+    return EnginePin(
+        engine=ENGINE,
+        version=engine_version(),
+        algorithm=f"{ALGORITHM} (judge rev {_judge_revision()})",
+    )
 
 
 def _require_advancing_run(duration: float, steps: int) -> None:
@@ -146,7 +165,11 @@ def roadrunner_version() -> str:
 
 def roadrunner_pin() -> EnginePin:
     """The :class:`~reprolith.model.EnginePin` for the libRoadRunner corroboration engine."""
-    return EnginePin(engine=ROADRUNNER_ENGINE, version=roadrunner_version(), algorithm=ROADRUNNER_ALGORITHM)
+    return EnginePin(
+        engine=ROADRUNNER_ENGINE,
+        version=roadrunner_version(),
+        algorithm=f"{ROADRUNNER_ALGORITHM} (judge rev {_judge_revision()})",
+    )
 
 
 def simulate_with_roadrunner(

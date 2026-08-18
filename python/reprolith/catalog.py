@@ -409,6 +409,22 @@ def _require_coherent_entry(entry: CatalogEntry) -> None:
             f"the saved entry's state {entry.state.value!r} is not where its history ends "
             f"({history[-1].to_state.value!r}); a state is recorded, never inferred"
         )
+    for earlier, later in zip(history, history[1:]):
+        if earlier.to_state is not later.from_state:
+            # A history that does not chain is not a record of what happened to this entry: it
+            # reads as a full lifecycle while describing moves from states the entry was never in.
+            raise ValueError(
+                f"the saved entry's history does not chain: a move ends in "
+                f"{earlier.to_state.value!r} and the next begins in {later.from_state.value!r}"
+            )
+    for transition in history:
+        if transition.to_state not in _ALLOWED.get(transition.from_state, frozenset()):
+            # Only the endpoint was checked, so a single fabricated queued -> certified hop
+            # published an entry as certified with a lifecycle the state machine refuses to walk.
+            raise ValueError(
+                f"the saved entry records a transition the lifecycle forbids: "
+                f"{transition.from_state.value} -> {transition.to_state.value}"
+            )
     if entry.state is LifecycleState.BLOCKED and not (history and history[-1].missing_inputs):
         raise ValueError("a saved blocked entry must record what it is blocked on")
     if entry.lease_expires is not None and not isinstance(entry.lease_expires, (int, float)):

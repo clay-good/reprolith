@@ -411,19 +411,20 @@
       "load_bearing": true
     },
     {
+      "carried_by_artifact": true,
       "detail": "the artifact carries 1 event(s) \u2014 a state change at a moment in time, usually a dose \u2014 which this dossier cannot represent; a model rebuilt from it alone runs without them",
       "element": "events",
       "kind": "dosing",
       "load_bearing": true
     },
     {
+      "carried_by_artifact": true,
       "detail": "32 initialAssignment(s) override initial values at the start of the run; the initial conditions recorded here are the stated ones, not the assigned ones",
       "element": "initial assignments",
       "kind": "initial-condition",
       "load_bearing": true
     },
     {
-      "carried_by_artifact": true,
       "detail": "81 of 115 extracted values state no unit in the artifact (Compartment_0, Compartment_1, Compartment_10, Compartment_11, Compartment_12, \u2026); their magnitudes are recorded, their units are not",
       "element": "units",
       "kind": "unit",

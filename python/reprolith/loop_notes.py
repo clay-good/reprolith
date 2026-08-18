@@ -89,6 +89,19 @@ class Citation:
     path: str
     quotes: tuple[str, ...] = ()
 
+    #: A quote has to be long enough to identify something. The empty string is in every file and
+    #: a single character is in almost every file, so either would satisfy "this note is anchored"
+    #: while pinning nothing at all.
+    MIN_QUOTE = 12
+
+    def __post_init__(self) -> None:
+        for quote in self.quotes:
+            if len(quote.strip()) < self.MIN_QUOTE:
+                raise ValueError(
+                    f"the citation to {self.path!r} quotes {quote!r}, which is too short to pin "
+                    f"anything; quote at least {self.MIN_QUOTE} characters of what it is cited for"
+                )
+
     @classmethod
     def from_record(cls, record: Any) -> Citation:
         if isinstance(record, str):

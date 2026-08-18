@@ -101,6 +101,24 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
     actions: list[dict[str, Any]] = []
     for a in cert.assessments:
         if a.verdict is Verdict.REPRODUCED:
+            if not a.assumption_qualified:
+                continue
+            # A claim that reproduced *only* under a value Reprolith supplied is the reason the
+            # clean pass was withheld, so the list of what to fix has to name it. It fell through
+            # every branch when no Assumption object carried it — which the claims-dataset path
+            # produces — and the report said "not yet ready" over an empty fix list.
+            actions.append(
+                {
+                    "priority": _ASSUMPTION_PRIORITY,
+                    "kind": "assumption",
+                    "claim_id": a.claim_id,
+                    "quantity": a.quantity,
+                    "source_location": a.source_location,
+                    "issue": "this claim reproduced only under an assumption Reprolith supplied, "
+                             "not as a clean pass",
+                    "fix": "state the value this claim rests on so it need not be assumed",
+                }
+            )
             continue
         issue, fix = _claim_issue_and_fix(a)
         actions.append(
@@ -132,8 +150,17 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
             }
         )
     for asm in cert.assumptions:
-        if not asm.load_bearing:
+        # An assumption awaiting expert confirmation withholds the clean pass exactly as a
+        # load-bearing one does (derive_overall consults both), so it belongs on the fix list too.
+        # The sibling gap report already listed it; this one skipped it.
+        if not asm.load_bearing and not asm.verification_item:
             continue
+        issue = (
+            f"Reprolith had to assume a load-bearing value: {asm.chosen}"
+            if asm.load_bearing
+            else f"this assumption is awaiting expert confirmation ({asm.verification_item}): "
+                 f"{asm.chosen}"
+        )
         actions.append(
             {
                 "priority": _ASSUMPTION_PRIORITY,
@@ -141,7 +168,7 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
                 "claim_id": None,
                 "quantity": asm.description,
                 "source_location": None,
-                "issue": f"Reprolith had to assume a load-bearing value: {asm.chosen}",
+                "issue": issue,
                 "fix": f"state {asm.description} explicitly so it need not be assumed",
             }
         )

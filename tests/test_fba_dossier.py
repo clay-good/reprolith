@@ -288,3 +288,50 @@ def test_a_medium_naming_an_unknown_reaction_is_surfaced_not_ignored() -> None:
             paper=PaperIdentity(title="E. coli core", doi=""),
             engine_pin=EnginePin(engine="scipy-highs", version="1.13", algorithm="linprog-highs"),
         )
+
+
+def test_a_load_bearing_gap_of_any_kind_qualifies_the_verdict() -> None:
+    """It used to be only `MEDIUM`, so any other load-bearing gap vanished from the record.
+
+    A gap of another kind — an objective the paper never named — passed validation and then
+    reached neither the gap report nor the per-claim qualification, and the certificate published
+    a clean unqualified `reproduced`.
+    """
+    from pathlib import Path
+
+    from reprolith import (
+        EnginePin,
+        ModelArtifact,
+        OverallVerdict,
+        PaperIdentity,
+        ReferenceKind,
+    )
+    from reprolith.constraint_based import certify_constraint_based, constraint_based_dossier
+    from reprolith.dossier import DossierClaim, Gap, GapKind
+
+    sbml = (
+        Path(__file__).parent.parent / "datasets" / "constraint_based" / "e_coli_core.xml"
+    ).read_text(encoding="utf-8")
+    dossier = constraint_based_dossier(
+        "e_coli_core",
+        model=ModelArtifact(filename="e_coli_core.xml", detected_format="sbml", validates=True),
+        objective_claims=(
+            DossierClaim(id="growth", quantity="maximal growth rate", conditions="aerobic",
+                         source_location="Table 1", reference_kind=ReferenceKind.NUMERIC,
+                         reference_data=(0.8739215,)),
+        ),
+        medium_gaps=(
+            Gap(element="biomass objective", kind=GapKind.OTHER,
+                detail="the paper never states which biomass reaction it maximized",
+                load_bearing=True),
+        ),
+    )
+    cert = certify_constraint_based(
+        paper=PaperIdentity(title="E. coli core", doi=""),
+        engine_pin=EnginePin(engine="scipy-highs", version="1.13", algorithm="linprog-highs"),
+        dossier=dossier,
+        sbml=sbml,
+    )
+    assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+    assert any("biomass objective" in note for note in cert.gap_report)
+    assert all(a.assumption_qualified for a in cert.assessments)

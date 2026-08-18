@@ -519,7 +519,13 @@ def test_a_single_trajectory_cannot_resolve_a_claim() -> None:
     """
     from reprolith.stochastic import unresolvable_ensemble_reason
 
-    reason = unresolvable_ensemble_reason(variance=0.0, reported_mean=10.0, trajectories=1)
-    assert reason is not None and "single draw" in reason
-    # A genuinely resolvable ensemble is still resolvable.
+    for trajectories in (1, 2, 3, 10):
+        reason = unresolvable_ensemble_reason(
+            variance=0.0, reported_mean=10.0, trajectories=trajectories
+        )
+        # Two draws of a genuinely stochastic model land on the same value 14.6% of the time, so
+        # the bar is not one trajectory but "enough that no spread is a measurement".
+        assert reason is not None and "no spread at all" in reason
+    # A genuinely resolvable ensemble is still resolvable, and so is a large all-identical one.
     assert unresolvable_ensemble_reason(variance=8.9, reported_mean=10.0, trajectories=1000) is None
+    assert unresolvable_ensemble_reason(variance=0.0, reported_mean=10.0, trajectories=1000) is None

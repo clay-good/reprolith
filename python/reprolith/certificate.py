@@ -72,7 +72,7 @@ def derive_overall(
     return OverallVerdict.NOT_REPRODUCED
 
 
-def _require_sampled_judgments_state_their_protocol(
+def require_stated_protocol(
     assessments: Sequence[ClaimAssessment],
 ) -> None:
     """Refuse a certificate whose supplied-number verdicts do not say how they were produced.
@@ -103,7 +103,7 @@ def _require_sampled_judgments_state_their_protocol(
             )
 
 
-def _require_distinct_assumption_ids(assumptions: Sequence[Assumption]) -> None:
+def require_distinct_assumption_ids(assumptions: Sequence[Assumption]) -> None:
     """Refuse two assumptions sharing an id: one of them is unreadable on the certificate.
 
     Ids are how an assumption is referred to — by a gap report, by a verification item, by a reader
@@ -142,8 +142,8 @@ def build_certificate(
     """
     frozen_assessments = tuple(assessments)
     frozen_assumptions = tuple(assumptions)
-    _require_sampled_judgments_state_their_protocol(frozen_assessments)
-    _require_distinct_assumption_ids(frozen_assumptions)
+    require_stated_protocol(frozen_assessments)
+    require_distinct_assumption_ids(frozen_assumptions)
     return Certificate(
         paper=paper,
         engine_pin=engine_pin,

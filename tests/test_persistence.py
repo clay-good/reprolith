@@ -173,3 +173,49 @@ def test_pruning_withdraws_a_certificate_the_run_no_longer_produces(tmp_path) ->
 
     assert prune_certificate_directory(tmp_path, {"kept"}) == ["withdrawn"]
     assert sorted(p.name for p in tmp_path.iterdir()) == ["kept.json", "kept.txt", "notes.md"]
+
+
+def test_the_load_path_refuses_what_the_builder_refuses() -> None:
+    """"The invariants hold for the ones read back off disk" was only half true.
+
+    The load path re-derived the verdict and pinned the scope text, but not the other two: a
+    stored estimation assessment with no protocol, or two assumptions sharing an id, loaded clean
+    while `build_certificate` refuses both — and the public registry reads certificates from disk
+    and never rebuilds them.
+    """
+    import pytest
+    from reprolith import (
+        Assumption,
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        ReproductionLevel,
+        Verdict,
+        build_certificate,
+        certificate_from_content,
+    )
+
+    base = build_certificate(
+        paper=PaperIdentity(title="p", doi="10.0/p"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[
+            ClaimAssessment(claim_id="c1", quantity="k", source_location="Table 1",
+                            verdict=Verdict.REPRODUCED, level=ReproductionLevel.ESTIMATION,
+                            protocol="Nelder-Mead from the paper's stated starting values"),
+        ],
+    )
+    no_protocol = base.content()
+    del no_protocol["assessments"][0]["protocol"]
+    with pytest.raises(ValueError, match="must record the protocol"):
+        certificate_from_content(no_protocol)
+
+    twice = build_certificate(
+        paper=PaperIdentity(title="p", doi="10.0/p"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[],
+        assumptions=[Assumption(id="A", description="d", chosen="x", basis="b",
+                                attributed_to="reprolith", load_bearing=False)],
+    ).content()
+    twice["assumptions"].append(dict(twice["assumptions"][0]))
+    with pytest.raises(ValueError, match="appears twice"):
+        certificate_from_content(twice)

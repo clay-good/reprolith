@@ -205,3 +205,49 @@ def test_an_estimation_reproduction_never_reads_as_a_clean_simulation_pass() -> 
     assert report["ready_to_submit"] is False
     assert "every claim reproduces cleanly" not in report["readiness"]
     assert [i["kind"] for i in report["fix_list"]] == ["level"]
+
+
+def test_the_fix_list_names_both_reasons_a_clean_pass_was_withheld() -> None:
+    """"Not yet ready … address the fix list" over an empty fix list, in two reachable cases.
+
+    A claim that reproduced only under an assumption Reprolith supplied (with no Assumption object
+    carrying it — what the claims-dataset path produces), and an assumption awaiting expert
+    confirmation that is not itself load-bearing. `derive_overall` honors both; the sibling gap
+    report lists both; this report listed neither.
+    """
+    from reprolith import (
+        Assumption,
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+        presubmission_report,
+    )
+
+    qualified_claim = build_certificate(
+        paper=PaperIdentity(title="p", doi="10.0/p"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[
+            ClaimAssessment(claim_id="Cmax", quantity="peak concentration",
+                            source_location="Table 1", verdict=Verdict.REPRODUCED,
+                            assumption_qualified=True),
+        ],
+    )
+    awaiting = build_certificate(
+        paper=PaperIdentity(title="p", doi="10.0/p"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[
+            ClaimAssessment(claim_id="Cmax", quantity="peak concentration",
+                            source_location="Table 1", verdict=Verdict.REPRODUCED),
+        ],
+        assumptions=[
+            Assumption(id="a1", description="the elimination route", chosen="renal",
+                       basis="convention", attributed_to="reprolith", load_bearing=False,
+                       verification_item="verify:ke"),
+        ],
+    )
+    for cert in (qualified_claim, awaiting):
+        report = presubmission_report(cert)
+        assert not report["ready_to_submit"]
+        assert report["fix_list"], "a report that says 'address the fix list' must have one"

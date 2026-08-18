@@ -30,12 +30,23 @@ class EngineCorroboration:
     engines: tuple[str, str]
     distance: float
     stable: bool
+    #: The tolerance the caller asked for. The verdict is decided on the *published* bound, so the
+    #: criterion actually applied is :meth:`effective_criterion` — never looser than this, and up
+    #: to five times tighter when this is not itself a power of ten.
+    criterion: float = 0.02
+
+    def effective_criterion(self) -> float:
+        """The largest decade at or below :attr:`criterion` — what the verdict was really held to."""
+        if not math.isfinite(self.criterion) or self.criterion <= 0.0:
+            return self.criterion
+        return 10.0 ** math.floor(math.log10(self.criterion))
 
     def summary(self) -> str:
         verdict = "engine-independent" if self.stable else "engine-sensitive"
         return (
             f"{self.species}: {self.engines[0]} vs {self.engines[1]} normalized distance "
-            f"at most {self.distance_bound():.0e} -> {verdict}"
+            f"at most {self.distance_bound():.0e} against a {self.effective_criterion():.0e} "
+            f"criterion -> {verdict}"
         )
 
     def distance_bound(self) -> float:
@@ -90,10 +101,12 @@ def corroborate_curve(
     # The verdict answers to the number that is published, not the one that was measured. The
     # artifact records the distance rounded *up* to the next decade, so a raw 0.011 was published
     # as "at most 1e-01 -> engine-independent" against a 0.02 criterion — a record that contradicts
-    # itself on its face. Judging the bound keeps the two in step and errs toward engine-sensitive,
-    # which is the safe direction. Every committed model measures at most 1e-03, so no published
-    # verdict moves.
-    return replace(result, stable=result.distance_bound() <= rel_tol)
+    # itself on its face. Judging the bound keeps the two in step and errs toward engine-sensitive.
+    # It also means the criterion actually applied is the largest decade at or below ``rel_tol``
+    # (0.01 for the 0.02 default), which is up to five times tighter than the number passed in —
+    # so it is reported rather than left for a reader to derive. Every committed model measures at
+    # most 1e-03, three orders inside even the tightened criterion.
+    return replace(result, stable=result.distance_bound() <= rel_tol, criterion=rel_tol)
 
 
 __all__ = ["EngineCorroboration", "corroborate_curve"]

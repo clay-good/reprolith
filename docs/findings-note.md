@@ -602,6 +602,78 @@ all found by auditing it the day it landed:
   a cross-engine headroom stated as three-to-five orders when the measured range is two-to-five,
   and a spec citation pointing at the wrong file. The gate caught none of them; an audit did.
 
+## What "no disagreement" was allowed to mean
+
+The twelfth pass went at the stages the eleventh had not: the catalog and its persistence, and
+ingestion and reconstruction. The theme repeated, one layer down — a check that guarded the way in
+and not the way out.
+
+- **Adopt-and-verify reported agreement without comparing anything**, three ways: an initial
+  condition held as a parameter plus a rate rule (the PK/PD idiom this ingester supports on
+  purpose) was never looked for among the parameters, so a hundred-fold disagreement in a dose read
+  as agreement; an initial condition naming nothing in the model at all was passed over, though the
+  parameter branch beside it reports exactly that; and a dossier parameter whose counterpart is a
+  compartment — a volume of distribution, the commonest PK dossier parameter — matched by name and
+  was never compared by value.
+- **A load-bearing gap that was not about the medium vanished from an FBA certificate.** The gap
+  report filtered on one gap kind, so an objective the paper never named passed validation and then
+  reached neither the report nor the per-claim qualification: a clean, unqualified `reproduced`
+  with the gap gone from the record. This is the 2026-08 audit's crown-jewel finding, back through
+  a door one filter over.
+- **The load path accepted certificates the builder refuses.** Deriving the verdict and pinning the
+  scope text was only half of "the invariants hold for the ones read back off disk": a stored
+  estimation assessment with no protocol, or two assumptions sharing an id, loaded clean. The
+  public registry reads certificates from disk and never rebuilds them.
+- **A saved catalog could carry a history the state machine forbids.** Only the *endpoint* was
+  checked, so a hand-edited file could publish an entry as `certified` through a single
+  `queued -> certified` hop that the in-process transition rejects, with a back-dated,
+  non-chaining history.
+- **Two of the six classes' certificates never expired.** The revision pin exists because "the
+  judge is part of the computation", and the four classes Reprolith solves itself carry it — but
+  the COPASI and libRoadRunner pins carried only the external engine's own version, so changing a
+  class-default tolerance invalidated every PK/PD and kinetic certificate while leaving them
+  looking current. Both pins now carry the judge's revision beside the engine's.
+- **The pre-submission report said "not yet ready — address the fix list" over an empty fix list**,
+  for a claim that reproduced only under a Reprolith-supplied assumption, and for an assumption
+  awaiting expert confirmation. Its sibling gap report handles both.
+- **Ingestion read past more than it recorded.** A dynamic species with no stated initial value was
+  dropped in silence, so the dossier could carry a rate rule for a variable it never declared;
+  algebraic rules and unstated compartment sizes produced neither gap nor refusal; and the
+  repository's own SBML-qual toggle switch ingested through the core path to a *completely empty*
+  dossier — no state variables, no equations, no gaps — which then rated "a valid shipped model
+  with nothing to assume". Package content is now a gap, except for `layout` and `render`, which
+  describe how to draw a model rather than what it does.
+- **The unstated-units gap was flagged as carried by the artifact**, which is definitionally
+  backwards: the gap exists *because* the artifact states no unit, so adopting the author's file
+  closes nothing. Flagged that way it was discounted out of the difficulty estimate entirely, and
+  six shipped models whose every extracted unit is unknown rated `low` while `unit-mismatch` is a
+  catalogued failure mode.
+
+## The same-day audit of the same-day fixes
+
+An adversarial pass over the eleventh's own diff, with measurements rather than impressions:
+
+- The new envelope worst-point rule **produced 0 failures in 7,800 trials** of correct work at
+  per-point noise up to 5% of band span, and 0 non-reproductions across 1,800 realistic
+  Monte-Carlo trials where a paper's 5/50/95 envelope from 5,000 subjects is re-sampled with 50 to
+  1,000. The motivating case (a doubled median peak) fails in both the judge and the linter. But
+  the discrepancy string named the worst *band* beside another band's worst *point* — it now names
+  the band each number came from.
+- The new linter provenance gate was exercised over **132 calls** — every entry point crossed with
+  paper-stated, reviewer-override, and all seven documented defaults — and refused **nothing**
+  legitimate.
+- The stochastic guard was correct at one trajectory and **stopped one value short**: two draws of
+  a genuinely stochastic model land on the same value **14.6% of the time** (500 seeds), 2.8% at
+  three, 0.0% by ten. A zero spread is now evidence of determinism only at 30 trajectories or
+  more, which is well above the largest size where a false zero was seen.
+- Judging cross-engine agreement on the *published* bound silently made the criterion **2x to 5x
+  tighter** than the number passed in, because the bound is a decade. The effective criterion is
+  now reported rather than left to be derived.
+- The citation anchoring held — **all 25 quotes across the 17 notes are genuinely present** — but
+  the gate accepted a quote of one character, or of none. A quote must now be at least twelve
+  characters, and the two anchors that pinned only an enum name now quote the tolerance literals
+  they are cited for.
+
 ## Known limits the audits found and left in place
 
 Recorded rather than fixed, because each needs a design change rather than a patch, and none

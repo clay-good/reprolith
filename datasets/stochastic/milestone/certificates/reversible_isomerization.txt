@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Reversible isomerization A<->B (N=50, kf=3, kr=1) — binomial equilibrium mean
-Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev 8ff42c259fba)
+Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev 635d78f95204)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

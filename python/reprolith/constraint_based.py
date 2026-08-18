@@ -134,10 +134,21 @@ def _apply_medium(model: FbaModel, medium: Sequence[Parameter]) -> FbaModel:
 
 
 def _gap_report(dossier: Dossier) -> tuple[str, ...]:
+    """Every load-bearing gap, not only the medium ones.
+
+    Filtering on ``GapKind.MEDIUM`` meant a load-bearing gap of any other kind — an objective the
+    paper never named, say — passed validation and then reached neither the gap report nor the
+    per-claim qualification, so the certificate published a clean unqualified `reproduced` with
+    the gap gone from the record entirely. The medium is only the most common way this class is
+    under-specified, never the only one.
+    """
     return tuple(
-        f"medium not fully specified: {gap.element} — {gap.detail}"
+        (
+            f"medium not fully specified: {gap.element} — {gap.detail}"
+            if gap.kind is GapKind.MEDIUM
+            else f"{gap.kind.value} not fully specified: {gap.element} — {gap.detail}"
+        )
         for gap in dossier.load_bearing_gaps()
-        if gap.kind is GapKind.MEDIUM
     )
 
 
@@ -191,11 +202,12 @@ def certify_constraint_based(
     model = _apply_medium(ingest_fbc_sbml(sbml), dossier.parameters)
     attributions = shortfalls or {}
     gap_report = _gap_report(dossier)
-    # A load-bearing medium the paper never stated is applied here as the model's default bound,
-    # so any claim that reproduces did so under a guessed value: qualify it, exactly as every other
-    # class marks a reproduction that rests on an assumption. Without this the objective claim would
-    # certify as a clean `reproduced` while the same fact sits, unheeded, only in the gap report.
-    medium_assumed = bool(gap_report)
+    # A load-bearing gap the paper never closed — a medium applied here as the model's own default
+    # bound, an objective nobody named — means any claim that reproduces did so under a guessed
+    # value: qualify it, exactly as every other class marks a reproduction that rests on an
+    # assumption. Without this the objective claim would certify as a clean `reproduced` while the
+    # same fact sits, unheeded, only in the gap report.
+    rests_on_a_gap = bool(gap_report)
     assessments = [
         judge_objective(
             claim_id=claim.id,
@@ -207,7 +219,7 @@ def certify_constraint_based(
             lower=model.lower,
             upper=model.upper,
             tolerance=tolerance,
-            assumption_qualified=medium_assumed,
+            assumption_qualified=rests_on_a_gap,
             # Without a fallback cause an objective that misses raises instead of certifying,
             # so this path could publish a reproduction or nothing at all — and the class's
             # agreement rate could not have come out any other way.

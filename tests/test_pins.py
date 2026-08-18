@@ -40,6 +40,11 @@ _CLASSES = {
         "constraint_based/milestone/certificates",
         ("fba", "constraint_based", "oracle", "certificate"),
     ),
+    # The two classes whose *solver* is an external engine still have a Reprolith judge, and a
+    # tolerance or verdict-rule change invalidates their certificates exactly as it does the
+    # self-solved ones. Their pins carry the judge's revision beside the engine's own version.
+    "ode-pkpd": ("milestone/certificates", ("oracle", "certificate")),
+    "kinetic": ("kinetic/milestone/certificates", ("oracle", "certificate")),
 }
 
 

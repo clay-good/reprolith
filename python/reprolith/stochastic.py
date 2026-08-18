@@ -353,6 +353,13 @@ def _sampling_cannot_resolve(
     )
 
 
+#: Below this many trajectories, an ensemble that produced no spread at all is not evidence that
+#: the process is deterministic. Measured on the immigration-death model over 500 seeds, an exactly
+#: zero sample variance appears in 14.6% of 2-trajectory ensembles, 2.8% at three, 0.8% at four,
+#: and 0.0% at ten; the bar sits well above the largest size where it was seen.
+_SPREAD_IS_EVIDENCE = 30
+
+
 def unresolvable_ensemble_reason(
     *,
     reported_mean: float,
@@ -369,18 +376,21 @@ def unresolvable_ensemble_reason(
     immigration-death model misses its 5% claim on most seeds, and a linter answering ``failed``
     there is a false accusation an agent acts on immediately.
     """
-    if trajectories < 2:
-        # Zero variance means "this ensemble resolves the claim" only when the ensemble is big
-        # enough to have measured one. A single trajectory has a population variance of 0 by
-        # construction, so the guard below was skipped exactly where the sampling noise is
-        # largest: one draw from an exactly-correct model published `reproduced` on 6 of 40 seeds
-        # and `failed` on 27, while every ensemble size from 2 upward honestly abstained.
+    if reported_mean == 0.0:
+        return None
+    if variance <= 0.0 and trajectories < _SPREAD_IS_EVIDENCE:
+        # A zero spread means "this ensemble resolves the claim" only once the ensemble is large
+        # enough for zero to be a measurement rather than an accident. One trajectory has a
+        # variance of 0 by construction; two draws of a genuinely stochastic model land on the
+        # same value 14.6% of the time (500 seeds, immigration-death), 2.8% at three, and 0% by
+        # ten. Below the bar the standard-error guard was skipped exactly where the sampling noise
+        # is largest, and an exactly-correct model published `reproduced` or `failed` by lottery.
         return (
             f"this ensemble cannot resolve the claim: {trajectories} trajector"
-            f"{'y' if trajectories == 1 else 'ies'} is a single draw, whose spread is zero by "
-            "construction rather than measured, so it cannot tell a reproduction from noise"
+            f"{'y' if trajectories == 1 else 'ies'} produced no spread at all, which at that size "
+            "is as likely an accident as a measurement, so it cannot tell a reproduction from noise"
         )
-    if variance <= 0.0 or reported_mean == 0.0:
+    if variance <= 0.0:
         return None
     tol = tolerance or default_tolerance(
         ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC

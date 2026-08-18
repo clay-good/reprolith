@@ -14,7 +14,11 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
-from .certificate import derive_overall
+from .certificate import (
+    derive_overall,
+    require_distinct_assumption_ids,
+    require_stated_protocol,
+)
 from .dossier import (
     Dossier,
     DossierClaim,
@@ -100,6 +104,13 @@ def certificate_from_content(content: dict[str, Any]) -> Certificate:
             "certificate carries a scope statement that is not Reprolith's: the scope is fixed "
             "text and cannot be reworded by the file that carries it"
         )
+    # The same two invariants the builder enforces. Deriving the verdict and pinning the scope
+    # text was only half of "the honesty invariants hold for the ones read back off disk": a
+    # stored estimation or population assessment with no protocol, or two assumptions sharing an
+    # id, loaded clean while build_certificate refuses both — and the public registry reads
+    # certificates from disk and never rebuilds them.
+    require_stated_protocol(assessments)
+    require_distinct_assumption_ids(assumptions)
     stored = OverallVerdict(content["overall"])
     derived = derive_overall(assessments, assumptions)
     if stored is not derived:

@@ -52,10 +52,16 @@ def test_simulation_is_deterministic() -> None:
 
 
 def test_engine_pin_reports_the_pinned_engine() -> None:
+    from reprolith.pins import algorithm_revision
+
     pin = engine_pin()
     assert pin.engine == "copasi"
-    assert pin.algorithm == "deterministic-lsoda"
     assert pin.version  # the concrete installed version travels with the pin
+    assert pin.algorithm is not None and pin.algorithm.startswith("deterministic-lsoda")
+    # An external solver carries its own version, but the judge that decides what its numbers mean
+    # is this package: a class-default tolerance or a change to the verdict rule invalidates these
+    # certificates too, and used to leave them looking fresh.
+    assert f"judge rev {algorithm_revision('oracle', 'certificate')}" in pin.algorithm
 
 
 def test_unknown_species_is_rejected() -> None:

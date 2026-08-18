@@ -114,3 +114,40 @@ def test_injected_mismatch_is_reported_and_model_is_labelled() -> None:
     assert bundle.validate() == []
     assert bundle.to_dict()["origin"] == "author-supplied"  # labelled as author-supplied
     assert bundle.mismatches  # and the mismatch travels with the bundle
+
+
+def test_adopt_and_verify_compares_what_it_says_it_compared() -> None:
+    """"No disagreement" has to mean the values were compared — three paths where it did not.
+
+    An initial condition held as a parameter plus a rate rule (the PK/PD idiom this ingester
+    supports on purpose), an initial condition naming nothing in the model at all, and a dossier
+    parameter whose counterpart is a compartment all returned agreement without a comparison.
+    """
+    from reprolith.dossier import Dossier, Parameter
+    from reprolith.sbml import compare_sbml_to_dossier
+
+    sbml = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+ <model id="m">
+  <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+  <listOfParameters>
+   <parameter id="A" value="1" constant="false"/>
+   <parameter id="ke" value="0.5" constant="true"/>
+  </listOfParameters>
+  <listOfRules>
+   <rateRule variable="A"><math xmlns="http://www.w3.org/1998/Math/MathML">
+     <apply><times/><apply><minus/><ci>ke</ci></apply><ci>A</ci></apply></math></rateRule>
+  </listOfRules>
+ </model></sbml>"""
+    dossier = Dossier(
+        entry="x",
+        parameters=(Parameter(name="c", value=42.0, unit="L", source_location="Table 1"),),
+        initial_conditions=(
+            Parameter(name="A", value=100.0, unit="mg", source_location="Table 1"),
+            Parameter(name="Z", value=1.0, unit="mg", source_location="Table 1"),
+        ),
+    )
+    mismatches = compare_sbml_to_dossier(sbml, dossier)
+    assert any("parameter c" in m and "42.0" in m for m in mismatches)      # a compartment size
+    assert any("initial condition A" in m and "100.0" in m for m in mismatches)  # parameter-held IC
+    assert any("initial condition Z" in m and "not present" in m for m in mismatches)

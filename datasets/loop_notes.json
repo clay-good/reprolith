@@ -237,11 +237,18 @@
         {
           "path": "python/reprolith/stochastic.py",
           "quotes": [
-            "FailureMode.FINITE_ENSEMBLE_SAMPLING"
+            "mode=FailureMode.FINITE_ENSEMBLE_SAMPLING"
           ]
         },
         "datasets/stochastic/milestone/certificates",
-        "docs/findings-note.md"
+        "docs/findings-note.md",
+        {
+          "path": "datasets/stochastic/milestone/certificates/immigration_death_10.json",
+          "quotes": [
+            "\"relative error 0.0227\"",
+            "\"root_cause\": null"
+          ]
+        }
       ]
     },
     {
@@ -318,7 +325,8 @@
         {
           "path": "python/reprolith/oracle.py",
           "quotes": [
-            "ReferenceKind.DIGITIZED_FIGURE"
+            "(ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.DIGITIZED_FIGURE): Tolerance(\n        0.15, 0.30, ToleranceSource.CLASS_DEFAULT\n    )",
+            "(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, ReferenceKind.DIGITIZED_FIGURE): Tolerance(\n        0.20, 0.40, ToleranceSource.CLASS_DEFAULT\n    )"
           ]
         },
         "openspec/specs/simulation-oracle/spec.md"
@@ -340,7 +348,13 @@
             "Distributional tolerance provenance"
           ]
         },
-        "python/reprolith/oracle.py",
+        {
+          "path": "python/reprolith/oracle.py",
+          "quotes": [
+            "(ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, ReferenceKind.NUMERIC): Tolerance(\n        0.15, 0.35, ToleranceSource.CLASS_DEFAULT\n    )",
+            "(ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, ReferenceKind.DIGITIZED_FIGURE): Tolerance(\n        0.25, 0.50, ToleranceSource.CLASS_DEFAULT\n    )"
+          ]
+        },
         "tests/test_population.py"
       ]
     },

@@ -188,10 +188,15 @@ def test_a_reaction_network_is_recorded_as_a_gap_not_read_past() -> None:
     assert len(reaction_gaps) == 1
     assert reaction_gaps[0].kind is GapKind.EQUATION and reaction_gaps[0].load_bearing
     # The gap is real and load-bearing for anything rebuilt from the dossier alone — but the
-    # shipped model still carries the reactions, so adopt-and-verify closes it and the advisory
-    # difficulty is unchanged. What must never happen again is the gap going unrecorded.
+    # shipped model still carries the reactions, so adopt-and-verify closes it and this gap does
+    # not make the paper harder. What must never happen again is the gap going unrecorded.
     assert reaction_gaps[0].carried_by_artifact
-    assert estimate_difficulty(dossier) == "low"
+    # The difficulty is `high` all the same, and for a different gap: none of this model's eight
+    # extracted values states a unit, and a unit the artifact never states is not closed by
+    # adopting the artifact. That gap used to be flagged as carried and discounted away.
+    units = [g for g in dossier.gaps if g.element == "units"]
+    assert len(units) == 1 and not units[0].carried_by_artifact
+    assert estimate_difficulty(dossier) == "high"
 
 
 def test_an_unstated_unit_is_recorded_as_missing_rather_than_called_dimensionless() -> None:
@@ -218,3 +223,44 @@ def test_an_unstated_unit_is_recorded_as_missing_rather_than_called_dimensionles
     # compartment of size 1 and every concentration in a 1799 mL liver would be out by that volume.
     volumes = [g for g in dossier.gaps if g.element == "compartment volumes"]
     assert len(volumes) == 1 and volumes[0].load_bearing
+
+
+def test_a_dynamic_species_with_no_stated_initial_value_is_a_gap() -> None:
+    """It was dropped in silence, so the dossier carried a rate rule for a variable it never declared."""
+    sbml = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+ <model id="m">
+  <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+  <listOfSpecies>
+   <species id="Gut" compartment="c" hasOnlySubstanceUnits="true"
+            boundaryCondition="false" constant="false"/>
+   <species id="Plasma" compartment="c" initialAmount="0" hasOnlySubstanceUnits="true"
+            boundaryCondition="false" constant="false"/>
+  </listOfSpecies>
+ </model></sbml>"""
+    dossier = ingest_sbml(sbml, entry="x", source_label="s")
+    assert dossier.state_variables == ("Plasma",)  # never fabricated
+    gap = next(g for g in dossier.gaps if g.element == "initial values")
+    assert gap.load_bearing and not gap.carried_by_artifact
+    assert "Gut" in gap.detail
+
+
+def test_package_content_this_path_cannot_read_is_a_gap_but_layout_is_not() -> None:
+    """The repo's own SBML-qual model used to ingest to an empty dossier that rated `low`."""
+    from pathlib import Path
+
+    from reprolith.dossier import estimate_difficulty
+
+    qual = Path(__file__).parent.parent / "datasets" / "logical" / "worked_example" / "model.xml"
+    dossier = ingest_sbml(qual.read_text(encoding="utf-8"), entry="toggle", source_label="s")
+    gap = next(g for g in dossier.gaps if g.element == "package content")
+    assert "qual" in gap.detail and gap.load_bearing
+    assert estimate_difficulty(dossier) == "high"
+    # A model declaring only `layout` describes how to draw itself; that is not a gap in its
+    # dynamics, and recording it would be a gap that cries wolf.
+    metformin = (
+        Path(__file__).parent.parent / "datasets" / "worked_examples"
+        / "Zake2021_metformin_human_single_PO.xml"
+    )
+    shipped = ingest_sbml(metformin.read_text(encoding="utf-8"), entry="m", source_label="s")
+    assert not [g for g in shipped.gaps if g.element == "package content"]
