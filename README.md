@@ -91,6 +91,10 @@ never runs dry.
 *Reprolith · reproduce + monolith · the bedrock layer under a literature that should be
 runnable.*
 
+> The failure-mode catalogue, the tolerance defaults, and every disagreement between a blind
+> verdict and its label carry a written, machine-audited record of what put them there — see
+> [`docs/discipline-loop.md`](docs/discipline-loop.md).
+
 > Status: pre-alpha. Six model classes (PK/PD, constraint-based, kinetic, logical, stochastic,
 > spatial) are built and self-validated in the open. See [`openspec/`](openspec/) for the full spec.
 

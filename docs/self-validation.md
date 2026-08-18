@@ -49,6 +49,13 @@ follow end to end, all regenerable from the repository alone.
   demonstrated, not asserted. The logical class proves the point hardest: a third, discrete oracle
   (attractors) with no continuous trajectory and no optimization, carried by the same contracts.
 
+## Where the disagreements are explained
+
+Every disagreement in the tables above carries a written note naming the stage responsible and
+whether it was fixed or explained, and every failure-mode category and default tolerance names what
+put it there. That record is committed data, and a gate audits it against the artifacts rather than
+trusting the prose: see [`discipline-loop.md`](discipline-loop.md).
+
 ## Read it live
 
 This track record is not just prose here — it is queryable through the same read surface that

@@ -20,9 +20,10 @@ numbers.
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
+from types import MappingProxyType
 
 from .enums import ReproductionLevel, Verdict
 from .model import ClaimAssessment
@@ -226,6 +227,16 @@ _DEFAULTS: dict[tuple[ComparisonMethod, ReferenceKind], Tolerance] = {
 def default_tolerance(method: ComparisonMethod, reference_kind: ReferenceKind) -> Tolerance:
     """The documented class-default tolerance for a comparison method and reference kind."""
     return _DEFAULTS[(method, reference_kind)]
+
+
+def default_tolerance_table() -> Mapping[tuple[ComparisonMethod, ReferenceKind], Tolerance]:
+    """The whole default table, read-only — so the discipline-loop record can audit its coverage.
+
+    Every default has to trace to a loop note (task 7.4), which means the audit must enumerate the
+    defaults rather than restate them by hand: a default added here and nowhere else would then be
+    an unexplained threshold, not an invisible one.
+    """
+    return MappingProxyType(_DEFAULTS)
 
 
 # Estimation reproduction re-fits parameters from raw data, so a recovered estimate is sensitive
@@ -821,6 +832,7 @@ __all__ = [
     "assess_match",
     "band_envelope_distance",
     "default_tolerance",
+    "default_tolerance_table",
     "estimation_default_tolerance",
     "judge_curve",
     "judge_distribution",
