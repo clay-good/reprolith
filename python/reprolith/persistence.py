@@ -82,6 +82,39 @@ def _assumption_from(record: dict[str, Any]) -> Assumption:
     )
 
 
+def _require_pin_agrees_with_protocol(
+    assessments: tuple[ClaimAssessment, ...], algorithm: str | None
+) -> None:
+    """Refuse a stored certificate whose pin contradicts its own protocol about what computed it.
+
+    Both are on the certificate, and nothing compared them. A logical certificate carries "N nodes,
+    SAT search" in its protocol and the solver in its pin, so a hand-edited pin could claim the
+    stronger thing — that every one of 2^60 states was walked — over a space z3 searched, and load
+    clean. `certify_logical` refuses exactly this on the way in; the public registry reads
+    certificates off disk and never rebuilds them.
+    """
+    if not algorithm:
+        return
+    names_sat = "sat-fixed-points" in algorithm
+    names_enumeration = "exhaustive-state-enumeration" in algorithm
+    for assessment in assessments:
+        protocol = assessment.protocol or ""
+        # The markers are the exact phrases `logical.search_protocol` writes, and the SAT one is
+        # tested first: its sentence *contains* the words "exhaustive enumeration" (as the thing the
+        # state space is beyond), so a looser enumeration marker matches both.
+        if "SAT search" in protocol and names_enumeration and not names_sat:
+            raise ValueError(
+                f"claim {assessment.claim_id!r} records a SAT search but the pin says "
+                f"{algorithm!r}: a certificate cannot claim exhaustive enumeration of a state "
+                "space it searched"
+            )
+        if "exhaustive enumeration of all" in protocol and names_sat and not names_enumeration:
+            raise ValueError(
+                f"claim {assessment.claim_id!r} records exhaustive enumeration but the pin names "
+                f"the SAT solver ({algorithm!r})"
+            )
+
+
 def certificate_from_content(content: dict[str, Any]) -> Certificate:
     """Reconstruct a :class:`Certificate` from the dict produced by :meth:`Certificate.content`.
 
@@ -113,6 +146,7 @@ def certificate_from_content(content: dict[str, Any]) -> Certificate:
     require_stated_protocol(assessments)
     require_stated_cause(assessments)
     require_distinct_assumption_ids(assumptions)
+    _require_pin_agrees_with_protocol(assessments, pin["algorithm"])
     stored = OverallVerdict(content["overall"])
     derived = derive_overall(assessments, assumptions)
     if stored is not derived:

@@ -529,3 +529,37 @@ def test_a_single_trajectory_cannot_resolve_a_claim() -> None:
     # A genuinely resolvable ensemble is still resolvable, and so is a large all-identical one.
     assert unresolvable_ensemble_reason(variance=8.9, reported_mean=10.0, trajectories=1000) is None
     assert unresolvable_ensemble_reason(variance=0.0, reported_mean=10.0, trajectories=1000) is None
+
+
+def test_a_percentile_band_that_is_only_the_observed_extreme_is_refused() -> None:
+    """`_empirical_percentile` is nearest-rank, so `n·tail == 100` is exactly rank 1 — the minimum.
+
+    P2.5 at 40 trajectories (an ordinary 95% envelope) and P1 at 100 both landed on that boundary
+    and returned the elementwise minimum wearing a band label.
+    """
+    decay = [Reaction(rate=1.0, reactants=((0, 1),), products=((1, 1),))]
+    for percentile, trajectories in ((2.5, 40), (1.0, 100), (2.0, 50)):
+        with pytest.raises(ValueError, match="to be a percentile rather than the observed extreme"):
+            ensemble_percentile_bands(2, decay, [50, 0], [0.0, 1.0], species=0,
+                                      percentiles=[percentile], trajectories=trajectories, seed=1)
+    # One more trajectory is enough to make it a percentile, and it is accepted.
+    assert ensemble_percentile_bands(2, decay, [50, 0], [0.0, 1.0], species=0,
+                                     percentiles=[2.5], trajectories=41, seed=1)
+
+
+def test_a_run_that_outlives_its_time_cap_is_censored_not_reported() -> None:
+    """The clock was tested before the jump, so a jump landing past the cap was still returned.
+
+    Measured on a pure-death process at `max_time=2.0`: 747 of 2000 runs returned a finite time
+    *exceeding* the cap, up to 4.4x it — biasing the finite subsample upward while looking like a
+    first passage observed inside the window.
+    """
+    import random
+
+    from reprolith.stochastic import time_to_extinction
+
+    death = [Reaction(rate=1.0, reactants=((0, 1),), products=())]
+    times = [time_to_extinction(1, death, [5], species=0, rng=random.Random(s), max_time=2.0)
+             for s in range(300)]
+    assert all(t == float("inf") or t < 2.0 for t in times)
+    assert any(t == float("inf") for t in times) and any(t < 2.0 for t in times)

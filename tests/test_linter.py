@@ -114,3 +114,21 @@ def test_the_linter_judges_an_envelope_by_its_worst_point_too() -> None:
     )
     assert result.verdict is Verdict.FAILED
     assert "worst point" in result.discrepancy
+
+
+def test_lint_diffusion_states_the_protocol_its_verdict_rests_on() -> None:
+    """The inline spatial check published a bare verdict with neither grid nor boundary.
+
+    `certify_spatial` argues at length that the discretization *is* the run and that this class's
+    boundary condition is one a reader cannot see anywhere else; the linter — the same judgment,
+    served to an agent over MCP — said neither, while `lint_stochastic` states its sampling.
+    """
+    from reprolith import lint_diffusion
+
+    result = lint_diffusion(
+        initial=(1.0, 0.0, 0.0, 0.0), reference=(0.6, 0.28, 0.09, 0.03),
+        diffusivity=1.0, dx=1.0, dt=0.2, steps=2,
+    )
+    assert result.protocol is not None
+    assert "zero-flux (Neumann) boundaries" in result.protocol
+    assert "D=1.0" in result.protocol and "dx=1.0" in result.protocol and "2 steps" in result.protocol

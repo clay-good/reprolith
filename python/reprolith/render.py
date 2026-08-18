@@ -70,7 +70,17 @@ def gap_items(cert: Certificate) -> list[dict[str, Any]]:
                     }
                 )
             continue
-        needs = a.root_cause or a.discrepancy or "evaluable output or reference data for this claim"
+        # `implicated` and `fault_hypothesis` are causes too, and falling straight through to the
+        # abstention sentence told a reader a claim had no evaluable output when the certificate
+        # says it was evaluated and missed. `presubmission._claim_issue_and_fix` already reads all
+        # three; this is the same rule on the neighbouring surface.
+        needs = (
+            a.root_cause
+            or a.implicated
+            or a.fault_hypothesis
+            or a.discrepancy
+            or "evaluable output or reference data for this claim"
+        )
         items.append(
             {
                 "claim_id": a.claim_id,

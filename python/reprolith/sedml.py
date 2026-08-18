@@ -67,8 +67,9 @@ def parse_sedml_recipes(sedml: str) -> list[SimulationRecipe]:
       interval. Measured on a document sampling ``t = 40…60`` in 20 intervals: the recipe said
       dt = 3.0 where the document said dt = 1.0, and a model reproducing its reference *exactly*
       linted `failed` at a normalized distance of 4.07. ``initialTime`` was never read at all.
-      Neither is expressible in one ``(duration, steps)`` pair, so the task is skipped rather than
-      described wrongly.
+      A recipe could in principle carry the offset (``output_start`` exists for it), but nothing
+      consumes it — the repo's own adopt-and-verify test runs ``(duration, steps)`` verbatim — so
+      the task is skipped rather than described in a field every reader ignores.
 
     A ``repeatedTask`` that merely wraps a subtask without changing anything still resolves to that
     subtask, so its observables attach to the runnable recipe. Raises ``ValueError`` if the text is
@@ -91,8 +92,13 @@ def parse_sedml_recipes(sedml: str) -> list[SimulationRecipe]:
         if name == "uniformTimeCourse":
             sim_id = element.get("id")
             end_time, num_steps = element.get("outputEndTime"), element.get("numberOfSteps")
-            initial_time = float(element.get("initialTime", "0"))
-            output_start = float(element.get("outputStartTime", "0"))
+            try:
+                initial_time = float(element.get("initialTime", "0"))
+                output_start = float(element.get("outputStartTime", "0"))
+            except ValueError as unreadable:
+                # This module's contract is one error type for an unreadable document; an
+                # unparseable attribute must not escape as a bare float() failure.
+                raise ValueError(f"not parseable SED-ML: {unreadable}") from unreadable
             if initial_time != 0.0 or output_start != 0.0:
                 continue  # not runnable verbatim as (duration, steps); see the docstring
             if sim_id is not None and end_time is not None and num_steps is not None:

@@ -53,7 +53,10 @@ def summarize_report(report: dict[str, Any]) -> dict[str, int]:
     # the counters rather than only alongside them. The guard above catches an inflated abstention
     # count and used to let an inflated `agreements` through untouched: 55 matching rows and 45
     # wrong verdicts published as 100 agreements and zero disagreements, off one edited integer.
-    if confusion:
+    # `or total`: deleting the confusion key is one hand edit, and it is the same hand edit the
+    # check exists to catch. A report with labelled entries and no rows cannot come from
+    # `build_agreement_report`, so it is a corrupted report rather than an empty one.
+    if confusion or total:
         rows = sum(int(count) for count in confusion.values())
         agreeing = sum(
             int(count) for key, count in confusion.items()

@@ -11,7 +11,7 @@ follow end to end, all regenerable from the repository alone.
 | **Constraint-based (FBA)** | **8/8** blind agreement across bacteria, a pathogen, and a eukaryote | E. coli core's documented growth rate; COBRApy references for the genome-scale set | [`datasets/constraint_based/milestone/`](../datasets/constraint_based/milestone/) |
 | **Generic-kinetic (ODE)** | **6/6** blind agreement across six network types | libRoadRunner (independent CVODE) reference trajectories | [`datasets/kinetic/milestone/`](../datasets/kinetic/milestone/) |
 | **Logical (Boolean)** | **9/9** blind agreement (incl. three 44–60-node models at scale) | CANA attractor signatures — how many attractors and the period of each, which is what the reference records; not the attractor states themselves (small models) + the SHA-256 of the fixed-point **set** an independent SAT solver found (the large signalling networks). Every certificate states the update scheme its numbers were computed under | [`datasets/logical/milestone/`](../datasets/logical/milestone/) |
-| **Stochastic (SSA)** | **3/3** blind agreement | Closed-form Poisson / binomial means (analytical) | [`datasets/stochastic/milestone/`](../datasets/stochastic/milestone/) |
+| **Stochastic (SSA)** | **3/3** blind agreement, every one `partially-reproduced` | Closed-form Poisson / binomial means (analytical) | [`datasets/stochastic/milestone/`](../datasets/stochastic/milestone/) |
 | **Spatial (reaction-diffusion)** | **3/3** blind agreement, every one `partially-reproduced` | Closed-form Gaussian diffusion (analytical) | [`datasets/spatial/milestone/`](../datasets/spatial/milestone/) |
 
 Two rows read `partially-reproduced` where the profile or the mean matches its analytical target

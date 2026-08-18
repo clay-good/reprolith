@@ -219,3 +219,93 @@ def test_the_load_path_refuses_what_the_builder_refuses() -> None:
     twice["assumptions"].append(dict(twice["assumptions"][0]))
     with pytest.raises(ValueError, match="appears twice"):
         certificate_from_content(twice)
+
+
+def test_a_stored_miss_with_no_stated_cause_is_refused_on_the_way_in_and_out() -> None:
+    """The judges require a cause for a non-pass; the builder and the load path did not.
+
+    A stored `failed` with no cause loaded clean, and `render.gap_items` then explained it as
+    "no evaluable output" — a reason invented for a claim the certificate says was evaluated and
+    missed. The public registry reads certificates off disk and never rebuilds them.
+    """
+    import pytest
+    from reprolith import (
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+    )
+    from reprolith.persistence import certificate_from_content
+
+    def assessment(**kw):
+        return ClaimAssessment(claim_id="c", quantity="AUC", verdict=Verdict.FAILED,
+                               source_location="Fig 1", **kw)
+
+    def certificate(a):
+        return build_certificate(paper=PaperIdentity(title="t", doi="10.0/t"),
+                                 engine_pin=EnginePin(engine="e", version="1"), assessments=[a])
+
+    for causeless in (assessment(), assessment(root_cause=""), assessment(root_cause="   ")):
+        with pytest.raises(ValueError, match="has to say what missed"):
+            certificate(causeless)
+
+    good = certificate(assessment(root_cause="parameter-value-mismatch"))
+    content = good.content()
+    assert certificate_from_content(content).overall is good.overall
+    # …and the same refusal on the way back in, from a hand-edited file.
+    content["assessments"][0]["root_cause"] = None
+    with pytest.raises(ValueError, match="has to say what missed"):
+        certificate_from_content(content)
+
+
+def test_a_stored_pin_that_contradicts_its_own_protocol_is_refused() -> None:
+    """A certificate carried two accounts of what computed it, and nothing compared them.
+
+    `certify_logical` refuses a pin claiming exhaustive enumeration over a space z3 searched. The
+    load path did not, and both facts are on the certificate itself.
+    """
+    import pytest
+    from reprolith import (
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+    )
+    from reprolith.persistence import certificate_from_content
+
+    honest = build_certificate(
+        paper=PaperIdentity(title="big network", doi="10.0/b"),
+        engine_pin=EnginePin(engine="reprolith-logical", version="0.0.1",
+                             algorithm="synchronous-update, sat-fixed-points (z3 4.12)"),
+        assessments=[ClaimAssessment(
+            claim_id="ss", quantity="steady state", verdict=Verdict.REPRODUCED,
+            source_location="Fig 1",
+            protocol="60 nodes, SAT search (2^60 states is beyond exhaustive enumeration)",
+        )],
+    )
+    content = honest.content()
+    assert certificate_from_content(content).overall is honest.overall
+
+    content["engine_pin"]["algorithm"] = "synchronous-update, exhaustive-state-enumeration"
+    with pytest.raises(ValueError, match="cannot claim exhaustive enumeration"):
+        certificate_from_content(content)
+
+
+def test_pruning_a_withdrawn_certificate_takes_its_badge_too() -> None:
+    """The certificate and its render were withdrawn and the embeddable verdict badge was not."""
+    import tempfile
+    from pathlib import Path
+
+    from reprolith.persistence import prune_certificate_directory
+
+    with tempfile.TemporaryDirectory() as tmp:
+        directory = Path(tmp)
+        for stem in ("KEPT", "WITHDRAWN"):
+            for suffix in (".json", ".txt", ".svg"):
+                (directory / f"{stem}{suffix}").write_text("x", encoding="utf-8")
+        assert prune_certificate_directory(directory, ["KEPT"]) == ["WITHDRAWN"]
+        assert sorted(p.name for p in directory.iterdir()) == [
+            "KEPT.json", "KEPT.svg", "KEPT.txt"
+        ]

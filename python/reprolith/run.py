@@ -36,6 +36,13 @@ def _paper_of(entry: CatalogEntry) -> PaperIdentity:
     return PaperIdentity(title=ids.title, doi=ids.doi, pubmed_id=ids.pubmed_id)
 
 
+def _title_tokens(title: str) -> list[str]:
+    """A title as lowercase alphanumeric words, for the loose comparison of last resort."""
+    return ["".join(c for c in word if c.isalnum()) for word in title.lower().split() if any(
+        c.isalnum() for c in word
+    )]
+
+
 def require_same_paper(entry: CatalogEntry, certificate: Certificate, key: str) -> None:
     """Refuse a certificate keyed to an entry that is not the paper the certificate is about.
 
@@ -52,12 +59,13 @@ def require_same_paper(entry: CatalogEntry, certificate: Certificate, key: str) 
     But five of the six classes certify models that carry no DOI and no PubMed ID, which left this
     guard vacuous for all but one of the published certificates — a swapped pair was accepted in
     silence and scored against the other paper's label, and the agreement report still read 6/6.
-    So when neither side states any stable identifier at all, the titles are the only thing left that
-    distinguishes the two papers, and they are compared — but loosely, exactly as loosely as the
-    paragraph above requires. The legitimate variation is one record naming the paper more fully
-    than the other ("E. coli core" and "E. coli core metabolic model"), so one title containing the
-    other is accepted. Two titles with no such relation are two papers: the measured swap
-    ("Elowitz2000 repressilator" filed under Kholodenko's accession) shares nothing and is refused.
+    So whenever that loop compares nothing — no field is stated on *both* sides — the titles are the
+    only thing left that distinguishes the two papers, and they are compared, but loosely, exactly
+    as loosely as the paragraph above requires. The legitimate variation is one record naming the
+    paper more fully than the other ("E. coli core" and "E. coli core metabolic model"), so one
+    title whose words are all contained in the other is accepted. Two titles with no such relation
+    are two papers: the measured swap ("Elowitz2000 repressilator" filed under Kholodenko's
+    accession) shares nothing and is refused, and so is an empty title, which witnesses nothing.
     """
     stated = _paper_of(entry)
     certified_paper = certificate.paper
@@ -68,23 +76,24 @@ def require_same_paper(entry: CatalogEntry, certificate: Certificate, key: str) 
                 f"certificate filed under {key!r} is for a different paper: entry {field} "
                 f"{ours!r} but certificate {field} {theirs!r}"
             )
-    # Only when *neither* side states anything stronger. If either one carries a DOI or PubMed ID
-    # the title is not the last thing left, and on the MCP path the positive-identity rule — which
-    # demands a shared identifier rather than merely refusing a contradiction — is the one that
-    # should speak.
-    either_states_an_identifier = any(
-        getattr(stated, field) or getattr(certified_paper, field)
+    # Whenever the loop above compared nothing. Gating on "neither side states an identifier" left
+    # the common case unguarded: a certificate that cites its paper properly, filed under an entry
+    # that carries no DOI, matched no field on both sides and so was checked by nothing at all.
+    compared_an_identifier = any(
+        getattr(stated, field) and getattr(certified_paper, field)
         for field in ("doi", "pubmed_id")
     )
-    if not either_states_an_identifier and stated.title and certified_paper.title:
-        ours, theirs = " ".join(stated.title.lower().split()), " ".join(
-            certified_paper.title.lower().split()
-        )
-        if ours not in theirs and theirs not in ours:
+    if not compared_an_identifier:
+        # Tokens, not raw substrings: "a" is inside every title, and an empty title is not a
+        # witness to anything. Word-level containment still accepts the variation the doi-only rule
+        # existed to tolerate — one record naming the paper more fully than the other.
+        ours = set(_title_tokens(stated.title))
+        theirs = set(_title_tokens(certified_paper.title))
+        if not ours or not theirs or not (ours <= theirs or theirs <= ours):
             raise ValueError(
-                f"certificate filed under {key!r} is for a different paper: neither side states a "
-                f"DOI or PubMed ID, and neither title names the other — entry {stated.title!r} but "
-                f"certificate {certified_paper.title!r}"
+                f"certificate filed under {key!r} is for a different paper: no DOI or PubMed ID is "
+                f"stated on both sides, and neither title names the other — entry "
+                f"{stated.title!r} but certificate {certified_paper.title!r}"
             )
 
 

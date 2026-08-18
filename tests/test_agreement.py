@@ -115,3 +115,29 @@ def test_a_report_whose_counters_cannot_partition_is_refused() -> None:
 
     # An honestly empty report is still a legal partition of nothing.
     assert summarize_report({"total": 0, "agreements": 0, "confusion": {}})["other"] == 0
+
+
+def test_a_report_that_contradicts_its_own_confusion_rows_is_refused() -> None:
+    """The partition guard checked one direction and ignored the rows it had already parsed.
+
+    These numbers are the credibility claim the CLI, the MCP surface, and the public registry all
+    state. Inflating `agreements` by one integer published 55 matches and 45 wrong verdicts as
+    "100 matched, 0 abstentions, 0 other of 100" — and deleting the confusion key entirely did the
+    same, which is why an empty rowset with labelled entries is refused rather than skipped.
+    """
+    import pytest
+    from reprolith.agreement import summarize_report
+
+    honest = {"total": 100, "agreements": 55,
+              "confusion": {"reproduced->reproduced": 55, "reproduced->not-reproduced": 45}}
+    assert summarize_report(honest) == {"total": 100, "matched": 55, "abstained": 0, "other": 45}
+
+    inflated = {**honest, "agreements": 100}
+    with pytest.raises(ValueError, match="contradicts its own confusion rows"):
+        summarize_report(inflated)
+    with pytest.raises(ValueError, match="contradicts its own confusion rows"):
+        summarize_report({"total": 100, "agreements": 100})          # rows deleted
+    with pytest.raises(ValueError, match="contradicts its own confusion rows"):
+        summarize_report({"total": 100, "agreements": 100, "confusion": {}})  # rows emptied
+    # An empty report is still an empty report, not a corrupted one.
+    assert summarize_report({"total": 0, "agreements": 0, "confusion": {}})["total"] == 0

@@ -78,7 +78,7 @@ def _diffusion_number(
         )
     alpha = diffusivity * dt / (dx * dx)
     if alpha > limit + 1e-12:
-        raise ValueError(
+        raise UnstableDiscretization(
             f"unstable discretization: D·dt/dx² = {alpha:.3g} must lie in [0, {limit}]; "
             "reduce dt or increase dx"
         )
@@ -89,7 +89,7 @@ def _diffusion_number(
     # downstream sees a non-finite value and the profile is judged as an honest miss.
     combined = 2.0 * alpha / limit + decay * dt
     if combined > 2.0 + 1e-12:
-        raise ValueError(
+        raise UnstableDiscretization(
             f"unstable discretization: diffusion and decay together give an amplification factor "
             f"of {1.0 - combined:.3g} at the shortest wavelength, outside [-1, 1] "
             f"(D·dt/dx² = {alpha:.3g}, decay·dt = {decay * dt:.3g}); reduce dt"
@@ -101,6 +101,64 @@ def _diffusion_number(
             "would return its initial condition unchanged (check the units of D, dx and dt)"
         )
     return alpha
+
+
+class UnstableDiscretization(ValueError):
+    """A discretization the explicit scheme cannot run stably.
+
+    A distinct type so a front-end can tell "this protocol cannot decide this claim" — an honest
+    abstention — from a caller's malformed input (a negative diffusivity, a one-point profile),
+    which is a bug and must still raise. Catching bare ``ValueError`` published the second as the
+    first, so a sign error certified as "not evaluable" instead of surfacing.
+    """
+
+
+def _reaction_stability(
+    values: Sequence[float],
+    reaction: Callable[[float], float],
+    *,
+    alpha: float,
+    dt: float,
+    samples: int = 33,
+) -> None:
+    """Refuse a step whose diffusion *and reaction* together leave the stable amplification band.
+
+    The explicit update's amplification at the shortest wavelength is ``1 − 4α − dt·f′``, so the
+    reaction has to be budgeted against the same [−1, 1] band the diffusion number is checked in —
+    the way :func:`_diffusion_number` already budgets a linear decay. ``f′`` is not known
+    symbolically here, so it is estimated by differencing ``f`` across the profile's own value
+    range (widened, because a growing profile leaves the range it started in).
+
+    An estimate is enough because the failure is not marginal: outside the band the even and odd
+    grid points decouple and the profile becomes a comb, which is finite, in range, and wrong by
+    any amount — a Fisher-KPP front speed of −0.0000 against an analytic 2.19.
+    """
+    finite = [v for v in values if math.isfinite(v)]
+    if not finite or dt == 0.0:
+        return
+    lo, hi = min(finite), max(finite)
+    span = hi - lo
+    # Widened, because a growing profile leaves the range it started in — but only slightly:
+    # widening far past the profile samples `f` where the run never goes, and for a logistic term
+    # that doubles the slope bound and refuses discretizations measured to be correct.
+    lo, hi = lo - 0.1 * span - 1e-9, hi + 0.1 * span + 1e-9
+    step = (hi - lo) / (samples - 1)
+    slope = 0.0
+    for i in range(samples - 1):
+        left, right = lo + i * step, lo + (i + 1) * step
+        try:
+            rise = reaction(right) - reaction(left)
+        except (ArithmeticError, ValueError):
+            return  # a reaction undefined off the profile tells us nothing about the profile
+        if math.isfinite(rise):
+            slope = max(slope, abs(rise) / step)
+    combined = 4.0 * alpha + dt * slope
+    if combined > 2.0 + 1e-12:
+        raise UnstableDiscretization(
+            f"unstable discretization: diffusion and reaction together give an amplification of "
+            f"{1.0 - combined:.3g} at the shortest wavelength, outside [-1, 1] "
+            f"(D·dt/dx² = {alpha:.3g}, dt·|f'| = {dt * slope:.3g}); reduce dt or dx"
+        )
 
 
 def diffuse_1d(
@@ -160,22 +218,29 @@ def react_diffuse_1d(
     near 0.5 the explicit update's amplification at the shortest wavelength approaches −1, so it
     stops smoothing and the even and odd grid points decouple. Pure diffusion still converges
     there; a reaction term feeds the resulting comb, and the profile becomes garbage that stays
-    entirely *finite* — so no non-finite abstention downstream can see it. Measured on Fisher-KPP
-    (D=1, r=1.2): correct through α = 0.45, and at α = 0.48 every value finite and in range with a
-    front speed of −0.005 against an analytic 2.19, which the judge then publishes as a confident
-    `failed` blamed on the paper. 0.4 is the strictest limit that admits every result this repo
-    validates (the two-species Turing dispersion relation runs there) and it keeps the shortest-
-    wavelength amplification at −0.6 rather than −1. The reaction's own stability past that is
-    still the caller's to keep, e.g. by a small ``dt``. The reaction moves the profile on its own,
-    so a zero diffusion number is a legitimate reaction-only run here.
+    entirely *finite* — so no non-finite abstention downstream can see it, and the judge publishes
+    a confident `failed` blamed on the paper for a time step the engine accepted.
+
+    So the reaction is budgeted rather than assumed away: the amplification at the shortest
+    wavelength is ``1 − 4α − dt·|f′|``, and this refuses a discretization whose reaction pushes it
+    outside [−1, 1] (see :func:`_reaction_stability`). A limit on α alone cannot do this, because
+    ``dt = α·dx²/D`` makes the reaction's share grow with ``dx²`` at fixed α — measured on
+    Fisher-KPP (D=1, r=1.2) at α = 0.40 exactly, which a bare α limit accepts: dx = 0.5 gives a
+    front speed of 1.95 against an analytic 2.19, and dx = 1.1 gives −0.0000, every value finite
+    and in range. The combined rule refuses the second and admits the first, and it reproduces the
+    measured cliff (α ≈ 0.465 at dx = 0.5) rather than guessing at a constant.
+
+    The reaction moves the profile on its own, so a zero diffusion number is a legitimate
+    reaction-only run here.
     """
     alpha = _diffusion_number(
-        diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, limit=0.4, must_advance=False,
+        diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, limit=0.5, must_advance=False,
     )
     current = list(profile)
     n = len(current)
     if n < 2:
         raise ValueError("need at least two grid points")
+    _reaction_stability(current, reaction, alpha=alpha, dt=dt)
     for _ in range(steps):
         nxt = current[:]
         for i in range(n):
@@ -265,16 +330,19 @@ def react_diffuse_2species(
     Solves the activator-inhibitor system ``u_t = Du u_xx + f(u,v)``, ``v_t = Dv v_xx + g(u,v)`` with
     the shared explicit scheme and zero-flux boundaries. This is the machinery behind Turing patterns
     (morphogenesis, pigmentation) and other multi-species spatial models. ``reaction_u``/``reaction_v``
-    are the local rates ``f`` and ``g``. Deterministic; both species must satisfy the same tighter
-    (0.4) stability limit :func:`react_diffuse_1d` explains — a reaction term feeds the node-to-node
-    oscillation an α near 0.5 stops damping, and the result is finite, plausible, and wrong.
+    are the local rates ``f`` and ``g``. Deterministic; both species must satisfy the same combined
+    diffusion-plus-reaction stability rule :func:`react_diffuse_1d` explains — a reaction term feeds
+    the node-to-node oscillation an α near 0.5 stops damping, and the result is finite, plausible,
+    and wrong.
     """
-    au = _diffusion_number(diffusivity=du, dx=dx, dt=dt, steps=steps, limit=0.4, must_advance=False)
-    av = _diffusion_number(diffusivity=dv, dx=dx, dt=dt, steps=steps, limit=0.4, must_advance=False)
+    au = _diffusion_number(diffusivity=du, dx=dx, dt=dt, steps=steps, limit=0.5, must_advance=False)
+    av = _diffusion_number(diffusivity=dv, dx=dx, dt=dt, steps=steps, limit=0.5, must_advance=False)
     cu, cv = list(u), list(v)
     n = len(cu)
     if n < 2 or len(cv) != n:
         raise ValueError("u and v must have the same length, at least two grid points")
+    _reaction_stability(cu, lambda x: reaction_u(x, 0.0), alpha=au, dt=dt)
+    _reaction_stability(cv, lambda x: reaction_v(0.0, x), alpha=av, dt=dt)
     for _ in range(steps):
         nu, nv = cu[:], cv[:]
         for i in range(n):
@@ -477,7 +545,7 @@ def certify_spatial(
                 claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
                 steps=claim.steps, decay=claim.decay,
             )
-        except ValueError as unstable:
+        except UnstableDiscretization as unstable:
             # An unstable discretization genuinely cannot be run — but raising discarded the whole
             # certificate, including the honest verdicts of every sibling claim, and made the class
             # systematically silent at the top of the error range (a diffusivity wrong enough to
@@ -526,8 +594,11 @@ def certify_spatial(
         )
         # Only the claims a verdict was actually drawn from, as the stochastic class does: an
         # assumption attached to an abstention would describe a judgment nobody made, and being
-        # load-bearing it would downgrade the certificate on that claim's behalf.
-        if claim.assumption_qualified:
+        # load-bearing it would downgrade the certificate on that claim's behalf. Read off the
+        # *assessment*, not the claim — the judge abstains internally on a non-finite profile
+        # without raising, so gating on the claim's own flag minted an assumption for a claim that
+        # came back `not-evaluable` and pushed the certificate to `partially-reproduced` anyway.
+        if assessments[-1].assumption_qualified:
             qualified.append(claim)
     # The counterpart of the stochastic class's `ssa-sampling-*` block. The boundary is named in
     # each assessment's protocol, but a protocol line does not downgrade a verdict and does not

@@ -493,3 +493,77 @@ def test_diffusion_and_decay_share_one_stability_budget() -> None:
     # A grid inside the joint bound still runs, and stays bounded by its initial magnitude.
     stable = diffuse_1d(profile, diffusivity=0.25, dx=1.0, dt=1.0, steps=30, decay=1.0)
     assert max(abs(v) for v in stable) <= 1.0
+
+
+def test_a_reaction_term_is_budgeted_against_the_stability_band_not_assumed_away() -> None:
+    """A limit on the diffusion number alone cannot make a reaction-bearing step stable.
+
+    `dt = α·dx²/D`, so the reaction's share of the amplification grows with `dx²` at fixed α.
+    Measured on Fisher-KPP (D=1, r=1.2) at α = 0.40 exactly — which any bare α limit accepts —
+    dx = 1.1 gives a front speed of −0.0000 against an analytic 2.19, with every value finite and
+    in range, so nothing downstream can see it and the judge blames the paper.
+    """
+    from reprolith.spatial import UnstableDiscretization, front_position, react_diffuse_1d
+
+    D, r, alpha = 1.0, 1.2, 0.40
+    analytic = 2 * math.sqrt(D * r)
+
+    def run(dx: float) -> float:
+        dt, n = alpha * dx * dx / D, int(400 / dx)
+        profile = [1.0 if i * dx < 20 else 0.0 for i in range(n)]
+        first = react_diffuse_1d(profile, diffusivity=D, dx=dx, dt=dt, steps=int(50 / dt),
+                                 reaction=lambda u: r * u * (1 - u))
+        second = react_diffuse_1d(first, diffusivity=D, dx=dx, dt=dt, steps=int(50 / dt),
+                                  reaction=lambda u: r * u * (1 - u))
+        return (front_position(second, dx=dx) - front_position(first, dx=dx)) / 50
+
+    # A grid the combined rule admits reproduces the analytic front speed.
+    assert abs(run(0.5) - analytic) / analytic < 0.15
+    # The same α on a coarser grid is refused, rather than returning finite garbage.
+    with pytest.raises(UnstableDiscretization, match="diffusion and reaction together"):
+        run(1.1)
+
+
+def test_a_spatial_claim_the_judge_abstains_on_does_not_mint_an_assumption() -> None:
+    """An assumption on an abstention describes a judgment nobody made — and downgrades for it.
+
+    The boundary qualification was read off the *claim*, but `judge_curve` abstains internally on a
+    non-finite reference without raising, so a `not-evaluable` claim still minted a load-bearing
+    assumption and pushed the whole certificate to `partially-reproduced`.
+    """
+    from reprolith import OverallVerdict, PaperIdentity, Verdict
+    from reprolith.spatial import SpatialClaim, certify_spatial, solver_pin
+
+    def claim(claim_id: str, reference: tuple[float, ...]) -> SpatialClaim:
+        return SpatialClaim(claim_id=claim_id, quantity="profile", initial=(1.0, 0.0, 0.0, 0.0),
+                            reference=reference, source_location="s", diffusivity=1.0,
+                            dx=1.0, dt=0.2, steps=2)
+
+    good = claim("good", (0.6, 0.28, 0.09, 0.03))
+    unjudgeable = claim("nanref", (float("nan"), 0.0, 0.0, 0.0))
+    cert = certify_spatial(paper=PaperIdentity(title="t", doi=""), engine_pin=solver_pin(),
+                           claims=[good, unjudgeable])
+    verdicts = {a.claim_id: a.verdict for a in cert.assessments}
+    assert verdicts["nanref"] is Verdict.NOT_EVALUABLE
+    assert [a.id for a in cert.assumptions] == ["spatial-boundary-good"]
+    assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED  # from the judged claim alone
+
+
+def test_a_caller_error_still_raises_where_an_unstable_grid_abstains() -> None:
+    """`except ValueError` was broad enough to publish a sign error as an honest abstention."""
+    from reprolith import PaperIdentity
+    from reprolith.spatial import SpatialClaim, certify_spatial, solver_pin
+
+    def certify(**kw) -> None:
+        certify_spatial(
+            paper=PaperIdentity(title="t", doi=""), engine_pin=solver_pin(),
+            claims=[SpatialClaim(claim_id="c", quantity="profile", initial=(1.0, 0.0, 0.0, 0.0),
+                                 reference=(1.0, 0.0, 0.0, 0.0), source_location="s",
+                                 dx=1.0, dt=0.2, steps=2, **kw)],
+        )
+
+    # An unstable discretization is a published abstention…
+    certify(diffusivity=100.0)
+    # …a negative diffusivity is a bug in the caller, and still raises.
+    with pytest.raises(ValueError, match="must not be negative"):
+        certify(diffusivity=-1.0)

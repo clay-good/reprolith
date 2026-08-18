@@ -31,6 +31,7 @@ from .dossier import (
     Parameter,
 )
 from .engine import EngineUnavailable
+from .sbml import _rule_names_in
 
 #: What a parameter's unit says when the model states none. `Parameter` requires a non-empty unit,
 #: and the value itself *is* stated — so the honest record is a value whose unit is missing, plus a
@@ -199,23 +200,6 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
     )
 
 
-def _rule_names(model: Any, target: str) -> set[str]:
-    """Every plain identifier a rule's math refers to (not `time`, not function names)."""
-    libsbml = _libsbml()
-    names: set[str] = set()
-    for i in range(model.getNumRules()):
-        rule = model.getRule(i)
-        if rule.getVariable() != target or rule.getMath() is None:
-            continue
-        stack = [rule.getMath()]
-        while stack:
-            node = stack.pop()
-            if node.getType() == libsbml.AST_NAME:
-                names.add(node.getName())
-            stack.extend(node.getChild(k) for k in range(node.getNumChildren()))
-    return names
-
-
 def _unresolved_symbols(
     model: Any, *, equations: tuple[Equation, ...], declared: set[str]
 ) -> tuple[Gap, ...]:
@@ -238,7 +222,7 @@ def _unresolved_symbols(
     unresolved = {
         name
         for equation in equations
-        for name in _rule_names(model, equation.target)
+        for name in _rule_names_in(model, equation.target)
         if name not in resolvable
     }
     dynamics = {e.target for e in equations if e.kind is EquationKind.RATE} - declared

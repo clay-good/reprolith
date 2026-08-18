@@ -121,6 +121,23 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
     return str(libsbml.writeSBMLToString(document))
 
 
+def _rule_names_in(model: Any, target: str) -> set[str]:
+    """Every plain identifier a rule's math refers to (not `time`, not function names)."""
+    libsbml = _libsbml()
+    names: set[str] = set()
+    for i in range(model.getNumRules()):
+        rule = model.getRule(i)
+        if rule.getVariable() != target or rule.getMath() is None:
+            continue
+        stack = [rule.getMath()]
+        while stack:
+            node = stack.pop()
+            if node.getType() == libsbml.AST_NAME:
+                names.add(node.getName())
+            stack.extend(node.getChild(k) for k in range(node.getNumChildren()))
+    return names
+
+
 def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-9) -> list[str]:
     """Report where an adopted SBML model disagrees with the dossier's stated values.
 
@@ -247,8 +264,17 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
         # for is exactly the state variable that went missing.
         | {e.target for e in dossier.equations if e.kind is EquationKind.ASSIGNMENT}
     )
+    # Restricted to species the dossier's own rules depend on. `ingest_sbml` skips a `constant` or
+    # `boundaryCondition` species on purpose, so reporting every one of them made a rules-only model
+    # with an unread fixed input — an ordinary PK/PD shape — permanently unable to return "no
+    # disagreement". What matters is a value the equations *need* and the dossier does not carry.
+    needed = {
+        name
+        for equation in dossier.equations
+        for name in _rule_names_in(model, equation.target)
+    } | {e.target for e in dossier.equations}
     for name, value in sorted(sbml_ics.items()):
-        if name not in stated_by_dossier:
+        if name in needed and name not in stated_by_dossier:
             mismatches.append(
                 f"{name}: a species the model gives an initial value ({value}) but the dossier "
                 "does not state"

@@ -349,9 +349,20 @@ def lint_diffusion(
         tolerance or default_tolerance(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind),
         ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind,
     )
+    # The same protocol string `certify_spatial` attaches, for the same reason it argues at length
+    # there: the discretization *is* the run, and the boundary condition is one this solver imposes
+    # rather than one the caller chose — a reader of an inline verdict cannot see either anywhere
+    # else. This surface published a bare `reproduced` with neither.
+    protocol = (
+        f"1-D finite difference: D={diffusivity!r}, dx={dx!r}, dt={dt!r}, {steps} steps"
+        + (f", decay={decay!r}" if decay else "")
+        + ", zero-flux (Neumann) boundaries"
+    )
     if not _all_finite(reference, predicted):
-        return _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol)
-    return _curve_lint(reference, predicted, tol)
+        return replace(
+            _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol), protocol=protocol
+        )
+    return replace(_curve_lint(reference, predicted, tol), protocol=protocol)
 
 
 def lint_steady_state(

@@ -134,7 +134,11 @@ def require_stated_cause(assessments: Iterable[ClaimAssessment]) -> None:
     for assessment in assessments:
         if assessment.verdict not in (Verdict.PARTIAL, Verdict.FAILED):
             continue
-        if not (assessment.root_cause or assessment.implicated or assessment.fault_hypothesis):
+        # The disjunction has to match what a reader is shown. `render.gap_items` prints the root
+        # cause or falls back to "no evaluable output" — so accepting an `implicated`-only
+        # assessment left exactly the invented sentence this guard promises to remove. Whitespace
+        # is not a cause either: a root cause of "   " printed as "   ".
+        if not (assessment.root_cause or "").strip():
             raise ValueError(
                 f"claim {assessment.claim_id!r} is published as {assessment.verdict.value!r} with "
                 "no root cause, implicated element, or fault hypothesis; a miss this certificate "

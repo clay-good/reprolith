@@ -262,7 +262,10 @@ def ensemble_percentile_bands(
         )
     for percentile in percentiles:
         tail = min(percentile, 100.0 - percentile)
-        if tail > 0.0 and trajectories * tail < 100.0:
+        # `<=`, not `<`: `_empirical_percentile` is nearest-rank, so `n·tail == 100` is exactly
+        # rank 1 — the observed minimum. P2.5 at n=40 (an ordinary 95% envelope) and P1 at n=100
+        # both landed on that boundary and returned the elementwise minimum wearing a band label.
+        if tail > 0.0 and trajectories * tail <= 100.0:
             raise ValueError(
                 f"the P{percentile:g} band needs about {math.ceil(100.0 / tail)} trajectories to "
                 f"be a percentile rather than the observed extreme; {trajectories} were run"
@@ -561,6 +564,10 @@ def time_to_extinction(
     population is a first-passage observable central to population dynamics — extinction of small
     populations, loss of a drug-resistant clone. Deterministic in ``rng``.
 
+    ``max_time`` is a hard cap: the jump that crosses it is not a first passage observed within the
+    window, so it censors too. Testing the clock only before the jump returned times up to 4.4x the
+    cap as uncensored answers, biasing the finite subsample upward.
+
     A run that ends without the species reaching zero — the ``max_time`` cap, or an absorbing state
     with no further reactions — returns ``inf``, because it observed no extinction. Returning ``t``
     made a censored run indistinguishable from a first passage, so a cap silently became the answer:
@@ -584,7 +591,7 @@ def time_to_extinction(
             if cumulative >= threshold:
                 reaction.apply(state)
                 break
-    return t if state[species] == 0 else float("inf")
+    return t if state[species] == 0 and t < max_time else float("inf")
 
 
 def fano_factor(ensemble: Sequence[Sequence[int]], species: int) -> float:

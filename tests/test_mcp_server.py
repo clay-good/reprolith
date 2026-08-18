@@ -782,7 +782,12 @@ def test_a_certificate_must_positively_identify_the_entrys_paper() -> None:
     _claim(query, catalog, "a")
     text, is_error = _effectful(query, catalog, "record_result",
                                 {"accession": "ATTACK-1", "requester": "a", "digest": digest})
-    assert is_error and "names no identifier this entry carries" in text
+    # Two rules now refuse this, and the general one speaks first: `require_same_paper` no longer
+    # goes quiet when only one side states a DOI, so an unrelated title is refused before the
+    # MCP-specific positive-identity rule is reached. Either message is an honest refusal of the
+    # same attack; what matters is that it is refused and the entry does not move.
+    assert is_error and "is for a different paper" in text
+    assert "A Paper Nobody Reproduced" in text and "Zake2021" in text
     assert catalog.find(Identifiers(title="", accession="ATTACK-1")).state.value == "queued"
     # A title is a sufficient witness when nothing stronger exists on either side — it is the
     # one identifier every record carries — and normalization makes it robust to case/spacing.

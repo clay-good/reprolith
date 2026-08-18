@@ -840,6 +840,55 @@ have alternate optima of their own, and the FVA rescue path relaxes the floor in
 93 pinned reactions into 8 — converting an earned failure into a silent abstention. Each now says
 so where a caller reads it.
 
+## The audit of that audit
+
+Two adversarial agents were then pointed at the fixes above, told to treat them as guilty until
+measured innocent, and asked specifically for guards that were too strict, guards that were too
+weak, fixes that moved a bug rather than closing it, and tests that would still pass if the fix
+were reverted. They found seventeen. The pattern worth recording: **a guard is a claim about what
+cannot happen, and it is exactly as trustworthy as the measurement behind it.**
+
+- **The concurrency lock did not lock anything.** It was taken on `catalog.json`'s inode, but the
+  catalog is written by atomic rename — so a waiter that opened the file before the rename woke up
+  holding an exclusive lock on an orphaned inode and rewrote the winner's work. Measured losing one
+  process's write in 4 of 6 runs, which is verbatim the loss it was added to prevent. It also
+  raised `FileNotFoundError` on a first run, where the catalog does not exist yet, and that escaped
+  the tool-error path entirely. The lock lives on a sidecar now — a file that is only ever locked,
+  never replaced.
+- **A limit on the diffusion number alone cannot stabilize a reaction term.** `dt = α·dx²/D`, so
+  the reaction's share of the amplification grows with `dx²` at fixed α: at the newly-tightened
+  α = 0.40, dx = 1.1 still produced a Fisher-KPP front speed of −0.0000 against an analytic 2.19,
+  every value finite and in range. The reaction is budgeted against the same [−1, 1] band the
+  diffusion number is checked in now, with `f′` estimated by differencing over the profile's own
+  range. The rule reproduces the measured cliff (α ≈ 0.465 at dx = 0.5) instead of guessing at a
+  constant, and admits every discretization measured to be correct.
+- **The NaN fix moved the bug one level down.** `band_worst_point` stopped stepping over a diverged
+  band, but `worst_point_deviation`'s own bare `max` still swallowed the NaN, so the same clean
+  number next to the same NaN was still published.
+- **Two guards were weaker than the sentence they promised.** `require_stated_cause` accepted an
+  `implicated`-only assessment, which `render.gap_items` still explained as "no evaluable output" —
+  the exact invented sentence — and accepted whitespace as a cause. `require_same_paper`'s new
+  title check went quiet whenever *either* side stated a DOI, which is the ordinary case for a
+  certificate that cites its paper properly; and raw substring containment accepted a title of "a".
+- **The new pin check guarded the builder and not the load path** — in the same batch that hoisted
+  `require_stated_cause` onto both, for the stated reason that the registry reads certificates off
+  disk and never rebuilds them. Both the pin and the protocol are on the certificate, so the load
+  path can compare them, and now does.
+- **The confusion cross-check was opt-out by deleting one key**, and the threat model it names is a
+  hand edit. **The spatial boundary assumption attached to claims nobody judged**, because the flag
+  was read off the claim and the judge abstains internally without raising. **`except ValueError`
+  was broad enough** to publish a caller's sign error as an honest abstention. **The percentile
+  guard was off by one at its own boundary**, so P2.5 at 40 trajectories — an ordinary 95% envelope
+  — still returned the observed minimum wearing a band label. **`max_time` was not a cap**: the
+  clock was tested before the jump, so 747 of 2000 runs returned a finite time exceeding it, up to
+  4.4x. **The new model-to-dossier sweep reported the ingester's own deliberate omission**, so a
+  rules-only model with an unread fixed input could never return "no disagreement".
+
+And four of the new guards had no behavioral test at all — the adversarial pass proved it by
+reverting each one and watching the suite stay green apart from the source-hash pins, which fire on
+any edit including a comment. Every fix in both batches now has a test that fails when the fix is
+removed.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

@@ -319,7 +319,17 @@ def worst_point_deviation(reference: Sequence[float], predicted: Sequence[float]
     if not reference:
         raise ValueError("need at least one sample point")
     n = len(reference)
-    worst = max(abs(p - r) for r, p in zip(reference, predicted))
+    # NaN-first. `max` compares false against NaN, so a diverged point was stepped over and the
+    # largest *surviving* gap returned as the worst — a clean number for a run that blew up. The
+    # judges pre-screen for non-finite values, so this is the exported function's own contract:
+    # `band_worst_point` fixing its own `max` only moved the same bug one level down.
+    worst = 0.0
+    for r, p in zip(reference, predicted):
+        gap = abs(p - r)
+        if math.isnan(gap):
+            worst = gap
+            break
+        worst = max(worst, gap)
     span = max(reference) - min(reference)
     if span == 0.0:
         span = abs(sum(reference) / n)
