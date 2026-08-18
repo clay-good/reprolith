@@ -82,47 +82,51 @@ def _assumption_from(record: dict[str, Any]) -> Assumption:
     )
 
 
-def require_pin_agrees_with_protocol(
-    assessments: tuple[ClaimAssessment, ...], algorithm: str | None
+def require_pin_names_protocol_path(
+    protocol: str, algorithm: str | None, *, claim_id: str = "this claim"
 ) -> None:
-    """Refuse a stored certificate whose pin contradicts its own protocol about what computed it.
+    """Refuse a pin that does not name the path one protocol line says was taken.
 
-    Both are on the certificate, and nothing compared them. A logical certificate carries "N nodes,
-    SAT search" in its protocol and the solver in its pin, so a hand-edited pin could claim the
-    stronger thing — that every one of 2^60 states was walked — over a space z3 searched, and load
-    clean. `certify_logical` refuses exactly this on the way in; the public registry reads
-    certificates off disk and never rebuilds them.
+    The single implementation of the rule. It lived in three places — the certificate builder, the
+    load path, and the logical front-end — and they gave two different answers about the same
+    certificate: one refused a pin naming no path while the others accepted it, and two refused a
+    pin naming both paths while the third accepted that.
+
+    "Names no path" includes a pin with no algorithm string at all: deleting the solver token and
+    deleting the whole field are the same hand edit, one character apart.
     """
-    if not algorithm:
-        return
-    names_sat = "sat-fixed-points" in algorithm
-    names_enumeration = "exhaustive-state-enumeration" in algorithm
+    named = algorithm or ""
+    names_sat = "sat-fixed-points" in named
+    names_enumeration = "exhaustive-state-enumeration" in named
     if names_sat and names_enumeration:
-        # Naming both satisfies whichever branch is asked, so it reads as agreement with any
-        # protocol. A run took one path.
         raise ValueError(
             f"the pin names both the SAT solver and exhaustive enumeration ({algorithm!r}); "
             "a certificate records the path that ran, not the ones available"
         )
+    # The markers are the phrases `logical.search_protocol` writes. The SAT sentence contains the
+    # words "exhaustive enumeration" (as the thing the space is beyond), so it is tested first and
+    # the enumeration marker is the longer, unambiguous phrase.
+    if "SAT search" in protocol and not names_sat:
+        raise ValueError(
+            f"claim {claim_id!r} records a SAT search but the pin ({algorithm!r}) does not name "
+            "the solver that ran it: a certificate cannot leave the software that searched a "
+            "state space off the record, or claim to have enumerated it"
+        )
+    if "exhaustive enumeration of all" in protocol and not names_enumeration:
+        raise ValueError(
+            f"claim {claim_id!r} records exhaustive enumeration but the pin ({algorithm!r}) "
+            "does not say so"
+        )
+
+
+def require_pin_agrees_with_protocol(
+    assessments: tuple[ClaimAssessment, ...], algorithm: str | None
+) -> None:
+    """Apply :func:`require_pin_names_protocol_path` to every assessment on a certificate."""
     for assessment in assessments:
-        protocol = assessment.protocol or ""
-        # The pin must *positively* name the path the protocol states. Requiring it to name the
-        # wrong one left the easier hand edit open: deleting "sat-fixed-points (z3 …)" leaves a pin
-        # naming no path at all, which loaded clean while the builder refuses exactly that.
-        # The markers are the phrases `logical.search_protocol` writes, and the SAT sentence
-        # contains the words "exhaustive enumeration" (as the thing the space is beyond), so it is
-        # tested first and the enumeration marker is the longer, unambiguous phrase.
-        if "SAT search" in protocol and not names_sat:
-            raise ValueError(
-                f"claim {assessment.claim_id!r} records a SAT search but the pin ({algorithm!r}) "
-                "does not name the solver that ran it: a certificate cannot leave the software "
-                "that searched a state space off the record, or claim to have enumerated it"
-            )
-        if "exhaustive enumeration of all" in protocol and not names_enumeration:
-            raise ValueError(
-                f"claim {assessment.claim_id!r} records exhaustive enumeration but the pin "
-                f"({algorithm!r}) does not say so"
-            )
+        require_pin_names_protocol_path(
+            assessment.protocol or "", algorithm, claim_id=assessment.claim_id
+        )
 
 
 def certificate_from_content(content: dict[str, Any]) -> Certificate:

@@ -120,8 +120,8 @@ def _reaction_stability(
     alpha: float,
     dt: float,
     samples: int = 33,
-    checked: tuple[float, float] | None = None,
-) -> tuple[float, float]:
+    checked: tuple[float, float, float] | None = None,
+) -> tuple[float, float, float]:
     """Refuse a step whose diffusion *and reaction* together leave the stable amplification band.
 
     The explicit update's amplification at the shortest wavelength is ``1 − 4α − dt·f′``, so the
@@ -130,43 +130,59 @@ def _reaction_stability(
     symbolically here, so it is estimated by differencing ``f`` across the values the profile
     actually holds.
 
-    Sampled *inside* the profile's own closed range, never outside it — a rule this docstring has
-    now stated three times and the code has broken twice. Widening the probe to anticipate growth
-    meant evaluating the caller's reaction where the run never goes: a reaction with an ordinary
-    non-negativity check raised (and the probe swallowed it, skipping the guard entirely),
-    ``u**0.5`` went complex and crashed the solver, and a uniform profile at large magnitude
-    widened by less than one ulp so the sample step was zero. Growth is handled by re-checking as
-    the profile grows, which is what the run actually does, rather than by guessing how far.
+    Sampled *inside* the profile's own closed range, never outside it. Widening the probe to
+    anticipate growth meant evaluating the caller's reaction where the run never goes: a reaction
+    with an ordinary non-negativity check raised, ``u**0.5`` went complex, and a uniform profile at
+    large magnitude widened by less than one ulp. Growth is handled by re-checking as the profile
+    grows, which is what the run actually does.
 
-    A *uniform* profile is therefore not probed at all, and reports no slope. That is not a gap:
-    the instability this guards against is the decoupling of neighbouring grid points, and a
-    profile with no spatial variation has no such mode to amplify. The moment the reaction moves it
-    off uniform the re-check fires on the range it actually reaches. Probing `lo + ε` instead —
-    the previous attempt — put the probe back outside the profile and crashed a reaction defined
-    only up to its carrying capacity.
+    A *uniform* profile is therefore not probed at all, and reports no slope. That is not a gap: the
+    instability guarded against is neighbouring grid points decoupling, and under the zero-flux
+    update a uniform profile stays bitwise uniform, so there is no such mode. The step that moves it
+    off uniform is re-checked on the range it reaches.
 
-    An estimate is enough because the failure is not marginal: outside the band the even and odd
-    grid points decouple and the profile becomes a comb, which is finite, in range, and wrong by
-    any amount — a Fisher-KPP front speed of −0.0000 against an analytic 2.19.
+    ``checked`` carries what a previous call already covered — the range and the largest slope found
+    in it — so a re-check probes only the sliver the profile has newly entered and keeps the slope
+    already measured. That is what makes re-checking on *any* departure affordable: an earlier
+    version skipped re-checks until the profile left the accumulated band by 1%, and because that
+    band only ever grows, a profile drifting step by step into a region with ``dt·|f′| = 25`` was
+    never re-probed at all — the run returned 4.92 against a true 5.00, finite and plausible and
+    wrong, which is the exact failure this guard exists to prevent.
     """
     finite = [v for v in values if math.isfinite(v)]
     if not finite or dt == 0.0:
-        return checked if checked is not None else (0.0, 0.0)
+        return checked if checked is not None else (0.0, 0.0, 0.0)
     lo, hi = min(finite), max(finite)
-    if checked is not None:  # a re-check covers the union, so a shrinking profile stays covered
-        lo, hi = min(lo, checked[0]), max(hi, checked[1])
-    if hi == lo:
-        return lo, hi  # no spatial variation, so no mode for a reaction to amplify (see above)
-    step = (hi - lo) / (samples - 1)
-    probes = [lo + i * step for i in range(samples)]
     slope = 0.0
-    for left, right in zip(probes, probes[1:]):
-        # No exception handling here on purpose: every probe is a value the profile holds, so a
-        # reaction that cannot be evaluated at one of them cannot be run either, and the error
-        # belongs to the caller rather than being turned into a silently skipped check.
-        rise = reaction(right) - reaction(left)
-        if math.isfinite(rise):
-            slope = max(slope, abs(rise) / (right - left))
+    if checked is None:
+        intervals = [(lo, hi)] if hi > lo else []
+    else:
+        seen_lo, seen_hi, slope = checked
+        # Only the newly entered slivers; the interior is already accounted for by `slope`.
+        intervals = [
+            (a, b) for a, b in ((lo, seen_lo), (seen_hi, hi)) if b > a
+        ]
+        lo, hi = min(lo, seen_lo), max(hi, seen_hi)
+    for left, right in intervals:
+        # A sliver needs fewer samples than a first look at the whole range, and its slope is
+        # folded into the running maximum rather than replacing it.
+        count = samples if checked is None else 5
+        step = (right - left) / (count - 1)
+        if step == 0.0:
+            # A sliver narrower than float resolution at this magnitude: the probes would all be
+            # the same value and the difference quotient would divide by zero. A smooth reaction's
+            # slope across it is the slope already measured on the range beside it.
+            continue
+        probes = [left + i * step for i in range(count)]
+        for a, b in zip(probes, probes[1:]):
+            if b == a:
+                continue
+            # No exception handling: every probe is a value the profile holds, so a reaction that
+            # cannot be evaluated at one of them cannot be run either, and that error belongs to
+            # the caller rather than being turned into a silently skipped check.
+            rise = reaction(b) - reaction(a)
+            if math.isfinite(rise):
+                slope = max(slope, abs(rise) / (b - a))
     combined = 4.0 * alpha + dt * slope
     if combined > 2.0 + 1e-12:
         raise UnstableDiscretization(
@@ -174,7 +190,7 @@ def _reaction_stability(
             f"{1.0 - combined:.3g} at the shortest wavelength, outside [-1, 1] "
             f"(D·dt/dx² = {alpha:.3g}, dt·|f'| = {dt * slope:.3g}); reduce dt or dx"
         )
-    return lo, hi
+    return lo, hi, slope
 
 
 def _hold(
@@ -185,30 +201,35 @@ def _hold(
 
 
 def _partner_probes(values: Sequence[float], samples: int = 9) -> list[float]:
-    """The partner-species values to hold ``f`` at: across its range, not just its endpoints."""
-    finite = [v for v in values if math.isfinite(v)]
+    """The partner-species values to hold ``f`` at — drawn from the grid itself.
+
+    The values the run visits, evenly subsampled, rather than a uniform grid over their range: the
+    same rule :func:`_reaction_stability` follows for the species it is differencing. A uniform grid
+    over the range steps over a narrow feature the profile sits on — measured, an activation window
+    at ``v = 51`` that a grid point lands exactly on reported ``dt·|∂f/∂u| = 1.1e-06`` against a true
+    10, and the run returned 1.5e38 against a reference of 1.2e-174.
+    """
+    finite = sorted({v for v in values if math.isfinite(v)})
     if not finite:
         return [0.0]
-    lo, hi = min(finite), max(finite)
-    if hi == lo:
-        return [lo]
-    step = (hi - lo) / (samples - 1)
-    return [lo + i * step for i in range(samples)]
+    if len(finite) <= samples:
+        return finite
+    step = (len(finite) - 1) / (samples - 1)
+    return [finite[round(i * step)] for i in range(samples)]
 
 
-def _left_checked(values: Sequence[float], checked: tuple[float, float]) -> bool:
-    """Whether a profile has moved materially outside the range already checked.
+def _left_checked(values: Sequence[float], checked: tuple[float, float, float]) -> bool:
+    """Whether a profile has moved outside the range already probed.
 
-    "Materially" is 1% of the checked span, because re-checking on any change at all made a
-    profile that grows every step re-probe every step — a measured 10.8x slowdown on a small grid
-    — while a smooth reaction's slope over an interval 1% wider is the slope already measured.
+    Any departure at all. A tolerance here is measured against a band that only ever grows, so it
+    lets a profile drift step by step into a region far stiffer than anything checked; the cost of
+    checking every departure is paid instead by probing only the newly entered sliver.
     """
     finite = [v for v in values if math.isfinite(v)]
     if not finite:
         return False
-    lo, hi = checked
-    margin = 0.01 * (hi - lo) if hi > lo else 0.0
-    return min(finite) < lo - margin or max(finite) > hi + margin
+    lo, hi, _ = checked
+    return min(finite) < lo or max(finite) > hi
 
 
 def diffuse_1d(
@@ -294,7 +315,7 @@ def react_diffuse_1d(
     # grows into a stiffer region of the reaction was admitted on the strength of where it started:
     # a run entering a region with dt·|f′| = 3.6 produced a spurious comb oscillating between 10.26
     # and 10.70 where the true steady state is flat at 10.25 — a pattern manufactured by the step.
-    checked_lo, checked_hi = _reaction_stability(current, reaction, alpha=alpha, dt=dt)
+    probed = _reaction_stability(current, reaction, alpha=alpha, dt=dt)
     for _ in range(steps):
         nxt = current[:]
         for i in range(n):
@@ -302,10 +323,8 @@ def react_diffuse_1d(
             right = current[i + 1] if i < n - 1 else current[i]
             nxt[i] = current[i] + alpha * (left - 2.0 * current[i] + right) + dt * reaction(current[i])
         current = nxt
-        if _left_checked(current, (checked_lo, checked_hi)):
-            checked_lo, checked_hi = _reaction_stability(
-                current, reaction, alpha=alpha, dt=dt, checked=(checked_lo, checked_hi)
-            )
+        if _left_checked(current, probed):
+            probed = _reaction_stability(current, reaction, alpha=alpha, dt=dt, checked=probed)
     return current
 
 
@@ -408,24 +427,45 @@ def react_diffuse_2species(
     def _check_pair(
         cu: list[float],
         cv: list[float],
-        seen_u: tuple[float, float] | None = None,
-        seen_v: tuple[float, float] | None = None,
-    ) -> tuple[tuple[float, float], tuple[float, float]]:
-        # The ranges already seen are carried in, exactly as the one-species loop carries them.
-        # Without that union a profile that is *uniform at every step* — which a reaction with no
-        # spatial variation stays — is degenerate on every single check and so never probed at all,
-        # while it walks through values whose slope is enormous. Dropping this thread is what let
-        # the two solvers disagree by 43% on the same model.
-        span_u, span_v = seen_u, seen_v
-        for partner in _partner_probes(cv):
-            span_u = _reaction_stability(
-                cu, _hold(reaction_u, partner, first=True), alpha=au, dt=dt, checked=span_u
+        seen_u: tuple[float, float, float] | None = None,
+        seen_v: tuple[float, float, float] | None = None,
+    ) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+        # Every partner value gets the *same* already-probed range, and the results are combined
+        # afterwards. Threading one partner's result into the next made the range look covered
+        # after the first partner, so the other eight never probed anything at all: an activation
+        # window that only fires at one partner value reported a slope of zero and the run
+        # returned 6.4e33. The ranges already seen are carried in the same way the one-species
+        # loop carries them — without that union a profile uniform at every step is degenerate on
+        # every individual check and is never probed.
+        def _combine(
+            spans: list[tuple[float, float, float]], seen: tuple[float, float, float] | None
+        ) -> tuple[float, float, float]:
+            if not spans:
+                return seen if seen is not None else (0.0, 0.0, 0.0)
+            return (
+                min(span[0] for span in spans),
+                max(span[1] for span in spans),
+                max(span[2] for span in spans),
             )
-        for partner in _partner_probes(cu):
-            span_v = _reaction_stability(
-                cv, _hold(reaction_v, partner, first=False), alpha=av, dt=dt, checked=span_v
-            )
-        assert span_u is not None and span_v is not None
+
+        span_u = _combine(
+            [
+                _reaction_stability(
+                    cu, _hold(reaction_u, partner, first=True), alpha=au, dt=dt, checked=seen_u
+                )
+                for partner in _partner_probes(cv)
+            ],
+            seen_u,
+        )
+        span_v = _combine(
+            [
+                _reaction_stability(
+                    cv, _hold(reaction_v, partner, first=False), alpha=av, dt=dt, checked=seen_v
+                )
+                for partner in _partner_probes(cu)
+            ],
+            seen_v,
+        )
         return span_u, span_v
 
     # The same re-check the one-species solver does, for the same reason and on the same rule: it

@@ -955,6 +955,33 @@ subsequence of something, so "model" would otherwise name any paper containing t
 Four rounds, fifty-eight findings. The yield per round has barely moved: 26, 17, 12, 12. What has
 moved is where they live — from the engine, to the fixes, to the fixes' own new branches.
 
+### Round five: a performance margin that blinded the check it was optimising
+
+Six findings, down from twelve — the first real drop in five rounds. One was a genuine regression,
+and it is the most instructive kind: the re-check added in round four was measurably slow, so round
+four bought speed with a 1% tolerance before re-probing. The tolerance was measured against the
+*accumulated* band, which only ever grows, so a profile drifting step by step into a region with
+``dt·|f′| = 25`` was never re-probed at all. A case the previous commit refused now returned 4.92
+against a true 5.00 — finite, plausible, and wrong, which is this module's own name for the failure
+it exists to prevent.
+
+The fix is the one that should have been reached for first: re-check on *any* departure, and pay
+for it by probing only the sliver newly entered rather than the whole range again, carrying the
+largest slope already measured. That is both correct and faster than the version with the
+tolerance — a 20-point grid over 5000 steps went from 0.50s to 0.09s — and it tightened the
+estimate enough that a discretization the old code refused now runs and returns the exact steady
+state. A guard bought with a heuristic was slower *and* wrong.
+
+Two more of the same family as earlier rounds. The two-species check threaded each partner value's
+probed range into the next, so after the first partner the range looked covered and the other eight
+never probed anything: an activation window that fires at exactly one partner value reported a
+slope of zero, and the run returned 6.4e33. And the pin rule — by then living in three places —
+still gave two answers: one layer refused a pin naming no path where the others accepted it, and
+two refused a pin naming both where the third accepted it. There is one implementation now, called
+from all three.
+
+Five rounds: 26, 17, 12, 12, 6.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

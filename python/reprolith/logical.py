@@ -756,6 +756,12 @@ def require_pin_matches_path(engine_pin: EnginePin, *, node_counts: Iterable[int
     # certificate builder and the load path apply to the protocol these claims will carry. A pin
     # that names neither used to satisfy this and then be refused two layers down, which is two
     # guards disagreeing about one certificate.
+    from .persistence import require_pin_names_protocol_path
+
+    # The certificate-level rule, applied to the protocol these claims will carry, so this
+    # front-end cannot answer differently from the builder and the load path — three
+    # implementations of one rule gave two answers about the same certificate.
+    require_pin_names_protocol_path(search_protocol(counts[0]), engine_pin.algorithm)
     if needs_sat[0] and not _pin_names_sat(engine_pin):
         raise ValueError(
             f"a network past {MAX_ENUMERABLE_NODES} nodes is solved by z3, not by enumeration, "

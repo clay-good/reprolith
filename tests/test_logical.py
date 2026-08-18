@@ -438,12 +438,14 @@ def test_certify_logical_refuses_a_pin_that_does_not_name_the_path_taken() -> No
                          reported=dict.fromkeys(nodes, 1), source_location="Fig 1")
     paper = PaperIdentity(title="big", doi="10.0/b")
 
-    with pytest.raises(ValueError, match="solved by z3"):
+    # The message comes from the one shared implementation of the rule (persistence), which the
+    # builder and the load path call too — three copies of this check used to give two answers.
+    with pytest.raises(ValueError, match="does not name the solver that ran it"):
         certify_logical(paper=paper, engine_pin=solver_pin(), claims=[claim])
 
     small = LogicalClaim(claim_id="ss", quantity="steady state", rules={"A": "!B", "B": "!A"},
                          reported={"A": 1, "B": 0}, source_location="Fig 1")
-    with pytest.raises(ValueError, match="enumerated exhaustively"):
+    with pytest.raises(ValueError, match="does not say so"):
         certify_logical(paper=paper, engine_pin=solver_pin_for(nodes=n), claims=[small])
 
 

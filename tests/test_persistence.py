@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 
 from reprolith import (
     Assumption,
@@ -377,3 +378,39 @@ def test_the_builder_cannot_mint_a_certificate_its_own_loader_refuses() -> None:
                 protocol="60 nodes, SAT search (2^60 states is beyond exhaustive enumeration)",
             )],
         )
+
+
+def test_a_pin_with_no_algorithm_at_all_is_refused_like_one_that_names_the_wrong_path() -> None:
+    """Deleting the solver token and deleting the whole field are the same edit, one apart."""
+    import pytest
+    from reprolith.persistence import require_pin_names_protocol_path
+
+    sat = "60 nodes, SAT search (2^60 states is beyond exhaustive enumeration)"
+    for blank in (None, "", "synchronous-update"):
+        with pytest.raises(ValueError, match="does not name the solver that ran it"):
+            require_pin_names_protocol_path(sat, blank)
+    require_pin_names_protocol_path(sat, "synchronous-update, sat-fixed-points (z3 4.12)")
+
+
+def test_the_three_layers_that_check_a_pin_cannot_disagree() -> None:
+    """One rule, one implementation: the builder, the load path and the logical front-end all call
+    the same function, after a measured matrix where they gave two different answers."""
+    import pytest
+    from reprolith import PaperIdentity
+    from reprolith.logical import LogicalClaim, certify_logical, solver_pin_for
+    from reprolith.persistence import require_pin_names_protocol_path
+
+    enumerated = "2 nodes, exhaustive enumeration of all 2^2 states"
+    claims = [LogicalClaim(claim_id="ss", quantity="steady state", rules={"A": "!B", "B": "!A"},
+                           reported={"A": 1, "B": 0}, source_location="Fig 1")]
+    paper = PaperIdentity(title="toggle", doi="10.0/t")
+
+    for bad in (None, "", "synchronous-update"):
+        with pytest.raises(ValueError):
+            require_pin_names_protocol_path(enumerated, bad)
+        with pytest.raises(ValueError):
+            certify_logical(paper=paper,
+                            engine_pin=replace(solver_pin_for(nodes=2), algorithm=bad),
+                            claims=claims)
+    # The honest pin passes every layer.
+    certify_logical(paper=paper, engine_pin=solver_pin_for(nodes=2), claims=claims)

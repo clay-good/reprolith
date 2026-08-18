@@ -582,14 +582,23 @@ def test_both_solvers_apply_the_same_reaction_stability_rule() -> None:
     def reaction(u: float) -> float:
         return 1000.0 - u**3          # slope 3 at u=1, 300 at u=10
 
-    for dt in (0.006, 0.008):
-        with pytest.raises(UnstableDiscretization):
-            react_diffuse_1d([1.0] * 8, diffusivity=0.1, dx=1.0, dt=dt, steps=4000,
-                             reaction=reaction)
-        with pytest.raises(UnstableDiscretization):
-            react_diffuse_2species([1.0] * 8, [0.0] * 8, du=0.1, dv=0.1, dx=1.0, dt=dt, steps=4000,
-                                   reaction_u=lambda u, v: reaction(u),
-                                   reaction_v=lambda u, v: 0.0)
+    def one_species(dt: float) -> list[float]:
+        return react_diffuse_1d([1.0] * 8, diffusivity=0.1, dx=1.0, dt=dt, steps=4000,
+                                reaction=reaction)
+
+    def two_species(dt: float) -> list[float]:
+        return react_diffuse_2species([1.0] * 8, [0.0] * 8, du=0.1, dv=0.1, dx=1.0, dt=dt,
+                                      steps=4000, reaction_u=lambda u, v: reaction(u),
+                                      reaction_v=lambda u, v: 0.0)[0]
+
+    # dt·|f′| = 1.8 at the steady state: inside the band, so both run and both find u = 10.
+    assert one_species(0.006)[0] == pytest.approx(10.0, abs=1e-4)
+    assert two_species(0.006)[0] == pytest.approx(10.0, abs=1e-4)
+    # dt·|f′| = 2.4: outside it, so both refuse rather than returning something finite and wrong.
+    with pytest.raises(UnstableDiscretization):
+        one_species(0.008)
+    with pytest.raises(UnstableDiscretization):
+        two_species(0.008)
 
 
 def test_a_uniform_profile_is_not_probed_outside_itself() -> None:

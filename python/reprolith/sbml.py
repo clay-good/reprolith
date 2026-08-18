@@ -286,7 +286,24 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
     # Species *and* the parameter-plus-rateRule idiom this ingester supports on purpose: a
     # PK/PD model that ships no species holds its whole state that way, so sweeping species alone
     # left the class with the most state to lose entirely unchecked.
-    stated_values = {**sbml_ics, **{k: v for k, v in sbml_params.items() if k in model_rule_targets}}
+    # Only *rate* targets, and only parameters the model actually sets. libSBML hands back a
+    # default for an unset parameter — 0.0 in L2, NaN in L3 — so an unset parameter whose value
+    # comes from an `initialAssignment` was reported as "a value the model gives (nan)" on a
+    # faithful dossier.
+    rate_targets = {
+        target
+        for i in range(model.getNumRules())
+        if model.getRule(i).isRate() and (target := model.getRule(i).getVariable())
+    }
+    set_parameters = {
+        model.getParameter(i).getId(): float(model.getParameter(i).getValue())
+        for i in range(model.getNumParameters())
+        if model.getParameter(i).isSetValue()
+    }
+    stated_values = {
+        **sbml_ics,
+        **{k: v for k, v in set_parameters.items() if k in rate_targets},
+    }
     for name, value in sorted(stated_values.items()):
         if name in needed and name not in stated_by_dossier:
             kind = "a species" if name in sbml_ics else "a rule-driven parameter"

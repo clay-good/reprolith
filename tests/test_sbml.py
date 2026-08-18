@@ -194,3 +194,34 @@ def test_a_state_variable_the_dossier_lost_entirely_is_reported() -> None:
         initial_conditions=tuple(i for i in dossier.initial_conditions if i.name != "Y"),
     )
     assert [m for m in compare_sbml_to_dossier(model, lost) if "Y" in m]
+
+
+def test_an_unset_parameter_is_not_a_value_the_model_states() -> None:
+    """libSBML hands back a default for an unset parameter — 0.0 in L2, NaN in L3.
+
+    The sweep read it as a stated value, so a faithful dossier of a standard model whose parameter
+    is initialised by an `initialAssignment` was reported as disagreeing with it, at `nan`.
+    """
+    from reprolith.ingest import ingest_sbml
+    from reprolith.sbml import compare_sbml_to_dossier
+
+    model = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+ <model id="m">
+  <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+  <listOfParameters>
+   <parameter id="P" constant="false"/>
+   <parameter id="k" value="0.5" constant="true"/>
+  </listOfParameters>
+  <listOfInitialAssignments>
+   <initialAssignment symbol="P"><math xmlns="http://www.w3.org/1998/Math/MathML">
+     <cn>3</cn></math></initialAssignment>
+  </listOfInitialAssignments>
+  <listOfRules>
+   <rateRule variable="P"><math xmlns="http://www.w3.org/1998/Math/MathML">
+     <apply><times/><apply><minus/><ci>k</ci></apply><ci>P</ci></apply></math></rateRule>
+  </listOfRules>
+ </model>
+</sbml>"""
+    dossier = ingest_sbml(model, entry="e", source_label="m.xml")
+    assert not [m for m in compare_sbml_to_dossier(model, dossier) if "does not state" in m]
