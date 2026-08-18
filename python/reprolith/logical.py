@@ -730,6 +730,11 @@ def _pin_names_sat(engine_pin: EnginePin) -> bool:
     return "sat-fixed-points" in (engine_pin.algorithm or "")
 
 
+def _pin_names_enumeration(engine_pin: EnginePin) -> bool:
+    """Whether a pin says the exhaustive enumerator produced the number."""
+    return "exhaustive-state-enumeration" in (engine_pin.algorithm or "")
+
+
 def require_pin_matches_path(engine_pin: EnginePin, *, node_counts: Iterable[int]) -> None:
     """Refuse a pin that does not name the path the networks actually took.
 
@@ -747,15 +752,19 @@ def require_pin_matches_path(engine_pin: EnginePin, *, node_counts: Iterable[int
             "these claims span both the enumeration and the SAT path, and one pin cannot name "
             "both; certify them separately, each under its own solver_pin_for(nodes=...)"
         )
+    # Positively naming the path, not merely not-naming the wrong one — the same rule the
+    # certificate builder and the load path apply to the protocol these claims will carry. A pin
+    # that names neither used to satisfy this and then be refused two layers down, which is two
+    # guards disagreeing about one certificate.
     if needs_sat[0] and not _pin_names_sat(engine_pin):
         raise ValueError(
             f"a network past {MAX_ENUMERABLE_NODES} nodes is solved by z3, not by enumeration, "
             f"but the pin says {engine_pin.algorithm!r}; use solver_pin_for(nodes=...)"
         )
-    if not needs_sat[0] and _pin_names_sat(engine_pin):
+    if not needs_sat[0] and not _pin_names_enumeration(engine_pin):
         raise ValueError(
-            f"the pin names the SAT solver ({engine_pin.algorithm!r}) but every network here is "
-            f"within {MAX_ENUMERABLE_NODES} nodes and was enumerated exhaustively; "
+            f"every network here is within {MAX_ENUMERABLE_NODES} nodes and was enumerated "
+            f"exhaustively, which the pin ({engine_pin.algorithm!r}) does not say; "
             "use solver_pin_for(nodes=...)"
         )
 

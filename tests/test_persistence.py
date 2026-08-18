@@ -314,3 +314,66 @@ def test_pruning_a_withdrawn_certificate_takes_its_badge_too() -> None:
         assert sorted(p.name for p in directory.iterdir()) == [
             "KEPT.json", "KEPT.svg", "KEPT.txt"
         ]
+
+
+def test_a_pin_naming_both_paths_is_refused() -> None:
+    """Naming both satisfies whichever branch is asked, so it agreed with every protocol."""
+    import pytest
+    from reprolith import (
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+    )
+    from reprolith.persistence import certificate_from_content
+
+    both = EnginePin(
+        engine="reprolith-logical", version="0.0.1",
+        algorithm="synchronous-update, sat-fixed-points (z3 4.12), exhaustive-state-enumeration",
+    )
+    assessment = ClaimAssessment(
+        claim_id="ss", quantity="steady state", verdict=Verdict.REPRODUCED,
+        source_location="Fig 1",
+        protocol="60 nodes, SAT search (2^60 states is beyond exhaustive enumeration)",
+    )
+    # Refused by the builder…
+    with pytest.raises(ValueError, match="names both"):
+        build_certificate(paper=PaperIdentity(title="n", doi="10.0/n"), engine_pin=both,
+                          assessments=[assessment])
+    # …and by the load path, for a file that never went through the builder.
+    honest = build_certificate(
+        paper=PaperIdentity(title="n", doi="10.0/n"),
+        engine_pin=EnginePin(engine="reprolith-logical", version="0.0.1",
+                             algorithm="synchronous-update, sat-fixed-points (z3 4.12)"),
+        assessments=[assessment],
+    )
+    content = honest.content()
+    content["engine_pin"]["algorithm"] = both.algorithm
+    with pytest.raises(ValueError, match="names both"):
+        certificate_from_content(content)
+
+
+def test_the_builder_cannot_mint_a_certificate_its_own_loader_refuses() -> None:
+    """The pin/protocol check was on the load path only, so `build_certificate` emitted files
+    that `certificate_from_content` rejected."""
+    import pytest
+    from reprolith import (
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+    )
+
+    with pytest.raises(ValueError, match="does not name the solver that ran it"):
+        build_certificate(
+            paper=PaperIdentity(title="n", doi="10.0/n"),
+            engine_pin=EnginePin(engine="reprolith-logical", version="0.0.1",
+                                 algorithm="synchronous-update, exhaustive-state-enumeration"),
+            assessments=[ClaimAssessment(
+                claim_id="ss", quantity="steady state", verdict=Verdict.REPRODUCED,
+                source_location="Fig 1",
+                protocol="60 nodes, SAT search (2^60 states is beyond exhaustive enumeration)",
+            )],
+        )

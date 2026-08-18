@@ -172,6 +172,12 @@ def build_certificate(
     require_stated_protocol(frozen_assessments)
     require_stated_cause(frozen_assessments)
     require_distinct_assumption_ids(frozen_assumptions)
+    # …including the pin/protocol agreement the load path checks, so the builder cannot mint a
+    # certificate that its own loader refuses. The check lives in `persistence` beside the other
+    # load-path invariants; imported here rather than duplicated, so the two cannot drift.
+    from .persistence import require_pin_agrees_with_protocol
+
+    require_pin_agrees_with_protocol(frozen_assessments, engine_pin.algorithm)
     return Certificate(
         paper=paper,
         engine_pin=engine_pin,

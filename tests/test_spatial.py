@@ -567,3 +567,45 @@ def test_a_caller_error_still_raises_where_an_unstable_grid_abstains() -> None:
     # …a negative diffusivity is a bug in the caller, and still raises.
     with pytest.raises(ValueError, match="must not be negative"):
         certify(diffusivity=-1.0)
+
+
+def test_both_solvers_apply_the_same_reaction_stability_rule() -> None:
+    """The re-check landed in the one-species solver and not its two-species neighbour.
+
+    Same model, same grid: one refused the step and the other ran it and returned 5.65 against a
+    true steady state of 10.0. The union with the range already checked has to be carried too — a
+    profile that stays uniform at every step is degenerate on every individual check, so without it
+    the guard never probes anything at all while the values walk somewhere far stiffer.
+    """
+    from reprolith.spatial import UnstableDiscretization, react_diffuse_1d, react_diffuse_2species
+
+    def reaction(u: float) -> float:
+        return 1000.0 - u**3          # slope 3 at u=1, 300 at u=10
+
+    for dt in (0.006, 0.008):
+        with pytest.raises(UnstableDiscretization):
+            react_diffuse_1d([1.0] * 8, diffusivity=0.1, dx=1.0, dt=dt, steps=4000,
+                             reaction=reaction)
+        with pytest.raises(UnstableDiscretization):
+            react_diffuse_2species([1.0] * 8, [0.0] * 8, du=0.1, dv=0.1, dx=1.0, dt=dt, steps=4000,
+                                   reaction_u=lambda u, v: reaction(u),
+                                   reaction_v=lambda u, v: 0.0)
+
+
+def test_a_uniform_profile_is_not_probed_outside_itself() -> None:
+    """A reaction defined only up to its carrying capacity must not be evaluated past it.
+
+    The rule is that every probe is a value the profile holds; a uniform profile has exactly one,
+    so it is not probed at all — which is sound, because the instability being guarded against is
+    neighbouring grid points decoupling, and a profile with no spatial variation has no such mode.
+    Probing `lo + ε` instead crashed with a bare `math domain error`.
+    """
+    from reprolith.spatial import react_diffuse_1d
+
+    at_capacity = react_diffuse_1d([1.0] * 6, diffusivity=1.0, dx=1.0, dt=0.05, steps=3,
+                                   reaction=lambda u: 0.5 * math.sqrt(1.0 - u))
+    assert at_capacity == [1.0] * 6
+    # …and a constant profile at any magnitude runs, rather than being refused by a fixed floor.
+    for magnitude in (1e-300, 1e-12, 0.0):
+        assert react_diffuse_1d([magnitude] * 6, diffusivity=1.0, dx=1.0, dt=0.05, steps=2,
+                                reaction=lambda u: 0.0) == [magnitude] * 6

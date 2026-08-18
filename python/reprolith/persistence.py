@@ -82,7 +82,7 @@ def _assumption_from(record: dict[str, Any]) -> Assumption:
     )
 
 
-def _require_pin_agrees_with_protocol(
+def require_pin_agrees_with_protocol(
     assessments: tuple[ClaimAssessment, ...], algorithm: str | None
 ) -> None:
     """Refuse a stored certificate whose pin contradicts its own protocol about what computed it.
@@ -97,6 +97,13 @@ def _require_pin_agrees_with_protocol(
         return
     names_sat = "sat-fixed-points" in algorithm
     names_enumeration = "exhaustive-state-enumeration" in algorithm
+    if names_sat and names_enumeration:
+        # Naming both satisfies whichever branch is asked, so it reads as agreement with any
+        # protocol. A run took one path.
+        raise ValueError(
+            f"the pin names both the SAT solver and exhaustive enumeration ({algorithm!r}); "
+            "a certificate records the path that ran, not the ones available"
+        )
     for assessment in assessments:
         protocol = assessment.protocol or ""
         # The pin must *positively* name the path the protocol states. Requiring it to name the
@@ -149,7 +156,7 @@ def certificate_from_content(content: dict[str, Any]) -> Certificate:
     require_stated_protocol(assessments)
     require_stated_cause(assessments)
     require_distinct_assumption_ids(assumptions)
-    _require_pin_agrees_with_protocol(assessments, pin["algorithm"])
+    require_pin_agrees_with_protocol(assessments, pin["algorithm"])
     stored = OverallVerdict(content["overall"])
     derived = derive_overall(assessments, assumptions)
     if stored is not derived:

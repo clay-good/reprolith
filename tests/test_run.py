@@ -149,3 +149,33 @@ def test_a_certificate_for_another_paper_is_refused_when_no_side_states_an_ident
         overall=OverallVerdict.BLOCKED, scope=Scope(), assessments=(), assumptions=(),
     )
     require_same_paper(entry, fuller, "BIOMD10")
+
+
+def test_the_title_rule_accepts_an_inserted_word_and_refuses_a_reordering() -> None:
+    """Contiguity was the wrong lever and a token set was too loose.
+
+    A set comparison made word order free, so two different papers matched. Requiring the words to
+    be *contiguous* then refused the ordinary variation — an inserted word — including the example
+    this module's own docstring gives. And any subsequence rule needs a length floor, or a one-word
+    title names every paper containing that word.
+    """
+    from reprolith.run import _is_word_subsequence, _title_tokens
+
+    def names_the_same_paper(one: str, other: str) -> bool:
+        ours, theirs = _title_tokens(one), _title_tokens(other)
+        return bool(ours) and bool(theirs) and (
+            _is_word_subsequence(ours, theirs) or _is_word_subsequence(theirs, ours)
+        )
+
+    assert names_the_same_paper("E. coli core model", "E. coli core metabolic model")
+    assert names_the_same_paper("E. coli core", "E. coli core metabolic model")
+    assert names_the_same_paper(
+        "Effect of insulin on glucose uptake", "Effect of insulin on hepatic glucose uptake"
+    )
+    # Two different papers, same words, different order.
+    assert not names_the_same_paper(
+        "Effect of insulin on glucose uptake", "Effect of glucose on insulin uptake"
+    )
+    # Too short to witness anything.
+    assert not names_the_same_paper("model", "A model of glycolytic oscillations")
+    assert not names_the_same_paper("cell cycle", "The cell cycle in fission yeast")

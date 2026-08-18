@@ -243,3 +243,26 @@ def test_an_unreadable_time_course_attribute_is_reported_as_unparseable_sedml() 
     for attribute in ("initial", "start", "end", "steps"):
         with pytest.raises(ValueError, match="not parseable SED-ML"):
             parse_sedml_recipes(template.format(**{**good, attribute: "abc"}))
+
+
+def test_a_skipped_simulation_cannot_fail_the_whole_document() -> None:
+    """A time course this parser deliberately drops must not be parsed for values nobody uses.
+
+    Hoisting the conversions above the skip so they could share one `try` meant an unreadable
+    attribute on a task no recipe describes failed the entire document.
+    """
+    from reprolith.sedml import parse_sedml_recipes
+
+    document = """<?xml version="1.0" encoding="UTF-8"?>
+<sedML xmlns="http://sed-ml.org/sed-ml/level1/version3" level="1" version="3">
+ <listOfModels><model id="m1" language="urn:sedml:language:sbml" source="m.xml"/></listOfModels>
+ <listOfSimulations>
+  <uniformTimeCourse id="skipme" initialTime="5" outputStartTime="5"
+                     outputEndTime="not-a-number" numberOfSteps="10"/>
+  <uniformTimeCourse id="good" initialTime="0" outputStartTime="0"
+                     outputEndTime="10" numberOfSteps="100"/>
+ </listOfSimulations>
+ <listOfTasks><task id="t1" modelReference="m1" simulationReference="good"/></listOfTasks>
+</sedML>"""
+    recipes = parse_sedml_recipes(document)
+    assert [(r.task_id, r.duration, r.steps) for r in recipes] == [("t1", 10.0, 100)]

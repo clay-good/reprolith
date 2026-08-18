@@ -921,6 +921,40 @@ Three passes, forty-six findings, and the shape of the last two is the same: **a
 and the claim is worth what its measurement is worth.** None of the second- or third-round defects
 were found by reasoning about the code. All of them were found by running it.
 
+### Round four: the rule was written down and not applied to the code written beside it
+
+Twelve more, four of them regressions the previous round introduced. The pattern is sharper than
+the last one and worth stating exactly: **round three fixed which values a probe may evaluate,
+wrote that rule into the docstring, and then authored two new code paths in the same commit that
+break it.** The uniform-profile branch probed `lo + ε` — outside the profile, three lines under a
+docstring saying "every probe is a value the profile holds" — and a reaction defined only up to its
+carrying capacity crashed with a bare `math domain error`. The two-species probe held the partner
+species at `0.0`, a value the run never visits.
+
+A uniform profile is not probed at all now. That is sound rather than a gap: the instability being
+guarded against is neighbouring grid points decoupling, and a profile with no spatial variation has
+no such mode — the moment the reaction moves it, the re-check fires on the range it reaches.
+
+The same round-three commit added the growth re-check to the one-species solver and not to its
+two-species neighbour, so an identical model refused at `dt = 0.008` in one and returned 5.65
+against a true 10.0 in the other. Threading the range already checked matters as much as the
+re-check itself: a profile that stays uniform at every step is degenerate on every individual
+check, so without the union the guard probes nothing at all while the values walk somewhere far
+stiffer.
+
+Three guards were still weaker or stricter than their own stated rule. A pin naming *both* paths
+satisfied whichever branch was asked. The builder did not enforce the pin/protocol agreement its
+own loader does, so `build_certificate` could mint a certificate `certificate_from_content`
+refuses — and the logical front-end's version of the check disagreed with both, which is three
+guards and two answers about one certificate. And the title rule swung from a token set (word order
+free: "Effect of insulin on glucose uptake" matched "Effect of glucose on insulin uptake") to
+contiguous words (refusing an inserted word, including this note's own example), when what it wanted
+was an order-preserving subsequence with a length floor — because every one-word title is a
+subsequence of something, so "model" would otherwise name any paper containing the word.
+
+Four rounds, fifty-eight findings. The yield per round has barely moved: 26, 17, 12, 12. What has
+moved is where they live — from the engine, to the fixes, to the fixes' own new branches.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

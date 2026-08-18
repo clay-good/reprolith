@@ -1222,7 +1222,13 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - stdio
                         catalog.restore(json.loads(text))
                 yield
             finally:
-                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                # Best-effort: closing the handle releases the lock anyway, and by this point the
+                # mutation has committed and persisted. Raising here reported a change that took
+                # effect as a failed call, and a client that retries on error double-applies it.
+                try:
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                except OSError:
+                    pass
 
     import time
 

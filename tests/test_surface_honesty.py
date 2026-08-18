@@ -269,8 +269,12 @@ def test_every_class_front_end_can_publish_a_miss_it_was_not_handed_a_cause_for(
     assert population.overall is OverallVerdict.NOT_REPRODUCED
     assert population.assessments[0].root_cause == "uncategorized"
 
+    from reprolith.logical import solver_pin_for
+
     logical = certify_logical(
-        paper=_PAPER, engine_pin=_PIN,
+        # The logical pin has to name the path that ran (enumeration or SAT); the shared `_PIN`
+        # here names neither, and this test is about the root cause, not the pin.
+        paper=_PAPER, engine_pin=solver_pin_for(nodes=2),
         claims=[LogicalClaim(claim_id="fp", quantity="the reported steady state",
                              rules={"A": "!B", "B": "!A"}, reported={"A": 1, "B": 1},
                              source_location="Fig 2")],

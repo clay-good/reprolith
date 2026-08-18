@@ -43,13 +43,33 @@ def _title_tokens(title: str) -> list[str]:
     )]
 
 
+#: The shortest title that can witness an identity on its own, and the share of the longer title it
+#: has to cover. A one-word title ("model") is inside half the literature; a title that names three
+#: of the other's twelve words is not naming that paper either.
+_MIN_WITNESS_WORDS = 3
+_MIN_WITNESS_SHARE = 0.6
+
+
 def _is_word_subsequence(inner: list[str], outer: list[str]) -> bool:
-    """Whether ``inner``'s words appear in ``outer`` contiguously and in order."""
-    if len(inner) > len(outer):
+    """Whether ``inner``'s words all appear in ``outer``, in order, and it is long enough to mean it.
+
+    Order-preserving but *not* contiguous: the ordinary variation between two records of one paper
+    is an inserted word ("E. coli core model" and "E. coli core metabolic model"), which contiguity
+    refused — including the example this module's own docstring gives. Order still matters, because
+    a set comparison made word order free and matched "Effect of insulin on glucose uptake" to
+    "Effect of glucose on insulin uptake", two different papers.
+
+    The length floor is what a subsequence rule cannot do without: every one-word title is a
+    subsequence of something, so "model" would otherwise name any paper containing the word. It
+    applies to *containment* only — two records stating the same short title state the same title,
+    and there is nothing left to be suspicious of.
+    """
+    if inner == outer:
+        return True
+    if len(inner) < _MIN_WITNESS_WORDS or len(inner) < _MIN_WITNESS_SHARE * len(outer):
         return False
-    return any(
-        outer[i:i + len(inner)] == inner for i in range(len(outer) - len(inner) + 1)
-    )
+    remaining = iter(outer)
+    return all(word in remaining for word in inner)
 
 
 def require_same_paper(entry: CatalogEntry, certificate: Certificate, key: str) -> None:

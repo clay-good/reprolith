@@ -272,16 +272,26 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
     # dossier made the check blind in exactly the case it exists for: a state variable the dossier
     # lost entirely takes its equation with it, so its name was never in `needed` and the sweep
     # reported nothing — "checked and agreed" over a dossier carrying half a model, again.
+    # An algebraic rule has no variable, so `getVariable()` returns "" — and `_rule_names_in("")`
+    # then matched every one of them and pulled their math in, reporting a species the dossier
+    # already declares an `algebraic rules` gap for.
     model_rule_targets = {
-        model.getRule(i).getVariable() for i in range(model.getNumRules())
+        target
+        for i in range(model.getNumRules())
+        if (target := model.getRule(i).getVariable())
     }
     needed = set(model_rule_targets)
     for target in model_rule_targets:
         needed |= _rule_names_in(model, target)
-    for name, value in sorted(sbml_ics.items()):
+    # Species *and* the parameter-plus-rateRule idiom this ingester supports on purpose: a
+    # PK/PD model that ships no species holds its whole state that way, so sweeping species alone
+    # left the class with the most state to lose entirely unchecked.
+    stated_values = {**sbml_ics, **{k: v for k, v in sbml_params.items() if k in model_rule_targets}}
+    for name, value in sorted(stated_values.items()):
         if name in needed and name not in stated_by_dossier:
+            kind = "a species" if name in sbml_ics else "a rule-driven parameter"
             mismatches.append(
-                f"{name}: a species the model gives an initial value ({value}) but the dossier "
+                f"{name}: {kind} the model gives an initial value ({value}) but the dossier "
                 "does not state"
             )
     return mismatches

@@ -308,16 +308,16 @@ def test_lint_steady_state_is_deterministic() -> None:
 
 def test_certify_logical_builds_a_certificate_through_the_shared_builder() -> None:
     from reprolith import (
-        EnginePin,
         LogicalClaim,
         OverallVerdict,
         PaperIdentity,
         certify_logical,
     )
+    from reprolith.logical import solver_pin_for
 
     cert = certify_logical(
         paper=PaperIdentity(title="A Boolean signaling model", doi="10.9/log"),
-        engine_pin=EnginePin(engine="reprolith-logical", version="0.0.1"),
+        engine_pin=solver_pin_for(nodes=2),
         claims=[
             LogicalClaim(
                 claim_id="ss1", quantity="ON steady state", rules={"A": "!B", "B": "!A"},
@@ -335,11 +335,12 @@ def test_certify_logical_builds_a_certificate_through_the_shared_builder() -> No
 
 
 def test_certify_logical_emits_an_honest_not_reproduced_certificate() -> None:
-    from reprolith import EnginePin, LogicalClaim, OverallVerdict, PaperIdentity, certify_logical
+    from reprolith import LogicalClaim, OverallVerdict, PaperIdentity, certify_logical
+    from reprolith.logical import solver_pin_for
 
     cert = certify_logical(
         paper=PaperIdentity(title="A Boolean signaling model", doi="10.9/log"),
-        engine_pin=EnginePin(engine="reprolith-logical", version="0.0.1"),
+        engine_pin=solver_pin_for(nodes=2),
         claims=[
             LogicalClaim(
                 claim_id="bad", quantity="claimed steady state", rules={"A": "!B", "B": "!A"},
@@ -395,14 +396,17 @@ def test_certify_logical_accepts_a_generator_of_claims() -> None:
     The second pass attaches the search protocol, so it silently emptied the assessment list and
     published an earned `not-reproduced` as a blocked certificate that had evaluated nothing.
     """
-    from reprolith import EnginePin, OverallVerdict, PaperIdentity
-    from reprolith.logical import LogicalClaim, certify_logical
+    from reprolith import OverallVerdict, PaperIdentity
+    from reprolith.logical import LogicalClaim, certify_logical, solver_pin_for
 
     claims = [
         LogicalClaim(claim_id="ss", quantity="steady state", rules={"A": "!B", "B": "!A"},
                      reported={"A": 1, "B": 1}, source_location="Fig 1"),
     ]
-    pin = EnginePin(engine="reprolith-logical", version="0.0.1", algorithm="synchronous-update")
+    # From `solver_pin_for`, because a pin now has to name the path that ran: the certificate's
+    # protocol says which one it was, and a pin silent about it is a certificate with one account
+    # of how it was computed and a blank where the other belongs.
+    pin = solver_pin_for(nodes=2)
     paper = PaperIdentity(title="toggle", doi="10.0/t")
     from_list = certify_logical(paper=paper, engine_pin=pin, claims=claims)
     from_generator = certify_logical(paper=paper, engine_pin=pin, claims=iter(claims))
