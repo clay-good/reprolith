@@ -1,6 +1,6 @@
 REPRODUCTION CERTIFICATE — E. coli core metabolic model (Orth, Fleming & Palsson 2010)
   doi=10.1128/ecosalplus.10.2.1
-Engine pin: scipy-linprog 1.13.1 / highs (reprolith-fba rev 6793da5041d4)
+Engine pin: scipy-linprog 1.13.1 / highs (reprolith-fba rev 88c91cf60b6c)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

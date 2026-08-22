@@ -298,8 +298,7 @@
         {
           "path": "python/reprolith/oracle.py",
           "quotes": [
-            "(ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC): Tolerance(",
-            "0.05, 0.15, ToleranceSource.CLASS_DEFAULT"
+            "(ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC): Tolerance(\n        0.05, 0.15, ToleranceSource.CLASS_DEFAULT\n    )"
           ]
         }
       ]
@@ -323,8 +322,7 @@
         {
           "path": "python/reprolith/oracle.py",
           "quotes": [
-            "(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, ReferenceKind.NUMERIC): Tolerance(",
-            "0.10, 0.25, ToleranceSource.CLASS_DEFAULT"
+            "(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, ReferenceKind.NUMERIC): Tolerance(\n        0.10, 0.25, ToleranceSource.CLASS_DEFAULT\n    )"
           ]
         },
         "tests/test_oracle.py"

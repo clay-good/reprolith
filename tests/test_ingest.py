@@ -191,12 +191,16 @@ def test_a_reaction_network_is_recorded_as_a_gap_not_read_past() -> None:
     # shipped model still carries the reactions, so adopt-and-verify closes it and this gap does
     # not make the paper harder. What must never happen again is the gap going unrecorded.
     assert reaction_gaps[0].carried_by_artifact
-    # The difficulty is `high` all the same, and for a different gap: none of this model's eight
-    # extracted values states a unit, and a unit the artifact never states is not closed by
-    # adopting the artifact. That gap used to be flagged as carried and discounted away.
+    # This model states its units after all: it is Level 2 and defines the predefined `substance`
+    # unit as nanomole, which is the default for every species that omits `substanceUnits`. Reading
+    # only the species attribute made all eight look unstated and published a load-bearing units
+    # gap whose own text says the artifact states no unit — about values whose unit it does state.
     units = [g for g in dossier.gaps if g.element == "units"]
-    assert len(units) == 1 and not units[0].carried_by_artifact
-    assert estimate_difficulty(dossier) == "high"
+    assert units == [], f"this model states its units; {[g.detail for g in units]}"
+    # And with no false units gap left, the difficulty is `low`: the model ships its whole reaction
+    # network and states its units, so adopt-and-verify closes everything. "A difficulty of high for
+    # a fully specified model" is the exact outcome the unit resolution exists to prevent.
+    assert estimate_difficulty(dossier) == "low"
 
 
 def test_an_unstated_unit_is_recorded_as_missing_rather_than_called_dimensionless() -> None:
@@ -371,9 +375,14 @@ def test_a_model_element_the_dossier_never_states_is_a_mismatch_not_a_silence() 
     for model in (_BOUNDARY_STATE_MODEL, _CONSTANT_SPECIES_MODEL):
         dossier = ingest_sbml(model, entry="e", source_label="m.xml")
         assert [m for m in compare_sbml_to_dossier(model, dossier) if "does not state" in m]
-    # …and it stays quiet on a model the dossier fully carries.
+    # …and on a model whose values a rule computes, it says that rather than either falling silent
+    # or calling them absent: three cases, not two. (Zero of these fire on the committed metformin
+    # model, the real adopt-and-verify path, because ingestion keeps rule-determined names out of
+    # the dossier's stated values in the first place.)
     fully_stated = ingest_sbml(_ASSIGNMENT_MODEL, entry="e", source_label="m.xml")
-    assert compare_sbml_to_dossier(_ASSIGNMENT_MODEL, fully_stated) == []
+    reported = compare_sbml_to_dossier(_ASSIGNMENT_MODEL, fully_stated)
+    assert all("a rule determines it" in m for m in reported), reported
+    assert not [m for m in reported if "not present in the model" in m]
 
 
 def test_a_model_level_substance_unit_is_read_as_stated() -> None:

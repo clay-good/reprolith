@@ -114,44 +114,60 @@ def test_the_builder_refuses_to_publish_a_class_that_is_missing() -> None:
         module.collect()
 
 
-def test_a_certificate_citing_a_paper_says_where_its_reference_value_came_from() -> None:
+def test_every_tool_backed_reference_names_the_tool_that_produced_it() -> None:
     """A `source_location` names where the reference VALUE came from, not just which paper.
 
     The claims dataset says so in as many words: "A claim's reference value comes from the paper
     (cited in `source_location`), not from re-running the model." For twenty of the thirty
     published certificates it did not — the reference was computed by COBRApy, libRoadRunner or
-    CANA re-running the same model file, which is what makes the cross-validation non-circular and
-    is the whole point of those sets. Citing only the publication let a certificate read as a
-    reproduction of the paper's own published number, over its DOI, when a reader following that
-    pointer would find no such number.
+    CANA re-running the same model file, which is what makes the cross-validation non-circular.
+
+    Driven from the datasets that record `reference_tool`, not from sniffing the rendered citation
+    for "doi:" or "et al.". That filter exempted the three kinetic entries whose papers are cited
+    by author-year model name ("Tyson1991 - Cell Cycle 6 var"), and since they were never counted,
+    the count floor did not notice: their attribution could be removed with the whole suite green.
     """
     import json
     from pathlib import Path
 
     datasets = Path(__file__).parent.parent / "datasets"
-    tool_backed = {
-        "constraint_based/milestone/certificates": "COBRApy",
-        "kinetic/milestone/certificates": "libRoadRunner",
-        "logical/milestone/certificates": "CANA",
-    }
-    checked = 0
-    for directory, tool in tool_backed.items():
-        paths = sorted((datasets / directory).glob("*.json"))
-        assert paths, f"{directory} publishes no certificates to check"
-        for path in paths:
-            content = json.loads(path.read_text(encoding="utf-8"))
-            for assessment in content["assessments"]:
-                cited = assessment["source_location"]
-                # Only the entries that cite a real publication make the claim this guards.
-                if "doi:" not in cited and "et al." not in cited:
-                    continue
-                checked += 1
-                assert "reference" in cited and (
-                    "computed by" in cited
-                ), f"{path.name} cites a publication without saying where its reference came from"
-                assert tool in cited or "sympy" in cited, (
-                    f"{path.name} names no reference tool; expected {tool}"
-                )
-    # 19 today: 7 constraint-based (e_coli_core's 0.873922 IS a documented literature
-    # value), 6 kinetic, 6 logical. A floor, so the guard cannot quietly stop biting.
-    assert checked >= 19, f"only {checked} publication-citing claims found; the guard is not biting"
+
+    def cited(directory: str, accession: str) -> str:
+        content = json.loads(
+            (datasets / directory / f"{accession}.json").read_text(encoding="utf-8")
+        )
+        return " ".join(a["source_location"] for a in content["assessments"])
+
+    expected: dict[tuple[str, str], str] = {}
+
+    kinetic = json.loads((datasets / "kinetic" / "cross_validation.json").read_text("utf-8"))
+    for model in kinetic["models"]:
+        expected[("kinetic/milestone/certificates", model["id"])] = model["reference_tool"]
+
+    growth = json.loads(
+        (datasets / "constraint_based" / "cross_validation" / "reference_growth.json")
+        .read_text("utf-8")
+    )
+    for model_id, record in growth["models"].items():
+        expected[("constraint_based/milestone/certificates", model_id)] = record["reference_tool"]
+
+    for name in ("reference", "scalable_fixed_points"):
+        logical = json.loads(
+            (datasets / "logical" / "cross_validation" / f"{name}.json").read_text("utf-8")
+        )
+        tool = logical["_source"].split(";")[0].split(":")[0].strip()
+        for key in logical["models"]:
+            expected[("logical/milestone/certificates", key)] = tool
+
+    # 6 kinetic + 7 genome-scale FBA + 6 CANA logical + 3 SAT logical. An equality, not a
+    # floor: a floor cannot notice an entry that was never counted, which is how the
+    # previous version of this gate exempted three certificates.
+    assert len(expected) == 22, f"the reference datasets describe {len(expected)}, not 22"
+
+    for (directory, accession), tool in sorted(expected.items()):
+        text = cited(directory, accession)
+        assert "computed by" in text, (
+            f"{accession} cites its paper without saying where its reference value came from"
+        )
+        head = tool.split()[0]
+        assert head in text, f"{accession} names no reference tool; expected {tool!r}"

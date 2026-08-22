@@ -122,8 +122,18 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
         # attribute, so reading only the species attribute reported a unit the model does state as
         # absent — a load-bearing gap whose own text asserted something false about the artifact,
         # and a difficulty of "high" for a fully specified model.
+        # `_stated_substance_units` follows BOTH levels' defaulting rules. This call site applied
+        # only Level 3's model-level fallback, so on Level 2 — where the default is the predefined
+        # `substance` unit, which a model may redefine and four of the six committed L2 models do —
+        # it got '' and recorded every species' unit as unstated. That published a load-bearing gap
+        # whose own text says the artifact states no unit for values whose unit the artifact does
+        # state, and pushed a fully specified model's difficulty to high: verbatim the Level 3
+        # defect recorded as fixed a few lines up, re-created one level down. The sibling's
+        # docstring claimed this parity; this is it.
+        from .sbml import _stated_substance_units
+
         species_unit, species_normalized = _resolve_unit(
-            model, species.getSubstanceUnits() or model.getSubstanceUnits()
+            model, _stated_substance_units(model, species)
         )
         initial_conditions.append(
             Parameter(

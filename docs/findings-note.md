@@ -1577,6 +1577,40 @@ serialized, digested, reloaded through `certificate_from_content` and rendered, 
 honesty path refusing it. An annotation is not a check, least of all at a boundary that mints
 certificates.
 
+### A fix that did not achieve its purpose
+
+Re-auditing the previous round found four more, and the first is the sharpest kind: a repair that
+looked right, passed, and did not do the thing it was for.
+
+- **The curve tolerance's loop note still did not redden when the tolerance was widened.** The
+  previous round gave the two load-bearing tolerance notes quoted citations, and the commit said
+  "both now quote". They did — but the curve note was split into two quotes and the second,
+  `"0.10, 0.25, ToleranceSource.CLASS_DEFAULT"`, is *not unique*: it also matches
+  `_ESTIMATION_DEFAULT`. Widen the curve default and the note stays satisfied by a line it does not
+  cite. Measured: scalar and band mutations redden the note gate, the curve one does not. Both notes
+  now quote the whole three-line block, which occurs exactly once. Quoting is not enough; the quote
+  has to be unique.
+- **The new provenance gate exempted three of the six kinetic certificates.** It sniffed the
+  rendered citation for `doi:` or `et al.`, and three entries cite their paper by author-year model
+  name — "Tyson1991 - Cell Cycle 6 var". They were never checked, and because they were never
+  *counted*, the `>= 19` floor could not notice: their attribution could be stripped with the whole
+  suite green, which is exactly the defect the gate was added to prevent. It is driven from the
+  datasets that record `reference_tool` now, and asserts an exact count rather than a floor — a
+  floor cannot see an entry it never counted.
+- **The Level 2 rule was not, in fact, taught to the neighbour whose docstring claimed it.** The
+  stochastic ingester learned that Level 2 defaults a species to the predefined `substance` unit,
+  and its docstring said "`_resolve_unit` learned this same rule one module over; this is its
+  neighbour." It had not: the call site applied only Level 3's model-level fallback, so on Level 2
+  every species' unit was recorded as unstated. Measured on the committed corpus, that published a
+  *load-bearing* gap reading "8 of 8 extracted values state no unit in the artifact" about a model
+  that defines `substance` as nanomole — and pushed a fully specified model's difficulty to high,
+  which is verbatim the Level 3 defect recorded as fixed a few lines above it. Four of the six
+  committed Level 2 kinetic models were affected. Two of them now report no units gap at all, and
+  one drops from `high` difficulty to `low`.
+- And the initial-condition branch still said "not present in the model" for a parameter that is
+  present and rule-determined — the three-case split the parameter branch had just been given,
+  missing from its twin ten lines below.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

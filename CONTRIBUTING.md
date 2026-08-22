@@ -117,6 +117,12 @@ when you add a check, a refusal, or a stability rule:
   state a value no paper could state, because the assumption was Reprolith's engine limit rather
   than their omission — and the sentence explaining that was printed by a sibling surface and
   dropped by the one whose job is to be acted on.
+- **A quote is evidence only if it is unique.** Two notes were given quoted citations so that
+  changing a tolerance would redden them. One quote also matched a different constant, so widening
+  that tolerance left the note satisfied by a line it does not cite. Check the string occurs once.
+- **A floor cannot see what it never counted.** A gate that filters its population by sniffing a
+  rendered string, then asserts `>= N`, is silent about everything the filter skipped — three
+  certificates in this case. Drive the population from the data, and assert the exact count.
 - **If a tool tells you it failed, read it.** The pinned engine reports an abandoned time course by
   returning `False` and recording the samples it reached — all finite, so the non-finite guard
   cannot see it. That return value was discarded and the sample count never compared to the one

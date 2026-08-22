@@ -305,7 +305,15 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
                     f"parameter {parameter.name}: dossier {parameter.value} != model {stated}"
                 )
     for ic in dossier.initial_conditions:
-        if ic.name not in comparable_ics:
+        if ic.name in rule_determined:
+            # The same three cases the parameter branch above distinguishes: an assignment rule
+            # determines this one, so it IS in the model and has no stated value to compare
+            # against. Reported as "not present in the model", which is false about the artifact.
+            mismatches.append(
+                f"initial condition {ic.name}: stated by the dossier ({ic.value}) but a rule "
+                "determines it in the model, so there is no stated value to compare"
+            )
+        elif ic.name not in comparable_ics:
             # "No disagreement" has to mean the values were compared, so a dossier initial
             # condition with no counterpart anywhere in the model is reported rather than passed
             # over — the parameter branch above already reports its own version of this.
