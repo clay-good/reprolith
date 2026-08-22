@@ -99,8 +99,15 @@ class InfeasibleFba(RuntimeError):
 
 
 # Relative slack for re-imposing optimality in flux variability: only used to rescue a reaction the
-# solver wrongly calls infeasible on the exact-optimum boundary. Small enough that the recovered
-# flux stays within the FROG cross-validation tolerance (1e-6). See :func:`_extreme_at_optimum`.
+# solver wrongly calls infeasible on the exact-optimum boundary. See :func:`_extreme_at_optimum`.
+#
+# It used to say the recovered flux "stays within the FROG cross-validation tolerance (1e-6)", and
+# that is measurably not true at genome scale. Reprolith-vs-COBRApy interval agreement degrades with
+# model size: max difference 2.97e-12 on e_coli_core (95 reactions), 2.55e-08 on iIT341 (554), and
+# 1.85e-03 on iAF1260 (2382) — three orders of magnitude *above* this constant, not below it. That
+# is LP conditioning, not this slack, and it does not make a verdict wrong: `judge_flux` reads a
+# wider interval as un-pinned and abstains, which is the conservative direction. But the number
+# here is not a bound on how closely two solvers agree, and the comment claimed it was.
 _FVA_OPTIMUM_TOLERANCE = 1e-6
 
 
@@ -853,6 +860,11 @@ def judge_flux(
     lo, hi = interval
     slack = pin_tolerance * max(1.0, abs(lo), abs(hi))
     inside = lo - slack <= reported <= hi + slack
+    # A slightly inverted interval — `hi` below `lo` by ~1e-11, which the LP produces routinely at
+    # scale (86 of 200 sampled reactions on iIT341) — is a pinned flux whose two bounds were solved
+    # to slightly different roundoff, not a contradiction. `(hi - lo) <= slack` already treats it as
+    # pinned, since a negative width satisfies any positive slack; said here because absorbing it
+    # silently and absorbing it deliberately look identical in the code and are not the same thing.
     pinned = (hi - lo) <= slack
 
     if inside and pinned:

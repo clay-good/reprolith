@@ -1611,6 +1611,72 @@ looked right, passed, and did not do the thing it was for.
   present and rule-determined — the three-case split the parameter branch had just been given,
   missing from its twin ten lines below.
 
+## Does the answer change with scale?
+
+Every previous round tested the committed corpus or a small constructed model. This one pushed the
+solvers until something broke. **Nothing did** — no surviving honesty finding — and since a clean
+result is only worth its numbers, here they are.
+
+**The finite-difference solver converges cleanly and roundoff is not a factor.** A Gaussian on
+`x ∈ [-10, 10]`, D = 1, judged against the analytic `σ² = σ₀² + 2Dt` at fixed α = 0.4, with the same
+FTCS update re-run in exact rational arithmetic to separate truncation from floating point:
+
+| grid | dx | steps | RMSE/span | worst/span | float vs exact rational |
+|---|---|---|---|---|---|
+| 51 | 0.400 | 31 | 1.708e-03 | 4.525e-03 | 1.55e-16 |
+| 101 | 0.200 | 125 | 4.247e-04 | 1.121e-03 | 1.56e-16 |
+| 401 | 0.050 | 2000 | 2.736e-05 | 7.001e-05 | — |
+| 801 | 0.025 | 8000 | 9.542e-06 | 4.304e-05 | — |
+
+Clean second-order convergence, accumulation at 1.5e-16, and the coarsest grid measured is still 58x
+inside the pass threshold. The committed certificates sit in this regime and publish their grid.
+
+**The LP matches COBRApy at genome scale**, objective and parsimonious total flux alike — relative
+error 1.3e-16 on *E. coli* core rising to 2.9e-11 on iAF1260's 2,382 reactions. Summation order,
+which the brief asked about specifically, is immaterial everywhere measured: the largest
+`sum`-versus-`fsum` gap anywhere was 5.7e-13, and 7.1e-15 for the AUC trapezoid at 48,000 samples,
+against tolerances of 1e-6 and 0.10.
+
+**A published verdict does not move with sample count.** The one committed PK reproduction, varying
+only `steps`: 24 samples gives a relative error of 0.0223 and 48,000 gives 0.0215, across a
+2,000-fold change, against a 0.10 threshold. The committed choice is fully converged, and the
+protocol publishes it anyway.
+
+**The SAT path is correct at 44–60 nodes** — 16, 12 and 71 fixed points, matching a sympy-derived
+reference independent of z3, with every solution re-checked definitionally before it is kept. And
+the SSA is unbiased: immigration-death bias falls 0.500 → 0.128 → 0.018 from 100 to 10,000
+trajectories, always under two standard errors.
+
+### What the scale run did change
+
+One measured claim was false. The comment on `_FVA_OPTIMUM_TOLERANCE` said the constant keeps a
+rescued flux "within the FROG cross-validation tolerance (1e-6)". Reprolith-versus-COBRApy interval
+agreement degrades with model size — 2.97e-12 on *E. coli* core, 2.55e-08 on iIT341, **1.85e-03** on
+iAF1260 — which is three orders of magnitude *above* the constant, not below it. That is LP
+conditioning rather than this slack, and it makes no verdict wrong: a wider interval reads as
+un-pinned and abstains, the conservative direction. But the number was not a bound on how closely
+two solvers agree, and the comment said it was.
+
+The same run showed that slightly *inverted* intervals — `hi` below `lo` by about 1e-11 — are
+routine at scale, 86 of 200 sampled reactions on iIT341. `judge_flux` already treats them as pinned,
+because a negative width satisfies any positive slack, which is right: two bounds solved to
+different roundoff is a pinned flux, not a contradiction. Nothing said so, and absorbing a case
+silently looks exactly like absorbing it deliberately.
+
+### Named as unmeasured, not clean
+
+The agent was stopped while still working and reported honestly on what it had not reached, which is
+recorded here so a later session does not read this section as coverage it is not: the pinned-verdict
+comparison against COBRApy was cut off before iJO1366, so whether the iAF1260 divergence is a trend
+or a one-off is unknown; SSA ensembles above 10,000 trajectories and single trajectories of
+10⁵–10⁷ events were not run; shadow prices at genome scale were scripted but never executed; and
+the 2-D and reaction-diffusion solvers were not scaled at all — they are library-only today, with
+all three committed spatial certificates using the 1-D diffusion path.
+
+One thing worth knowing rather than fixing: exhaustive logical enumeration grows six- to eightfold
+per two nodes, so the declared 20-node ceiling costs on the order of tens of minutes. It completes
+and it is bounded; it is simply not free.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
