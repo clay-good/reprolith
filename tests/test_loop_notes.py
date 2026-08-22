@@ -156,3 +156,29 @@ def test_abstentions_are_disagreements_that_still_owe_an_explanation() -> None:
     subjects = disagreement_subjects(committed_reports())
     assert "BIOMD0000001028" in subjects
     assert len(subjects) == 31  # the PK/PD run; the other five classes disagree nowhere
+
+
+def test_a_citation_of_source_must_find_the_words_in_code_that_runs(tmp_path) -> None:
+    """A commented-out line satisfied a citation, so a fixed defect could be restored under it.
+
+    Demonstrated: restoring the stochastic root-cause defect while leaving the original line in
+    place as a comment kept this gate green, because it matched the raw file. The note's whole job
+    is to point at evidence that holds; a line that no longer runs is not that.
+    """
+    from reprolith.loop_notes import Citation
+
+    source = tmp_path / "python" / "reprolith"
+    source.mkdir(parents=True)
+    quote = "attribution = undetermined_shortfall(claim.quantity)"
+    citation = Citation(path="python/reprolith/mod.py", quotes=(quote,))
+
+    (source / "mod.py").write_text(f"def f():\n    {quote}\n", encoding="utf-8")
+    assert citation.unmet(tmp_path) == []
+
+    (source / "mod.py").write_text(f"def f():\n    # {quote}\n    pass\n", encoding="utf-8")
+    assert citation.unmet(tmp_path), "a commented-out line must not satisfy a citation"
+
+    # Prose files are matched whole — a markdown line beginning with '#' is a heading.
+    (tmp_path / "notes.md").write_text("# A heading worth citing\n", encoding="utf-8")
+    heading = Citation(path="notes.md", quotes=("# A heading worth citing",))
+    assert heading.unmet(tmp_path) == []

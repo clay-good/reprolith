@@ -295,7 +295,13 @@
           ]
         },
         "datasets/milestone/certificates/BIOMD0000001028.json",
-        "python/reprolith/oracle.py"
+        {
+          "path": "python/reprolith/oracle.py",
+          "quotes": [
+            "(ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC): Tolerance(",
+            "0.05, 0.15, ToleranceSource.CLASS_DEFAULT"
+          ]
+        }
       ]
     },
     {
@@ -314,7 +320,13 @@
             "0 false failures in 15,000 trials"
           ]
         },
-        "python/reprolith/oracle.py",
+        {
+          "path": "python/reprolith/oracle.py",
+          "quotes": [
+            "(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, ReferenceKind.NUMERIC): Tolerance(",
+            "0.10, 0.25, ToleranceSource.CLASS_DEFAULT"
+          ]
+        },
         "tests/test_oracle.py"
       ]
     },

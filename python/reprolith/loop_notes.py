@@ -124,6 +124,15 @@ class Citation:
         if not target.is_file():
             return [f"{self.path} (a directory cannot be quoted)"]
         text = target.read_text(encoding="utf-8")
+        if target.suffix == ".py":
+            # A citation of source has to find the words in code that runs. Matching the raw file
+            # let a commented-out line satisfy it: the defect a note records as fixed could be
+            # restored while the original line stayed in place as a comment, and this check went on
+            # passing. Comment lines are dropped before matching — a quote genuinely about a
+            # comment can cite the prose that explains it instead.
+            text = "\n".join(
+                line for line in text.splitlines() if not line.lstrip().startswith("#")
+            )
         return [f"{self.path}: {q!r}" for q in self.quotes if q not in text]
 
 

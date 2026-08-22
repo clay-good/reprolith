@@ -1475,6 +1475,46 @@ Three more of that round's fixes were defective in the same pass:
   with none because a rule computes it, and absent — and collapsing the middle one into either
   neighbour is what produced both defects.
 
+### Breaking the invariants on purpose
+
+Thirty mutations against a frozen copy, full suite each time, with a no-op control to calibrate:
+appending a comment to a pinned module turns two `test_pins` cases red on its own, so "773 passed,
+2 failed, both test_pins" is the signature of an *unguarded* invariant, not a caught one.
+
+Most of what this project claims held. `derive_overall`'s three downgrade routes, the scope
+statement at construction and on load, `certificate_from_content` re-deriving the overall verdict
+rather than trusting it, all four `require_*` guards, the blindness rules on both the entry and the
+query surface, `verdict_for`'s bands, the non-finite abstention, the curve worst-point term, the
+`_reference_scale` repair that was explicitly rejected, `load_bearing` in all five modules that mint
+assumptions, and tampering with a committed certificate's discrepancy, protocol or tolerance — every
+one was caught by a behavioural test. So was inflating the PK/PD agreement report, by the registry's
+byte-for-byte rebuild.
+
+Two were not, and both were tests of mine that asserted the wrong thing:
+
+- **The spatial abstention could be deleted.** Replacing the `except UnstableDiscretization` branch
+  with "judge the initial profile" left the suite green apart from the pin control. A grid at
+  α = 20, against an explicit scheme's limit of 0.5, then published `reproduced` — the "a simulation
+  that never happened reads as a perfect reproduction" failure the module names as its own. The test
+  guarding it had the right comment above the right call and asserted only that nothing raised.
+- **A source-text test let a fixed defect return.** The stochastic root-cause test read
+  `inspect.getsource` and checked for two substrings. Comments are source, so restoring the defect
+  while leaving the original line in place as a comment satisfied it — and satisfied the loop note
+  citing that same line. A previous round's agent had already flagged this test as pinning the
+  letter rather than the behaviour, and I did not act on it; that is the second time in this session
+  I was told something about my own test hygiene and left it.
+
+Both now assert the published verdict and root cause. And the citation check no longer matches
+commented-out code: a note citing source has to find the words in code that runs, since a line that
+no longer executes is not the evidence the note claims to rest on.
+
+One thing survived that is not an escape but is the familiar shape. Widening the scalar tolerance
+from 5%/15% to 20%/35% is caught thirteen times over by behavioural tests — but the *written record*
+does not notice, because the notes for the two defaults every committed certificate actually uses
+cite `oracle.py` as a bare path with no quotes, while the other four quote their exact `Tolerance(…)`
+lines. The record could have stated 5% over code saying 20%. The rule reached four cases and not the
+two that mattered most; both now quote their source.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

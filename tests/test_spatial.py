@@ -551,19 +551,29 @@ def test_a_spatial_claim_the_judge_abstains_on_does_not_mint_an_assumption() -> 
 
 def test_a_caller_error_still_raises_where_an_unstable_grid_abstains() -> None:
     """`except ValueError` was broad enough to publish a sign error as an honest abstention."""
-    from reprolith import PaperIdentity
+    from reprolith import OverallVerdict, PaperIdentity, Verdict
     from reprolith.spatial import SpatialClaim, certify_spatial, solver_pin
 
-    def certify(**kw) -> None:
-        certify_spatial(
+    def certify(**kw):
+        return certify_spatial(
             paper=PaperIdentity(title="t", doi=""), engine_pin=solver_pin(),
             claims=[SpatialClaim(claim_id="c", quantity="profile", initial=(1.0, 0.0, 0.0, 0.0),
                                  reference=(1.0, 0.0, 0.0, 0.0), source_location="s",
                                  dx=1.0, dt=0.2, steps=2, **kw)],
         )
 
-    # An unstable discretization is a published abstention…
-    certify(diffusivity=100.0)
+    # An unstable discretization is a published abstention — and the abstention is what is
+    # asserted, not merely that nothing raised. Asserting only "no exception" let the whole
+    # abstention branch be deleted with the suite staying green: the certificate then read the
+    # initial profile back as the answer and published `reproduced` for a grid at alpha = 20
+    # against an explicit scheme's limit of 0.5, which is the "a simulation that never happened
+    # reads as a perfect reproduction" failure this module names as its own.
+    unstable = certify(diffusivity=100.0)
+    assert unstable.overall is OverallVerdict.BLOCKED
+    assert unstable.assessments[0].verdict is Verdict.NOT_EVALUABLE
+    assert "unstable" in (unstable.assessments[0].root_cause or "") or "unstable" in (
+        unstable.assessments[0].discrepancy or ""
+    )
     # …a negative diffusivity is a bug in the caller, and still raises.
     with pytest.raises(ValueError, match="must not be negative"):
         certify(diffusivity=-1.0)

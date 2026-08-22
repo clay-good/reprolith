@@ -12,6 +12,7 @@ import random
 
 import pytest
 from reprolith import (
+    FailureMode,
     PercentileBand,
     Reaction,
     ReferenceKind,
@@ -616,17 +617,42 @@ def test_a_decisively_wrong_ensemble_is_judged_not_ruled_unresolvable() -> None:
 def test_a_stochastic_shortfall_is_not_filed_under_the_cause_just_ruled_out() -> None:
     """Nothing reaches the attribution until the guard has excluded sampling noise as the cause.
 
-    The class defaulted every shortfall to `finite-ensemble-sampling-noise` anyway, so a large
-    discrepancy was filed under a small noise source — the nearest-wrong-cause that the
-    `uncategorized` escape hatch exists to prevent, and the one class front-end that did not use it.
+    The class used to default every shortfall to `finite-ensemble-sampling-noise` anyway, filing a
+    large discrepancy under a small noise source — the nearest-wrong-cause that `uncategorized`
+    exists to prevent.
+
+    Asserted on the published root cause, not on the source text. This test read
+    `inspect.getsource` and checked for two substrings, which a comment satisfies: the whole defect
+    could be restored, with the original line left in place as a comment, and this test — and the
+    loop note citing that same line — both stayed green.
     """
-    import inspect
+    from reprolith import PaperIdentity
+    from reprolith.stochastic import (
+        Reaction,
+        StochasticClaim,
+        certify_stochastic,
+        solver_pin,
+    )
 
-    from reprolith import stochastic
-
-    source = inspect.getsource(stochastic.certify_stochastic)
-    assert "undetermined_shortfall(claim.quantity)" in source
-    assert "FailureMode.FINITE_ENSEMBLE_SAMPLING" not in source
+    # Immigration-death with a stationary mean of ~10, against a paper reporting 100: a ~90% miss,
+    # far outside anything 200 trajectories of sampling noise could explain.
+    reactions = [
+        Reaction(rate=10.0, reactants=(), products=((0, 1),)),
+        Reaction(rate=1.0, reactants=((0, 1),), products=()),
+    ]
+    certificate = certify_stochastic(
+        paper=PaperIdentity(title="a decisive miss", doi="10.1/x"),
+        engine_pin=solver_pin(), n_species=1, reactions=reactions, initial=(10,),
+        claims=[StochasticClaim(claim_id="c1", quantity="stationary mean", species=0,
+                                reported_mean=100.0, source_location="Table 1",
+                                duration=20.0, trajectories=200, seed=7)],
+    )
+    assessment = certificate.assessments[0]
+    assert assessment.verdict is Verdict.FAILED
+    assert assessment.root_cause == FailureMode.UNCATEGORIZED.value, (
+        f"a 90% miss was filed under {assessment.root_cause!r}, a cause the resolvability guard "
+        "has already excluded"
+    )
 
 
 def test_a_run_that_does_not_advance_cannot_certify() -> None:
