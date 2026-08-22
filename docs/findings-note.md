@@ -1274,6 +1274,90 @@ all clean. Two things were not.
   entry's permanent history while the CLI reading the same directory reported it superseded. The
   ledger is now re-read under the same lock, keyed on the certificate directory's mtime.
 
+## Six classes compared with each other, and a file that means something else
+
+Round four took four angles: the previous round's fixes again; a differential audit *across* the six
+classes rather than within one; a sweep for silent truncation; and semantically hostile model files
+checked against independent tools. Every angle paid, and half the findings were again in the
+previous rounds' own work.
+
+**The unit resolution, third time.** Two more ways it was wrong. SBML Level 2 predefines five unit
+names — `substance`, `volume`, `area`, `length`, `time` — that a model may use without defining
+them, and reading them as unresolvable identifiers made the units gap say "N of M extracted values
+state no unit **in the artifact**" about values whose unit the artifact does state, pushing a fully
+specified model from low difficulty to high: the exact defect this resolution was added to remove,
+re-created one level down. And `getExponent()` truncates, so a valid `exponent="0.5"` published as
+`metre^0` — a different physical dimension, at `quoted` confidence.
+
+**The guard that was both too narrow and too strict at once.** The kinetic-law shadow check added
+last round read `getNumLocalParameters`, a Level 3 accessor that returns 0 on Level 2 — and five of
+the six committed kinetic models are Level 2, including the one whose 135 local parameters the guard
+was written for. It saw 10 of the corpus's 234. It also unioned every reaction's locals flatly, so a
+global shadowed in one reaction was refused where it is the live value in another — the ordinary
+"global default, per-reaction local override" idiom — refusing an override that moved the answer
+7.4×, under a message stating the opposite. It now refuses only an id that no law anywhere reads
+from global scope, read level-agnostically: 119 ids on the model that previously showed 0.
+
+**Comparing the six classes with each other** found two contracts that five honour and one does not.
+A zero-duration ensemble comes back as the initial state, and a claim stated there certified as
+`reproduced` at relative error 0.0000 — while both time-advancing siblings refuse exactly that at
+their certifying front end, and the MCP boundary already refuses it here. And the stochastic protocol
+was the only one not naming what it read: the network, the initial state and the species count are
+all certificate-level, so two claims reading different species had byte-identical protocol strings
+while disagreeing about the answer.
+
+The same comparison caught the resolvability fix reaching one surface and not its twin: the linter
+omitted the observed mean, so a threefold over-prediction sitting 66 standard errors outside the
+pass band certified as `failed` and linted as "insufficient information" — the sentence this note
+already called arithmetically false, still live on the agent-facing gate. The test meant to keep the
+two aligned called the shared function directly and never the call sites, so it stayed green; it now
+drives both.
+
+**Files that mean something else.** Three well-formed artifacts, zero libSBML diagnostics each,
+walked past guards written for exactly their hazard — all in the path an untrusted MCP caller
+reaches:
+
+- A Level 2 `stoichiometryMath` (`A → n B`, n=5) read as stoichiometry 1. libRoadRunner gives 500
+  molecules; Reprolith gave 100, and `reported_mean=500` — the model's own answer — published as
+  `failed`. The `constant` attribute the guard tested is Level 3 only.
+- A model-level `substanceUnits="mole"` is the default for every species that omits the attribute,
+  so a model declaring itself in moles passed the guard whose docstring says "a species declared in
+  moles is read verbatim, so 100 mol becomes 100 molecules and every noise statistic the class
+  exists to reproduce is computed for a different system". The sibling ingester already reads that
+  fallback.
+- Only the *model's* `conversionFactor` was refused, not a *species'*, which rescales that species'
+  contribution to every reaction's extent: 1000 under libRoadRunner against 100 here.
+
+**And four things that quietly did less than they said.** A missing class agreement report was
+skipped rather than refused, so the registry banner, the CLI table and the MCP payload all published
+a smaller denominator as the whole truth — 60 labelled entries becoming 57, on a page still
+rendering that class's three certificates. `compare_sbml_to_dossier` kept the *first* value seen
+under a local parameter name, so a model holding `k1` at 0.1 and 999.0 reported "no disagreement"
+against a dossier stating either one, decided by reaction order. A blocked entry recorded the first
+of several gap notes as though it were the blockers. And the non-constant-stoichiometry gap named
+one reaction and stopped, under-naming the affected set with no count.
+
+And three more in the round before's fixes, found by re-auditing it:
+
+- **A parameter the model does contain, reported as absent.** Excluding rule-determined names from
+  the model's parameter dictionary excluded them from *membership* too, so a faithfully ingested
+  dossier reported its own source file as "not present in the model". Worse, the exclusion covered
+  *rate*-rule targets, whose `value` is not inert at all — it is the initial condition, and
+  "a parameter plus a rate rule" is the PK/PD idiom the ingester supports on purpose. It silently
+  undid the earlier fix whose comment sits four lines below it, the one that exists because
+  comparing against species alone read a hundred-fold disagreement in a dose as agreement. What has
+  no stated value to compare is a narrower thing than what the model does not contain.
+- **A change signal blind to how this repository publishes.** The ledger refresh keyed on the
+  certificate directory's mtime — which moves when a file is added or removed, and does not move
+  when an existing file is rewritten in place. Every milestone script writes `<accession>.json`, so
+  a corrected certificate republished under its own name stayed invisible to a live server for the
+  life of the process: precisely the case the refresh was added for. It now fingerprints the
+  listing.
+- **One bad file, then permanent quiet degradation.** The directory was marked seen *before* the
+  load, so a single unreadable certificate raised once and was then skipped forever, leaving every
+  valid file beside it unread — the smaller-track-record failure that `load_certificates` refuses
+  to allow for one file, reintroduced for a whole directory.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

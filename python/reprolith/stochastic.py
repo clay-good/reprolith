@@ -346,10 +346,17 @@ class StochasticClaim:
 
 
 def _protocol(claim: StochasticClaim) -> str:
-    """The sampling a stochastic assessment rests on, in the form the certificate records."""
+    """The sampling a stochastic assessment rests on, in the form the certificate records.
+
+    The species is named because it is the only per-claim degree of freedom that moves the number:
+    the network, the initial state and the species count are all certificate-level, so two claims
+    reading different species had byte-identical protocols while disagreeing about the answer. Every
+    other class with a read to choose records it — the ODE classes write `read=[X] cmax`, FBA writes
+    `maximize: <reaction>` — and this was the one that did not.
+    """
     return (
         f"SSA ensemble: {claim.trajectories} trajectories to t={claim.duration:g}, "
-        f"seed {claim.seed}"
+        f"seed {claim.seed}, read=species[{claim.species}]"
     )
 
 
@@ -524,6 +531,18 @@ def certify_stochastic(
     judged: list[StochasticClaim] = []
     assessments = []
     for claim in claims:
+        # A run that does not advance is not evidence about the model: the ensemble comes back as
+        # the initial state, and a claim stated at that state judges as `reproduced` at relative
+        # error 0.0000. Both time-advancing siblings refuse it at their certifying front end —
+        # spatial for `steps < 1`, the ODE engine for a non-positive duration — and the MCP
+        # boundary already refuses it here. The sampler itself keeps allowing a zero-duration
+        # request, which is a well-defined way to ask for the initial state; what is refused is
+        # certifying a claim against one.
+        if claim.duration <= 0.0:
+            raise ValueError(
+                f"claim {claim.claim_id!r} asks for a run of {claim.duration!r} time units: a "
+                "stochastic claim must advance the ensemble to be evidence about the model"
+            )
         ensemble = ensemble_final_counts(
             n_species, reactions, initial,
             duration=claim.duration, trajectories=claim.trajectories, seed=claim.seed,

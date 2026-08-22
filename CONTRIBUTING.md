@@ -96,6 +96,10 @@ when you add a check, a refusal, or a stability rule:
   found every reference value reproducible — and one of them credited to a paper reporting a
   different number, because the reference network has a node the paper's does not. Check that the
   source you cite reports the thing you cite it for, not merely that your number is right.
+- **An accessor has a version, and so does the file.** A guard that read a Level 3 accessor saw
+  nothing on Level 2, which is most of the curated corpus — it covered 10 of 234 cases while its
+  comment claimed all of them. When you read a model through a library, check the attribute exists
+  at the level the files you actually ingest are written in.
 - **If a tool tells you it failed, read it.** The pinned engine reports an abandoned time course by
   returning `False` and recording the samples it reached — all finite, so the non-finite guard
   cannot see it. That return value was discarded and the sample count never compared to the one

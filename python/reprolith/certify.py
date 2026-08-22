@@ -126,6 +126,42 @@ def _run_protocol(
     return stated
 
 
+def _fully_shadowed_ids(model: Any) -> set[str]:
+    """Global parameter ids that *every* kinetic law referencing them shadows with its own local.
+
+    Two ways the first attempt at this was wrong. It read `getNumLocalParameters`, which is a
+    Level 3 accessor returning 0 on Level 2 — and five of the six committed kinetic models are
+    Level 2, including the one whose 135 local parameters the guard was written for, so it saw 10
+    of the corpus's 234. And it unioned every reaction's locals flatly, so a global shadowed in one
+    reaction was refused even where it is the live value in another: the ordinary "global default,
+    per-reaction local override" idiom. Measured, that refused an override that moved the answer
+    7.4x, under a message stating the opposite.
+
+    So: read the level-agnostic `getParameter`, and refuse only an id that no law anywhere reads
+    from the global scope. An id nothing references at all is not shadowed — overriding it is a
+    different kind of no-op, and one this function does not claim to catch.
+    """
+    referencing: dict[str, list[bool]] = {}
+    for i in range(model.getNumReactions()):
+        law = model.getReaction(i).getKineticLaw()
+        if law is None:
+            continue
+        locals_here = {law.getParameter(j).getId() for j in range(law.getNumParameters())}
+        formula = law.getFormula() or ""
+        for name in locals_here:
+            referencing.setdefault(name, [])
+        for name in _symbols_in(formula):
+            referencing.setdefault(name, []).append(name in locals_here)
+    return {name for name, shadows in referencing.items() if shadows and all(shadows)}
+
+
+def _symbols_in(formula: str) -> set[str]:
+    """The bare identifiers a kinetic-law formula mentions."""
+    import re
+
+    return set(re.findall(r"[A-Za-z_][A-Za-z_0-9]*", formula))
+
+
 def _apply_overrides(sbml: str, overrides: tuple[tuple[str, float], ...]) -> str:
     from .sbml import _libsbml
 
@@ -156,13 +192,7 @@ def _apply_overrides(sbml: str, overrides: tuple[tuple[str, float], ...]) -> str
         model.getInitialAssignment(i).getSymbol()
         for i in range(model.getNumInitialAssignments())
     }
-    shadowed = {
-        law.getLocalParameter(j).getId()
-        for i in range(model.getNumReactions())
-        for law in [model.getReaction(i).getKineticLaw()]
-        if law is not None
-        for j in range(law.getNumLocalParameters())
-    }
+    shadowed = _fully_shadowed_ids(model)
     for name, value in overrides:
         parameter = model.getParameter(name)
         if parameter is None:

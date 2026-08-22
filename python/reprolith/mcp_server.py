@@ -572,9 +572,7 @@ def record_result(
         at=_history_stamp(arguments, at=at),
         actor=requester,
         blocked_reason=(
-            certificate.gap_report[0]
-            if certificate.gap_report
-            else "the certificate reports no evaluable claim"
+            certificate.gap_report or ("the certificate reports no evaluable claim",)
         ),
         reason=f"result recorded from certificate {arguments['digest']}",
     )
@@ -1131,8 +1129,18 @@ def milestone_agreement_reports() -> dict[str, dict[str, Any]]:
     reports: dict[str, dict[str, Any]] = {}
     for label, certs_dir in milestone_certificate_dirs().items():
         report_file = certs_dir.parent / "agreement_report.json"
-        if report_file.is_file():
-            reports[label] = json.loads(report_file.read_text(encoding="utf-8"))
+        if not report_file.is_file():
+            # Skipped, a class simply vanished from the published track record: the registry
+            # banner, the CLI table and the MCP payload all state `classes` and `labelled_entries`
+            # as sums over whatever was found, so removing one report turned 60 labelled entries
+            # into 57 and 6 classes into 5 — asserted as the whole truth, exit 0, no warning, on a
+            # page still rendering that class's three certificates. `build_registry.collect` raises
+            # for exactly this on the certificate directory; its sibling here never got the rule.
+            raise FileNotFoundError(
+                f"no agreement report for the {label!r} class at {report_file} — the published "
+                "track record would silently omit it; run that class's milestone script"
+            )
+        reports[label] = json.loads(report_file.read_text(encoding="utf-8"))
     return reports
 
 
@@ -1208,26 +1216,52 @@ def refresh_catalog_from_disk(catalog: Catalog, catalog_file: Path) -> None:
         )
 
 
-def refresh_certificates(
-    ledger: CertificateLedger, directories: Sequence[Path], seen: dict[Path, float]
-) -> None:
-    """Re-read any certificate directory whose mtime has moved since ``seen`` last recorded it.
+def _directory_fingerprint(directory: Path) -> tuple[tuple[str, int, int], ...]:
+    """What is in a certificate directory now, cheaply enough to check before every mutation.
 
-    The ledger is loaded once at start-up, and supersession is expressed by *adding* a file — so
-    ``record_result``'s refusal to record a superseded certificate was decided against the set as
-    it stood when the process started. A correction published into the same data directory
-    afterwards was invisible, and the retracted verdict went into the entry's permanent lifecycle
-    history while the CLI reading that same directory reported it superseded. Loading is idempotent
-    by digest, and a directory whose mtime has not moved costs one stat.
+    Not the directory's mtime: that moves when a file is created or removed, and does not move when
+    an existing file is rewritten in place — which is exactly how this repository publishes a
+    corrected certificate, since every milestone script writes `<accession>.json`. Keyed on mtime
+    alone, a correction republished under its own name stayed invisible to a live server for the
+    life of the process, which is the failure the refresh exists to prevent.
+    """
+    try:
+        entries = sorted(directory.glob("*.json"))
+    except OSError:  # pragma: no cover - a directory that vanished mid-run
+        return ()
+    fingerprint = []
+    for path in entries:
+        try:
+            stat = path.stat()
+        except OSError:  # pragma: no cover - a file that vanished between listing and stat
+            continue
+        fingerprint.append((path.name, stat.st_mtime_ns, stat.st_size))
+    return tuple(fingerprint)
+
+
+def refresh_certificates(
+    ledger: CertificateLedger,
+    directories: Sequence[Path],
+    seen: dict[Path, tuple[tuple[str, int, int], ...]],
+) -> None:
+    """Re-read any certificate directory whose contents have changed since ``seen`` recorded them.
+
+    The ledger is loaded once at start-up, so ``record_result``'s refusal to record a superseded
+    certificate was decided against the set as it stood when the process started. A correction
+    published into the same data directory afterwards was invisible, and the retracted verdict went
+    into the entry's permanent lifecycle history while the CLI reading that same directory reported
+    it superseded. Loading is idempotent by digest, and an unchanged directory costs one listing.
     """
     for directory in directories:
-        try:
-            mtime = directory.stat().st_mtime
-        except OSError:
+        fingerprint = _directory_fingerprint(directory)
+        if seen.get(directory) == fingerprint:
             continue
-        if seen.get(directory) != mtime:
-            seen[directory] = mtime
-            load_certificates(ledger, directory)
+        # Recorded only after the load succeeds. Marking it seen first meant a directory holding
+        # one unreadable certificate raised once and was then skipped forever, so every valid file
+        # beside it went unread — quietly serving a smaller ledger, which is the failure mode
+        # `load_certificates` refuses to allow for a single file.
+        load_certificates(ledger, directory)
+        seen[directory] = fingerprint
 
 
 def write_json_atomically(path: Path, payload: Any) -> None:
@@ -1282,7 +1316,7 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - stdio
     certificate_dirs = [milestone / "certificates"]
     if args.data_dir is None:
         certificate_dirs.extend(milestone_certificate_dirs().values())
-    seen_mtimes: dict[Path, float] = {}
+    seen_certificates: dict[Path, tuple[tuple[str, int, int], ...]] = {}
 
     @contextmanager
     def guard() -> Any:
@@ -1307,7 +1341,7 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - stdio
         with open(lock_file, "a+", encoding="utf-8") as handle:
             fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
             try:
-                refresh_certificates(query.ledger, certificate_dirs, seen_mtimes)
+                refresh_certificates(query.ledger, certificate_dirs, seen_certificates)
                 refresh_catalog_from_disk(catalog, catalog_file)
                 yield
             finally:

@@ -251,7 +251,9 @@ def test_certify_stochastic_produces_a_qualified_reproduced_certificate() -> Non
     # ensemble is the assumption, and it is on the certificate as one.
     assumption = cert.assumptions[0]
     assert assumption.id == "ssa-sampling-A-mean"
-    assert assumption.chosen == "SSA ensemble: 400 trajectories to t=40, seed 20260807"
+    assert assumption.chosen == (
+        "SSA ensemble: 400 trajectories to t=40, seed 20260807, read=species[0]"
+    )
     assert assumption.load_bearing is True and assumption.attributed_to == "reprolith"
 
 
@@ -625,3 +627,55 @@ def test_a_stochastic_shortfall_is_not_filed_under_the_cause_just_ruled_out() ->
     source = inspect.getsource(stochastic.certify_stochastic)
     assert "undetermined_shortfall(claim.quantity)" in source
     assert "FailureMode.FINITE_ENSEMBLE_SAMPLING" not in source
+
+
+def test_a_run_that_does_not_advance_cannot_certify() -> None:
+    """A zero-duration ensemble comes back as the initial state, and a claim stated there passes.
+
+    Both time-advancing siblings refuse it at the certifying front end — spatial for `steps < 1`,
+    the ODE engine for a non-positive duration — and the MCP boundary already refuses it here. The
+    sampler itself keeps allowing a zero-duration request, which is a well-defined way to ask for
+    the initial state; what is refused is certifying a claim against one.
+    """
+    from reprolith import PaperIdentity
+    from reprolith.stochastic import (
+        Reaction,
+        StochasticClaim,
+        certify_stochastic,
+        solver_pin,
+    )
+
+    reactions = [Reaction(rate=1.0, reactants=(), products=((0, 1),))]
+    claim = StochasticClaim(
+        claim_id="c1", quantity="mean count", species=0, reported_mean=5.0,
+        source_location="Table 1", duration=0.0, trajectories=60, seed=1,
+    )
+    with pytest.raises(ValueError, match="must advance the ensemble"):
+        certify_stochastic(
+            paper=PaperIdentity(title="a run that never ran", doi="10.1/x"),
+            engine_pin=solver_pin(), n_species=1, reactions=reactions, initial=(5,),
+            claims=[claim],
+        )
+    # The sampler primitive is untouched: asking for the initial state is still a legal request.
+    from reprolith.stochastic import ensemble_final_counts
+
+    assert ensemble_final_counts(
+        1, reactions, (5,), duration=0.0, trajectories=3, seed=1
+    ) == [[5], [5], [5]]
+
+
+def test_the_stochastic_protocol_names_the_species_it_read() -> None:
+    """The only per-claim degree of freedom that moves the number was absent from the record.
+
+    The network, the initial state and the species count are certificate-level, so two claims
+    reading different species had byte-identical protocols while disagreeing about the answer.
+    Every other class with a read to choose records it.
+    """
+    from reprolith.stochastic import StochasticClaim, _protocol
+
+    first = StochasticClaim(claim_id="a", quantity="A mean", species=0, reported_mean=1.0,
+                            source_location="Fig 1", duration=1.0, trajectories=200, seed=5)
+    second = StochasticClaim(claim_id="b", quantity="B mean", species=1, reported_mean=1.0,
+                             source_location="Fig 1", duration=1.0, trajectories=200, seed=5)
+    assert _protocol(first) != _protocol(second)
+    assert "read=species[0]" in _protocol(first)

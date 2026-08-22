@@ -283,7 +283,17 @@ def lint_stochastic(
         ),
         ComparisonMethod.SCALAR_RELATIVE_ERROR,
     )
-    protocol = f"SSA ensemble: {trajectories} trajectories to t={duration:g}, seed {seed}"
+    if duration <= 0.0:
+        # The certify path's rule, on the agent-facing surface too: a run that does not advance
+        # returns the initial state, and a claim stated at that state lints as a clean pass.
+        raise ValueError(
+            f"a run of {duration!r} time units does not advance the ensemble, so it is not "
+            "evidence about the model"
+        )
+    protocol = (
+        f"SSA ensemble: {trajectories} trajectories to t={duration:g}, seed {seed}, "
+        f"read=species[{species}]"
+    )
     if not _all_finite((reported_mean, mean)):
         return replace(
             _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol), protocol=protocol
@@ -297,7 +307,14 @@ def lint_stochastic(
     if unscaled_zero is not None:
         return replace(unscaled_zero, protocol=protocol)
     unresolvable = unresolvable_ensemble_reason(
-        reported_mean=reported_mean, variance=variance, trajectories=trajectories, tolerance=tol,
+        reported_mean=reported_mean, variance=variance, trajectories=trajectories,
+        # The certificate path passes this; without it here the two surfaces published opposite
+        # answers about one ensemble — a threefold over-prediction sitting 66 standard errors
+        # outside the pass band certified as `failed` and linted as "insufficient information",
+        # which is the sentence this function's own docstring calls arithmetically false. Whether
+        # an ensemble can resolve a claim is a property of the ensemble, not of which surface asked.
+        observed_mean=mean,
+        tolerance=tol,
     )
     if unresolvable is not None:
         return LintResult(

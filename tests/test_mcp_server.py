@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import io
 import json
-import os
 from pathlib import Path
 
 import pytest
@@ -1122,7 +1121,7 @@ def test_a_correction_published_after_startup_is_seen_by_the_write_path(tmp_path
     directory = tmp_path / "certificates"
     directory.mkdir()
     ledger = CertificateLedger()
-    seen: dict[Path, float] = {}
+    seen: dict[Path, tuple[tuple[str, int, int], ...]] = {}
 
     original = build_certificate(
         paper=PaperIdentity(title="A paper", doi="10.1/x"),
@@ -1145,6 +1144,28 @@ def test_a_correction_published_after_startup_is_seen_by_the_write_path(tmp_path
         supersedes=original,
     )
     (directory / "correction.json").write_text(json.dumps(correction.content()), encoding="utf-8")
-    os.utime(directory, (0, 0))  # force a distinct mtime rather than sleeping
     refresh_certificates(ledger, [directory], seen)
     assert [c.supersedes for _, c in ledger.items() if c.supersedes] == [first]
+
+    # …and a correction republished *in place*, which is how every milestone script writes a
+    # certificate. A directory's mtime does not move for an in-place rewrite, so keying on it left
+    # exactly this case invisible for the life of the process.
+    ledger_two = CertificateLedger()
+    seen_two: dict[Path, tuple[tuple[str, int, int], ...]] = {}
+    single = tmp_path / "single"
+    single.mkdir()
+    target = single / "BIOMD0000000001.json"
+    target.write_text(json.dumps(original.content()), encoding="utf-8")
+    refresh_certificates(ledger_two, [single], seen_two)
+    assert len(ledger_two) == 1
+    target.write_text(json.dumps(correction.content()), encoding="utf-8")
+    refresh_certificates(ledger_two, [single], seen_two)
+    assert [c.supersedes for _, c in ledger_two.items() if c.supersedes] == [first]
+
+    # An unreadable certificate raises — and does not mark the directory seen, or every valid file
+    # beside it would go unread for the rest of the run.
+    (single / "broken.json").write_text("{not json", encoding="utf-8")
+    with pytest.raises(ValueError, match="not a readable certificate"):
+        refresh_certificates(ledger_two, [single], seen_two)
+    with pytest.raises(ValueError, match="not a readable certificate"):
+        refresh_certificates(ledger_two, [single], seen_two)

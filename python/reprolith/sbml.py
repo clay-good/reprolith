@@ -188,16 +188,27 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
     # number against that same inert attribute reported agreement on a value neither side had
     # checked — "no disagreement" has to mean the values were compared, which is the rule this
     # function's own docstring already states for local parameters.
+    # Assignment rules only. A *rate* rule's target keeps a meaningful `value`: it is the initial
+    # condition, and "a parameter plus a rate rule" is the PK/PD idiom this ingester supports on
+    # purpose — excluding those undid the fix four lines below, which exists because comparing
+    # against species alone read a hundred-fold disagreement in a dose as agreement.
     rule_determined = {
         model.getRule(i).getVariable()
         for i in range(model.getNumRules())
-        if model.getRule(i).isAssignment() or model.getRule(i).isRate()
+        if model.getRule(i).isAssignment()
     }
-    sbml_params = {
+    # Every model parameter is *known* — dropping the rule-determined ones from this dict removed
+    # them from `known` and `comparable_ics` too, so a faithfully ingested dossier reported its own
+    # source file as "not present in the model". What has no stated value to compare is a narrower
+    # thing than what the model does not contain.
+    all_params = {
         model.getParameter(i).getId(): model.getParameter(i).getValue()
         for i in range(model.getNumParameters())
-        if model.getParameter(i).getId() not in rule_determined
     }
+    sbml_params = {
+        name: value for name, value in all_params.items() if name not in rule_determined
+    }
+    local_values: dict[str, list[float]] = {}
     for i in range(model.getNumReactions()):
         law = model.getReaction(i).getKineticLaw()
         if law is None:
@@ -206,8 +217,11 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
             local = law.getParameter(j)
             if local.isSetValue():
                 # A local name shadows nothing global in SBML scoping terms, but for the
-                # manuscript's purposes 'k1' is 'k1'; a disagreement is worth reporting once.
-                sbml_params.setdefault(local.getId(), local.getValue())
+                # manuscript's purposes 'k1' is 'k1'. Every value seen under a name is kept, not
+                # just the first: L2 models routinely reuse `k1`/`Km`/`Vmax` across reactions with
+                # different values, and keeping the first meant a dossier stating the *second* was
+                # reported as agreeing with the first — "no disagreement" decided by reaction order.
+                local_values.setdefault(local.getId(), []).append(local.getValue())
     sbml_ics: dict[str, float] = {}
     for i in range(model.getNumSpecies()):
         species = model.getSpecies(i)
@@ -235,11 +249,16 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
     # An initial condition can be held as a parameter plus a rate rule — the PK/PD idiom this
     # ingester supports on purpose — so a dossier IC has to be looked for among the parameters too.
     # Comparing against species alone meant a hundred-fold disagreement in a dose read as agreement.
-    comparable_ics = {**sbml_params, **sbml_sizes, **sbml_ics}
+    # One representative per local name for the value lookups, and the full set kept beside it so
+    # a name the model holds two values under is reported rather than silently resolved to one.
+    for name, values in local_values.items():
+        sbml_params.setdefault(name, values[0])
+        all_params.setdefault(name, values[0])
+    comparable_ics = {**all_params, **sbml_sizes, **sbml_ics}
 
     known = {model.getSpecies(i).getId() for i in range(model.getNumSpecies())}
     known |= {model.getCompartment(i).getId() for i in range(model.getNumCompartments())}
-    known |= set(sbml_params)
+    known |= set(all_params)
 
     mismatches: list[str] = []
     for parameter in dossier.parameters:
@@ -249,6 +268,22 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
                 "not present in the model"
             )
         else:
+            held = local_values.get(parameter.name)
+            if held is not None and any(
+                _differs(parameter.value, value, rel_tol) for value in held
+            ):
+                # The model holds this name at more than one value, or at one that differs. Either
+                # way the manuscript's single number cannot be said to agree with the artifact.
+                distinct = sorted({value for value in held})
+                mismatches.append(
+                    f"parameter {parameter.name}: dossier {parameter.value} != model "
+                    + (
+                        f"{distinct[0]}"
+                        if len(distinct) == 1
+                        else f"{distinct} (the model holds it at several values)"
+                    )
+                )
+                continue
             stated = {**sbml_params, **sbml_sizes}.get(parameter.name)
             if stated is not None and _differs(parameter.value, stated, rel_tol):
                 mismatches.append(
@@ -834,6 +869,28 @@ def _mass_action_rate(kinetic_law: Any, reactant_powers: Mapping[str, int]) -> f
     return float(rate_param.getValue()) * stoichiometric_factor
 
 
+def _resolved_substance_units(model: Any, unit_id: str) -> str:
+    """A species' substance units, following a `unitDefinition` reference to what it means.
+
+    Returns the base kind when the definition is a single unscaled, unmultiplied unit of one — the
+    only shape that can be read as a molecule count — and the identifier itself otherwise, so an
+    unresolvable or compound unit still reaches the refusal below with its own name in the message.
+    """
+    if not unit_id:
+        return ""
+    definition = model.getUnitDefinition(unit_id)
+    if definition is None or definition.getNumUnits() != 1:
+        return unit_id
+    unit = definition.getUnit(0)
+    if (
+        unit.getExponentAsDouble() != 1.0
+        or unit.getScale() != 0
+        or unit.getMultiplier() != 1.0
+    ):
+        return unit_id
+    return str(_libsbml().UnitKind_toString(unit.getKind()))
+
+
 def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[int]]:
     """Parse an SBML reaction network into the species, reactions, and initial counts the SSA runs.
 
@@ -877,7 +934,16 @@ def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[i
                 "(hasOnlySubstanceUnits is false); the SSA needs molecule counts, and reading its "
                 "amount verbatim would misread every rate law that scales with volume"
             )
-        units = spec.getSubstanceUnits()
+        # Resolved, not compared raw: SBML states a unit by reference, so a species whose own
+        # `unitDefinition` *is* `item` was refused under a reason that is false about the file —
+        # the un-taught neighbour of `ingest._resolve_unit`, which learned this one level over.
+        # The model's own `substanceUnits` is the default for every species that omits the
+        # attribute, and libsbml returns '' for such a species — so a model declaring itself in
+        # moles walked straight past the guard whose whole purpose is catching that. The sibling
+        # ingester already reads the fallback (`ingest._read_species`); this is its neighbour.
+        units = _resolved_substance_units(
+            model, spec.getSubstanceUnits() or model.getSubstanceUnits()
+        )
         if units not in ("", "item", "dimensionless"):
             # The SSA counts molecules. A species declared in moles is read verbatim, so 100 mol
             # becomes 100 molecules and every noise statistic the class exists to reproduce — the
@@ -957,11 +1023,25 @@ def _refuse_unrepresentable_constructs(model: Any, *, kind: str) -> None:
         unsupported.append("events (they change the state at a moment in time — dosing, most often)")
     if model.isSetConversionFactor():
         unsupported.append("a model conversionFactor (it rescales every amount)")
+    # …and a *species'* own conversion factor, which rescales that species' contribution to every
+    # reaction's extent. Refusing only the model-level attribute implemented half of the reason
+    # this check states: a species carrying `conversionFactor="cf"` with cf=10 produced 1000 under
+    # libRoadRunner and 100 here, and the difference was published as the paper being wrong.
+    if any(model.getSpecies(i).isSetConversionFactor() for i in range(model.getNumSpecies())):
+        unsupported.append("a species conversionFactor (it rescales that species' amount)")
     for j in range(model.getNumReactions()):
         rxn = model.getReaction(j)
         refs = [rxn.getReactant(k) for k in range(rxn.getNumReactants())]
         refs += [rxn.getProduct(k) for k in range(rxn.getNumProducts())]
-        if any(ref.isSetConstant() and not ref.getConstant() for ref in refs):
+        # `constant` is a Level 3 attribute, so on a Level 2 file — which most of the curated
+        # corpus is — it is never set and this guard never fired. Level 2 says the same thing with
+        # `stoichiometryMath`, and a `A -> n B` with n=5 was read as one B: 500 molecules under
+        # libRoadRunner against 100 here, with `reported_mean=500` published as `failed`.
+        if any(
+            (ref.isSetConstant() and not ref.getConstant())
+            or (ref.isSetStoichiometryMath() if hasattr(ref, "isSetStoichiometryMath") else False)
+            for ref in refs
+        ):
             unsupported.append(f"a non-constant stoichiometry in reaction {rxn.getId()!r}")
             break
     if unsupported:

@@ -281,3 +281,41 @@ def test_every_class_front_end_can_publish_a_miss_it_was_not_handed_a_cause_for(
     )
     assert logical.overall is OverallVerdict.NOT_REPRODUCED
     assert logical.assessments[0].root_cause == "uncategorized"
+
+
+def test_the_linter_and_the_certificate_path_agree_on_a_decisively_wrong_ensemble() -> None:
+    """The rule is shared; the *call sites* were not, and the shared-function test could not see it.
+
+    When the resolvability rule gained the observed mean, only the certificate path passed it — so
+    an ensemble sitting far outside the pass band certified as `failed` and linted as
+    "insufficient information". This drives both real call sites over one model, which is the only
+    thing that can catch a divergence between them.
+    """
+    pytest.importorskip(
+        "libsbml", reason="the optional 'engine' extra (python-libsbml) is not installed"
+    )
+    from pathlib import Path
+
+    from reprolith.linter import lint_stochastic
+    from reprolith.sbml import ingest_stochastic_sbml
+    from reprolith.stochastic import StochasticClaim, certify_stochastic, solver_pin
+
+    sbml = (Path(__file__).parent / "fixtures" / "immigration_death.xml").read_text(encoding="utf-8")
+    names, reactions, initial = ingest_stochastic_sbml(sbml)
+    # Its stationary mean is ~9.9; a paper reporting 3.0 is a decisive miss, not a noise question.
+    shared = dict(duration=20.0, trajectories=400, seed=20260807)
+
+    certificate = certify_stochastic(
+        paper=PaperIdentity(title="a decisively wrong reconstruction", doi="10.1/x"),
+        engine_pin=solver_pin(), n_species=len(names), reactions=reactions, initial=initial,
+        claims=[StochasticClaim(claim_id="c1", quantity="stationary mean", species=0,
+                                reported_mean=3.0, source_location="Table 1", **shared)],
+    )
+    certified = certificate.assessments[0].verdict
+    linted = lint_stochastic(sbml=sbml, species=0, reported_mean=3.0, **shared)
+
+    assert certified is Verdict.FAILED, "a threefold miss is a miss, not an abstention"
+    assert (linted.verdict is Verdict.NOT_EVALUABLE) == (certified is Verdict.NOT_EVALUABLE), (
+        f"certificate said {certified}, linter said {linted.verdict} — the two surfaces disagree "
+        "about whether this ensemble decided the claim"
+    )

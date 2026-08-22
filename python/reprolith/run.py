@@ -201,7 +201,7 @@ def advance_to_outcome(
     *,
     at: str,
     actor: str,
-    blocked_reason: str = NO_CLAIMS_REASON,
+    blocked_reason: str | Sequence[str] = NO_CLAIMS_REASON,
     reason: str = "blind run",
 ) -> None:
     """Walk a queued entry to the lifecycle state matching its run outcome, recording each move.
@@ -222,7 +222,12 @@ def advance_to_outcome(
     else:
         path = _TO_CERTIFIED
     for state in path:
-        missing = (blocked_reason,) if state is LifecycleState.BLOCKED else ()
+        # Every missing input, not the first. `missing_inputs` is a tuple built to hold several,
+        # and a certificate whose gap report names three things blocked on one of them: the field
+        # exists so a reader learns what would unstall the paper, and one of three published as
+        # "the blockers" — with no count and no ellipsis — is the same overstatement in miniature.
+        blockers = (blocked_reason,) if isinstance(blocked_reason, str) else tuple(blocked_reason)
+        missing = blockers if state is LifecycleState.BLOCKED else ()
         entry.transition(state, at=at, actor=actor, reason=reason, missing_inputs=missing)
 
 

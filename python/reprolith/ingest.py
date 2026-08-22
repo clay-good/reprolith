@@ -220,6 +220,18 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
     )
 
 
+#: The five unit names SBML Level 2 predefines, with what each defaults to (L2 §4.4.3). A Level 2
+#: model may name them without a `unitDefinition`, and a model that defines one overrides the
+#: default — which is why this is consulted only after `getUnitDefinition` has been asked.
+_L2_PREDEFINED_UNITS = {
+    "substance": "mole",
+    "volume": "litre",
+    "area": "metre^2",
+    "length": "metre",
+    "time": "second",
+}
+
+
 def _resolve_unit(model: Any, unit_id: str) -> tuple[str, str | None]:
     """The unit as the source states it, and what it resolves to — or that it states none.
 
@@ -240,6 +252,14 @@ def _resolve_unit(model: Any, unit_id: str) -> tuple[str, str | None]:
             return unit_id, (rendered if rendered != unit_id else None)
     if _libsbml().UnitKind_forName(unit_id) != _libsbml().UNIT_KIND_INVALID:
         return unit_id, None  # already a base kind: `litre` means litre
+    # SBML Level 2 predefines five unit names a model may use without defining them (L2 §4.4.3).
+    # Reading them as unresolvable identifiers made the units gap say "N of M extracted values
+    # state no unit in the artifact" about values whose unit the artifact does state, and pushed a
+    # fully specified model's difficulty from low to high — the exact defect this resolution was
+    # added to remove, re-created one level down. Level 3 predefines none of them, which is why the
+    # committed L3 metformin model defines `substance` itself and none of this fires for it.
+    if model.getLevel() == 2 and unit_id in _L2_PREDEFINED_UNITS:
+        return unit_id, _L2_PREDEFINED_UNITS[unit_id]
     return UNSTATED_UNIT, None
 
 
@@ -259,18 +279,22 @@ def _render_unit_definition(definition: Any) -> str:
     for i in range(definition.getNumUnits()):
         unit = definition.getUnit(i)
         kind = libsbml.UnitKind_toString(unit.getKind())
-        exponent, scale, multiplier = unit.getExponent(), unit.getScale(), unit.getMultiplier()
+        # As a double: `getExponent` truncates, so a valid `exponent="0.5"` published as
+        # `metre^0` — a different physical dimension, at `quoted` confidence, and worse than the
+        # bare identifier it replaced because it reads as resolved.
+        exponent = unit.getExponentAsDouble()
+        scale, multiplier = unit.getScale(), unit.getMultiplier()
         head = ""
         if multiplier != 1.0:
             head += f"{multiplier:g}*"
         if scale != 0:
             head += f"10^{scale} "
-        if exponent == 1:
+        if exponent == 1.0:
             factors.append(f"{head}{kind}")
         elif head:
-            factors.append(f"({head}{kind})^{exponent}")
+            factors.append(f"({head}{kind})^{exponent:g}")
         else:
-            factors.append(f"{kind}^{exponent}")
+            factors.append(f"{kind}^{exponent:g}")
     return " * ".join(factors)
 
 
@@ -539,11 +563,21 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
             load_bearing=True,
             carried_by_artifact=True,
         ))
+    # One gap per affected reaction, not the first and then `break`. The same loop in
+    # `sbml._refuse_unrepresentable_constructs` does break, and is right to — it refuses the whole
+    # artifact, so one exemplar is enough. Here the gap is recorded and ingestion continues, and
+    # the `element` string names a specific reaction, so breaking under-named the affected set with
+    # no count and no "and N others". Level 2 says the same thing with `stoichiometryMath`, which
+    # has no `constant` attribute to be unset.
     for j in range(model.getNumReactions()):
         rxn = model.getReaction(j)
         refs = [rxn.getReactant(k) for k in range(rxn.getNumReactants())]
         refs += [rxn.getProduct(k) for k in range(rxn.getNumProducts())]
-        if any(ref.isSetConstant() and not ref.getConstant() for ref in refs):
+        if any(
+            (ref.isSetConstant() and not ref.getConstant())
+            or (ref.isSetStoichiometryMath() if hasattr(ref, "isSetStoichiometryMath") else False)
+            for ref in refs
+        ):
             gaps.append(Gap(
                 element=f"stoichiometry of reaction {rxn.getId()!r}",
                 kind=GapKind.EQUATION,
@@ -551,7 +585,6 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
                 load_bearing=True,
                 carried_by_artifact=True,
             ))
-            break
     return tuple(gaps)
 
 

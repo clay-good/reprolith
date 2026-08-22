@@ -8,7 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "SSA ensemble: 1600 trajectories to t=40, seed 11",
+      "protocol": "SSA ensemble: 1600 trajectories to t=40, seed 11, read=species[0]",
       "quantity": "mean copy number",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -26,7 +26,7 @@
       ],
       "attributed_to": "reprolith",
       "basis": "a finite ensemble's mean differs from the model's true mean by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible",
-      "chosen": "SSA ensemble: 1600 trajectories to t=40, seed 11",
+      "chosen": "SSA ensemble: 1600 trajectories to t=40, seed 11, read=species[0]",
       "description": "the mean judged here is the average of an ensemble Reprolith sampled, not a number the paper's own run produced",
       "id": "ssa-sampling-immigration_death_4-mean",
       "load_bearing": true,
@@ -34,7 +34,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "gillespie-direct-method (rev 167522121e16)",
+    "algorithm": "gillespie-direct-method (rev 0f3b19c5dfdd)",
     "engine": "reprolith-ssa",
     "version": "0.0.1"
   },

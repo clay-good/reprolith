@@ -7,6 +7,7 @@ module skips without it.
 from __future__ import annotations
 
 import math
+from contextlib import contextmanager
 
 import pytest
 
@@ -225,3 +226,120 @@ def test_an_unset_parameter_is_not_a_value_the_model_states() -> None:
 </sbml>"""
     dossier = ingest_sbml(model, entry="e", source_label="m.xml")
     assert not [m for m in compare_sbml_to_dossier(model, dossier) if "does not state" in m]
+
+
+def test_a_name_the_model_holds_at_two_values_is_not_reported_as_agreeing() -> None:
+    """`setdefault` kept the first local parameter of a name, so agreement was decided by reaction order.
+
+    SBML Level 2 models routinely reuse `k1`/`Km`/`Vmax` across reactions at different values. A
+    dossier stating the *second* was compared against the first and reported as agreeing — and
+    `ReconstructionBundle.mismatches` documents an empty list as "checked and agreed".
+    """
+    pytest.importorskip(
+        "libsbml", reason="the optional 'engine' extra (python-libsbml) is not installed"
+    )
+    from reprolith.dossier import Dossier, ExtractionConfidence, Parameter
+    from reprolith.sbml import compare_sbml_to_dossier
+
+    two_valued = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4"><model id="m">
+ <listOfCompartments><compartment id="c" size="1"/></listOfCompartments>
+ <listOfSpecies><species id="A" compartment="c" initialAmount="1" hasOnlySubstanceUnits="true"/></listOfSpecies>
+ <listOfReactions>
+  <reaction id="R1" reversible="false">
+   <listOfReactants><speciesReference species="A"/></listOfReactants>
+   <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k1</ci><ci>A</ci></apply></math>
+    <listOfParameters><parameter id="k1" value="0.1"/></listOfParameters></kineticLaw>
+  </reaction>
+  <reaction id="R2" reversible="false">
+   <listOfReactants><speciesReference species="A"/></listOfReactants>
+   <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k1</ci><ci>A</ci></apply></math>
+    <listOfParameters><parameter id="k1" value="999.0"/></listOfParameters></kineticLaw>
+  </reaction>
+ </listOfReactions></model></sbml>"""
+
+    for stated in (0.1, 999.0):
+        dossier = Dossier(entry="X", parameters=(Parameter(
+            name="k1", value=stated, unit="second", source_location="Table 1",
+            confidence=ExtractionConfidence.QUOTED,
+        ),))
+        problems = compare_sbml_to_dossier(two_valued, dossier)
+        assert problems, f"a model holding k1 at two values cannot agree with a single stated {stated}"
+        assert "several values" in problems[0]
+
+
+@contextmanager
+def _naming(label: str):
+    """Put the case's name in the failure when one of these stops being refused."""
+    try:
+        yield
+    except AssertionError as exc:  # pragma: no cover - only on a regression
+        raise AssertionError(f"{label} was ingested rather than refused") from exc
+
+
+def test_the_stochastic_ingester_refuses_what_it_says_it_refuses() -> None:
+    """Three well-formed files walked past the guards written for exactly their hazard.
+
+    A Level 2 `stoichiometryMath` (the `constant` attribute is Level 3, so the guard never fired)
+    was read as stoichiometry 1 — 500 molecules under libRoadRunner against 100 here. A model-level
+    `substanceUnits="mole"` is the default for a species that omits the attribute, so a model
+    declaring itself in moles ran as a 100-molecule SSA. And only the *model's* conversionFactor was
+    refused, not a species', which rescales that species' contribution to every reaction's extent.
+    """
+    pytest.importorskip(
+        "libsbml", reason="the optional 'engine' extra (python-libsbml) is not installed"
+    )
+    from reprolith.sbml import ingest_stochastic_sbml
+
+    stoichiometry_math = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4"><model id="m">
+ <listOfCompartments><compartment id="c" size="1"/></listOfCompartments>
+ <listOfSpecies>
+  <species id="A" compartment="c" initialAmount="100" hasOnlySubstanceUnits="true"/>
+  <species id="B" compartment="c" initialAmount="0" hasOnlySubstanceUnits="true"/>
+ </listOfSpecies>
+ <listOfParameters><parameter id="k" value="1"/><parameter id="n" value="5"/></listOfParameters>
+ <listOfReactions><reaction id="r" reversible="false">
+  <listOfReactants><speciesReference species="A" stoichiometry="1"/></listOfReactants>
+  <listOfProducts><speciesReference species="B">
+   <stoichiometryMath><math xmlns="http://www.w3.org/1998/Math/MathML"><ci>n</ci></math></stoichiometryMath>
+  </speciesReference></listOfProducts>
+  <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>A</ci></apply></math></kineticLaw>
+ </reaction></listOfReactions></model></sbml>"""
+
+    model_level_moles = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+<model id="m" substanceUnits="mole" timeUnits="second" extentUnits="mole">
+ <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+ <listOfSpecies><species id="A" compartment="c" initialAmount="100" hasOnlySubstanceUnits="true"
+   boundaryCondition="false" constant="false"/></listOfSpecies>
+ <listOfParameters><parameter id="k" value="1" constant="true"/></listOfParameters>
+ <listOfReactions><reaction id="r" reversible="false">
+  <listOfReactants><speciesReference species="A" stoichiometry="1" constant="true"/></listOfReactants>
+  <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>A</ci></apply></math></kineticLaw>
+ </reaction></listOfReactions></model></sbml>"""
+
+    species_conversion_factor = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2"><model id="m">
+ <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+ <listOfParameters><parameter id="k" value="1" constant="true"/>
+  <parameter id="cf" value="10" constant="true"/></listOfParameters>
+ <listOfSpecies>
+  <species id="A" compartment="c" initialAmount="100" hasOnlySubstanceUnits="true"
+    boundaryCondition="false" constant="false"/>
+  <species id="B" compartment="c" initialAmount="0" hasOnlySubstanceUnits="true"
+    boundaryCondition="false" constant="false" conversionFactor="cf"/>
+ </listOfSpecies>
+ <listOfReactions><reaction id="r" reversible="false">
+  <listOfReactants><speciesReference species="A" stoichiometry="1" constant="true"/></listOfReactants>
+  <listOfProducts><speciesReference species="B" stoichiometry="1" constant="true"/></listOfProducts>
+  <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>A</ci></apply></math></kineticLaw>
+ </reaction></listOfReactions></model></sbml>"""
+
+    for label, sbml in (
+        ("stoichiometryMath", stoichiometry_math),
+        ("model-level substance units", model_level_moles),
+        ("species conversionFactor", species_conversion_factor),
+    ):
+        with pytest.raises(ValueError, match=r".+"), _naming(label):
+            ingest_stochastic_sbml(sbml)
