@@ -251,3 +251,49 @@ def test_the_fix_list_names_both_reasons_a_clean_pass_was_withheld() -> None:
         report = presubmission_report(cert)
         assert not report["ready_to_submit"]
         assert report["fix_list"], "a report that says 'address the fix list' must have one"
+
+
+def test_an_assumption_the_author_cannot_clear_says_so() -> None:
+    """Six of the thirty published certificates carried an instruction no paper could satisfy.
+
+    The spatial engine implements one boundary condition and the stochastic class samples an
+    ensemble, so those assumptions are Reprolith's limits rather than the paper's omissions — and
+    `presubmission`, the surface whose whole job is to be acted on, told the author to state the
+    value anyway. The sibling `gaps` report carried the sentence explaining why; this one dropped it.
+    """
+    from reprolith import (
+        Assumption,
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+    )
+    from reprolith.presubmission import presubmission_report
+
+    def report(**kw):
+        cert = build_certificate(
+            paper=PaperIdentity(title="t", doi="10.1/x"),
+            engine_pin=EnginePin(engine="e", version="1"),
+            assessments=[ClaimAssessment(claim_id="c", quantity="q", verdict=Verdict.REPRODUCED,
+                                         source_location="Fig 1", assumption_qualified=True)],
+            assumptions=[Assumption(id="a", description="a boundary Reprolith imposes",
+                                    chosen="zero-flux (Neumann) boundaries",
+                                    basis="this solver has exactly one boundary condition",
+                                    load_bearing=True, **kw)],
+        )
+        items = presubmission_report(cert)["fix_list"]
+        # Two kinds of assumption item exist: the per-claim "this claim rests on one" and the
+        # certificate-level entry for the assumption itself. This is about the latter.
+        return next(
+            i for i in items
+            if i["kind"] == "assumption" and "zero-flux" in i["issue"]
+        )
+
+    closable = report()
+    assert "state" in closable["fix"]
+    assert closable["why"] == "this solver has exactly one boundary condition"
+
+    engine_limit = report(author_can_close=False)
+    assert "nothing in the paper can clear this one" in engine_limit["fix"]
+    assert "limit of Reprolith's engine" in engine_limit["fix"]

@@ -226,7 +226,13 @@ _DEFAULTS: dict[tuple[ComparisonMethod, ReferenceKind], Tolerance] = {
 
 def default_tolerance(method: ComparisonMethod, reference_kind: ReferenceKind) -> Tolerance:
     """The documented class-default tolerance for a comparison method and reference kind."""
-    return _DEFAULTS[(method, reference_kind)]
+    # An exact comparison — an attractor signature, a FROG fingerprint — has no table entry and is
+    # held to 0/0, which `require_documented_default` states in as many words and implements. This
+    # accessor raised a bare KeyError for three of the six comparison methods instead of reporting
+    # the default its own sibling applies.
+    return _DEFAULTS.get((method, reference_kind)) or Tolerance(
+        0.0, 0.0, ToleranceSource.CLASS_DEFAULT
+    )
 
 
 def default_tolerance_table() -> Mapping[tuple[ComparisonMethod, ReferenceKind], Tolerance]:

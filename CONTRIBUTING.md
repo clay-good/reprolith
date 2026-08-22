@@ -109,6 +109,14 @@ when you add a check, a refusal, or a stability rule:
   raised passed against a package with all three fixes it guarded reverted — the fixtures were
   refused earlier, for an unrelated reason, and the test accepted that. Match the specific refusal,
   and run the revert check one test at a time rather than batching it and reporting the batch.
+- **An annotation is not a check.** One parameter was widened to accept a sequence and the
+  function it forwards to was not; the forbidden value reached `Certificate.gap_report`, which is
+  declared `tuple[str, ...]`, and the list serialized, digested, reloaded and rendered with nothing
+  refusing it. At a boundary that mints certificates, validate what you were handed.
+- **Read the surface aimed at the person your output judges.** The fix list told six authors to
+  state a value no paper could state, because the assumption was Reprolith's engine limit rather
+  than their omission — and the sentence explaining that was printed by a sibling surface and
+  dropped by the one whose job is to be acted on.
 - **If a tool tells you it failed, read it.** The pinned engine reports an abandoned time course by
   returning `False` and recording the samples it reached — all finite, so the non-finite guard
   cannot see it. That return value was discarded and the sample count never compared to the one

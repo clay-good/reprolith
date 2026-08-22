@@ -1515,6 +1515,68 @@ cite `oracle.py` as a bare path with no quotes, while the other four quote their
 lines. The record could have stated 5% over code saying 20%. The rule reached four cases and not the
 two that mattered most; both now quote their source.
 
+## What the surfaces told the person being judged
+
+Round six read the outputs aimed at the *author* — the gap report, the fix list, the dossier, the
+blocked status — as the modeller whose paper had just been assessed, and used the package as a
+third-party library consumer would. Both found things the code audits could not.
+
+**Six of the thirty certificates told an author to fix something no paper could fix.** The spatial
+engine implements exactly one boundary condition and the stochastic class judges an ensemble it
+sampled itself; both assumptions are Reprolith's limits, not omissions in anyone's paper. The
+fix list said *"state the value this claim rests on so it need not be assumed"* anyway — and the
+one sentence that explains why the item is unclosable, the assumption's `basis`, was printed by the
+sibling `gaps` report and dropped by the surface whose entire purpose is to be acted on. Assumptions
+now record whether an author can close them, and an item they cannot says so.
+
+**The spatial certificate asserted a fact about the author's paper that nothing checked.** It read
+"evolved under a boundary condition Reprolith imposes, *not one the paper stated*". This front-end
+takes claims rather than a dossier and never learns what was stated — its own docstring says it
+"cannot see" the dossier's boundary gap — and for the three committed entries there is no paper at
+all. It now says what is true: this engine implements one boundary, and Reprolith did not check
+what the source specifies.
+
+**Thirty blocked papers were told their model file had been examined.** The reason read "no
+machine-checkable claims extracted from the shipped model artifact", naming a source and an
+operation that never happened: nothing is fetched and nothing is opened on that path. An entry is
+blocked because Reprolith holds no extracted claims for the paper, and the recorded `ingesting`
+step — required by the lifecycle, not evidence of ingestion — corroborated the false account. The
+reason now says what happened, who owns the missing input, and how to supply it, and the lifecycle
+step says it is a lifecycle step.
+
+**And a real, author-fixable gap never reached the author.** The metformin dossier records that 45
+of 69 extracted values state no unit — load-bearing, and the only one of its six gaps the artifact
+does *not* carry. The constraint-based class routes its dossier's load-bearing gaps into the
+certificate; the PK/PD path never consulted a dossier, so the fix list told that author there were
+two things to fix where Reprolith's own records held three. The rule reached one class and not its
+neighbour, again.
+
+### Using it as a library
+
+Reading `__all__` and trying to build something with it found the surface incomplete in a way no
+internal test could: **an exported `certify_logical` refused every pin the exported names could
+construct.** Four of the six classes keep their `solver_pin` in a module the package `__init__`
+does not re-export, and the guard's own error message names `solver_pin_for(nodes=...)` — also
+unreachable. The only route through the public API was to hand-write the magic algorithm substring
+into an `EnginePin`, which the guard accepts. `undetermined_shortfall` was unreachable the same way,
+so a consumer whose claim did not reproduce could not supply the escape hatch the package itself
+uses. All are exported now, and a test builds a logical certificate from exported names only.
+
+Three smaller ones, each the same shape as findings the engine audits kept producing:
+`default_tolerance` raised a bare `KeyError` for three of the six comparison methods, where its own
+sibling `require_documented_default` holds an exact comparison to 0/0 and says so; `list_catalog`'s
+filters were annotated `object` and compared with `is`, so passing the string `"logical"` — which
+compares *equal* to `ModelClass.LOGICAL` — returned an empty list rather than an error, a read
+surface answering "there are none" to a question it did not understand; and one missing extra
+raised two different exception types.
+
+The sharpest of the three is an honesty escape rather than an ergonomic one. `advance_to_outcome`
+was widened to record every missing input and `blocked_certificate` was not, so passing a sequence
+to both put a *list* inside `Certificate.gap_report` — declared `tuple[str, ...]` — and it
+serialized, digested, reloaded through `certificate_from_content` and rendered, with nothing on the
+honesty path refusing it. An annotation is not a check, least of all at a boundary that mints
+certificates.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

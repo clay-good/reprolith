@@ -76,6 +76,14 @@ class Assumption:
     alternatives: tuple[str, ...] = ()
     attributed_to: str = REPROLITH_ATTRIBUTION
     verification_item: str | None = None
+    #: Whether anything the author could write in their paper would discharge this assumption.
+    #: Most are the paper's under-specification and clear when it states the value. Some are the
+    #: engine's own limits — the spatial solver implements one boundary condition, the stochastic
+    #: class samples an ensemble — and no wording clears those. The author-facing fix list asked
+    #: for a statement either way, so six of the thirty published certificates carried an
+    #: instruction their author could not follow. Omitted from ``to_dict`` at the default, so a
+    #: certificate whose assumptions are all author-closable is unchanged.
+    author_can_close: bool = True
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -87,6 +95,7 @@ class Assumption:
             "alternatives": list(self.alternatives),
             "attributed_to": self.attributed_to,
             "verification_item": self.verification_item,
+            **({} if self.author_can_close else {"author_can_close": False}),
         }
 
 

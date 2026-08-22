@@ -123,12 +123,13 @@ def solver_pin() -> EnginePin:
     leaves scipy free to pick dual simplex or interior point — so that is what the algorithm field
     says, rather than claiming a choice this code does not make.
     """
-    from .engine import EngineUnavailable
-
     try:
         import scipy
     except ImportError as exc:  # pragma: no cover - exercised only without the extra
-        raise EngineUnavailable(
+        # FbaUnavailable, like every other entry point in this module: one missing extra should not
+        # need two except-clauses, and a consumer wrapping its FBA work in `except FbaUnavailable`
+        # crashed here on the pin.
+        raise FbaUnavailable(
             "the LP backend is not installed; install the 'fba' extra (pip install 'reprolith[fba]')"
         ) from exc
     # scipy's version moves when the LP backend does, but the analysis layer above it — the FVA

@@ -38,16 +38,16 @@
       "basis": "observed",
       "stage": "ingest",
       "resolution": "explained",
-      "note": "Thirty of the thirty-one PK/PD entries disagree with their BioModels label because Reprolith returned blocked, not because it judged the paper wrong. The shipped artifact carries no machine-checkable claim to reproduce against, so the run reports run.NO_CLAIMS_REASON and abstains; a blocked verdict can never equal a reproduced or not-reproduced label, which is what makes the raw agreement 0/31. Explained rather than fixed: the responsible stage is ingestion, and the missing input is each paper's targetable claims read from the manuscript (tasks 2.1-2.3), which is deliberately not yet built. Closing these thirty needs a claim extractor, not a tolerance or oracle change.",
+      "note": "Thirty of the thirty-one PK/PD entries disagree with their BioModels label because Reprolith returned blocked, not because it judged the paper wrong. Reprolith holds no extracted claims for these papers, so the run reports run.NO_CLAIMS_REASON and abstains without fetching or opening anything; a blocked verdict can never equal a reproduced or not-reproduced label, which is what makes the raw agreement 0/31. The reason text used to say the claims had not been extracted 'from the shipped model artifact', which named an inspection that never happened — no artifact is read on this path at all. Explained rather than fixed: the responsible stage is ingestion, and the missing input is each paper's targetable claims read from its manuscript, which is not automated.",
       "evidence": [
-        "datasets/milestone/agreement_report.json",
-        "datasets/milestone/README.md",
         {
           "path": "python/reprolith/run.py",
           "quotes": [
-            "no machine-checkable claims extracted from the shipped model artifact"
+            "Reprolith holds no extracted claims for this paper"
           ]
         },
+        "datasets/milestone/agreement_report.json",
+        "datasets/milestone/README.md",
         "openspec/changes/bootstrap-ode-pkpd-mvp/tasks.md"
       ]
     },

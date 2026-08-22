@@ -249,6 +249,7 @@ def certify_model(
     engine_pin: EnginePin,
     claims: Iterable[Claim],
     assumptions: Iterable[Assumption] = (),
+    gap_report: Sequence[str] = (),
     duration: float,
     steps: int = 480,
 ) -> Certificate:
@@ -258,6 +259,13 @@ def certify_model(
     load-bearing assumption cannot report an unqualified ``reproduced``. Each assessment records
     the run behind it — the window, the sample count, and the claim's parameter overrides — so the
     published number can be re-derived from the certificate alone.
+
+    ``gap_report`` carries what the dossier found missing from the *artifact*, which this path
+    cannot see for itself: it takes claims and an SBML string, never a dossier. The
+    constraint-based class routes its dossier's load-bearing gaps into the certificate, and this
+    one did not — so the metformin dossier's load-bearing units gap (45 of 69 extracted values
+    state no unit) reached neither the "what was missing" report nor the author's fix list, which
+    told that author there were two things to fix where Reprolith's own records held three.
     """
     assessments = []
     for claim in claims:
@@ -297,6 +305,7 @@ def certify_model(
         engine_pin=engine_pin,
         assessments=assessments,
         assumptions=tuple(assumptions),
+        gap_report=tuple(gap_report),
     )
 
 

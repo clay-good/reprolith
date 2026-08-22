@@ -645,3 +645,26 @@ def test_an_unstable_decay_step_abstains_instead_of_taking_down_the_certificate(
     # A genuine caller bug stays a caller bug.
     with pytest.raises(ValueError, match="must not be negative"):
         diffuse_1d((1.0, 1.0, 1.0), diffusivity=0.0, dx=1.0, dt=0.5, steps=1, decay=-1.0)
+
+
+def test_the_boundary_assumption_does_not_assert_what_the_paper_said() -> None:
+    """This front-end takes claims, not a dossier, so it never learns what boundary was stated.
+
+    Its own docstring says it "cannot see" the dossier's boundary gap — and the published
+    assumption asserted "not one the paper stated" regardless, a fact about the author's paper that
+    nothing checked, and vacuously wrong for the three committed entries, which have no paper.
+    """
+    from reprolith import PaperIdentity
+    from reprolith.spatial import SpatialClaim, certify_spatial, solver_pin
+
+    cert = certify_spatial(
+        paper=PaperIdentity(title="1-D diffusion", doi=""), engine_pin=solver_pin(),
+        claims=[SpatialClaim(claim_id="c", quantity="profile", initial=(0.0, 1.0, 0.0),
+                             reference=(0.1, 0.8, 0.1), source_location="Fig 1",
+                             diffusivity=0.1, dx=1.0, dt=0.1, steps=1)],
+    )
+    description = cert.assumptions[0].description
+    assert "the paper stated" not in description, description
+    assert "did not check" in description
+    # And the author is told it is not theirs to fix.
+    assert cert.assumptions[0].author_can_close is False

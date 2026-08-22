@@ -25,6 +25,7 @@
         "a larger ensemble"
       ],
       "attributed_to": "reprolith",
+      "author_can_close": false,
       "basis": "a finite ensemble's mean differs from the model's true mean by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible",
       "chosen": "SSA ensemble: 400 trajectories to t=40, seed 20260807, read=species[0]",
       "description": "the mean judged here is the average of an ensemble Reprolith sampled, not a number the paper's own run produced",
@@ -34,7 +35,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "gillespie-direct-method (rev 0f3b19c5dfdd)",
+    "algorithm": "gillespie-direct-method (rev c1ee40ee6b8a)",
     "engine": "reprolith-ssa",
     "version": "0.0.1"
   },

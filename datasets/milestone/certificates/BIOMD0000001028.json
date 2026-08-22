@@ -48,11 +48,13 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "deterministic-lsoda (judge rev cba7794da7a2)",
+    "algorithm": "deterministic-lsoda (judge rev 5fb30f1ebc9b)",
     "engine": "copasi",
     "version": "4.46.300 (Source)"
   },
-  "gap_report": [],
+  "gap_report": [
+    "unit not stated by the artifact: units \u2014 45 of 69 extracted values state no unit in the artifact (Compartment_0, Compartment_1, Compartment_10, Compartment_11, Compartment_12, \u2026); their magnitudes are recorded, their units are not"
+  ],
   "overall": "partially-reproduced",
   "paper": {
     "doi": "10.1371/journal.pone.0249594",

@@ -24,7 +24,7 @@ from typing import Any
 from .agreement import summarize_report
 from .catalog import Catalog, CatalogEntry, Identifiers
 from .determinism import certificate_digest
-from .enums import ReproductionLevel, Verdict
+from .enums import LifecycleState, ModelClass, ReproductionLevel, Verdict
 from .model import Certificate
 from .presubmission import presubmission_report
 from .render import claim_counts, gap_items
@@ -138,15 +138,21 @@ class ReprolithQuery:
     def list_catalog(
         self,
         *,
-        model_class: object | None = None,
-        state: object | None = None,
+        model_class: ModelClass | None = None,
+        state: LifecycleState | None = None,
     ) -> list[dict[str, Any]]:
-        """Browse catalog entries as blind public views, optionally filtered."""
+        """Browse catalog entries as blind public views, optionally filtered.
+
+        The filters are typed, and compared by equality rather than identity. Annotated `object`
+        and compared with `is`, a caller passing the string `"logical"` — which compares equal to
+        `ModelClass.LOGICAL`, these being str enums — got an empty list rather than an error: a
+        read surface answering "there are none" for a question it did not understand.
+        """
         out: list[dict[str, Any]] = []
         for entry in self._catalog.entries:
-            if model_class is not None and entry.model_class is not model_class:
+            if model_class is not None and entry.model_class != model_class:
                 continue
-            if state is not None and entry.state is not state:
+            if state is not None and entry.state != state:
                 continue
             out.append(self._entry_view(entry))
         return out

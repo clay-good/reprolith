@@ -25,9 +25,16 @@ from .certify import Claim, certify_model
 from .enums import LifecycleState, OverallVerdict
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
 
+# Says what actually happened, and who owns the missing input. It used to read "no
+# machine-checkable claims extracted from the shipped model artifact", which named a source and an
+# operation that never took place: this path fetches nothing and opens nothing. An entry lands here
+# because Reprolith holds no extracted claims for the paper, and the transition history recorded an
+# `ingesting` step that corroborated the false account. Thirty of the thirty-one PK/PD entries are
+# in this state, so it is the single sentence most authors of a blocked paper will ever read.
 NO_CLAIMS_REASON = (
-    "no machine-checkable claims extracted from the shipped model artifact; "
-    "reproduction requires the paper's targetable claims (manuscript claim extraction)"
+    "Reprolith holds no extracted claims for this paper, so there was nothing to reproduce and no "
+    "model was run; extracting a paper's targetable claims from its manuscript is not automated "
+    "yet, and claims are contributed by hand to datasets/pkpd_claims.json"
 )
 
 
@@ -133,14 +140,45 @@ def blocked_certificate(
     paper: PaperIdentity,
     engine_pin: EnginePin,
     *,
-    reason: str = NO_CLAIMS_REASON,
+    reason: str | Sequence[str] = NO_CLAIMS_REASON,
 ) -> Certificate:
-    """A certificate that abstains: no evaluable claims, with the missing input recorded."""
+    """A certificate that abstains: no evaluable claims, with the missing inputs recorded.
+
+    Accepts one reason or several, and normalizes here. `advance_to_outcome` was widened to record
+    every missing input and this was not, so a sequence passed to both put a *list* inside
+    `Certificate.gap_report`, which is declared `tuple[str, ...]` — and it serialized, digested,
+    reloaded through `certificate_from_content` and rendered, with nothing on the honesty path
+    refusing it. An annotation is not a check at a boundary that mints certificates.
+    """
+    reasons = (reason,) if isinstance(reason, str) else tuple(reason)
+    if not reasons or not all(isinstance(r, str) and r.strip() for r in reasons):
+        raise ValueError(
+            "a blocked certificate must record at least one non-empty missing input, as text"
+        )
     return build_certificate(
         paper=paper,
         engine_pin=engine_pin,
         assessments=(),
-        gap_report=(reason,),
+        gap_report=reasons,
+    )
+
+
+def _artifact_gaps(sbml: str, accession: str) -> tuple[str, ...]:
+    """What the artifact itself leaves out, as the certificate's "what was missing" report.
+
+    The constraint-based class routes its dossier's load-bearing gaps into the certificate; this
+    path never consulted a dossier, so a gap Reprolith had recorded — the metformin model states no
+    unit for 45 of its 69 extracted values — reached neither the gap report nor the author's fix
+    list. Only the gaps the artifact does *not* carry are included: a gap the model file itself
+    closes is not something the paper is missing.
+    """
+    from .ingest import ingest_sbml
+
+    dossier = ingest_sbml(sbml, entry=accession)
+    return tuple(
+        f"{gap.kind.value} not stated by the artifact: {gap.element} — {gap.detail}"
+        for gap in dossier.load_bearing_gaps()
+        if not gap.carried_by_artifact
     )
 
 
@@ -168,6 +206,7 @@ def certified_from_claims(
             engine_pin=engine_pin,
             claims=claims,
             assumptions=assumptions,
+            gap_report=_artifact_gaps(sbml, accession),
             duration=float(entry["duration"]),
             steps=int(entry.get("steps", 480)),
         )
@@ -214,6 +253,10 @@ def advance_to_outcome(
     """
     if entry.state is not LifecycleState.QUEUED:
         return
+    # The walk to BLOCKED passes through INGESTING because the lifecycle requires it (queued's only
+    # non-quarantine successor), not because anything was ingested. A reader seeing that step could
+    # take it as evidence the artifact was opened, so the reason recorded on it says otherwise; the
+    # missing-inputs line beneath carries what is actually missing.
     path: tuple[LifecycleState, ...]
     if overall is OverallVerdict.BLOCKED:
         path = _TO_BLOCKED
@@ -222,13 +265,18 @@ def advance_to_outcome(
     else:
         path = _TO_CERTIFIED
     for state in path:
+        step_reason = (
+            f"{reason} (lifecycle step; nothing was ingested)"
+            if state is LifecycleState.INGESTING and overall is OverallVerdict.BLOCKED
+            else reason
+        )
         # Every missing input, not the first. `missing_inputs` is a tuple built to hold several,
         # and a certificate whose gap report names three things blocked on one of them: the field
         # exists so a reader learns what would unstall the paper, and one of three published as
         # "the blockers" — with no count and no ellipsis — is the same overstatement in miniature.
         blockers = (blocked_reason,) if isinstance(blocked_reason, str) else tuple(blocked_reason)
         missing = blockers if state is LifecycleState.BLOCKED else ()
-        entry.transition(state, at=at, actor=actor, reason=reason, missing_inputs=missing)
+        entry.transition(state, at=at, actor=actor, reason=step_reason, missing_inputs=missing)
 
 
 def run_test_set(
@@ -236,7 +284,7 @@ def run_test_set(
     *,
     engine_pin: EnginePin,
     certified: Mapping[str, Certificate] | None = None,
-    blocked_reason: str = NO_CLAIMS_REASON,
+    blocked_reason: str | Sequence[str] = NO_CLAIMS_REASON,
     advance: bool = False,
     at: str = "blind-run",
     actor: str = "reprolith",

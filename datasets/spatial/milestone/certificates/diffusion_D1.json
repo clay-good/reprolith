@@ -27,16 +27,17 @@
         "an unbounded domain"
       ],
       "attributed_to": "reprolith",
+      "author_can_close": false,
       "basis": "this solver has exactly one boundary condition and a claim carries no field to state another, so on a domain narrow enough for the walls to matter the distance moves with a choice the paper did not make",
       "chosen": "zero-flux (Neumann) boundaries",
-      "description": "the profile judged here was evolved under a boundary condition Reprolith imposes, not one the paper stated",
+      "description": "the profile judged here was evolved under zero-flux (Neumann) boundaries, the only boundary this engine implements; Reprolith did not check what boundary the source specifies",
       "id": "spatial-boundary-diffusion_D1-profile",
       "load_bearing": true,
       "verification_item": null
     }
   ],
   "engine_pin": {
-    "algorithm": "explicit-forward-euler-finite-difference (rev 88f4e01f5c58)",
+    "algorithm": "explicit-forward-euler-finite-difference (rev 351c2e2f0030)",
     "engine": "reprolith-fd",
     "version": "0.0.1"
   },

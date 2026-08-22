@@ -743,8 +743,14 @@ def certify_spatial(
         Assumption(
             id=f"spatial-boundary-{claim.claim_id}",
             description=(
-                "the profile judged here was evolved under a boundary condition Reprolith "
-                "imposes, not one the paper stated"
+                # Not "not one the paper stated" — this front-end takes claims rather than a
+                # dossier and never sees whether a boundary was stated, as the docstring above
+                # concedes. Asserting it published a fact about the author's paper that nothing
+                # checked, and vacuously so for the three committed entries, which have no paper
+                # at all. What is true is what this engine does, and that it did not look.
+                "the profile judged here was evolved under zero-flux (Neumann) boundaries, the "
+                "only boundary this engine implements; Reprolith did not check what boundary the "
+                "source specifies"
             ),
             chosen="zero-flux (Neumann) boundaries",
             basis=(
@@ -754,6 +760,10 @@ def certify_spatial(
             ),
             load_bearing=True,
             alternatives=("Dirichlet (fixed value)", "absorbing", "periodic", "an unbounded domain"),
+            # The alternatives listed are ones this engine does not implement, so no
+            # wording in a paper discharges this: it is Reprolith's limit, not the
+            # paper's omission.
+            author_can_close=False,
         )
         for claim in qualified
     )

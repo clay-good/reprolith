@@ -169,7 +169,23 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
                 "quantity": asm.description,
                 "source_location": None,
                 "issue": issue,
-                "fix": f"state {asm.description} explicitly so it need not be assumed",
+                # `basis` is why Reprolith had to assume it — and for some assumptions it is also
+                # the reason the author cannot discharge the item at all: the spatial engine
+                # implements one boundary condition and the stochastic class samples an ensemble,
+                # so six of the thirty published certificates carried an instruction no wording in
+                # any paper could satisfy. The sibling `gaps` report prints the basis; this one,
+                # the surface that exists to be acted on, dropped it. An item the author cannot
+                # close now says so instead of asking them to try.
+                "why": asm.basis,
+                "fix": (
+                    f"state {asm.description} explicitly so it need not be assumed"
+                    if asm.author_can_close
+                    else (
+                        "nothing in the paper can clear this one — it is a limit of Reprolith's "
+                        f"engine, not an omission in the paper: {asm.basis}. If that does not "
+                        "describe the model, this result is not evidence about it"
+                    )
+                ),
             }
         )
     for note in cert.gap_report:

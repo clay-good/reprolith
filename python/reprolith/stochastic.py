@@ -591,6 +591,9 @@ def certify_stochastic(
             ),
             load_bearing=True,
             alternatives=("a different seed", "a larger ensemble"),
+            # The ensemble is Reprolith's sampling choice, not anything the paper
+            # left out, so nothing the author writes clears it.
+            author_can_close=False,
         )
         for claim in judged
         if claim.assumption_qualified
