@@ -7,6 +7,14 @@ their own paper. Reprolith rebuilds the model from the paper, re-runs it, and ch
 output against the paper's own figures and tables — then hands you a **certificate**:
 reproduced, partially, or not — for each result, with the reason.
 
+That is what it is *for*, and it is worth being exact about how much of it is done today: of the
+thirty published certificates, one checks a reconstruction against numbers read from a paper
+(metformin's two plasma Cmax values). The rest check Reprolith's engine against an independent
+tool — COBRApy, libRoadRunner, CANA — or against closed-form mathematics, re-running the same
+model file. Each certificate now says which on its own claim line. Reading a paper's claims out of
+its manuscript at scale is the piece that is not built; [`docs/findings-note.md`](docs/findings-note.md) and
+[`openspec/`](openspec/) say so in detail.
+
 ---
 
 ## Why this works when biology usually doesn't

@@ -126,6 +126,25 @@ def _run_protocol(
     return stated
 
 
+def _model_level_math(model: Any) -> list[Any]:
+    """Every MathML node outside a kinetic law: rules, initial assignments, event triggers and
+    assignments, and constraints. What these read, they read from global scope."""
+    nodes = []
+    for i in range(model.getNumRules()):
+        nodes.append(model.getRule(i).getMath())
+    for i in range(model.getNumInitialAssignments()):
+        nodes.append(model.getInitialAssignment(i).getMath())
+    for i in range(model.getNumConstraints()):
+        nodes.append(model.getConstraint(i).getMath())
+    for i in range(model.getNumEvents()):
+        event = model.getEvent(i)
+        nodes.append(event.getTrigger().getMath() if event.getTrigger() else None)
+        nodes.append(event.getDelay().getMath() if event.getDelay() else None)
+        for j in range(event.getNumEventAssignments()):
+            nodes.append(event.getEventAssignment(j).getMath())
+    return [node for node in nodes if node is not None]
+
+
 def _fully_shadowed_ids(model: Any) -> set[str]:
     """Global parameter ids that *every* kinetic law referencing them shadows with its own local.
 
@@ -142,6 +161,17 @@ def _fully_shadowed_ids(model: Any) -> set[str]:
     different kind of no-op, and one this function does not claim to catch.
     """
     referencing: dict[str, list[bool]] = {}
+    # Everything outside a kinetic law that reads a global reads the *global*, and can never be
+    # shadowed by a reaction's local. Counting only kinetic laws meant one reaction declaring a
+    # local `k` made a global `k` that a rate rule integrates look fully shadowed: measured, an
+    # override of it moved the answer 54.6x and was refused under a message saying it has no
+    # effect on the run. Same shape as the 7.4x case the previous round fixed, one route over.
+    from .sbml import _libsbml as _sbml_module
+
+    libsbml = _sbml_module()
+    for math in _model_level_math(model):
+        for name in _symbols_in(libsbml.formulaToString(math) or ""):
+            referencing.setdefault(name, []).append(False)
     for i in range(model.getNumReactions()):
         law = model.getReaction(i).getKineticLaw()
         if law is None:

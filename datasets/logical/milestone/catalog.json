@@ -61,7 +61,7 @@
         "accession": "budding_yeast",
         "doi": null,
         "pubmed_id": null,
-        "title": "Budding yeast cell-cycle network, CANA's 12-node variant (after Li et al. 2004)"
+        "title": "Budding yeast cell-cycle network, CANA's 12-node variant (after Li et al. 2004) \u2014 reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper"
       },
       "lease_expires": null,
       "leased_to": null,
@@ -130,7 +130,7 @@
         "accession": "drosophila",
         "doi": null,
         "pubmed_id": null,
-        "title": "Drosophila melanogaster segment polarity, single cell (Albert & Othmer 2003)"
+        "title": "Drosophila melanogaster segment polarity, single cell (Albert & Othmer 2003) \u2014 reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper"
       },
       "lease_expires": null,
       "leased_to": null,
@@ -199,7 +199,7 @@
         "accession": "marques_pita",
         "doi": null,
         "pubmed_id": null,
-        "title": "Two-symbol schemata example network (Marques-Pita & Rocha 2013)"
+        "title": "Two-symbol schemata example network (Marques-Pita & Rocha 2013) \u2014 reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper"
       },
       "lease_expires": null,
       "leased_to": null,
@@ -268,7 +268,7 @@
         "accession": "repressilator",
         "doi": null,
         "pubmed_id": null,
-        "title": "Three-gene repressilator ring \u2014 a synchronous limit cycle, no fixed point"
+        "title": "Three-gene repressilator ring \u2014 a synchronous limit cycle, no fixed point \u2014 reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper"
       },
       "lease_expires": null,
       "leased_to": null,
@@ -337,7 +337,7 @@
         "accession": "thaliana",
         "doi": null,
         "pubmed_id": null,
-        "title": "Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006)"
+        "title": "Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006) \u2014 reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper"
       },
       "lease_expires": null,
       "leased_to": null,
@@ -406,7 +406,7 @@
         "accession": "toggle_plus_switch",
         "doi": null,
         "pubmed_id": null,
-        "title": "A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch"
+        "title": "A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch \u2014 reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper"
       },
       "lease_expires": null,
       "leased_to": null,
@@ -475,7 +475,7 @@
         "accession": "guard_cell_aba",
         "doi": null,
         "pubmed_id": null,
-        "title": "Guard-cell abscisic-acid signalling; via Cell Collective (Helikar et al. 2012)"
+        "title": "Guard-cell abscisic-acid signalling; via Cell Collective (Helikar et al. 2012) \u2014 reference computed by sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0, not a count read from the paper"
       },
       "lease_expires": null,
       "leased_to": null,
@@ -544,7 +544,7 @@
         "accession": "leukemia",
         "doi": null,
         "pubmed_id": null,
-        "title": "T-LGL leukemia signalling network (Zhang et al. 2008)"
+        "title": "T-LGL leukemia signalling network (Zhang et al. 2008) \u2014 reference computed by sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0, not a count read from the paper"
       },
       "lease_expires": null,
       "leased_to": null,
@@ -613,7 +613,7 @@
         "accession": "mapk_cancer",
         "doi": null,
         "pubmed_id": null,
-        "title": "MAPK network / cancer cell-fate decision (Grieco et al. 2013); via Cell Collective (Helikar et al. 2012)"
+        "title": "MAPK network / cancer cell-fate decision (Grieco et al. 2013); via Cell Collective (Helikar et al. 2012) \u2014 reference computed by sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0, not a count read from the paper"
       },
       "lease_expires": null,
       "leased_to": null,

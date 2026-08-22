@@ -298,13 +298,14 @@ def test_the_stochastic_ingester_refuses_what_it_says_it_refuses() -> None:
   <species id="A" compartment="c" initialAmount="100" hasOnlySubstanceUnits="true"/>
   <species id="B" compartment="c" initialAmount="0" hasOnlySubstanceUnits="true"/>
  </listOfSpecies>
- <listOfParameters><parameter id="k" value="1"/><parameter id="n" value="5"/></listOfParameters>
+ <listOfParameters><parameter id="n" value="5"/></listOfParameters>
  <listOfReactions><reaction id="r" reversible="false">
   <listOfReactants><speciesReference species="A" stoichiometry="1"/></listOfReactants>
   <listOfProducts><speciesReference species="B">
    <stoichiometryMath><math xmlns="http://www.w3.org/1998/Math/MathML"><ci>n</ci></math></stoichiometryMath>
   </speciesReference></listOfProducts>
-  <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>A</ci></apply></math></kineticLaw>
+  <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>A</ci></apply></math>
+   <listOfParameters><parameter id="k" value="1"/></listOfParameters></kineticLaw>
  </reaction></listOfReactions></model></sbml>"""
 
     model_level_moles = """<?xml version="1.0" encoding="UTF-8"?>
@@ -313,17 +314,16 @@ def test_the_stochastic_ingester_refuses_what_it_says_it_refuses() -> None:
  <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
  <listOfSpecies><species id="A" compartment="c" initialAmount="100" hasOnlySubstanceUnits="true"
    boundaryCondition="false" constant="false"/></listOfSpecies>
- <listOfParameters><parameter id="k" value="1" constant="true"/></listOfParameters>
  <listOfReactions><reaction id="r" reversible="false">
   <listOfReactants><speciesReference species="A" stoichiometry="1" constant="true"/></listOfReactants>
-  <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>A</ci></apply></math></kineticLaw>
+  <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>A</ci></apply></math>
+   <listOfLocalParameters><localParameter id="k" value="1"/></listOfLocalParameters></kineticLaw>
  </reaction></listOfReactions></model></sbml>"""
 
     species_conversion_factor = """<?xml version="1.0" encoding="UTF-8"?>
 <sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2"><model id="m">
  <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
- <listOfParameters><parameter id="k" value="1" constant="true"/>
-  <parameter id="cf" value="10" constant="true"/></listOfParameters>
+ <listOfParameters><parameter id="cf" value="10" constant="true"/></listOfParameters>
  <listOfSpecies>
   <species id="A" compartment="c" initialAmount="100" hasOnlySubstanceUnits="true"
     boundaryCondition="false" constant="false"/>
@@ -333,13 +333,105 @@ def test_the_stochastic_ingester_refuses_what_it_says_it_refuses() -> None:
  <listOfReactions><reaction id="r" reversible="false">
   <listOfReactants><speciesReference species="A" stoichiometry="1" constant="true"/></listOfReactants>
   <listOfProducts><speciesReference species="B" stoichiometry="1" constant="true"/></listOfProducts>
-  <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>A</ci></apply></math></kineticLaw>
+  <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>A</ci></apply></math>
+   <listOfLocalParameters><localParameter id="k" value="1"/></listOfLocalParameters></kineticLaw>
  </reaction></listOfReactions></model></sbml>"""
 
-    for label, sbml in (
-        ("stoichiometryMath", stoichiometry_math),
-        ("model-level substance units", model_level_moles),
-        ("species conversionFactor", species_conversion_factor),
+    # The expected refusal is named per case. `match=r".+"` accepted any ValueError, and each of
+    # these fixtures originally declared its rate constant at model scope — so the mass-action
+    # reader refused all three before any guard under test was reached, and the test passed against
+    # a package with every one of these fixes reverted.
+    for label, sbml, expected in (
+        ("stoichiometryMath", stoichiometry_math, "non-constant stoichiometry"),
+        ("model-level substance units", model_level_moles, "declares substance units"),
+        ("species conversionFactor", species_conversion_factor, "species conversionFactor"),
     ):
-        with pytest.raises(ValueError, match=r".+"), _naming(label):
+        with pytest.raises(ValueError, match=expected), _naming(label):
             ingest_stochastic_sbml(sbml)
+
+
+def test_a_level_2_species_defaults_to_the_models_own_substance_definition() -> None:
+    """Level 2 has no model-level `substanceUnits`; its default is the predefined `substance` unit.
+
+    A model may redefine that, and four of the six committed Level 2 kinetic models do — as scaled
+    moles. Reading only the species attribute returned '' there and let a model whose amounts are
+    nanomoles through the guard whose whole purpose is catching amounts that are not counts.
+    """
+    pytest.importorskip(
+        "libsbml", reason="the optional 'engine' extra (python-libsbml) is not installed"
+    )
+    from reprolith.sbml import ingest_stochastic_sbml
+
+    def model(kind: str, scale: str) -> str:
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4"><model id="m">
+ <listOfUnitDefinitions><unitDefinition id="substance">
+   <listOfUnits><unit kind="{kind}" scale="{scale}"/></listOfUnits>
+ </unitDefinition></listOfUnitDefinitions>
+ <listOfCompartments><compartment id="c" size="1"/></listOfCompartments>
+ <listOfSpecies>
+  <species id="A" compartment="c" initialAmount="100" hasOnlySubstanceUnits="true"/>
+  <species id="B" compartment="c" initialAmount="0" hasOnlySubstanceUnits="true"/>
+ </listOfSpecies>
+ <listOfReactions><reaction id="r" reversible="false">
+  <listOfReactants><speciesReference species="A"/></listOfReactants>
+  <listOfProducts><speciesReference species="B"/></listOfProducts>
+  <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>A</ci></apply></math>
+   <listOfParameters><parameter id="k" value="1"/></listOfParameters></kineticLaw>
+ </reaction></listOfReactions></model></sbml>"""
+
+    # Scaled moles are amounts, not counts, however the model spells them.
+    for scale in ("-9", "-3", "0"):
+        with pytest.raises(ValueError, match="substance units"):
+            ingest_stochastic_sbml(model("mole", scale))
+    # Genuine molecule counts still ingest.
+    names, _, initial = ingest_stochastic_sbml(model("item", "0"))
+    assert list(initial) == [100, 0]
+
+
+def test_a_rule_determined_name_is_reported_rather_than_passed_over() -> None:
+    """A rule-determined parameter has no stated value to compare — which is not silence.
+
+    Restoring those names to the comparison dictionaries put their inert `value` attributes back
+    into the comparison, so a dossier stating one agreed with it and the check fell silent exactly
+    where it had just been taught to speak. And reading only the locals for a reused name published
+    "model 9.0" for a model whose global is 5.0 — the dossier's own number, live in another
+    reaction — naming a value the model does not hold.
+    """
+    pytest.importorskip(
+        "libsbml", reason="the optional 'engine' extra (python-libsbml) is not installed"
+    )
+    from pathlib import Path
+
+    from reprolith.dossier import Dossier, ExtractionConfidence, Parameter
+    from reprolith.sbml import compare_sbml_to_dossier
+
+    def stated(name: str, value: float) -> Parameter:
+        return Parameter(name=name, value=value, unit="second", source_location="Table 1",
+                         confidence=ExtractionConfidence.QUOTED)
+
+    committed = (Path(__file__).parent.parent / "datasets" / "kinetic"
+                 / "BIOMD0000000058.xml").read_text(encoding="utf-8")
+    problems = compare_sbml_to_dossier(
+        committed, Dossier(entry="X", parameters=(stated("Phi1_c1", 0.0),))
+    )
+    assert problems and "a rule determines it" in problems[0], problems
+
+    global_and_local = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4"><model id="m">
+ <listOfCompartments><compartment id="c" size="1"/></listOfCompartments>
+ <listOfSpecies><species id="A" compartment="c" initialAmount="1" hasOnlySubstanceUnits="true"/></listOfSpecies>
+ <listOfParameters><parameter id="Vmax" value="5.0"/></listOfParameters>
+ <listOfReactions>
+  <reaction id="R1" reversible="false"><listOfReactants><speciesReference species="A"/></listOfReactants>
+   <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>Vmax</ci><ci>A</ci></apply></math>
+    <listOfParameters><parameter id="Vmax" value="9.0"/></listOfParameters></kineticLaw></reaction>
+  <reaction id="R2" reversible="false"><listOfReactants><speciesReference species="A"/></listOfReactants>
+   <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>Vmax</ci><ci>A</ci></apply></math>
+   </kineticLaw></reaction>
+ </listOfReactions></model></sbml>"""
+    reported = compare_sbml_to_dossier(
+        global_and_local, Dossier(entry="Y", parameters=(stated("Vmax", 5.0),))
+    )
+    assert reported and "several values" in reported[0], reported
+    assert "5.0" in reported[0], "the global the dossier agrees with must appear"

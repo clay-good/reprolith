@@ -72,7 +72,10 @@ def main() -> None:
                 quantity=f"{spec['species']} time-course ({spec['network']})",
                 species=spec["species"],
                 reference=tuple(spec["curve"]),
-                source_location=spec["source"],
+                source_location=(
+                    f"{spec['source']} — reference curve computed by {spec['reference_tool']} "
+                    "re-running this model file, not a curve digitized from the paper"
+                ),
                 duration=spec["duration"],
                 steps=spec["steps"],
                 # A partial or failed verdict must carry a root cause, and a claim supplying none

@@ -82,7 +82,18 @@ def _cross_validation_entry(model_id: str, record: dict) -> tuple[Identifiers, G
             id=f"{model_id}-growth",
             quantity="maximal growth rate on the distributed medium",
             conditions="the model's distributed exchange bounds",
-            source_location=record["source"],
+            # A `source_location` names where the reference VALUE came from — the claims dataset says
+            # so in as many words: "A claim's reference value comes from the paper (cited in
+            # source_location), not from re-running the model." For these entries it did not: the
+            # reference was computed by an independent tool re-running this same model file, which is
+            # what makes the cross-validation non-circular and is the whole point of the set. Citing
+            # only the publication let a certificate read as a reproduction of the paper's own
+            # published number, over its DOI, when a reader following that pointer would find no such
+            # number. The tool is already recorded beside the reference; it travels with the claim now.
+            source_location=(
+                f"{record['source']} — reference value computed by {record['reference_tool']} "
+                "re-running this model file, not a number read from the paper"
+            ),
             reference_kind=ReferenceKind.NUMERIC,
             reference_data=(record["reference_growth"],),
         )],

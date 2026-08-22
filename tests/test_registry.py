@@ -112,3 +112,46 @@ def test_the_builder_refuses_to_publish_a_class_that_is_missing() -> None:
     module._SOURCES = dict(module._SOURCES, spatial=_REPO / "datasets" / "no_such_class")
     with pytest.raises(FileNotFoundError, match="spatial"):
         module.collect()
+
+
+def test_a_certificate_citing_a_paper_says_where_its_reference_value_came_from() -> None:
+    """A `source_location` names where the reference VALUE came from, not just which paper.
+
+    The claims dataset says so in as many words: "A claim's reference value comes from the paper
+    (cited in `source_location`), not from re-running the model." For twenty of the thirty
+    published certificates it did not — the reference was computed by COBRApy, libRoadRunner or
+    CANA re-running the same model file, which is what makes the cross-validation non-circular and
+    is the whole point of those sets. Citing only the publication let a certificate read as a
+    reproduction of the paper's own published number, over its DOI, when a reader following that
+    pointer would find no such number.
+    """
+    import json
+    from pathlib import Path
+
+    datasets = Path(__file__).parent.parent / "datasets"
+    tool_backed = {
+        "constraint_based/milestone/certificates": "COBRApy",
+        "kinetic/milestone/certificates": "libRoadRunner",
+        "logical/milestone/certificates": "CANA",
+    }
+    checked = 0
+    for directory, tool in tool_backed.items():
+        paths = sorted((datasets / directory).glob("*.json"))
+        assert paths, f"{directory} publishes no certificates to check"
+        for path in paths:
+            content = json.loads(path.read_text(encoding="utf-8"))
+            for assessment in content["assessments"]:
+                cited = assessment["source_location"]
+                # Only the entries that cite a real publication make the claim this guards.
+                if "doi:" not in cited and "et al." not in cited:
+                    continue
+                checked += 1
+                assert "reference" in cited and (
+                    "computed by" in cited
+                ), f"{path.name} cites a publication without saying where its reference came from"
+                assert tool in cited or "sympy" in cited, (
+                    f"{path.name} names no reference tool; expected {tool}"
+                )
+    # 19 today: 7 constraint-based (e_coli_core's 0.873922 IS a documented literature
+    # value), 6 kinetic, 6 logical. A floor, so the guard cannot quietly stop biting.
+    assert checked >= 19, f"only {checked} publication-citing claims found; the guard is not biting"

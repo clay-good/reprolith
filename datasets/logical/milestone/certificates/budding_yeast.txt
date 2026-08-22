@@ -1,11 +1,11 @@
-REPRODUCTION CERTIFICATE — Budding yeast cell-cycle network, CANA's 12-node variant (after Li et al. 2004)
+REPRODUCTION CERTIFICATE — Budding yeast cell-cycle network, CANA's 12-node variant (after Li et al. 2004) — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper
 Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 151d73ed314c)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
 
 CLAIMS
-  [budding_yeast-attractors] attractor signature (count and periods): reproduced (source Budding yeast cell-cycle network, CANA's 12-node variant (after Li et al. 2004) via attractor-signature-match, tol=exact match on the attractor count and every period)
+  [budding_yeast-attractors] attractor signature (count and periods): reproduced (source Budding yeast cell-cycle network, CANA's 12-node variant (after Li et al. 2004) — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper via attractor-signature-match, tol=exact match on the attractor count and every period)
       protocol: 12 nodes, exhaustive enumeration of all 2^12 states
 
 SCOPE

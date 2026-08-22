@@ -100,6 +100,15 @@ when you add a check, a refusal, or a stability rule:
   nothing on Level 2, which is most of the curated corpus — it covered 10 of 234 cases while its
   comment claimed all of them. When you read a model through a library, check the attribute exists
   at the level the files you actually ingest are written in.
+- **Read the artifact as the reader you are aiming it at.** Auditing the code that produces a
+  certificate is not the same as reading the certificate. Twenty of thirty published certificates
+  cited a paper's DOI as the source of a reference value that an independent tool had computed by
+  re-running the model file — every dataset stored the tool's name, and the field dropped it. Follow
+  every pointer your artifact prints and check it says what you are citing it for.
+- **`pytest.raises(ValueError)` is not a measurement.** A test asserting only that *something*
+  raised passed against a package with all three fixes it guarded reverted — the fixtures were
+  refused earlier, for an unrelated reason, and the test accepted that. Match the specific refusal,
+  and run the revert check one test at a time rather than batching it and reporting the batch.
 - **If a tool tells you it failed, read it.** The pinned engine reports an abandoned time course by
   returning `False` and recording the samples it reached — all finite, so the non-finite guard
   cannot see it. That return value was discarded and the sample count never compared to the one

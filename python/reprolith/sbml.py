@@ -254,7 +254,11 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
     for name, values in local_values.items():
         sbml_params.setdefault(name, values[0])
         all_params.setdefault(name, values[0])
-    comparable_ics = {**all_params, **sbml_sizes, **sbml_ics}
+    # Comparable values come from `sbml_params` — the rule-determined names are excluded, because
+    # their `value` attribute is inert. Building this from `all_params` put those inert numbers
+    # back in the comparison, so a dossier stating one agreed with it and the check fell silent
+    # exactly where the previous round had made it speak.
+    comparable_ics = {**sbml_params, **sbml_sizes, **sbml_ics}
 
     known = {model.getSpecies(i).getId() for i in range(model.getNumSpecies())}
     known |= {model.getCompartment(i).getId() for i in range(model.getNumCompartments())}
@@ -267,14 +271,25 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
                 f"parameter {parameter.name}: stated by the dossier ({parameter.value}) but "
                 "not present in the model"
             )
+        elif parameter.name in rule_determined:
+            # Present in the model, but with no stated value to compare: a rule computes it. Said
+            # plainly rather than passed over — "no disagreement" has to mean the values were
+            # compared, and falling through to nothing here is the silence this check exists to
+            # break. It is not the "not present in the model" the branch above reports, either.
+            mismatches.append(
+                f"parameter {parameter.name}: stated by the dossier ({parameter.value}) but a "
+                "rule determines it in the model, so there is no stated value to compare"
+            )
         else:
-            held = local_values.get(parameter.name)
-            if held is not None and any(
-                _differs(parameter.value, value, rel_tol) for value in held
-            ):
-                # The model holds this name at more than one value, or at one that differs. Either
-                # way the manuscript's single number cannot be said to agree with the artifact.
-                distinct = sorted({value for value in held})
+            # Every value the model holds under this name, the global included: reading only the
+            # locals published "model 9.0" for a model whose global is 5.0 — the dossier's own
+            # number, and the live value in another reaction — so the mismatch named a value the
+            # model does not hold and the several-values wording never fired.
+            held = list(local_values.get(parameter.name, ()))
+            if parameter.name in all_params and parameter.name not in rule_determined:
+                held.append(all_params[parameter.name])
+            if held and any(_differs(parameter.value, value, rel_tol) for value in held):
+                distinct = sorted(set(held))
                 mismatches.append(
                     f"parameter {parameter.name}: dossier {parameter.value} != model "
                     + (
@@ -285,7 +300,7 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
                 )
                 continue
             stated = {**sbml_params, **sbml_sizes}.get(parameter.name)
-            if stated is not None and _differs(parameter.value, stated, rel_tol):
+            if not held and stated is not None and _differs(parameter.value, stated, rel_tol):
                 mismatches.append(
                     f"parameter {parameter.name}: dossier {parameter.value} != model {stated}"
                 )
@@ -869,6 +884,27 @@ def _mass_action_rate(kinetic_law: Any, reactant_powers: Mapping[str, int]) -> f
     return float(rate_param.getValue()) * stoichiometric_factor
 
 
+def _stated_substance_units(model: Any, spec: Any) -> str:
+    """The unit id a species' amount is stated in, following both levels' defaulting rules.
+
+    Level 3 defaults a species that omits the attribute to the *model's* `substanceUnits`. Level 2
+    has no such model attribute and defaults instead to the predefined `substance` unit — which a
+    model may redefine, and four of the six committed Level 2 kinetic models do, as scaled moles
+    (1e-9, 1e-9, 1e-3, 1e-6). Reading only the species attribute there returned '' and let a model
+    whose amounts are nanomoles through the guard that exists to catch exactly that. `_resolve_unit`
+    learned this same Level 2 rule one module over; this is its neighbour.
+
+    An L2 model that neither states nor defines `substance` is left alone: the implicit default is
+    `mole`, and refusing every such model would fail far more real work than it protects.
+    """
+    stated = spec.getSubstanceUnits()
+    if stated:
+        return str(stated)
+    if model.getLevel() == 2:
+        return "substance" if model.getUnitDefinition("substance") is not None else ""
+    return str(model.getSubstanceUnits())
+
+
 def _resolved_substance_units(model: Any, unit_id: str) -> str:
     """A species' substance units, following a `unitDefinition` reference to what it means.
 
@@ -941,9 +977,7 @@ def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[i
         # attribute, and libsbml returns '' for such a species — so a model declaring itself in
         # moles walked straight past the guard whose whole purpose is catching that. The sibling
         # ingester already reads the fallback (`ingest._read_species`); this is its neighbour.
-        units = _resolved_substance_units(
-            model, spec.getSubstanceUnits() or model.getSubstanceUnits()
-        )
+        units = _resolved_substance_units(model, _stated_substance_units(model, spec))
         if units not in ("", "item", "dimensionless"):
             # The SSA counts molecules. A species declared in moles is read verbatim, so 100 mol
             # becomes 100 molecules and every noise statistic the class exists to reproduce — the

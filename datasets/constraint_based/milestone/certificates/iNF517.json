@@ -12,7 +12,7 @@
       "quantity": "maximal growth rate on the distributed medium",
       "reference_kind": "numeric",
       "root_cause": null,
-      "source_location": "BiGG Models http://bigg.ucsd.edu/models/iNF517 ; doi:10.1128/AEM.00113-13 (PMID 23974059)",
+      "source_location": "BiGG Models http://bigg.ucsd.edu/models/iNF517 ; doi:10.1128/AEM.00113-13 (PMID 23974059) \u2014 reference value computed by COBRApy 0.31.1 slim_optimize on the model's distributed medium re-running this model file, not a number read from the paper",
       "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "highs (reprolith-fba rev 18454cb60235)",
+    "algorithm": "highs (reprolith-fba rev 07162636ff81)",
     "engine": "scipy-linprog",
     "version": "1.13.1"
   },

@@ -60,6 +60,21 @@ REPO = Path(__file__).resolve().parents[1]
 LOG = REPO / "datasets" / "logical"
 
 
+def _cited(citation: str, reference_tool: str) -> str:
+    """The publication, and the tool that actually produced the number judged against it.
+
+    A `source_location` names where the reference VALUE came from — the claims dataset says so in
+    as many words: "A claim's reference value comes from the paper (cited in source_location), not
+    from re-running the model." For these entries it did not: the attractor structure was computed
+    by an independent tool from the same committed rules, which is what makes the cross-validation
+    non-circular. Citing only the publication let the certificate read as a reproduction of the
+    paper's own published count, over its own citation, when a reader following that pointer would
+    find a different number — the defect already fixed once for the budding-yeast entry, unfixed
+    for its neighbours.
+    """
+    return f"{citation} — reference computed by {reference_tool}, not a count read from the paper"
+
+
 def main() -> None:
     reference = json.loads((LOG / "cross_validation" / "reference.json").read_text(encoding="utf-8"))
     scalable = json.loads(
@@ -80,7 +95,8 @@ def main() -> None:
     plans = []
     for key in sorted(reference["models"]):
         entry = reference["models"][key]
-        plans.append((key, entry["rules"], entry["citation"], "attractors",
+        plans.append((key, entry["rules"], _cited(entry["citation"], reference["_source"]),
+                      "attractors",
                       (entry["n_attractors"], sorted(entry["attractor_periods"])),
                       "attractor signature (count and periods)",
                       "the attractor count and every period",
@@ -91,7 +107,8 @@ def main() -> None:
         # The reference publishes the SHA-256 of the fixed-point set itself, so compare that: a
         # count alone is satisfied by any network with the same number of steady states, and
         # single-rule inversions of these very models keep the count while sharing not one state.
-        plans.append((key, entry["rules"], entry["citation"], "fixed_points",
+        plans.append((key, entry["rules"], _cited(entry["citation"], scalable["_source"]),
+                      "fixed_points",
                       (entry["n_fixed_points"], entry["fixed_points_sha256"]),
                       "steady-state (fixed-point) set",
                       "the fixed-point set (SHA-256 of the sorted states)",

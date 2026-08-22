@@ -1358,6 +1358,123 @@ And three more in the round before's fixes, found by re-auditing it:
   valid file beside it unread — the smaller-track-record failure that `load_certificates` refuses
   to allow for one file, reintroduced for a whole directory.
 
+## What twenty certificates were pointing at
+
+Round five's sharpest finding came from an angle nobody had taken: reading a finished certificate
+as the outside reader it exists to persuade — a reviewer checking an author's reproducibility
+claim — rather than auditing the code that produced it.
+
+**Twenty of the thirty published certificates cited a publication as the source of the reference
+value, and the reference had been computed by a different tool re-running the same model file.**
+The claims dataset states the rule in as many words: *"A claim's reference value comes from the
+paper (cited in `source_location`), not from re-running the model."* Every other use of the field
+honours it — `"Table 4, Zaharenko dataset (reported 6.2 nmol/mL)"`, `"Fig 3"`, `"Table 2"`. But the
+kinetic curves are libRoadRunner's, the seven genome-scale growth rates are COBRApy's, and the
+logical attractor structures are CANA's, each recomputed from the committed model, and no
+certificate named the tool. The provenance was stored right beside the reference in every dataset
+file — `reference_tool` — and dropped on the way to the claim.
+
+That is not a small wording point. Those references are *why* the cross-validation is
+non-circular, and the project's documentation says so accurately in five places. None of them is
+reachable from the certificate, which `render.py` describes as "a self-contained, plain-text
+certificate a stranger can follow". A reader following `doi:10.1038/msb.2011.65` from the iJO1366
+certificate finds a paper that publishes no such growth rate. This note's own earlier section
+records the internal analysis that for exactly those two models "an honest per-paper reproduction
+abstains rather than guess the medium" — while the public artifact said `reproduced`, green, over
+their DOI and PMID.
+
+It is also the same defect as the budding-yeast attribution fixed one round earlier — *"a reader
+following the certificate's own pointer landed on a source reporting something else"* — which was
+fixed for the one entry that surfaced it and not for the nineteen beside it. The rule reached one
+certificate and not its neighbours.
+
+Every publication-citing claim now says what produced the number judged against it: *"…
+— reference value computed by COBRApy 0.31.1 `slim_optimize` on the model's distributed medium,
+not a number read from the paper"*. Nineteen claims across three classes, pinned by a test with a
+floor so the guard cannot quietly stop biting. No verdict moved: 8/8, 6/6 and 9/9 as before.
+
+The same reading reached the README's first paragraph, which says Reprolith "checks the output
+against the paper's own figures and tables". One of the thirty certificates does that. The claim
+is what the project is *for*, and it now says so while being exact about how much of it is built.
+
+**One finding declined, with the reason recorded.** The seven genome-scale certificates disclose on
+their protocol line that the paper stated no medium, and that fact reaches neither the gap report
+nor the badge — where the spatial class treats an identically-shaped omission as a load-bearing
+gap and goes amber. Measured, the alternative matters enormously: an anaerobic medium changes
+iJO1366's growth by 75% and iMM904's by 100%. But nothing was *guessed* here. The medium is stated
+— by the model file, named in the claim's own `conditions` and in its protocol — and the reference
+was computed under that same stated medium. With the reference provenance now on the claim line, a
+reader is told exactly what was compared with what. Recording it as a load-bearing gap would
+downgrade eight verdicts and invalidate their ground-truth labels for an omission that, once the
+claim is honestly scoped, is not there. A too-strict fix is a defect too.
+
+### The pipeline reproduces byte for byte
+
+Determinism is one of the three honesty invariants this project claims, and until now it had been
+checked at the level of the content hash — stable under `PYTHONHASHSEED`, `canonical_json` sorting
+its keys — never by running the generation pipeline twice and diffing everything it makes.
+
+Five independent clean trees, each extracted with `git archive`, running all eight generators:
+baseline; reverse order with `PYTHONHASHSEED=12345`, `LC_ALL=C`, `TZ=Asia/Tokyo`, invoked from `/`
+by absolute path with the registry built *before* any milestone; a five-level-deeper path with a
+comma-decimal locale (`de_DE.UTF-8`), `TZ=UTC` and `OMP_NUM_THREADS=1`; a from-scratch run with all
+64 generated files deleted first; and a third order permutation under `PYTHONHASHSEED=random`.
+`diff -rq` across whole trees returns nothing, in every pairing. Checked against the committed
+blobs rather than a working directory: **64 produced files, 0 differing from HEAD**.
+
+The solver noise is real and does not reach the artifacts. Four consecutive `simulate` calls on
+Kholodenko's MAPK model alternate by 2.94e-4 with call parity, exactly as `engine.simulate`'s
+docstring describes — and certifying that model *alone, in a fresh process, at a different parity*
+still reproduces the published digest, because the discrepancy is published to four decimals and
+the corroboration figure is published as a bound rather than a measurement. Planting a stale
+certificate in a milestone directory is pruned, and the registry sorts its rows rather than
+inheriting filesystem order, so no iteration order leaks into a published page.
+
+One thing is unexercised rather than proven: `content_hash({"v": -0.0})` differs from
+`content_hash({"v": 0.0})`, so a solver sign flip on a zero could in principle move a digest. No
+committed certificate contains `-0.0`.
+
+### A claim I made that was not true
+
+The round-four commit said its regression tests were "verified red against a reverted package". For
+one of the three — the test covering the hostile stochastic artifacts — that was false, and the
+re-audit caught it. All three fixtures declared their rate constant at model scope, so the
+mass-action reader refused them *before* any of the three guards under test was reached, and
+`pytest.raises(ValueError, match=r".+")` accepted that refusal as proof. The test passed against a
+package with every one of the fixes reverted. The numbers quoted in its docstring — 500 molecules
+under libRoadRunner against 100 — could not have come from those files, because the reverted code
+never ingested them at all.
+
+I ran the revert check per-test in earlier rounds and batched it in that one, then wrote the
+stronger sentence anyway. The fixtures now put the rate constant inside the kinetic law so each
+file reaches the guard it is for, and each case asserts the specific refusal rather than any
+`ValueError`; verified red against the reverted package, one test at a time. A guard is worth what
+its measurement is worth, and so is a claim about a test.
+
+Three more of that round's fixes were defective in the same pass:
+
+- **The shadow guard saw only kinetic laws.** Everything else that reads a global — a rule, an
+  initial assignment, an event trigger — reads global scope and cannot be shadowed by any
+  reaction's local. So one reaction declaring a local `k` made a global `k` that a rate rule
+  integrates look fully shadowed, and an override of it was refused under a message saying it has
+  no effect on the run. Measured: 54.6x. That is the same defect the round before had just fixed at
+  7.4x, one route over — the third time this one guard has been wrong.
+- **The Level 2 twin of its own substance-units fix.** Level 2 has no model-level `substanceUnits`;
+  its default is the predefined `substance` unit, which a model may redefine — and four of the six
+  committed Level 2 kinetic models define it as scaled moles (1e-9, 1e-9, 1e-3, 1e-6). Reading only
+  the species attribute returned nothing there, so a model whose amounts are nanomoles passed the
+  guard that exists to catch amounts that are not counts. `ingest._resolve_unit` had learned exactly
+  this Level 2 rule in the same commit; its neighbour had not.
+- **Two flags turned to silence, and one true value to a false one.** Restoring rule-determined
+  names to the comparison dictionaries — the fix for a *different* over-reporting defect — put
+  their inert `value` attributes back into the comparison, so a dossier stating one agreed with it
+  and the check fell silent precisely where it had just been taught to speak. And reading only the
+  local values for a reused name published "model 9.0" for a model whose global is 5.0, the
+  dossier's own number and the live value in another reaction: a mismatch naming a value the model
+  does not hold. There are three cases here, not two — present with a comparable value, present
+  with none because a rule computes it, and absent — and collapsing the middle one into either
+  neighbour is what produced both defects.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

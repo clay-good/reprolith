@@ -12,7 +12,7 @@
       "quantity": "attractor signature (count and periods)",
       "reference_kind": "numeric",
       "root_cause": null,
-      "source_location": "Drosophila melanogaster segment polarity, single cell (Albert & Othmer 2003)",
+      "source_location": "Drosophila melanogaster segment polarity, single cell (Albert & Othmer 2003) \u2014 reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper",
       "tolerance": "exact match on the attractor count and every period",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
@@ -29,7 +29,7 @@
   "paper": {
     "doi": "",
     "pubmed_id": null,
-    "title": "Drosophila melanogaster segment polarity, single cell (Albert & Othmer 2003)"
+    "title": "Drosophila melanogaster segment polarity, single cell (Albert & Othmer 2003) \u2014 reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper"
   },
   "scope": {
     "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",

@@ -12,7 +12,7 @@
       "quantity": "steady-state (fixed-point) set",
       "reference_kind": "numeric",
       "root_cause": null,
-      "source_location": "MAPK network / cancer cell-fate decision (Grieco et al. 2013); via Cell Collective (Helikar et al. 2012)",
+      "source_location": "MAPK network / cancer cell-fate decision (Grieco et al. 2013); via Cell Collective (Helikar et al. 2012) \u2014 reference computed by sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0, not a count read from the paper",
       "tolerance": "exact match on the fixed-point set (SHA-256 of the sorted states)",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
@@ -29,7 +29,7 @@
   "paper": {
     "doi": "",
     "pubmed_id": null,
-    "title": "MAPK network / cancer cell-fate decision (Grieco et al. 2013); via Cell Collective (Helikar et al. 2012)"
+    "title": "MAPK network / cancer cell-fate decision (Grieco et al. 2013); via Cell Collective (Helikar et al. 2012) \u2014 reference computed by sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0, not a count read from the paper"
   },
   "scope": {
     "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",

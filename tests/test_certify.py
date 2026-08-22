@@ -319,3 +319,38 @@ def test_an_override_a_local_parameter_shadows_is_refused() -> None:
         _apply_overrides(shadowed, (("k", 3.0),))
     # A global nothing shadows is still overridable.
     assert "5" in _apply_overrides(shadowed, (("free", 5.0),))
+
+
+def test_a_global_a_rule_reads_is_not_treated_as_shadowed() -> None:
+    """The shadow guard counted kinetic laws only, and everything else reads the global.
+
+    One reaction declaring a local `k` made a global `k` that a rate rule integrates look fully
+    shadowed, so an override of it was refused under a message saying it has no effect on the run.
+    Measured: it moved the answer 54.6x. Same shape as the case the previous round fixed, one
+    route over — a rule, an initial assignment or an event reads global scope and cannot be
+    shadowed by any reaction's local.
+    """
+    pytest.importorskip(
+        "libsbml", reason="the optional 'engine' extra (python-libsbml) is not installed"
+    )
+    from reprolith.certify import _apply_overrides
+
+    rule_reads_global = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4"><model id="m">
+ <listOfCompartments><compartment id="c" size="1"/></listOfCompartments>
+ <listOfSpecies>
+  <species id="A" compartment="c" initialAmount="1" hasOnlySubstanceUnits="true"/>
+  <species id="D" compartment="c" initialAmount="1" hasOnlySubstanceUnits="true"/>
+ </listOfSpecies>
+ <listOfParameters><parameter id="k" value="0.1"/></listOfParameters>
+ <listOfRules><rateRule variable="D">
+  <math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>D</ci></apply></math>
+ </rateRule></listOfRules>
+ <listOfReactions><reaction id="R1" reversible="false">
+  <listOfReactants><speciesReference species="A"/></listOfReactants>
+  <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>A</ci></apply></math>
+   <listOfParameters><parameter id="k" value="5.0"/></listOfParameters></kineticLaw>
+ </reaction></listOfReactions></model></sbml>"""
+
+    # It governs the rate rule, so overriding it takes — and must not be refused.
+    assert "0.9" in _apply_overrides(rule_reads_global, (("k", 0.9),))

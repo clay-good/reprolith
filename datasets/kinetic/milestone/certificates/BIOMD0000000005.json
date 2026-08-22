@@ -12,7 +12,7 @@
       "quantity": "M time-course (cell-cycle)",
       "reference_kind": "numeric",
       "root_cause": null,
-      "source_location": "BioModels https://www.ebi.ac.uk/biomodels/BIOMD0000000005 (curated); Tyson1991 - Cell Cycle 6 var",
+      "source_location": "BioModels https://www.ebi.ac.uk/biomodels/BIOMD0000000005 (curated); Tyson1991 - Cell Cycle 6 var \u2014 reference curve computed by libRoadRunner 2.7.0 (CVODE) re-running this model file, not a curve digitized from the paper",
       "tolerance": "reproduced<=0.1, partial<=0.25 (class-default)",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "deterministic-lsoda (judge rev 807ad1663443)",
+    "algorithm": "deterministic-lsoda (judge rev cba7794da7a2)",
     "engine": "copasi",
     "version": "4.46.300 (Source)"
   },

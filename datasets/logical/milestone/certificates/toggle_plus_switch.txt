@@ -1,11 +1,11 @@
-REPRODUCTION CERTIFICATE — A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch
+REPRODUCTION CERTIFICATE — A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper
 Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 151d73ed314c)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
 
 CLAIMS
-  [toggle_plus_switch-attractors] attractor signature (count and periods): reproduced (source A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch via attractor-signature-match, tol=exact match on the attractor count and every period)
+  [toggle_plus_switch-attractors] attractor signature (count and periods): reproduced (source A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper via attractor-signature-match, tol=exact match on the attractor count and every period)
       protocol: 3 nodes, exhaustive enumeration of all 2^3 states
 
 SCOPE

@@ -1,11 +1,11 @@
-REPRODUCTION CERTIFICATE — Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006)
+REPRODUCTION CERTIFICATE — Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006) — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper
 Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 151d73ed314c)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
 
 CLAIMS
-  [thaliana-attractors] attractor signature (count and periods): reproduced (source Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006) via attractor-signature-match, tol=exact match on the attractor count and every period)
+  [thaliana-attractors] attractor signature (count and periods): reproduced (source Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006) — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper via attractor-signature-match, tol=exact match on the attractor count and every period)
       protocol: 15 nodes, exhaustive enumeration of all 2^15 states
 
 SCOPE
