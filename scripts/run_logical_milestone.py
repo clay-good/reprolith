@@ -46,6 +46,7 @@ from reprolith import (
     search_protocol,
 )
 from reprolith.logical import require_pin_matches_path, solver_pin, solver_pin_for
+from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import prune_certificate_directory
 
 
@@ -167,9 +168,10 @@ def main() -> None:
         (milestone / "certificates" / f"{key}.txt").write_text(
             render_human(cert, run), encoding="utf-8"
         )
-    (milestone / "catalog.json").write_text(
-        json.dumps(catalog.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    # Atomic: this file is what both surfaces read at start-up and what a live MCP server
+    # re-reads under its lock, and a plain write_text truncates it to zero before writing
+    # ~52 KB. A crash in that window leaves a blank catalog behind.
+    write_json_atomically(milestone / "catalog.json", catalog.to_dict())
     (milestone / "agreement_report.json").write_text(
         json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )

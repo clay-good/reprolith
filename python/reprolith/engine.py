@@ -223,7 +223,7 @@ def simulate_with_roadrunner(
     _require_advancing_run(duration, steps)
     roadrunner = _roadrunner()
     runner = roadrunner.RoadRunner(sbml)
-    runner.timeCourseSelections = ["time", f"[{species}]"]
+    runner.timeCourseSelections = ["time", f"[{_observable_id(species)}]"]
     result = runner.simulate(0.0, float(duration), int(steps) + 1)
     # The same short-run check :func:`simulate` makes, for the same reason: this engine's output
     # is what a corroboration distance is measured against, and a run that returned fewer samples
@@ -253,7 +253,22 @@ def require_finite(values: tuple[float, ...], species: str) -> tuple[float, ...]
     return values
 
 
+def _observable_id(name: str) -> str:
+    """Accept SBML's concentration notation ``[X]`` for the species ``X``.
+
+    Both of these functions read the engine's *concentration* data, so `[X]` is the accurate way
+    to name what comes back and is what the published protocols and bundle recipes now say. A
+    stranger re-running a bundle strictly as published passes that string straight through, so it
+    has to resolve; a bare id keeps working for every caller that already used one.
+    """
+    stripped = name.strip()
+    if stripped.startswith("[") and stripped.endswith("]"):
+        return stripped[1:-1].strip()
+    return stripped
+
+
 def _species_column(series: Any, name: str, datamodel: Any) -> int:
+    name = _observable_id(name)
     # Resolve by SBML id first: real models often reuse the same display name across
     # several species (the column title is then ambiguous), but the SBML id is unique.
     for i in range(series.getNumVariables()):

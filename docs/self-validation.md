@@ -49,9 +49,10 @@ does not get to publish a clean pass for a result resting on its own choice.
   whose minimized total flux matches COBRApy's `pfba` on the same model, and the **production
   envelope**, whose acetate-vs-growth frontier reproduces COBRApy's `production_envelope` point for
   point. Kinetic verdicts are additionally shown **engine-independent** — every model reproduces
-  identically under COPASI and libRoadRunner (`corroborate_curve`, reported alongside the
-  certificates rather than gating them; see `docs/kinetic-class.md`), so no verdict rests on one
-  solver's quirk.
+  under COPASI and libRoadRunner to a published bound — the worst is the repressilator at a
+  normalized distance of 3.2e-4, three orders inside the pass threshold (`corroborate_curve`,
+  reported alongside the certificates rather than gating them; see `docs/kinetic-class.md`), so no
+  verdict rests on one solver's quirk.
 - **The same contracts throughout.** All six classes flow through one catalog lifecycle, one
   agreement report, one certificate format, and one inescapable scope flag — the generalization is
   demonstrated, not asserted. The logical class proves the point hardest: a third, discrete oracle

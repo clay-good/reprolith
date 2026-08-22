@@ -12,7 +12,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "deterministic-lsoda (judge rev 34c971ff8e23)",
+    "algorithm": "deterministic-lsoda (judge rev f54f02f96bd3)",
     "engine": "copasi",
     "version": "4.46.300 (Source)"
   },
@@ -29,7 +29,7 @@
     {
       "claim_id": "Cmax-500mg",
       "metric": "cmax",
-      "output": "mPlasmaVenous",
+      "output": "[mPlasmaVenous]",
       "protocol": "Table 4, Zaharenko dataset (reported 6.2 nmol/mL)",
       "steps": 480,
       "time_span": "0-24.0"
@@ -37,7 +37,7 @@
     {
       "claim_id": "Cmax-1000mg",
       "metric": "cmax",
-      "output": "mPlasmaVenous",
+      "output": "[mPlasmaVenous]",
       "parameter_overrides": {
         "Metformin_Dose_in_Lumen_in_mg": 779.9
       },

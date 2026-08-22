@@ -11,7 +11,9 @@ kinetic-vs-libRoadRunner checks. It needs no CANA at test time, only the committ
 
 The signature (count + periods) is invariant to CANA's constant-node reduction and to state
 encoding, so agreement on it is a representation-independent reproduction of each model's documented
-attractor structure — e.g. the 11 fixed points of the Li et al. 2004 yeast cell-cycle network.
+attractor structure — e.g. the 11 attractors of CANA's 12-node budding-yeast network, whose
+seven `CellSize=0` fixed points are Li et al. 2004's published steady states (the paper reports 7
+over 11 nodes; the 12th node is a free self-loop CANA adds).
 """
 
 from __future__ import annotations
@@ -56,7 +58,8 @@ def test_reference_covers_published_models_and_cyclic_cases() -> None:
     assert {"thaliana", "drosophila", "budding_yeast", "marques_pita"} <= models
     # Plus synthetic networks that exercise the limit-cycle path against CANA, not just fixed points.
     assert {"repressilator", "toggle_plus_switch"} <= models
-    # Anchored sanity checks: the Li et al. 2004 yeast fixed-point count, and a genuine cycle.
+    # Anchored sanity checks: CANA's 12-node yeast variant's fixed-point count (11, of which
+    # the seven at CellSize=0 are Li et al. 2004's), and a genuine cycle.
     assert _REFERENCE["models"]["budding_yeast"]["n_attractors"] == 11
     assert _REFERENCE["models"]["repressilator"]["attractor_periods"] == [2, 6]  # a period-6 cycle
 

@@ -149,7 +149,7 @@ def test_a_time_course_certificate_records_the_run_behind_each_number(
                       parameter_overrides=(("Dose_mg", 779.9),))],
     )
     assert scalar.assessments[0].protocol == (
-        "duration=10.0, steps=10, read=C cmax, overrides: Dose_mg=779.9"
+        "duration=10.0, steps=10, read=[C] cmax, overrides: Dose_mg=779.9"
     )
 
     curve = certify_curves(
@@ -158,9 +158,9 @@ def test_a_time_course_certificate_records_the_run_behind_each_number(
                            reference=tuple(5.0 for _ in times), source_location="Fig 1",
                            duration=10.0, steps=10)],
     )
-    assert curve.assessments[0].protocol == "duration=10.0, steps=10, read=C curve"
+    assert curve.assessments[0].protocol == "duration=10.0, steps=10, read=[C] curve"
     # It travels into the published content, so a reader holding the file can re-run it.
-    assert curve.content()["assessments"][0]["protocol"] == "duration=10.0, steps=10, read=C curve"
+    assert curve.content()["assessments"][0]["protocol"] == "duration=10.0, steps=10, read=[C] curve"
 
 
 def test_an_estimation_claim_that_states_no_protocol_is_refused() -> None:
@@ -230,7 +230,7 @@ def test_the_protocol_prints_the_value_that_was_run_and_what_was_read(
                       parameter_overrides=(("dose", 389.9200009),))],
     )
     assert "dose=389.9200009" in cert.assessments[0].protocol
-    assert "read=C cmax" in cert.assessments[0].protocol
+    assert "read=[C] cmax" in cert.assessments[0].protocol
 
 
 def test_an_override_an_event_may_overwrite_is_allowed() -> None:

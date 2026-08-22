@@ -123,6 +123,18 @@ class ReprolithQuery:
 
     # --- catalog / status (blind: no ground-truth label leaves the catalog) --------
 
+
+    @property
+    def ledger(self) -> CertificateLedger:
+        """The certificate ledger this surface reads.
+
+        Exposed read-only so a long-lived server can refresh it: the ledger is loaded once at
+        start-up, and supersession is expressed by *adding* a file, so a correction published after
+        start-up was invisible and `record_result` wrote the retracted verdict into the entry's
+        permanent history.
+        """
+        return self._ledger
+
     def list_catalog(
         self,
         *,

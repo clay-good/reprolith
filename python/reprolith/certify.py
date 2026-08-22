@@ -112,6 +112,13 @@ def _run_protocol(
     Values are written at full precision rather than rounded for display: a reader who re-runs with
     the printed number has to get the number that was run, and six significant figures is enough to
     print two distinct doses identically.
+
+    The observable is written in SBML's concentration notation, ``[X]``, because that is what is
+    read: :func:`reprolith.engine.simulate` takes the engine's concentration data. A bare ``X`` is
+    the *amount* to anyone who resolves the symbol the way SBML defines it, and on the one committed
+    model with real compartments the two differ by 2247x — the metformin certificate's 6.07 nmol/mL
+    against 13,630.8 nmol. The same ambiguity had already produced a real cross-engine defect, where
+    it was harmless only because every other committed model has a compartment of size 1.
     """
     stated = f"duration={duration!r}, steps={int(steps)}, read={read}"
     if overrides:
@@ -220,7 +227,7 @@ def certify_model(
                 protocol=_run_protocol(
                     duration=duration,
                     steps=steps,
-                    read=f"{claim.species} {claim.metric}",
+                    read=f"[{claim.species}] {claim.metric}",
                     overrides=claim.parameter_overrides,
                 ),
             )
@@ -299,7 +306,7 @@ def certify_curves(
                 protocol=_run_protocol(
                     duration=claim.duration,
                     steps=claim.steps,
-                    read=f"{claim.species} curve",
+                    read=f"[{claim.species}] curve",
                     overrides=claim.parameter_overrides,
                 ),
             )

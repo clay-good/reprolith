@@ -29,9 +29,10 @@ Each certificate is produced from only the model's Boolean rules and the indepen
 the label. The counts are CANA's (small models) or an independent SAT solver's (sympy, for the large
 leukemia network — reproduced here by z3); the committed rules are *proven faithful* to CANA's model
 before use (see the [cross-validation](../cross_validation/README.md)). So a reproduced verdict here
-is Reprolith's own oracle agreeing with an independent tool — e.g. the 11 fixed points of the Li et
-al. 2004 yeast cell-cycle network, or the 71 steady states of the 60-node leukemia network — not a
-tool agreeing with itself.
+is Reprolith's own oracle agreeing with an independent tool — e.g. the 11 attractors of CANA's
+12-node budding-yeast network (whose seven `CellSize=0` fixed points are Li et al. 2004's published
+steady states; the paper's own network is 11 nodes with 7), or the 71 steady states of the 60-node
+leukemia network — not a tool agreeing with itself.
 
 Regenerate with `python scripts/run_logical_milestone.py` (reads committed data; no CANA, no
 network).

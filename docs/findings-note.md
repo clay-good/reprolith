@@ -1200,6 +1200,80 @@ else, so a hand-edited verdict in a committed render passed untouched — the sa
 result it was added to close, one field over. It now asserts the render is byte-for-byte the
 rendering of the certificate beside it.
 
+## The corpus, the modeller's reading, and two servers over one directory
+
+Round three took four angles, three of them new: the previous round's own fixes again; the
+ingestion path read as a domain modeller rather than a programmer; the committed *data* recomputed
+against independent tools, which nobody had ever checked; and the write path driven from five
+concurrent processes.
+
+**The data is sound.** Every FBA growth value reproduces bit-identically against COBRApy, every
+kinetic reference curve byte-identically against libRoadRunner, every CANA attractor signature and
+SAT fixed-point digest twice over, and every closed form — Poisson, binomial, Gaussian diffusion,
+Fisher-KPP, Nagumo, morphogen decay length, bursty Fano, harmonic extinction, Derrida — derived and
+checked numerically rather than asserted. Every count in all six agreement reports, in
+`docs/self-validation.md`, and on the registry page recomputes from the per-entry rows, and all
+thirty published content digests recompute from the certificates. That is the first independent
+audit of the corpus itself, and it came back clean but for one thing:
+
+- **A number attributed to a paper that reports a different one.** Four documents, and the
+  certificate's own `source_location`, credited "the 11 fixed points of the Li et al. 2004 yeast
+  cell-cycle network". Li et al. 2004 report **7**, over 11 nodes, with basins
+  1764/151/109/9/7/7/1. The 11 belongs to CANA's bundled *12*-node variant, which adds `CellSize`
+  as a free self-loop node; seven of the eleven sit at `CellSize=0` and are exactly the paper's,
+  and four exist only at `CellSize=1`. The count was never wrong — CANA returns 11, brute force
+  returns 11, and the protocol line honestly said "12 nodes" — but a reader following the
+  certificate's own pointer landed on a source reporting something else. The network is now named
+  for what it is everywhere it appears.
+
+**What a modeller would notice.** Reading ingestion as someone who might hand Reprolith their own
+model found the unit resolution added last round publishing units *inverted*:
+
+- SBML defines a factor as `(multiplier × 10^scale × kind)^exponent`, and the renderer applied the
+  exponent to the kind alone. The metformin model's eleven blood flows were published as 3.6e5
+  mL/s where the file states mL per 360000 s — wrong by 1.3e11, in a committed artifact — and a
+  second-order rate constant came out 1e6 the other way. Strictly worse than the bare `unit_2` it
+  replaced, because it reads as resolved. Every rendering now agrees with libsbml's own.
+- **A value a rule computes is not a value the paper stated.** SBML makes a rule-determined
+  parameter's `value` attribute inert, and models ship whatever was there: BIOMD0000000058 declares
+  eight such parameters at `0` that the model runs between 0.5 and 21, and BIOMD0000000051 carries
+  seven time-varying cofactor pools — ATP decays 45% over the run — as if they were clamped
+  constants. Recorded at `quoted` confidence, the dossier asserted numbers the model never holds,
+  and `compare_sbml_to_dossier` compared the dossier against that same inert attribute and
+  published "no disagreement" over every one of them. The rule was already written into the two
+  neighbouring surfaces — `build_model_sbml` emits such a parameter non-constant, `_apply_overrides`
+  refuses an override on one — and had reached neither the ingester nor the check. Metformin's
+  dossier drops from 94 stated parameters to 48; the rules that determine the other 46 were always
+  carried, so nothing is lost but the false value.
+- **The published observable named an amount and meant a concentration.** The bundle recipe and the
+  certificate protocol both said `mPlasmaVenous`, which in this SBML is declared
+  `hasOnlySubstanceUnits`, in a compartment of 2247 mL. `simulate` reads the engine's concentration
+  data, so the number is 6.07 nmol/mL; a stranger resolving the symbol as SBML defines it gets
+  13,630.8 nmol and a `failed` verdict at 2199% error. Every other committed model has a
+  compartment of size 1, which is why the same ambiguity had already produced a cross-engine defect
+  and been recorded as harmless. Protocols and recipes now write `[X]`, and the engine accepts that
+  notation, so a bundle re-run strictly as published resolves.
+
+**Two servers, one data directory.** The lock on the sidecar and the atomic write hold: five
+processes, SIGKILL mid-write, a real full disk, verdict laundering, replay, unbounded history —
+all clean. Two things were not.
+
+- **A blank catalog was silently reverted rather than refused.** The guard re-reads the catalog
+  under its lock so a mutation applies to current state; for an *empty* file it skipped the re-read,
+  mutated this process's start-up snapshot and wrote that back whole — destroying twenty entries
+  another server had persisted, and replying `created: true`. Reachable from the repository's own
+  regeneration scripts, which rewrote the catalog with a plain `write_text` that truncates to zero
+  before writing ~52 KB and takes no lock. Start-up already refuses a blank catalog and the guard
+  already refuses a corrupt-but-non-empty one; this was the third reader of one condition, and it
+  disagreed with both. It refuses now, and the six scripts write atomically.
+- **A correction published after start-up was invisible to the write path.** `record_result`
+  refuses a superseded certificate — "recording one would write that stale verdict into the catalog
+  permanently" — but decided supersession against the ledger as it stood when the process started,
+  and supersession is expressed by *adding* a file. The same digest was accepted or refused
+  depending on whether the server happened to be running, and the retracted verdict went into the
+  entry's permanent history while the CLI reading the same directory reported it superseded. The
+  ledger is now re-read under the same lock, keyed on the certificate directory's mtime.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

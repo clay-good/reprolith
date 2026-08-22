@@ -425,7 +425,7 @@
       "load_bearing": true
     },
     {
-      "detail": "81 of 115 extracted values state no unit in the artifact (Compartment_0, Compartment_1, Compartment_10, Compartment_11, Compartment_12, \u2026); their magnitudes are recorded, their units are not",
+      "detail": "45 of 69 extracted values state no unit in the artifact (Compartment_0, Compartment_1, Compartment_10, Compartment_11, Compartment_12, \u2026); their magnitudes are recorded, their units are not",
       "element": "units",
       "kind": "unit",
       "load_bearing": true
@@ -621,7 +621,7 @@
     {
       "confidence": "quoted",
       "name": "Cardiac_Output",
-      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
+      "normalized_unit": "10^-3 litre * (3600*10^2 second)^-1",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_2",
       "value": 312000.0
@@ -677,209 +677,10 @@
     },
     {
       "confidence": "quoted",
-      "name": "QAdipose",
-      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unit_2",
-      "value": 16224.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "QBrain",
-      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unit_2",
-      "value": 35568.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "QHeart",
-      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unit_2",
-      "value": 12480.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "QKidney",
-      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unit_2",
-      "value": 54600.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "QMuscle",
-      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unit_2",
-      "value": 59592.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "QRemainder",
-      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unit_2",
-      "value": 62712.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgLiver",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgIntestineLumen",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgBrain",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgAdipose",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgHeart",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgKidneyPlasma",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgRemainder",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgMuscle",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgPortalVein",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgUrineSum",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgFeces",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgEnterocytes",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
       "name": "Ktp_Lung",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unstated",
       "value": 3.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgVenousPlasma",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgArterialPlasma",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgLung",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgStomach",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "QLiverArtery",
-      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unit_2",
-      "value": 14352.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "QStomach",
-      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unit_2",
-      "value": 3432.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "QPortalVein",
-      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unit_2",
-      "value": 19968.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "QIntestineVascular",
-      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unit_2",
-      "value": 33072.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "QLiverOut",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 70824.0
     },
     {
       "confidence": "quoted",
@@ -897,108 +698,10 @@
     },
     {
       "confidence": "quoted",
-      "name": "mIntestineTotal",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
       "name": "Qgfr",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unstated",
       "value": 5600.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mKidneyTotal",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgKidneyTissues",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgIntestineVascular",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgStomachLumen",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "QPortalVeinOut",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 56472.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mArterialPlasma__kidney",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgKidneyTubular",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgRBC",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "_03_2__IntestineLumen____Enterocytes__PMAT_OCT3__Vf",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 1946218.75
-    },
-    {
-      "confidence": "quoted",
-      "name": "_03_3__Enterocytes____IntestineVascular__OCT1__Vmax",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 757968.75
-    },
-    {
-      "confidence": "quoted",
-      "name": "_03_4__IntestineLumen____IntestineVascular__Saturable",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 29400.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "_03_6__IntestineLumen____Enterocytes__Diffusion__Coefficient",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 214.375
-    },
-    {
-      "confidence": "quoted",
-      "name": "_03_7__IntestineLumen____IntestineVascular__Diffusion__Coefficient",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 398.125
     },
     {
       "confidence": "quoted",
@@ -1013,41 +716,6 @@
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unstated",
       "value": 320.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "_13_4__KidneyPlasma____KidneyTissue",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 27948480.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "_13_5__KidneyTissue____KidneyTubular",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 960000.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgKidneyTotal",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "mgIntestineTotal",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "IntestineSurffaceCoefficient",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 2187.5
     },
     {
       "confidence": "quoted",

@@ -92,6 +92,10 @@ when you add a check, a refusal, or a stability rule:
   a denominator — is the one that turns a miss into a pass. The same round set a badge colour for
   the case it was written for and applied it to all four verdicts, upgrading two. "It can only do X"
   is an argument only once you have said whether X is the harmful direction.
+- **A number is only as good as what it is attributed to.** The corpus's first independent audit
+  found every reference value reproducible — and one of them credited to a paper reporting a
+  different number, because the reference network has a node the paper's does not. Check that the
+  source you cite reports the thing you cite it for, not merely that your number is right.
 - **If a tool tells you it failed, read it.** The pinned engine reports an abandoned time course by
   returning `False` and recording the samples it reached — all finite, so the non-finite guard
   cannot see it. That return value was discarded and the sample count never compared to the one

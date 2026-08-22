@@ -8,7 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "curve-normalized-distance",
-      "protocol": "duration=100.0, steps=200, read=M curve",
+      "protocol": "duration=100.0, steps=200, read=[M] curve",
       "quantity": "M time-course (cell-cycle)",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "deterministic-lsoda (judge rev 34c971ff8e23)",
+    "algorithm": "deterministic-lsoda (judge rev f54f02f96bd3)",
     "engine": "copasi",
     "version": "4.46.300 (Source)"
   },

@@ -12,7 +12,7 @@
       "quantity": "attractor signature (count and periods)",
       "reference_kind": "numeric",
       "root_cause": null,
-      "source_location": "Budding yeast cell-cycle network (Li et al. 2004)",
+      "source_location": "Budding yeast cell-cycle network, CANA's 12-node variant (after Li et al. 2004)",
       "tolerance": "exact match on the attractor count and every period",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
@@ -29,7 +29,7 @@
   "paper": {
     "doi": "",
     "pubmed_id": null,
-    "title": "Budding yeast cell-cycle network (Li et al. 2004)"
+    "title": "Budding yeast cell-cycle network, CANA's 12-node variant (after Li et al. 2004)"
   },
   "scope": {
     "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",

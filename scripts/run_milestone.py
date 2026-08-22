@@ -26,6 +26,7 @@ from reprolith import (
     run_test_set,
     seed_catalog,
 )
+from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import prune_certificate_directory
 
 REPO = Path(__file__).resolve().parents[1]
@@ -90,7 +91,10 @@ def main() -> None:
         # as published gave the 500 mg answer to both.
         recipe = tuple(
             RecipeStep(claim_id=(c := Claim.from_record(rec)).claim_id, protocol=c.source_location,
-                       output=c.species, time_span=f"0-{entry['duration']}",
+                       # SBML concentration notation: `simulate` reads the engine's concentration
+                       # data, and a bare species id is the *amount* to anyone who resolves the
+                       # symbol as SBML defines it — 2247x apart on this model's real compartments.
+                       output=f"[{c.species}]", time_span=f"0-{entry['duration']}",
                        steps=int(entry.get("steps", 480)),
                        parameter_overrides=c.parameter_overrides, metric=c.metric)
             for rec in entry["claims"]
@@ -115,9 +119,10 @@ def main() -> None:
 
     # Persist the advanced catalog (lifecycle state, history, and difficulty) so the durable
     # registry reflects the run and can be reloaded — e.g. by the MCP server.
-    (DATASETS / "milestone" / "catalog.json").write_text(
-        json.dumps(catalog.to_dict(), indent=2, sort_keys=True) + "\n"
-    )
+    # Atomic: this file is what both surfaces read at start-up and what a live MCP server
+    # re-reads under its lock, and a plain write_text truncates it to zero before writing
+    # ~52 KB. A crash in that window leaves a blank catalog behind.
+    write_json_atomically(DATASETS / "milestone" / "catalog.json", catalog.to_dict())
 
     counts = Counter(cert.overall.value for cert in certificates)
     print(f"entries: {len(certificates)} | verdicts: {dict(counts)}")

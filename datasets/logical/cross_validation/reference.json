@@ -15,7 +15,7 @@
         1,
         1
       ],
-      "citation": "Budding yeast cell-cycle network (Li et al. 2004)",
+      "citation": "Budding yeast cell-cycle network, CANA's 12-node variant (after Li et al. 2004)",
       "n_attractors": 11,
       "n_nodes": 12,
       "rules": {

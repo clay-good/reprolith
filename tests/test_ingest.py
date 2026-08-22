@@ -388,3 +388,66 @@ def test_a_model_level_substance_unit_is_read_as_stated() -> None:
     # The species no longer appear in the units gap; `k`, which really does state none, still does.
     units_gap = next(g for g in dossier.gaps if g.element == "units")
     assert "X" not in units_gap.detail and "Y" not in units_gap.detail
+
+
+def test_a_unit_exponent_covers_the_whole_prefixed_factor() -> None:
+    """SBML defines a factor as `(multiplier * 10^scale * kind)^exponent`, not `multiplier * 10^scale * kind^exponent`.
+
+    Rendered the second way, the metformin model's blood flows read as 3.6e5 mL/s where the file
+    states mL per 360000 s — wrong by 1.3e11 and in a committed artifact — and a second-order rate
+    constant came out 1e6 the other way. That is worse than the bare `unit_2` it replaced, because
+    it reads as resolved.
+    """
+    pytest.importorskip(
+        "libsbml", reason="the optional 'engine' extra (python-libsbml) is not installed"
+    )
+    import libsbml
+    from reprolith.ingest import _render_unit_definition
+
+    root = Path(__file__).parent.parent / "datasets"
+    for path in (root / "worked_examples" / "Zake2021_metformin_human_single_PO.xml",
+                 root / "kinetic" / "BIOMD0000000051.xml"):
+        model = libsbml.readSBMLFromString(path.read_text(encoding="utf-8")).getModel()
+        for i in range(model.getNumUnitDefinitions()):
+            definition = model.getUnitDefinition(i)
+            rendered = _render_unit_definition(definition)
+            for j in range(definition.getNumUnits()):
+                unit = definition.getUnit(j)
+                if unit.getExponent() != 1 and (
+                    unit.getScale() != 0 or unit.getMultiplier() != 1.0
+                ):
+                    kind = libsbml.UnitKind_toString(unit.getKind())
+                    assert f"{kind})^{unit.getExponent()}" in rendered, (
+                        f"{definition.getId()} renders as {rendered!r}, which reads as the "
+                        "reciprocal of what the file says"
+                    )
+
+
+def test_a_value_an_assignment_rule_determines_is_not_recorded_as_a_stated_one() -> None:
+    """SBML makes a rule-determined parameter's `value` attribute inert, and models ship anything.
+
+    BIOMD0000000058 declares eight such parameters at 0 that the model runs between 0.5 and 21, and
+    BIOMD0000000051 carries seven time-varying cofactor pools as if clamped. Recorded as `quoted`,
+    the dossier asserted a number the model never holds — and `compare_sbml_to_dossier` compared it
+    against the same inert attribute and published "no disagreement" over every one of them.
+    """
+    pytest.importorskip(
+        "libsbml", reason="the optional 'engine' extra (python-libsbml) is not installed"
+    )
+    from reprolith.ingest import ingest_sbml
+    from reprolith.sbml import compare_sbml_to_dossier
+
+    path = Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000058.xml"
+    sbml = path.read_text(encoding="utf-8")
+    dossier = ingest_sbml(sbml, entry="BIOMD0000000058")
+
+    stated = {p.name for p in dossier.parameters}
+    assignment_targets = {e.target for e in dossier.equations if e.kind.value == "assignment"}
+    assert assignment_targets, "this model is only a fixture while it has assignment rules"
+    assert not (stated & assignment_targets), (
+        f"{sorted(stated & assignment_targets)} are determined by a rule, not stated"
+    )
+    # The rules themselves are still carried, so nothing was lost — only the false value.
+    assert "Phi1_c1" in assignment_targets
+    # And the check no longer reports agreement on values neither side compared.
+    assert compare_sbml_to_dossier(sbml, dossier) == []

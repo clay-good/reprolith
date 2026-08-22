@@ -123,7 +123,9 @@ library, on four real published models — the Arabidopsis flower, Drosophila se
 budding-yeast cell-cycle, and a schemata example network. Each model's rules are exported from CANA
 and *proven faithful* (checked against CANA's own per-node step over every input), and Reprolith's
 own attractor computation reproduces CANA's independently-computed attractor signature on all four —
-including the 11 fixed points of the Li et al. 2004 yeast cell-cycle network. See
+including the 11 attractors of CANA's 12-node budding-yeast network, whose seven `CellSize=0`
+fixed points are exactly Li et al. 2004's published steady states (basins
+1764/151/109/9/7/7/1). See
 [`datasets/logical/cross_validation/`](../datasets/logical/cross_validation/) and
 [`tests/test_logical_cross_validation.py`](../tests/test_logical_cross_validation.py). The oracle
 itself is additionally validated by differential and property testing over ~1,800 random networks

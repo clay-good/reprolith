@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import io
 import json
+import os
 from pathlib import Path
 
+import pytest
 from reprolith import (
     Catalog,
     CertificateLedger,
@@ -19,6 +21,7 @@ from reprolith import (
     ReprolithQuery,
     Verdict,
     build_certificate,
+    certificate_digest,
     handle_request,
     serve_stdio,
 )
@@ -1069,3 +1072,79 @@ def test_an_accession_less_entry_is_stepped_over_not_left_blocking_the_queue() -
     assert exhausted["claimed"] is False
     assert exhausted["skipped_without_accession"] == 2
     assert "no accession" in exhausted["reason"]
+
+
+def test_a_blank_catalog_is_refused_not_overwritten_with_a_startup_snapshot(tmp_path) -> None:
+    """Blank is not the same as absent, and skipping the re-read lost every write since start-up.
+
+    The guard re-reads the catalog under its lock so a mutation applies to current state. For an
+    empty file it skipped the re-read, mutated this process's start-up snapshot and wrote *that*
+    back whole — destroying every entry and transition another process had written, while replying
+    as if the call had succeeded. Reachable: the milestone scripts rewrite this file, and a crash
+    mid-write leaves it at zero length. Start-up already refuses a blank catalog, and this function
+    already refuses a corrupt-but-non-empty one; it was the third reader of one condition.
+    """
+    from reprolith.enums import ModelClass as _ModelClass
+    from reprolith.mcp_server import refresh_catalog_from_disk
+
+    catalog_file = tmp_path / "catalog.json"
+    loaded = Catalog()
+    loaded.add(Identifiers(title="A", accession="A1"), _ModelClass.ODE_PKPD)
+
+    # A genuine first run has no file at all, and is left alone.
+    refresh_catalog_from_disk(loaded, catalog_file)
+    assert len(loaded) == 1
+
+    # A blank file beside a non-empty catalog is refused rather than silently reverted.
+    catalog_file.write_text("   \n", encoding="utf-8")
+    with pytest.raises(ValueError, match="exists but is empty"):
+        refresh_catalog_from_disk(loaded, catalog_file)
+
+    # A real file is read, and is what the mutation then applies to.
+    other = Catalog()
+    other.add(Identifiers(title="B", accession="B2"), _ModelClass.ODE_PKPD)
+    other.add(Identifiers(title="C", accession="C3"), _ModelClass.ODE_PKPD)
+    catalog_file.write_text(json.dumps(other.to_dict()), encoding="utf-8")
+    refresh_catalog_from_disk(loaded, catalog_file)
+    assert {e.identifiers.accession for e in loaded.entries} == {"B2", "C3"}
+
+
+def test_a_correction_published_after_startup_is_seen_by_the_write_path(tmp_path) -> None:
+    """The ledger was a start-up snapshot, and supersession is expressed by *adding* a file.
+
+    So `record_result`'s refusal to record a superseded certificate was decided against the set as
+    it stood when the process started: a correction published into the same data directory
+    afterwards was invisible, and the retracted verdict went into the entry's permanent lifecycle
+    history while the CLI reading that same directory reported it superseded.
+    """
+    from reprolith.mcp_server import refresh_certificates
+
+    directory = tmp_path / "certificates"
+    directory.mkdir()
+    ledger = CertificateLedger()
+    seen: dict[Path, float] = {}
+
+    original = build_certificate(
+        paper=PaperIdentity(title="A paper", doi="10.1/x"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(claim_id="c1", quantity="AUC", verdict=Verdict.REPRODUCED,
+                                     source_location="Table 1")],
+    )
+    (directory / "original.json").write_text(json.dumps(original.content()), encoding="utf-8")
+    refresh_certificates(ledger, [directory], seen)
+    first = certificate_digest(original)
+    assert ledger.get(first) is not None
+    assert not [c for _, c in ledger.items() if c.supersedes == first]
+
+    # A correction lands after that first load; the mtime moves, so the next pass picks it up.
+    correction = build_certificate(
+        paper=PaperIdentity(title="A paper", doi="10.1/x"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(claim_id="c1", quantity="AUC", verdict=Verdict.REPRODUCED,
+                                     source_location="Table 1")],
+        supersedes=original,
+    )
+    (directory / "correction.json").write_text(json.dumps(correction.content()), encoding="utf-8")
+    os.utime(directory, (0, 0))  # force a distinct mtime rather than sleeping
+    refresh_certificates(ledger, [directory], seen)
+    assert [c.supersedes for _, c in ledger.items() if c.supersedes] == [first]

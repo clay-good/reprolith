@@ -144,6 +144,20 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
         for i in range(model.getNumRules())
         if model.getRule(i).isRate()
     }
+    # A parameter an *assignment* rule determines is not a stated value either. SBML says its
+    # `value` attribute is inert once a rule computes it, and models ship whatever was there:
+    # BIOMD0000000058 declares eight such parameters at 0 that the model runs between 0.5 and 21,
+    # and BIOMD0000000051 carries seven time-varying cofactor pools (ATP decays 45% over the run)
+    # as if they were clamped constants. Recorded as `quoted`, the dossier asserted a number the
+    # model never holds — and `compare_sbml_to_dossier` compared the dossier against the same inert
+    # attribute and published "no disagreement" over all of them. The rule was already written into
+    # the two neighbouring surfaces (`build_model_sbml` emits such a parameter non-constant,
+    # `_apply_overrides` refuses an override on one); it had not reached the ingester or the check.
+    assignment_targets = {
+        model.getRule(i).getVariable()
+        for i in range(model.getNumRules())
+        if model.getRule(i).isAssignment()
+    }
 
     parameters: list[Parameter] = []
     for i in range(model.getNumParameters()):
@@ -162,7 +176,7 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
         if parameter.getId() in rate_targets:
             state_variables.append(parameter.getId())
             initial_conditions.append(extracted)
-        else:
+        elif parameter.getId() not in assignment_targets:
             parameters.append(extracted)
 
     equations: list[Equation] = []
@@ -230,7 +244,16 @@ def _resolve_unit(model: Any, unit_id: str) -> tuple[str, str | None]:
 
 
 def _render_unit_definition(definition: Any) -> str:
-    """A ``unitDefinition`` as a readable product of base kinds, scales and exponents."""
+    """A ``unitDefinition`` as a readable product of base kinds, scales and exponents.
+
+    SBML defines each factor as ``(multiplier * 10^scale * kind)^exponent`` — the exponent applies
+    to the whole prefixed quantity, not to the kind alone. Rendering it as ``3600*10^2 second^-1``
+    put the multiplier and the scale outside the exponent, which is the *reciprocal* of what the
+    file says: the metformin model's blood flows read as 3.6e5 mL/s where the file states mL per
+    360000 s, wrong by 1.3e11, and a second-order rate constant in BIOMD0000000051 came out 1e6 the
+    other way. That is worse than the bare identifier it replaced, because it reads as resolved.
+    Parenthesized, so the exponent's scope is on the page.
+    """
     libsbml = _libsbml()
     factors = []
     for i in range(definition.getNumUnits()):
@@ -242,7 +265,12 @@ def _render_unit_definition(definition: Any) -> str:
             head += f"{multiplier:g}*"
         if scale != 0:
             head += f"10^{scale} "
-        factors.append(f"{head}{kind}" + (f"^{exponent}" if exponent != 1 else ""))
+        if exponent == 1:
+            factors.append(f"{head}{kind}")
+        elif head:
+            factors.append(f"({head}{kind})^{exponent}")
+        else:
+            factors.append(f"{kind}^{exponent}")
     return " * ".join(factors)
 
 

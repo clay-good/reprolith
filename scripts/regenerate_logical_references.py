@@ -32,7 +32,12 @@ from pathlib import Path
 _PUBLISHED = {
     "thaliana": ("THALIANA", "Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006)"),
     "drosophila": ("DROSOPHILA", "Drosophila melanogaster segment polarity, single cell (Albert & Othmer 2003)"),
-    "budding_yeast": ("BUDDING_YEAST", "Budding yeast cell-cycle network (Li et al. 2004)"),
+    # CANA bundles a 12-node variant of this network, adding `CellSize` as a free self-loop
+    # node. Its 11 fixed points are not the paper's: Li et al. 2004 report 7 over 11 nodes
+    # (basins 1764/151/109/9/7/7/1), which are exactly this network's `CellSize=0` half.
+    # Cited as the paper, the certificate pointed a reader at a source reporting a
+    # different number than the certificate carried.
+    "budding_yeast": ("BUDDING_YEAST", "Budding yeast cell-cycle network, CANA's 12-node variant (after Li et al. 2004)"),
     "marques_pita": ("MARQUESPITA", "Two-symbol schemata example network (Marques-Pita & Rocha 2013)"),
 }
 

@@ -1185,6 +1185,51 @@ def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[R
     return query, catalog
 
 
+def refresh_catalog_from_disk(catalog: Catalog, catalog_file: Path) -> None:
+    """Re-read ``catalog_file`` into ``catalog``, refusing a blank file that would lose work.
+
+    Called under the lock before every mutation, so the change applies to the current state rather
+    than to this process's start-up snapshot. Blank is not the same as absent: skipping the re-read
+    for an empty file mutated the snapshot and then wrote *that* back whole, destroying every entry
+    and transition written since start-up while replying as if the call had succeeded. Reachable —
+    the milestone scripts rewrite this file, and a crash mid-write can leave it at zero length —
+    and inconsistent with the two other readers of the same condition, since start-up refuses a
+    blank catalog and this function already refuses a corrupt-but-non-empty one.
+    """
+    if not catalog_file.exists():
+        return  # a genuine first run; there is nothing to re-read
+    text = catalog_file.read_text(encoding="utf-8")
+    if text.strip():
+        catalog.restore(json.loads(text))
+    elif len(catalog):
+        raise ValueError(
+            f"{catalog_file} exists but is empty; refusing to overwrite it with this process's "
+            "start-up snapshot — restore or remove the file"
+        )
+
+
+def refresh_certificates(
+    ledger: CertificateLedger, directories: Sequence[Path], seen: dict[Path, float]
+) -> None:
+    """Re-read any certificate directory whose mtime has moved since ``seen`` last recorded it.
+
+    The ledger is loaded once at start-up, and supersession is expressed by *adding* a file — so
+    ``record_result``'s refusal to record a superseded certificate was decided against the set as
+    it stood when the process started. A correction published into the same data directory
+    afterwards was invisible, and the retracted verdict went into the entry's permanent lifecycle
+    history while the CLI reading that same directory reported it superseded. Loading is idempotent
+    by digest, and a directory whose mtime has not moved costs one stat.
+    """
+    for directory in directories:
+        try:
+            mtime = directory.stat().st_mtime
+        except OSError:
+            continue
+        if seen.get(directory) != mtime:
+            seen[directory] = mtime
+            load_certificates(ledger, directory)
+
+
 def write_json_atomically(path: Path, payload: Any) -> None:
     """Write ``payload`` as JSON to ``path`` so a failed write cannot leave a half-written file.
 
@@ -1234,6 +1279,11 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - stdio
     def save() -> None:
         write_json_atomically(catalog_file, catalog.to_dict())
 
+    certificate_dirs = [milestone / "certificates"]
+    if args.data_dir is None:
+        certificate_dirs.extend(milestone_certificate_dirs().values())
+    seen_mtimes: dict[Path, float] = {}
+
     @contextmanager
     def guard() -> Any:
         """Hold an exclusive lock on the catalog file, and re-read it, across one mutation.
@@ -1257,10 +1307,8 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover - stdio
         with open(lock_file, "a+", encoding="utf-8") as handle:
             fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
             try:
-                if catalog_file.exists():
-                    text = catalog_file.read_text(encoding="utf-8")
-                    if text.strip():
-                        catalog.restore(json.loads(text))
+                refresh_certificates(query.ledger, certificate_dirs, seen_mtimes)
+                refresh_catalog_from_disk(catalog, catalog_file)
                 yield
             finally:
                 # Best-effort: closing the handle releases the lock anyway, and by this point the

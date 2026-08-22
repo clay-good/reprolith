@@ -40,6 +40,7 @@ from reprolith import (
     engine_pin,
     run_test_set,
 )
+from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import prune_certificate_directory
 
 REPO = Path(__file__).resolve().parents[1]
@@ -103,9 +104,10 @@ def main() -> None:
         (certs / f"{accession}.json").write_text(
             json.dumps(cert.content(), indent=2, sort_keys=True) + "\n"
         )
-    (milestone / "catalog.json").write_text(
-        json.dumps(catalog.to_dict(), indent=2, sort_keys=True) + "\n"
-    )
+    # Atomic: this file is what both surfaces read at start-up and what a live MCP server
+    # re-reads under its lock, and a plain write_text truncates it to zero before writing
+    # ~52 KB. A crash in that window leaves a blank catalog behind.
+    write_json_atomically(milestone / "catalog.json", catalog.to_dict())
 
     # Engine independence: the same curve under both COPASI and libRoadRunner (spec:
     # simulation-oracle). Recorded alongside the blind agreement so the walkable result shows no

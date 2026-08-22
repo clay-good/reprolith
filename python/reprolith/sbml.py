@@ -61,7 +61,14 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
         raise ValueError(f"cannot build: state variables without a rate equation: {missing_eqs}")
     if not dossier.state_variables:
         raise ValueError("cannot build: the dossier declares no state variables")
-    declared = set(dossier.state_variables) | {p.name for p in dossier.parameters}
+    # An assignment equation declares its own target: the rule *is* the definition, and the target
+    # carries no independent stated value to record (which is why ingestion no longer puts one in
+    # `parameters`). A rate equation is different — its target is a state variable and still needs
+    # an initial condition, which the check above enforces.
+    assignment_targets = {e.target for e in dossier.equations if e.kind is EquationKind.ASSIGNMENT}
+    declared = (
+        set(dossier.state_variables) | {p.name for p in dossier.parameters} | assignment_targets
+    )
     undeclared = sorted(t for t in equations if t not in declared)
     if undeclared:
         raise ValueError(
@@ -94,6 +101,15 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
         # A parameter an equation determines varies over the run; emitting it constant would
         # drop that equation and freeze it at its initial value.
         sbml_parameter.setConstant(parameter.name not in equations)
+
+    # …and the assignment targets that carry no stated value of their own get a value-less,
+    # non-constant declaration for their rule to fill, which is what SBML asks for.
+    for target in sorted(assignment_targets - {p.name for p in dossier.parameters}):
+        if target in set(dossier.state_variables):
+            continue
+        sbml_parameter = model.createParameter()
+        sbml_parameter.setId(target)
+        sbml_parameter.setConstant(False)
 
     # State variables first, in their declared order, so a dossier whose equations only govern
     # state variables emits byte-identical SBML to before equations carried a kind.
@@ -167,9 +183,20 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
     if model is None:
         raise ValueError("the adopted artifact is not readable SBML")
 
+    # A parameter a rule determines has no stated value to compare against: SBML makes its
+    # `value` attribute inert, and the dossier no longer records one. Comparing the dossier's
+    # number against that same inert attribute reported agreement on a value neither side had
+    # checked — "no disagreement" has to mean the values were compared, which is the rule this
+    # function's own docstring already states for local parameters.
+    rule_determined = {
+        model.getRule(i).getVariable()
+        for i in range(model.getNumRules())
+        if model.getRule(i).isAssignment() or model.getRule(i).isRate()
+    }
     sbml_params = {
         model.getParameter(i).getId(): model.getParameter(i).getValue()
         for i in range(model.getNumParameters())
+        if model.getParameter(i).getId() not in rule_determined
     }
     for i in range(model.getNumReactions()):
         law = model.getReaction(i).getKineticLaw()

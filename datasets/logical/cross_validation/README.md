@@ -13,7 +13,7 @@ Four **real, published** Boolean models bundled by CANA:
 |---|---|---|---|
 | `thaliana` | 15 | 10 | Arabidopsis flower morphogenesis (Chaos et al. 2006) |
 | `drosophila` | 17 | 10 | Drosophila segment polarity, single cell (Albert & Othmer 2003) |
-| `budding_yeast` | 12 | 11 | Budding-yeast cell-cycle network (Li et al. 2004) |
+| `budding_yeast` | 12 | 11 | Budding-yeast cell cycle, CANA's 12-node variant (after Li et al. 2004) |
 | `marques_pita` | 7 | 1 | Two-symbol schemata example (Marques-Pita & Rocha 2013) |
 
 For each, [`reference.json`](reference.json) stores the model's Boolean rules and CANA's
@@ -34,7 +34,9 @@ only under synchronous updating) do not.
   provably CANA's model, not a transcription guess.
 - **Representation-independent comparison.** The signature (count + periods) is invariant to CANA's
   constant-node reduction and to state encoding, so agreement is a genuine reproduction of each
-  model's documented attractor structure — e.g. the 11 fixed points of the Li et al. 2004 yeast
+  model's documented attractor structure — e.g. the 11 attractors of CANA's 12-node budding-yeast network, whose seven `CellSize=0`
+  fixed points are exactly Li et al. 2004's published steady states (basins
+  1764/151/109/9/7/7/1)
   cell-cycle network.
 
 [`tests/test_logical_cross_validation.py`](../../../tests/test_logical_cross_validation.py) runs

@@ -1,6 +1,6 @@
 REPRODUCTION CERTIFICATE — Zake2021 - PBPK model of metformin in humans, single PO dose
   doi=10.1371/journal.pone.0249594
-Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev 34c971ff8e23)
+Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev f54f02f96bd3)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=2, partial=0, failed=0, not-evaluable=0
@@ -8,9 +8,9 @@ OVERALL: partially-reproduced
 
 CLAIMS
   [Cmax-500mg] plasma Cmax after 500 mg single oral dose: reproduced (source Table 4, Zaharenko dataset (reported 6.2 nmol/mL) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
-      protocol: duration=24.0, steps=480, read=mPlasmaVenous cmax
+      protocol: duration=24.0, steps=480, read=[mPlasmaVenous] cmax
   [Cmax-1000mg] plasma Cmax after 1000 mg single oral dose: reproduced [assumption-qualified] (source Chung dataset (reported 11.2 nmol/mL) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
-      protocol: duration=24.0, steps=480, read=mPlasmaVenous cmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9
+      protocol: duration=24.0, steps=480, read=[mPlasmaVenous] cmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9
 
 ASSUMPTIONS (supplied by Reprolith, not the paper)
   [dose-salt-form] the stated 1000 mg oral dose is metformin HCl; the model's dose input is free base -> 779.9 mg free base (1000 mg HCl x 129.16/165.62) [load-bearing]
