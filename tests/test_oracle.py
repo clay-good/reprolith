@@ -365,3 +365,34 @@ def test_worst_point_deviation_does_not_step_over_a_diverged_point() -> None:
         assert math.isnan(worst_point_deviation(reference, (0.0, 0.0, 0.0)))
     assert math.isnan(worst_point_deviation((1.0, 2.0, 3.0), (1.0, nan, 3.0)))
     assert worst_point_deviation((1.0, 2.0, 3.0), (1.0, 2.5, 3.0)) == 0.25
+
+
+def test_a_nearly_flat_reference_is_normalized_by_its_level_not_by_its_noise() -> None:
+    """The mean-magnitude fallback used to fire only at exactly `span == 0.0`.
+
+    That relieved the references that never occur and missed every one that is *nearly* flat — a
+    plateau, a steady state, the median band of a stationary ensemble, a digitized flat line —
+    where the range is made of the reference's own noise. Dividing by it turned an excellent
+    reconstruction into a normalized miss of 2.0 and a `failed` verdict blamed on the
+    reconstruction, while an exactly-flat reference reconstructed 10% wrong passed.
+    """
+    from reprolith.oracle import normalized_curve_distance, worst_point_deviation
+
+    # A digitized plateau at 100 with half-a-pixel noise, reconstructed perfectly. Span is 1.0, so
+    # the old normalizer scored this 0.4208 and failed it.
+    plateau = [100.0 + (0.5 if i % 2 else -0.5) for i in range(30)]
+    perfect = [100.0] * 30
+    assert normalized_curve_distance(plateau, perfect) < 0.01
+    assert worst_point_deviation(plateau, perfect) < 0.01
+
+    # A stationary band: level 50, span 1, off by 2 everywhere. The honest number is 4%.
+    band = [50.0 + (i % 2) for i in range(40)]
+    assert worst_point_deviation(band, [v + 2.0 for v in band]) == pytest.approx(0.04, abs=0.001)
+
+    # The exactly-flat case keeps behaving as it always did: the level is the scale.
+    assert normalized_curve_distance([1.0] * 20, [1.1] * 20) == pytest.approx(0.1)
+
+    # And the scale can only ever widen, so a reference whose range dominates its level is
+    # untouched — which is why the committed spatial curves are bit-identical under this.
+    ramp = [float(i) for i in range(11)]
+    assert normalized_curve_distance(ramp, [v + 1.0 for v in ramp]) == pytest.approx(0.1)

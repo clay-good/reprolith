@@ -292,12 +292,31 @@ def normalized_curve_distance(reference: Sequence[float], predicted: Sequence[fl
     n = len(reference)
     mse = sum((p - r) ** 2 for r, p in zip(reference, predicted)) / n
     rmse = math.sqrt(mse)
-    span = max(reference) - min(reference)
-    if span == 0.0:
-        span = abs(sum(reference) / n)
+    span = _reference_scale(reference, n)
     if span == 0.0:
         return 0.0 if rmse == 0.0 else float("inf")
     return rmse / span
+
+
+def _reference_scale(reference: Sequence[float], n: int) -> float:
+    """The scale a curve deviation is a fraction of: the reference's range or its level.
+
+    The range alone is not a scale. A reference that barely moves — a plateau, a steady state, the
+    median band of a stationary ensemble, a digitized flat line — has a range made of its own noise,
+    and dividing by it turns an excellent reconstruction into a normalized miss of 2.0 and a
+    `failed` verdict blamed on the reconstruction. This was already conceded for a *perfectly* flat
+    reference, which fell back to the mean magnitude; the relief was just a point condition at
+    exactly zero, so it missed every reference that is nearly flat rather than exactly flat, which
+    is all of the real ones. Measured: two 400-trajectory ensembles of one stationary
+    immigration-death model, differing only in seed, disagree by 2 copies out of 50 — 4% — and the
+    flat P50 band scored that as 2.00 while P90 scored the *same absolute error* as 0.20, so the
+    band named "worst-matched" in the certificate was among the best-matched.
+
+    Taking the larger of the two can only widen the denominator, so no comparison that passes today
+    can be turned into a non-pass by it: on the committed spatial curves the range dominates the
+    level (span/|mean| of 3.67, 2.83 and 4.42) and their published distances are unchanged.
+    """
+    return max(max(reference) - min(reference), abs(sum(reference) / n))
 
 
 def worst_point_deviation(reference: Sequence[float], predicted: Sequence[float]) -> float:
@@ -330,9 +349,7 @@ def worst_point_deviation(reference: Sequence[float], predicted: Sequence[float]
             worst = gap
             break
         worst = max(worst, gap)
-    span = max(reference) - min(reference)
-    if span == 0.0:
-        span = abs(sum(reference) / n)
+    span = _reference_scale(reference, n)
     if span == 0.0:
         return 0.0 if worst == 0.0 else float("inf")
     return worst / span
@@ -738,7 +755,7 @@ def judge_curve(
             # contributes a clean pass, and one above it is judged on the same partial/failed
             # scale as the average. Calling it "the budget" read as a bound the verdict honoured,
             # so a `partial` could report a worst point of 0.62 against a "budget" of 0.25.
-            f"normalized distance {dist:.4f}, worst point {worst:.4f} of span "
+            f"normalized distance {dist:.4f}, worst point {worst:.4f} of reference scale "
             f"(pass budget {tol.partial_within:.4f})"
         ),
         tol=tol,
@@ -803,7 +820,7 @@ def judge_distribution(
         measure=max(distance, scaled_worst),
         discrepancy=(
             f"worst band {worst_band.label()} normalized distance {distance:.4f}, worst point "
-            f"{worst:.4f} of span in {worst_point_band.label()} "
+            f"{worst:.4f} of reference scale in {worst_point_band.label()} "
             f"(pass budget {tol.partial_within:.4f})"
         ),
         tol=tol,

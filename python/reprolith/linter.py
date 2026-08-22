@@ -118,7 +118,7 @@ def _curve_lint(reference: Sequence[float], predicted: Sequence[float], tol: Tol
         verdict=verdict_for(max(distance, scaled_worst), tol),
         method=ComparisonMethod.CURVE_NORMALIZED_DISTANCE.value,
         discrepancy=(
-            f"normalized distance {distance:.4f}, worst point {worst:.4f} of span "
+            f"normalized distance {distance:.4f}, worst point {worst:.4f} of reference scale "
             f"(pass budget {tol.partial_within:.4f})"
         ),
         tolerance=tol.label(),
@@ -482,7 +482,7 @@ def lint_distribution(
         method=ComparisonMethod.DISTRIBUTION_BAND_DISTANCE.value,
         discrepancy=(
             f"worst band {worst_band.label()} normalized distance {distance:.4f}, worst point "
-            f"{worst:.4f} of span in {worst_point_band.label()} "
+            f"{worst:.4f} of reference scale in {worst_point_band.label()} "
             f"(pass budget {tol.partial_within:.4f})"
         ),
         tolerance=tol.label(),

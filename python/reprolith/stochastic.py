@@ -408,8 +408,12 @@ def unresolvable_ensemble_reason(
     immigration-death model misses its 5% claim on most seeds, and a linter answering ``failed``
     there is a false accusation an agent acts on immediately.
     """
-    if reported_mean == 0.0:
-        return None
+    # The zero-spread guard runs first, because a reported mean of zero is the value this check
+    # should be strictest at, not the one that switches it off. An extinction or no-expression
+    # claim took the early return below and skipped resolvability entirely, so a one-trajectory
+    # ensemble that happened to land on 0 published `reproduced` at "relative error 0.0000":
+    # measured on immigration-death with a true mean of 1.0, that is 87 of 200 seeds at one
+    # trajectory and 27 at two, against 0 once the guard is allowed to see the case.
     if variance <= 0.0 and trajectories < _SPREAD_IS_EVIDENCE:
         # A zero spread means "this ensemble resolves the claim" only once the ensemble is large
         # enough for zero to be a measurement rather than an accident. One trajectory has a
@@ -422,6 +426,8 @@ def unresolvable_ensemble_reason(
             f"{'y' if trajectories == 1 else 'ies'} produced no spread at all, which at that size "
             "is as likely an accident as a measurement, so it cannot tell a reproduction from noise"
         )
+    if reported_mean == 0.0:
+        return None
     if variance <= 0.0:
         return None
     tol = tolerance or default_tolerance(

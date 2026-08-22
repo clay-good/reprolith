@@ -38,7 +38,8 @@ _CLASSES = {
     "logical": ("logical/milestone/certificates", ("logical", "oracle", "certificate")),
     "constraint_based": (
         "constraint_based/milestone/certificates",
-        ("fba", "constraint_based", "oracle", "certificate"),
+        # `sbml` decides which LP is solved for this class — see fba.solver_pin.
+        ("fba", "sbml", "constraint_based", "oracle", "certificate"),
     ),
     # The two classes whose *solver* is an external engine still have a Reprolith judge, and a
     # tolerance or verdict-rule change invalidates their certificates exactly as it does the
@@ -134,3 +135,57 @@ def test_every_committed_certificate_carries_the_revision_it_was_generated_under
                 f"{path} was generated under an older revision of {class_name}; re-run that "
                 f"class's milestone script to re-certify it under the current solver"
             )
+
+
+# The rendered certificates committed outside a milestone directory, and the class whose revision
+# each was generated under. A render is a published surface too — `datasets/worked_examples/`'s
+# metformin certificate is the one the README and docs/mcp-server.md send readers to — and the
+# JSON-only sweep above could not see it.
+_RENDERED_ELSEWHERE = {
+    "worked_examples": "ode-pkpd",
+    "constraint_based/worked_example": "constraint_based",
+    "logical/worked_example": "logical",
+}
+
+
+def test_every_committed_render_names_the_current_revision_too() -> None:
+    # The JSON sweep above globs six milestone directories. The metformin render sat outside all of
+    # them, so it kept publishing `Engine pin: copasi 4.46.300 / deterministic-lsoda` — no judge
+    # revision at all — while the machine-readable certificate for the same paper carried one, and
+    # it had drifted two code changes behind the protocol text it printed. Two accounts of how one
+    # result was computed, and the weaker one was the reader-facing one. Every render is checked
+    # here, and a render this test cannot attribute to a class fails rather than being skipped:
+    # that silent skip is the whole defect.
+    renders = sorted(
+        path
+        for path in _DATASETS.rglob("*.txt")
+        if "Engine pin:" in path.read_text(encoding="utf-8")
+    )
+    assert renders, "no rendered certificates found to check"
+    for path in renders:
+        relative = path.relative_to(_DATASETS)
+        parent = relative.parent.as_posix()
+        class_name = next(
+            (
+                name
+                for directory, (glob, _) in _CLASSES.items()
+                for name in [directory]
+                if parent == glob
+            ),
+            None,
+        ) or next(
+            (name for prefix, name in _RENDERED_ELSEWHERE.items() if parent == prefix), None
+        )
+        assert class_name is not None, (
+            f"{relative} is a published certificate render in a directory no freshness check "
+            "covers; add it to _CLASSES or _RENDERED_ELSEWHERE"
+        )
+        revision = algorithm_revision(*_CLASSES[class_name][1])
+        pin_line = next(
+            line for line in path.read_text(encoding="utf-8").splitlines()
+            if line.startswith("Engine pin:")
+        )
+        assert f"rev {revision}" in pin_line, (
+            f"{relative} names no current revision ({pin_line!r}); re-render it from the "
+            f"certificate its class's milestone script produces"
+        )

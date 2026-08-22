@@ -335,3 +335,41 @@ def test_a_load_bearing_gap_of_any_kind_qualifies_the_verdict() -> None:
     assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
     assert any("biomass objective" in note for note in cert.gap_report)
     assert all(a.assumption_qualified for a in cert.assessments)
+
+
+@pytestmark_engine
+def test_certifying_refuses_a_dossier_the_class_calls_ill_formed() -> None:
+    """The class's rules were written down in `validate_constraint_based` and never consulted here.
+
+    `certify_constraint_based` read `reference_data[0]` and let the judge default to a NUMERIC
+    reference, so a growth rate the dossier records as digitized off a figure was judged at the
+    numeric tolerance and then published as `reference_kind: "numeric"` — the certificate asserting
+    a precision of reference the paper never gave, and flipping the verdict on it (a relative error
+    of 0.1062 is `reproduced` in the digitized band and `not-reproduced` in the numeric one). The
+    milestone's own entry reaches certification through `dossier_from_dict`, which validates
+    nothing, so guarding the way in left the way out open.
+    """
+    import dataclasses
+    import json
+
+    from reprolith import EnginePin, PaperIdentity, ReferenceKind, certify_constraint_based
+    from reprolith.persistence import dossier_from_dict
+
+    worked_example = _MODEL_PATH.parent / "worked_example"
+    dossier = dossier_from_dict(json.loads((worked_example / "dossier.json").read_text("utf-8")))
+    claims = list(dossier.claims)
+    sbml = _MODEL_PATH.read_text(encoding="utf-8")
+    pin = EnginePin(engine="scipy-highs", version="1.13", algorithm="linprog-highs")
+
+    for mutated in (
+        dataclasses.replace(claims[0], reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+                            reference_data=(0.79,)),
+        dataclasses.replace(claims[0], reference_data=(0.79, 0.873922)),
+    ):
+        ill_formed = dataclasses.replace(dossier, claims=tuple([mutated] + claims[1:]))
+        with pytest.raises(ValueError, match="exactly one numeric reference value"):
+            certify_constraint_based(
+                ill_formed, sbml=sbml,
+                paper=PaperIdentity(title="E. coli core", doi="10.1128/ecosalplus.10.2.1"),
+                engine_pin=pin,
+            )

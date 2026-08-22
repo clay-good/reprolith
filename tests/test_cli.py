@@ -259,3 +259,33 @@ def test_gaps_prints_the_scope_even_when_nothing_was_missing(capsys, tmp_path) -
     out = capsys.readouterr().out
     assert "nothing was missing" in out
     assert "no claim about biological correctness" in out
+
+
+def test_status_says_what_a_blocked_paper_is_blocked_on(tmp_path, capsys):
+    """`missing_inputs` reached the JSON an agent receives and never the terminal.
+
+    A BLOCKED transition is *required* to carry a non-empty `missing_inputs` — what is missing is
+    the whole point of the state — and 30 of the 31 shipped entries are blocked. The human surface
+    printed only the transition's `reason`, which for the whole committed corpus is "blind run", so
+    a reader at a terminal learned that a paper stalled and could never learn what would unstall it.
+    """
+    from reprolith.enums import LifecycleState
+    from reprolith.enums import ModelClass as _ModelClass
+
+    catalog = Catalog()
+    entry = catalog.add(Identifiers(title="A stalled paper", accession="ACC9"), _ModelClass.ODE_PKPD)
+    entry.transition(LifecycleState.INGESTING, reason="blind run", at=0.0, actor="test")
+    entry.transition(
+        LifecycleState.BLOCKED,
+        reason="blind run",
+        at=1.0,
+        actor="test",
+        missing_inputs=("the paper's targetable claims were never extracted",),
+    )
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "catalog.json").write_text(json.dumps(catalog.to_dict()), encoding="utf-8")
+
+    assert run(["--data-dir", str(repo), "status", "ACC9"]) == 0
+    out = capsys.readouterr().out
+    assert "the paper's targetable claims were never extracted" in out

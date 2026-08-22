@@ -199,6 +199,20 @@ def certify_constraint_based(
     """
     from .sbml import ingest_fbc_sbml
 
+    # The class's own rules are written down in validate_constraint_based, and this path — the one
+    # that publishes — never consulted them. It reads `claim.reference_data[0]` and lets
+    # judge_objective default to a NUMERIC reference, so a claim the dossier records as digitized
+    # off a figure was judged at the numeric tolerance and then published as `reference_kind:
+    # "numeric"`: the certificate asserting a precision of reference the dossier never claimed,
+    # and a verdict flipping on it. The milestone's own e_coli_core entry reaches here through
+    # dossier_from_dict, which validates nothing. Guarding only the way in left the way out open.
+    problems = validate_constraint_based(dossier)
+    if problems:
+        raise ValueError(
+            "a constraint-based dossier cannot be certified while it is ill-formed: "
+            + "; ".join(problems)
+        )
+
     model = _apply_medium(ingest_fbc_sbml(sbml), dossier.parameters)
     attributions = shortfalls or {}
     gap_report = _gap_report(dossier)

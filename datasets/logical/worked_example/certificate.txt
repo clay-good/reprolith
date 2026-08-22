@@ -1,6 +1,6 @@
 REPRODUCTION CERTIFICATE — Toggle switch — a two-gene mutual-repression circuit
   doi=10.0/toggle
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 22107704c9ea)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 470ca6966b05)
 
 OVERALL: reproduced
   claims by verdict: reproduced=2, partial=0, failed=0, not-evaluable=0

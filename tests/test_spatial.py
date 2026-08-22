@@ -618,3 +618,20 @@ def test_a_uniform_profile_is_not_probed_outside_itself() -> None:
     for magnitude in (1e-300, 1e-12, 0.0):
         assert react_diffuse_1d([magnitude] * 6, diffusivity=1.0, dx=1.0, dt=0.05, steps=2,
                                 reaction=lambda u: 0.0) == [magnitude] * 6
+
+
+def test_an_unstable_decay_step_abstains_instead_of_taking_down_the_certificate() -> None:
+    """The decay check raised a bare `ValueError` while both its siblings raise UnstableDiscretization.
+
+    `certify_spatial` catches only `UnstableDiscretization`, in order to abstain on the one claim
+    that cannot be judged. Raised as a `ValueError`, an ordinary discretization — a 5/min
+    degradation rate at dt = 0.5 min — escaped that handler and took down the whole certificate,
+    discarding every sibling claim's honest verdict. The threshold itself is right; the type was not.
+    """
+    from reprolith.spatial import UnstableDiscretization, diffuse_1d
+
+    with pytest.raises(UnstableDiscretization, match="unstable decay step"):
+        diffuse_1d((1.0, 1.0, 1.0), diffusivity=0.0, dx=1.0, dt=0.5, steps=1, decay=3.0)
+    # A genuine caller bug stays a caller bug.
+    with pytest.raises(ValueError, match="must not be negative"):
+        diffuse_1d((1.0, 1.0, 1.0), diffusivity=0.0, dx=1.0, dt=0.5, steps=1, decay=-1.0)

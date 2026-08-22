@@ -3,7 +3,7 @@
     {
       "assumption_qualified": false,
       "claim_id": "BIOMD0000000010-timecourse",
-      "discrepancy": "normalized distance 0.0000, worst point 0.0000 of span (pass budget 0.2500)",
+      "discrepancy": "normalized distance 0.0000, worst point 0.0000 of reference scale (pass budget 0.2500)",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "deterministic-lsoda (judge rev 2caf502df981)",
+    "algorithm": "deterministic-lsoda (judge rev cf2dc36efd1c)",
     "engine": "copasi",
     "version": "4.46.300 (Source)"
   },

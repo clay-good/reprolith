@@ -982,6 +982,110 @@ from all three.
 
 Five rounds: 26, 17, 12, 12, 6.
 
+## A rule that held everywhere except where it mattered most
+
+Six agents were given disjoint territory — the oracle and agreement layer, certificate provenance,
+the constraint-based class, the logical/spatial/stochastic trio, the kinetic and ODE pipeline, and
+the three query surfaces — and told that a finding without a runnable repro printing real numbers
+was worth nothing, and that they had to try to refute themselves before reporting. Between them
+they killed about forty candidates and kept eleven. Two found the same pin defect independently.
+
+The pattern this round is narrower than the last few, and it is a stubborn one: **the rule was
+right, and it was applied to all but one of the cases it was written for — and the omitted case
+was the one where it mattered most.**
+
+- **A relief that fired at a point instead of on a condition.** `normalized_curve_distance`
+  divides by the reference's range, falling back to its mean magnitude when the range is zero,
+  because a flat reference has no range to be a fraction of. But the fallback tested
+  `span == 0.0`, so it covered exactly the references that never occur and missed every one that
+  is *nearly* flat — which is all the real ones: a plateau, a steady state, the median band of a
+  stationary ensemble, a digitized flat line. Measured: two 400-trajectory ensembles of one
+  stationary immigration-death model, differing only in seed, certify as `failed | worst band P50
+  normalized distance 0.7528 | fault: reconstruction` over a 2-copies-in-50 disagreement — and the
+  P50 band named "worst-matched" carries the same absolute error as the P90 band that passes at
+  0.20, so the certificate points the reader at the best-agreeing band. Worse in both directions
+  at once: a digitized plateau reconstructed to 0.5% failed at 0.4208, while an exactly-flat
+  reference reconstructed 10% wrong passed at 0.1000. The scale is now the larger of the range and
+  the level, which can only widen the denominator — so no comparison that passed can be turned
+  into a non-pass, and the committed spatial curves (span/|mean| of 3.67, 2.83, 4.42) are
+  bit-identical. The near-flat plateau now scores 0.0050 and the flat band's 4% miss scores 0.0396
+  against a true 0.0400. The discrepancy line no longer says "of span", because the denominator is
+  no longer always the span.
+- **A guard switched off at the value it should be strictest at.** `unresolvable_ensemble_reason`
+  returned "this ensemble can resolve the claim" for a reported mean of zero *before* the
+  zero-spread check ran, so an extinction or no-expression claim skipped resolvability entirely.
+  A one-trajectory ensemble that happened to land on 0 published `reproduced` at "relative error
+  0.0000": 87 of 200 seeds on immigration-death with a true mean of 1.0, and 27 of 200 at two
+  trajectories. With the two checks in the other order, 0 of 200 at every ensemble size measured,
+  while a genuinely deterministic zero model still resolves.
+- **A guard covering two of the three ways a parameter is determined.** An override of a parameter
+  fixed by a rule or an initial assignment was refused, on the stated ground that "an override that
+  does not take is a claim about a run that did not happen". An event assignment determines a
+  parameter too, and was not refused — so in a repeated-dose or infusion model, the ordinary shape
+  for a COPASI-exported PK model, the event rewrites the very parameter the claim moves. Measured:
+  a 3x override changed the answer by 0.01% and published `overrides: kin=3.0` beside
+  `reproduced, relative error 0.0000`.
+- **A pin spanning four of the five modules that decide the number.** The constraint-based engine
+  pin named `fba`, `constraint_based`, `oracle` and `certificate` — but the LP it solves is fixed
+  by `ingest_fbc_sbml`, which sets the stoichiometry, the flux bounds and the objective vector.
+  Halving the ingested bounds moves *E. coli* core growth from 0.873922 to 0.436961 and leaves the
+  pin byte-identical, so the freshness gate keeps certifying the corpus as current. This has
+  already happened: commit `2b814dc` ("refuse a minimize objective instead of returning a
+  wrong-signed optimum") touched `sbml.py` alone, changed a verdict away from FAILED, and moved no
+  revision. The other three self-solved classes were checked before generalizing — none of their
+  certified paths reads `sbml.py`, so this was the only pin to widen.
+- **A validator the publishing path never called.** `validate_constraint_based` requires each
+  objective claim to carry exactly one *numeric* reference value. `certify_constraint_based` never
+  called it, read `reference_data[0]`, and let the judge default to a numeric reference — so a
+  growth rate the dossier recorded as digitized off a figure was judged at the numeric tolerance
+  and then published as `reference_kind: "numeric"`, the certificate asserting a precision of
+  reference the paper never gave. It flips real verdicts: a relative error of 0.1062 is
+  `reproduced` inside the digitized band and `not-reproduced` inside the numeric one. The rule was
+  guarding the way in and not the way out; the milestone's own entry reaches certification through
+  `dossier_from_dict`, which validates nothing.
+
+Four more were the same shape one level up — a check that validated its inputs and never its
+outputs, and a rule that reached one surface and not its neighbour:
+
+- **A truncated run published as a complete one.** COPASI signals a time course it abandoned —
+  step-limit exceeded, integration failure — by returning `False` and recording only the samples it
+  reached. `simulate` discarded that return value and never compared the recorded count to the
+  requested one. Every recorded sample is finite, so `require_finite` cannot see it. Measured on a
+  chattering-event model: 2 of 21 samples, the run stopping at t = 5.0 of 100, and the certificate
+  publishing `REPRODUCED, relative error 0.0000` for a claim stated at t = 100, with
+  `protocol: duration=100.0, steps=20` printed beside it. Curve claims are caught downstream by the
+  oracle's sample-count check; scalar claims — the whole PK/PD class — were not. An abandoned run is
+  now the blocked-not-failed signal the module already raises for divergence, and the libRoadRunner
+  path, which sets corroboration distances, carries the same check.
+- **A stability failure raised as a caller bug.** The decay-step check raised a bare `ValueError`
+  while both of its siblings in the same function raise `UnstableDiscretization` — the one exception
+  `certify_spatial` catches in order to abstain on a single claim. So an ordinary discretization
+  (a 5/min degradation rate at dt = 0.5 min) took down the whole certificate and discarded every
+  sibling claim's honest verdict. The threshold itself was measured correct; only the type was wrong.
+- **One un-workable entry froze the entire queue.** A previous round taught `claim_work` to refuse an
+  accession-less entry, since nothing can finish or release one. It refused the head of the queue and
+  *returned*. `seed_candidates` gives every un-curated candidate no accession and nothing in the
+  surface can add one, so a single such entry withheld every workable entry behind it, permanently,
+  while `backlog_health` went on publishing them as claimable: 3 claimable, 0 obtainable. The refusal
+  now steps over them and names how many it stepped over.
+- **The terminal could not learn what a blocked paper was blocked on.** `missing_inputs` is *required*
+  to be non-empty for a blocked transition — "what is missing is the whole point of the state" — and
+  30 of the 31 shipped entries are blocked. The JSON an agent receives carried it; the CLI printed
+  only `(blind run)`. Likewise a certificate whose overall verdict is derived from its claims alone
+  could show a green badge and an unqualified verdict summary over a non-empty "what was missing"
+  report, because a gap that never became a claim cannot lower the overall.
+
+And one that the fix for it immediately caught a second instance of. The metformin certificate —
+the render the README and `docs/mcp-server.md` send readers to — published `Engine pin: copasi
+4.46.300 / deterministic-lsoda` with no judge revision, while the machine-readable certificate for
+the same paper carried one; it had also drifted two code changes behind the protocol text it
+printed. Two accounts of how one result was computed, and the reader-facing one was the weaker and
+the staler. The freshness gate globbed `*.json` under six milestone directories and could not see
+it. It now checks every committed render, and fails on any it cannot attribute to a class rather
+than skipping it — which found that the *E. coli* core worked-example render names no revision
+either. `scripts/render_worked_examples.py` regenerates all three from the certificates they are
+renderings of, so the two accounts cannot drift apart again.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

@@ -123,6 +123,12 @@ def _cmd_status(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print("  history:")
         for t in view["history"]:
             print(f"    {t['from_state']} -> {t['to_state']} ({t['reason']})")
+            # BLOCKED is the one state that is required to say what it is blocked on, and
+            # `reason` is not it — most shipped entries read "blind run". Without this the
+            # terminal reader learns that a paper stalled but never what would unstall it,
+            # while the JSON an agent receives has carried the answer all along.
+            for missing in t["missing_inputs"]:
+                print(f"      missing: {missing}")
     certs = view.get("certificates") or []
     if certs:
         print("  certificates:")
@@ -171,6 +177,10 @@ def _cmd_verdict(query: ReprolithQuery, args: argparse.Namespace) -> int:
         # Every other rendering flags it — the badge never goes green, the human render prints
         # [estimation], pre-submission refuses ready-to-submit. This summary read as a clean pass.
         print("  reproduced only at estimation level: " + ", ".join(view["estimation_claims"]))
+    for note in view["gap_notes"]:
+        # A gap that never became a claim cannot move the overall verdict, so the terminal would
+        # otherwise print an unqualified pass over a certificate that names something missing.
+        print(f"  what was missing: {note}")
     print(f"  scope: {view['scope']['human']}")
     if view["superseded_by"]:
         # The gap report and the JSON view both carry it; without it here the terminal is the one

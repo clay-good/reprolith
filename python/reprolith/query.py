@@ -365,6 +365,12 @@ class ReprolithQuery:
                 for a in cert.assessments
                 if a.level is ReproductionLevel.ESTIMATION and a.verdict is not Verdict.FAILED
             ],
+            # A gap note that never became a claim is a published result nobody evaluated, and
+            # derive_overall reads only the claims — so a certificate can total up to an
+            # unqualified "reproduced" while its own "what was missing" report is non-empty. The
+            # human certificate and the pre-submission report both print it; this summary carried
+            # the verdict without it. Same structural hole as estimation_claims, same fix.
+            "gap_notes": list(cert.gap_report),
             "scope": cert.scope.to_dict(),
         }
 

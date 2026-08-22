@@ -130,11 +130,21 @@ def _apply_overrides(sbml: str, overrides: tuple[tuple[str, float], ...]) -> str
     # setting its value here changes nothing — and the protocol would then publish an override the
     # run never had. Refused for the same reason an unknown parameter is: an override that does not
     # take is a claim about a run that did not happen.
+    # An event assignment overwrites its target mid-run, which makes it the same kind of
+    # not-taking override as the two above: in a repeated-dose or infusion model — the ordinary
+    # shape for a COPASI-exported PK model — the event rewrites the very rate or dose parameter a
+    # claim wants to move, and the published `overrides: X=v` then describes a run that carried v
+    # only until the first event fired. The rule was stated for rules and initial assignments and
+    # not applied to the third way a parameter gets determined.
     determined = {
         model.getRule(i).getVariable() for i in range(model.getNumRules())
     } | {
         model.getInitialAssignment(i).getSymbol()
         for i in range(model.getNumInitialAssignments())
+    } | {
+        model.getEvent(i).getEventAssignment(j).getVariable()
+        for i in range(model.getNumEvents())
+        for j in range(model.getEvent(i).getNumEventAssignments())
     }
     for name, value in overrides:
         parameter = model.getParameter(name)
@@ -142,8 +152,9 @@ def _apply_overrides(sbml: str, overrides: tuple[tuple[str, float], ...]) -> str
             raise ValueError(f"parameter {name!r} is not in the model")
         if name in determined:
             raise ValueError(
-                f"parameter {name!r} is determined by a rule or initial assignment, so overriding "
-                "its value has no effect on the run; override the quantity that determines it"
+                f"parameter {name!r} is determined by a rule, an initial assignment, or an event "
+                "assignment, so overriding its value does not survive the run; override the "
+                "quantity that determines it"
             )
         parameter.setValue(float(value))
     return str(libsbml.writeSBMLToString(document))

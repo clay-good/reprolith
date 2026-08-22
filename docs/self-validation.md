@@ -159,7 +159,16 @@ python scripts/run_kinetic_milestone.py    # generic-kinetic
 python scripts/run_logical_milestone.py    # logical (reads committed CANA references)
 python scripts/run_stochastic_milestone.py # stochastic (closed-form Poisson/binomial ground truth)
 python scripts/run_spatial_milestone.py    # spatial (closed-form Gaussian diffusion ground truth)
+python scripts/render_worked_examples.py   # the three renders that live outside a milestone dir
+python scripts/build_registry.py           # the public registry page
 ```
+
+Run the last two after the milestone scripts. `render_worked_examples.py` exists because the three
+worked-example certificate texts — metformin, *E. coli* core, and the logical toggle — are published
+renders that no script regenerated, and the metformin one had drifted to naming an engine pin with
+no judge revision while its own machine-readable certificate carried one. `tests/test_pins.py` now
+fails on any committed render that does not name the current revision, and on any render in a
+directory no freshness check covers.
 
 The reference values themselves are regenerable from the independent tools with the `refgen` extra;
 see [CONTRIBUTING.md](../CONTRIBUTING.md). Every certificate says, in plain text, that it attests

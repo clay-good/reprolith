@@ -184,6 +184,13 @@ def render_badge(cert: Certificate) -> str:
     if estimation_claims(cert):
         verdict = f"{verdict} (estimation)"
         color = _BADGE_COLOR["partially-reproduced"]  # never green: no simulation reproduction shown
+    if cert.gap_report:
+        # The overall verdict is derived from the claims alone, so a result that went missing
+        # before it ever became a claim cannot lower it. This badge is the most compressed
+        # rendering there is — one word and one colour — and it is the one a reader meets first,
+        # so it must not show a clean green pass over a non-empty "what was missing" report.
+        verdict = f"{verdict} (gaps)"
+        color = _BADGE_COLOR["partially-reproduced"]
     label = "reprolith"
     label_w = len(label) * 7 + 10
     value_w = len(verdict) * 7 + 10

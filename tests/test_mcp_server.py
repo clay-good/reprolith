@@ -356,7 +356,7 @@ def test_claim_work_tool_leases_the_next_item() -> None:
     second = claim("agent-2")  # different item, no collision
     assert second["claimed"] and second["entry"]["identifiers"]["accession"] != first["entry"]["identifiers"]["accession"]
     # No eligible work left while both are leased.
-    assert claim("agent-3") == {"claimed": False, "reason": "no eligible work"}
+    assert claim("agent-3") == {"claimed": False, "reason": "no eligible work", "skipped_without_accession": 0}
 
 
 def test_claim_work_refused_on_read_only_server() -> None:
@@ -622,7 +622,7 @@ def test_recording_a_result_takes_the_entry_out_of_the_queue() -> None:
     assert done["recorded"] and done["state"] == "certified" and done["overall"] == "reproduced"
     # No longer claimable, by anyone, even once the lease would have expired.
     again, _ = _effectful(query, catalog, "claim_work", {"requester": "agent-2"}, at=1e9)
-    assert again == {"claimed": False, "reason": "no eligible work"}
+    assert again == {"claimed": False, "reason": "no eligible work", "skipped_without_accession": 0}
     # The pathway is recorded, not inferred, and names who recorded it.
     history = query.status(accession="ACC-A")["history"]
     assert [t["to_state"] for t in history][-1] == "certified"
@@ -1034,5 +1034,38 @@ def test_an_effectful_call_applies_to_the_current_catalog_not_a_startup_snapshot
         catalog=catalog, now=lambda: 0.0, guard=guard,
     )
     claimed = json.loads(resp["result"]["content"][0]["text"])
-    assert claimed == {"claimed": False, "reason": "no eligible work"}
+    assert claimed == {"claimed": False, "reason": "no eligible work", "skipped_without_accession": 0}
     assert catalog.find(Identifiers(title="", accession="ACC-A")).leased_to == "agent-elsewhere"
+
+
+def test_an_accession_less_entry_is_stepped_over_not_left_blocking_the_queue() -> None:
+    """Refusing the head of the queue and returning let one entry withhold every entry behind it.
+
+    `release_work` and `record_result` both address an entry by accession, so an entry without one
+    cannot be finished or handed back and must not be leased. It was refused — and the refusal
+    stopped there. `seed_candidates` gives every un-curated candidate no accession and nothing in
+    this surface can add one (`submit_paper` does not merge identifiers into an existing entry), so
+    a single such entry jammed the whole queue permanently while `backlog_health` went on
+    publishing it as claimable.
+    """
+    from reprolith.enums import ModelClass as _ModelClass
+    from reprolith.mcp_server import claim_work
+
+    catalog = Catalog()
+    # Un-curated first: `claimable` ranks by readiness, and these carry no difficulty, so they sort
+    # ahead of the workable entry — which is exactly the ordering that used to be fatal.
+    catalog.add(Identifiers(title="Un-curated one"), _ModelClass.ODE_PKPD)
+    catalog.add(Identifiers(title="Un-curated two"), _ModelClass.ODE_PKPD)
+    catalog.add(Identifiers(title="Workable", accession="BIOMD0000000012"),
+                _ModelClass.ODE_PKPD, difficulty="high")
+
+    claimed = claim_work(catalog, {"requester": "agent-1"}, at=0.0)
+    assert claimed["claimed"] is True
+    assert claimed["entry"]["identifiers"]["accession"] == "BIOMD0000000012"
+    # The claimant is told why the two ahead of it were passed over.
+    assert claimed["skipped_without_accession"] == 2
+
+    exhausted = claim_work(catalog, {"requester": "agent-2"}, at=0.0)
+    assert exhausted["claimed"] is False
+    assert exhausted["skipped_without_accession"] == 2
+    assert "no accession" in exhausted["reason"]

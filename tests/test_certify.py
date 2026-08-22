@@ -231,3 +231,50 @@ def test_the_protocol_prints_the_value_that_was_run_and_what_was_read(
     )
     assert "dose=389.9200009" in cert.assessments[0].protocol
     assert "read=C cmax" in cert.assessments[0].protocol
+
+
+def test_an_override_an_event_would_overwrite_is_refused_too() -> None:
+    """The guard covered two of the three ways a parameter gets determined.
+
+    An event assignment writes its target mid-run, which makes it the same kind of not-taking
+    override as a rule or an initial assignment: in a repeated-dose or infusion model — the
+    ordinary shape for a COPASI-exported PK model — the event rewrites the very rate or dose
+    parameter a claim wants to move, and the published `overrides: X=v` then describes a run that
+    carried v only until the first event fired. Measured before the fix: a 3x override changed the
+    answer by 0.01% and still published `reproduced, relative error 0.0000` beside it.
+    """
+    pytest.importorskip(
+        "libsbml", reason="the optional 'engine' extra (python-libsbml) is not installed"
+    )
+    from reprolith.certify import _apply_overrides
+
+    event_model = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="dosed">
+    <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+    <listOfParameters>
+      <parameter id="kin" value="0" constant="false"/>
+      <parameter id="ke" value="1" constant="true"/>
+    </listOfParameters>
+    <listOfEvents>
+      <event id="dose" useValuesFromTriggerTime="true">
+        <trigger initialValue="false" persistent="true">
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><gt/><csymbol encoding="text"
+              definitionURL="http://www.sbml.org/sbml/symbols/time"> t </csymbol>
+              <cn> 0.001 </cn></apply>
+          </math>
+        </trigger>
+        <listOfEventAssignments>
+          <eventAssignment variable="kin">
+            <math xmlns="http://www.w3.org/1998/Math/MathML"><cn> 1 </cn></math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+    </listOfEvents>
+  </model>
+</sbml>"""
+    with pytest.raises(ValueError, match="event assignment"):
+        _apply_overrides(event_model, (("kin", 3.0),))
+    # The parameter no event writes is still overridable.
+    assert "5" in _apply_overrides(event_model, (("ke", 5.0),))

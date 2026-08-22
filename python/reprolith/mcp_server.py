@@ -404,34 +404,49 @@ def submit_paper(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
 def claim_work(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dict[str, Any]:
     """Claim the next best work item at time ``at``, leased to the requester."""
     model_class = ModelClass(arguments["model_class"]) if arguments.get("model_class") else None
-    entry = catalog.claim_next(
-        arguments["requester"],
-        at=at,
-        seconds=_bounded_lease(arguments.get("lease_seconds", 3600.0)),
-        model_class=model_class,
-    )
-    if entry is None:
-        return {"claimed": False, "reason": "no eligible work"}
-    if not entry.identifiers.accession:
-        # release_work and record_result both address an entry by accession, so an entry without
-        # one is a work unit that can be leased and then neither finished nor handed back — it
-        # simply strands until the lease expires and is offered again. submit_paper will happily
-        # create one (only a title is required), so refuse the lease rather than hand out work
-        # whose completion the surface cannot accept.
-        entry.release_lease()
+    # release_work and record_result both address an entry by accession, so an entry without one
+    # is a work unit that can be leased and then neither finished nor handed back — it simply
+    # strands until the lease expires and is offered again. submit_paper will happily create one
+    # (only a title is required), and seed_candidates does so for every un-curated candidate, so
+    # such an entry is not refused *and returned on*: it is stepped over. Refusing the head of the
+    # queue and stopping there let a single accession-less entry — which nothing in this surface
+    # can ever repair, since submit_paper does not merge identifiers into an existing entry —
+    # withhold every workable entry behind it, for good.
+    unaddressable = 0
+    for candidate in catalog.claimable(at, model_class=model_class):
+        if candidate.identifiers.accession:
+            entry = candidate
+            break
+        unaddressable += 1
+    else:
         return {
             "claimed": False,
             "reason": (
-                "the next entry carries no accession, and release_work and record_result address "
-                "an entry by accession — it cannot be finished or released once claimed; add an "
-                "accession to it before it can be worked"
+                "no eligible work"
+                if unaddressable == 0
+                else (
+                    f"no eligible work: {unaddressable} claimable "
+                    f"{'entry carries' if unaddressable == 1 else 'entries carry'} no accession, "
+                    "and release_work and record_result address an entry by accession — such an "
+                    "entry cannot be finished or released once claimed; add an accession to it "
+                    "before it can be worked"
+                )
             ),
+            "skipped_without_accession": unaddressable,
         }
+    entry.lease(
+        arguments["requester"],
+        at=at,
+        seconds=_bounded_lease(arguments.get("lease_seconds", 3600.0)),
+    )
     return {
         "claimed": True,
         "entry": entry.blind().to_dict(),
         "lease_expires": entry.lease_expires,
         "priority": catalog.priority_signals(entry),  # why this entry was offered
+        # Named even when zero: a claimant that is handed the third-ranked entry is owed the
+        # reason the first two were passed over.
+        "skipped_without_accession": unaddressable,
     }
 
 

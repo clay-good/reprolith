@@ -79,6 +79,19 @@ when you add a check, a refusal, or a stability rule:
 - **A guard that is too strict is a defect too.** A stability limit tightened to a safe-looking
   constant broke a validated Turing dispersion relation; the measured answer was different from the
   cautious one.
+- **Cover the case the rule is about, not one point inside it.** A whole round's findings were a
+  correct rule applied to every case but one, and the omitted case was the one that mattered most:
+  a flat-reference fallback that tested `span == 0.0`, and so relieved only the references that
+  never occur while missing every nearly-flat one; a resolvability check that returned early on a
+  reported mean of zero, the value it should be strictest at; an override guard covering rules and
+  initial assignments but not event assignments; a revision pin spanning four of the five modules
+  that decide the number. Enumerate the cases the rule is written for, then check the code against
+  that list.
+- **If a tool tells you it failed, read it.** The pinned engine reports an abandoned time course by
+  returning `False` and recording the samples it reached — all finite, so the non-finite guard
+  cannot see it. That return value was discarded and the sample count never compared to the one
+  requested, so a run that stopped at t = 5 of 100 was judged as if it had finished, at relative
+  error 0.0000. Validate what came back, not only what went in.
 
 [`docs/findings-note.md`](docs/findings-note.md) records what each round found, with the numbers.
 

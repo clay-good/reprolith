@@ -141,11 +141,26 @@ def simulate(
         problem.setStepNumber(int(steps))
 
         task.initialize(copasi.CCopasiTask.OUTPUT_UI)
-        task.process(True)
+        completed = task.process(True)
 
         series = task.getTimeSeries()
         column = _species_column(series, species, datamodel)
         recorded = series.getRecordedSteps()
+        # The engine reports a run it abandoned — step-limit exceeded, integration failure — by
+        # returning False and recording the samples it did reach, and every one of those samples
+        # is finite, so require_finite's sibling check cannot see it. Read as-is, a run that
+        # stopped at t=5 of 100 hands the metric layer a Cmax over 5% of the window while the
+        # protocol published beside it names the full duration; a scalar claim stated at the end
+        # of the course then judges as reproduced at relative error 0.0000 against a trajectory
+        # that never got there. Curve claims are caught downstream by the oracle's sample-count
+        # check; scalar claims — the whole PK/PD class — are not. An abandoned run is intractable,
+        # which is the blocked-not-failed case this module already signals for divergence.
+        if not completed or recorded != int(steps) + 1:
+            reached = float(duration) * max(recorded - 1, 0) / int(steps)
+            raise NonFiniteSimulation(
+                f"the pinned engine did not complete the time course for {species!r}: it stopped "
+                f"at t={reached} of {float(duration)} ({recorded} of {int(steps) + 1} samples)"
+            )
         # The output grid is uniform over [0, duration], so the sample times are known
         # exactly; taking them from the grid avoids depending on the engine's time column.
         times = tuple(float(duration) * i / int(steps) for i in range(recorded))
@@ -205,6 +220,15 @@ def simulate_with_roadrunner(
     runner = roadrunner.RoadRunner(sbml)
     runner.timeCourseSelections = ["time", f"[{species}]"]
     result = runner.simulate(0.0, float(duration), int(steps) + 1)
+    # The same short-run check :func:`simulate` makes, for the same reason: this engine's output
+    # is what a corroboration distance is measured against, and a run that returned fewer samples
+    # than it was asked for would set that distance over a window the model never crossed.
+    if len(result) != int(steps) + 1:
+        reached = float(duration) * max(len(result) - 1, 0) / int(steps)
+        raise NonFiniteSimulation(
+            f"the corroboration engine did not complete the time course for {species!r}: it "
+            f"stopped at t={reached} of {float(duration)} ({len(result)} of {int(steps) + 1} samples)"
+        )
     times = tuple(float(duration) * i / int(steps) for i in range(len(result)))
     values = tuple(float(row[1]) for row in result)
     return times, require_finite(values, species)

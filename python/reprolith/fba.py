@@ -135,7 +135,17 @@ def solver_pin() -> EnginePin:
     # bounds, the pFBA two-stage program, the essentiality sweep, the FROG fingerprint — is this
     # package, and its version has never moved. Naming its revision is what lets the freshness
     # check see a fix to any of that (see :func:`reprolith.pins.algorithm_revision`).
-    revision = algorithm_revision("fba", "constraint_based", "oracle", "certificate")
+    #
+    # `sbml` is in the span because this is the one class whose certified path reads its model
+    # through `ingest_fbc_sbml`: that function fixes the stoichiometry, the flux bounds and the
+    # objective vector, which is to say it decides *which* linear program the pinned solver then
+    # optimises. Leaving it out made the freshness check blind in a way that has already happened
+    # — commit 2b814dc ("refuse a minimize objective instead of returning a wrong-signed optimum")
+    # touched sbml.py alone, changed a verdict from FAILED, and moved no revision, so every
+    # certificate it invalidated went on comparing equal to the current pin. A kinetic-side edit
+    # to sbml.py now moves this revision too; re-verifying a certificate that did not need it is
+    # the error direction pins.py already declares safe.
+    revision = algorithm_revision("fba", "sbml", "constraint_based", "oracle", "certificate")
     return EnginePin(
         engine="scipy-linprog",
         version=str(scipy.__version__),

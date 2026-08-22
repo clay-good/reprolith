@@ -563,3 +563,25 @@ def test_a_run_that_outlives_its_time_cap_is_censored_not_reported() -> None:
              for s in range(300)]
     assert all(t == float("inf") or t < 2.0 for t in times)
     assert any(t == float("inf") for t in times) and any(t < 2.0 for t in times)
+
+
+def test_a_reported_mean_of_zero_does_not_switch_off_the_resolvability_check() -> None:
+    """The zero-mean early return ran *before* the zero-spread guard, so it skipped it entirely.
+
+    An extinction or no-expression claim is the case this check should be strictest at, and it was
+    the one case exempted: a one-trajectory ensemble that happened to land on 0 published
+    `reproduced` at "relative error 0.0000" on 87 of 200 seeds of an immigration-death model whose
+    true mean is 1.0, and 27 of 200 at two trajectories.
+    """
+    from reprolith.stochastic import unresolvable_ensemble_reason
+
+    for trajectories in (1, 2, 3, 5, 10):
+        assert unresolvable_ensemble_reason(
+            reported_mean=0.0, variance=0.0, trajectories=trajectories
+        ) is not None, f"{trajectories} trajectories with no spread cannot resolve an extinction claim"
+
+    # A genuinely deterministic zero model still resolves, once the ensemble is big enough for a
+    # zero spread to be a measurement rather than an accident.
+    assert unresolvable_ensemble_reason(reported_mean=0.0, variance=0.0, trajectories=30) is None
+    # And a non-zero reported mean is unaffected, at either size.
+    assert unresolvable_ensemble_reason(reported_mean=0.01, variance=0.0, trajectories=1) is not None

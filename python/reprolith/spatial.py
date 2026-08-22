@@ -72,7 +72,11 @@ def _diffusion_number(
     if decay < 0.0:
         raise ValueError(f"decay must not be negative (a negative decay is unbounded growth), got {decay}")
     if decay * dt > 1.0:
-        raise ValueError(
+        # UnstableDiscretization, not ValueError: this is a statement about the grid, exactly like
+        # the two checks below it, and certify_spatial catches only UnstableDiscretization in order
+        # to abstain on one claim. Raised as a ValueError it escaped that handler and took down the
+        # whole certificate, discarding every sibling claim's honest verdict over a step size.
+        raise UnstableDiscretization(
             f"unstable decay step: decay·dt = {decay * dt:.3g} must not exceed 1; "
             "above it the first-order term overshoots zero and oscillates"
         )

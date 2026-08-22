@@ -326,3 +326,44 @@ def test_the_gap_report_names_a_cause_the_certificate_actually_carries() -> None
 
     nothing = _cert([_claim(Verdict.NOT_EVALUABLE, cid="c")])
     assert gap_items(nothing)[0]["needs"] == "evaluable output or reference data for this claim"
+
+
+def test_a_gap_that_never_became_a_claim_still_reaches_the_badge_and_the_verdict_summary() -> None:
+    """`derive_overall` reads the claims alone, so a missing result nobody evaluated cannot lower it.
+
+    The human certificate prints such a note under WHAT WAS MISSING and pre-submission refuses
+    ready-to-submit, but the badge — one word and one colour, the most compressed rendering there
+    is and the one a reader meets first — went green, and the verdict summary read as a clean pass.
+    The same structural hole `estimation_claims` was added to close, one field over.
+    """
+    from reprolith import (
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+        render_badge,
+    )
+    from reprolith.catalog import Catalog
+    from reprolith.query import ReprolithQuery
+    from reprolith.supersession import CertificateLedger
+
+    cert = build_certificate(
+        paper=PaperIdentity(title="A paper with an undigitized figure", doi="10.1/g"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(claim_id="c1", quantity="AUC", verdict=Verdict.REPRODUCED,
+                                     source_location="Table 1")],
+        gap_report=["Figure 3 could not be digitized, so its claim was never evaluated"],
+    )
+    assert cert.overall.value == "reproduced"  # the claims alone still say so
+
+    badge = render_badge(cert)
+    assert "(gaps)" in badge
+    assert "#4c1" not in badge, "a certificate naming something missing must not render green"
+
+    ledger = CertificateLedger()
+    digest = ledger.issue(cert)
+    view = ReprolithQuery(Catalog(), ledger).verdict(digest)
+    assert view["gap_notes"] == [
+        "Figure 3 could not be digitized, so its claim was never evaluated"
+    ]
