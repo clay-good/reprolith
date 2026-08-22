@@ -367,3 +367,45 @@ def test_a_gap_that_never_became_a_claim_still_reaches_the_badge_and_the_verdict
     assert view["gap_notes"] == [
         "Figure 3 could not be digitized, so its claim was never evaluated"
     ]
+
+
+def test_a_gap_report_downgrades_a_badge_and_never_upgrades_one() -> None:
+    """Setting the amber unconditionally *raised* the two verdicts below it.
+
+    `run.blocked_certificate` always carries a gap report, so every abstention the pipeline
+    produces — 30 of the 31 PK/PD entries — turned from grey to amber, a not-reproduced result with
+    a gap turned from red to amber, and grey became unreachable.
+    """
+    from reprolith import (
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+        render_badge,
+    )
+    from reprolith.oracle import FailureMode, Fault
+
+    gaps = ["Figure 3 could not be digitized"]
+    pin = EnginePin(engine="copasi", version="4.46")
+    paper = PaperIdentity(title="t", doi="10.1/g")
+
+    passing = build_certificate(
+        paper=paper, engine_pin=pin, gap_report=gaps,
+        assessments=[ClaimAssessment(claim_id="c", quantity="AUC", verdict=Verdict.REPRODUCED,
+                                     source_location="T1")],
+    )
+    assert "(gaps)" in render_badge(passing) and "#4c1" not in render_badge(passing)
+
+    failing = build_certificate(
+        paper=paper, engine_pin=pin, gap_report=gaps,
+        assessments=[ClaimAssessment(claim_id="c", quantity="AUC", verdict=Verdict.FAILED,
+                                     source_location="T1",
+                                     root_cause=FailureMode.UNCATEGORIZED.value,
+                                     implicated="AUC",
+                                     fault_hypothesis=Fault.RECONSTRUCTION.value)],
+    )
+    assert "#e05d44" in render_badge(failing), "a not-reproduced badge must not be upgraded to amber"
+
+    abstained = build_certificate(paper=paper, engine_pin=pin, gap_report=gaps, assessments=[])
+    assert "#9f9f9f" in render_badge(abstained), "an abstention must not be upgraded to amber"

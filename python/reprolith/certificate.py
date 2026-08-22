@@ -16,6 +16,7 @@ from collections.abc import Iterable, Sequence
 from .canonical import content_hash
 from .enums import OverallVerdict, ReproductionLevel, Verdict
 from .model import (
+    REPROLITH_ATTRIBUTION,
     Assumption,
     Certificate,
     ClaimAssessment,
@@ -120,6 +121,26 @@ def require_distinct_assumption_ids(assumptions: Sequence[Assumption]) -> None:
         seen.add(assumption.id)
 
 
+def require_reprolith_attribution(assumptions: Sequence[Assumption]) -> None:
+    """Refuse an assumption attributed to anyone but Reprolith.
+
+    An assumption is, by definition, a value Reprolith supplied because the paper did not. The
+    certificate prints them under "ASSUMPTIONS (supplied by Reprolith, not the paper)" while the
+    machine form carries the field verbatim — so a certificate naming the paper as the source of
+    its own guess states two contradictory things about one number, and an agent reading the
+    machine form gets only the false half. The field was free text with a default, which is to say
+    the invariant was carried by a docstring; every committed assumption honours it, and this is
+    what keeps a contributed or hand-edited certificate honouring it too.
+    """
+    for assumption in assumptions:
+        if assumption.attributed_to != REPROLITH_ATTRIBUTION:
+            raise ValueError(
+                f"assumption {assumption.id!r} is attributed to {assumption.attributed_to!r}, but "
+                "an assumption is a value Reprolith supplied because the paper did not — it can "
+                f"only be attributed to {REPROLITH_ATTRIBUTION!r}"
+            )
+
+
 def require_stated_cause(assessments: Iterable[ClaimAssessment]) -> None:
     """Refuse a non-pass verdict that names no reason for it.
 
@@ -172,6 +193,7 @@ def build_certificate(
     require_stated_protocol(frozen_assessments)
     require_stated_cause(frozen_assessments)
     require_distinct_assumption_ids(frozen_assumptions)
+    require_reprolith_attribution(frozen_assumptions)
     # …including the pin/protocol agreement the load path checks, so the builder cannot mint a
     # certificate that its own loader refuses. The check lives in `persistence` beside the other
     # load-path invariants; imported here rather than duplicated, so the two cannot drift.

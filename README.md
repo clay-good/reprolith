@@ -115,7 +115,11 @@ ruff check . && mypy && pytest -q
 Work from a clone. The committed body of work — the labelled blind sets, every class's milestone
 certificates, the registry — is repository data, not packaged resources, so a non-editable install
 carries the code but none of the state the surfaces read. Both surfaces take `--data-dir` if you
-need to point an installed copy at a checkout.
+need to point an installed copy at a checkout — but it reads exactly the one directory you name,
+deliberately, so a digest can never be certified against a certificate the operator's data
+directory has never held. The aggregated view over all six classes is what a source checkout gives
+you by default; under `--data-dir` you get that directory and nothing else, and a paper outside it
+reads as unknown rather than as an error.
 
 Actually running a model needs the optional **`engine`** extra, which pins COPASI (a
 BioSimulators-registered engine) and the SBML tooling. It stays out of the core so the fast
@@ -217,5 +221,6 @@ The code is MIT ([LICENSE](LICENSE)). The data Reprolith *produces* — certific
 entries, dossiers, bundles, agreement reports, the registry page — is CC BY 4.0
 ([LICENSE-DATASET](LICENSE-DATASET)), so cite it if you build on it. The third-party model files
 redistributed under `datasets/` keep their own upstream licenses, and some are more restrictive:
-the BiGG genome-scale models are academic and non-profit use only. See
+the BiGG models — `e_coli_core` included, not only the genome-scale ones — are academic
+and non-profit use only. See
 [datasets/THIRD-PARTY-NOTICES.md](datasets/THIRD-PARTY-NOTICES.md) before redistributing.

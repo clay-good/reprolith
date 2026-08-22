@@ -156,7 +156,12 @@ def simulate(
         # check; scalar claims — the whole PK/PD class — are not. An abandoned run is intractable,
         # which is the blocked-not-failed case this module already signals for divergence.
         if not completed or recorded != int(steps) + 1:
-            reached = float(duration) * max(recorded - 1, 0) / int(steps)
+            # The time the engine actually reached, read from its own time column rather than
+            # inferred from the grid: COPASI appends a duplicate final row when it abandons a
+            # course, so `duration * (recorded - 1) / steps` overstated the stopping point by
+            # exactly one grid step every time — and this text reaches an agent verbatim through
+            # the MCP lint tools, erring in the direction of "the run got further than it did".
+            reached = float(series.getData(recorded - 1, 0)) if recorded else 0.0
             raise NonFiniteSimulation(
                 f"the pinned engine did not complete the time course for {species!r}: it stopped "
                 f"at t={reached} of {float(duration)} ({recorded} of {int(steps) + 1} samples)"

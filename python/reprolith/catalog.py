@@ -634,9 +634,17 @@ class Catalog:
         published next to it. ``at`` is the time leases are judged against.
         """
         labelled = sum(1 for e in self._entries if e.ground_truth is not None)
+        # An entry with no accession is claimable here and unofferable at every surface that hands
+        # work out, because release and record both address an entry by accession. Counting it in
+        # `claimable` republished the very overstatement this field was added to remove: a queue of
+        # fifty un-curated candidates reported fifty claimable and handed out none, permanently,
+        # since nothing in the submit surface can add an accession to an existing entry.
+        claimable = self.claimable(at)
+        offerable = [e for e in claimable if e.identifiers.accession]
         return {
             "total": len(self._entries),
-            "claimable": len(self.claimable(at)),
+            "claimable": len(offerable),
+            "claimable_without_accession": len(claimable) - len(offerable),
             "by_state": dict(Counter(e.state.value for e in self._entries)),
             "by_class": dict(Counter(e.model_class.value for e in self._entries)),
             "by_difficulty": dict(Counter(e.difficulty or "unassessed" for e in self._entries)),

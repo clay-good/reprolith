@@ -585,3 +585,43 @@ def test_a_reported_mean_of_zero_does_not_switch_off_the_resolvability_check() -
     assert unresolvable_ensemble_reason(reported_mean=0.0, variance=0.0, trajectories=30) is None
     # And a non-zero reported mean is unaffected, at either size.
     assert unresolvable_ensemble_reason(reported_mean=0.01, variance=0.0, trajectories=1) is not None
+
+
+def test_a_decisively_wrong_ensemble_is_judged_not_ruled_unresolvable() -> None:
+    """The guard divided the reconstruction's noise by the paper's number.
+
+    For a counting process the variance grows with the mean, so the further a reconstruction
+    over-predicted the noisier it was and the more certainly it was ruled unresolvable — and
+    `blocked` is published as "insufficient information". Measured at the shipped settings
+    (reported 10.0, 400 trajectories, Poisson variance): a model over-predicting threefold sat 71
+    standard errors outside the pass band and abstained, while a hundredfold *under*-prediction was
+    judged, because under-predicting shrinks the variance.
+    """
+    from reprolith.stochastic import unresolvable_ensemble_reason
+
+    for simulated in (12.0, 20.0, 30.0, 100.0):  # Poisson: variance == mean
+        assert unresolvable_ensemble_reason(
+            reported_mean=10.0, variance=simulated, trajectories=400, observed_mean=simulated
+        ) is None, f"a mean of {simulated} against a reported 10.0 is not a sampling accident"
+
+    # The case the guard exists for is untouched: at ten trajectories a correct model's mean sits
+    # inside the band, sampling noise really can flip the verdict, and abstaining is right.
+    assert unresolvable_ensemble_reason(
+        reported_mean=10.0, variance=10.0, trajectories=10, observed_mean=10.2
+    ) is not None
+
+
+def test_a_stochastic_shortfall_is_not_filed_under_the_cause_just_ruled_out() -> None:
+    """Nothing reaches the attribution until the guard has excluded sampling noise as the cause.
+
+    The class defaulted every shortfall to `finite-ensemble-sampling-noise` anyway, so a large
+    discrepancy was filed under a small noise source — the nearest-wrong-cause that the
+    `uncategorized` escape hatch exists to prevent, and the one class front-end that did not use it.
+    """
+    import inspect
+
+    from reprolith import stochastic
+
+    source = inspect.getsource(stochastic.certify_stochastic)
+    assert "undetermined_shortfall(claim.quantity)" in source
+    assert "FailureMode.FINITE_ENSEMBLE_SAMPLING" not in source

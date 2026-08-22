@@ -1086,6 +1086,120 @@ than skipping it — which found that the *E. coli* core worked-example render n
 either. `scripts/render_worked_examples.py` regenerates all three from the certificates they are
 renderings of, so the two accounts cannot drift apart again.
 
+## The audit of that audit, again — and the direction a fix points
+
+Round one's eleven fixes were handed to a fresh agent told to treat them as guilty until measured
+innocent, alongside three angles nobody had used: the specs read line by line against the code,
+whether the *failure* paths are reachable at all, and the whole project walked as a first-time user
+executing every documented claim. Every angle found something. Eight of the survivors were in the
+previous round's own fixes, and the two worst were the same mistake: **a repair that is safe in one
+direction is not safe, and I checked the wrong direction.**
+
+- **The oracle fix loosened the number it was meant to make honest.** Widening a denominator to
+  `max(range, level)` was verified one-directional over 200,000 random references — 0 narrowed,
+  3,752 widened — and that argument is worthless, because widening can only turn a miss into a
+  pass. On Chassagnole's *E. coli* carbon-metabolism curve, a shipped kinetic milestone reference
+  with a range of 2.18 mM against a level of 4.09 mM, the denominator grew 1.87x and a
+  reconstruction missing by **43% of everything the curve does** certified as `reproduced`. Six
+  further flips were measured on the same model. The level is now used only where the range really
+  is noise: below a tenth of the level. That boundary is measured twice over — every curve the
+  oracle judges has a range/level of 0.534 or more (then 1.45, 2.45, 2.61, 3.25, 12.18) while the
+  flat cases the fallback exists for sit at 0.02 and 0.01, whose geometric midpoint is 0.103; and
+  independently it is the curve tolerance's own pass threshold, since a curve that does not move by
+  one tolerance-width cannot be measured in units of its own excursion.
+- **The badge fix upgraded the verdicts it was meant to leave alone.** Setting amber whenever a gap
+  report is non-empty was written for the green case and applied to all four. `run.blocked_certificate`
+  always carries a gap report, so all 30 PK/PD abstentions turned from grey to amber, a
+  not-reproduced result with a gap turned from red to amber, and grey became unreachable. It now
+  only ever downgrades.
+
+Two more of round one's fixes were too strict, which is a defect in this repo and not a safe
+default:
+
+- **The event-assignment override guard is reverted.** An event overwrites its target only when its
+  trigger fires, so an override still governs the run until that moment and governs all of it if
+  the trigger is never satisfied in the window. Three measured shapes — an event firing at the
+  moment the claim is read, a trigger never satisfied, an assignment writing the value already
+  held — each moved the answer threefold and each was refused. What was actually missing is a
+  fourth route the guard never had: a kinetic law's own local parameter shadowing a global of the
+  same id, where the law reads the local one, the run comes back bit-identical, and the protocol
+  publishes an override that did nothing. That one is unambiguous, and is what the guard now
+  refuses. The residual event case needs the trigger evaluated over the protocol window, not a name
+  lookup, and is left recorded rather than guessed at.
+- **The constraint-based validator aborted where an abstention was available.** A dossier with no
+  targetable claim states nothing to be wrong about — the judging loop is empty and the certificate
+  comes out `blocked`, which is first-class output here. Raising on it would have taken down a
+  whole eight-model milestone run for one not-yet-extractable entry.
+
+And two were right but reported wrongly: the truncated-run refusal named a stopping time one grid
+step later than the engine reached, because COPASI appends a duplicate final row when it abandons a
+course, and the text reaches an agent verbatim through the MCP lint tools — erring toward *the run
+got further than it did*. It reads the engine's own time column now. The queue fix stepped over
+un-workable entries but left `backlog_health` counting them, so a queue of fifty un-curated
+candidates still advertised fifty claimable and handed out none.
+
+### What the failure paths could not say
+
+Asking whether each class can publish a true negative — never asked before — found the stochastic
+class bounded in a way nothing stated. `unresolvable_ensemble_reason` divided the *reconstruction's*
+standard error by the *paper's* reported mean, and for a counting process the variance grows with
+the mean, so the further a reconstruction over-predicted the noisier it was and the more certainly
+it was ruled unresolvable. At the shipped settings a model over-predicting threefold sat **71
+standard errors** outside the pass band and was published as `blocked`, whose published meaning is
+"insufficient information", under a reason that was arithmetically false. It was one-sided, too: a
+hundredfold *under*-prediction was judged, because under-predicting shrinks the variance. Past about
+2.5x over-prediction the class could not publish a true negative at all.
+
+However noisy the ensemble, a mean clear of the pass band by more than three standard errors is not
+there by sampling accident, and is now judged. Three is measured: on the immigration-death model
+over 200 seeds a *correct* model would be published as a false `not-reproduced` on 9 of 200 seeds at
+two standard errors and 2 of 200 at three, with four buying no further improvement, and at forty
+trajectories and above it is 0 of 200 — while every wrong model measured re-opens at all three
+values. The change can only turn an abstention into a judgement, so no verdict that stood can flip
+to blocked.
+
+The same class was also the only front-end still defaulting a shortfall to a *named* cause,
+`finite-ensemble-sampling-noise` — on the far side of the guard that has just established the
+ensemble's noise is too small to explain a miss. It was filing a 107% discrepancy under a 2.2% noise
+source, which is precisely the nearest-wrong-cause the `uncategorized` escape hatch exists to
+prevent, and it made this note's own earlier sentence — "every class front-end uses it" — false.
+All eight front-ends use it now.
+
+### What the documents claimed
+
+Reading the specs against the code, and then the whole project as a first-time user:
+
+- **An assumption could be attributed to the paper.** `attributed_to` was free text with a default,
+  which is to say the invariant "always attributed to Reprolith, never to the paper" was carried by
+  the sentence asserting it. A certificate can print "supplied by Reprolith, not the paper" over an
+  assumption whose machine form names the paper's own table — two contradictory statements about one
+  number, with an agent reading only the false half. Refused now on the build path and the load
+  path, the boundary the loader exists to defend. All eight committed assumptions were already clean.
+- **The dossier recorded SBML unit *identifiers* as units.** `unit_0`, `unit_2`, `substance` — and
+  the units gap counted only the values with no reference at all, so "81 of 115 extracted values
+  state no unit" implied the remaining 34 carried usable ones. Every one of those 34 resolves to a
+  real unit in the file's own `unitDefinition`s, and none of them said so; the dossier now carries
+  both, the source's wording for provenance and what it resolves to (milligram, millilitre,
+  nanomole), which is what the ingestion spec asked for and nothing implemented.
+- **The spatial milestone README published a cleaner verdict than its certificates carry** —
+  "the verdicts are clean **reproduced**", where all three are `partially-reproduced` and every
+  claim is assumption-qualified by the boundary condition Reprolith chose. The top-level README and
+  `docs/self-validation.md` both say so correctly; this file was missed by the commit that fixed
+  them. Corrected, along with a milestone README whose headline said 31 entries "yielded a
+  certificate" when thirty are abstentions with no certificate file, a worked example labelling
+  `e_coli_core` CC-BY where the repo's own third-party notice says academic and non-profit only, and
+  a `--data-dir` flag documented as the remedy for an installed copy without saying it reads exactly
+  the one directory named and drops the aggregated six-class view.
+- **`github-collaboration` promised an MCP view of collaboration state that no tool provides.** It
+  now carries the same "what carries each requirement today" disclosure the autonomous-build-loop
+  spec already sets as the precedent, naming both this and the unfiled queue issues as intent rather
+  than machinery.
+
+The render freshness gate added last round was itself too weak: it checked the pin line and nothing
+else, so a hand-edited verdict in a committed render passed untouched — the same two-accounts-of-one-
+result it was added to close, one field over. It now asserts the render is byte-for-byte the
+rendering of the certificate beside it.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

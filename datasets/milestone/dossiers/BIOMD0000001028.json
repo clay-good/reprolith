@@ -435,6 +435,7 @@
     {
       "confidence": "quoted",
       "name": "mLiver",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -442,6 +443,7 @@
     {
       "confidence": "quoted",
       "name": "mKidneyPlasma",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -449,6 +451,7 @@
     {
       "confidence": "quoted",
       "name": "mRemainder",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -456,6 +459,7 @@
     {
       "confidence": "quoted",
       "name": "mPlasmaVenous",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -463,6 +467,7 @@
     {
       "confidence": "quoted",
       "name": "mHeart",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -470,6 +475,7 @@
     {
       "confidence": "quoted",
       "name": "mMuscle",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -477,6 +483,7 @@
     {
       "confidence": "quoted",
       "name": "mAdipose",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -484,6 +491,7 @@
     {
       "confidence": "quoted",
       "name": "mBrain",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -491,6 +499,7 @@
     {
       "confidence": "quoted",
       "name": "mFeces",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -498,6 +507,7 @@
     {
       "confidence": "quoted",
       "name": "mUrineExternal",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -505,6 +515,7 @@
     {
       "confidence": "quoted",
       "name": "mIntestineLumen",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -512,6 +523,7 @@
     {
       "confidence": "quoted",
       "name": "mPlasmaArterial",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -519,6 +531,7 @@
     {
       "confidence": "quoted",
       "name": "mLung",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -526,6 +539,7 @@
     {
       "confidence": "quoted",
       "name": "mPortalVein",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -533,6 +547,7 @@
     {
       "confidence": "quoted",
       "name": "mStomach",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -540,6 +555,7 @@
     {
       "confidence": "quoted",
       "name": "mEnterocytes",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -547,6 +563,7 @@
     {
       "confidence": "quoted",
       "name": "mKidneyTissue",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -554,6 +571,7 @@
     {
       "confidence": "quoted",
       "name": "mIntestineVascular",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -561,6 +579,7 @@
     {
       "confidence": "quoted",
       "name": "mStomachLumen",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -568,6 +587,7 @@
     {
       "confidence": "quoted",
       "name": "mRBC",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -575,6 +595,7 @@
     {
       "confidence": "quoted",
       "name": "mKidneyTubular",
+      "normalized_unit": "10^-9 mole",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "substance",
       "value": 0.0
@@ -584,6 +605,7 @@
     {
       "confidence": "quoted",
       "name": "Metformin_Dose_in_Lumen_in_mg",
+      "normalized_unit": "10^-3 gram",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_0",
       "value": 389.92
@@ -591,6 +613,7 @@
     {
       "confidence": "quoted",
       "name": "Body_Weight",
+      "normalized_unit": "10^-3 litre",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_1",
       "value": 70000.0
@@ -598,6 +621,7 @@
     {
       "confidence": "quoted",
       "name": "Cardiac_Output",
+      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_2",
       "value": 312000.0
@@ -654,6 +678,7 @@
     {
       "confidence": "quoted",
       "name": "QAdipose",
+      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_2",
       "value": 16224.0
@@ -661,6 +686,7 @@
     {
       "confidence": "quoted",
       "name": "QBrain",
+      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_2",
       "value": 35568.0
@@ -668,6 +694,7 @@
     {
       "confidence": "quoted",
       "name": "QHeart",
+      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_2",
       "value": 12480.0
@@ -675,6 +702,7 @@
     {
       "confidence": "quoted",
       "name": "QKidney",
+      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_2",
       "value": 54600.0
@@ -682,6 +710,7 @@
     {
       "confidence": "quoted",
       "name": "QMuscle",
+      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_2",
       "value": 59592.0
@@ -689,6 +718,7 @@
     {
       "confidence": "quoted",
       "name": "QRemainder",
+      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_2",
       "value": 62712.0
@@ -815,6 +845,7 @@
     {
       "confidence": "quoted",
       "name": "QLiverArtery",
+      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_2",
       "value": 14352.0
@@ -822,6 +853,7 @@
     {
       "confidence": "quoted",
       "name": "QStomach",
+      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_2",
       "value": 3432.0
@@ -829,6 +861,7 @@
     {
       "confidence": "quoted",
       "name": "QPortalVein",
+      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_2",
       "value": 19968.0
@@ -836,6 +869,7 @@
     {
       "confidence": "quoted",
       "name": "QIntestineVascular",
+      "normalized_unit": "10^-3 litre * 3600*10^2 second^-1",
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unit_2",
       "value": 33072.0

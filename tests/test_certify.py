@@ -233,15 +233,16 @@ def test_the_protocol_prints_the_value_that_was_run_and_what_was_read(
     assert "read=C cmax" in cert.assessments[0].protocol
 
 
-def test_an_override_an_event_would_overwrite_is_refused_too() -> None:
-    """The guard covered two of the three ways a parameter gets determined.
+def test_an_override_an_event_may_overwrite_is_allowed() -> None:
+    """Deliberate, and reversed from an earlier round that refused it.
 
-    An event assignment writes its target mid-run, which makes it the same kind of not-taking
-    override as a rule or an initial assignment: in a repeated-dose or infusion model — the
-    ordinary shape for a COPASI-exported PK model — the event rewrites the very rate or dose
-    parameter a claim wants to move, and the published `overrides: X=v` then describes a run that
-    carried v only until the first event fired. Measured before the fix: a 3x override changed the
-    answer by 0.01% and still published `reproduced, relative error 0.0000` beside it.
+    An event assignment looked like the same not-taking override as a rule or an initial
+    assignment, and it is not: an event overwrites its target only when its trigger fires, so an
+    override still governs the run up to that moment and governs all of it when the trigger is
+    never satisfied in the protocol window. Refusing it rejected three measured shapes whose
+    overrides each moved the answer threefold. The residual gap — a certificate reporting an
+    override without saying an event may overwrite it — needs the trigger evaluated over the
+    window, and is recorded in docs/findings-note.md rather than guessed at with a name lookup.
     """
     pytest.importorskip(
         "libsbml", reason="the optional 'engine' extra (python-libsbml) is not installed"
@@ -254,7 +255,6 @@ def test_an_override_an_event_would_overwrite_is_refused_too() -> None:
     <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
     <listOfParameters>
       <parameter id="kin" value="0" constant="false"/>
-      <parameter id="ke" value="1" constant="true"/>
     </listOfParameters>
     <listOfEvents>
       <event id="dose" useValuesFromTriggerTime="true">
@@ -262,7 +262,7 @@ def test_an_override_an_event_would_overwrite_is_refused_too() -> None:
           <math xmlns="http://www.w3.org/1998/Math/MathML">
             <apply><gt/><csymbol encoding="text"
               definitionURL="http://www.sbml.org/sbml/symbols/time"> t </csymbol>
-              <cn> 0.001 </cn></apply>
+              <cn> 100 </cn></apply>
           </math>
         </trigger>
         <listOfEventAssignments>
@@ -274,7 +274,48 @@ def test_an_override_an_event_would_overwrite_is_refused_too() -> None:
     </listOfEvents>
   </model>
 </sbml>"""
-    with pytest.raises(ValueError, match="event assignment"):
-        _apply_overrides(event_model, (("kin", 3.0),))
-    # The parameter no event writes is still overridable.
-    assert "5" in _apply_overrides(event_model, (("ke", 5.0),))
+    assert "3" in _apply_overrides(event_model, (("kin", 3.0),))
+
+
+def test_an_override_a_local_parameter_shadows_is_refused() -> None:
+    """A kinetic law's own local parameter shadows a global of the same id, and the law reads it.
+
+    So the override is accepted, the run comes back bit-identical, and the protocol publishes an
+    override the run never had — the third route by which an override fails to take. An *event*
+    assignment is deliberately not refused: it overwrites its target only when its trigger fires,
+    so an override still governs the run up to that moment and may govern all of it.
+    """
+    pytest.importorskip(
+        "libsbml", reason="the optional 'engine' extra (python-libsbml) is not installed"
+    )
+    from reprolith.certify import _apply_overrides
+
+    shadowed = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="shadowed">
+    <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="A" compartment="c" initialAmount="1" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="k" value="1" constant="true"/>
+      <parameter id="free" value="1" constant="true"/>
+    </listOfParameters>
+    <listOfReactions>
+      <reaction id="decay" reversible="false">
+        <listOfReactants><speciesReference species="A" stoichiometry="1" constant="true"/></listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><times/><ci> k </ci><ci> A </ci></apply>
+          </math>
+          <listOfLocalParameters><localParameter id="k" value="0.5"/></listOfLocalParameters>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>"""
+    with pytest.raises(ValueError, match="shadowed by a kinetic law"):
+        _apply_overrides(shadowed, (("k", 3.0),))
+    # A global nothing shadows is still overridable.
+    assert "5" in _apply_overrides(shadowed, (("free", 5.0),))

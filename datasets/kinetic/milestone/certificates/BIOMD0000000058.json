@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "deterministic-lsoda (judge rev cf2dc36efd1c)",
+    "algorithm": "deterministic-lsoda (judge rev 34c971ff8e23)",
     "engine": "copasi",
     "version": "4.46.300 (Source)"
   },

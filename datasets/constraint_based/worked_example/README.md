@@ -10,7 +10,8 @@ flag.
 ## The model and the claim
 
 - **Model:** the standard *E. coli* core reconstruction, [`e_coli_core.xml`](../e_coli_core.xml)
-  (BiGG Models, SBML L3 fbc v2, CC-BY).
+  (BiGG Models, SBML L3 fbc v2; academic and non-profit use only — see
+[`datasets/THIRD-PARTY-NOTICES.md`](../../THIRD-PARTY-NOTICES.md)).
 - **Origin:** Orth, Fleming & Palsson (2010), *EcoSal Plus*
   ([doi:10.1128/ecosalplus.10.2.1](https://doi.org/10.1128/ecosalplus.10.2.1)).
 - **Claim checked** (reference value from the literature, not from re-running the model, so the

@@ -206,12 +206,18 @@ def certify_constraint_based(
     # "numeric"`: the certificate asserting a precision of reference the dossier never claimed,
     # and a verdict flipping on it. The milestone's own e_coli_core entry reaches here through
     # dossier_from_dict, which validates nothing. Guarding only the way in left the way out open.
-    problems = validate_constraint_based(dossier)
-    if problems:
-        raise ValueError(
-            "a constraint-based dossier cannot be certified while it is ill-formed: "
-            + "; ".join(problems)
-        )
+    # …but only for a dossier that is going to publish a number. A dossier with no targetable
+    # claim states nothing to be wrong about — the loop below is empty and the certificate comes
+    # out `blocked`, which is first-class output here (30 of the 31 PK/PD entries are exactly
+    # that). Raising on it turned an available abstention into an abort, and one not-yet-extractable
+    # entry would take down a whole milestone run.
+    if dossier.targetable_claims():
+        problems = validate_constraint_based(dossier)
+        if problems:
+            raise ValueError(
+                "a constraint-based dossier cannot be certified while it is ill-formed: "
+                + "; ".join(problems)
+            )
 
     model = _apply_medium(ingest_fbc_sbml(sbml), dossier.parameters)
     attributions = shortfalls or {}

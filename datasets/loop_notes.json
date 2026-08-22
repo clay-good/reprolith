@@ -144,7 +144,7 @@
         "engine-algorithm-sensitivity"
       ],
       "basis": "measured",
-      "note": "The only catalogued mode with a measurement behind it rather than a requirement. Every kinetic model in the committed corpus was run under two independently-implemented engines (COPASI and libRoadRunner/CVODE), and the published distance bounds run from 1e-06 to 1e-03 \u2014 two to five orders of magnitude below the 0.10 curve tolerance, and at least an order below the 2% the corroboration check itself enforces. So no committed verdict is engine-sensitive and the mode has never been attributed. What the measurement establishes is the opposite of a failure: the category exists so that a distance which does cross has somewhere honest to land, and the committed bounds are re-checked against a live run so genuine drift toward the tolerance fails loudly.",
+      "note": "The only catalogued mode with a measurement behind it rather than a requirement. Every kinetic model in the committed corpus was run under two independently-implemented engines (COPASI and libRoadRunner/CVODE), and the published distance bounds run from 1e-06 to 1e-03 — two to five orders of magnitude below the 0.10 curve tolerance, and at least an order below the 2% the corroboration check itself enforces. So no committed verdict is engine-sensitive and the mode has never been attributed. What the measurement establishes is the opposite of a failure: the category exists so that a distance which does cross has somewhere honest to land, and the committed bounds are re-checked against a live run so genuine drift toward the tolerance fails loudly.",
       "evidence": [
         "python/reprolith/corroboration.py",
         {
@@ -167,7 +167,7 @@
         "load-bearing-assumption-dependence"
       ],
       "basis": "spec",
-      "note": "Both are class-agnostic and neither has been emitted. The metformin entry is the nearest real instance of assumption dependence \u2014 its 1000 mg claim rests on a salt-form assumption Reprolith made itself, and the overall verdict is qualified down to partially-reproduced because of it \u2014 but the assessment records no attribution, because the claim reproduced. apparent-manuscript-error has deliberately never been asserted: calling a published number wrong needs more than a mismatch Reprolith cannot otherwise explain.",
+      "note": "Both are class-agnostic and neither has been emitted. The metformin entry is the nearest real instance of assumption dependence — its 1000 mg claim rests on a salt-form assumption Reprolith made itself, and the overall verdict is qualified down to partially-reproduced because of it — but the assessment records no attribution, because the claim reproduced. apparent-manuscript-error has deliberately never been asserted: calling a published number wrong needs more than a mismatch Reprolith cannot otherwise explain.",
       "evidence": [
         "python/reprolith/oracle.py",
         {
@@ -232,12 +232,18 @@
         "finite-ensemble-sampling-noise"
       ],
       "basis": "spec",
-      "note": "The stochastic class's own default cause: an SSA mean judged from a finite ensemble can miss by chance at a rate the ensemble size sets, which is a property of the measurement and not a fault in the paper. It exists because a stochastic claim that supplied no root cause used to raise rather than certify, so a seed that happened to miss crashed the run instead of publishing the honest not-reproduced certificate it had earned. No committed certificate carries it: the three milestone means landed at 0.6-2.3% relative error, inside tolerance.",
+      "note": "A catalogued cause with no code that assigns it. It was the stochastic class's own default: an SSA mean judged from a finite ensemble can miss by chance at a rate the ensemble size sets, which is a property of the measurement and not a fault in the paper. That default was wrong where it was applied, because nothing reaches the attribution until the resolvability guard has already established that the ensemble's noise is too small to explain a miss — so it filed large discrepancies under a small noise source, the nearest-wrong-cause the uncategorized escape hatch exists to prevent. The class now defaults to uncategorized like every other class front-end, and this mode is reserved for a caller that has actually diagnosed it. No committed certificate carries it: the three milestone means landed at 0.6-2.3% relative error, inside tolerance.",
       "evidence": [
+        {
+          "path": "python/reprolith/oracle.py",
+          "quotes": [
+            "FINITE_ENSEMBLE_SAMPLING = \"finite-ensemble-sampling-noise\""
+          ]
+        },
         {
           "path": "python/reprolith/stochastic.py",
           "quotes": [
-            "mode=FailureMode.FINITE_ENSEMBLE_SAMPLING"
+            "attribution=claim.shortfall or undetermined_shortfall(claim.quantity)"
           ]
         },
         "datasets/stochastic/milestone/certificates",
@@ -258,7 +264,7 @@
         "uncategorized"
       ],
       "basis": "spec",
-      "note": "The escape hatch every class spec requires \u2014 ode-pkpd, constraint-based, and logical each say a shortfall fitting none of the catalogued causes is recorded as uncategorized, which flags the set to be extended rather than letting a verdict be filed under the nearest wrong cause. Its presence in a certificate is a signal about this catalogue, not about the paper.",
+      "note": "The escape hatch every class spec requires — ode-pkpd, constraint-based, and logical each say a shortfall fitting none of the catalogued causes is recorded as uncategorized, which flags the set to be extended rather than letting a verdict be filed under the nearest wrong cause. Its presence in a certificate is a signal about this catalogue, not about the paper.",
       "evidence": [
         {
           "path": "openspec/specs/ode-pkpd-class/spec.md",
@@ -284,8 +290,8 @@
         {
           "path": "docs/findings-note.md",
           "quotes": [
-            "| ode-pkpd scalar | metformin dose | 2.2% | +8% / \u22123% | +10% \u2192 partial |",
-            "| constraint-based | glucose uptake bound, *E. coli* core | rel. err 0 | \u00b13% | +5% \u2192 partial |"
+            "| ode-pkpd scalar | metformin dose | 2.2% | +8% / −3% | +10% → partial |",
+            "| constraint-based | glucose uptake bound, *E. coli* core | rel. err 0 | ±3% | +5% → partial |"
           ]
         },
         "datasets/milestone/certificates/BIOMD0000001028.json",
@@ -299,7 +305,7 @@
         "curve-normalized-distance/numeric"
       ],
       "basis": "measured",
-      "note": "10% reproduced / 25% partial on the RMSE, but the measured budget is not 10%: the verdict is the stricter of the RMSE and a worst-point check at 25% of the reference span, and the worst-point statistic binds whenever the error concentrates in under about a sixth of the samples \u2014 so on four of five curve shapes even a systematic error is decided at 24.8-25.0%. The rule exists because a doubled peak once averaged itself into a pass; it now fails at 25, 101, 201, and 1001 sample points, and the single-point allowance is flat rather than growing as the square root of the sample count, which closed sample-count gaming with it. Tightening the worst point to the pass threshold was measured and rejected: at coarse per-point noise it fails correct work about half the time, where the present budget produced 0 false failures in 15,000 trials up to 5% per-point noise.",
+      "note": "10% reproduced / 25% partial on the RMSE, but the measured budget is not 10%: the verdict is the stricter of the RMSE and a worst-point check at 25% of the reference span, and the worst-point statistic binds whenever the error concentrates in under about a sixth of the samples — so on four of five curve shapes even a systematic error is decided at 24.8-25.0%. The rule exists because a doubled peak once averaged itself into a pass; it now fails at 25, 101, 201, and 1001 sample points, and the single-point allowance is flat rather than growing as the square root of the sample count, which closed sample-count gaming with it. Tightening the worst point to the pass threshold was measured and rejected: at coarse per-point noise it fails correct work about half the time, where the present budget produced 0 false failures in 15,000 trials up to 5% per-point noise.",
       "evidence": [
         {
           "path": "docs/findings-note.md",
@@ -365,7 +371,7 @@
         "estimation-level"
       ],
       "basis": "spec",
-      "note": "10%/25%, keyed by reproduction level rather than comparison method: re-fitting parameters from raw data is sensitive to the optimizer, its starting values, the objective, and the dataset, so a recovered estimate cannot be held to the tolerance of a scalar read out of a fixed model. Declared, not measured \u2014 no estimation-level claim has been certified.",
+      "note": "10%/25%, keyed by reproduction level rather than comparison method: re-fitting parameters from raw data is sensitive to the optimizer, its starting values, the objective, and the dataset, so a recovered estimate cannot be held to the tolerance of a scalar read out of a fixed model. Declared, not measured — no estimation-level claim has been certified.",
       "evidence": [
         {
           "path": "python/reprolith/oracle.py",
@@ -384,7 +390,7 @@
         "exact-match"
       ],
       "basis": "observed",
-      "note": "Zero slack, and the only default that is observed in committed certificates rather than argued for. A discrete result has no tolerance to declare, and the logical milestone shows two strengths of it: six of the nine certificates publish 'exact match on the attractor count and every period', while the three large signalling networks \u2014 whose state spaces are far past enumeration \u2014 publish 'exact match on the fixed-point set (SHA-256 of the sorted states)', which is the weaker projection of fixed points only. The FBA class holds its FROG cross-validation to 1e-6, which is numerical noise rather than a reproduction budget. The zero pair is admitted by the threshold check precisely so an exact comparison does not have to invent slack it does not use.",
+      "note": "Zero slack, and the only default that is observed in committed certificates rather than argued for. A discrete result has no tolerance to declare, and the logical milestone shows two strengths of it: six of the nine certificates publish 'exact match on the attractor count and every period', while the three large signalling networks — whose state spaces are far past enumeration — publish 'exact match on the fixed-point set (SHA-256 of the sorted states)', which is the weaker projection of fixed points only. The FBA class holds its FROG cross-validation to 1e-6, which is numerical noise rather than a reproduction budget. The zero pair is admitted by the threshold check precisely so an exact comparison does not have to invent slack it does not use.",
       "evidence": [
         {
           "path": "datasets/logical/milestone/certificates/budding_yeast.json",

@@ -944,9 +944,13 @@ def handle_request(
             # expected, a dict where a string is — reaches a `.items()` or `.strip()` deep inside a
             # judge, and a caller sending malformed JSON deserves the same honest tool-level
             # refusal as one sending an impossible value, not an escaped exception.
+            # A KeyError stringifies to the bare key, so a call missing a required argument came
+            # back as `error: 'digest'` — a quoted word with no verb, on the surface whose whole
+            # job is telling an agent what went wrong. Named here rather than at each tool.
+            detail = _missing_argument_message(name, arguments, exc) or str(exc)
             return _result(
                 request_id,
-                {"content": [{"type": "text", "text": f"error: {exc}"}], "isError": True},
+                {"content": [{"type": "text", "text": f"error: {detail}"}], "isError": True},
             )
         return _result(
             request_id,
@@ -956,6 +960,28 @@ def handle_request(
     if request_id is None:
         return None  # an unknown notification
     return _error(request_id, -32601, f"method not found: {method}")
+
+
+def _missing_argument_message(
+    name: str, arguments: dict[str, Any] | None, exc: Exception
+) -> str | None:
+    """Name the argument a tool call left out, or ``None`` when that is not what went wrong.
+
+    A KeyError stringifies to the bare key, so a call missing a required argument came back as
+    `error: 'digest'` — a quoted word with no verb, on the surface whose whole job is telling an
+    agent what went wrong. Keyed on the tool's own declared schema rather than on "the key is
+    absent from arguments", because `unknown tool: x` is a KeyError too and its key is a sentence.
+    """
+    if not isinstance(exc, KeyError) or not exc.args or arguments is None:
+        return None
+    key = exc.args[0]
+    declared: dict[str, Any] = next(
+        (t["inputSchema"].get("properties", {}) for t in TOOL_DEFINITIONS if t["name"] == name),
+        {},
+    )
+    if key in declared and key not in arguments:
+        return f"{name} requires a {key!r} argument"
+    return None
 
 
 def serve_stdio(

@@ -189,8 +189,14 @@ def render_badge(cert: Certificate) -> str:
         # before it ever became a claim cannot lower it. This badge is the most compressed
         # rendering there is — one word and one colour — and it is the one a reader meets first,
         # so it must not show a clean green pass over a non-empty "what was missing" report.
+        #
+        # Only ever a downgrade. Setting the amber unconditionally *upgraded* the two verdicts
+        # below it — and `run.blocked_certificate` always carries a gap report, so every abstention
+        # the pipeline produces (30 of the 31 PK/PD entries) turned from grey to amber, and a
+        # not-reproduced result with a gap turned from red to amber. Grey became unreachable.
         verdict = f"{verdict} (gaps)"
-        color = _BADGE_COLOR["partially-reproduced"]
+        if color == _BADGE_COLOR["reproduced"]:
+            color = _BADGE_COLOR["partially-reproduced"]
     label = "reprolith"
     label_w = len(label) * 7 + 10
     value_w = len(verdict) * 7 + 10

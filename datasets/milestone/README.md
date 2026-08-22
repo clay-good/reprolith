@@ -10,7 +10,10 @@ python scripts/run_milestone.py
 
 ## The result in one line
 
-**Every one of the 31 entries yielded a certificate, with zero confidently-wrong verdicts.**
+**Every one of the 31 entries yielded a verdict, with zero confidently-wrong verdicts** — one
+certified reproduction, and thirty honest abstentions recorded as `blocked` in the agreement report
+rather than published as certificates. Only the certified entry has a file under `certificates/`,
+so `reprolith certificates-for` returns nothing for the other thirty.
 
 | Outcome | Count | What it means |
 |---|---|---|

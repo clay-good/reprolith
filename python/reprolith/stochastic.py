@@ -26,14 +26,13 @@ from .model import Assumption, Certificate, ClaimAssessment, EnginePin, PaperIde
 from .oracle import (
     Attribution,
     ComparisonMethod,
-    FailureMode,
-    Fault,
     PercentileBand,
     ReferenceKind,
     Tolerance,
     default_tolerance,
     judge_scalar,
     not_evaluable,
+    undetermined_shortfall,
 )
 from .pins import algorithm_revision
 
@@ -355,7 +354,7 @@ def _protocol(claim: StochasticClaim) -> str:
 
 
 def _sampling_cannot_resolve(
-    claim: StochasticClaim, variance: float, trajectories: int
+    claim: StochasticClaim, variance: float, trajectories: int, observed_mean: float
 ) -> ClaimAssessment | None:
     """Abstain when the ensemble's own noise is too large to decide the claim, else ``None``.
 
@@ -372,7 +371,7 @@ def _sampling_cannot_resolve(
     """
     reason = unresolvable_ensemble_reason(
         reported_mean=claim.reported_mean, variance=variance, trajectories=trajectories,
-        tolerance=claim.tolerance,
+        observed_mean=observed_mean, tolerance=claim.tolerance,
     )
     if reason is None:
         return None
@@ -392,11 +391,22 @@ def _sampling_cannot_resolve(
 _SPREAD_IS_EVIDENCE = 30
 
 
+#: How many standard errors clear of the pass band an observed mean must sit before sampling noise
+#: is ruled out as the explanation. Measured on the immigration-death model (true mean 10, 200
+#: seeds per size): at ten trajectories a *correct* model would be published as a false
+#: `not-reproduced` on 9 of 200 seeds at two standard errors and 2 of 200 at three, with four
+#: buying no further improvement — so three is where the curve flattens. At forty trajectories and
+#: above it is 0 of 200. Every wrong model measured (+20%, threefold, tenfold) re-opens at all
+#: three values, so the choice costs nothing on the side it exists to serve.
+_DECISIVELY_OUTSIDE = 3.0
+
+
 def unresolvable_ensemble_reason(
     *,
     reported_mean: float,
     variance: float,
     trajectories: int,
+    observed_mean: float | None = None,
     tolerance: Tolerance | None = None,
 ) -> str | None:
     """Why this ensemble cannot decide this claim, or ``None`` when it can.
@@ -433,9 +443,26 @@ def unresolvable_ensemble_reason(
     tol = tolerance or default_tolerance(
         ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
     )
-    relative_sem = abs(math.sqrt(variance / trajectories) / reported_mean)
+    sem = math.sqrt(variance / trajectories)
+    relative_sem = abs(sem / reported_mean)
     if relative_sem <= tol.reproduced_within / 2.0:
         return None
+    # The rule above compares the *reconstruction's* noise to the *paper's* number, and for a
+    # counting process the variance grows with the mean — so the further a reconstruction
+    # over-predicts, the noisier it is and the more certainly it was ruled unresolvable. A model
+    # over-predicting threefold sat 71 standard errors outside the pass band and was published as
+    # `blocked`, whose published meaning is "insufficient information", under a reason that was
+    # arithmetically false. It was one-sided too: a hundredfold *under*-prediction was judged,
+    # because under-predicting shrinks the variance.
+    #
+    # So: however noisy the ensemble, if the observed mean is clear of the pass band by more than
+    # `_DECISIVELY_OUTSIDE` standard errors, sampling noise cannot be what put it there, and the
+    # honest verdict is the miss, not an abstention. This can only turn an abstention into a
+    # judgement, never the reverse, so no verdict that stands today can flip to blocked.
+    if observed_mean is not None:
+        band = tol.reproduced_within * abs(reported_mean)
+        if abs(observed_mean - reported_mean) > band + _DECISIVELY_OUTSIDE * sem:
+            return None
     return (
         f"this ensemble cannot resolve the claim: its standard error is "
         f"{relative_sem:.1%} of the reported mean, against a "
@@ -502,7 +529,7 @@ def certify_stochastic(
             duration=claim.duration, trajectories=claim.trajectories, seed=claim.seed,
         )
         mean, variance = species_mean_variance(ensemble, claim.species)
-        unresolvable = _sampling_cannot_resolve(claim, variance, len(ensemble))
+        unresolvable = _sampling_cannot_resolve(claim, variance, len(ensemble), mean)
         if unresolvable is not None:
             assessments.append(replace(unresolvable, protocol=_protocol(claim)))
             continue
@@ -514,15 +541,15 @@ def certify_stochastic(
             predicted=mean,
             tolerance=claim.tolerance,
             # A failed verdict must carry a root cause, and a claim that supplies none used to
-            # raise instead of certifying — so a seed that happened to miss crashed the run
-            # rather than producing the honest not-reproduced certificate it had earned. The
-            # class's own default cause is the sampling the verdict rests on; a caller who knows
-            # better supplies its own.
-            attribution=claim.shortfall or Attribution(
-                mode=FailureMode.FINITE_ENSEMBLE_SAMPLING,
-                implicated=claim.quantity,
-                fault=Fault.RECONSTRUCTION,
-            ),
+            # raise instead of certifying — so a seed that happened to miss crashed the run rather
+            # than producing the honest not-reproduced certificate it had earned. The cause used to
+            # default to FINITE_ENSEMBLE_SAMPLING, but nothing reaches this line until the guard
+            # above has established that the ensemble's noise is *too small* to explain a miss: the
+            # certificate was filing a 107% discrepancy under a 2.2% noise source, which is exactly
+            # the "nearest wrong cause" that `uncategorized` exists to prevent. This class now
+            # defaults the way every other class front-end does; a caller who has actually
+            # diagnosed finite-ensemble sampling still supplies it.
+            attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
             assumption_qualified=claim.assumption_qualified,
         )
         assessments.append(replace(assessment, protocol=_protocol(claim)))

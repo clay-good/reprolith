@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Arabidopsis thaliana flower morphogenesis (Chaos et al. 2006)
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 470ca6966b05)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 151d73ed314c)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

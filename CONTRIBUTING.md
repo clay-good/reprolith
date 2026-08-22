@@ -87,6 +87,11 @@ when you add a check, a refusal, or a stability rule:
   initial assignments but not event assignments; a revision pin spanning four of the five modules
   that decide the number. Enumerate the cases the rule is written for, then check the code against
   that list.
+- **Ask which direction the fix errs in, not just whether it is safe.** A repair verified
+  one-directional over 200,000 inputs was still wrong, because the direction it moved in — widening
+  a denominator — is the one that turns a miss into a pass. The same round set a badge colour for
+  the case it was written for and applied it to all four verdicts, upgrading two. "It can only do X"
+  is an argument only once you have said whether X is the harmful direction.
 - **If a tool tells you it failed, read it.** The pinned engine reports an abandoned time course by
   returning `False` and recording the samples it reached — all finite, so the non-finite guard
   cannot see it. That return value was discarded and the sample count never compared to the one

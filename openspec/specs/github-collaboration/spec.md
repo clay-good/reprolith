@@ -8,6 +8,24 @@ new contributions become pull requests, and the deterministic gates become requi
 GitHub is where the human-in-the-loop actually happens — the place experts validate Reprolith's
 judgment and keep the dataset fresh, with every contribution attributed and reviewed.
 
+## What carries each requirement today
+
+No code in this repository touches the GitHub API. The gates are real — CI runs `ruff`, `mypy`,
+`pytest`, and `openspec validate` on every push, and every contribution goes through a pull
+request — but the *issue* half of this capability is carried by people, not machinery, and the
+requirement text below describes the intent:
+
+- *Verification-queue items are GitHub issues.* `reprolith.VerificationQueue` holds the shapes and
+  ranks pending items by impact, but nothing files one as an issue. The issue templates say so in
+  their own text: queue issues are opened by hand.
+- *An agent can query collaboration state over MCP.* There is no tool for it. The server's
+  read-only surface covers certificates, verdicts, gaps, dossiers, bundles and the backlog; the
+  verification queue is not among them, so an agent cannot see what is pending human validation.
+
+Neither gap can produce a wrong certificate — an unescalated uncertainty still travels as a
+load-bearing assumption, which downgrades the verdict on its own — but a reader should not take
+these requirements as implemented machinery.
+
 ## Requirements
 
 ### Requirement: Verification-queue items are GitHub issues

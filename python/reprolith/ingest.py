@@ -118,15 +118,19 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
             unstated_ics.append(species.getId())
             continue
         state_variables.append(species.getId())
+        # SBML L3 makes `<model substanceUnits=...>` the default for every species that omits the
+        # attribute, so reading only the species attribute reported a unit the model does state as
+        # absent — a load-bearing gap whose own text asserted something false about the artifact,
+        # and a difficulty of "high" for a fully specified model.
+        species_unit, species_normalized = _resolve_unit(
+            model, species.getSubstanceUnits() or model.getSubstanceUnits()
+        )
         initial_conditions.append(
             Parameter(
                 name=species.getId(),
                 value=float(value),
-                # SBML L3 makes `<model substanceUnits=...>` the default for every species that
-                # omits the attribute, so reading only the species attribute reported a unit the
-                # model does state as absent — a load-bearing gap whose own text asserted something
-                # false about the artifact, and a difficulty of "high" for a fully specified model.
-                unit=species.getSubstanceUnits() or model.getSubstanceUnits() or UNSTATED_UNIT,
+                unit=species_unit,
+                normalized_unit=species_normalized,
                 source_location=source,
                 confidence=ExtractionConfidence.QUOTED,
             )
@@ -146,10 +150,12 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
         parameter = model.getParameter(i)
         if not parameter.isSetValue():
             continue  # value-less parameter (rule-assigned); not a directly-stated value
+        stated, normalized = _resolve_unit(model, parameter.getUnits())
         extracted = Parameter(
             name=parameter.getId(),
             value=float(parameter.getValue()),
-            unit=parameter.getUnits() or UNSTATED_UNIT,
+            unit=stated,
+            normalized_unit=normalized,
             source_location=source,
             confidence=ExtractionConfidence.QUOTED,
         )
@@ -198,6 +204,46 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
         )
         + _unstated_units(tuple(parameters) + tuple(initial_conditions)),
     )
+
+
+def _resolve_unit(model: Any, unit_id: str) -> tuple[str, str | None]:
+    """The unit as the source states it, and what it resolves to — or that it states none.
+
+    SBML states a unit by reference: a parameter reads ``units="unit_0"`` and the meaning lives in
+    a ``unitDefinition`` elsewhere in the file. Recording the reference alone gave a dossier that
+    named `unit_0`, `unit_2` and `substance` as *units*, which is not what they are — and the units
+    gap counted only the values with no reference at all, so its "N of M extracted values state no
+    unit" implied the remainder carried usable ones. On the shipped metformin model every one of
+    the 34 that did resolve to a real unit (milligram, millilitre, nanomole), and none of them said
+    so. An identifier that resolves to nothing is not a unit either, and is recorded as unstated.
+    """
+    if not unit_id:
+        return UNSTATED_UNIT, None
+    definition = model.getUnitDefinition(unit_id)
+    if definition is not None:
+        rendered = _render_unit_definition(definition)
+        if rendered:
+            return unit_id, (rendered if rendered != unit_id else None)
+    if _libsbml().UnitKind_forName(unit_id) != _libsbml().UNIT_KIND_INVALID:
+        return unit_id, None  # already a base kind: `litre` means litre
+    return UNSTATED_UNIT, None
+
+
+def _render_unit_definition(definition: Any) -> str:
+    """A ``unitDefinition`` as a readable product of base kinds, scales and exponents."""
+    libsbml = _libsbml()
+    factors = []
+    for i in range(definition.getNumUnits()):
+        unit = definition.getUnit(i)
+        kind = libsbml.UnitKind_toString(unit.getKind())
+        exponent, scale, multiplier = unit.getExponent(), unit.getScale(), unit.getMultiplier()
+        head = ""
+        if multiplier != 1.0:
+            head += f"{multiplier:g}*"
+        if scale != 0:
+            head += f"10^{scale} "
+        factors.append(f"{head}{kind}" + (f"^{exponent}" if exponent != 1 else ""))
+    return " * ".join(factors)
 
 
 def _unresolved_symbols(

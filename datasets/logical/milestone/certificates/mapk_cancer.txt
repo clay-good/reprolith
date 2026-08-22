@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — MAPK network / cancer cell-fate decision (Grieco et al. 2013); via Cell Collective (Helikar et al. 2012)
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, sat-fixed-points (z3 5.0.0) (rev 470ca6966b05)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, sat-fixed-points (z3 5.0.0) (rev 151d73ed314c)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

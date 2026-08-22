@@ -298,25 +298,38 @@ def normalized_curve_distance(reference: Sequence[float], predicted: Sequence[fl
     return rmse / span
 
 
+#: The range is a usable yardstick only while the curve actually moves. Below this fraction of the
+#: reference's own level, its range is noise and the level is the honest scale. Measured on the
+#: committed corpus: every curve the oracle judges has a range/level of 0.534 or more
+#: (Chassagnole's cg6p is the lowest, then 1.45, 2.45, 2.61, 3.25, 12.18), while the flat cases the
+#: fallback exists for sit at 0.02 (a stationary ensemble's median band) and 0.01 (a digitized
+#: plateau). The geometric midpoint of that gap is 0.103, and independently it is the curve
+#: tolerance's own pass threshold — a curve that does not move by even one tolerance-width cannot
+#: be measured in units of its own excursion. Both readings give the same number.
+_RANGE_IS_NOISE_BELOW = 0.10
+
+
 def _reference_scale(reference: Sequence[float], n: int) -> float:
-    """The scale a curve deviation is a fraction of: the reference's range or its level.
+    """The scale a curve deviation is a fraction of: the reference's range, or its level.
 
     The range alone is not a scale. A reference that barely moves — a plateau, a steady state, the
     median band of a stationary ensemble, a digitized flat line — has a range made of its own noise,
     and dividing by it turns an excellent reconstruction into a normalized miss of 2.0 and a
     `failed` verdict blamed on the reconstruction. This was already conceded for a *perfectly* flat
-    reference, which fell back to the mean magnitude; the relief was just a point condition at
-    exactly zero, so it missed every reference that is nearly flat rather than exactly flat, which
-    is all of the real ones. Measured: two 400-trajectory ensembles of one stationary
-    immigration-death model, differing only in seed, disagree by 2 copies out of 50 — 4% — and the
-    flat P50 band scored that as 2.00 while P90 scored the *same absolute error* as 0.20, so the
-    band named "worst-matched" in the certificate was among the best-matched.
+    reference, which fell back to the mean magnitude; the relief was a point condition at exactly
+    zero, so it missed every reference that is nearly flat rather than exactly flat.
 
-    Taking the larger of the two can only widen the denominator, so no comparison that passes today
-    can be turned into a non-pass by it: on the committed spatial curves the range dominates the
-    level (span/|mean| of 3.67, 2.83 and 4.42) and their published distances are unchanged.
+    Taking the larger of the two would have been the easy repair, and it is wrong: widening a
+    denominator can only turn a miss into a pass, which is the direction that matters here. On
+    Chassagnole's *E. coli* carbon-metabolism curve (a shipped milestone input, range 2.18 mM
+    against a level of 4.09 mM) it grew the denominator 1.87x, and a reconstruction missing by 43%
+    of everything the curve does certified as `reproduced`. So the level is used only where the
+    range genuinely is noise — see :data:`_RANGE_IS_NOISE_BELOW` for the measurement behind the
+    boundary — and every committed curve keeps being judged against its own excursion.
     """
-    return max(max(reference) - min(reference), abs(sum(reference) / n))
+    span = max(reference) - min(reference)
+    level = abs(sum(reference) / n)
+    return level if span < _RANGE_IS_NOISE_BELOW * level else span
 
 
 def worst_point_deviation(reference: Sequence[float], predicted: Sequence[float]) -> float:

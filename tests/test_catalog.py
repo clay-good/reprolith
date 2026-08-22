@@ -480,3 +480,22 @@ def test_a_saved_history_the_lifecycle_forbids_is_refused() -> None:
             [move("queued", "ingesting", "2026-01-01"), move("verifying", "certified", "1999-01-01")],
             "certified",
         ))
+
+
+def test_backlog_health_does_not_advertise_work_no_surface_can_hand_out() -> None:
+    """An accession-less entry is claimable here and unofferable everywhere work is handed out.
+
+    Release and record both address an entry by accession, so `claim_work` steps over such an
+    entry — but `backlog_health` went on counting it, republishing the overstatement the
+    `claimable` field was added to remove: fifty un-curated candidates reported fifty claimable and
+    handed out none, permanently, since nothing in the submit surface can add an accession.
+    """
+    catalog = Catalog()
+    catalog.add(Identifiers(title="Un-curated one"), ModelClass.ODE_PKPD)
+    catalog.add(Identifiers(title="Un-curated two"), ModelClass.ODE_PKPD)
+    catalog.add(Identifiers(title="Workable", accession="BIOMD0000000012"), ModelClass.ODE_PKPD)
+
+    health = catalog.backlog_health(0.0)
+    assert health["total"] == 3
+    assert health["claimable"] == 1
+    assert health["claimable_without_accession"] == 2

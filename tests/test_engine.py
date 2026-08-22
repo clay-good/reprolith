@@ -118,7 +118,11 @@ def test_a_run_the_engine_abandoned_is_refused_not_returned_as_a_full_course() -
     times, values = simulate(BLOWUP_SBML, "A", duration=0.5, steps=20)
     assert len(times) == 21 and values[-1] == pytest.approx(2.0, rel=1e-4)  # the integrator's own tolerance
 
-    # Past it, the run is abandoned — and the refusal names how far it actually got.
+    # Past it, the run is abandoned — and the refusal names how far it actually got. The number is
+    # asserted, not just the phrase: the engine appends a duplicate final row when it abandons a
+    # course, so a stopping time inferred from the grid overstated it by one step every time, in
+    # the direction of "the run got further than it did". A(t) = 1/(1-t) diverges at t=1, and t=1.0
+    # is what the engine's own time column reports for both windows.
     for duration in (2.0, 10.0):
-        with pytest.raises(NonFiniteSimulation, match="did not complete the time course"):
+        with pytest.raises(NonFiniteSimulation, match=r"it stopped at t=1\.0 of "):
             simulate(BLOWUP_SBML, "A", duration=duration, steps=20)

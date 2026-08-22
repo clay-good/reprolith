@@ -191,3 +191,36 @@ def test_two_assumptions_under_one_id_are_refused() -> None:
             assessments=[],
             assumptions=same_id,
         )
+
+
+def test_an_assumption_cannot_be_attributed_to_the_paper() -> None:
+    """`attributed_to` was free text with a default, so the invariant was carried by a docstring.
+
+    An assumption exists *because* the paper did not supply the value. The human certificate prints
+    them under "supplied by Reprolith, not the paper" while the machine form carries the field
+    verbatim, so a certificate naming the paper as the source of Reprolith's own guess states two
+    contradictory things about one number and an agent reads only the false half. Checked on the
+    load path too, because the registry reads certificates off disk and never rebuilds them.
+    """
+    from reprolith import Assumption, EnginePin, PaperIdentity, build_certificate
+    from reprolith.persistence import certificate_from_content
+
+    borrowed = Assumption(
+        id="V1", description="central volume of distribution", chosen="12.3 L",
+        basis="inferred from the reported AUC", load_bearing=True,
+        attributed_to="Zake et al. 2021, Table 2",
+    )
+    pin = EnginePin(engine="copasi", version="4.46")
+    paper = PaperIdentity(title="t", doi="10.1/x")
+    with pytest.raises(ValueError, match="can only be attributed to"):
+        build_certificate(paper=paper, engine_pin=pin, assessments=[], assumptions=[borrowed])
+
+    honest = build_certificate(
+        paper=paper, engine_pin=pin, assessments=[],
+        assumptions=[Assumption(id="V1", description="central volume", chosen="12.3 L",
+                                basis="AUC", load_bearing=True)],
+    )
+    content = honest.content()
+    content["assumptions"][0]["attributed_to"] = "Zake et al. 2021, Table 2"
+    with pytest.raises(ValueError, match="can only be attributed to"):
+        certificate_from_content(content)

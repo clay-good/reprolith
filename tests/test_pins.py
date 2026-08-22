@@ -18,7 +18,13 @@ import json
 from pathlib import Path
 
 import pytest
-from reprolith import EnginePin, certificates_needing_review
+from reprolith import (
+    EnginePin,
+    RunMetadata,
+    certificate_from_content,
+    certificates_needing_review,
+    render_human,
+)
 from reprolith.logical import solver_pin as logical_pin
 from reprolith.model import OverallVerdict, PaperIdentity
 from reprolith.pins import algorithm_revision
@@ -181,11 +187,24 @@ def test_every_committed_render_names_the_current_revision_too() -> None:
             "covers; add it to _CLASSES or _RENDERED_ELSEWHERE"
         )
         revision = algorithm_revision(*_CLASSES[class_name][1])
-        pin_line = next(
-            line for line in path.read_text(encoding="utf-8").splitlines()
-            if line.startswith("Engine pin:")
-        )
+        text = path.read_text(encoding="utf-8")
+        pin_line = next(line for line in text.splitlines() if line.startswith("Engine pin:"))
         assert f"rev {revision}" in pin_line, (
             f"{relative} names no current revision ({pin_line!r}); re-render it from the "
             f"certificate its class's milestone script produces"
         )
+        # …and the render has to be the render *of* that certificate. Checking only the pin line
+        # left every other line unpinned: a hand-edited verdict or reported value in a committed
+        # render passed the gate untouched, which is the same two-accounts-of-one-result the gate
+        # was added to close, one field over. Re-rendering needs no solver — the certificate is
+        # committed beside it — so this is cheap enough to assert on every render that has one.
+        sibling = path.with_suffix(".json")
+        if sibling.exists():
+            cert = certificate_from_content(json.loads(sibling.read_text(encoding="utf-8")))
+            run = RunMetadata(created_at="", actor="gate", tool_version="")
+            # Trailing-newline policy differs between the milestone writers and the worked-example
+            # renderer; what has to match is the certificate's content, not the file's last byte.
+            assert text.rstrip("\n") == render_human(cert, run).rstrip("\n"), (
+                f"{relative} is not the rendering of {sibling.name}; re-run "
+                "scripts/render_worked_examples.py or that class's milestone script"
+            )

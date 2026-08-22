@@ -130,21 +130,31 @@ def _apply_overrides(sbml: str, overrides: tuple[tuple[str, float], ...]) -> str
     # setting its value here changes nothing — and the protocol would then publish an override the
     # run never had. Refused for the same reason an unknown parameter is: an override that does not
     # take is a claim about a run that did not happen.
-    # An event assignment overwrites its target mid-run, which makes it the same kind of
-    # not-taking override as the two above: in a repeated-dose or infusion model — the ordinary
-    # shape for a COPASI-exported PK model — the event rewrites the very rate or dose parameter a
-    # claim wants to move, and the published `overrides: X=v` then describes a run that carried v
-    # only until the first event fired. The rule was stated for rules and initial assignments and
-    # not applied to the third way a parameter gets determined.
+    # A reaction's kinetic law may declare a local parameter shadowing a global of the same id, and
+    # the law reads the local one — so setting the global changes nothing, the run comes back
+    # bit-identical, and the protocol publishes an override the run never had. It is the same
+    # not-taking override as the two above, by a third route; local parameters are pervasive in
+    # real exports (135 in one committed kinetic model), so the shadow is an ordinary shape.
+    #
+    # An *event* assignment is deliberately not on this list. It looked like the same case and is
+    # not: an event overwrites its target only when its trigger fires, so an override still governs
+    # the run up to that moment, and may govern all of it if the trigger is never satisfied in the
+    # window. Refusing it rejected three measured shapes whose overrides each moved the answer
+    # threefold. What remains is a real gap — an override the certificate reports without saying an
+    # event may overwrite it — but closing it needs the trigger evaluated over the protocol window,
+    # not a name lookup, so it is recorded in docs/findings-note.md rather than guessed at here.
     determined = {
         model.getRule(i).getVariable() for i in range(model.getNumRules())
     } | {
         model.getInitialAssignment(i).getSymbol()
         for i in range(model.getNumInitialAssignments())
-    } | {
-        model.getEvent(i).getEventAssignment(j).getVariable()
-        for i in range(model.getNumEvents())
-        for j in range(model.getEvent(i).getNumEventAssignments())
+    }
+    shadowed = {
+        law.getLocalParameter(j).getId()
+        for i in range(model.getNumReactions())
+        for law in [model.getReaction(i).getKineticLaw()]
+        if law is not None
+        for j in range(law.getNumLocalParameters())
     }
     for name, value in overrides:
         parameter = model.getParameter(name)
@@ -152,9 +162,14 @@ def _apply_overrides(sbml: str, overrides: tuple[tuple[str, float], ...]) -> str
             raise ValueError(f"parameter {name!r} is not in the model")
         if name in determined:
             raise ValueError(
-                f"parameter {name!r} is determined by a rule, an initial assignment, or an event "
-                "assignment, so overriding its value does not survive the run; override the "
-                "quantity that determines it"
+                f"parameter {name!r} is determined by a rule or initial assignment, so overriding "
+                "its value has no effect on the run; override the quantity that determines it"
+            )
+        if name in shadowed:
+            raise ValueError(
+                f"parameter {name!r} is shadowed by a kinetic law's own local parameter of the "
+                "same id, which is the value that law reads, so overriding the global one has no "
+                "effect on the run"
             )
         parameter.setValue(float(value))
     return str(libsbml.writeSBMLToString(document))

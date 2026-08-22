@@ -50,13 +50,22 @@ class EnginePin:
         return {"engine": self.engine, "version": self.version, "algorithm": self.algorithm}
 
 
+#: The only attribution an assumption may carry. An assumption exists *because* the paper did not
+#: supply the value, so naming anyone else as its source inverts the one thing the field records.
+#: A reviewer's judgement is a different object and lives on :class:`~reprolith.verification.
+#: VerificationDecision.expert`; this constant is not a default to be overridden.
+REPROLITH_ATTRIBUTION = "reprolith"
+
+
 @dataclass(frozen=True)
 class Assumption:
     """A value or structural choice Reprolith supplied to close a dossier gap.
 
-    Assumptions are always attributed to Reprolith, never to the paper. A
-    ``load_bearing`` assumption is one that plausibly changes whether a claim
-    reproduces; the certificate refuses to call such a claim an unqualified success.
+    Assumptions are always attributed to Reprolith, never to the paper — enforced by
+    :func:`~reprolith.certificate.require_reprolith_attribution` on both the build path and the
+    load path, because this sentence used to be carried by nothing but this sentence. A
+    ``load_bearing`` assumption is one that plausibly changes whether a claim reproduces; the
+    certificate refuses to call such a claim an unqualified success.
     """
 
     id: str
@@ -65,7 +74,7 @@ class Assumption:
     basis: str
     load_bearing: bool
     alternatives: tuple[str, ...] = ()
-    attributed_to: str = "reprolith"
+    attributed_to: str = REPROLITH_ATTRIBUTION
     verification_item: str | None = None
 
     def to_dict(self) -> dict[str, Any]:

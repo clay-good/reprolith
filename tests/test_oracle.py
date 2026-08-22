@@ -396,3 +396,25 @@ def test_a_nearly_flat_reference_is_normalized_by_its_level_not_by_its_noise() -
     # untouched — which is why the committed spatial curves are bit-identical under this.
     ramp = [float(i) for i in range(11)]
     assert normalized_curve_distance(ramp, [v + 1.0 for v in ramp]) == pytest.approx(0.1)
+
+
+def test_the_level_is_used_only_where_the_range_really_is_noise() -> None:
+    """Taking the larger of range and level was the easy repair, and it was wrong.
+
+    Widening a denominator can only turn a miss into a pass, which is the direction that matters.
+    On Chassagnole's *E. coli* carbon-metabolism curve — a shipped milestone reference, range
+    2.18 mM against a level of 4.09 mM — it grew the denominator 1.87x, and a reconstruction
+    missing by 43% of everything the curve does certified as `reproduced`.
+    """
+    from reprolith.oracle import _reference_scale
+
+    # A curve that genuinely moves is judged against its own excursion, however high it sits.
+    chassagnole_shaped = [4.0878 + 1.09175 * (1 if i % 2 else -1) for i in range(40)]
+    span = max(chassagnole_shaped) - min(chassagnole_shaped)
+    assert _reference_scale(chassagnole_shaped, 40) == pytest.approx(span)
+    assert span / abs(sum(chassagnole_shaped) / 40) == pytest.approx(0.534, abs=0.01)
+
+    # A curve whose range is its own noise is judged against its level.
+    plateau = [100.0 + (0.5 if i % 2 else -0.5) for i in range(30)]
+    assert _reference_scale(plateau, 30) == pytest.approx(100.0)
+    assert _reference_scale([1.0] * 20, 20) == pytest.approx(1.0)

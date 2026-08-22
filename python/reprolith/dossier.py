@@ -61,6 +61,14 @@ class Parameter:
     unit: str
     source_location: str
     confidence: ExtractionConfidence = ExtractionConfidence.QUOTED
+    #: The unit resolved to its base kinds, when the source's own unit is an identifier rather than
+    #: a unit. SBML states units by reference — a parameter reads ``unit_0``, and what that means
+    #: lives in a ``unitDefinition`` elsewhere in the file — so recording only the reference gave a
+    #: dossier that named a unit without saying what it was, and `unit-mismatch` is a catalogued
+    #: failure mode. ``unit`` keeps the source's own wording for provenance; this carries what it
+    #: resolves to. ``None`` when the two would be the same, and omitted from ``to_dict`` then, so
+    #: a dossier whose units need no resolution is unchanged.
+    normalized_unit: str | None = None
 
     def __post_init__(self) -> None:
         if not self.name.strip():
@@ -71,13 +79,16 @@ class Parameter:
             raise ValueError("every extracted element must cite its source location")
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        record: dict[str, Any] = {
             "name": self.name,
             "value": self.value,
             "unit": self.unit,
             "source_location": self.source_location,
             "confidence": self.confidence.value,
         }
+        if self.normalized_unit is not None:
+            record["normalized_unit"] = self.normalized_unit
+        return record
 
 
 @dataclass(frozen=True)

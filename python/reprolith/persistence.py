@@ -17,6 +17,7 @@ from typing import Any
 from .certificate import (
     derive_overall,
     require_distinct_assumption_ids,
+    require_reprolith_attribution,
     require_stated_cause,
     require_stated_protocol,
 )
@@ -160,6 +161,7 @@ def certificate_from_content(content: dict[str, Any]) -> Certificate:
     require_stated_protocol(assessments)
     require_stated_cause(assessments)
     require_distinct_assumption_ids(assumptions)
+    require_reprolith_attribution(assumptions)
     require_pin_agrees_with_protocol(assessments, pin["algorithm"])
     stored = OverallVerdict(content["overall"])
     derived = derive_overall(assessments, assumptions)
@@ -187,6 +189,7 @@ def _parameter_from(record: dict[str, Any]) -> Parameter:
         unit=record["unit"],
         source_location=record["source_location"],
         confidence=ExtractionConfidence(record["confidence"]),
+        normalized_unit=record.get("normalized_unit"),
     )
 
 

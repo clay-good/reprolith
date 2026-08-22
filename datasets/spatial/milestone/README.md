@@ -19,8 +19,11 @@ concentration profile over space, judged by the shared curve oracle.
 The ground truth is closed-form mathematics: the diffusion of a Gaussian is exactly a Gaussian whose
 variance grows by `2·D·t`. Each certificate is produced from only the initial profile and the pinned
 discretization (spatial step, time step, diffusivity), never the label, and the pinned discretization
-makes it byte-reproducible. The verdicts are clean **reproduced** — a spatial reproduction is
-deterministic, so unlike the stochastic class it carries no sampling qualification.
+makes it byte-reproducible. The verdicts are **partially-reproduced**, every one: the profile
+matches the analytical Gaussian to within 1e-3 of its own scale, but the solver imposes a zero-flux
+(Neumann) boundary that Reprolith chose rather than one the source stated, and that choice is
+recorded as a load-bearing assumption. A result resting on a choice Reprolith made is never
+published as a clean pass — which is why this class has no `reproduced` certificate at all.
 
 One honest limit on how independent these three systems are: each picks its time step as a fixed
 fraction of the stability limit (`dt = 0.2·dx²/D`), so the reference variance `2·D·steps·dt` works

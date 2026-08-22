@@ -16,9 +16,11 @@ pip install -e .
 reprolith-mcp
 ```
 
-The `lint` tool additionally needs the optional engine extra (`pip install -e ".[engine]"`); the
-other tools work without it. On start-up the server loads the labelled catalog and, if a
-milestone run has been recorded, its certificates, dossiers, and bundles.
+The `lint`, `lint_objective` and `lint_stochastic` tools need the optional engine extra
+(`pip install -e ".[engine]"`, and `lint_objective` also needs `fba`), because each of the three
+builds SBML; every other tool works without it, as the tool table below states per tool. On
+start-up the server loads the labelled catalog and, if a milestone run has been recorded, its
+certificates, dossiers, and bundles.
 
 ## Register it in an MCP client
 
