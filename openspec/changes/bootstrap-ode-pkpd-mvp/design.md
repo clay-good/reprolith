@@ -20,7 +20,8 @@ We do not build a simulator or a new model format. We target the existing standa
 containerized engines so our outputs are portable and independently checkable:
 
 - Model: SBML (primary for PK/PD kinetics), CellML tolerated on intake.
-- Simulation recipe: SED-ML; bundle: OMEX / COMBINE archive.
+- Simulation recipe: SED-ML **on intake only** — Reprolith reads a shipped recipe
+  (`parse_sedml_recipes`) and does not emit one. See below.
 - Engines: the BioSimulators containerized registry, pinned by version, so anyone can re-run
   a bundle and get our numbers.
 - Self-validation labels: public curation status and reproduced figures (e.g. BioModels).
@@ -28,6 +29,13 @@ containerized engines so our outputs are portable and independently checkable:
 Concrete library choices (interchangeable, kept out of the specs) are an implementation
 detail to settle at build time; the contract is only that outputs validate against these
 standards and run under a pinned registered engine.
+
+**What a bundle actually is today, stated plainly.** This section used to say "bundle: OMEX /
+COMBINE archive", and nothing emits one: there is no SED-ML writer and no archive writer in the
+package. A published bundle is a Reprolith JSON record that *references* a model file by path and
+carries a recipe in Reprolith's own shape. The model it points at is standard SBML and the engine
+pin is real, so the run is reproducible — but the container is not a COMBINE archive and the recipe
+is not SED-ML. Emitting both belongs in the not-yet list below, not in the delivered contract.
 
 ## Key decisions
 
@@ -107,6 +115,14 @@ evidence-driven, not guessed up front.
 - Lease-based work handoff over MCP (repository is the work surface for now; MCP is read-only
   plus the inline linter).
 - Any model class other than `ode-pkpd`; unassigned candidates accumulate as backlog.
+- **Emitting SED-ML or an OMEX/COMBINE archive.** SED-ML is read on intake and never written; a
+  bundle is a Reprolith JSON record referencing an SBML file. The "Stand on the standards
+  ecosystem" section above used to list archive emission as part of the delivered contract.
+
+Several of the entries above have since been built — population and estimation reproduction,
+cross-engine corroboration, five further model classes, and lease-based handoff over MCP all exist
+now. They are left listed rather than silently deleted, because this document is the record of what
+the change proposed, and the note under each is the honest way to show the difference.
 
 ## Risks and how the design answers them
 

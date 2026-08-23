@@ -1677,6 +1677,50 @@ One thing worth knowing rather than fixing: exhaustive logical enumeration grows
 per two nodes, so the declared 20-node ceiling costs on the order of tens of minutes. It completes
 and it is bounded; it is simply not free.
 
+## What the proposal said it would build
+
+The capability specs were read against the code two rounds ago. The *change* that drove the whole
+build — its proposal, its design rationale, its thirty-six tasks — had never been. Two survivors,
+and both are claims about scope rather than defects in a computation.
+
+**The design's output-format decision was not taken.** "Stand on the standards ecosystem" listed
+"Simulation recipe: SED-ML; bundle: OMEX / COMBINE archive" among the things the contract requires
+outputs to validate against. Nothing emits either: there is no SED-ML writer and no archive writer
+anywhere in the package — `sedml.py` is a parser, and `grep` for `omex` or `zipfile` across
+`python/`, `scripts/` and `tests/` returns nothing. A published bundle is a Reprolith JSON record
+that *references* a model file by path, and `ReconstructionBundle.validate()` checks presence and
+duplicate ids, never a schema.
+
+That would be a documentation tidy-up if it stayed inside the design document. It did not:
+`docs/outreach-shortlist.md` — an outward-facing deliverable — tells COMBINE that the OMEX archive
+is "the exact standards Reprolith's bundles target", and offers SED-ML and OMEX maintainers
+"concrete recipe/archive validation failures found during reconstruction". Reconstruction produces
+no archives and validates no recipes. Approaching a standards body with a conformance claim nothing
+in the repository supports is the same failure as a certificate citing a paper for a number the
+paper does not contain, aimed at people whose whole business is conformance.
+
+All three now say what is true: the design lists archive emission under what is *not* built, the
+outreach rows offer intake experience rather than conformance, and the README's "ships in open
+formats" says which format and which container.
+
+**And a flag that asserts a measurement.** Both milestone scripts wrote `validates=True` as a
+literal into the model artifact — and `validate_constraint_based` then *checks* that flag as
+evidence the adopted model validates, while `estimate_difficulty` reads it as "a runnable model
+shipped". The value happens to be correct for every committed model, verified against libSBML. But
+it was never measured, and the sharpest evidence that this is out of line with the project's own
+standard sits eight lines below it in the same constructor, where the author refused to do exactly
+this for the sibling field: *"Left unchecked, and recorded as unchecked… would publish a vacuous
+agreement as though something had been verified."* Both scripts compute it now, the way ingestion
+always has.
+
+The rest of the change checked out, including the parts most likely to be flattering: the three
+unbuilt tasks really are unbuilt and nothing else is quietly half-done; the blind-verdict path
+provably cannot read a ground-truth label; the scope statement refuses both an empty and a reworded
+value; and a tolerance labelled `class-default` is refused if its width is not one. The proposal's
+"deferred, not forgotten" list is stale in the harmless direction — six of the things it defers have
+since been built — and is left standing with a note, because a proposal is a record of what was
+proposed.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

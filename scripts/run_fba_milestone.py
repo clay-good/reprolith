@@ -52,6 +52,18 @@ CROSS = CB / "cross_validation"
 PIN = solver_pin()
 
 
+def _artifact_validates(sbml: str) -> bool:
+    """Whether libSBML reads this artifact without a fatal error — measured, not asserted."""
+    from reprolith.sbml import _libsbml
+
+    libsbml = _libsbml()
+    document = libsbml.readSBMLFromString(sbml)
+    return not any(
+        document.getError(i).getSeverity() >= libsbml.LIBSBML_SEV_ERROR
+        for i in range(document.getNumErrors())
+    )
+
+
 def _e_coli_core() -> tuple[Identifiers, GroundTruth, object, str]:
     """The E. coli core entry, labelled by its documented growth rate; dossier from the worked example."""
     identifiers = Identifiers(
@@ -77,7 +89,15 @@ def _cross_validation_entry(model_id: str, record: dict) -> tuple[Identifiers, G
     )
     dossier = constraint_based_dossier(
         model_id,
-        model=ModelArtifact(filename=f"{model_id}.xml.gz", detected_format="sbml-fbc", validates=True),
+        model=ModelArtifact(
+            filename=f"{model_id}.xml.gz", detected_format="sbml-fbc",
+            # Measured, not asserted — validate_constraint_based checks this flag as
+            # evidence the adopted model validates, and estimate_difficulty reads it as
+            # "a runnable model shipped". Writing True made both consume an assertion.
+            validates=_artifact_validates(
+                gzip.decompress((CROSS / f"{model_id}.xml.gz").read_bytes()).decode("utf-8")
+            ),
+        ),
         objective_claims=[DossierClaim(
             id=f"{model_id}-growth",
             quantity="maximal growth rate on the distributed medium",

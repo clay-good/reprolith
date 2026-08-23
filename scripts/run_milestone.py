@@ -33,6 +33,25 @@ REPO = Path(__file__).resolve().parents[1]
 DATASETS = REPO / "datasets"
 
 
+def _artifact_validates(sbml: str) -> bool:
+    """Whether libSBML reads this artifact without a fatal error — measured, not asserted.
+
+    Both milestone scripts wrote `validates=True` as a literal, and `validate_constraint_based`
+    then *checks* that flag as evidence the adopted model validates, while `estimate_difficulty`
+    reads it as "a runnable model shipped". A self-asserted flag consumed as a measurement is the
+    same defect as an empty mismatch list standing for an unrun comparison — which the very next
+    field in this constructor refuses to do, and says so. `ingest_sbml` has always computed it.
+    """
+    from reprolith.sbml import _libsbml
+
+    libsbml = _libsbml()
+    document = libsbml.readSBMLFromString(sbml)
+    return not any(
+        document.getError(i).getSeverity() >= libsbml.LIBSBML_SEV_ERROR
+        for i in range(document.getNumErrors())
+    )
+
+
 def main() -> None:
     catalog = Catalog()
     entries = seed_catalog(catalog)
@@ -102,7 +121,12 @@ def main() -> None:
         bundle = ReconstructionBundle(
             entry=accession,
             engine_pin=pin,
-            model=ModelArtifact(filename=entry["model_file"], detected_format="sbml", validates=True),
+            model=ModelArtifact(
+                filename=entry["model_file"], detected_format="sbml",
+                validates=_artifact_validates(
+                    (DATASETS / entry["model_file"]).read_text(encoding="utf-8")
+                ),
+            ),
             origin=ModelOrigin.AUTHOR_SUPPLIED,
             recipe=recipe,
             assumptions=tuple(Assumption(**a) for a in entry.get("assumptions", [])),

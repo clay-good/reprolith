@@ -17,8 +17,8 @@ the groups that already curate, standardize, or study that reproducibility.
 
 | Target | Why it fits | How to engage |
 |---|---|---|
-| **COMBINE (co.mbine.org)** | Coordinates SBML, SED-ML, and the OMEX/COMBINE archive — the exact standards Reprolith's bundles target. | Present at the annual COMBINE forum / HARMONY hackathon; propose the certificate as a standard artifact alongside SED-ML. |
-| **SED-ML and OMEX maintainers** | Reprolith's simulation recipes and bundles are only as portable as these standards; BioModels' own SED-ML coverage is known to be partial and error-prone, which is precisely the gap Reprolith's determinism harness surfaces. | Feed back concrete recipe/archive validation failures found during reconstruction. |
+| **COMBINE (co.mbine.org)** | Coordinates SBML, SED-ML, and the OMEX/COMBINE archive. Reprolith reads SBML and SED-ML and emits SBML; it does **not** emit SED-ML or OMEX today, so approach this as a shared-goal conversation rather than a claim of conformance. | Present at the annual COMBINE forum / HARMONY hackathon; propose the certificate as a standard artifact alongside SED-ML. |
+| **SED-ML and OMEX maintainers** | Reprolith's bundles are a private JSON record referencing an SBML file, not SED-ML or OMEX, so it has no conformance story to offer yet. What it does have is intake experience: BioModels' own SED-ML coverage is partial and error-prone, and `parse_sedml_recipes` refuses several shapes rather than reinterpreting them. | Feed back the recipe shapes intake refuses and why. Offer archive conformance only once something emits an archive. |
 
 ## Tier 3 — pharmacometrics / PK-PD (the MVP's domain)
 

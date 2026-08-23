@@ -33,7 +33,9 @@ guessing — just: *does the described model produce the shown result?*
   missing value, the certificate says so. It never takes credit for its own guesses.
 - **A "what was missing" list.** When a paper can't be reproduced, you get the exact
   parameter, unit, or condition it left out — the thing the field actually needs to fix.
-- **Standard, runnable artifacts.** The rebuilt model ships in open formats anyone can re-run.
+- **Standard, runnable artifacts.** The model ships as SBML and the engine is pinned by
+  version, so anyone can re-run it. The bundle that packages them is Reprolith's own JSON
+  record, not a COMBINE archive — emitting SED-ML and OMEX is not built yet.
 - **A verdict that expires.** Every certificate names the software that computed it — including,
   for the classes Reprolith solves itself, the revision of that code — so changing a solver flags
   every certificate it invalidates instead of leaving them looking current.
