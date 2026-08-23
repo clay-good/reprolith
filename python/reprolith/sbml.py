@@ -984,7 +984,9 @@ def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[i
         # The model's own `substanceUnits` is the default for every species that omits the
         # attribute, and libsbml returns '' for such a species — so a model declaring itself in
         # moles walked straight past the guard whose whole purpose is catching that. The sibling
-        # ingester already reads the fallback (`ingest._read_species`); this is its neighbour.
+        # ingester already reads the fallback (`ingest.ingest_sbml`, at its species loop); this is its
+        # neighbour. (The name cited here was `ingest._read_species`, which has never existed — the
+        # only dangling symbol reference among the eighty added today.)
         units = _resolved_substance_units(model, _stated_substance_units(model, spec))
         if units not in ("", "item", "dimensionless"):
             # The SSA counts molecules. A species declared in moles is read verbatim, so 100 mol

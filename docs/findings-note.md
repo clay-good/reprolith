@@ -1290,9 +1290,11 @@ re-created one level down. And `getExponent()` truncates, so a valid `exponent="
 `metre^0` — a different physical dimension, at `quoted` confidence.
 
 **The guard that was both too narrow and too strict at once.** The kinetic-law shadow check added
-last round read `getNumLocalParameters`, a Level 3 accessor that returns 0 on Level 2 — and five of
-the six committed kinetic models are Level 2, including the one whose 135 local parameters the guard
-was written for. It saw 10 of the corpus's 234. It also unioned every reaction's locals flatly, so a
+last round read `getNumLocalParameters`, a Level 3 accessor that returns 0 on Level 2 — and *all
+six* committed kinetic models are Level 2, including the one whose 135 local parameters the guard
+was written for. It saw none of their 224; the 10 of the corpus's 234 it did see all belong to the
+Level 3 PK/PD model, which is a different class. (This read "five of the six" until a claims audit
+counted them — the true statement is the sharper one, since no kinetic model was visible at all.) It also unioned every reaction's locals flatly, so a
 global shadowed in one reaction was refused where it is the live value in another — the ordinary
 "global default, per-reaction local override" idiom — refusing an override that moved the answer
 7.4×, under a message stating the opposite. It now refuses only an id that no law anywhere reads
@@ -1615,7 +1617,9 @@ looked right, passed, and did not do the thing it was for.
   that defines `substance` as nanomole — and pushed a fully specified model's difficulty to high,
   which is verbatim the Level 3 defect recorded as fixed a few lines above it. Four of the six
   committed Level 2 kinetic models were affected. Two of them now report no units gap at all, and
-  one drops from `high` difficulty to `low`.
+  two drop from `high` difficulty to `low` — BIOMD0000000010 and BIOMD0000000051, both of which
+  define `substance` as scaled moles. (Recorded as one until it was counted; three more improve
+  without clearing.)
 - And the initial-condition branch still said "not present in the model" for a parameter that is
   present and rule-determined — the three-case split the parameter branch had just been given,
   missing from its twin ten lines below.
@@ -1818,6 +1822,48 @@ actually mints them, and on the load path the same commit chose to defend for `a
 list of `Gap` objects passed straight through, serialized, digested, reloaded and printed its `repr`
 into the "what was missing" section as though it were a sentence about a paper. Both paths refuse
 now.
+
+### The claims audit, second pass
+
+A second agent re-derived every number in today's commits from the code at each revision, and
+rebuilt four trees to actually perform every "verified red against a reverted package" claim. It
+also checked all eighty backticked `module.symbol` references added today against the package.
+
+**The revert claims hold.** Ten of ten, eight of eight, four of four, and four of five — the single
+green being exactly the one already self-reported and recorded above. Nothing new failed.
+
+**Most numbers hold, several to more precision than they were written with.** The 45 of 69 unstated
+metformin units, the 8 of 8 Level 2 gap, the 119 shadowed ids, the 87 and 27 seeds, the 71 and 66
+standard errors, the six span-over-level ratios and the 0.103 midpoint, the 14.6 / 2.8 / 0.8 / 0.0
+zero-variance measurements, the 2.968e-12 FVA agreement on *E. coli* core, the 1.3e11 unit
+inversion, the 2247 mL compartment and its 2199% consequence, the Li et al. basins summing to 2048,
+the four Level 2 models defining `substance` as scaled moles, the three comparison methods that
+raised, the twenty tool-computed references, the six unclosable assumptions — all re-derived.
+
+**Three more of mine were wrong, and one is sharper than I wrote it.**
+
+I recorded that "five of the six committed kinetic models are Level 2". **All six are.** The
+Level 3 accessor therefore saw *none* of their 224 local parameters — the 10 it did see belong to
+the metformin model, which this repository classes `ode-pkpd`, not `kinetic`. I had reached "five
+of six" by counting the PK/PD model among the kinetic ones to make the arithmetic come out. The
+correct statement is worse for the old code and better as a description: the guard was blind to the
+entire kinetic corpus.
+
+A parity comment cited **`ingest._read_species`, a function that has never existed**. The parity it
+asserts is real and the neighbouring citation on the line above resolves, which is precisely why
+this one reads as checkable. It is the only dangling symbol reference among the eighty added today,
+and it survives as a finding only because two commits ago this project decided that a citation a
+reader cannot follow is not evidence.
+
+And "one drops from high to low" was two — BIOMD0000000010 and BIOMD0000000051, with three more
+improving without clearing. Understating, which is the harmless direction, and still not what the
+measurement says.
+
+**What was not checked, so that it is not read as verified:** the genome-scale FVA figures
+(2.55e-08 and 1.85e-03) and the 86-of-200 inverted-interval count were not re-derived; nor were most
+of the convergence, summation and sample-count numbers from the scale audit beyond the SSA line;
+nor the byte-for-byte reproducibility run; nor the two override magnitudes, 54.6x and 7.4x, whose
+surrounding structural claims did check out.
 
 ## Status and what remains
 

@@ -149,9 +149,11 @@ def _fully_shadowed_ids(model: Any) -> set[str]:
     """Global parameter ids that *every* kinetic law referencing them shadows with its own local.
 
     Two ways the first attempt at this was wrong. It read `getNumLocalParameters`, which is a
-    Level 3 accessor returning 0 on Level 2 — and five of the six committed kinetic models are
-    Level 2, including the one whose 135 local parameters the guard was written for, so it saw 10
-    of the corpus's 234. And it unioned every reaction's locals flatly, so a global shadowed in one
+    Level 3 accessor returning 0 on Level 2 — and *all six* committed kinetic models are Level 2,
+    including the one whose 135 local parameters the guard was written for, so it saw none of their
+    224. The 10 of the corpus's 234 it did see all belong to the Level 3 PK/PD model, which is a
+    different class. (This said "five of the six" until a claims audit counted them; the true
+    statement is the sharper one.) And it unioned every reaction's locals flatly, so a global shadowed in one
     reaction was refused even where it is the live value in another: the ordinary "global default,
     per-reaction local override" idiom. Measured, that refused an override that moved the answer
     7.4x, under a message stating the opposite.
