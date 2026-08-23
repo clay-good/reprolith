@@ -31,9 +31,11 @@ a category that exists because a spec demands it must not read as loop experienc
 
 Only the PK/PD run disagrees with its labels at all; the other five classes agree everywhere.
 
-- **30 abstentions**, all one note, traced to **ingestion**: the shipped artifact carries no
-  machine-checkable claim, so the run abstains, and a `blocked` verdict can never equal a
-  `reproduced` label. Recorded as *explained*, not fixed — closing them needs each paper's claims
+- **30 abstentions**, all one note, traced to **ingestion**: Reprolith holds no extracted claims
+  for these papers, so there was nothing to reproduce and no model was run — the run abstains, and a
+  `blocked` verdict can never equal a `reproduced` label. (This said "the shipped artifact carries
+  no machine-checkable claim" until a regression audit noticed the code had been corrected and its
+  two explanatory documents had not: nothing is fetched or opened on that path.) Recorded as *explained*, not fixed — closing them needs each paper's claims
   read from the manuscript (tasks 2.1–2.3), not a tolerance or oracle change.
 - **1 more-careful verdict** (metformin), traced to the **oracle**: both claims matched well inside
   tolerance, but one rests on a load-bearing salt-form assumption, so the overall verdict is

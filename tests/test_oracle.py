@@ -378,8 +378,10 @@ def test_a_nearly_flat_reference_is_normalized_by_its_level_not_by_its_noise() -
     """
     from reprolith.oracle import normalized_curve_distance, worst_point_deviation
 
-    # A digitized plateau at 100 with half-a-pixel noise, reconstructed perfectly. Span is 1.0, so
-    # the old normalizer scored this 0.4208 and failed it.
+    # A digitized plateau at 100 with half-a-pixel noise, reconstructed perfectly. Span is 1.0
+    # exactly, so the old normalizer scored this 0.5000 — RMSE and worst point are both 0.5 — and
+    # failed it. (The comment said 0.4208 until a claims audit re-derived it; no denominator
+    # available here produces that number.)
     plateau = [100.0 + (0.5 if i % 2 else -0.5) for i in range(30)]
     perfect = [100.0] * 30
     assert normalized_curve_distance(plateau, perfect) < 0.01

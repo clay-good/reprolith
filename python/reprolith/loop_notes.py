@@ -133,7 +133,21 @@ class Citation:
             text = "\n".join(
                 line for line in text.splitlines() if not line.lstrip().startswith("#")
             )
-        return [f"{self.path}: {q!r}" for q in self.quotes if q not in text]
+        unmet = [f"{self.path}: {q!r}" for q in self.quotes if q not in text]
+        if target.suffix == ".py":
+            # A quote is evidence only if it is unique. One tolerance note quoted
+            # `0.10, 0.25, ToleranceSource.CLASS_DEFAULT`, which also matches a *different*
+            # constant — so widening the tolerance the note exists to pin left it satisfied by a
+            # line it does not cite. That was fixed by hand, and the lesson written down; written
+            # down is not enforced, so it is checked here. Prose files are exempt: a phrase
+            # recurring in a document is ordinary, and it is source that a note pins to behaviour.
+            unmet += [
+                f"{self.path}: {q!r} occurs {text.count(q)} times — a quote that matches more than "
+                "one line is satisfied by a line it does not cite"
+                for q in self.quotes
+                if text.count(q) > 1
+            ]
+        return unmet
 
 
 @dataclass(frozen=True)

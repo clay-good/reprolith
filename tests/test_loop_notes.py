@@ -182,3 +182,32 @@ def test_a_citation_of_source_must_find_the_words_in_code_that_runs(tmp_path) ->
     (tmp_path / "notes.md").write_text("# A heading worth citing\n", encoding="utf-8")
     heading = Citation(path="notes.md", quotes=("# A heading worth citing",))
     assert heading.unmet(tmp_path) == []
+
+
+def test_a_source_quote_that_matches_more_than_one_line_is_refused(tmp_path) -> None:
+    """A quote is evidence only if it is unique — enforced, not merely written down.
+
+    One tolerance note quoted `0.10, 0.25, ToleranceSource.CLASS_DEFAULT`, which also matches a
+    different constant in the same file, so widening the tolerance the note exists to pin left it
+    satisfied by a line it does not cite. That was found by hand and the lesson recorded; a lesson
+    in a document does not fail a build.
+    """
+    from reprolith.loop_notes import Citation
+
+    source = tmp_path / "python" / "reprolith"
+    source.mkdir(parents=True)
+    quote = "0.10, 0.25, ToleranceSource.CLASS_DEFAULT"
+    citation = Citation(path="python/reprolith/mod.py", quotes=(quote,))
+
+    (source / "mod.py").write_text(f"A = Tolerance(\n    {quote}\n)\n", encoding="utf-8")
+    assert citation.unmet(tmp_path) == []
+
+    (source / "mod.py").write_text(
+        f"A = Tolerance(\n    {quote}\n)\nB = Tolerance({quote})\n", encoding="utf-8"
+    )
+    problems = citation.unmet(tmp_path)
+    assert problems and "occurs 2 times" in problems[0], problems
+
+    # Prose is exempt: a phrase recurring in a document is ordinary.
+    (tmp_path / "notes.md").write_text("a repeated phrase\nand a repeated phrase\n", encoding="utf-8")
+    assert Citation(path="notes.md", quotes=("a repeated phrase",)).unmet(tmp_path) == []

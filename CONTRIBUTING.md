@@ -123,6 +123,18 @@ when you add a check, a refusal, or a stability rule:
 - **A floor cannot see what it never counted.** A gate that filters its population by sniffing a
   rendered string, then asserts `>= N`, is silent about everything the filter skipped — three
   certificates in this case. Drive the population from the data, and assert the exact count.
+- **Measure the sentence, not just the code.** Four claims went wrong in one day — two parities a
+  comment asserted the code did not have, a number in a test comment (0.4208 where the code gives
+  0.5000), and three ratios in the findings note that no computation produces. Each sat beside code
+  that was correct. A number in a commit message or a comment is exactly as checkable as a number in
+  a certificate; re-derive it before you write it.
+- **A check must not define its own population by what it is checking.** A freshness gate
+  enumerated "every render containing an `Engine pin:` line" — so deleting that line removed the
+  file from the gate, and its verdict could then be edited with the suite green. Enumerate by
+  location or from the data, then assert the property.
+- **Writing the check is not checking that it ran.** The same gate's byte-for-byte comparison was
+  guarded by `if sibling.exists()`, and the three renders with no sibling included the one the gate
+  was written for. Verify a new guard fires on the exact case that motivated it.
 - **If a tool tells you it failed, read it.** The pinned engine reports an abandoned time course by
   returning `False` and recording the samples it reached — all finite, so the non-finite guard
   cannot see it. That return value was discarded and the sample count never compared to the one

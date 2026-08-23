@@ -1007,7 +1007,7 @@ was the one where it mattered most.**
   at once: a digitized plateau reconstructed to 0.5% failed at 0.4208, while an exactly-flat
   reference reconstructed 10% wrong passed at 0.1000. The scale is now the larger of the range and
   the level, which can only widen the denominator — so no comparison that passed can be turned
-  into a non-pass, and the committed spatial curves (span/|mean| of 3.67, 2.83, 4.42) are
+  into a non-pass, and the committed spatial curves (span/|mean| of 3.89, 4.24, 3.48) are
   bit-identical. The near-flat plateau now scores 0.0050 and the flat band's 4% miss scores 0.0396
   against a true 0.0400. The discrepancy line no longer says "of span", because the denominator is
   no longer always the span.
@@ -1481,6 +1481,13 @@ Thirty mutations against a frozen copy, full suite each time, with a no-op contr
 appending a comment to a pinned module turns two `test_pins` cases red on its own, so "773 passed,
 2 failed, both test_pins" is the signature of an *unguarded* invariant, not a caught one.
 
+That control is understated, and a later claims audit measured the correction: for `oracle.py`,
+`certificate.py` and `logical.py` the no-op signature is **three** failures, not two — the logical
+worked example's byte-for-byte rebuild embeds a pin spanning all three, so it fires on a comment
+too. Those happen to be the modules carrying most of the mutations below, which means a mutation
+caught *only* by that rebuild would read as a behavioural catch under the two-failure signature. It
+is worth stating plainly that this weakens the exercise's precision, not just its arithmetic.
+
 Most of what this project claims held. `derive_overall`'s three downgrade routes, the scope
 statement at construction and on load, `certificate_from_content` re-deriving the overall verdict
 rather than trusting it, all four `require_*` guards, the blindness rules on both the entry and the
@@ -1509,7 +1516,9 @@ commented-out code: a note citing source has to find the words in code that runs
 no longer executes is not the evidence the note claims to rest on.
 
 One thing survived that is not an escape but is the familiar shape. Widening the scalar tolerance
-from 5%/15% to 20%/35% is caught thirteen times over by behavioural tests — but the *written record*
+from 5%/15% to 20%/35% fails thirteen tests — ten of them behavioural, the other three being the
+pin-and-rebuild control that a bare comment also trips, a distinction the original claim of
+"thirteen behavioural catches" did not draw — but the *written record*
 does not notice, because the notes for the two defaults every committed certificate actually uses
 cite `oracle.py` as a bare path with no quotes, while the other four quote their exact `Tolerance(…)`
 lines. The record could have stated 5% over code saying 20%. The rule reached four cases and not the
@@ -1720,6 +1729,95 @@ value; and a tolerance labelled `class-default` is refused if its width is not o
 "deferred, not forgotten" list is stale in the harmless direction — six of the things it defers have
 since been built — and is left standing with a note, because a proposal is a record of what was
 proposed.
+
+## Auditing the claims, not the code
+
+Nine commits landed in one day, each asserting what was wrong, what was measured, and what was
+fixed. Two of those assertions had already been caught and self-reported — a "verified red against a
+reverted package" that was not, and three comments claiming a parity the code lacked. So an agent was
+pointed at the record itself: re-derive every number, and actually perform every claimed revert.
+
+**The "verified red" claim held.** For the two commits examined in depth, all twenty named tests were
+reverted one at a time — the fixed module swapped for its parent's version, that single test run
+against the reverted package — and every one went red, 10 of 10 and 10 of 10, each with a distinct
+and appropriate failure. That is the claim that had failed once before, and it is worth recording
+that it was true here rather than only recording the time it was not.
+
+Most of the numbers held too, and to more precision than they were written with. The 87 of 200 seeds
+reproduced to the seed, along with the 27 at two trajectories. The 9 / 2 / 0 measurements behind the
+three-standard-error threshold reproduced exactly, including that four buys no further improvement.
+The 71 standard errors, the 1.87x denominator growth, the 0.534 and the geometric midpoint of 0.103,
+the 135 local parameters, the 34 resolved units, the one-grid-step overstatement — all confirmed.
+
+**Two were false, and both were mine.**
+
+A comment in a regression test said the old normalizer "scored this 0.4208 and failed it". Re-derived
+against the parent revision, it scored **0.5000** — RMSE and worst point are both exactly 0.5 on a
+plateau alternating half a pixel about 100, over a span of exactly 1.0. No denominator available in
+that fixture produces 0.4208; it appears to be left over from an earlier draft of the data. The
+number understates rather than flatters — both values fail — which makes it a false measurement
+rather than a flattering one, and no less false for that.
+
+And this note itself claimed the committed spatial curves have span over level of "3.67, 2.83 and
+4.42". Recomputing them from the milestone's own configuration gives **3.89, 4.24 and 3.48**. No
+permutation matches, and no plausible variant — initial profiles, simulated profiles, max over mean,
+the pre-tightening diffusion number — produces the claimed triple. The sentence was supporting an
+argument that a later round then judged worthless on other grounds, so nothing rested on it; it was
+simply wrong, sitting in the document that exists to be the honest record.
+
+Both are corrected in place. The pattern they share with the earlier two is worth naming: every one
+was a number or a parity asserted in prose, next to code that was itself correct. The code got
+measured; the sentence about the code did not. A claim in a commit message or a comment is exactly
+as checkable as a claim in a certificate, and this project already knows what to do about an
+unchecked claim — it just had not been applying it to its own record.
+
+Two smaller inaccuracies, both understating: "nine regression tests" was ten, and "seven" was eight.
+
+## Re-running fifty defects, and the gate that skipped the file it was built for
+
+Six rewrites of the same handful of functions in one day is exactly the churn where an early fix
+quietly disappears, so every defect fixed today was re-run against HEAD. Almost all held: the
+truncated-run refusal, the queue that froze, the badge over a gap report, the resolvability guard,
+the blank catalog, the atomic writes, the exported pins, the six tolerance defaults, the twelve
+`default_tolerance` combinations, and all six agreement reports recomputed from their own per-entry
+rows. Three did not, and two of those contradict something I wrote.
+
+**The badge fix reached one branch of two.** The commit said "it now only ever downgrades", and that
+is true of the gap branch it changed — three lines above it, the estimation branch does the identical
+unconditional repaint. So a *failed* estimation claim rendered amber instead of red, and an
+*abstained* one amber instead of grey: for any estimation-level certificate, red and grey were
+unreachable. The spec asks that an estimation result never be green and never read as a clean pass.
+That is a cap. It does not authorize promoting a failure, and the abstention path that reaches it is
+one an earlier round deliberately created. It is a cap now.
+
+**The render freshness gate skipped the render it was written for.** Two independent holes. Its
+byte-for-byte check ran only `if sibling.exists()` — and the three worked-example renders have no
+sibling JSON, including the metformin certificate that produced the original finding and that the
+README sends readers to. Hand-editing its overall verdict from `partially-reproduced` to
+`reproduced` left the entire suite green. And the gate enumerated its population as "every `.txt`
+containing `Engine pin:`", so deleting that line removed the file from the gate altogether: verdict
+edited, pin line gone, suite green. **The population a check runs over must not be defined by the
+thing the check is looking for.** Renders are enumerated by location now, a missing pin line is a
+failure rather than an exemption, and the two worked examples are byte-checked against the
+certificates `scripts/render_worked_examples.py` already knows they come from.
+
+That is the third claim of mine this session that an audit had to correct, and the most pointed,
+because the gate exists precisely to stop a published render from drifting from its certificate.
+Writing the check was not the same as checking that the check ran.
+
+**Two real fixes had nothing pinning them.** Reverting the missing-agreement-report refusal to a
+`continue` left the suite green; so did truncating a blocked entry's missing inputs to the first of
+several. Both are pinned now. And the lesson recorded last round — *a quote is evidence only if it
+is unique* — was a sentence in a document, which does not fail a build; `Citation.unmet` now refuses
+a source quote that matches more than one line, with prose files exempt.
+
+One more, smaller: `build_certificate` still accepted a non-string into `gap_report`. The previous
+round fixed that at `blocked_certificate`, one caller, and named the lesson "an annotation is not a
+check at a boundary that mints certificates" — while leaving it unchecked at the boundary that
+actually mints them, and on the load path the same commit chose to defend for `attributed_to`. A
+list of `Gap` objects passed straight through, serialized, digested, reloaded and printed its `repr`
+into the "what was missing" section as though it were a sentence about a paper. Both paths refuse
+now.
 
 ## Status and what remains
 

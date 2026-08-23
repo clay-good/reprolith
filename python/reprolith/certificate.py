@@ -121,6 +121,25 @@ def require_distinct_assumption_ids(assumptions: Sequence[Assumption]) -> None:
         seen.add(assumption.id)
 
 
+def require_readable_gap_notes(gap_report: Sequence[str]) -> tuple[str, ...]:
+    """Refuse a "what was missing" note that is not readable text.
+
+    `gap_report` is declared `tuple[str, ...]` and is published verbatim — by the human render, by
+    the registry card, by the author-facing fix list. An annotation is not a check: a list of `Gap`
+    objects, or a stray `None`, serialized, digested, reloaded and rendered, printing its `repr`
+    into a certificate as though it were a sentence about a paper. The sibling rule for
+    `attributed_to` is enforced on both the build and the load path; this is the field it skipped.
+    """
+    notes = tuple(gap_report)
+    for note in notes:
+        if not isinstance(note, str) or not note.strip():
+            raise ValueError(
+                f"a gap note must be non-empty text, not {note!r} — it is published verbatim as "
+                "the certificate's account of what was missing"
+            )
+    return notes
+
+
 def require_reprolith_attribution(assumptions: Sequence[Assumption]) -> None:
     """Refuse an assumption attributed to anyone but Reprolith.
 
@@ -194,6 +213,7 @@ def build_certificate(
     require_stated_cause(frozen_assessments)
     require_distinct_assumption_ids(frozen_assumptions)
     require_reprolith_attribution(frozen_assumptions)
+    frozen_gaps = require_readable_gap_notes(gap_report)
     # …including the pin/protocol agreement the load path checks, so the builder cannot mint a
     # certificate that its own loader refuses. The check lives in `persistence` beside the other
     # load-path invariants; imported here rather than duplicated, so the two cannot drift.
@@ -207,6 +227,6 @@ def build_certificate(
         scope=scope if scope is not None else Scope(),
         assessments=frozen_assessments,
         assumptions=frozen_assumptions,
-        gap_report=tuple(gap_report),
+        gap_report=frozen_gaps,
         supersedes=content_hash(supersedes.content()) if supersedes is not None else None,
     )

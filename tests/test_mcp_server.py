@@ -1169,3 +1169,27 @@ def test_a_correction_published_after_startup_is_seen_by_the_write_path(tmp_path
         refresh_certificates(ledger_two, [single], seen_two)
     with pytest.raises(ValueError, match="not a readable certificate"):
         refresh_certificates(ledger_two, [single], seen_two)
+
+
+def test_a_missing_agreement_report_is_refused_rather_than_skipped(tmp_path, monkeypatch) -> None:
+    """Skipped, a whole class simply vanished from the published track record.
+
+    `self_validation_summary` publishes `classes` and `labelled_entries` as sums over whatever it
+    found, so removing one report turned 60 labelled entries into 57 and six classes into five —
+    asserted as the whole truth, on a page still rendering that class's three certificates. The
+    raise was added for that, and nothing pinned it: reverting it to `continue` left the whole
+    suite green.
+    """
+    from reprolith import mcp_server
+
+    real = mcp_server.milestone_certificate_dirs()
+    absent = tmp_path / "nowhere" / "certificates"
+    monkeypatch.setattr(
+        mcp_server, "milestone_certificate_dirs", lambda: {**real, "invented": absent}
+    )
+    with pytest.raises(FileNotFoundError, match="no agreement report for the 'invented' class"):
+        mcp_server.milestone_agreement_reports()
+
+    # Unpatched, every declared class must have one — the count is the point, not just the loop.
+    monkeypatch.undo()
+    assert len(mcp_server.milestone_agreement_reports()) == len(real) == 6

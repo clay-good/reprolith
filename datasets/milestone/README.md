@@ -18,7 +18,7 @@ so `reprolith certificates-for` returns nothing for the other thirty.
 | Outcome | Count | What it means |
 |---|---|---|
 | `partially-reproduced` | 1 | Metformin (BIOMD0000001028) — claims extracted and verified; reproduced, but with a load-bearing salt-form assumption flagged. |
-| `blocked` | 30 | Reprolith **abstained** — the shipped model artifact carries no machine-checkable claims, so there was nothing to reproduce against. Not a failure to reproduce; a recorded missing input. |
+| `blocked` | 30 | Reprolith **abstained** — Reprolith holds no extracted claims for these papers, so there was nothing to reproduce and no model was run. Not a failure to reproduce; a recorded missing input. |
 
 Raw agreement with the ground-truth labels is 0/31 — and that number is the honest one, not a bad
 one. Read on.

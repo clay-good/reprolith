@@ -147,64 +147,76 @@ def test_every_committed_certificate_carries_the_revision_it_was_generated_under
 # each was generated under. A render is a published surface too — `datasets/worked_examples/`'s
 # metformin certificate is the one the README and docs/mcp-server.md send readers to — and the
 # JSON-only sweep above could not see it.
+# Every render that lives outside a milestone directory: the class whose revision it was generated
+# under, and the committed certificate it is the rendering *of*. The certificate path is what makes
+# the byte-for-byte check possible for these three — `scripts/render_worked_examples.py` holds the
+# same mapping, and the toggle switch is regenerated from its two claims rather than from a file,
+# so `tests/test_logical_worked_example.py` byte-checks that one instead.
 _RENDERED_ELSEWHERE = {
-    "worked_examples": "ode-pkpd",
-    "constraint_based/worked_example": "constraint_based",
-    "logical/worked_example": "logical",
+    "worked_examples": ("ode-pkpd", "milestone/certificates/BIOMD0000001028.json"),
+    # These two write their own `certificate.json` beside the render (see
+    # scripts/render_worked_examples.py), so the sibling lookup finds them like any milestone
+    # render — no special case, and nothing skipped.
+    "constraint_based/worked_example": ("constraint_based", None),
+    "logical/worked_example": ("logical", None),
 }
 
 
 def test_every_committed_render_names_the_current_revision_too() -> None:
     # The JSON sweep above globs six milestone directories. The metformin render sat outside all of
-    # them, so it kept publishing `Engine pin: copasi 4.46.300 / deterministic-lsoda` — no judge
-    # revision at all — while the machine-readable certificate for the same paper carried one, and
-    # it had drifted two code changes behind the protocol text it printed. Two accounts of how one
-    # result was computed, and the weaker one was the reader-facing one. Every render is checked
-    # here, and a render this test cannot attribute to a class fails rather than being skipped:
-    # that silent skip is the whole defect.
+    # them, so it kept publishing an engine pin with no judge revision while the machine-readable
+    # certificate for the same paper carried one. Every render is checked here, and a render this
+    # test cannot attribute to a class fails rather than being skipped: that silent skip is the
+    # whole defect.
+    #
+    # Enumerated by *location*, not by the presence of the line under test. Keyed on
+    # `"Engine pin:" in text`, a render that lost its pin line removed itself from the gate — so
+    # deleting that line and editing the verdict beneath it passed the whole suite. The population
+    # a check runs over must not be defined by the thing the check is looking for.
+    directories = {
+        directory: name for name, (directory, _) in _CLASSES.items()
+    } | {directory: name for directory, (name, _) in _RENDERED_ELSEWHERE.items()}
+    sources = {directory: source for directory, (_, source) in _RENDERED_ELSEWHERE.items()}
+
     renders = sorted(
-        path
-        for path in _DATASETS.rglob("*.txt")
-        if "Engine pin:" in path.read_text(encoding="utf-8")
+        path for path in _DATASETS.rglob("*.txt") if path.parent != _DATASETS / "fixtures"
     )
     assert renders, "no rendered certificates found to check"
     for path in renders:
         relative = path.relative_to(_DATASETS)
         parent = relative.parent.as_posix()
-        class_name = next(
-            (
-                name
-                for directory, (glob, _) in _CLASSES.items()
-                for name in [directory]
-                if parent == glob
-            ),
-            None,
-        ) or next(
-            (name for prefix, name in _RENDERED_ELSEWHERE.items() if parent == prefix), None
-        )
+        class_name = directories.get(parent)
         assert class_name is not None, (
             f"{relative} is a published certificate render in a directory no freshness check "
             "covers; add it to _CLASSES or _RENDERED_ELSEWHERE"
         )
-        revision = algorithm_revision(*_CLASSES[class_name][1])
         text = path.read_text(encoding="utf-8")
-        pin_line = next(line for line in text.splitlines() if line.startswith("Engine pin:"))
-        assert f"rev {revision}" in pin_line, (
-            f"{relative} names no current revision ({pin_line!r}); re-render it from the "
+        pin_lines = [line for line in text.splitlines() if line.startswith("Engine pin:")]
+        assert pin_lines, f"{relative} names no engine pin at all; it cannot be checked for freshness"
+        revision = algorithm_revision(*_CLASSES[class_name][1])
+        assert f"rev {revision}" in pin_lines[0], (
+            f"{relative} names no current revision ({pin_lines[0]!r}); re-render it from the "
             f"certificate its class's milestone script produces"
         )
         # …and the render has to be the render *of* that certificate. Checking only the pin line
-        # left every other line unpinned: a hand-edited verdict or reported value in a committed
-        # render passed the gate untouched, which is the same two-accounts-of-one-result the gate
-        # was added to close, one field over. Re-rendering needs no solver — the certificate is
-        # committed beside it — so this is cheap enough to assert on every render that has one.
+        # left every other line unpinned: a hand-edited verdict in a committed render passed the
+        # gate untouched. This used to be conditional on a sibling JSON beside the render — and the
+        # three worked-example renders have none, including the metformin one that produced the
+        # original finding, so the check skipped exactly the file it was written for.
         sibling = path.with_suffix(".json")
-        if sibling.exists():
-            cert = certificate_from_content(json.loads(sibling.read_text(encoding="utf-8")))
-            run = RunMetadata(created_at="", actor="gate", tool_version="")
-            # Trailing-newline policy differs between the milestone writers and the worked-example
-            # renderer; what has to match is the certificate's content, not the file's last byte.
-            assert text.rstrip("\n") == render_human(cert, run).rstrip("\n"), (
-                f"{relative} is not the rendering of {sibling.name}; re-run "
-                "scripts/render_worked_examples.py or that class's milestone script"
-            )
+        source = sibling if sibling.exists() else (
+            _DATASETS / sources[parent] if sources.get(parent) else None
+        )
+        assert source is not None, (
+            f"{relative} has no certificate to be compared against; a render with no source cannot "
+            "be checked, and skipping it is how a hand-edited verdict went unnoticed"
+        )
+        assert source.exists(), f"{relative}'s source certificate {source} is missing"
+        cert = certificate_from_content(json.loads(source.read_text(encoding="utf-8")))
+        run = RunMetadata(created_at="", actor="gate", tool_version="")
+        # Trailing-newline policy differs between the milestone writers and the worked-example
+        # renderer; what has to match is the certificate's content, not the file's last byte.
+        assert text.rstrip("\n") == render_human(cert, run).rstrip("\n"), (
+            f"{relative} is not the rendering of {source.relative_to(_DATASETS)}; re-run "
+            "scripts/render_worked_examples.py or that class's milestone script"
+        )

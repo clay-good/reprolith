@@ -18,6 +18,7 @@ import json
 from pathlib import Path
 
 from reprolith import (
+    Certificate,
     PaperIdentity,
     RunMetadata,
     certificate_from_content,
@@ -31,6 +32,9 @@ from reprolith.logical import solver_pin as logical_pin
 from reprolith.persistence import dossier_from_dict
 
 ROOT = Path(__file__).parent.parent
+#: One fixed stamp for every render this script writes; run metadata is outside the content hash
+#: and `render_human` prints none of it, so this keeps each render reproducible byte for byte.
+_RUN = RunMetadata(created_at="2026-08-07T00:00:00Z", actor="worked-example", tool_version="0.0.1")
 DATASETS = ROOT / "datasets"
 
 # Each render, and the committed certificate it is the rendering *of*. Re-rendering from the
@@ -46,7 +50,7 @@ FROM_JSON = [
 _CB = DATASETS / "constraint_based"
 
 
-def _e_coli_certificate() -> str:
+def _e_coli_certificate() -> Certificate:
     """Re-certified from the worked example's own dossier, not from the milestone certificate.
 
     The milestone run certifies the same model from the same dossier but under a PaperIdentity
@@ -65,10 +69,7 @@ def _e_coli_certificate() -> str:
         ),
         engine_pin=fba_pin(),
     )
-    run = RunMetadata(
-        created_at="2026-08-07T00:00:00Z", actor="worked-example", tool_version="0.0.1"
-    )
-    return render_human(cert, run) + "\n"
+    return cert
 
 
 # The toggle switch has no milestone certificate — it is built from its two claims, and
@@ -77,7 +78,7 @@ def _e_coli_certificate() -> str:
 _TOGGLE_RULES = {"A": "!B", "B": "!A"}
 
 
-def _toggle_certificate() -> str:
+def _toggle_certificate() -> Certificate:
     cert = certify_logical(
         paper=PaperIdentity(
             title="Toggle switch — a two-gene mutual-repression circuit", doi="10.0/toggle"
@@ -90,10 +91,7 @@ def _toggle_certificate() -> str:
                          reported={"A": 0, "B": 1}, source_location="Fig 1b"),
         ],
     )
-    run = RunMetadata(
-        created_at="2026-08-07T00:00:00Z", actor="worked-example", tool_version="0.0.1"
-    )
-    return render_human(cert, run) + "\n"
+    return cert
 
 
 def main() -> None:
@@ -109,13 +107,23 @@ def main() -> None:
         target.write_text(render_human(cert, run) + "\n", encoding="utf-8")
         print(f"wrote {target.relative_to(ROOT)} from {source.relative_to(ROOT)}")
 
-    target = _CB / "worked_example" / "certificate.txt"
-    target.write_text(_e_coli_certificate(), encoding="utf-8")
-    print(f"wrote {target.relative_to(ROOT)}")
-
-    target = DATASETS / "logical" / "worked_example" / "certificate.txt"
-    target.write_text(_toggle_certificate(), encoding="utf-8")
-    print(f"wrote {target.relative_to(ROOT)}")
+    # Each of these two is rendered from a certificate this script builds rather than from one a
+    # milestone published — the E. coli worked example re-certifies under a PaperIdentity carrying
+    # the doi the milestone entry drops, and the toggle switch is built from its two claims. The
+    # certificate is written out beside the render so the freshness gate can compare them byte for
+    # byte, instead of having no sibling and being skipped, which is how a hand-edited verdict in a
+    # committed render went unnoticed.
+    for certificate, directory in (
+        (_e_coli_certificate(), _CB / "worked_example"),
+        (_toggle_certificate(), DATASETS / "logical" / "worked_example"),
+    ):
+        (directory / "certificate.txt").write_text(
+            render_human(certificate, _RUN) + "\n", encoding="utf-8"
+        )
+        (directory / "certificate.json").write_text(
+            json.dumps(certificate.content(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        print(f"wrote {(directory / 'certificate.txt').relative_to(ROOT)} and its certificate.json")
 
 
 if __name__ == "__main__":

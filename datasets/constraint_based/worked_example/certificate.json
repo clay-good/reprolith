@@ -2,17 +2,17 @@
   "assessments": [
     {
       "assumption_qualified": false,
-      "claim_id": "iJO1366-growth",
+      "claim_id": "growth-glucose-aerobic",
       "discrepancy": "relative error 0.0000",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "medium: the model's own distributed bounds (none stated by the paper); maximize: R_BIOMASS_Ec_iJO1366_core_53p95M",
-      "quantity": "maximal growth rate on the distributed medium",
+      "protocol": "medium: R_EX_glc__D_e<=10.0 mmol/gDW/h, R_EX_o2_e<=1000.0 mmol/gDW/h; maximize: R_BIOMASS_Ecoli_core_w_GAM",
+      "quantity": "maximal aerobic growth rate, glucose minimal medium (R_BIOMASS_Ecoli_core_w_GAM, maximize)",
       "reference_kind": "numeric",
       "root_cause": null,
-      "source_location": "BiGG Models http://bigg.ucsd.edu/models/iJO1366 ; doi:10.1038/msb.2011.65 (PMID 21988831) \u2014 reference value computed by COBRApy 0.31.1 slim_optimize on the model's distributed medium re-running this model file, not a number read from the paper",
+      "source_location": "Orth, Fleming & Palsson (2010), EcoSal Plus; BiGG e_coli_core",
       "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
@@ -27,9 +27,9 @@
   "gap_report": [],
   "overall": "reproduced",
   "paper": {
-    "doi": "",
+    "doi": "10.1128/ecosalplus.10.2.1",
     "pubmed_id": null,
-    "title": "iJO1366 (Escherichia coli str. K-12 substr. MG1655 (genome-scale))"
+    "title": "E. coli core metabolic model (Orth, Fleming & Palsson 2010)"
   },
   "scope": {
     "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",

@@ -179,3 +179,26 @@ def test_the_title_rule_accepts_an_inserted_word_and_refuses_a_reordering() -> N
     # Too short to witness anything.
     assert not names_the_same_paper("model", "A model of glycolytic oscillations")
     assert not names_the_same_paper("cell cycle", "The cell cycle in fission yeast")
+
+
+def test_a_blocked_entry_records_every_missing_input_not_the_first() -> None:
+    """`missing_inputs` is a tuple built to hold several, and a certificate can name several.
+
+    Truncating to the first published one of three as "the blockers", with no count and no
+    ellipsis. Nothing pinned it: replacing `tuple(blocked_reason)` with `tuple(blocked_reason)[:1]`
+    left the entire suite green, because the nearest test asserted only that *some* missing input
+    was recorded.
+    """
+    from reprolith import Catalog, Identifiers, ModelClass, OverallVerdict
+    from reprolith.enums import LifecycleState
+    from reprolith.run import advance_to_outcome
+
+    catalog = Catalog()
+    entry = catalog.add(Identifiers(title="p", accession="ACC1"), ModelClass.ODE_PKPD)
+    blockers = ("the dosing schedule is not stated", "the variability model is not stated",
+                "the model artifact is paywalled")
+    advance_to_outcome(entry, OverallVerdict.BLOCKED, at="t", actor="a", blocked_reason=blockers)
+
+    recorded = [t for t in entry.history if t.to_state is LifecycleState.BLOCKED]
+    assert len(recorded) == 1
+    assert recorded[0].missing_inputs == blockers, recorded[0].missing_inputs

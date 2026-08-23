@@ -1,0 +1,56 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": false,
+      "claim_id": "ss_on",
+      "discrepancy": "reported steady state is a fixed point",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "attractor-set-match",
+      "protocol": "2 nodes, exhaustive enumeration of all 2^2 states",
+      "quantity": "A-ON steady state",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "Fig 1a",
+      "tolerance": "reproduced<=0, partial<=0 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "ss_off",
+      "discrepancy": "reported steady state is a fixed point",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "attractor-set-match",
+      "protocol": "2 nodes, exhaustive enumeration of all 2^2 states",
+      "quantity": "A-OFF steady state",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "Fig 1b",
+      "tolerance": "reproduced<=0, partial<=0 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": "synchronous-update, exhaustive-state-enumeration (rev 0084e63f210e)",
+    "engine": "reprolith-logical",
+    "version": "0.0.1"
+  },
+  "gap_report": [],
+  "overall": "reproduced",
+  "paper": {
+    "doi": "10.0/toggle",
+    "pubmed_id": null,
+    "title": "Toggle switch \u2014 a two-gene mutual-repression circuit"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

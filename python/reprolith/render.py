@@ -183,7 +183,15 @@ def render_badge(cert: Certificate) -> str:
     color = _BADGE_COLOR[verdict]
     if estimation_claims(cert):
         verdict = f"{verdict} (estimation)"
-        color = _BADGE_COLOR["partially-reproduced"]  # never green: no simulation reproduction shown
+        # A cap, not a repaint — the same correction the gap branch below already carries. Setting
+        # the amber unconditionally *raised* the two verdicts beneath it: a failed estimation claim
+        # rendered amber instead of red, and an abstained one amber instead of grey, so for any
+        # estimation-level certificate red and grey were unreachable. The spec asks that an
+        # estimation result never be green and never read as a clean pass; it does not authorize
+        # promoting a failure. `judge_estimation`'s own abstention branch sets this level, so this
+        # is a live path rather than a hand-built one.
+        if color == _BADGE_COLOR["reproduced"]:
+            color = _BADGE_COLOR["partially-reproduced"]
     if cert.gap_report:
         # The overall verdict is derived from the claims alone, so a result that went missing
         # before it ever became a claim cannot lower it. This badge is the most compressed

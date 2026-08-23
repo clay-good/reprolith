@@ -17,6 +17,7 @@ from typing import Any
 from .certificate import (
     derive_overall,
     require_distinct_assumption_ids,
+    require_readable_gap_notes,
     require_reprolith_attribution,
     require_stated_cause,
     require_stated_protocol,
@@ -163,6 +164,7 @@ def certificate_from_content(content: dict[str, Any]) -> Certificate:
     require_stated_cause(assessments)
     require_distinct_assumption_ids(assumptions)
     require_reprolith_attribution(assumptions)
+    require_readable_gap_notes(content.get("gap_report", ()))
     require_pin_agrees_with_protocol(assessments, pin["algorithm"])
     stored = OverallVerdict(content["overall"])
     derived = derive_overall(assessments, assumptions)
