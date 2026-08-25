@@ -670,6 +670,23 @@ def certify_spatial(
     assessments = []
     qualified = []
     for claim in claims:
+        if not claim.reference:
+            # No reported profile to compare against — abstain rather than run and judge against
+            # nothing. `certify_curves` answers the same input the same way; before this, the two
+            # front-ends over the same oracle disagreed about a reference-less claim, one abstaining
+            # and one raising out of the whole certificate. NUMERIC because this class states no
+            # reference kind anywhere and its sibling abstention already says NUMERIC.
+            assessments.append(not_evaluable(
+                claim_id=claim.claim_id,
+                quantity=claim.quantity,
+                source_location=claim.source_location,
+                reason=(
+                    "no reported profile for this claim: there is nothing to compare the "
+                    "simulated profile against"
+                ),
+                reference_kind=ReferenceKind.NUMERIC,
+            ))
+            continue
         if claim.steps < 1:
             raise ValueError(
                 f"claim {claim.claim_id!r} asks for {claim.steps} steps: a spatial claim must "

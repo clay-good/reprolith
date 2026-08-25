@@ -668,3 +668,32 @@ def test_the_boundary_assumption_does_not_assert_what_the_paper_said() -> None:
     assert "did not check" in description
     # And the author is told it is not theirs to fix.
     assert cert.assumptions[0].author_can_close is False
+
+
+def test_a_claim_with_no_reported_profile_abstains_like_its_sibling_front_end() -> None:
+    """Two front-ends over one oracle used to answer the same input differently.
+
+    `certify_curves` abstains on a claim with no reference; this one raised out of the whole
+    certificate, discarding every sibling claim's verdict along with it.
+    """
+    from reprolith import OverallVerdict, PaperIdentity, Verdict
+    from reprolith.spatial import SpatialClaim, certify_spatial, solver_pin
+
+    certificate = certify_spatial(
+        paper=PaperIdentity(title="t", doi=""), engine_pin=solver_pin(),
+        claims=[
+            SpatialClaim(claim_id="figure-only", quantity="profile", initial=(1.0, 0.0, 0.0, 0.0),
+                         reference=(), source_location="Fig 3", diffusivity=0.1,
+                         dx=1.0, dt=0.2, steps=2),
+            SpatialClaim(claim_id="checked", quantity="profile", initial=(1.0, 0.0, 0.0, 0.0),
+                         reference=(0.98, 0.02, 0.0, 0.0), source_location="Fig 4",
+                         diffusivity=0.1, dx=1.0, dt=0.2, steps=2),
+        ],
+    )
+
+    abstained, judged = certificate.assessments
+    assert abstained.verdict is Verdict.NOT_EVALUABLE
+    assert "nothing to compare" in (abstained.root_cause or "")
+    # The sibling claim is still judged: the abstention costs one claim, not the certificate.
+    assert judged.verdict is not Verdict.NOT_EVALUABLE
+    assert certificate.overall is not OverallVerdict.BLOCKED
