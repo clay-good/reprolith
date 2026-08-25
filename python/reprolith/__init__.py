@@ -214,7 +214,7 @@ from .sbml import (
 )
 from .scope import Scope
 from .screening import Candidate, Screening, ScreeningResult, screen_candidate, storable_content
-from .sedml import SimulationRecipe, parse_sedml_recipes
+from .sedml import SimulationRecipe, enumerate_sedml_claims, parse_sedml_recipes
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
 from .spatial import (
     SpatialClaim,
@@ -334,6 +334,7 @@ __all__ = [
     "ensemble_final_counts",
     "ensemble_percentile_bands",
     "EntryAgreement",
+    "enumerate_sedml_claims",
     "Equation",
     "EquationKind",
     "essentiality_agreement",

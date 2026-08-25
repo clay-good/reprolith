@@ -460,3 +460,25 @@ def test_a_value_an_assignment_rule_determines_is_not_recorded_as_a_stated_one()
     assert "Phi1_c1" in assignment_targets
     # And the check no longer reports agreement on values neither side compared.
     assert compare_sbml_to_dossier(sbml, dossier) == []
+
+
+def test_a_shipped_sedml_document_gives_the_dossier_its_claims() -> None:
+    """Artifact intake reads the model's structure; the SED-ML beside it says what is shown.
+
+    Without the document a dossier from this path has no claims — the manuscript is not read
+    here, and inventing one would be a claim the paper never staked.
+    """
+    kinetic = Path(__file__).parent.parent / "datasets" / "kinetic"
+    sbml = (kinetic / "BIOMD0000000010.xml").read_text(encoding="utf-8")
+    sedml = (kinetic / "BIOMD0000000010.sedml").read_text(encoding="utf-8")
+
+    without = ingest_sbml(sbml, entry="BIOMD0000000010")
+    assert without.claims == ()
+
+    with_recipe = ingest_sbml(sbml, entry="BIOMD0000000010", sedml=sedml)
+    assert [c.quantity for c in with_recipe.targetable_claims()] == [
+        "MAPK_PP", "MAPK", "MAPK_PP", "MAPK",
+    ]
+    # The rest of the dossier is untouched by the document it now carries claims from.
+    assert with_recipe.state_variables == without.state_variables
+    assert with_recipe.validate() == []

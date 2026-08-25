@@ -9,9 +9,11 @@ become the governing equations — every element citing the model file it came f
 
 This is the *artifact-intake* ingestion path, distinct from extracting a dossier from the
 manuscript prose. It gives real models a real dossier without inventing anything: the source
-is the model file, honestly recorded as such, and the claims a paper stakes are **not** here
-(they live in the manuscript), so a dossier built this way carries model structure but no
-targetable claims.
+is the model file, honestly recorded as such. The claims a paper stakes live in the manuscript,
+which is not read here — but a paper that also ships a SED-ML document has written down which
+curves it shows, so passing that document to :func:`ingest_sbml` enumerates those plots as
+claims (:func:`reprolith.enumerate_sedml_claims`). Without one, a dossier built this way carries
+model structure and no targetable claims.
 
 Uses the optional ``engine`` extra (python-libsbml), imported lazily.
 """
@@ -32,6 +34,7 @@ from .dossier import (
 )
 from .engine import EngineUnavailable
 from .sbml import _rule_names_in
+from .sedml import enumerate_sedml_claims
 
 #: What a parameter's unit says when the model states none. `Parameter` requires a non-empty unit,
 #: and the value itself *is* stated — so the honest record is a value whose unit is missing, plus a
@@ -83,7 +86,13 @@ def _initial_amount(model: Any, species: Any) -> float | None:
     return float(species.getInitialConcentration())
 
 
-def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file") -> Dossier:
+def ingest_sbml(
+    sbml: str,
+    *,
+    entry: str,
+    source_label: str = "SBML model file",
+    sedml: str | None = None,
+) -> Dossier:
     """Parse a shipped SBML model into a dossier of its structure.
 
     ``entry`` is the catalog-entry key the dossier belongs to; ``source_label`` names the file
@@ -95,6 +104,11 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
     ``Parameter`` says in its own contract that an unstated unit is a gap rather than a value. A
     species stating a concentration in a compartment that is not unit-sized is refused rather
     than read as an amount (see :func:`_initial_amount`).
+
+    ``sedml`` is the SED-ML document the paper ships beside the model, when there is one. Its
+    plots are the document's own statement of which curves are shown results, so they become the
+    dossier's claims (:func:`reprolith.enumerate_sedml_claims`); without it the dossier has model
+    structure and no claims, because this path never reads the manuscript.
     """
     libsbml = _libsbml()
     document = libsbml.readSBMLFromString(sbml)
@@ -214,6 +228,7 @@ def ingest_sbml(sbml: str, *, entry: str, source_label: str = "SBML model file")
 
     return Dossier(
         entry=entry,
+        claims=enumerate_sedml_claims(sedml) if sedml is not None else (),
         state_variables=tuple(state_variables),
         equations=tuple(equations),
         parameters=tuple(parameters),

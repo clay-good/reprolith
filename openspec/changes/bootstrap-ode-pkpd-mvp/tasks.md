@@ -20,6 +20,11 @@ a phase done until its verification holds.
 
 - [ ] 2.1 Produce a PK/PD dossier: compartment structure, rate expressions, PD link, parameters+units, initial conditions, dosing → verify: on a hand-checked paper, every element cites a source location
 - [ ] 2.2 Enumerate targetable claims (curves and reported metrics) with reference data or figure-reference marking → verify: claim count and types match a manual read
+  - Partly done: a shipped SED-ML document's plots are enumerated as claims and its reports are
+    retained non-targetable (`enumerate_sedml_claims`), verified against a manual read of the
+    BioModels SED-ML for Kholodenko — four curves, two figures. Reference *data* is not there:
+    the document says what to plot, not what the figure showed, so every claim is
+    figure-referenced. Reading claims from manuscript prose is still not built.
 - [ ] 2.3 Record gaps and extraction-confidence; never fill gaps at this stage → verify: a paper with a missing parameter yields a gap, not a value
 - [x] 2.4 Support reviewer correction as a tracked revision → verify: a correction is applied and the original remains retrievable
 

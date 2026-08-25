@@ -58,6 +58,16 @@ Two findings, both from real data:
    the exception; figure-locked claims are the norm, and the scaling constraint is therefore
    **figure digitization**, not simulation.
 
+   One half of that bottleneck is now closed where a paper ships a **SED-ML** document beside its
+   model: its plots are a machine-readable statement of which curves the paper shows, and
+   `enumerate_sedml_claims` reads them as dossier claims (see
+   [the fast-path note](sedml-fast-path.md)). On the BioModels SED-ML for Kholodenko's MAPK model
+   that is exactly the four curves of Figures 2A and 2B, with the second pair correctly attributed
+   to the *modified* model. What it does not supply is the other half — the values those curves
+   showed — so such a claim is marked figure-referenced with no reference data and the oracle
+   abstains. Figure digitization remains the constraint; the document removes the guesswork about
+   *which* results a reproduction should be aiming at.
+
 ## The figure boundary is not PK/PD-specific — FBA hits it too
 
 The same wall recurs in the constraint-based class, which rules out "PK/PD figures are just

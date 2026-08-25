@@ -19,6 +19,9 @@ import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 
+from .dossier import DossierClaim
+from .oracle import ReferenceKind
+
 # A SED-ML variable targets a model element by an XPath whose LAST step selects the element, as in
 # ``.../species[@id='S1']``. Match that final step only: an ancestor step can carry an ``@id`` too
 # (``compartment[@id='cyt']/listOfSpecies/species[@name='S1']``), and taking the last ``@id``
@@ -185,4 +188,173 @@ def parse_sedml_recipes(sedml: str) -> list[SimulationRecipe]:
     return recipes
 
 
-__all__ = ["SimulationRecipe", "parse_sedml_recipes"]
+#: SED-ML names the independent variable with this symbol. A data generator built only from it
+#: is the plot's axis, not a quantity the document asserts anything about — ``time`` and
+#: ``time/60`` are the same axis in different units, and neither is a claim.
+_TIME_SYMBOL = "urn:sedml:symbol:time"
+
+
+@dataclass(frozen=True)
+class _Generator:
+    """What a SED-ML data generator observes: its label, its task, and whether it is the axis."""
+
+    name: str
+    quantity: str
+    task_ref: str
+    is_time: bool
+
+
+def _read_generators(root: ET.Element) -> dict[str, _Generator]:
+    generators: dict[str, _Generator] = {}
+    for element in root.iter():
+        if _localname(element.tag) != "dataGenerator":
+            continue
+        gen_id = element.get("id")
+        if not gen_id:
+            continue
+        quantity, task_ref, symbols, targets = "", "", 0, 0
+        for variable in element.iter():
+            if _localname(variable.tag) != "variable":
+                continue
+            task_ref = task_ref or (variable.get("taskReference") or "")
+            target = variable.get("target")
+            if variable.get("symbol") == _TIME_SYMBOL:
+                symbols += 1
+            if target:
+                targets += 1
+                leaf = _LEAF_ID.search(target)
+                quantity = quantity or (leaf.group(1) if leaf else target)
+        name = element.get("name") or gen_id
+        generators[gen_id] = _Generator(
+            name=name,
+            quantity=quantity or name,
+            task_ref=task_ref,
+            # Only a generator built from nothing but the time symbol is the axis. One that mixes
+            # time with a species (a normalized trace) still asserts something about the species.
+            is_time=symbols > 0 and targets == 0,
+        )
+    return generators
+
+
+def _read_tasks(root: ET.Element) -> dict[str, tuple[str, str]]:
+    tasks: dict[str, tuple[str, str]] = {}
+    for element in root.iter():
+        if _localname(element.tag) != "task":
+            continue
+        task_id = element.get("id")
+        if task_id:
+            tasks[task_id] = (
+                element.get("modelReference") or "", element.get("simulationReference") or ""
+            )
+    return tasks
+
+
+def _conditions(generator: _Generator, tasks: dict[str, tuple[str, str]]) -> str:
+    """The run a claim holds under, named as precisely as the document allows.
+
+    The task is what pins the conditions: it names the model — including a model the document
+    defines by overriding another, which is how one document plots two different parameter sets —
+    and the simulation. Naming the model matters for exactly that case: Figure 2B of the shipped
+    Kholodenko document is the *modified* model, and a claim that said only "task_fig2b" would
+    hide that the two figures are not the same model.
+    """
+    if not generator.task_ref:
+        return ""
+    model_ref, sim_ref = tasks.get(generator.task_ref, ("", ""))
+    if not model_ref and not sim_ref:
+        return f"task '{generator.task_ref}'"
+    return f"task '{generator.task_ref}', model '{model_ref}', simulation '{sim_ref}'"
+
+
+def enumerate_sedml_claims(sedml: str) -> tuple[DossierClaim, ...]:
+    """Enumerate the published results a SED-ML document stakes, as dossier claims.
+
+    A SED-ML document's **plots** are the document's own statement of which curves are shown
+    results, so each ``curve`` (and each ``surface`` of a ``plot3D``) becomes one targetable
+    claim: the quantity it plots, the task it holds under, and the plot and curve it came from
+    as its source location. This is the artifact-declared path to claims, distinct from reading
+    them out of manuscript prose, which is not built (see ``docs/findings-note.md``).
+
+    Two things are deliberately *not* claims:
+
+    * **The time axis.** A data generator built only from ``urn:sedml:symbol:time`` is what the
+      curve is plotted against, not something the document asserts.
+    * **A report's data sets.** A ``report`` is an export format — "write these columns" — not a
+      statement that the paper published the value. In the SED-ML BioModels ships for the
+      Kholodenko model, one report restates a plot verbatim and another dumps every symbol in the
+      model, reaction fluxes and compartment volume included. Reading those as claims would
+      manufacture seventeen results the paper never staked. A report data set that no curve plots
+      is therefore retained with ``targetable`` false rather than dropped, so a reviewer can
+      promote it as a tracked revision; one that a curve *does* plot is the claim already
+      enumerated from that curve, and is not repeated.
+
+    A document that ships only reports therefore yields no targetable claims. That is an
+    abstention, not a wrong answer: nothing in it says which of its columns the paper published.
+
+    Every claim is marked ``digitized-figure`` with no reference data, because a SED-ML document
+    says what to plot, never what values the paper's figure showed. The oracle abstains on a
+    claim with no reference rather than inventing one. Reference values shipped through a
+    ``dataDescription`` are not read yet, so a document carrying real experimental data is
+    currently marked figure-referenced like any other.
+
+    Raises ``ValueError`` if the text is not parseable SED-ML.
+    """
+    try:
+        root = ET.fromstring(sedml)
+    except ET.ParseError as exc:
+        raise ValueError(f"not parseable SED-ML: {exc}") from exc
+
+    generators = _read_generators(root)
+    tasks = _read_tasks(root)
+    claims: list[DossierClaim] = []
+    plotted: set[str] = set()
+
+    for output in root.iter():
+        kind = _localname(output.tag)
+        if kind not in ("plot2D", "plot3D"):
+            continue
+        plot_id = output.get("id") or kind
+        plot_name = output.get("name")
+        where = f"SED-ML {kind} '{plot_id}'" + (f" ({plot_name})" if plot_name else "")
+        marks = (c for c in output.iter() if _localname(c.tag) in ("curve", "surface"))
+        for index, curve in enumerate(marks):
+            # The dependent quantity is z on a surface and y on a curve; x is the axis.
+            ref = curve.get("zDataReference") or curve.get("yDataReference")
+            generator = generators.get(ref or "")
+            if generator is None or generator.is_time:
+                continue
+            plotted.add(ref or "")
+            curve_id = curve.get("id") or f"{plot_id}_{_localname(curve.tag)}{index}"
+            claims.append(DossierClaim(
+                id=curve_id,
+                quantity=curve.get("name") or generator.quantity,
+                conditions=_conditions(generator, tasks),
+                source_location=f"{where}, {_localname(curve.tag)} '{curve_id}'",
+                reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+            ))
+
+    for output in root.iter():
+        if _localname(output.tag) != "report":
+            continue
+        report_id = output.get("id") or "report"
+        report_name = output.get("name")
+        where = f"SED-ML report '{report_id}'" + (f" ({report_name})" if report_name else "")
+        columns = (d for d in output.iter() if _localname(d.tag) == "dataSet")
+        for index, data_set in enumerate(columns):
+            ref = data_set.get("dataReference") or ""
+            generator = generators.get(ref)
+            if generator is None or generator.is_time or ref in plotted:
+                continue
+            set_id = data_set.get("id") or f"{report_id}_dataSet{index}"
+            claims.append(DossierClaim(
+                id=set_id,
+                quantity=data_set.get("label") or generator.quantity,
+                conditions=_conditions(generator, tasks),
+                source_location=f"{where}, dataSet '{set_id}'",
+                targetable=False,
+            ))
+
+    return tuple(claims)
+
+
+__all__ = ["SimulationRecipe", "enumerate_sedml_claims", "parse_sedml_recipes"]

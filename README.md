@@ -13,7 +13,10 @@ thirty published certificates, one checks a reconstruction against numbers read 
 tool — COBRApy, libRoadRunner, CANA — or against closed-form mathematics, re-running the same
 model file. Each certificate now says which on its own claim line. Reading a paper's claims out of
 its manuscript at scale is the piece that is not built; [`docs/findings-note.md`](docs/findings-note.md) and
-[`openspec/`](openspec/) say so in detail.
+[`openspec/`](openspec/) say so in detail. Where a paper ships a **SED-ML** document, the half of that
+job the document already did is read from it: its plots say which curves the paper shows, and those
+become the dossier's claims. Their *values* are still not there, so such a claim is figure-referenced
+and the oracle abstains — see [`docs/sedml-fast-path.md`](docs/sedml-fast-path.md).
 
 ---
 

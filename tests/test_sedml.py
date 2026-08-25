@@ -11,7 +11,7 @@ import importlib.util
 from pathlib import Path
 
 import pytest
-from reprolith import SimulationRecipe, parse_sedml_recipes
+from reprolith import ReferenceKind, SimulationRecipe, parse_sedml_recipes
 
 _SEDML = (Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.sedml").read_text(
     encoding="utf-8"
@@ -266,3 +266,161 @@ def test_a_skipped_simulation_cannot_fail_the_whole_document() -> None:
 </sedML>"""
     recipes = parse_sedml_recipes(document)
     assert [(r.task_id, r.duration, r.steps) for r in recipes] == [("t1", 10.0, 100)]
+
+
+# --- 2.2 enumerating the claims a document stakes ------------------------------------
+
+
+def test_claim_enumeration_matches_a_manual_read_of_the_shipped_document() -> None:
+    """The manual read of the BioModels SED-ML for Kholodenko: two figures, two curves each.
+
+    Figure 2A plots MAPK_PP and MAPK from the unmodified model; Figure 2B plots the same two
+    quantities from the model the document modifies. Everything else the document emits is a
+    report, and no report is a published result: two of them restate the plots, and the third
+    dumps every symbol in the model.
+    """
+    from reprolith import enumerate_sedml_claims
+
+    claims = enumerate_sedml_claims(_SEDML)
+    targetable = [c for c in claims if c.targetable]
+
+    assert [(c.quantity, c.source_location.split(",")[0]) for c in targetable] == [
+        ("MAPK_PP", "SED-ML plot2D 'plot_0' (Figure 2A)"),
+        ("MAPK", "SED-ML plot2D 'plot_0' (Figure 2A)"),
+        ("MAPK_PP", "SED-ML plot2D 'plot_1' (Figure 2B)"),
+        ("MAPK", "SED-ML plot2D 'plot_1' (Figure 2B)"),
+    ]
+    # Figure 2B is a different model from Figure 2A, and the claim says which it holds under.
+    assert targetable[0].conditions == "task 'task_fig2a', model 'kholodenko', simulation 'sim0'"
+    assert targetable[2].conditions == "task 'task_fig2b', model 'kholodenko_b', simulation 'sim1'"
+    # The document says what to plot, never what the paper's figure showed: no reference values.
+    assert all(c.reference_kind is ReferenceKind.DIGITIZED_FIGURE for c in targetable)
+    assert all(c.reference_data == () for c in targetable)
+
+    # Nothing is dropped: the seventeen columns of the auto-generated report that no curve plots
+    # are retained as non-targetable — reaction fluxes and the compartment volume included.
+    retained = [c for c in claims if not c.targetable]
+    assert [c.quantity for c in retained] == [
+        "MKKK", "MKKK_P", "MKK", "MKK_P", "MKK_PP", "MAPK_P", "uVol",
+        *[f"J{i}" for i in range(10)],
+    ]
+    assert all("report" in c.source_location for c in retained)
+
+
+def test_claims_are_uniquely_identified_and_validate_inside_a_dossier() -> None:
+    from reprolith import Dossier, enumerate_sedml_claims
+
+    claims = enumerate_sedml_claims(_SEDML)
+    assert len({c.id for c in claims}) == len(claims)
+    assert Dossier(entry="BIOMD0000000010", claims=claims).validate() == []
+
+
+def test_the_time_axis_is_not_a_claim_and_a_plotted_column_is_not_repeated() -> None:
+    """Time is what a curve is plotted against; a report column a curve plots is that curve."""
+    from reprolith import enumerate_sedml_claims
+
+    document = """<?xml version="1.0" encoding="UTF-8"?>
+<sedML xmlns="http://sed-ml.org/sed-ml/level1/version3" level="1" version="3">
+ <listOfTasks><task id="t1" modelReference="m1" simulationReference="s1"/></listOfTasks>
+ <listOfDataGenerators>
+  <dataGenerator id="g_time" name="t/60">
+   <listOfVariables><variable id="v" symbol="urn:sedml:symbol:time" taskReference="t1"/></listOfVariables>
+  </dataGenerator>
+  <dataGenerator id="g_S1">
+   <listOfVariables><variable id="w" target="/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species[@id='S1']" taskReference="t1"/></listOfVariables>
+  </dataGenerator>
+ </listOfDataGenerators>
+ <listOfOutputs>
+  <plot2D id="p1" name="Figure 1">
+   <listOfCurves><curve id="c1" name="S1" xDataReference="g_time" yDataReference="g_S1"/></listOfCurves>
+  </plot2D>
+  <report id="r1">
+   <listOfDataSets>
+    <dataSet id="d_time" label="Time" dataReference="g_time"/>
+    <dataSet id="d_S1" label="S1" dataReference="g_S1"/>
+   </listOfDataSets>
+  </report>
+ </listOfOutputs>
+</sedML>"""
+    assert [(c.id, c.targetable) for c in enumerate_sedml_claims(document)] == [("c1", True)]
+
+
+def test_a_report_only_document_abstains_rather_than_inventing_targets() -> None:
+    """Nothing in a report says which of its columns the paper published, so none is a target."""
+    from reprolith import enumerate_sedml_claims
+
+    document = """<?xml version="1.0" encoding="UTF-8"?>
+<sedML xmlns="http://sed-ml.org/sed-ml/level1/version3" level="1" version="3">
+ <listOfTasks><task id="t1" modelReference="m1" simulationReference="s1"/></listOfTasks>
+ <listOfDataGenerators>
+  <dataGenerator id="g_S1">
+   <listOfVariables><variable id="w" target="/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species[@id='S1']" taskReference="t1"/></listOfVariables>
+  </dataGenerator>
+ </listOfDataGenerators>
+ <listOfOutputs>
+  <report id="r1" name="Table 1">
+   <listOfDataSets><dataSet id="d_S1" label="S1" dataReference="g_S1"/></listOfDataSets>
+  </report>
+ </listOfOutputs>
+</sedML>"""
+    claims = enumerate_sedml_claims(document)
+    assert [(c.id, c.targetable) for c in claims] == [("d_S1", False)]
+    assert claims[0].source_location == "SED-ML report 'r1' (Table 1), dataSet 'd_S1'"
+
+
+def test_a_plot3d_surface_is_a_claim_about_its_dependent_quantity() -> None:
+    """A surface's z is the quantity; reading its y would report the second axis as the result."""
+    from reprolith import enumerate_sedml_claims
+
+    document = """<?xml version="1.0" encoding="UTF-8"?>
+<sedML xmlns="http://sed-ml.org/sed-ml/level1/version3" level="1" version="3">
+ <listOfTasks><task id="t1" modelReference="m1" simulationReference="s1"/></listOfTasks>
+ <listOfDataGenerators>
+  <dataGenerator id="g_x"><listOfVariables><variable id="a" symbol="urn:sedml:symbol:time" taskReference="t1"/></listOfVariables></dataGenerator>
+  <dataGenerator id="g_y"><listOfVariables><variable id="b" target="/sbml:sbml/sbml:model/sbml:listOfParameters/sbml:parameter[@id='k']" taskReference="t1"/></listOfVariables></dataGenerator>
+  <dataGenerator id="g_z"><listOfVariables><variable id="c" target="/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species[@id='S1']" taskReference="t1"/></listOfVariables></dataGenerator>
+ </listOfDataGenerators>
+ <listOfOutputs>
+  <plot3D id="p3" name="Figure 4">
+   <listOfSurfaces>
+    <surface id="s1" xDataReference="g_x" yDataReference="g_y" zDataReference="g_z"/>
+   </listOfSurfaces>
+  </plot3D>
+ </listOfOutputs>
+</sedML>"""
+    claim = enumerate_sedml_claims(document)[0]
+    assert (claim.id, claim.quantity, claim.targetable) == ("s1", "S1", True)
+    assert claim.source_location == "SED-ML plot3D 'p3' (Figure 4), surface 's1'"
+
+
+def test_unparseable_sedml_is_rejected_by_the_claim_reader_too() -> None:
+    from reprolith import enumerate_sedml_claims
+
+    with pytest.raises(ValueError, match="not parseable SED-ML"):
+        enumerate_sedml_claims("<sedML>")
+
+
+def test_a_curve_mixing_time_with_a_species_is_still_a_claim_about_the_species() -> None:
+    """Only a generator built from nothing but time is the axis; S1/t asserts something about S1."""
+    from reprolith import enumerate_sedml_claims
+
+    document = """<?xml version="1.0" encoding="UTF-8"?>
+<sedML xmlns="http://sed-ml.org/sed-ml/level1/version3" level="1" version="3">
+ <listOfTasks><task id="t1" modelReference="m1" simulationReference="s1"/></listOfTasks>
+ <listOfDataGenerators>
+  <dataGenerator id="g_x"><listOfVariables><variable id="a" symbol="urn:sedml:symbol:time" taskReference="t1"/></listOfVariables></dataGenerator>
+  <dataGenerator id="g_rate" name="S1 per unit time">
+   <listOfVariables>
+    <variable id="b" symbol="urn:sedml:symbol:time" taskReference="t1"/>
+    <variable id="c" target="/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species[@id='S1']" taskReference="t1"/>
+   </listOfVariables>
+  </dataGenerator>
+ </listOfDataGenerators>
+ <listOfOutputs>
+  <plot2D id="p1"><listOfCurves>
+   <curve id="c1" xDataReference="g_x" yDataReference="g_rate"/>
+  </listOfCurves></plot2D>
+ </listOfOutputs>
+</sedML>"""
+    claim = enumerate_sedml_claims(document)[0]
+    assert (claim.id, claim.quantity) == ("c1", "S1")
