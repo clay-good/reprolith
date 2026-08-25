@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import re
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .dossier import DossierClaim
 from .oracle import ReferenceKind
@@ -236,20 +236,59 @@ def _read_generators(root: ET.Element) -> dict[str, _Generator]:
     return generators
 
 
-def _read_tasks(root: ET.Element) -> dict[str, tuple[str, str]]:
-    tasks: dict[str, tuple[str, str]] = {}
+@dataclass(frozen=True)
+class _Task:
+    """What a task runs: its model and simulation, and the range it repeats over, if any."""
+
+    model_ref: str
+    sim_ref: str
+    #: The ``range`` a ``repeatedTask`` scans, empty for a plain task. A curve plotted from a
+    #: scanning task is one arm of several runs at several parameter values, which is part of the
+    #: conditions the claim holds under — and the reason no recipe is adopted for it.
+    repeated_over: str = ""
+    #: The task a ``repeatedTask`` wraps, so its model and simulation can be resolved after the
+    #: whole document is read (a subtask may be declared after the task that wraps it).
+    wraps: str = ""
+
+
+def _read_tasks(root: ET.Element) -> dict[str, _Task]:
+    tasks: dict[str, _Task] = {}
     for element in root.iter():
-        if _localname(element.tag) != "task":
+        kind = _localname(element.tag)
+        if kind not in ("task", "repeatedTask"):
             continue
         task_id = element.get("id")
-        if task_id:
-            tasks[task_id] = (
-                element.get("modelReference") or "", element.get("simulationReference") or ""
+        if not task_id:
+            continue
+        if kind == "task":
+            tasks[task_id] = _Task(
+                model_ref=element.get("modelReference") or "",
+                sim_ref=element.get("simulationReference") or "",
             )
+            continue
+        subtasks = [c for c in element.iter() if _localname(c.tag) == "subTask"]
+        tasks[task_id] = _Task(
+            model_ref="",
+            sim_ref="",
+            repeated_over=element.get("range") or "",
+            wraps=(subtasks[0].get("task") or "") if len(subtasks) == 1 else "",
+        )
+
+    # A repeated task runs whatever its subtask runs, so it inherits that task's model and
+    # simulation. Resolved after the whole document is read, and only through tasks already seen,
+    # so a cycle terminates instead of looping.
+    for task_id, task in tasks.items():
+        seen = {task_id}
+        current = task
+        while current.wraps and current.wraps in tasks and current.wraps not in seen:
+            seen.add(current.wraps)
+            current = tasks[current.wraps]
+        if current is not task:
+            tasks[task_id] = replace(task, model_ref=current.model_ref, sim_ref=current.sim_ref)
     return tasks
 
 
-def _conditions(generator: _Generator, tasks: dict[str, tuple[str, str]]) -> str:
+def _conditions(generator: _Generator, tasks: dict[str, _Task]) -> str:
     """The run a claim holds under, named as precisely as the document allows.
 
     The task is what pins the conditions: it names the model — including a model the document
@@ -260,10 +299,15 @@ def _conditions(generator: _Generator, tasks: dict[str, tuple[str, str]]) -> str
     """
     if not generator.task_ref:
         return ""
-    model_ref, sim_ref = tasks.get(generator.task_ref, ("", ""))
-    if not model_ref and not sim_ref:
-        return f"task '{generator.task_ref}'"
-    return f"task '{generator.task_ref}', model '{model_ref}', simulation '{sim_ref}'"
+    task = tasks.get(generator.task_ref)
+    named = f"task '{generator.task_ref}'"
+    if task is None:
+        return named
+    if task.repeated_over:
+        named += f" (repeated over range '{task.repeated_over}')"
+    if not task.model_ref and not task.sim_ref:
+        return named
+    return f"{named}, model '{task.model_ref}', simulation '{task.sim_ref}'"
 
 
 def sedml_model_sources(sedml: str) -> tuple[str, ...]:

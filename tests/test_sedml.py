@@ -424,3 +424,54 @@ def test_a_curve_mixing_time_with_a_species_is_still_a_claim_about_the_species()
 </sedML>"""
     claim = enumerate_sedml_claims(document)[0]
     assert (claim.id, claim.quantity) == ("c1", "S1")
+
+
+def test_a_curve_from_a_scanning_task_says_so_in_its_conditions() -> None:
+    """The metformin document's 81 plotted curves are all arms of one range scan.
+
+    Named only as `task 'task2'`, a claim from a scan is indistinguishable from a claim from a
+    single run — and the scan is precisely why no recipe is adopted for it. The repeated task
+    also inherits the model and simulation of the task it wraps, which is what it runs.
+    """
+    from reprolith import enumerate_sedml_claims
+
+    document = """<?xml version="1.0" encoding="UTF-8"?>
+<sedML xmlns="http://sed-ml.org/sed-ml/level1/version3" level="1" version="3">
+ <listOfTasks>
+  <task id="t1" modelReference="m1" simulationReference="s1"/>
+  <repeatedTask id="scan" range="doses" resetModel="true">
+   <listOfRanges><vectorRange id="doses"><value>500</value><value>1000</value></vectorRange></listOfRanges>
+   <listOfSubTasks><subTask order="1" task="t1"/></listOfSubTasks>
+  </repeatedTask>
+ </listOfTasks>
+ <listOfDataGenerators>
+  <dataGenerator id="g_x"><listOfVariables><variable id="a" symbol="urn:sedml:symbol:time" taskReference="scan"/></listOfVariables></dataGenerator>
+  <dataGenerator id="g_C"><listOfVariables><variable id="b" target="/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species[@id='C']" taskReference="scan"/></listOfVariables></dataGenerator>
+ </listOfDataGenerators>
+ <listOfOutputs>
+  <plot2D id="p1" name="Figure 3"><listOfCurves>
+   <curve id="c1" name="C" xDataReference="g_x" yDataReference="g_C"/>
+  </listOfCurves></plot2D>
+ </listOfOutputs>
+</sedML>"""
+    claim = enumerate_sedml_claims(document)[0]
+    assert claim.conditions == (
+        "task 'scan' (repeated over range 'doses'), model 'm1', simulation 's1'"
+    )
+
+
+def test_the_shipped_metformin_document_enumerates_as_a_scan() -> None:
+    """A second real document, from a different tool: every plotted curve is one scan arm."""
+    from reprolith import enumerate_sedml_claims
+
+    metformin = (
+        Path(__file__).parent.parent / "datasets" / "worked_examples"
+        / "Zake2021_metformin_human_single_PO.sedml"
+    ).read_text(encoding="utf-8")
+    claims = enumerate_sedml_claims(metformin)
+    targetable = [c for c in claims if c.targetable]
+
+    assert len(targetable) == 81
+    assert all("repeated over range 'range0'" in c.conditions for c in targetable)
+    assert all(c.reference_kind is ReferenceKind.DIGITIZED_FIGURE for c in targetable)
+    assert len({c.id for c in claims}) == len(claims)

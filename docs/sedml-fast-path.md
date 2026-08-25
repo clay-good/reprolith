@@ -53,6 +53,12 @@ location. `ingest_sbml(sbml, entry=..., sedml=...)` attaches them, so a paper th
 gets a dossier with structure *and* targets; without the document it gets structure and no claims,
 because this path never reads the manuscript.
 
+A claim records the task it holds under, and a task that *scans* says so: the metformin document
+shipped in [`datasets/worked_examples/`](../datasets/worked_examples/) plots 81 curves, every one of
+them an arm of one range scan, and a claim reading only `task 'task2'` would be indistinguishable
+from a claim about a single run — which is also precisely why no recipe is adopted for it. A
+repeated task inherits the model and simulation of the task it wraps, because that is what it runs.
+
 Two things are deliberately not claims:
 
 | Not a claim | Why |
