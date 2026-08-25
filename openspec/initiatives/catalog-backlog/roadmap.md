@@ -61,7 +61,8 @@ a change under `openspec/changes/`.
 
 ### 4. SED-ML / OMEX adopt-and-verify fast-path
 
-- **Type:** capability
+- **Type:** capability *(intake landed: recipes, claims, and archive reading in `paper-ingestion`;
+  emitting an archive and surfacing archive-vs-manuscript mismatches are not built)*
 - **Why (value):** When a paper ships an executable simulation recipe and archive, reproduction
   is mostly "run it and check" — the highest certificate yield per unit effort, across every
   class at once. Also the cleanest momentum builder.

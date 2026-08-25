@@ -148,6 +148,7 @@ from .model import (
     PaperIdentity,
     RunMetadata,
 )
+from .omex import ingest_omex
 from .oracle import (
     Attribution,
     ComparisonMethod,
@@ -214,7 +215,12 @@ from .sbml import (
 )
 from .scope import Scope
 from .screening import Candidate, Screening, ScreeningResult, screen_candidate, storable_content
-from .sedml import SimulationRecipe, enumerate_sedml_claims, parse_sedml_recipes
+from .sedml import (
+    SimulationRecipe,
+    enumerate_sedml_claims,
+    parse_sedml_recipes,
+    sedml_model_sources,
+)
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
 from .spatial import (
     SpatialClaim,
@@ -368,6 +374,7 @@ __all__ = [
     "IllegalTransition",
     "InfeasibleFba",
     "ingest_fbc_sbml",
+    "ingest_omex",
     "ingest_qual_sbml",
     "ingest_sbml",
     "ingest_stochastic_sbml",
@@ -454,6 +461,7 @@ __all__ = [
     "Screening",
     "ScreeningResult",
     "search_protocol",
+    "sedml_model_sources",
     "seed_candidates",
     "seed_catalog",
     "SeedingReport",

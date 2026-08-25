@@ -73,3 +73,26 @@ plot; it never says what values the paper's figure showed, and the oracle abstai
 no reference rather than inventing one. That is the same wall
 [the findings note](findings-note.md) describes: the document closes the "which results are there"
 half of claim extraction, and leaves the "what values were shown" half where it was.
+
+## The archive around it
+
+A paper more often ships the whole experiment as a **COMBINE archive** (`.omex`): a zip whose
+`manifest.xml` says, by format URI, what each file is. `reprolith.ingest_omex(archive, entry=...)`
+reads one — path or bytes, standard library only, nothing written to disk and nothing executed —
+finds the master SED-ML and the model it runs, and returns the dossier: model structure from the
+SBML, claims from the document's plots. Every member is recorded as an artifact with the format the
+manifest gives it, including files ingestion does not read, and a member the manifest never lists
+is recorded as `unlisted` rather than dropped.
+
+It refuses rather than guesses, each refusal naming the ambiguity:
+
+| Refused | Why |
+| --- | --- |
+| A zip with no `manifest.xml` | The manifest is what makes a zip an archive; without it nothing says what each file is. |
+| Several SED-ML documents with none marked master | Which experiment the paper ran is the archive's to say. |
+| An experiment that runs more than one model file | A dossier is the extraction of one model. |
+| An experiment or model the manifest lists but the archive does not contain | The archive is incomplete; the missing file is named. |
+| No experiment and more than one model | With no experiment to name the model, nothing says what the dossier is of. |
+
+An archive that ships a model and no experiment is not a refusal: it yields structure and no
+claims, for the same reason a bare SBML does.

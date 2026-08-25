@@ -266,6 +266,27 @@ def _conditions(generator: _Generator, tasks: dict[str, tuple[str, str]]) -> str
     return f"task '{generator.task_ref}', model '{model_ref}', simulation '{sim_ref}'"
 
 
+def sedml_model_sources(sedml: str) -> tuple[str, ...]:
+    """The model *files* a SED-ML document references, in document order, without repeats.
+
+    A model the document defines by overriding another names ``source="#base"`` — a reference to
+    a model inside the document, not a file — so it contributes the file its base already names
+    and nothing more. Used to find the model inside a COMBINE archive; raises ``ValueError`` if
+    the text is not parseable SED-ML.
+    """
+    try:
+        root = ET.fromstring(sedml)
+    except ET.ParseError as exc:
+        raise ValueError(f"not parseable SED-ML: {exc}") from exc
+
+    sources = [
+        element.get("source", "")
+        for element in root.iter()
+        if _localname(element.tag) == "model"
+    ]
+    return tuple(dict.fromkeys(s for s in sources if s and not s.startswith("#")))
+
+
 def enumerate_sedml_claims(sedml: str) -> tuple[DossierClaim, ...]:
     """Enumerate the published results a SED-ML document stakes, as dossier claims.
 
@@ -357,4 +378,9 @@ def enumerate_sedml_claims(sedml: str) -> tuple[DossierClaim, ...]:
     return tuple(claims)
 
 
-__all__ = ["SimulationRecipe", "enumerate_sedml_claims", "parse_sedml_recipes"]
+__all__ = [
+    "SimulationRecipe",
+    "enumerate_sedml_claims",
+    "parse_sedml_recipes",
+    "sedml_model_sources",
+]
