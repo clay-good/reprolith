@@ -44,6 +44,18 @@ are exactly what the oracle will check.
 - **AND** results that cannot serve as a reproduction target (purely schematic figures,
   cartoons) are marked as non-targetable rather than dropped
 
+#### Scenario: Claims from a shipped simulation document
+
+- **WHEN** the paper ships a simulation document (SED-ML) alongside its model
+- **THEN** each curve the document *plots* is recorded as a claim, since a plot is the
+  document's own statement that this is a shown result
+- **AND** the independent axis is not recorded as a claim, and a report's data sets are not
+  recorded as claims — a report is an export format, not a statement that the paper published
+  the value — but a reported column no plot shows is retained as non-targetable rather than
+  dropped
+- **AND** a document that ships only reports yields no targetable claims, because nothing in it
+  says which of its columns the paper published
+
 #### Scenario: Reference data for a claim
 
 - **WHEN** the paper provides the numeric values behind a claim (a data table, digitized
@@ -88,6 +100,26 @@ what it has to work with.
 - **THEN** ingestion records both the original stated unit and a normalized canonical unit,
   keeping the original for provenance
 - **AND** an unstated or ambiguous unit is recorded as a gap, never coerced silently
+
+#### Scenario: Recognizing a shipped archive
+
+- **WHEN** the paper ships a COMBINE archive
+- **THEN** ingestion reads its manifest, ingests the model its master simulation document runs,
+  and records every file the archive ships as an artifact with the format the manifest gives it
+- **AND** a file the manifest lists but the archive does not contain is recorded as a gap, not as
+  an artifact, since the paper does not in fact ship it
+- **AND** an archive that does not single out one experiment, or whose experiment runs more than
+  one model file, is refused with the ambiguity named rather than resolved by choosing one
+
+#### Scenario: The experiment and the model must agree
+
+- **WHEN** a shipped simulation document refers to a model element the model does not have —
+  an observed variable, or the target of a parameter override
+- **THEN** the mismatch is recorded as a load-bearing gap
+- **AND** the check resolves each reference by its nesting in the model, so an override aimed at
+  the right name inside the wrong parent is reported rather than accepted
+- **AND** a reference ingestion cannot resolve is left unreported, because failing to resolve a
+  reference is not evidence that the model lacks the element
 
 ### Requirement: Ingestion is inspectable and revisable
 
