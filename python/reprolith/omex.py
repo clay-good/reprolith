@@ -141,6 +141,11 @@ def _resolves_in(model_root: ET.Element, target: str) -> bool | None:
     a mismatch it did not establish.
     """
     path = target.split("/@", 1)[0]  # `.../parameter[@id='n']/@value` selects the parameter
+    if "//" in path:
+        # A descendant axis. Walking direct children cannot answer it, and answering `False`
+        # would report a model element that is there as missing — `//sbml:species[@id='MAPK_PP']`
+        # against the document's own model did exactly that before this line.
+        return None
     steps = [step for step in path.split("/") if step]
     if not steps:
         return None
@@ -153,9 +158,9 @@ def _resolves_in(model_root: ET.Element, target: str) -> bool | None:
 
     root_name, root_id = parsed[0]
     if _localname(model_root.tag) != root_name:
-        return False
+        return None  # not anchored at the document root: unresolvable here, not absent
     if root_id is not None and model_root.get("id") != root_id:
-        return False
+        return None
     current = model_root
     for name, element_id in parsed[1:]:
         for child in current:
@@ -214,9 +219,10 @@ def archive_mismatches(sedml: str, sbml: str) -> list[str]:
     element from one named ``n`` inside ``J1``, and an override aimed at the wrong reaction is
     exactly the kind of mismatch this exists to catch.
 
-    Not checked, rather than guessed at: a target selecting on any attribute other than ``id``, or
-    using an axis or function this resolver does not read. Those are left unreported — a target
-    this cannot resolve is not evidence that the model lacks the element. Neither is the SED-ML's
+    Not checked, rather than guessed at: a target selecting on any attribute other than ``id``,
+    one using a descendant axis or a function this resolver does not read, and one not anchored at
+    the model document's root. Those are left unreported — a target this cannot resolve is not
+    evidence that the model lacks the element, and reporting one accuses a correct archive. Neither is the SED-ML's
     own well-formedness beyond its targets, nor anything about the manuscript, which is not read.
 
     Raises ``ValueError`` if either document is not parseable XML.

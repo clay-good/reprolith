@@ -120,9 +120,10 @@ at the wrong reaction is caught rather than waved through. `ingest_omex` runs th
 each mismatch as a load-bearing gap: it is missing from the archive, and it changes what a run
 produces.
 
-A target selecting on any attribute other than `id`, or using an axis or function the resolver
-does not read, is left unreported — not resolving a path is not evidence that the model lacks the
-element.
+A target selecting on any attribute other than `id`, one using a descendant axis (`//species[...]`)
+or a function the resolver does not read, and one not anchored at the model document's root are all
+left unreported — not resolving a path is not evidence that the model lacks the element, and
+reporting one accuses a correct archive.
 
 ## One archive in, one certificate out
 

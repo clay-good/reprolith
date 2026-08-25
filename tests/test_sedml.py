@@ -475,3 +475,18 @@ def test_the_shipped_metformin_document_enumerates_as_a_scan() -> None:
     assert all("repeated over range 'range0'" in c.conditions for c in targetable)
     assert all(c.reference_kind is ReferenceKind.DIGITIZED_FIGURE for c in targetable)
     assert len({c.id for c in claims}) == len(claims)
+
+
+def test_the_published_worked_example_pair_agrees_with_itself() -> None:
+    """The repository publishes a model and a document side by side; they must still match.
+
+    Nothing else checks the pair Reprolith ships as its own walkable example, so an edit to
+    either file could rename a species out from under 81 plotted curves and no gate would say so.
+    """
+    from reprolith.omex import archive_mismatches
+
+    examples = Path(__file__).parent.parent / "datasets" / "worked_examples"
+    sedml = (examples / "Zake2021_metformin_human_single_PO.sedml").read_text(encoding="utf-8")
+    sbml = (examples / "Zake2021_metformin_human_single_PO.xml").read_text(encoding="utf-8")
+
+    assert archive_mismatches(sedml, sbml) == []

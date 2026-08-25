@@ -312,3 +312,28 @@ def test_a_member_stored_with_a_leading_dot_slash_is_the_same_file() -> None:
     dossier = ingest_omex(archive, entry="BIOMD0000000010")
     assert len(dossier.targetable_claims()) == 4
     assert "unlisted" not in {a.detected_format for a in dossier.artifacts}
+
+
+def test_a_descendant_axis_target_is_unresolvable_not_missing() -> None:
+    """`//sbml:species[@id='MAPK_PP']` names a species the model *has*.
+
+    Walking direct children cannot answer a descendant axis, and answering "absent" accuses a
+    correct archive — the failure this check's own contract says it must not make.
+    """
+    from reprolith import archive_mismatches
+
+    short = _SEDML.replace(
+        f"/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species[@id={_APOS}MAPK_PP{_APOS}]",
+        f"//sbml:species[@id={_APOS}MAPK_PP{_APOS}]",
+    )
+    assert short != _SEDML
+    assert archive_mismatches(short, _SBML) == []
+
+
+def test_a_target_anchored_somewhere_else_is_unresolvable_not_missing() -> None:
+    """A path that does not start at the model document cannot be walked from its root."""
+    from reprolith import archive_mismatches
+
+    elsewhere = _SEDML.replace("/sbml:sbml/sbml:model/sbml:listOfSpecies/", "sbml:model/sbml:listOfSpecies/")
+    assert elsewhere != _SEDML
+    assert archive_mismatches(elsewhere, _SBML) == []

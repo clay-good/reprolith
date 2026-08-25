@@ -19,6 +19,10 @@ a phase done until its verification holds.
 ## 2. Ingestion (PK/PD dossier)
 
 - [ ] 2.1 Produce a PK/PD dossier: compartment structure, rate expressions, PD link, parameters+units, initial conditions, dosing → verify: on a hand-checked paper, every element cites a source location
+  - Partly done: `ingest_sbml` / `ingest_omex` produce this from a *shipped artifact*, every
+    element citing the file it came from. Reading compartment structure, the PD link, and the
+    dosing protocol out of manuscript prose is not built; the metformin worked example did it
+    by hand.
 - [ ] 2.2 Enumerate targetable claims (curves and reported metrics) with reference data or figure-reference marking → verify: claim count and types match a manual read
   - Partly done: a shipped SED-ML document's plots are enumerated as claims and its reports are
     retained non-targetable (`enumerate_sedml_claims`), verified against a manual read of the
@@ -26,6 +30,10 @@ a phase done until its verification holds.
     the document says what to plot, not what the figure showed, so every claim is
     figure-referenced. Reading claims from manuscript prose is still not built.
 - [ ] 2.3 Record gaps and extraction-confidence; never fill gaps at this stage → verify: a paper with a missing parameter yields a gap, not a value
+  - Partly done for the same reason. On the artifact path a symbol no declaration covers, an
+    unstated unit, an unstated initial value, and a construct the dossier cannot represent are
+    all recorded as gaps and never filled (`tests/test_ingest.py`), and every extraction carries
+    its confidence. The manuscript path that would find a parameter a *paper* omits is not built.
 - [x] 2.4 Support reviewer correction as a tracked revision → verify: a correction is applied and the original remains retrievable
 
 ## 3. Reconstruction (PK/PD)
