@@ -697,3 +697,18 @@ def test_a_claim_with_no_reported_profile_abstains_like_its_sibling_front_end() 
     # The sibling claim is still judged: the abstention costs one claim, not the certificate.
     assert judged.verdict is not Verdict.NOT_EVALUABLE
     assert certificate.overall is not OverallVerdict.BLOCKED
+
+
+def test_a_zero_step_claim_still_raises_even_with_no_reference() -> None:
+    """Two malformed things at once: the caller's bug wins, it is not published as an abstention."""
+    import pytest as _pytest
+    from reprolith import PaperIdentity
+    from reprolith.spatial import SpatialClaim, certify_spatial, solver_pin
+
+    with _pytest.raises(ValueError, match="at least one step"):
+        certify_spatial(
+            paper=PaperIdentity(title="t", doi=""), engine_pin=solver_pin(),
+            claims=[SpatialClaim(claim_id="c", quantity="profile", initial=(1.0, 0.0, 0.0, 0.0),
+                                 reference=(), source_location="Fig 3", diffusivity=0.1,
+                                 dx=1.0, dt=0.2, steps=0)],
+        )

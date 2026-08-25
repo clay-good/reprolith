@@ -670,12 +670,21 @@ def certify_spatial(
     assessments = []
     qualified = []
     for claim in claims:
+        if claim.steps < 1:
+            raise ValueError(
+                f"claim {claim.claim_id!r} asks for {claim.steps} steps: a spatial claim must "
+                "evolve the profile by at least one step to be evidence about the model"
+            )
         if not claim.reference:
             # No reported profile to compare against — abstain rather than run and judge against
             # nothing. `certify_curves` answers the same input the same way; before this, the two
             # front-ends over the same oracle disagreed about a reference-less claim, one abstaining
             # and one raising out of the whole certificate. NUMERIC because this class states no
             # reference kind anywhere and its sibling abstention already says NUMERIC.
+            # Ordered *after* the step check on purpose: a claim that asks for zero steps is a
+            # caller's bug and must still raise, and checking the reference first turned a
+            # malformed claim into a published abstention — the same "a bug published as an honest
+            # abstention" shape `UnstableDiscretization` exists to prevent.
             assessments.append(not_evaluable(
                 claim_id=claim.claim_id,
                 quantity=claim.quantity,
@@ -687,11 +696,6 @@ def certify_spatial(
                 reference_kind=ReferenceKind.NUMERIC,
             ))
             continue
-        if claim.steps < 1:
-            raise ValueError(
-                f"claim {claim.claim_id!r} asks for {claim.steps} steps: a spatial claim must "
-                "evolve the profile by at least one step to be evidence about the model"
-            )
         try:
             predicted = diffuse_1d(
                 claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
