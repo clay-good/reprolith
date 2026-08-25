@@ -295,3 +295,20 @@ def test_an_inconsistent_archive_records_the_mismatch_as_a_load_bearing_gap() ->
     # The healthy pair records no such gap.
     healthy = ingest_omex(_kholodenko_archive(), entry="BIOMD0000000010")
     assert [g for g in healthy.gaps if "which the model does not have" in g.detail] == []
+
+
+def test_a_member_stored_with_a_leading_dot_slash_is_the_same_file() -> None:
+    """Zips and manifests write `./model.xml` and `model.xml` interchangeably."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+
+    archive = _archive({
+        "./manifest.xml": _manifest(
+            ("BIOMD0000000010_url.xml", f"{_SPEC}sbml", False),
+            ("./BIOMD0000000010.sedml", f"{_SPEC}sed-ml", True),
+        ),
+        "./BIOMD0000000010_url.xml": _SBML,
+        "BIOMD0000000010.sedml": _SEDML,
+    })
+    dossier = ingest_omex(archive, entry="BIOMD0000000010")
+    assert len(dossier.targetable_claims()) == 4
+    assert "unlisted" not in {a.detected_format for a in dossier.artifacts}

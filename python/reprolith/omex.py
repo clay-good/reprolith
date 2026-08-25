@@ -56,10 +56,16 @@ def _format_name(format_uri: str) -> str:
     return format_uri[len(_COMBINE_SPECIFICATIONS):].split(".")[0]
 
 
-def _read_manifest(archive: zipfile.ZipFile) -> list[tuple[str, str, bool]]:
-    """The manifest's contents as ``(location, format name, master)``, in manifest order."""
+def _read_manifest(
+    archive: zipfile.ZipFile, stored: dict[str, str]
+) -> list[tuple[str, str, bool]]:
+    """The manifest's contents as ``(location, format name, master)``, in manifest order.
+
+    ``stored`` maps each member's normalized name to the name the zip stores it under, so a
+    manifest written as ``./manifest.xml`` and one written as ``manifest.xml`` both resolve.
+    """
     try:
-        manifest = archive.read("manifest.xml")
+        manifest = archive.read(stored["manifest.xml"])
     except KeyError:
         raise ValueError(
             "not a COMBINE archive: no manifest.xml at the archive root. A zip of model files "
@@ -243,9 +249,13 @@ def ingest_omex(archive: str | os.PathLike[str] | bytes, *, entry: str) -> Dossi
     handle = io.BytesIO(archive) if isinstance(archive, bytes) else archive
     try:
         with zipfile.ZipFile(handle) as zf:
-            contents = _read_manifest(zf)
+            # A zip may store the same file as `model.xml` or `./model.xml`, and a manifest may
+            # write the location either way. Both are the same member, so lookups go through the
+            # normalized name and reads go through the name the zip actually stores.
+            stored = {_normalize(member): member for member in zf.namelist()}
+            members = set(stored)
+            contents = _read_manifest(zf, stored)
             experiment = _choose_experiment(contents)
-            members = zf.namelist()
 
             sedml_text: str | None = None
             if experiment is not None:
@@ -254,7 +264,7 @@ def ingest_omex(archive: str | os.PathLike[str] | bytes, *, entry: str) -> Dossi
                         f"the archive's manifest lists the experiment '{experiment}', "
                         "but the archive does not contain it"
                     )
-                sedml_text = zf.read(experiment).decode("utf-8")
+                sedml_text = zf.read(stored[experiment]).decode("utf-8")
                 sources = sedml_model_sources(sedml_text)
                 resolved = tuple(dict.fromkeys(_resolve(s, relative_to=experiment) for s in sources))
                 if len(resolved) != 1:
@@ -285,7 +295,7 @@ def ingest_omex(archive: str | os.PathLike[str] | bytes, *, entry: str) -> Dossi
                         "but the archive does not contain it"
                     )
 
-            model_text = zf.read(model_location).decode("utf-8")
+            model_text = zf.read(stored[model_location]).decode("utf-8")
     except zipfile.BadZipFile as exc:
         raise ValueError(f"not a readable COMBINE archive: {exc}") from exc
     except UnicodeDecodeError as exc:
@@ -311,7 +321,7 @@ def ingest_omex(archive: str | os.PathLike[str] | bytes, *, entry: str) -> Dossi
         if location in members
     ) + tuple(
         ingested.get(member) or ModelArtifact(filename=member, detected_format="unlisted")
-        for member in members
+        for member in sorted(members)
         if member not in listed and member != "manifest.xml" and not member.endswith("/")
     )
     # A file the manifest promises and the archive does not ship is missing from the source, so it
