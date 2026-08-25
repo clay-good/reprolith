@@ -121,6 +121,27 @@ def require_distinct_assumption_ids(assumptions: Sequence[Assumption]) -> None:
         seen.add(assumption.id)
 
 
+def require_distinct_claim_ids(assessments: Sequence[ClaimAssessment]) -> None:
+    """Refuse two assessments sharing a claim id: one of them cannot be addressed.
+
+    The same argument as :func:`require_distinct_assumption_ids`, and with a demonstrated
+    consequence. A claim id is how a claim is referred to — by the gap report, by an agent
+    recording an outcome against it, by a reader tracing a verdict back to a figure. The gap
+    report resolves an estimation claim by looking its id up among the assessments, so under two
+    claims sharing one id it emitted the first claim's row twice and dropped the second's
+    shortfall entirely: a published "what was missing" report missing exactly one of the things
+    that was missing.
+    """
+    seen = set()
+    for assessment in assessments:
+        if assessment.claim_id in seen:
+            raise ValueError(
+                f"claim id {assessment.claim_id!r} appears twice; a claim a verdict is published "
+                "against has to be identifiable, so give each one its own id"
+            )
+        seen.add(assessment.claim_id)
+
+
 def require_readable_gap_notes(gap_report: Sequence[str]) -> tuple[str, ...]:
     """Refuse a "what was missing" note that is not readable text.
 
@@ -211,6 +232,7 @@ def build_certificate(
     frozen_assumptions = tuple(assumptions)
     require_stated_protocol(frozen_assessments)
     require_stated_cause(frozen_assessments)
+    require_distinct_claim_ids(frozen_assessments)
     require_distinct_assumption_ids(frozen_assumptions)
     require_reprolith_attribution(frozen_assumptions)
     frozen_gaps = require_readable_gap_notes(gap_report)

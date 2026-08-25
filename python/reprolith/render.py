@@ -93,8 +93,12 @@ def gap_items(cert: Certificate) -> list[dict[str, Any]]:
                 "needs": needs,
             }
         )
-    for claim_id in estimation_claims(cert):
-        a = next(x for x in cert.assessments if x.claim_id == claim_id)
+    for a in cert.assessments:
+        # Walked directly rather than resolved by id. Ids are unique — `build_certificate` and the
+        # load path both refuse a repeat — but a lookup that assumes it silently answers the first
+        # match, and this loop is the one place a claim's row is fetched by id rather than iterated.
+        if a.level is not ReproductionLevel.ESTIMATION:
+            continue
         if a.verdict is not Verdict.REPRODUCED:
             continue  # already listed above with its own shortfall
         items.append(

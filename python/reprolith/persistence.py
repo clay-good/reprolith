@@ -17,6 +17,7 @@ from typing import Any
 from .certificate import (
     derive_overall,
     require_distinct_assumption_ids,
+    require_distinct_claim_ids,
     require_readable_gap_notes,
     require_reprolith_attribution,
     require_stated_cause,
@@ -162,6 +163,7 @@ def certificate_from_content(content: dict[str, Any]) -> Certificate:
     # certificates from disk and never rebuilds them.
     require_stated_protocol(assessments)
     require_stated_cause(assessments)
+    require_distinct_claim_ids(assessments)
     require_distinct_assumption_ids(assumptions)
     require_reprolith_attribution(assumptions)
     require_readable_gap_notes(content.get("gap_report", ()))

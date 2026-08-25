@@ -224,3 +224,42 @@ def test_an_assumption_cannot_be_attributed_to_the_paper() -> None:
     content["assumptions"][0]["attributed_to"] = "Zake et al. 2021, Table 2"
     with pytest.raises(ValueError, match="can only be attributed to"):
         certificate_from_content(content)
+
+
+def test_two_claims_under_one_id_are_refused_on_both_paths() -> None:
+    """A claim a verdict is published against has to be identifiable — and one was not.
+
+    The gap report resolves an estimation claim by looking its id up among the assessments, so
+    two claims sharing an id published the first one's row twice and dropped the second's
+    shortfall: a "what was missing" report missing one of the things that was missing.
+    """
+    from reprolith import ReproductionLevel, Verdict
+    from reprolith.certificate import require_distinct_claim_ids
+    from reprolith.persistence import certificate_from_content
+
+    def assessment(quantity: str, verdict: Verdict) -> ClaimAssessment:
+        return ClaimAssessment(
+            claim_id="cl", quantity=quantity, verdict=verdict, source_location="Table 3",
+            discrepancy=None, root_cause="the re-fit did not recover the estimate",
+            level=ReproductionLevel.ESTIMATION, protocol="maximum likelihood, shipped dataset",
+        )
+
+    duplicated = [assessment("CL/F", Verdict.REPRODUCED), assessment("V/F", Verdict.FAILED)]
+    with pytest.raises(ValueError, match="claim id 'cl' appears twice"):
+        build_certificate(
+            paper=PaperIdentity(title="P", doi="10.0/dup"),
+            engine_pin=EnginePin(engine="test-engine", version="0.0.0"),
+            assessments=duplicated,
+        )
+    require_distinct_claim_ids([assessment("CL/F", Verdict.REPRODUCED)])  # one id, no complaint
+
+    # And a hand-edited file cannot smuggle the same shape back in through the load path.
+    good = build_certificate(
+        paper=PaperIdentity(title="P", doi="10.0/dup"),
+        engine_pin=EnginePin(engine="test-engine", version="0.0.0"),
+        assessments=[assessment("CL/F", Verdict.REPRODUCED)],
+    )
+    content = good.content()
+    content["assessments"].append(dict(content["assessments"][0], quantity="V/F"))
+    with pytest.raises(ValueError, match="appears twice"):
+        certificate_from_content(content)
