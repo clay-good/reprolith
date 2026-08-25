@@ -290,6 +290,7 @@ def test_a_medium_naming_an_unknown_reaction_is_surfaced_not_ignored() -> None:
         )
 
 
+@pytestmark_engine
 def test_a_load_bearing_gap_of_any_kind_qualifies_the_verdict() -> None:
     """It used to be only `MEDIUM`, so any other load-bearing gap vanished from the record.
 

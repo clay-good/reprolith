@@ -59,6 +59,19 @@ pytest -q
 
 (Spec validation uses the OpenSpec CLI: `npx @fission-ai/openspec validate --specs --strict`.)
 
+**A green run in your own environment is not the core gate.** CI runs `pytest` twice: once with only
+`.[dev]` installed — no COPASI, no libsbml, no scipy, no z3 — and once with the optional extras. A
+test that reaches an extra must skip without it, or it passes for you and fails there. Three such
+tests once left `main` red for three days, because every developer's environment had the extras. To
+check the way CI does:
+
+```bash
+python -m venv /tmp/coregate && /tmp/coregate/bin/pip install -e ".[dev]" && /tmp/coregate/bin/python -m pytest -q
+```
+
+Guard a test that needs an extra with `pytest.importorskip("libsbml", reason=...)` or the
+`skipif(importlib.util.find_spec(...) is None)` marker its neighbours already use.
+
 ## If you add a guard, measure it
 
 A guard is a claim about what cannot happen, and it is worth exactly what its measurement is worth.

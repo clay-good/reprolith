@@ -7,6 +7,8 @@ tests use small networks whose fixed points and cycles are known by hand.
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 from reprolith import (
     Attribution,
@@ -414,6 +416,10 @@ def test_certify_logical_accepts_a_generator_of_claims() -> None:
     assert len(from_generator.assessments) == len(from_list.assessments) == 1
 
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("z3") is None,
+    reason="the scalable fixed-point path needs the 'sat' extra (z3-solver)",
+)
 def test_certify_logical_refuses_a_pin_that_does_not_name_the_path_taken() -> None:
     """A pin is a claim about what ran, and nothing used to check it against what did.
 
@@ -471,6 +477,10 @@ def test_certify_logical_refuses_claims_spanning_both_paths_under_one_pin() -> N
                         engine_pin=solver_pin(), claims=claims)
 
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("z3") is None,
+    reason="the scalable fixed-point path needs the 'sat' extra (z3-solver)",
+)
 def test_solver_pin_for_reads_the_path_off_the_network_size() -> None:
     """The path is a fact about the network, so the caller never has to get `sat=` right."""
     from reprolith.logical import MAX_ENUMERABLE_NODES, solver_pin_for
