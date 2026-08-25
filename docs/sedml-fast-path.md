@@ -117,3 +117,28 @@ produces.
 A target selecting on any attribute other than `id`, or using an axis or function the resolver
 does not read, is left unreported — not resolving a path is not evidence that the model lacks the
 element.
+
+## One archive in, one certificate out
+
+Put the three pieces together and the fast-path runs end to end with no hand-written claim:
+
+```python
+dossier = ingest_omex(archive_bytes, entry="BIOMD0000000010")   # structure + claims
+recipes = {r.task_id: r for r in parse_sedml_recipes(sedml)}    # what to run, for how long
+certificate = certify_curves(sbml, paper=..., engine_pin=engine_pin(), claims=[...])
+```
+
+Nothing above says which curves to check or how long to run them; the archive says both. The only
+input still supplied by hand is the reference each curve is judged against, and for a document that
+ships no values that reference is an independent simulator re-running the same model file — stated
+on the claim line, never dressed up as the paper's own numbers.
+
+On the Kholodenko archive the honest result is a split certificate: the two curves of Figure 2A
+reproduce under the pinned engine, and the two of Figure 2B are `not-evaluable`, because the
+document runs them on a model it modifies and an adopted recipe carries no overrides.
+`tests/test_archive_end_to_end.py` walks exactly that.
+
+It is a test rather than a thirty-first published certificate on purpose. This model is already
+certified through the [kinetic milestone](../datasets/kinetic/milestone/); a second certificate for
+the same model, with a reference computed the same way, would add a registry row and no information.
+What is worth proving is that the path runs.
