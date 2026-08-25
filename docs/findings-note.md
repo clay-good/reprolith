@@ -68,6 +68,15 @@ Two findings, both from real data:
    abstains. Figure digitization remains the constraint; the document removes the guesswork about
    *which* results a reproduction should be aiming at.
 
+   Measured on Reprolith's own flagship example, the gap between the two halves is wide. The
+   metformin PBPK model ships a SED-ML document beside it, and that document declares **81 plotted
+   curves** across three figures — every compartment's amount, every concentration, every reaction
+   flux. The published certificate checks **two** of the paper's claims, the two plasma Cmax values
+   its table reports. Nothing is wrong with the certificate; the 81 are curves whose *values* the
+   paper shows only as figures. But it puts a number on the shape of the problem: the artifact-declared
+   half of claim extraction now scales to 81 targets in a file Reprolith already shipped, and the
+   values half scales to 2.
+
 ## The figure boundary is not PK/PD-specific — FBA hits it too
 
 The same wall recurs in the constraint-based class, which rules out "PK/PD figures are just
