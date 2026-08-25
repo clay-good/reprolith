@@ -30,6 +30,7 @@ import pytest
 from reprolith import (
     CurveClaim,
     PaperIdentity,
+    ReferenceKind,
     Verdict,
     certify_curves,
     engine_pin,
@@ -92,6 +93,10 @@ def test_an_archive_walks_to_a_certificate_without_hand_written_claims() -> None
             quantity=claim.quantity,
             species=claim.quantity,
             reference=reference,
+            # What the claim is judged against, said on the claim itself: a curve an independent
+            # simulator computed is numeric, and one with nothing behind it keeps the dossier's
+            # figure reference — the document plots it and never says what it showed.
+            reference_kind=ReferenceKind.NUMERIC if reference else ReferenceKind.DIGITIZED_FIGURE,
             source_location=(
                 f"{claim.source_location} — reference curve computed by libRoadRunner re-running "
                 "this model file, not digitized from the paper"
@@ -123,6 +128,9 @@ def test_an_archive_walks_to_a_certificate_without_hand_written_claims() -> None
     # no reference — an abstention, not a guess.
     assert [a.verdict for a in figure_2b] == [Verdict.NOT_EVALUABLE, Verdict.NOT_EVALUABLE]
     assert all("nothing to compare" in (a.root_cause or "") for a in figure_2b)
+    # And each claim line says what it was judged against, so a reader can tell the two apart.
+    assert {a.reference_kind for a in figure_2a} == {ReferenceKind.NUMERIC.value}
+    assert {a.reference_kind for a in figure_2b} == {ReferenceKind.DIGITIZED_FIGURE.value}
 
     # The scope flag travels regardless: reproducibility, never correctness.
     assert certificate.content()["scope"]
