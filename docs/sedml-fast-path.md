@@ -6,6 +6,11 @@ species to observe. When that recipe exists, reproduction is mostly "adopt it an
 reconstructing the simulation settings by hand. This is the highest certificate yield per unit
 effort, and it applies across every ODE class.
 
+The document says more than that, though, and this page follows all of it: the recipe it writes
+down, the **claims** its plots stake, the **archive** it usually travels in, and whether the two
+files in that archive still agree with each other. The last section walks one archive end to end,
+from a zip to a certificate, with no hand-written claim anywhere in between.
+
 ## Reading the recipe
 
 `reprolith.parse_sedml_recipes(sedml_text)` returns a `SimulationRecipe` per uniform-time-course
