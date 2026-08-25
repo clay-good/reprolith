@@ -354,3 +354,57 @@ def test_a_global_a_rule_reads_is_not_treated_as_shadowed() -> None:
 
     # It governs the rate rule, so overriding it takes — and must not be refused.
     assert "0.9" in _apply_overrides(rule_reads_global, (("k", 0.9),))
+
+
+def test_a_curve_claim_with_no_reference_abstains_instead_of_raising(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The shape of a claim read off a shipped SED-ML: which curve is plotted, not its values.
+
+    Judging a run against an empty reference used to raise, so the one front-end most likely to
+    meet a reference-less claim crashed on it instead of abstaining.
+    """
+    import reprolith.certify as certify_module
+    from reprolith import (
+        CurveClaim,
+        EnginePin,
+        OverallVerdict,
+        PaperIdentity,
+        Verdict,
+        certify_curves,
+        claim_counts,
+    )
+
+    times = tuple(float(i) for i in range(11))
+    ran: list[str] = []
+
+    def _record(sbml: str, species: str, **kwargs: object) -> tuple[tuple[float, ...], ...]:
+        ran.append(species)
+        return times, tuple(5.0 for _ in times)
+
+    monkeypatch.setattr(certify_module, "simulate", _record)
+    certificate = certify_curves(
+        "<sbml/>",
+        paper=PaperIdentity(title="A document with two figures", doi="10.0/sedml"),
+        engine_pin=EnginePin(engine="test-engine", version="0.0.0"),
+        claims=[
+            CurveClaim(claim_id="fig2a", quantity="MAPK_PP", species="MAPK_PP", reference=(),
+                       source_location="SED-ML plot2D 'plot_0' (Figure 2A)",
+                       duration=9000.0, steps=10),
+            CurveClaim(claim_id="checked", quantity="MAPK", species="MAPK",
+                       reference=tuple(5.0 for _ in times), source_location="Fig 1",
+                       duration=10.0, steps=10),
+        ],
+    )
+
+    abstained, judged = certificate.assessments
+    assert abstained.verdict is Verdict.NOT_EVALUABLE
+    assert "nothing to compare" in (abstained.root_cause or "")
+    assert judged.verdict is Verdict.REPRODUCED
+    # The claim it cannot check is not run at all.
+    assert ran == ["MAPK"]
+    # The documented overall rule counts only evaluable claims, so this is a `reproduced` whose
+    # own claim counts show one claim nobody could check — the abstention is visible, not folded
+    # into the pass.
+    assert certificate.overall is OverallVerdict.REPRODUCED
+    assert claim_counts(certificate)["not-evaluable"] == 1

@@ -72,7 +72,9 @@ Every claim is marked `digitized-figure` with no reference data. A SED-ML docume
 plot; it never says what values the paper's figure showed, and the oracle abstains on a claim with
 no reference rather than inventing one. That is the same wall
 [the findings note](findings-note.md) describes: the document closes the "which results are there"
-half of claim extraction, and leaves the "what values were shown" half where it was.
+half of claim extraction, and leaves the "what values were shown" half where it was. `certify_curves`
+takes such a claim and abstains on it — `not-evaluable`, with the reason on the claim line — rather
+than running the model and judging it against nothing.
 
 ## The archive around it
 

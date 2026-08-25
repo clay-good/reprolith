@@ -31,6 +31,7 @@ from .oracle import (
     judge_distribution,
     judge_estimation,
     judge_scalar,
+    not_evaluable,
     undetermined_shortfall,
 )
 
@@ -353,9 +354,32 @@ def certify_curves(
     are recorded as the assessment's protocol: a curve distance is a function of the grid it was
     measured on, and a window short enough to return the initial condition would otherwise read as
     a perfect reproduction with nothing in the certificate to show it.
+
+    A claim whose ``reference`` is empty abstains rather than being run and judged: there is
+    nothing to compare against. That is the ordinary shape of a claim read off a shipped SED-ML
+    document, which says which curve the paper plots and never what the figure showed.
     """
     assessments = []
     for claim in claims:
+        if not claim.reference:
+            # A claim with no reference values has nothing to compare against, so it abstains
+            # rather than guessing a pass or a fail (spec: simulation-oracle — "Abstention").
+            # This is the ordinary shape of a claim read off a shipped SED-ML document: the
+            # document says which curve the paper plots, never what the figure showed. Running
+            # the model anyway and judging it against an empty reference used to raise, which
+            # turned "no data" into a crash at the one front-end most likely to meet it.
+            assessments.append(not_evaluable(
+                claim_id=claim.claim_id,
+                quantity=claim.quantity,
+                source_location=claim.source_location,
+                reason=(
+                    "no reference values for this curve: the source states which curve is "
+                    "plotted but not the values it showed, so there is nothing to compare "
+                    "the run against"
+                ),
+                reference_kind=claim.reference_kind,
+            ))
+            continue
         model = _apply_overrides(sbml, claim.parameter_overrides) if claim.parameter_overrides else sbml
         _, values = simulate(model, claim.species, duration=claim.duration, steps=claim.steps)
         assessment = (
