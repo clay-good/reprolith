@@ -39,7 +39,8 @@ guessing — just: *does the described model produce the shown result?*
 - **Standard, runnable artifacts.** The model ships as SBML and the engine is pinned by
   version, so anyone can re-run it. A paper that ships a COMBINE archive is read straight out of
   it — the manifest names the model and the experiment, and one file becomes a dossier with
-  structure and claims. What Reprolith writes back is its own JSON record, not a COMBINE archive:
+  structure and claims, including a check that the two files refer to the same model elements
+  (an override aimed at a parameter that is not there silently runs the unmodified model). What Reprolith writes back is its own JSON record, not a COMBINE archive:
   emitting SED-ML and OMEX is still not built.
 - **A verdict that expires.** Every certificate names the software that computed it — including,
   for the classes Reprolith solves itself, the revision of that code — so changing a solver flags

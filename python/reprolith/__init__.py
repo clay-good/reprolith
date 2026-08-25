@@ -148,7 +148,7 @@ from .model import (
     PaperIdentity,
     RunMetadata,
 )
-from .omex import ingest_omex
+from .omex import archive_mismatches, ingest_omex
 from .oracle import (
     Attribution,
     ComparisonMethod,
@@ -274,6 +274,7 @@ __all__ = [
     "advance_to_outcome",
     "AgreementReport",
     "AmbiguousMerge",
+    "archive_mismatches",
     "assess_match",
     "Assumption",
     "Attribution",

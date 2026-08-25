@@ -96,3 +96,22 @@ It refuses rather than guesses, each refusal naming the ambiguity:
 
 An archive that ships a model and no experiment is not a refusal: it yields structure and no
 claims, for the same reason a bare SBML does.
+
+## Do the two files agree?
+
+Nothing in an archive checks that its experiment and its model refer to the same elements, and
+when they do not the failure is quiet in the worst way: a `changeAttribute` aimed at a parameter
+that is not there overrides nothing, so the run reproduces the *unmodified* model and looks fine.
+`reprolith.archive_mismatches(sedml_text, sbml_text)` reports both that case and a data generator
+observing a species the model does not define — one line each, empty when the pair agrees, the
+same shape `compare_sbml_to_dossier` uses for an adopted model.
+
+Targets resolve **by nesting**, not by a flat search for the id. A rate constant named `KK2`
+inside reaction `J1` is a different element from one named `KK2` inside `J0`, so an override aimed
+at the wrong reaction is caught rather than waved through. `ingest_omex` runs the check and records
+each mismatch as a load-bearing gap: it is missing from the archive, and it changes what a run
+produces.
+
+A target selecting on any attribute other than `id`, or using an axis or function the resolver
+does not read, is left unreported — not resolving a path is not evidence that the model lacks the
+element.

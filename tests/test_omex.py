@@ -225,3 +225,73 @@ def test_a_manifest_entry_the_archive_does_not_ship_is_a_gap_not_an_artifact() -
     assert "supplement.pdf" not in {a.filename for a in dossier.artifacts}
     missing = [g for g in dossier.gaps if g.element == "supplement.pdf"]
     assert len(missing) == 1 and "does not contain it" in missing[0].detail
+
+
+# --- the experiment and the model have to agree --------------------------------------
+
+_APOS = "&apos;"
+
+
+def test_the_shipped_pair_agrees_with_itself() -> None:
+    """The check earns its keep only if it is quiet on a real, correct archive."""
+    from reprolith import archive_mismatches
+
+    assert archive_mismatches(_SEDML, _SBML) == []
+
+
+def test_an_observed_species_the_model_does_not_define_is_reported() -> None:
+    from reprolith import archive_mismatches
+
+    broken = _SEDML.replace(
+        f"species[@id={_APOS}MAPK_PP{_APOS}]", f"species[@id={_APOS}MAPK_PPP{_APOS}]"
+    )
+    assert broken != _SEDML
+    problems = archive_mismatches(broken, _SBML)
+    assert problems and all("MAPK_PPP" in p and "observes" in p for p in problems)
+
+
+def test_an_override_aimed_at_the_wrong_reaction_is_reported() -> None:
+    """A flat search for the id would pass: KK2 exists — inside J1, not the J0 aimed at here."""
+    from reprolith import archive_mismatches
+
+    misaimed = _SEDML.replace(
+        f"reaction[@id={_APOS}J1{_APOS}]/sbml:kineticLaw/sbml:listOfParameters/"
+        f"sbml:parameter[@id={_APOS}KK2{_APOS}]",
+        f"reaction[@id={_APOS}J0{_APOS}]/sbml:kineticLaw/sbml:listOfParameters/"
+        f"sbml:parameter[@id={_APOS}KK2{_APOS}]",
+    )
+    assert misaimed != _SEDML
+    problems = archive_mismatches(misaimed, _SBML)
+    assert len(problems) == 1 and "changes" in problems[0] and "J0" in problems[0]
+
+
+def test_a_target_this_resolver_cannot_read_is_not_called_a_mismatch() -> None:
+    """Not resolving a path is not evidence the model lacks the element."""
+    from reprolith import archive_mismatches
+
+    by_name = _SEDML.replace(
+        f"species[@id={_APOS}MAPK_PP{_APOS}]", f"species[@name={_APOS}MAPK_PP{_APOS}]"
+    )
+    assert by_name != _SEDML
+    assert archive_mismatches(by_name, _SBML) == []
+
+
+def test_an_inconsistent_archive_records_the_mismatch_as_a_load_bearing_gap() -> None:
+    """An override that overrides nothing runs the unmodified model, so the gap is load-bearing."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+
+    broken = _SEDML.replace(f"parameter[@id={_APOS}Ki{_APOS}]", f"parameter[@id={_APOS}Kj{_APOS}]")
+    archive = _archive({
+        "manifest.xml": _manifest(
+            ("./BIOMD0000000010_url.xml", f"{_SPEC}sbml", False),
+            ("./BIOMD0000000010.sedml", f"{_SPEC}sed-ml", True),
+        ),
+        "BIOMD0000000010_url.xml": _SBML, "BIOMD0000000010.sedml": broken,
+    })
+    dossier = ingest_omex(archive, entry="BIOMD0000000010")
+
+    flagged = [g for g in dossier.load_bearing_gaps() if "Kj" in g.element]
+    assert len(flagged) == 1 and "which the model does not have" in flagged[0].detail
+    # The healthy pair records no such gap.
+    healthy = ingest_omex(_kholodenko_archive(), entry="BIOMD0000000010")
+    assert [g for g in healthy.gaps if "which the model does not have" in g.detail] == []
