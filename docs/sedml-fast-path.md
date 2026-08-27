@@ -231,6 +231,11 @@ the run's. And the **engine pin** is not written: SED-ML names a solver *method*
 does say CVODE, but the pinned engine and version that computed a verdict belong to the certificate,
 which is what expires when a solver changes.
 
+The MCP surface has no export tool, deliberately. The server holds the catalog, the certificates,
+the dossiers, and the bundles — never the model bytes — so an agent would have to send the model
+over JSON-RPC and take an archive back as base64. The bundle is already readable through the
+`bundle` tool, and an agent that wants the archive can build it from the same library the CLI uses.
+
 ### It reports; it does not plot
 
 SED-ML has two ways to name the quantities a run records, and the difference is the whole honesty
@@ -255,6 +260,7 @@ targetable claims**: an honest silence rather than an invented checklist.
 | A variable the model does not have | The document would record a column that cannot exist — the same mismatch `archive_mismatches` reports when reading an archive. Every target the writer emits resolves in the model it ships with, by nesting. |
 | A run with a non-positive duration or step count | Not a run. |
 | A model and an experiment at the same location | An archive stores one file per location. |
+| A model declaring the `fbc`, `qual`, `spatial`, or `multi` SBML package | Reprolith certifies six classes and only some are integrated trajectories. An FBA model is solved at steady state; a logical one advances in discrete update steps. A uniform time course written for either is valid SED-ML describing a run nobody performs, which is worse than a refusal. Packages that only annotate (`layout`, `render`, `distrib`, `comp`) leave the run a time course and are not refused. |
 
 The document declares SED-ML **L1V4**, which is not cosmetic: a uniform time course spells its
 sample count `numberOfSteps` only from L1V4 onward (L1V3 says `numberOfPoints`), and that is the

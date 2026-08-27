@@ -80,6 +80,48 @@ def _namespace(tag: str) -> str:
     return tag[1:].split("}", 1)[0] if tag.startswith("{") else ""
 
 
+#: SBML packages that change what *running* the model means, mapped to what they make it. A model
+#: declaring one of these is not run as a time course at all, so writing it a ``uniformTimeCourse``
+#: would describe a run nobody performs — and the document would look perfectly valid doing it.
+#: Packages that only annotate (``layout``, ``render``, ``distrib``, ``comp``) are not here: they
+#: leave the run a time course.
+_NOT_A_TIME_COURSE = {
+    "fbc": "a constraint-based model, solved at steady state rather than integrated",
+    "qual": "a qualitative (logical) model, advanced in discrete update steps",
+    "spatial": "a spatially-resolved model, not a single well-mixed trajectory",
+    "multi": "a multi-component species model, whose species are not the ones a course records",
+}
+
+#: The namespace an SBML Level 3 package declares, e.g.
+#: ``http://www.sbml.org/sbml/level3/version1/fbc/version2``.
+_PACKAGE_NAMESPACE = re.compile(
+    r"^http://www\.sbml\.org/sbml/level\d+/version\d+/([a-z]+)/version\d+$"
+)
+
+
+def _refuse_a_model_no_time_course_describes(root: ET.Element) -> None:
+    """Refuse a model whose SBML package means it is not run as a uniform time course.
+
+    Namespace *declarations* are not visible through ElementTree, so this reads the namespaces the
+    document actually uses — on any element or attribute — which is what a package's presence
+    amounts to in practice: an fbc model carries ``fbc:required`` on its root and an fbc objective
+    inside its model.
+    """
+    used = {_namespace(root.tag)}
+    for element in root.iter():
+        used.add(_namespace(element.tag))
+        used.update(_namespace(key) for key in element.attrib if key.startswith("{"))
+    for namespace in sorted(used):
+        match = _PACKAGE_NAMESPACE.match(namespace)
+        package = match.group(1) if match else ""
+        if package in _NOT_A_TIME_COURSE:
+            raise ValueError(
+                f"the model uses the SBML '{package}' package, so it is "
+                f"{_NOT_A_TIME_COURSE[package]}; a uniform time course would describe a run "
+                "nobody performs, and would look valid doing it"
+            )
+
+
 def _model_root(model_sbml: str) -> ET.Element:
     try:
         root = ET.fromstring(model_sbml)
@@ -173,6 +215,7 @@ def build_experiment_sedml(
         raise ValueError(f"a run needs a positive number of steps; got {steps}")
 
     root = _model_root(model_sbml)
+    _refuse_a_model_no_time_course_describes(root)
     index = _elements_by_id(root)
     recorded = _species_ids(root) if observables is None else tuple(observables)
     if not recorded:
@@ -352,6 +395,7 @@ def build_bundle_sedml(
     since an experiment with no task describes no run.
     """
     root = _model_root(model_sbml)
+    _refuse_a_model_no_time_course_describes(root)
     index = _elements_by_id(root)
     parameters = {name for name, (container, _) in index.items() if container == "listOfParameters"}
 

@@ -493,3 +493,36 @@ def test_a_member_name_that_is_not_inside_the_archive_is_refused(location: str) 
             build_experiment_sedml(_MODEL, duration=1.0, steps=10),
             model_location=location,
         )
+
+
+@pytest.mark.parametrize(
+    ("fixture", "package"),
+    [
+        ("datasets/constraint_based/e_coli_core.xml", "fbc"),
+        ("tests/fixtures/toggle_qual.xml", "qual"),
+    ],
+)
+def test_a_model_no_time_course_describes_is_refused(fixture: str, package: str) -> None:
+    """Reprolith certifies six classes and only two of them are integrated trajectories.
+
+    An FBA model is solved at steady state and a logical one advances in discrete update steps.
+    Neither is run as a uniform time course — and a document that wrote one for them would be
+    perfectly valid SED-ML describing a run nobody performs, which is worse than a refusal.
+    """
+    from pathlib import Path
+
+    model = (Path(__file__).parent.parent / fixture).read_text(encoding="utf-8")
+    with pytest.raises(ValueError, match=f"the SBML '{package}' package"):
+        build_experiment_sedml(model, duration=1.0, steps=10)
+
+
+def test_a_model_that_only_annotates_itself_is_still_exportable() -> None:
+    """The guard names the packages that change what a *run* is. `layout` is not one of them, and
+    refusing it would reject an ordinary BioModels export for carrying diagram coordinates."""
+    annotated = _MODEL.replace(
+        '<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core"',
+        '<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core"'
+        ' xmlns:layout="http://www.sbml.org/sbml/level3/version1/layout/version1"'
+        ' layout:required="false"',
+    )
+    assert parse_sedml_recipes(build_experiment_sedml(annotated, duration=1.0, steps=10))
