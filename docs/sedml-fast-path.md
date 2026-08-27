@@ -267,4 +267,5 @@ sample count `numberOfSteps` only from L1V4 onward (L1V3 says `numberOfPoints`),
 attribute this repository's parser reads. An earlier declaration over a later attribute writes a
 document that reads here and fails validation everywhere else. libSEDML — an independent
 implementation, not this one — rejected exactly that, and reads the corrected document with zero
-errors; `tests/test_export.py` keeps both facts.
+errors; `tests/test_export.py` keeps both facts, and the `validate` extra puts libSEDML in CI so
+that check runs on every push rather than only where someone happened to install it.

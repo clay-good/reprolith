@@ -40,8 +40,11 @@ jobs:
 
   # The dependency-free core gate (job `python`) never installs the optional extras, so the
   # extra-backed tests (real simulation, ingestion, the linter, the FBA oracle, the scalable
-  # logical SAT solver) skip there. This job installs the engine, fba, and sat extras and runs
-  # them, so those paths have CI coverage.
+  # logical SAT solver) skip there. This job installs the engine, fba, sat, and validate extras and
+  # runs them, so those paths have CI coverage. `validate` is libSEDML, which reads what Reprolith
+  # *writes*: the check that caught the exported document declaring the wrong SED-ML level was
+  # local-only, so the guard that found the defect was not running anywhere it could catch the
+  # next one.
   engine:
     runs-on: ubuntu-latest
     strategy:
@@ -53,10 +56,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install with the engine, fba, and sat extras
+      - name: Install with the engine, fba, sat, and validate extras
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,engine,fba,sat]"
+          pip install -e ".[dev,engine,fba,sat,validate]"
       - name: Tests (pytest, extra-backed included)
         run: pytest -q
 

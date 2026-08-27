@@ -51,6 +51,12 @@ fba = ["scipy>=1.7", "numpy>=1.20"]  # numpy is imported directly, not only thro
 # Boolean network's steady states without enumerating its 2ⁿ state space, so real 60–80-node
 # signalling models are tractable. Optional — small networks use exact enumeration and need none.
 sat = ["z3-solver>=4.12"]
+# An independent SED-ML implementation, used to check what Reprolith *writes* rather than what it
+# reads. A writer validated only by its own reader is not validated: the exported document declared
+# SED-ML L1V3 over a `numberOfSteps` attribute that arrives in L1V4, which round-tripped perfectly
+# through this repository's own parser and fails schema validation everywhere else. libSEDML caught
+# it. Optional, and needed only by the export tests' validation checks.
+validate = ["python-libsedml>=2.0"]
 # A second registered engine (libRoadRunner) for cross-engine corroboration — run a curve under
 # both COPASI and libRoadRunner and report whether the verdict is engine-independent. Optional.
 corroborate = ["libroadrunner>=2.5"]

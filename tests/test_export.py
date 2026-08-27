@@ -247,11 +247,13 @@ def test_the_document_declares_the_dialect_its_sampling_attribute_belongs_to() -
 def test_an_independent_sedml_library_reads_the_document_without_error() -> None:
     """The writer's own reader agreeing with it proves nothing about the standard.
 
-    Skipped where libSEDML is not installed, which includes the required-checks gate: it is not a
-    dependency of Reprolith, and the core stays dependency-free.
+    Skipped on the dependency-free core gate, where no optional extra is installed; the `validate`
+    extra puts libSEDML in the extras job, so an independent implementation reads what Reprolith
+    writes on every CI run. It was local-only when it caught the level defect, which meant the
+    guard that found that bug was not running anywhere it could catch the next one.
     """
     libsedml = pytest.importorskip(
-        "libsedml", reason="python-libsedml is not installed; this check is local-only"
+        "libsedml", reason="the optional 'validate' extra (python-libsedml) is not installed"
     )
     document = libsedml.readSedMLFromString(
         build_experiment_sedml(_MODEL, duration=24.0, steps=240)
@@ -420,7 +422,7 @@ def test_an_independent_sedml_library_reads_the_exported_bundle_without_error() 
     from reprolith import build_bundle_sedml, bundle_from_dict
 
     libsedml = pytest.importorskip(
-        "libsedml", reason="python-libsedml is not installed; this check is local-only"
+        "libsedml", reason="the optional 'validate' extra (python-libsedml) is not installed"
     )
     root = Path(__file__).parent.parent
     bundle = bundle_from_dict(
