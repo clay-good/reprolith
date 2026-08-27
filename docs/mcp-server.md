@@ -138,5 +138,19 @@ server runs with a mutable catalog, and a read-only server hides and refuses the
 
 The human-facing `reprolith` CLI is the same surface for people at a terminal: it loads the same
 persisted state through the same `load_repository` and reads it through the same `ReprolithQuery`,
-so the terminal view and the agent view are guaranteed identical. Any read command takes `--json`
-to emit the exact object the corresponding MCP tool returns.
+so for everything either surface can answer, the terminal view and the agent view are guaranteed
+identical. Any read command takes `--json` to emit the exact object the corresponding MCP tool
+returns.
+
+### What the CLI has that the server does not
+
+Two commands work on a **file**, not on repository state, and have no MCP tool:
+
+| Command | Why it is not a tool |
+| --- | --- |
+| `reprolith export` | The server holds catalogs, certificates, dossiers, and bundles — never model bytes. An agent would have to send the model over JSON-RPC and take an archive back as base64. The bundle it exports is already readable through the `bundle` tool, and the same library the CLI calls is importable. |
+| `reprolith archive-check` | Same shape: the archive is a file the server has no path to. It also needs libSBML to read the model, and the inline lint tools are dependency-free by contract — a tool that worked only where an optional extra happened to be installed would answer differently on two servers reading the same state, which is the one thing this surface exists to prevent. |
+
+This is an absence, not a divergence: neither command reads or writes anything the query surface
+covers, so nothing either surface reports about a paper can disagree. `tests/test_cli.py` pins the
+set, so adding a third without deciding this question fails.

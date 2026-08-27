@@ -429,3 +429,33 @@ def test_archive_check_json_is_the_report_object(tmp_path, capsys):
 def test_archive_check_of_a_missing_file_is_a_message(tmp_path, capsys):
     assert run(["archive-check", str(tmp_path / "nope.omex")]) == 1
     assert "cannot read the archive" in capsys.readouterr().err
+
+
+def test_only_the_two_file_commands_sit_outside_the_query_surface():
+    """Parity is the repository's central claim, so its exceptions are pinned rather than assumed.
+
+    `export` and `archive-check` act on a file the MCP server has no path to, and both are written
+    up in docs/mcp-server.md with the reason. A third command joining them means that question was
+    not asked, so this fails until it is.
+    """
+    import argparse
+
+    from reprolith.cli import build_parser
+
+    parser = build_parser()
+    subcommands = next(
+        a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
+    ).choices
+    file_based = {name for name in subcommands if name in {"export", "archive-check"}}
+    assert file_based == {"export", "archive-check"}
+    documented = (
+        Path(__file__).parent.parent / "docs" / "mcp-server.md"
+    ).read_text(encoding="utf-8")
+    for name in file_based:
+        assert f"reprolith {name}" in documented, f"{name} is not explained in docs/mcp-server.md"
+    # Everything else must be reachable as an MCP tool name or be a pure formatting view of one.
+    on_the_query_surface = set(subcommands) - file_based
+    assert on_the_query_surface == {
+        "backlog", "bundle", "catalog", "certificate", "certificates-for", "dossier", "gaps",
+        "presubmission", "self-validation", "status", "verdict",
+    }
