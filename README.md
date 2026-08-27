@@ -229,6 +229,15 @@ population figures use, and the class is self-validated non-circularly against c
 the immigration-death process's Poisson stationary mean and variance and a reversible reaction's
 binomial equilibrium — with a 3/3 [milestone blind run](datasets/stochastic/milestone/).
 
+**Population figures** — a median with outer percentiles across a virtual population, which is how
+a large slice of the PK/PD and QSP literature reports its results — are judged by the same
+distributional oracle, and Reprolith now simulates the population as well as judging it: a
+log-normal between-subject variability model, drawn under a stated seed, run subject by subject.
+The variability model, the draws, and the percentile definition are written into the certificate's
+protocol, because an envelope read without them is a picture rather than a result. It is validated
+against mathematics — the closed-form percentiles of a one-compartment model whose volume varies —
+not against itself. What is missing is a *paper's* population figure to point it at.
+
 **Spatial reaction-diffusion (PDE) models** are the sixth class: the reproducible result is a
 concentration profile over space, so a pure-Python finite-difference solver feeds the same curve
 oracle, self-validated non-circularly against the exact analytical diffusion solution (a Gaussian

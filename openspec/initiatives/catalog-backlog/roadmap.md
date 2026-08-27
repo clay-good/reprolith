@@ -112,7 +112,11 @@ a change under `openspec/changes/`.
 
 ### 7. Population / inter-individual variability reproduction
 
-- **Type:** capability *(oracle landed: distributional band judge in `simulation-oracle`)*
+- **Type:** capability *(landed: the distributional band judge in `simulation-oracle`, and now the
+  half that was deferred — `simulate_population` draws a log-normal between-subject variability
+  model under a stated seed and runs the ensemble, validated against the closed-form percentiles of
+  a one-compartment model whose volume varies. What is still missing is a *paper's* population
+  figure to point it at; the demonstration is against mathematics, not a published envelope.)*
 - **Why (value):** Many PK/PD and QSP figures are distributions, percentiles, or virtual
   populations, not single trajectories. Reproducing them unlocks a large, high-value slice of the
   literature the MVP explicitly deferred.

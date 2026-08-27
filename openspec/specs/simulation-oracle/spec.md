@@ -108,6 +108,19 @@ depends on the variability model and the sampling.
   shared set, including an unspecified between-subject variability model and an unspecified
   population size or sampling scheme
 
+#### Scenario: The population the bands came from
+
+- **WHEN** Reprolith simulates the population itself rather than being handed its bands
+- **THEN** the variability model, the draw mechanism, and the percentile definition are stated
+  in the protocol the certificate carries, because an envelope read without them is a picture
+  rather than a result — a mean-preserving variability model and a median-preserving one place
+  every band differently, and percentile definitions disagree materially at small ensembles
+- **AND** the same seed and inputs reproduce the same population, on any machine
+- **AND** a parameter whose between-subject variability could not reach the run — one the model
+  does not declare, one a rule determines, one a kinetic law shadows — is refused before the
+  ensemble runs, since that failure is otherwise silent: every subject identical, the bands one
+  line, and nothing saying the variability was discarded
+
 ### Requirement: Estimation reproduction is a distinct verdict
 
 When a paper ships the raw data it was fit to, Reprolith SHALL be able to reproduce the

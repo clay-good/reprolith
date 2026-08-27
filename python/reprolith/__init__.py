@@ -187,6 +187,7 @@ from .persistence import (
     certificate_from_content,
     dossier_from_dict,
 )
+from .population import PopulationRun, SubjectVariability, simulate_population
 from .presubmission import presubmission_report, render_presubmission_human
 from .query import ReprolithQuery
 from .reconstruction import (
@@ -439,6 +440,7 @@ __all__ = [
     "ParsimoniousSolution",
     "PercentileBand",
     "PopulationClaim",
+    "PopulationRun",
     "presubmission_report",
     "production_envelope",
     "ProductionEnvelope",
@@ -480,6 +482,7 @@ __all__ = [
     "shadow_prices",
     "ShadowPrices",
     "simulate",
+    "simulate_population",
     "simulate_with_roadrunner",
     "SimulationRecipe",
     "solve_objective",
@@ -492,6 +495,7 @@ __all__ = [
     "stochastic_solver_pin",
     "StochasticClaim",
     "storable_content",
+    "SubjectVariability",
     "synthetic_lethal_genes",
     "synthetic_lethal_reactions",
     "time_to_extinction",
