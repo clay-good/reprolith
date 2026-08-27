@@ -1,10 +1,17 @@
 """Writing a COMBINE archive, and reading back exactly what was written.
 
 The reading half of the fast path has tests (``test_omex.py``, ``test_archive_end_to_end.py``).
-This is the writing half: what Reprolith emits must be what Reprolith's own reader accepts, and it
-must not assert more than the reconstruction knows. Most of these need no optional extra — the
-writer and the SED-ML/manifest readers are pure standard library. The one that needs libSBML is
-the full round trip, because turning an archive back into a dossier parses the model.
+This is the writing half, and it asks three different questions of the output:
+
+* **Reprolith's own reader accepts it**, and it asserts no more than the reconstruction knows.
+  These need no optional extra — the writer and the SED-ML/manifest readers are pure standard
+  library.
+* **An independent implementation accepts it.** libSEDML for the document and libCombine for the
+  archive, behind the ``validate`` extra. This is the question that matters most: the writer's
+  first version declared the wrong SED-ML level and every other test in this file passed, because
+  it round-tripped through the parser in this same package. A writer validated only by its own
+  reader is not validated.
+* **A dossier comes back out of it**, which parses the model and so needs libSBML.
 """
 
 from __future__ import annotations
@@ -528,3 +535,45 @@ def test_a_model_that_only_annotates_itself_is_still_exportable() -> None:
         ' layout:required="false"',
     )
     assert parse_sedml_recipes(build_experiment_sedml(annotated, duration=1.0, steps=10))
+
+
+def test_an_independent_archive_library_reads_what_the_packager_wrote() -> None:
+    """The manifest is a written artifact, and until this test nothing but `ingest_omex` had ever
+    read one back. The SED-ML level defect is what that shape of gap produces: a file that is
+    correct against its author's own reader and wrong against the specification.
+
+    Skipped where the `validate` extra is absent; the extras job installs it.
+    """
+    libcombine = pytest.importorskip(
+        "libcombine", reason="the optional 'validate' extra (python-libcombine) is not installed"
+    )
+    import tempfile
+    from pathlib import Path
+
+    archive = build_omex_archive(_MODEL, build_experiment_sedml(_MODEL, duration=24.0, steps=240))
+    with tempfile.TemporaryDirectory() as workspace:
+        path = Path(workspace) / "written.omex"
+        path.write_bytes(archive)
+        combine = libcombine.CombineArchive()
+        try:
+            assert combine.initializeFromArchive(str(path)), "libCombine cannot open the archive"
+            entries = {
+                combine.getEntry(i).getLocation(): (
+                    combine.getEntry(i).getFormat(), combine.getEntry(i).getMaster()
+                )
+                for i in range(combine.getNumEntries())
+            }
+            spec = "http://identifiers.org/combine.specifications/"
+            assert entries == {
+                "./manifest.xml": (f"{spec}omex-manifest", False),
+                "./model.xml": (f"{spec}sbml.level-3.version-2", False),
+                "./experiment.sedml": (f"{spec}sed-ml.level-1.version-4", True),
+            }
+            # An archive that does not single out one experiment is one `ingest_omex` refuses, so
+            # the writer has to produce one an independent reader agrees is singled out.
+            assert combine.getMasterFile().getLocation() == "./experiment.sedml"
+            extracted = Path(workspace) / "out"
+            assert combine.extractTo(str(extracted))
+            assert (extracted / "model.xml").read_text(encoding="utf-8") == _MODEL
+        finally:
+            combine.cleanUp()

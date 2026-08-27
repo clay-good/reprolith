@@ -41,10 +41,10 @@ jobs:
   # The dependency-free core gate (job `python`) never installs the optional extras, so the
   # extra-backed tests (real simulation, ingestion, the linter, the FBA oracle, the scalable
   # logical SAT solver) skip there. This job installs the engine, fba, sat, and validate extras and
-  # runs them, so those paths have CI coverage. `validate` is libSEDML, which reads what Reprolith
-  # *writes*: the check that caught the exported document declaring the wrong SED-ML level was
-  # local-only, so the guard that found the defect was not running anywhere it could catch the
-  # next one.
+  # runs them, so those paths have CI coverage. `validate` is libSEDML and libCombine, independent
+  # implementations that read what Reprolith *writes* rather than what it reads: the check that
+  # caught the exported document declaring the wrong SED-ML level was local-only, so the guard that
+  # found that defect was not running anywhere it could catch the next one.
   engine:
     runs-on: ubuntu-latest
     strategy:
