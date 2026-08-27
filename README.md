@@ -48,8 +48,9 @@ guessing — just: *does the described model produce the shown result?*
   and used to live only in Reprolith's JSON. A step the document cannot state is listed with the
   reason, never dropped, and the exported document *reports* its columns rather than *plotting*
   them, so re-reading it manufactures no published results the paper never staked
-  ([`docs/sedml-fast-path.md`](docs/sedml-fast-path.md)). The certificate itself still travels as
-  Reprolith's own JSON record.
+  ([`docs/sedml-fast-path.md`](docs/sedml-fast-path.md)). The metformin worked example ships its
+  archive: [`datasets/worked_examples/metformin_reconstruction.omex`](datasets/worked_examples/).
+  The certificate itself still travels as Reprolith's own JSON record.
 - **A verdict that expires.** Every certificate names the software that computed it — including,
   for the classes Reprolith solves itself, the revision of that code — so changing a solver flags
   every certificate it invalidates instead of leaving them looking current.

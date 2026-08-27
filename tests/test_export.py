@@ -460,3 +460,24 @@ def test_the_exported_document_reproduces_the_published_number_when_run() -> Non
         model, recipe[0].observables[0], duration=recipe[0].duration, steps=recipe[0].steps
     )
     assert max(values) == pytest.approx(6.07, abs=0.02)
+
+
+def test_the_published_worked_example_archive_is_what_the_export_produces_today() -> None:
+    """A committed binary is only honest if it is checkable. The bytes are deterministic, so this
+    regenerates the published archive and compares — a drifted artifact fails rather than sitting
+    there looking current."""
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+    try:
+        from export_worked_example_archive import ARCHIVE, export
+    finally:
+        sys.path.pop(0)
+
+    archive, expressed, unexpressed = export()
+    assert (expressed, unexpressed) == (("Cmax-500mg", "Cmax-1000mg"), ())
+    assert ARCHIVE.read_bytes() == archive, (
+        "datasets/worked_examples/metformin_reconstruction.omex is stale; regenerate it with "
+        "python scripts/export_worked_example_archive.py"
+    )
