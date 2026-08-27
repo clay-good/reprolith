@@ -137,3 +137,48 @@ def test_overriding_the_dose_actually_changes_the_curve() -> None:
         "mPlasmaVenous", duration=24.0, steps=480,
     )
     assert max(dosed) > 1.5 * max(base)
+
+
+def test_a_model_reprolith_built_is_engine_independent_too() -> None:
+    """Every corroboration in this file, and every one in the committed artifacts, is of a model
+    an *author* shipped. A model Reprolith assembled from a dossier had never been checked.
+
+    That matters twice over. It is the reconstruction path's own engine independence — the thing
+    the certificates claim — and it is a third implementation reading what `build_model_sbml`
+    writes. libSBML both writes and validates that file, so libSBML agreeing with it is not
+    independent evidence; COPASI running it is one outside reader, and libRoadRunner is a second.
+    """
+    from reprolith import (
+        Dossier,
+        Equation,
+        ExtractionConfidence,
+        Parameter,
+        build_model_sbml,
+    )
+
+    dossier = Dossier(
+        entry="two_compartment",
+        state_variables=("central", "peripheral"),
+        equations=(
+            Equation(target="central", expression="-(k12 + k10) * central + k21 * peripheral",
+                     source_location="Eq 1"),
+            Equation(target="peripheral", expression="k12 * central - k21 * peripheral",
+                     source_location="Eq 2"),
+        ),
+        parameters=tuple(
+            Parameter(name=name, value=value, unit="1/h", source_location="Table 1",
+                      confidence=ExtractionConfidence.QUOTED)
+            for name, value in (("k12", 0.8), ("k21", 0.3), ("k10", 0.25))
+        ),
+        initial_conditions=(
+            Parameter(name="central", value=100.0, unit="mg", source_location="Methods",
+                      confidence=ExtractionConfidence.QUOTED),
+            Parameter(name="peripheral", value=0.0, unit="mg", source_location="Methods",
+                      confidence=ExtractionConfidence.QUOTED),
+        ),
+    )
+
+    built = build_model_sbml(dossier)
+    for species in ("central", "peripheral"):
+        result = corroborate_curve(built, species, duration=24.0, steps=240)
+        assert result.stable, result.summary()
