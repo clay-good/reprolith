@@ -47,7 +47,7 @@ _MODEL = """<?xml version="1.0" encoding="UTF-8"?>
       <parameter id="D" value="100" constant="true"/>
       <parameter id="V" value="10" constant="true"/>
       <parameter id="k" value="0.2" constant="true"/>
-      <parameter id="Vd" constant="false"/>
+      <parameter id="Vd" value="10" constant="false"/>
     </listOfParameters>
     <listOfInitialAssignments>
       <initialAssignment symbol="C">
@@ -195,3 +195,46 @@ def test_a_simulated_population_certifies_end_to_end() -> None:
     assert certificate.assessments[0].protocol == run.protocol
     # The qualification is written down as an assumption naming the sampling, not left as a flag.
     assert any("virtual population" in a.description for a in certificate.assumptions)
+
+
+@pytest.mark.parametrize("percentiles", [(0.0, 50.0), (50.0, 100.0), (-5.0,)])
+def test_a_percentile_that_is_an_extreme_is_refused_before_the_ensemble_runs(
+    percentiles: tuple[float, ...],
+) -> None:
+    """The 0th and 100th are properties of the ensemble's size, not of the population — and
+    catching them after 500 runs would name the band rather than the argument."""
+    with pytest.raises(ValueError, match=r"open interval \(0, 100\)"):
+        simulate_population(
+            _MODEL, "C", duration=6.0, steps=6,
+            variability=(SubjectVariability(parameter="V", cv=0.3),), subjects=10, seed=1,
+            percentiles=percentiles,
+        )
+
+
+def test_two_variability_specs_for_one_parameter_are_refused() -> None:
+    """They apply as two overrides and the later wins, so the earlier draw is discarded in
+    silence and the CV in force is not the one the protocol would print."""
+    with pytest.raises(ValueError, match="repeated: V"):
+        simulate_population(
+            _MODEL, "C", duration=6.0, steps=6,
+            variability=(
+                SubjectVariability(parameter="V", cv=0.3),
+                SubjectVariability(parameter="V", cv=0.5),
+            ),
+            subjects=10, seed=1,
+        )
+
+
+def test_a_parameter_with_no_stated_value_has_no_median_to_vary_around() -> None:
+    """libSBML reports an unset value as 0.0, and a log-normal multiplier on zero is zero: the
+    bands would collapse to one flat line that reads as a population with no variability."""
+    valueless = _MODEL.replace(
+        '<parameter id="k" value="0.2" constant="true"/>',
+        '<parameter id="k" value="0.2" constant="true"/>\n'
+        '      <parameter id="F" constant="true"/>',
+    )
+    with pytest.raises(ValueError, match="states no value for 'F'"):
+        simulate_population(
+            valueless, "C", duration=6.0, steps=6,
+            variability=(SubjectVariability(parameter="F", cv=0.3),), subjects=10, seed=1,
+        )

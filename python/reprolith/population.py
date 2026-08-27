@@ -132,6 +132,25 @@ def simulate_population(
         )
     if not percentiles:
         raise ValueError("a population run must report at least one percentile band")
+    outside = [p for p in percentiles if not 0.0 < p < 100.0]
+    if outside:
+        # Refused here rather than left to PercentileBand: by then the whole ensemble has run, and
+        # the error would name the band instead of the argument that was wrong.
+        raise ValueError(
+            f"percentiles must be in the open interval (0, 100); got {outside}. The 0th and 100th "
+            "are the ensemble's extremes, which are properties of its size rather than of the "
+            "population."
+        )
+    repeated = sorted({
+        spec.parameter for spec in variability
+        if [s.parameter for s in variability].count(spec.parameter) > 1
+    })
+    if repeated:
+        # Two specs for one parameter apply as two overrides, and the later one wins — so the
+        # earlier draw is silently discarded and the published CV is not the one in force.
+        raise ValueError(
+            "each parameter may carry one variability spec; repeated: " + ", ".join(repeated)
+        )
 
     draws = random.Random(seed)
     standard = NormalDist()
@@ -199,6 +218,14 @@ def _typical(sbml: str, parameter: str) -> float:
     if element is None:
         raise ValueError(
             f"the model declares no parameter {parameter!r} to vary between subjects"
+        )
+    if not element.isSetValue():
+        # libSBML reports an unset value as 0.0, and a log-normal multiplier on zero is zero: every
+        # subject would get the same value the model never stated, and the bands would collapse to
+        # one flat line that looks like a population with no variability.
+        raise ValueError(
+            f"the model states no value for {parameter!r}, so there is no population median for "
+            "the between-subject variability to be around"
         )
     return float(element.getValue())
 
