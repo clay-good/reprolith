@@ -8,8 +8,9 @@ effort, and it applies across every ODE class.
 
 The document says more than that, though, and this page follows all of it: the recipe it writes
 down, the **claims** its plots stake, the **archive** it usually travels in, and whether the two
-files in that archive still agree with each other. The last section walks one archive end to end,
-from a zip to a certificate, with no hand-written claim anywhere in between.
+files in that archive still agree with each other. One section walks an archive end to end, from a
+zip to a certificate, with no hand-written claim anywhere in between. The last section goes the
+other way: writing an archive, so a reconstruction leaves in the same standard form it arrived in.
 
 ## Reading the recipe
 
@@ -154,3 +155,54 @@ It is a test rather than a thirty-first published certificate on purpose. This m
 certified through the [kinetic milestone](../datasets/kinetic/milestone/); a second certificate for
 the same model, with a reference computed the same way, would add a registry row and no information.
 What is worth proving is that the path runs.
+
+## Writing an archive
+
+Reading is only half of it. A reconstruction that leaves as a bare SBML string has its run
+conditions — how long, how finely, recording what — written down nowhere a simulator can read, so
+re-running it means recovering them from prose. `build_omex_archive` closes that: the model, the
+SED-ML that runs it, and the manifest, as bytes.
+
+```python
+from reprolith import build_model_sbml, build_omex_archive
+
+archive = build_omex_archive(build_model_sbml(dossier), duration=24.0, steps=240)
+Path("reconstruction.omex").write_bytes(archive)
+```
+
+`build_experiment_sedml` writes the document alone, for a model that is already adopted rather than
+rebuilt. Both use only the standard library, neither touches the filesystem, and the archive's bytes
+are deterministic — fixed member order, fixed timestamps — so the same model and run conditions
+produce the same archive and it can be digested like any other artifact here.
+
+### It reports; it does not plot
+
+SED-ML has two ways to name the quantities a run records, and the difference is the whole honesty
+question for an export:
+
+| | What it means | What Reprolith reads it as |
+| --- | --- | --- |
+| `plot` | the curves this work displays | the document's own statement of a published result — a targetable claim |
+| `report` | write these columns | an export format, asserting nothing about what was published |
+
+An exported reproduction is the second thing. It knows how to run the model; it does not know which
+of its outputs anyone displayed — that lives in the dossier's claims and in the certificate, and
+SED-ML has no vocabulary for it. Emitting a plot would produce a document that, read back by
+Reprolith's own claim reader, manufactures one published result per state variable. So the export
+writes a report, and re-ingesting an exported archive gives back the model's structure and **no
+targetable claims**: an honest silence rather than an invented checklist.
+
+### What it refuses
+
+| Refused | Why |
+| --- | --- |
+| A variable the model does not have | The document would record a column that cannot exist — the same mismatch `archive_mismatches` reports when reading an archive. Every target the writer emits resolves in the model it ships with, by nesting. |
+| A run with a non-positive duration or step count | Not a run. |
+| A model and an experiment at the same location | An archive stores one file per location. |
+
+The document declares SED-ML **L1V4**, which is not cosmetic: a uniform time course spells its
+sample count `numberOfSteps` only from L1V4 onward (L1V3 says `numberOfPoints`), and that is the
+attribute this repository's parser reads. An earlier declaration over a later attribute writes a
+document that reads here and fails validation everywhere else. libSEDML — an independent
+implementation, not this one — rejected exactly that, and reads the corrected document with zero
+errors; `tests/test_export.py` keeps both facts.

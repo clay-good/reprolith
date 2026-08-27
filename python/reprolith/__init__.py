@@ -67,6 +67,7 @@ from .enums import (
     ReproductionLevel,
     Verdict,
 )
+from .export import build_experiment_sedml, build_omex_archive
 from .fba import (
     FbaModel,
     FbaUnavailable,
@@ -286,7 +287,9 @@ __all__ = [
     "BooleanNetwork",
     "build_agreement_report",
     "build_certificate",
+    "build_experiment_sedml",
     "build_model_sbml",
+    "build_omex_archive",
     "bundle_from_dict",
     "Candidate",
     "canonical_bytes",

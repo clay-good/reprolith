@@ -30,6 +30,36 @@ results are usable by the community, not buried.
   freshness
 - **AND** each entry links to the reconstruction artifacts needed to re-run it
 
+### Requirement: A reconstruction ships in the standard runnable form
+
+A reconstruction SHALL be exportable as a COMBINE archive — the model, the simulation experiment
+that runs it, and a manifest saying what each file is — so re-running it needs no Reprolith.
+
+#### Scenario: Exporting a reconstruction
+
+- **WHEN** a reconstruction is exported
+- **THEN** the archive holds the model as SBML, a SED-ML document giving the run duration, its
+  step count, and the variables recorded, and a manifest that singles out that document as the
+  archive's master experiment
+- **AND** the archive is byte-identical for the same model and run conditions, so it can be
+  digested and compared like every other published artifact
+
+#### Scenario: What an exported document does not assert
+
+- **WHEN** the exported document names the quantities a run records
+- **THEN** it names them as a report — the columns to write — and never as plotted results,
+  because SED-ML cannot say that a *paper* published a value and a plot read back as claims would
+  manufacture one published result per recorded variable
+- **AND** re-ingesting an exported archive therefore yields the model's structure and no
+  targetable claims
+
+#### Scenario: An exported experiment agrees with the model it ships with
+
+- **WHEN** the exported document records a variable
+- **THEN** the variable resolves in the model the archive ships, by its nesting
+- **AND** an export asked to record something the model does not have is refused with the name
+  reported, rather than written as a column that cannot exist
+
 ### Requirement: Stable, citable identity
 
 Each published certificate SHALL have a stable identifier so it can be cited and linked durably.
