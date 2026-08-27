@@ -97,7 +97,15 @@ reprolith certificates-for <id>      # every certificate digest for one paper, n
 reprolith self-validation            # the blind track record, per class and overall
 reprolith export <accession> \       # the reconstruction as a runnable COMBINE archive
   --model <model.xml> --out <out.omex>
+reprolith archive-check <file.omex>  # what a reproducer would find in your archive
 ```
+
+`archive-check` is the author-facing counterpart: point it at a COMBINE archive and it says what a
+reproducer would find — whether the experiment and the model agree, whether the document states any
+published result, whether the run can be adopted verbatim — and exits non-zero when it cannot. It
+runs no model and issues no certificate, and it says so rather than borrowing a certificate's words.
+What Reprolith's *own extraction* would not carry is listed separately and never as a fix, because
+some of it the archive omits and some of it the archive states perfectly well.
 
 Every command reads except `export`, which writes the archive named by `--out`. It packages the
 published bundle for that accession — the window, the sample count, the output each claim reads,

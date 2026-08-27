@@ -189,7 +189,12 @@ from .persistence import (
     dossier_from_dict,
 )
 from .population import PopulationRun, SubjectVariability, simulate_population
-from .presubmission import presubmission_report, render_presubmission_human
+from .presubmission import (
+    archive_report,
+    presubmission_report,
+    render_archive_human,
+    render_presubmission_human,
+)
 from .query import ReprolithQuery
 from .reconstruction import (
     ModelOrigin,
@@ -283,6 +288,7 @@ __all__ = [
     "AgreementReport",
     "AmbiguousMerge",
     "archive_mismatches",
+    "archive_report",
     "assess_match",
     "Assumption",
     "Attribution",
@@ -455,6 +461,7 @@ __all__ = [
     "ReferenceKind",
     "refit_parameters",
     "relative_error",
+    "render_archive_human",
     "render_badge",
     "render_human",
     "render_machine",

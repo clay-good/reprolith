@@ -13,6 +13,7 @@ reproduction, so a partial, assumption-qualified, or estimation-level result can
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from .enums import OverallVerdict, Verdict
@@ -245,4 +246,206 @@ def render_presubmission_human(cert: Certificate) -> str:
     return "\n".join(lines)
 
 
-__all__ = ["presubmission_report", "render_presubmission_human"]
+#: Fix-list priorities for an archive check, in the order an author should act. An archive that
+#: cannot be read at all is not on this scale — it has no report to prioritize.
+_ARCHIVE_MISMATCH_PRIORITY = 1
+_ARCHIVE_NO_CLAIM_PRIORITY = 2
+_ARCHIVE_UNADOPTABLE_PRIORITY = 3
+_ARCHIVE_GAP_PRIORITY = 4
+
+#: What this check is, said in the report itself. The certificate scope statement is not reusable
+#: here: it opens "This certificate attests…", and this check issues no certificate — printing it
+#: would put a certificate's words on a report that ran no model and reached no verdict.
+_ARCHIVE_NOTE = (
+    "This check reads the archive only. It runs no model, reaches no verdict, and issues no "
+    "certificate; it says nothing about biological correctness or clinical use."
+)
+
+
+def archive_report(archive: str | os.PathLike[str] | bytes) -> dict[str, Any]:
+    """An author-facing check of a COMBINE archive, before any certificate exists.
+
+    :func:`presubmission_report` answers "given the verdict Reprolith reached, what should I fix?"
+    This answers the question that comes before it: an author has an archive on disk and wants to
+    know what a reproducer will find in it. No engine runs and nothing is certified — the archive
+    is ingested (:func:`reprolith.ingest_omex`), its experiment is compared against its model, and
+    its recipes are read for whether they can be adopted verbatim.
+
+    Returns the same shape :func:`presubmission_report` does — a readiness flag, a readiness
+    sentence, a prioritized fix list, and the scope statement — plus what was found in the archive.
+    An archive that cannot be read at all is reported as not ready with the refusal as its single
+    fix item, rather than raising: a malformed archive is the most actionable finding there is.
+
+    The fix list is ordered by what most changes what a reproducer gets:
+
+    1. **A mismatch between the experiment and the model.** The failure is silent — an override
+       aimed at a parameter that is not there runs the unmodified model — so it outranks anything
+       merely missing.
+    2. **No targetable claim.** An archive that states no published result gives a reproducer
+       nothing to check; it can be run, but it cannot be reproduced.
+    3. **A recipe that cannot be adopted verbatim.** A parameter scan or a modified model means a
+       reproducer must reconstruct the run rather than read it.
+    4. **Load-bearing gaps** the ingested model leaves open.
+    """
+    from .omex import archive_mismatches, ingest_omex
+    from .sedml import parse_sedml_recipes
+
+    found: dict[str, Any] = {
+        "readable": True,
+        "files": [],
+        "claims": {"targetable": 0, "figure_referenced": 0, "not_targetable": 0},
+        "adoptable_recipes": 0,
+    }
+    actions: list[dict[str, Any]] = []
+    try:
+        dossier = ingest_omex(archive, entry="submitted")
+    except ValueError as refused:
+        found["readable"] = False
+        return {
+            "ready_to_submit": False,
+            "readiness": (
+                "this archive cannot be read, so nothing in it can be reproduced: " + str(refused)
+            ),
+            "found": found,
+            "fix_list": [{
+                "priority": 0,
+                "kind": "archive",
+                "claim_id": None,
+                "quantity": None,
+                "source_location": None,
+                "issue": str(refused),
+                "fix": "repair the archive so its manifest and its members agree",
+            }],
+            "note": _ARCHIVE_NOTE,
+        }
+
+    found["files"] = [a.to_dict() for a in dossier.artifacts]
+    targetable = dossier.targetable_claims()
+    found["claims"] = {
+        "targetable": len(targetable),
+        "figure_referenced": sum(1 for c in targetable if not c.reference_data),
+        "not_targetable": len(dossier.claims) - len(targetable),
+    }
+
+    experiment = next(
+        (a.filename for a in dossier.artifacts if a.detected_format == "sed-ml"), None
+    )
+    if experiment is not None:
+        # Re-read from the archive rather than from the dossier: the dossier keeps what the
+        # document *claimed*, and this asks whether the run behind those claims is adoptable.
+        import zipfile
+        from io import BytesIO
+
+        handle = BytesIO(archive) if isinstance(archive, bytes) else archive
+        with zipfile.ZipFile(handle) as zf:
+            stored = {name.lstrip("./"): name for name in zf.namelist()}
+            sedml = zf.read(stored[experiment.lstrip("./")]).decode("utf-8")
+            model = next(
+                a.filename for a in dossier.artifacts if a.detected_format == "sbml"
+            )
+            sbml = zf.read(stored[model.lstrip("./")]).decode("utf-8")
+        recipes = parse_sedml_recipes(sedml)
+        found["adoptable_recipes"] = len(recipes)
+        for message in archive_mismatches(sedml, sbml):
+            actions.append({
+                "priority": _ARCHIVE_MISMATCH_PRIORITY, "kind": "mismatch", "claim_id": None,
+                "quantity": None, "source_location": experiment, "issue": message,
+                "fix": "make the experiment and the model agree; an override aimed at an element "
+                       "that is not there runs the unmodified model and reports nothing",
+            })
+        if targetable and not recipes:
+            actions.append({
+                "priority": _ARCHIVE_UNADOPTABLE_PRIORITY, "kind": "recipe", "claim_id": None,
+                "quantity": None, "source_location": experiment,
+                "issue": "the experiment states results but no run a reproducer can adopt "
+                         "verbatim (a parameter scan, a modified model, or a window that does "
+                         "not start at zero)",
+                "fix": "ship a plain uniform time course over the unmodified model for each "
+                       "curve you publish, so a reproducer runs what you ran",
+            })
+
+    if not targetable:
+        actions.append({
+            "priority": _ARCHIVE_NO_CLAIM_PRIORITY, "kind": "claims", "claim_id": None,
+            "quantity": None, "source_location": experiment,
+            "issue": "the archive states no published result, so a reproducer can run it but has "
+                     "nothing to check it against",
+            "fix": "ship a SED-ML document whose plots are the curves your paper shows",
+        })
+
+    # Gaps are reported, and deliberately *not* as things for the author to fix. A dossier's
+    # load-bearing gaps mix two different findings under one shape: something the archive genuinely
+    # omits (45 of metformin's 69 values state no unit) and something Reprolith's extraction cannot
+    # represent however fully the archive states it (its 35 reactions, its events). Telling an
+    # author to "state this in the archive" covers the first and is simply wrong about the second —
+    # it sends them to fix a file that is already correct. Nothing here distinguishes the two, so
+    # this says what is true of both and gates readiness on neither.
+    found["extraction_gaps"] = [
+        {"element": gap.element, "detail": gap.detail} for gap in dossier.load_bearing_gaps()
+    ]
+
+    actions.sort(key=lambda item: item["priority"])
+    ready = not actions
+    return {
+        "ready_to_submit": ready,
+        "readiness": (
+            "this archive is readable, states its results, and its experiment agrees with its "
+            "model" if ready else
+            "a reproducer would hit the items below before reaching a verdict"
+        ),
+        "found": found,
+        "fix_list": actions,
+        "note": _ARCHIVE_NOTE,
+    }
+
+
+def render_archive_human(archive: str | os.PathLike[str] | bytes) -> str:
+    """A plain-text archive check an author can act on directly."""
+    report = archive_report(archive)
+    found = report["found"]
+    lines = ["ARCHIVE REPRODUCIBILITY CHECK", ""]
+    verdict = "READY TO SUBMIT" if report["ready_to_submit"] else "NOT YET READY"
+    lines.append(verdict)
+    lines.append(f"  {report['readiness']}")
+    lines.append("")
+    if found["readable"]:
+        lines.append("WHAT THE ARCHIVE SHIPS")
+        for artifact in found["files"]:
+            lines.append(f"  - {artifact['filename']} ({artifact['detected_format']})")
+        claims = found["claims"]
+        lines.append(
+            f"  claims: {claims['targetable']} targetable "
+            f"({claims['figure_referenced']} figure-referenced, no values), "
+            f"{claims['not_targetable']} not targetable"
+        )
+        lines.append(f"  runs a reproducer can adopt verbatim: {found['adoptable_recipes']}")
+        lines.append("")
+    lines.append("FIX BEFORE YOU SUBMIT (most impactful first)")
+    if not report["fix_list"]:
+        lines.append("  (nothing — a reproducer can read this archive and knows what to check)")
+    for item in report["fix_list"]:
+        where = f"{item['quantity']}: " if item["quantity"] else ""
+        lines.append(f"  - {where}{item['issue']}")
+        lines.append(f"      fix: {item['fix']}")
+    gaps = found.get("extraction_gaps") or []
+    if gaps:
+        lines.append("")
+        lines.append("WHAT REPROLITH'S OWN EXTRACTION WOULD NOT CARRY")
+        lines.append(
+            "  Not a fix list: some of these the archive omits, and some it states perfectly well "
+            "and Reprolith cannot represent. Nothing here distinguishes the two."
+        )
+        for gap in gaps:
+            lines.append(f"  - {gap['element']}: {gap['detail']}")
+    lines.append("")
+    lines.append("WHAT THIS CHECK IS")
+    lines.append(f"  {report['note']}")
+    return "\n".join(lines)
+
+
+__all__ = [
+    "archive_report",
+    "presubmission_report",
+    "render_archive_human",
+    "render_presubmission_human",
+]

@@ -30,6 +30,7 @@ from .export import build_bundle_sedml, build_omex_archive
 from .mcp_server import default_data_dir, load_repository
 from .model import RunMetadata
 from .persistence import bundle_from_dict
+from .presubmission import archive_report, render_archive_human
 from .query import ReprolithQuery
 from .render import render_human
 
@@ -322,6 +323,25 @@ def _cmd_export(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_archive_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Report what a reproducer would find in a COMBINE archive, before any certificate exists."""
+    path = Path(args.archive)
+    try:
+        archive = path.read_bytes()
+    except OSError as unreadable:
+        print(f"cannot read the archive: {unreadable}", file=sys.stderr)
+        return 1
+    report = archive_report(archive)
+    if args.json:
+        _print_json(report)
+    else:
+        print(render_archive_human(archive))
+    # The exit code answers the question the command asks. An author wiring this into a
+    # pre-submission hook needs "is this ready" to be actionable, and a report that always exits 0
+    # says READY and NOT YET READY in the same voice.
+    return 0 if report["ready_to_submit"] else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="reprolith",
@@ -403,6 +423,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("accession", help="the entry accession")
     add_json(p)
     p.set_defaults(func=_cmd_bundle)
+
+    p = sub.add_parser(
+        "archive-check",
+        help="what a reproducer would find in a COMBINE archive (no model is run)",
+    )
+    p.add_argument("archive", help="the .omex archive to check")
+    add_json(p)
+    p.set_defaults(func=_cmd_archive_check)
 
     p = sub.add_parser(
         "export",

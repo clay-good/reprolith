@@ -54,6 +54,35 @@ an author knows what to fix first rather than reading an unordered list.
 - **AND** the ready-to-submit signal can never be green while any claim is partial, failed,
   not-evaluable, or assumption-qualified
 
+### Requirement: An archive can be checked before any certificate exists
+
+An author with a COMBINE archive and no certificate SHALL be able to learn what a reproducer would
+find in it, since a file that cannot be read or states no result never reaches a verdict at all.
+
+#### Scenario: What the archive check reports
+
+- **WHEN** an archive is checked
+- **THEN** it reports what the archive ships, whether its experiment and its model agree, whether
+  it states any published result, and how many of its runs a reproducer can adopt verbatim
+- **AND** an archive that cannot be read is reported as the whole finding rather than raising,
+  because a malformed archive is the most actionable result there is
+- **AND** no model is run and no verdict is reached
+
+#### Scenario: The check does not speak as a certificate
+
+- **WHEN** the archive check is rendered
+- **THEN** it states what it is — a read of the archive that runs no model and issues no
+  certificate — rather than carrying the certificate scope statement, whose first words are
+  "This certificate attests"
+
+#### Scenario: An extraction limit is not an author's defect
+
+- **WHEN** Reprolith's own extraction of the archive's model leaves load-bearing gaps
+- **THEN** they are reported separately from the fix list and do not decide readiness
+- **AND** they are not phrased as something for the author to state, because the same gap shape
+  covers both something the archive omits and something the archive states fully that Reprolith
+  cannot represent — and telling an author to repair a correct file is worse than saying nothing
+
 ### Requirement: Runnable over the MCP surface
 
 An author or their agent SHALL be able to run the check through the same read-only MCP surface as

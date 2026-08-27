@@ -393,3 +393,39 @@ def test_export_of_an_unreadable_model_is_a_message_not_a_traceback(tmp_path, ca
                 "--model", str(tmp_path / "two_compartment.xml") + ".missing",
                 "--out", str(tmp_path / "r.omex")]) == 1
     assert "cannot read the model" in capsys.readouterr().err
+
+
+def test_archive_check_reports_and_exits_on_readiness(tmp_path, capsys):
+    """The exit code answers the question the command asks: an author wiring this into a
+    pre-submission hook needs "is this ready" to be actionable."""
+    from reprolith import build_experiment_sedml, build_omex_archive
+
+    model = _EXPORT_MODEL
+    archive = tmp_path / "a.omex"
+    archive.write_bytes(
+        build_omex_archive(model, build_experiment_sedml(model, duration=24.0, steps=240))
+    )
+    assert run(["archive-check", str(archive)]) == 1  # reports columns, states no published result
+    printed = capsys.readouterr().out
+    assert "ARCHIVE REPRODUCIBILITY CHECK" in printed
+    assert "This certificate attests" not in printed
+
+
+def test_archive_check_json_is_the_report_object(tmp_path, capsys):
+    from reprolith import build_experiment_sedml, build_omex_archive
+
+    archive = tmp_path / "a.omex"
+    archive.write_bytes(
+        build_omex_archive(
+            _EXPORT_MODEL, build_experiment_sedml(_EXPORT_MODEL, duration=24.0, steps=240)
+        )
+    )
+    assert run(["archive-check", str(archive), "--json"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report["ready_to_submit"] is False
+    assert "issues no certificate" in report["note"]
+
+
+def test_archive_check_of_a_missing_file_is_a_message(tmp_path, capsys):
+    assert run(["archive-check", str(tmp_path / "nope.omex")]) == 1
+    assert "cannot read the archive" in capsys.readouterr().err
