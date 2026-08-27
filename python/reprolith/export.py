@@ -375,13 +375,11 @@ def build_bundle_sedml(
     known_runs: dict[tuple[float, int], str] = {}
 
     for step in bundle.recipe:
-        reason = _unexpressible(step, index=index, parameters=parameters)
-        if reason is not None:
+        plan, reason = _plan(step, index=index, parameters=parameters)
+        if plan is None:
             unexpressed.append(f"claim '{step.claim_id}': {reason}")
             continue
-        span = _TIME_SPAN.match(step.time_span)
-        assert span is not None and step.steps is not None  # established by _unexpressible
-        duration, count = float(span.group(1)), int(step.steps)
+        duration, count = plan.duration, plan.steps
         ordinal = len(expressed) + 1
 
         run = known_runs.get((duration, count))
@@ -419,7 +417,7 @@ def build_bundle_sedml(
             "modelReference": model_ref, "simulationReference": run,
         })
 
-        output_id = _output_id(step.output)
+        output_id = plan.output
         _add_generator(
             generators, generator_id=f"time{ordinal}", variable_id="time",
             symbol=_TIME_SYMBOL, task=task,
@@ -457,33 +455,52 @@ def build_bundle_sedml(
     )
 
 
-def _unexpressible(
+@dataclass(frozen=True)
+class _Runnable:
+    """A recipe step reduced to what a uniform time course needs: how long, how finely, what."""
+
+    duration: float
+    steps: int
+    output: str
+
+
+def _plan(
     step: RecipeStep,
     *,
     index: dict[str, tuple[str, str]],
     parameters: set[str],
-) -> str | None:
-    """Why this recipe step cannot be written as a task, or ``None`` when it can."""
+) -> tuple[_Runnable | None, str]:
+    """This step as a runnable plan, or why it cannot be written. Exactly one of the two is set.
+
+    The two answers come from one function on purpose: a version that only reported *whether* a
+    step was expressible left the caller to re-derive the window and the output it had just
+    validated, and a re-derivation that disagrees with its own check is how a step gets dropped
+    with no reason recorded.
+    """
     if step.steps is None or step.steps <= 0:
-        return (
+        return None, (
             f"the recipe states no sample count, so how finely to sample "
             f"'{step.time_span}' is not written down"
         )
-    if _TIME_SPAN.match(step.time_span) is None:
-        return (
+    span = _TIME_SPAN.match(step.time_span)
+    if span is None:
+        return None, (
             f"the window '{step.time_span}' is not a numeric span starting at zero, and a "
             "uniform time course that starts later is not adoptable as (duration, steps)"
         )
+    duration = float(span.group(1))
+    if duration <= 0.0:
+        return None, f"the window '{step.time_span}' does not advance, so there is nothing to run"
     output_id = _output_id(step.output)
     if output_id not in index:
-        return f"the model has no top-level element '{output_id}' to record"
+        return None, f"the model has no top-level element '{output_id}' to record"
     missing = sorted(name for name, _ in step.parameter_overrides if name not in parameters)
     if missing:
-        return (
+        return None, (
             "the model declares no parameter named " + ", ".join(missing)
             + "; an override aimed at a parameter that is not there runs the unmodified model"
         )
-    return None
+    return _Runnable(duration=duration, steps=int(step.steps), output=output_id), ""
 
 
 def _sbml_format(root: ET.Element) -> str:
@@ -522,6 +539,17 @@ def build_omex_archive(
             f"the model and the experiment cannot both be '{model_location}': "
             "an archive stores one file per location"
         )
+    # A member name is written into the zip verbatim, so a location that climbs out of the archive
+    # root — or one an extractor would resolve to a different name than the manifest lists — is
+    # refused. Whoever unpacks it decides where `../x.xml` lands, and that is not a decision an
+    # exported artifact gets to make on their machine.
+    for role, location in (("model", model_location), ("experiment", experiment_location)):
+        if not location or posixpath.normpath(location) != location or location.startswith(("/", "..")):
+            raise ValueError(
+                f"the {role} location {location!r} is not a plain relative path inside the "
+                "archive; an archive member name is stored verbatim, and a path that climbs out "
+                "of the root is unpacked wherever the extractor decides"
+            )
     # The document's `source` is resolved relative to the document, and that is the only thing a
     # reader follows to find the model. A caller that moved the model without telling the writer
     # would ship an archive whose experiment runs a file the archive does not contain — which

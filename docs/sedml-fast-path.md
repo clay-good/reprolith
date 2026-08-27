@@ -179,7 +179,9 @@ digested like any other artifact here.
 `model_location` is the path the *document* names, which a reader resolves relative to the document.
 The packager checks the two agree: an experiment whose `source` resolves to a file the archive does
 not store is refused where the mistake was made, rather than shipped as bytes that fail for whoever
-opens them.
+opens them. It also refuses a storage location that is not a plain relative path inside the archive
+— a zip member name is written verbatim, and where `../x.xml` lands is the extractor's decision, not
+one an exported artifact gets to make on someone else's machine.
 
 ### Exporting a published reconstruction
 

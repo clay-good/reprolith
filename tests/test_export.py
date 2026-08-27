@@ -481,3 +481,15 @@ def test_the_published_worked_example_archive_is_what_the_export_produces_today(
         "datasets/worked_examples/metformin_reconstruction.omex is stale; regenerate it with "
         "python scripts/export_worked_example_archive.py"
     )
+
+
+@pytest.mark.parametrize("location", ["../escape.xml", "/abs.xml", "./model.xml", ""])
+def test_a_member_name_that_is_not_inside_the_archive_is_refused(location: str) -> None:
+    """A zip member name is stored verbatim, so where `../x.xml` lands is the extractor's
+    decision — not one an exported artifact gets to make on someone else's machine."""
+    with pytest.raises(ValueError, match="plain relative path inside the archive"):
+        build_omex_archive(
+            _MODEL,
+            build_experiment_sedml(_MODEL, duration=1.0, steps=10),
+            model_location=location,
+        )
