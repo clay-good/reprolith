@@ -41,10 +41,13 @@ guessing — just: *does the described model produce the shown result?*
   it — the manifest names the model and the experiment, and one file becomes a dossier with
   structure and claims, including a check that the two files refer to the same model elements
   (an override aimed at a parameter that is not there silently runs the unmodified model). A
-  reconstruction now leaves in that same form: `build_omex_archive` writes the model, the SED-ML
-  that says how long to run it and what to record, and the manifest — deterministic bytes, no
-  Reprolith needed to re-run them. The exported document *reports* its columns rather than
-  *plotting* them, so re-reading it manufactures no published results the paper never staked
+  reconstruction now leaves in that same form: a published bundle — per claim, the window, the
+  sample count, the output, and the parameter values that claim sets — is written as SED-ML and
+  packaged with the model and a manifest, in deterministic bytes no Reprolith is needed to re-run.
+  The overrides are the point: metformin's 779.9 mg free-base dose is what separates its two claims
+  and used to live only in Reprolith's JSON. A step the document cannot state is listed with the
+  reason, never dropped, and the exported document *reports* its columns rather than *plotting*
+  them, so re-reading it manufactures no published results the paper never staked
   ([`docs/sedml-fast-path.md`](docs/sedml-fast-path.md)). The certificate itself still travels as
   Reprolith's own JSON record.
 - **A verdict that expires.** Every certificate names the software that computed it — including,

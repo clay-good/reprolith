@@ -44,6 +44,17 @@ that runs it, and a manifest saying what each file is — so re-running it needs
 - **AND** the archive is byte-identical for the same model and run conditions, so it can be
   digested and compared like every other published artifact
 
+#### Scenario: Exporting a published reconstruction
+
+- **WHEN** a reconstruction bundle is exported
+- **THEN** each recipe step becomes a task stating its window, its sample count, the output it
+  records, and the parameter values that step sets, so the values that distinguish two claims on
+  one model travel in the file rather than only in Reprolith's own record
+- **AND** a step the document cannot state is reported with its reason, never dropped, since an
+  archive quietly short of a claim reads as a reconstruction that never had one
+- **AND** an override naming a parameter the model does not declare is one such step, because
+  writing it would ship an archive that silently runs the unmodified model
+
 #### Scenario: What an exported document does not assert
 
 - **WHEN** the exported document names the quantities a run records

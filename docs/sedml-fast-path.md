@@ -164,16 +164,58 @@ re-running it means recovering them from prose. `build_omex_archive` closes that
 SED-ML that runs it, and the manifest, as bytes.
 
 ```python
-from reprolith import build_model_sbml, build_omex_archive
+from reprolith import build_experiment_sedml, build_model_sbml, build_omex_archive
 
-archive = build_omex_archive(build_model_sbml(dossier), duration=24.0, steps=240)
+model = build_model_sbml(dossier)
+archive = build_omex_archive(model, build_experiment_sedml(model, duration=24.0, steps=240))
 Path("reconstruction.omex").write_bytes(archive)
 ```
 
-`build_experiment_sedml` writes the document alone, for a model that is already adopted rather than
-rebuilt. Both use only the standard library, neither touches the filesystem, and the archive's bytes
-are deterministic — fixed member order, fixed timestamps — so the same model and run conditions
-produce the same archive and it can be digested like any other artifact here.
+Two composable pieces: one writes the document, the other packages it. Both use only the standard
+library, neither touches the filesystem, and the archive's bytes are deterministic — fixed member
+order, fixed timestamps — so the same model and experiment produce the same archive and it can be
+digested like any other artifact here.
+
+`model_location` is the path the *document* names, which a reader resolves relative to the document.
+The packager checks the two agree: an experiment whose `source` resolves to a file the archive does
+not store is refused where the mistake was made, rather than shipped as bytes that fail for whoever
+opens them.
+
+### Exporting a published reconstruction
+
+A bare run is not what Reprolith publishes. It publishes a **reconstruction bundle** — per claim, a
+window, a sample count, the output to read, and the parameter values that claim sets — and
+`build_bundle_sedml` writes that:
+
+```python
+experiment = build_bundle_sedml(bundle, model_sbml)
+archive = build_omex_archive(model_sbml, experiment.sedml)
+```
+
+Each step becomes a task, over the base model or over a model derived from it by that step's
+overrides, plus a report of time and the step's output. Steps that run the same window at the same
+resolution share one simulation. The **overrides** are the reason this exists: they are what
+separates two claims on one model, and until now they lived only in Reprolith's JSON. In the
+published metformin bundle that is the 779.9 mg free-base dose — the value without which the
+1000 mg claim runs the 500 mg arm, and taken naively (1000 mg straight in) overshoots the paper by
+26%. It is now a `changeAttribute` in a file any simulator can act on.
+
+`build_bundle_sedml` returns what it wrote *and* what it could not: `expressed` names the claims
+that became tasks, and `unexpressed` carries one line per step it could not state — no sample
+count, a window that is not a number starting at zero, an output the model does not have, or an
+override naming a parameter the model does not declare. A step is listed, never dropped: an archive
+quietly short of a claim reads as a reconstruction that never had one.
+
+What it does not check is whether an override that *does* name a model parameter takes effect — one
+fixed by a rule, or shadowed by a kinetic law's own local parameter. That needs the model's math
+read rather than its element names, and certification already applies exactly that check to every
+override before a bundle can carry one.
+
+Two things stay outside the document on purpose. The **metric** (`cmax`, `auc`) is not written: a
+report records the trajectory, and which scalar is read off it is the certificate's statement, not
+the run's. And the **engine pin** is not written: SED-ML names a solver *method*, and the document
+does say CVODE, but the pinned engine and version that computed a verdict belong to the certificate,
+which is what expires when a solver changes.
 
 ### It reports; it does not plot
 

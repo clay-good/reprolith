@@ -30,10 +30,15 @@ artifact this repository publishes.
 
 from __future__ import annotations
 
+import posixpath
 import re
 import xml.etree.ElementTree as ET
 import zipfile
+from dataclasses import dataclass
 from io import BytesIO
+
+from .reconstruction import RecipeStep, ReconstructionBundle
+from .sedml import sedml_model_sources
 
 #: The COMBINE specifications namespace the manifest names each format by, as
 #: :mod:`reprolith.omex` reads them back.
@@ -146,8 +151,10 @@ def build_experiment_sedml(
     output starts later is one the recipe parser deliberately refuses to adopt, and exporting one
     would write a document Reprolith itself will not read.
 
-    ``model_location`` is the model's path *as the archive stores it*, which is what the document's
-    ``source`` must name for :func:`reprolith.ingest_omex` to find it. ``observables`` names the
+    ``model_location`` is the model's path *as the document names it*, and a reader resolves it
+    relative to the document — so a model stored at ``models/m.xml`` beside an experiment at
+    ``experiments/e.sedml`` is ``../models/m.xml`` here. :func:`build_omex_archive` checks the two
+    agree rather than shipping an archive whose experiment runs a file that is not in it. ``observables`` names the
     model elements to record; by default every species, in model order. Each named observable must
     be a top-level identified element of the model — a species, a parameter, a compartment — and
     one that is not is refused rather than written, because a document observing an element the
@@ -252,11 +259,12 @@ def _add_generator(
     variable_id: str,
     target: str | None = None,
     symbol: str | None = None,
+    task: str = "task",
 ) -> None:
     """One data generator over one variable: the value itself, with no transformation applied."""
     generator = ET.SubElement(parent, "dataGenerator", {"id": generator_id, "name": variable_id})
     variables = ET.SubElement(generator, "listOfVariables")
-    attributes = {"id": variable_id, "taskReference": "task"}
+    attributes = {"id": variable_id, "taskReference": task}
     if target is not None:
         attributes["target"] = target
     if symbol is not None:
@@ -274,6 +282,210 @@ def _model_language(root: ET.Element) -> str:
     return "urn:sedml:language:sbml"
 
 
+@dataclass(frozen=True)
+class ExportedExperiment:
+    """A SED-ML document written from a reconstruction recipe, and what it could not express."""
+
+    sedml: str
+    #: The claim ids that became a task in the document, in recipe order.
+    expressed: tuple[str, ...]
+    #: One line per recipe step the document could not state, naming the step and the reason —
+    #: the same shape :func:`reprolith.archive_mismatches` reports a disagreement in. A step that
+    #: cannot be written is listed here rather than dropped, because an archive silently short of
+    #: a claim reads as a reconstruction that never had one.
+    unexpressed: tuple[str, ...]
+
+
+#: A recipe's ``time_span`` is a record of the window that was run, written as free text: the
+#: committed bundles say ``0-24.0`` and the tests say ``0-24 h``. Only a window starting at zero is
+#: expressible — a uniform time course that starts later is one this repository's own recipe parser
+#: refuses to adopt — and the trailing unit, when there is one, is prose: the number is in the
+#: model's own time unit, which is how the certified run used it.
+_TIME_SPAN = re.compile(r"^\s*0(?:\.0*)?\s*-\s*([0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\s*[A-Za-z]*\s*$")
+
+#: A recipe's ``output`` is written in the concentration notation the certificate prints,
+#: ``[species]``. SED-ML addresses the species itself; whether a tool reads it as an amount or a
+#: concentration is the tool's business, and the same is true of the engines this repository runs.
+_BRACKETED = re.compile(r"^\[(.+)\]$")
+
+
+def _output_id(output: str) -> str:
+    match = _BRACKETED.match(output.strip())
+    return (match.group(1) if match else output).strip()
+
+
+def build_bundle_sedml(
+    bundle: ReconstructionBundle,
+    model_sbml: str,
+    *,
+    model_location: str = "model.xml",
+) -> ExportedExperiment:
+    """Write a published reconstruction's recipe as a SED-ML document.
+
+    A :class:`reprolith.ReconstructionBundle` is Reprolith's own answer to "how do I re-run this":
+    per claim, a window, a sample count, the output to read, and the parameter values that claim
+    sets. All of that is expressible in SED-ML, and until it was, the one part that distinguishes
+    two claims on one model — the **overrides** — lived only in Reprolith's JSON. In the published
+    metformin bundle that is the 779.9 mg free-base dose, without which both claims run the 500 mg
+    arm; writing it as a ``changeAttribute`` puts it in a file any simulator can act on.
+
+    Each step becomes a task over the base model, or over a model derived from it by the step's
+    overrides, and a ``report`` recording time and the step's output. Simulations are shared by
+    window and sample count, so two claims run the same way name the same one. Identifiers are
+    generated (``task1``, ``report1``), never built from the claim id — a claim id is free text and
+    ``Cmax-500mg`` is not a valid SED-ML identifier — and each element carries the claim id it came
+    from as its ``name``.
+
+    A step the document cannot state is **listed, not dropped**: its reason goes in
+    :attr:`ExportedExperiment.unexpressed`. That covers a step with no sample count, a window that
+    is not a number starting at zero, an output the model does not have, and an override naming a
+    parameter the model does not declare — which is the "override that overrides nothing" failure
+    :func:`reprolith.archive_mismatches` exists to catch, and writing one would ship an archive
+    that quietly runs the unmodified model.
+
+    Not checked here: whether an override that *does* name a model parameter takes effect — one
+    fixed by a rule, or shadowed by a kinetic law's own local parameter, is written as given. That
+    check needs the model's math read, not its element names, and certification already applies it
+    to every override before a bundle can carry one.
+
+    Raises ``ValueError`` if the model is not parseable SBML, or if no step at all is expressible,
+    since an experiment with no task describes no run.
+    """
+    root = _model_root(model_sbml)
+    index = _elements_by_id(root)
+    parameters = {name for name, (container, _) in index.items() if container == "listOfParameters"}
+
+    document = ET.Element("sedML", {
+        "xmlns": _SEDML_NAMESPACE,
+        "xmlns:sbml": _namespace(root.tag),
+        "level": str(_SEDML_LEVEL),
+        "version": str(_SEDML_VERSION),
+    })
+    models = ET.SubElement(document, "listOfModels")
+    ET.SubElement(models, "model", {
+        "id": "model", "language": _model_language(root), "source": model_location,
+    })
+    simulations = ET.SubElement(document, "listOfSimulations")
+    tasks = ET.SubElement(document, "listOfTasks")
+    generators = ET.SubElement(document, "listOfDataGenerators")
+    outputs = ET.SubElement(document, "listOfOutputs")
+
+    expressed: list[str] = []
+    unexpressed: list[str] = []
+    known_runs: dict[tuple[float, int], str] = {}
+
+    for step in bundle.recipe:
+        reason = _unexpressible(step, index=index, parameters=parameters)
+        if reason is not None:
+            unexpressed.append(f"claim '{step.claim_id}': {reason}")
+            continue
+        span = _TIME_SPAN.match(step.time_span)
+        assert span is not None and step.steps is not None  # established by _unexpressible
+        duration, count = float(span.group(1)), int(step.steps)
+        ordinal = len(expressed) + 1
+
+        run = known_runs.get((duration, count))
+        if run is None:
+            run = f"simulation{len(known_runs) + 1}"
+            known_runs[(duration, count)] = run
+            course = ET.SubElement(simulations, "uniformTimeCourse", {
+                "id": run,
+                "initialTime": "0",
+                "outputStartTime": "0",
+                "outputEndTime": repr(duration),
+                "numberOfSteps": str(count),
+            })
+            ET.SubElement(course, "algorithm", {"kisaoID": _CVODE})
+
+        model_ref = "model"
+        if step.parameter_overrides:
+            model_ref = f"model{ordinal}"
+            derived = ET.SubElement(models, "model", {
+                "id": model_ref,
+                "name": step.claim_id,
+                "language": _model_language(root),
+                "source": "#model",
+            })
+            changes = ET.SubElement(derived, "listOfChanges")
+            for name, value in step.parameter_overrides:
+                ET.SubElement(changes, "changeAttribute", {
+                    "target": _target(name, index) + "/@value",
+                    "newValue": repr(float(value)),
+                })
+
+        task = f"task{ordinal}"
+        ET.SubElement(tasks, "task", {
+            "id": task, "name": step.claim_id,
+            "modelReference": model_ref, "simulationReference": run,
+        })
+
+        output_id = _output_id(step.output)
+        _add_generator(
+            generators, generator_id=f"time{ordinal}", variable_id="time",
+            symbol=_TIME_SYMBOL, task=task,
+        )
+        _add_generator(
+            generators, generator_id=f"output{ordinal}", variable_id=output_id,
+            target=_target(output_id, index), task=task,
+        )
+        report = ET.SubElement(outputs, "report", {
+            "id": f"report{ordinal}",
+            "name": f"{step.claim_id}: {step.protocol}" if step.protocol else step.claim_id,
+        })
+        columns = ET.SubElement(report, "listOfDataSets")
+        ET.SubElement(columns, "dataSet", {
+            "id": f"time{ordinal}_column", "label": "time", "dataReference": f"time{ordinal}",
+        })
+        ET.SubElement(columns, "dataSet", {
+            "id": f"output{ordinal}_column", "label": output_id,
+            "dataReference": f"output{ordinal}",
+        })
+        expressed.append(step.claim_id)
+
+    if not expressed:
+        raise ValueError(
+            f"no recipe step of '{bundle.entry}' is expressible as a simulation experiment, so "
+            "the document would describe no run: " + "; ".join(unexpressed or ["the recipe is empty"])
+        )
+
+    ET.indent(document, space="  ")
+    sedml = '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(
+        document, encoding="unicode"
+    ) + "\n"
+    return ExportedExperiment(
+        sedml=sedml, expressed=tuple(expressed), unexpressed=tuple(unexpressed)
+    )
+
+
+def _unexpressible(
+    step: RecipeStep,
+    *,
+    index: dict[str, tuple[str, str]],
+    parameters: set[str],
+) -> str | None:
+    """Why this recipe step cannot be written as a task, or ``None`` when it can."""
+    if step.steps is None or step.steps <= 0:
+        return (
+            f"the recipe states no sample count, so how finely to sample "
+            f"'{step.time_span}' is not written down"
+        )
+    if _TIME_SPAN.match(step.time_span) is None:
+        return (
+            f"the window '{step.time_span}' is not a numeric span starting at zero, and a "
+            "uniform time course that starts later is not adoptable as (duration, steps)"
+        )
+    output_id = _output_id(step.output)
+    if output_id not in index:
+        return f"the model has no top-level element '{output_id}' to record"
+    missing = sorted(name for name, _ in step.parameter_overrides if name not in parameters)
+    if missing:
+        return (
+            "the model declares no parameter named " + ", ".join(missing)
+            + "; an override aimed at a parameter that is not there runs the unmodified model"
+        )
+    return None
+
+
 def _sbml_format(root: ET.Element) -> str:
     """The manifest format URI for an SBML document, at the level and version it declares."""
     level, version = root.get("level"), root.get("version")
@@ -284,39 +496,46 @@ def _sbml_format(root: ET.Element) -> str:
 
 def build_omex_archive(
     model_sbml: str,
+    experiment_sedml: str,
     *,
-    duration: float,
-    steps: int,
     model_location: str = "model.xml",
     experiment_location: str = "experiment.sedml",
-    observables: tuple[str, ...] | None = None,
 ) -> bytes:
-    """Package a model and its run as a COMBINE archive, returned as bytes.
+    """Package a model and its experiment as a COMBINE archive, returned as bytes.
 
-    The archive holds three files: the model as given, the SED-ML
-    :func:`build_experiment_sedml` writes for it, and the ``manifest.xml`` that says what each one
-    is. The experiment is marked ``master``, which is how an archive singles out the one simulation
-    it describes — :func:`reprolith.ingest_omex` refuses an archive that does not.
+    The archive holds three files: the model as given, the SED-ML document as given — from
+    :func:`build_experiment_sedml` for a plain run, or :func:`build_bundle_sedml` for a published
+    reconstruction's recipe — and the ``manifest.xml`` that says what each one is. The experiment
+    is marked ``master``, which is how an archive singles out the one simulation it describes;
+    :func:`reprolith.ingest_omex` refuses an archive that does not.
 
-    Nothing is written to disk. The bytes are deterministic: members are stored in a fixed order
-    with a fixed timestamp, so the same model and run conditions give the same archive every time,
-    and two exports can be compared by digest.
+    ``model_location`` must be the location the *document* names as its model source, since that is
+    what a reader resolves. Nothing is written to disk. The bytes are deterministic: members are
+    stored in a fixed order with a fixed timestamp, so the same model and experiment give the same
+    archive every time, and two exports can be compared by digest.
 
-    Raises ``ValueError`` for anything :func:`build_experiment_sedml` refuses, and if the model and
-    the experiment would be stored at the same location.
+    Raises ``ValueError`` if the model is not parseable SBML, or if the model and the experiment
+    would be stored at the same location.
     """
     if model_location == experiment_location:
         raise ValueError(
             f"the model and the experiment cannot both be '{model_location}': "
             "an archive stores one file per location"
         )
-    sedml = build_experiment_sedml(
-        model_sbml,
-        duration=duration,
-        steps=steps,
-        model_location=model_location,
-        observables=observables,
-    )
+    # The document's `source` is resolved relative to the document, and that is the only thing a
+    # reader follows to find the model. A caller that moved the model without telling the writer
+    # would ship an archive whose experiment runs a file the archive does not contain — which
+    # `ingest_omex` refuses, so refusing it here names the mistake where it was made.
+    base = posixpath.dirname(experiment_location)
+    named = {
+        posixpath.normpath(posixpath.join(base, source))
+        for source in sedml_model_sources(experiment_sedml)
+    }
+    if named != {posixpath.normpath(model_location)}:
+        raise ValueError(
+            f"the experiment runs {sorted(named) or ['no model']}, but the archive stores the "
+            f"model at '{model_location}'; the document's source is what a reader follows"
+        )
     manifest = _manifest(
         model_location=model_location,
         model_format=_sbml_format(_model_root(model_sbml)),
@@ -328,7 +547,7 @@ def build_omex_archive(
         for name, text in (
             ("manifest.xml", manifest),
             (model_location, model_sbml),
-            (experiment_location, sedml),
+            (experiment_location, experiment_sedml),
         ):
             info = zipfile.ZipInfo(name, date_time=_FIXED_TIMESTAMP)
             info.compress_type = zipfile.ZIP_DEFLATED
@@ -358,4 +577,9 @@ def _manifest(*, model_location: str, model_format: str, experiment_location: st
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(root, encoding="unicode") + "\n"
 
 
-__all__ = ["build_experiment_sedml", "build_omex_archive"]
+__all__ = [
+    "ExportedExperiment",
+    "build_bundle_sedml",
+    "build_experiment_sedml",
+    "build_omex_archive",
+]
