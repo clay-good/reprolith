@@ -149,7 +149,11 @@ def test_the_published_bundle_can_re_run_the_claims_it_describes() -> None:
 
     root = Path(__file__).parent.parent / "datasets"
     bundle = bundle_from_dict(
-        json.loads((root / "milestone" / "bundles" / "BIOMD0000001028.json").read_text())
+        json.loads(
+            (root / "milestone" / "bundles" / "BIOMD0000001028.json").read_text(
+                encoding="utf-8"
+            )
+        )
     )
     sbml = (root / bundle.model.filename).read_text(encoding="utf-8")
     reported = {"Cmax-500mg": 6.2, "Cmax-1000mg": 11.2}

@@ -18,7 +18,7 @@ pytest.importorskip("roadrunner", reason="the optional 'corroborate' extra (libR
 from reprolith import corroborate_curve, roadrunner_pin, simulate_with_roadrunner  # noqa: E402
 
 _KIN = Path(__file__).parent.parent / "datasets" / "kinetic"
-_MODELS = {m["id"]: m for m in json.loads((_KIN / "cross_validation.json").read_text())["models"]}
+_MODELS = {m["id"]: m for m in json.loads((_KIN / "cross_validation.json").read_text(encoding="utf-8"))["models"]}
 _SBML = (_KIN / "BIOMD0000000010.xml").read_text(encoding="utf-8")
 
 
@@ -84,7 +84,7 @@ def test_the_published_distance_is_a_bound_the_engines_can_reproduce() -> None:
     assert bound(0.0) == 0.0
 
     # And it is genuinely an upper bound on every model in the committed corpus.
-    committed = json.loads((_KIN / "milestone" / "corroboration.json").read_text())
+    committed = json.loads((_KIN / "milestone" / "corroboration.json").read_text(encoding="utf-8"))
     for model_id, record in committed.items():
         spec = _MODELS[model_id]
         result = corroborate_curve(

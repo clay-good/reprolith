@@ -59,7 +59,7 @@ _GENOME_SCALE = {
 
 
 def _load(path: Path) -> cobra.Model:
-    xml = gzip.decompress(path.read_bytes()).decode("utf-8") if path.suffix == ".gz" else path.read_text()
+    xml = gzip.decompress(path.read_bytes()).decode("utf-8") if path.suffix == ".gz" else path.read_text(encoding="utf-8")
     return cobra.io.read_sbml_model(io.StringIO(xml))
 
 

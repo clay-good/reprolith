@@ -342,6 +342,7 @@ def test_export_writes_a_runnable_archive(tmp_path, capsys):
 
     import zipfile
 
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     from reprolith import ingest_omex, parse_sedml_recipes
     with zipfile.ZipFile(out) as archive:
         members = set(archive.namelist())
@@ -398,6 +399,7 @@ def test_export_of_an_unreadable_model_is_a_message_not_a_traceback(tmp_path, ca
 def test_archive_check_reports_and_exits_on_readiness(tmp_path, capsys):
     """The exit code answers the question the command asks: an author wiring this into a
     pre-submission hook needs "is this ready" to be actionable."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     from reprolith import build_experiment_sedml, build_omex_archive
 
     model = _EXPORT_MODEL
@@ -412,6 +414,7 @@ def test_archive_check_reports_and_exits_on_readiness(tmp_path, capsys):
 
 
 def test_archive_check_json_is_the_report_object(tmp_path, capsys):
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     from reprolith import build_experiment_sedml, build_omex_archive
 
     archive = tmp_path / "a.omex"

@@ -147,25 +147,40 @@ def _events_overwriting(sbml: str, overrides: tuple[tuple[str, float], ...]) -> 
     """
     if not overrides:
         return ()
-    from .sbml import _libsbml
+    # ElementTree, not libSBML. An event assignment names its target in a plain `variable`
+    # attribute, so reading it needs no SBML semantics — and routing it through libSBML put a
+    # second, needless dependency on a path whose one libSBML entry point (`_apply_overrides`) a
+    # caller can already stub. That broke two tests that run on the dependency-free gate, and it
+    # would have broken any consumer disclosing a caution without the engine extra installed.
+    import xml.etree.ElementTree as ET
 
-    libsbml = _libsbml()
-    model = libsbml.readSBMLFromString(sbml).getModel()
-    if model is None:
+    try:
+        root = ET.fromstring(sbml)
+    except ET.ParseError:
+        # Unparseable SBML is the business of the paths that must actually run the model; a
+        # disclosure cannot be the thing that reports it, and inventing a caution here would be
+        # worse than staying quiet.
         return ()
     targets = {name for name, _ in overrides}
     warnings: list[str] = []
-    for i in range(model.getNumEvents()):
-        event = model.getEvent(i)
-        name = event.getId() or event.getName() or f"event {i}"
-        for j in range(event.getNumEventAssignments()):
-            variable = event.getEventAssignment(j).getVariable()
+    for index, event in enumerate(
+        element for element in root.iter() if _localname(element.tag) == "event"
+    ):
+        name = event.get("id") or event.get("name") or f"event {index}"
+        for assignment in event.iter():
+            if _localname(assignment.tag) != "eventAssignment":
+                continue
+            variable = assignment.get("variable")
             if variable in targets:
                 warnings.append(
                     f"caution: event {name!r} assigns to {variable!r}, which this claim overrides "
                     "— whether it fires within the window was not evaluated"
                 )
     return tuple(warnings)
+
+
+def _localname(tag: str) -> str:
+    return tag.split("}", 1)[1] if "}" in tag else tag
 
 
 def _model_level_math(model: Any) -> list[Any]:

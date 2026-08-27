@@ -22,9 +22,11 @@ _MILESTONE = _LOGICAL / "milestone"
 # reference.json plus the large models in scalable_fixed_points.json — so adding a model to either
 # reference without regenerating the milestone fails this guard instead of drifting silently.
 _EXPECTED = (
-    set(json.loads((_LOGICAL / "cross_validation" / "reference.json").read_text())["models"])
+    set(json.loads((_LOGICAL / "cross_validation" / "reference.json").read_text(encoding="utf-8"))["models"])
     | set(json.loads(
-        (_LOGICAL / "cross_validation" / "scalable_fixed_points.json").read_text()
+        (_LOGICAL / "cross_validation" / "scalable_fixed_points.json").read_text(
+            encoding="utf-8"
+        )
     )["models"])
 )
 

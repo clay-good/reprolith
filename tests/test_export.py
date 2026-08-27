@@ -403,9 +403,15 @@ def test_the_published_metformin_bundle_exports_to_a_runnable_archive() -> None:
 
     root = Path(__file__).parent.parent
     bundle = bundle_from_dict(
-        json.loads((root / "datasets/milestone/bundles/BIOMD0000001028.json").read_text())
+        json.loads(
+            (root / "datasets/milestone/bundles/BIOMD0000001028.json").read_text(
+                encoding="utf-8"
+            )
+        )
     )
-    model = (root / "datasets/worked_examples/Zake2021_metformin_human_single_PO.xml").read_text()
+    model = (
+        root / "datasets/worked_examples/Zake2021_metformin_human_single_PO.xml"
+    ).read_text(encoding="utf-8")
 
     experiment = build_bundle_sedml(bundle, model)
     assert experiment.expressed == ("Cmax-500mg", "Cmax-1000mg")
@@ -433,9 +439,15 @@ def test_an_independent_sedml_library_reads_the_exported_bundle_without_error() 
     )
     root = Path(__file__).parent.parent
     bundle = bundle_from_dict(
-        json.loads((root / "datasets/milestone/bundles/BIOMD0000001028.json").read_text())
+        json.loads(
+            (root / "datasets/milestone/bundles/BIOMD0000001028.json").read_text(
+                encoding="utf-8"
+            )
+        )
     )
-    model = (root / "datasets/worked_examples/Zake2021_metformin_human_single_PO.xml").read_text()
+    model = (
+        root / "datasets/worked_examples/Zake2021_metformin_human_single_PO.xml"
+    ).read_text(encoding="utf-8")
 
     document = libsedml.readSedMLFromString(build_bundle_sedml(bundle, model).sedml)
     assert document.getNumErrors() == 0, document.getErrorLog().toString()
@@ -459,9 +471,15 @@ def test_the_exported_document_reproduces_the_published_number_when_run() -> Non
 
     root = Path(__file__).parent.parent
     bundle = bundle_from_dict(
-        json.loads((root / "datasets/milestone/bundles/BIOMD0000001028.json").read_text())
+        json.loads(
+            (root / "datasets/milestone/bundles/BIOMD0000001028.json").read_text(
+                encoding="utf-8"
+            )
+        )
     )
-    model = (root / "datasets/worked_examples/Zake2021_metformin_human_single_PO.xml").read_text()
+    model = (
+        root / "datasets/worked_examples/Zake2021_metformin_human_single_PO.xml"
+    ).read_text(encoding="utf-8")
 
     recipe = parse_sedml_recipes(build_bundle_sedml(bundle, model).sedml)
     assert [r.task_id for r in recipe] == ["task1"]  # the 500 mg arm; the other carries overrides

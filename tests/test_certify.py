@@ -460,7 +460,6 @@ def test_an_override_an_event_may_overwrite_is_disclosed_not_refused() -> None:
     without claiming the override *was* overwritten, which would need the trigger evaluated over
     the window rather than a name lookup.
     """
-    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     from reprolith.certify import _events_overwriting
 
     warnings = _events_overwriting(_EVENT_MODEL, (("dose", 50.0),))
@@ -472,7 +471,6 @@ def test_an_override_an_event_may_overwrite_is_disclosed_not_refused() -> None:
 def test_an_override_no_event_touches_is_left_unqualified() -> None:
     """The check is targeted: the metformin model has two events and neither assigns to the dose
     parameter its 1000 mg claim overrides, so that certificate carries no caution."""
-    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     from reprolith.certify import _events_overwriting
 
     assert _events_overwriting(_EVENT_MODEL, (("k", 0.2),)) == ()
