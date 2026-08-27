@@ -28,6 +28,12 @@ search is scale-free — the pharmacometric convention. A fit that does not conv
 iteration budget raises rather than returning: an optimizer that stopped early has not produced an
 estimate, and publishing one as though it had is the failure this whole path exists to avoid.
 
+Two shapes are refused because they would otherwise publish a fit that did not happen. An
+objective that does not move when the parameters do — the parameters are unidentifiable from this
+data — because Nelder-Mead on a flat landscape shrinks its simplex until the convergence test
+passes and hands back the caller's own starting values as an estimate. And a search that walks off
+the log scale entirely, which used to end in an ``OverflowError`` naming nothing.
+
 For the same reason, a parameter region the engine cannot integrate propagates its error rather
 than being scored as infinitely bad. Scoring it would be the usual practice and would quietly
 steer the search away, leaving no trace that the fit went somewhere the model does not exist —
@@ -46,6 +52,11 @@ from .engine import simulate
 #: Nelder-Mead's standard coefficients: reflection, expansion, contraction, shrink. Named rather
 #: than inlined because they are part of the method a protocol claims to have used.
 _ALPHA, _GAMMA, _RHO, _SIGMA = 1.0, 2.0, 0.5, 0.5
+
+#: How far the log-scale search may wander before it is called divergent rather than slow. Well
+#: inside `math.exp`'s overflow point, so a diverging fit ends with a message that names the
+#: parameter instead of an OverflowError that names nothing.
+_LOG_LIMIT = 300.0
 
 #: How the initial simplex is built around the starting point, on the log scale: each vertex moves
 #: one coordinate by this much. Fixed, so the simplex is a function of the starting values alone.
@@ -141,6 +152,20 @@ def refit_parameters(
     _apply_overrides(sbml, start)
 
     def objective(log_values: list[float]) -> float:
+        diverged = [
+            name for name, value in zip(names, log_values) if abs(value) > _LOG_LIMIT
+        ]
+        if diverged:
+            # Without this the search reaches `math.exp` of a few thousand and the fit ends in an
+            # OverflowError naming nothing. A simplex that has walked this far on the log scale —
+            # e³⁰⁰ times its starting value — is not converging on an estimate, and saying so is
+            # more useful than either an obscure exception or a silent penalty that steers it back.
+            raise ValueError(
+                "the re-fit diverged: " + ", ".join(sorted(diverged))
+                + f" left the range e±{_LOG_LIMIT:g} around a positive value, which is not a "
+                "region this model can be run in. Start closer, or check that the parameter is "
+                "the one the data identifies."
+            )
         overrides = tuple(
             (name, math.exp(value)) for name, value in zip(names, log_values)
         )
@@ -158,6 +183,19 @@ def refit_parameters(
         for i in range(len(origin))
     ]
     scores = [objective(vertex) for vertex in simplex]
+    # An objective that does not move when the parameters do is not a fit. Nelder-Mead on a flat
+    # landscape shrinks its simplex until the convergence test passes and returns the point it
+    # started from, reporting "converged in N iterations" — so an estimate that is nothing but the
+    # caller's starting guess reaches the certificate with a protocol saying a fit produced it.
+    # Measured on this repository's own model: estimating a parameter the trajectory does not read
+    # returned the starting value with a residual sum of squares that never improved.
+    if max(scores) - min(scores) <= f_tolerance:
+        raise ValueError(
+            "the objective does not move when " + ", ".join(names) + " does, so this data does "
+            "not identify them: the fit would return the starting values with a residual that "
+            "never improved, and reporting that as a recovered estimate is a fit that did not "
+            "happen"
+        )
 
     for iteration in range(1, max_iterations + 1):
         order = sorted(range(len(simplex)), key=lambda i: scores[i])

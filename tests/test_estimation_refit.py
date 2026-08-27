@@ -176,3 +176,22 @@ def test_the_fitted_trajectory_is_the_one_the_data_came_from() -> None:
     for time, observed in _DATA:
         index = min(range(len(times)), key=lambda i: abs(times[i] - time))
         assert values[index] == pytest.approx(observed, rel=0.02)
+
+
+def test_a_parameter_the_data_cannot_identify_is_refused_not_estimated() -> None:
+    """The quiet failure this exists to catch, found by auditing this module's own first version.
+
+    Nelder-Mead on a flat landscape shrinks its simplex until the convergence test passes and
+    returns the point it started from — reporting "converged in N iterations" over a residual that
+    never improved. The caller's starting guess then reaches the certificate as a recovered
+    estimate, with a protocol saying a fit produced it.
+    """
+    unidentifiable = _MODEL.replace(
+        '<parameter id="k" value="0.2" constant="true"/>',
+        '<parameter id="k" value="0.2" constant="true"/>\n'
+        '      <parameter id="unused" value="1" constant="true"/>',
+    )
+    with pytest.raises(ValueError, match="does not identify them"):
+        refit_parameters(
+            unidentifiable, "C", observations=_DATA, start=(("unused", 1.0),),
+        )
