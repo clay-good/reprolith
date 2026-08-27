@@ -1890,6 +1890,63 @@ of the convergence, summation and sample-count numbers from the scale audit beyo
 nor the byte-for-byte reproducibility run; nor the two override magnitudes, 54.6x and 7.4x, whose
 surrounding structural claims did check out.
 
+## Four capabilities, and what auditing each one's first version found
+
+A round of building rather than a round of auditing: the OMEX writer, the population simulator,
+the re-fitting engine, and the archive check all landed here. Each was re-audited immediately, and
+each first version had a real defect. Recorded because the pattern is the useful part — **every one
+was found by using the thing as its consumer, not by re-reading the code.**
+
+### The fit that returned the caller's own guess
+
+Nelder-Mead does not diverge on a flat landscape. It shrinks its simplex until the convergence test
+passes and hands back the point it started from, reporting `converged in N iterations` over a
+residual that never improved. Estimating a parameter the trajectory does not read did exactly that:
+the caller's starting guess came back as a *recovered estimate*, carrying a protocol saying a fit
+produced it, ready for a certificate to publish. An objective that does not move when the
+parameters do is now refused before the first iteration.
+
+This is the estimation path's own worst case — a re-fit that never happened, reported as one — and
+it was inside the module written to prevent it. Found by writing a test that fit a parameter
+nothing reads, expecting an error and getting a number.
+
+### The report that told an author to fix a correct file
+
+The archive check's first output listed metformin's 35 reactions and its events under *fix before
+you submit*, with the fix `state this in the archive`. The archive states both perfectly well;
+Reprolith's dossier cannot represent them. The same gap shape covers that and a genuine omission —
+45 of that model's 69 values state no unit — and nothing in the shape distinguishes them, so the
+report now puts all of them in their own section, never as a fix, and lets none of them decide
+readiness. Telling an author to repair a correct file is worse than saying nothing.
+
+The same output printed the certificate scope statement, whose first words are *This certificate
+attests*, above a check that runs no model and issues no certificate.
+
+Both were found by running the new command on the repository's own published archive and reading
+the result as the author being judged. Neither is visible in the code.
+
+### The document that read here and nowhere else
+
+The exported SED-ML declared L1V3 over a `numberOfSteps` attribute. L1V3 spells that
+`numberOfPoints`; `numberOfSteps` arrives in L1V4. Reprolith's own parser reads `numberOfSteps`, so
+the document round-tripped perfectly here and failed schema validation everywhere else, with its
+sampling invisible to a strict reader. Found by installing libSEDML — an independent implementation
+— and asking it to read the output. It rejected it; it reads the corrected document with zero
+errors.
+
+The lesson generalizes past SED-ML: **a writer validated only by its own reader is not validated.**
+
+### Two more, both about names
+
+An exported archive whose experiment sat in one directory and whose model sat in another named the
+model by where the archive stored it, not by where a reader resolves it from — so the document
+pointed at a file that was not there. Caught by a check added in the same change, on that change's
+own first test.
+
+And zip member names were normalized with `lstrip("./")`, which takes a character *set*: a member
+named `.hidden.xml` lost its leading dot and matched nothing. The OMEX reader's own normalizer
+strips a path prefix and had been correct all along, three files away.
+
 ## A published number that moved a decade between two runs
 
 Extending cross-engine corroboration to the PK/PD class surfaced a defect in the mechanism that
@@ -1917,7 +1974,10 @@ that motivated it is not verified at its boundary, and the boundary is where the
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
 artifact (8.1), this note (8.2), and the discipline-loop record (7.3, 7.4) are all done and
-committed. What remains is what finding 2 names: a scaled way to extract each paper's targetable
+committed. Both deferred method fences are lifted: a population is simulated, not only judged, and
+an estimate is re-derived, not only compared — each validated against closed-form mathematics, and
+neither yet pointed at a paper, because no population figure and no shipped dataset are in the
+corpus. What remains is what finding 2 names: a scaled way to extract each paper's targetable
 claims (tasks 2.1-2.3). Thirty of the thirty-one entries abstained for want of exactly that, so
 verdict *accuracy* across the set is still unestablished — the metformin example shows only that,
 given a claim, the rest of the pipeline delivers an honest, root-caused verdict.
