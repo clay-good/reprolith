@@ -6,7 +6,9 @@ The CLI is Reprolith's human-facing surface at a terminal, the counterpart to th
 MCP server. It exposes the same read-only query model — browse the catalog, read a certificate,
 list its gaps, see the blind self-validation track record — so a person can obtain a verdict
 without speaking JSON-RPC or writing Python. It re-presents what the engine already produced; it
-computes no verdict of its own.
+computes no verdict of its own. One command writes: `export` turns a published reconstruction into
+a runnable COMBINE archive, because a reconstruction nobody can re-run without Reprolith is not a
+published artifact.
 
 ## Requirements
 
@@ -22,12 +24,22 @@ cannot become a divergent second implementation of Reprolith's contracts.
 - **AND** the CLI exposes no verdict-producing behavior of its own — it formats what the query
   returns
 
-#### Scenario: Every command is side-effect-free
+#### Scenario: No command changes repository state
 
 - **WHEN** any CLI command runs
-- **THEN** it returns data and changes no repository state
+- **THEN** it changes no repository state
 - **AND** an unknown certificate digest or unknown paper is reported as such with a non-zero exit
   status, not a fabricated result
+
+#### Scenario: The one command that writes a file
+
+- **WHEN** a reconstruction is exported from the terminal
+- **THEN** the only file written is the archive at the path the caller named, built from the
+  published bundle the query returns and nothing the CLI decided
+- **AND** it is refused if the model supplied is not the one the bundle records having been built
+  from, since an archive built from another model packages a run the certificate never judged
+- **AND** a recipe step the archive cannot state is reported to the terminal, never dropped
+  silently
 
 ### Requirement: Scope statement inescapable in terminal output
 

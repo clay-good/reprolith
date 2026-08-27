@@ -202,6 +202,18 @@ published metformin bundle that is the 779.9 mg free-base dose — the value wit
 1000 mg claim runs the 500 mg arm, and taken naively (1000 mg straight in) overshoots the paper by
 26%. It is now a `changeAttribute` in a file any simulator can act on.
 
+From a terminal, the same thing without Python:
+
+```bash
+reprolith export BIOMD0000001028 \
+  --model datasets/worked_examples/Zake2021_metformin_human_single_PO.xml \
+  --out reconstruction.omex
+```
+
+It is the CLI's only writing command. It refuses a `--model` the bundle was not built from — the
+store records which file a reconstruction used, never its bytes, and an archive built from another
+model packages a run the certificate never judged.
+
 `build_bundle_sedml` returns what it wrote *and* what it could not: `expressed` names the claims
 that became tasks, and `unexpressed` carries one line per step it could not state — no sample
 count, a window that is not a number starting at zero, an output the model does not have, or an

@@ -95,7 +95,14 @@ reprolith gaps <digest>              # the "what was missing" report
 reprolith status <accession>         # a paper's lifecycle status and history
 reprolith certificates-for <id>      # every certificate digest for one paper, newest first
 reprolith self-validation            # the blind track record, per class and overall
+reprolith export <accession> \       # the reconstruction as a runnable COMBINE archive
+  --model <model.xml> --out <out.omex>
 ```
+
+Every command reads except `export`, which writes the archive named by `--out`. It packages the
+published bundle for that accession — the window, the sample count, the output each claim reads,
+and the values that claim sets — and refuses a `--model` the bundle was not built from, since an
+archive built from another model packages a run the certificate never judged.
 
 `certificates-for` takes `--by title|doi|pubmed-id|accession`, and it is how you reach the classes
 the catalog does not list: the catalog is the PK/PD work queue, while the ledger carries all six

@@ -7,7 +7,11 @@ the same :class:`~reprolith.query.ReprolithQuery`, so the terminal view and the 
 never disagree ("Parity with the human surface"). The CLI computes no verdict of its own; it
 formats what the query returns.
 
-Every command is read-only. Structured data prints as indented, sorted JSON with ``--json``
+Every command reads; one writes. ``export`` is the exception and the only one — it turns a
+published reconstruction bundle into a COMBINE archive on disk, because a reconstruction nobody
+can run without Reprolith is not a published artifact. It computes nothing: the bundle it exports
+is the one the query returns, and the file it writes is what :func:`reprolith.build_bundle_sedml`
+makes of it. Structured data prints as indented, sorted JSON with ``--json``
 (the exact object an agent gets over MCP); without it, the human-friendly formatters below
 render the same data as legible text. A certificate renders through
 :func:`reprolith.render.render_human`, the canonical plain-text certificate, so the terminal
@@ -19,10 +23,13 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path, PurePosixPath
 from typing import Any
 
+from .export import build_bundle_sedml, build_omex_archive
 from .mcp_server import default_data_dir, load_repository
 from .model import RunMetadata
+from .persistence import bundle_from_dict
 from .query import ReprolithQuery
 from .render import render_human
 
@@ -260,6 +267,61 @@ def _cmd_bundle(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_export(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Write a published reconstruction as a runnable COMBINE archive."""
+    view = query.bundle(args.accession)
+    if view is None:
+        print(f"no bundle for accession: {args.accession}", file=sys.stderr)
+        return 1
+    bundle = bundle_from_dict(view)
+
+    model_path = Path(args.model)
+    try:
+        model_sbml = model_path.read_text(encoding="utf-8")
+    except OSError as unreadable:
+        print(f"cannot read the model: {unreadable}", file=sys.stderr)
+        return 1
+    # The store records which file a reconstruction was built from, never its bytes, so the model
+    # is supplied here — and a bundle exported against a *different* model would produce an archive
+    # that runs something the certificate never judged. The recorded name is what says which file
+    # that is, so a mismatch is refused rather than exported.
+    recorded = PurePosixPath(bundle.model.filename).name if bundle.model else None
+    if recorded is not None and recorded != model_path.name:
+        print(
+            f"the bundle for {args.accession} was built from '{recorded}', not "
+            f"'{model_path.name}'; exporting it against another model would package a run the "
+            "certificate never judged",
+            file=sys.stderr,
+        )
+        return 1
+
+    location = recorded or model_path.name
+    try:
+        experiment = build_bundle_sedml(bundle, model_sbml, model_location=location)
+        archive = build_omex_archive(model_sbml, experiment.sedml, model_location=location)
+    except ValueError as refused:
+        print(str(refused), file=sys.stderr)
+        return 1
+
+    out = Path(args.out)
+    out.write_bytes(archive)
+    if args.json:
+        _print_json({
+            "archive": str(out),
+            "bytes": len(archive),
+            "expressed": list(experiment.expressed),
+            "unexpressed": list(experiment.unexpressed),
+        })
+        return 0
+    print(f"wrote {out} ({len(archive)} bytes)")
+    print(f"claims expressed: {', '.join(experiment.expressed)}")
+    for line in experiment.unexpressed:
+        # Printed, never swallowed: an archive short of a claim reads as a reconstruction that
+        # never had one, and the terminal is where the person exporting it finds out.
+        print(f"not expressed: {line}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="reprolith",
@@ -341,6 +403,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("accession", help="the entry accession")
     add_json(p)
     p.set_defaults(func=_cmd_bundle)
+
+    p = sub.add_parser(
+        "export",
+        help="write a reconstruction as a runnable COMBINE archive (the one command that writes)",
+    )
+    p.add_argument("accession", help="the entry accession")
+    p.add_argument("--model", required=True, help="the SBML file the reconstruction was built from")
+    p.add_argument("--out", required=True, help="where to write the .omex archive")
+    add_json(p)
+    p.set_defaults(func=_cmd_export)
 
     return parser
 

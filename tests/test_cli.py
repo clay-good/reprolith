@@ -289,3 +289,107 @@ def test_status_says_what_a_blocked_paper_is_blocked_on(tmp_path, capsys):
     assert run(["--data-dir", str(repo), "status", "ACC9"]) == 0
     out = capsys.readouterr().out
     assert "the paper's targetable claims were never extracted" in out
+
+
+_EXPORT_MODEL = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="two_compartment">
+    <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="central" compartment="c" initialAmount="100" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters><parameter id="k" value="0.3" constant="true"/></listOfParameters>
+  </model>
+</sbml>
+"""
+
+
+def _write_exportable_bundle(repo: Path) -> Path:
+    """Replace the stub bundle with a real one, and drop the model it names beside it."""
+    from reprolith import ModelArtifact, RecipeStep, ReconstructionBundle
+
+    model = repo / "two_compartment.xml"
+    model.write_text(_EXPORT_MODEL, encoding="utf-8")
+    bundle = ReconstructionBundle(
+        entry="ACC1",
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        model=ModelArtifact(filename="models/two_compartment.xml", detected_format="sbml"),
+        recipe=(
+            RecipeStep(claim_id="AUC", protocol="Table 1", output="[central]",
+                       time_span="0-24.0", steps=480),
+            RecipeStep(claim_id="Cmax", protocol="Fig 2", output="[central]",
+                       time_span="0-24.0", steps=480, parameter_overrides=(("k", 0.6),)),
+        ),
+    )
+    (repo / "bundles" / "ACC1.json").write_text(
+        json.dumps(bundle.to_dict(), indent=2, sort_keys=True), encoding="utf-8"
+    )
+    return model
+
+
+def test_export_writes_a_runnable_archive(tmp_path, capsys):
+    """The one command that writes: a published reconstruction becomes a file any tool can open."""
+    repo, _ = _write_repo(tmp_path)
+    model = _write_exportable_bundle(repo)
+    out = tmp_path / "reconstruction.omex"
+
+    assert run(["--data-dir", str(repo), "export", "ACC1",
+                "--model", str(model), "--out", str(out)]) == 0
+    printed = capsys.readouterr().out
+    assert "claims expressed: AUC, Cmax" in printed
+    assert "not expressed" not in printed
+
+    import zipfile
+
+    from reprolith import ingest_omex, parse_sedml_recipes
+    with zipfile.ZipFile(out) as archive:
+        members = set(archive.namelist())
+        sedml = archive.read("experiment.sedml").decode("utf-8")
+    # The archive names the model by the file the *bundle* records, not by where the caller keeps it.
+    assert members == {"manifest.xml", "two_compartment.xml", "experiment.sedml"}
+    assert [r.duration for r in parse_sedml_recipes(sedml)] == [24.0]
+    assert ingest_omex(out.read_bytes(), entry="ACC1").state_variables == ("central",)
+
+
+def test_export_json_reports_what_it_wrote_and_what_it_could_not(tmp_path, capsys):
+    repo, _ = _write_repo(tmp_path)
+    model = _write_exportable_bundle(repo)
+    out = tmp_path / "r.omex"
+
+    assert run(["--data-dir", str(repo), "export", "ACC1",
+                "--model", str(model), "--out", str(out), "--json"]) == 0
+    reported = json.loads(capsys.readouterr().out)
+    assert reported["expressed"] == ["AUC", "Cmax"]
+    assert reported["unexpressed"] == []
+    assert reported["bytes"] == out.stat().st_size
+
+
+def test_export_refuses_a_model_the_bundle_was_not_built_from(tmp_path, capsys):
+    """An archive built from another model packages a run the certificate never judged."""
+    repo, _ = _write_repo(tmp_path)
+    _write_exportable_bundle(repo)
+    other = tmp_path / "something_else.xml"
+    other.write_text(_EXPORT_MODEL, encoding="utf-8")
+
+    assert run(["--data-dir", str(repo), "export", "ACC1",
+                "--model", str(other), "--out", str(tmp_path / "r.omex")]) == 1
+    assert "never judged" in capsys.readouterr().err
+    assert not (tmp_path / "r.omex").exists()
+
+
+def test_export_of_an_unknown_accession_says_so(tmp_path, capsys):
+    repo, _ = _write_repo(tmp_path)
+    model = _write_exportable_bundle(repo)
+    assert run(["--data-dir", str(repo), "export", "NOPE",
+                "--model", str(model), "--out", str(tmp_path / "r.omex")]) == 1
+    assert "no bundle for accession: NOPE" in capsys.readouterr().err
+
+
+def test_export_of_an_unreadable_model_is_a_message_not_a_traceback(tmp_path, capsys):
+    repo, _ = _write_repo(tmp_path)
+    _write_exportable_bundle(repo)
+    assert run(["--data-dir", str(repo), "export", "ACC1",
+                "--model", str(tmp_path / "two_compartment.xml") + ".missing",
+                "--out", str(tmp_path / "r.omex")]) == 1
+    assert "cannot read the model" in capsys.readouterr().err
