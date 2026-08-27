@@ -67,6 +67,7 @@ from .enums import (
     ReproductionLevel,
     Verdict,
 )
+from .estimation import EstimationResult, refit_parameters
 from .export import (
     ExportedExperiment,
     build_bundle_sedml,
@@ -358,6 +359,7 @@ __all__ = [
     "estimate_difficulty",
     "estimation_default_tolerance",
     "EstimationClaim",
+    "EstimationResult",
     "ExportedExperiment",
     "ExtractionConfidence",
     "FailureMode",
@@ -451,6 +453,7 @@ __all__ = [
     "RecipeStep",
     "ReconstructionBundle",
     "ReferenceKind",
+    "refit_parameters",
     "relative_error",
     "render_badge",
     "render_human",

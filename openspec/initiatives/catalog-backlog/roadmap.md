@@ -130,7 +130,11 @@ a change under `openspec/changes/`.
 
 ### 8. Estimation reproduction (re-fit from raw data)
 
-- **Type:** capability *(estimation judge landed in `simulation-oracle`; re-fitting engine deferred)*
+- **Type:** capability *(landed: the estimation judge in `simulation-oracle`, and now the re-fitting
+  engine — `refit_parameters` minimizes least squares with an owned, deterministic Nelder-Mead on
+  the log scale, validated by recovering a rate constant a closed-form regression gives exactly.
+  What is still missing is a *paper's* shipped dataset to point it at; the demonstration is against
+  mathematics, not a published estimate.)*
 - **Why (value):** The level-2 oracle deferred from the MVP: when raw data ships, re-fit the
   model and check the *reported parameter estimates*, not just the shown curve. The strongest form
   of reproducibility, and the most convincing when it holds.

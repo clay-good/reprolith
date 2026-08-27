@@ -144,6 +144,19 @@ simulation verdict so the two levels are never conflated.
 - **AND** the protocol travels on the assessment, because a re-fit nobody can repeat is not
   evidence and a recovered value equal to the reported one proves nothing on its own
 
+#### Scenario: An estimate Reprolith re-derived itself
+
+- **WHEN** Reprolith runs the re-fit rather than being handed the estimate
+- **THEN** the objective, the optimizer, the starting values, and the dataset and grid it ran on
+  are recorded in the protocol the certificate carries, as they are for a supplied estimate —
+  running the fit does not exempt it from stating how
+- **AND** the optimizer is deterministic and owned, so the same data and starting values give the
+  same estimate on every machine and no dependency's version can move the answer
+- **AND** the starting values are the caller's, never defaulted, because a starting point is part
+  of an optimizer's answer for any objective that is not convex
+- **AND** a fit that does not converge inside its iteration budget is refused rather than
+  reported: an optimizer that stopped early has not produced an estimate
+
 #### Scenario: Estimation tolerance reflects re-fit sensitivity
 
 - **WHEN** no paper-stated precision or reviewer override exists for an estimation claim

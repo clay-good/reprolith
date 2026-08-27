@@ -238,6 +238,15 @@ protocol, because an envelope read without them is a picture rather than a resul
 against mathematics — the closed-form percentiles of a one-compartment model whose volume varies —
 not against itself. What is missing is a *paper's* population figure to point it at.
 
+**Reported parameter estimates** — the strongest form of reproducibility, when a paper ships the
+data it was fit to — are re-derived rather than taken on trust: `refit_parameters` minimizes least
+squares with a deterministic Nelder-Mead written here rather than imported, searching on the log
+scale so a rate cannot wander negative and no dependency's version can move the answer. The
+objective, the optimizer, the starting values, and the dataset and grid all travel in the
+certificate's protocol, and a fit that does not converge inside its budget is refused rather than
+reported. Validated by recovering a rate constant that a closed-form regression gives exactly.
+Here too, what is missing is a *paper's* shipped dataset to point it at.
+
 **Spatial reaction-diffusion (PDE) models** are the sixth class: the reproducible result is a
 concentration profile over space, so a pure-Python finite-difference solver feeds the same curve
 oracle, self-validated non-circularly against the exact analytical diffusion solution (a Gaussian
