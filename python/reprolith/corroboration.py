@@ -21,6 +21,12 @@ from .engine import ENGINE as _COPASI_ENGINE
 from .engine import ROADRUNNER_ENGINE, simulate, simulate_with_roadrunner
 from .oracle import normalized_curve_distance
 
+#: How far a raw distance is lifted before it is rounded up to a decade. Two: the measured
+#: cross-run spread on the model that exposed the problem was about 12%, and a factor of two keeps
+#: a value that close to a boundary on the same side of it in every observation, at the cost of at
+#: most one decade of looseness in the published bound.
+_MARGIN = 2.0
+
 
 @dataclass(frozen=True)
 class EngineCorroboration:
@@ -69,7 +75,18 @@ class EngineCorroboration:
         # so the published granularity is the decade. It still says what the number is for —
         # agreement three to five orders below the tolerance — without pretending to digits no
         # second machine reproduces.
-        return float(f"{10.0 ** math.ceil(math.log10(self.distance)):.0e}")
+        #
+        # The decade alone was not enough either, for a distance sitting near a boundary. Measured
+        # on the metformin reconstruction: three runs of one milestone script on one machine
+        # published 1e-06 twice and 1e-07 once, because the raw distance straddles 1e-07 (1.11e-07
+        # in isolation, just under it inside a longer run). A committed number that moves a decade
+        # between two runs is the very thing this method exists to prevent. So the distance is
+        # lifted by a margin before it is rounded up: a value within a factor of `_MARGIN` of the
+        # decade below is published at the decade above, and both draws land on the same number.
+        # The change is one-directional by construction — the margin is greater than one, so the
+        # published bound can only ever loosen, and it still never states better agreement than
+        # was measured.
+        return float(f"{10.0 ** math.ceil(math.log10(self.distance * _MARGIN)):.0e}")
 
 
 def corroborate_curve(

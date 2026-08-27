@@ -24,7 +24,7 @@
     ]
   },
   "BIOMD0000000021": {
-    "distance_at_most": 1e-05,
+    "distance_at_most": 0.0001,
     "engine_independent": true,
     "engines": [
       "copasi",

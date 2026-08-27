@@ -1144,7 +1144,13 @@ default:
   same id, where the law reads the local one, the run comes back bit-identical, and the protocol
   publishes an override that did nothing. That one is unambiguous, and is what the guard now
   refuses. The residual event case needs the trigger evaluated over the protocol window, not a name
-  lookup, and is left recorded rather than guessed at.
+  lookup, so it is **disclosed rather than judged**: when an event assignment targets a parameter a
+  claim overrides, the certificate's protocol says so and says that whether the event fires within
+  the window was not evaluated. That is exactly what is known, and it replaces a silence in which
+  the certificate published the override and said nothing about the event that might replace it.
+  It fires on no committed certificate — the metformin model has two events and neither assigns to
+  the dose parameter its 1000 mg claim overrides — so it is a guard for the next model, verified
+  against a constructed one.
 - **The constraint-based validator aborted where an abstention was available.** A dossier with no
   targetable claim states nothing to be wrong about — the judging loop is empty and the certificate
   comes out `blocked`, which is first-class output here. Raising on it would have taken down a
@@ -1883,6 +1889,29 @@ measurement says.
 of the convergence, summation and sample-count numbers from the scale audit beyond the SSA line;
 nor the byte-for-byte reproducibility run; nor the two override magnitudes, 54.6x and 7.4x, whose
 surrounding structural claims did check out.
+
+## A published number that moved a decade between two runs
+
+Extending cross-engine corroboration to the PK/PD class surfaced a defect in the mechanism that
+was supposed to make corroboration numbers reproducible. `EngineCorroboration.distance_bound`
+publishes the distance rounded *up* to the next decade, precisely because the raw distance between
+two agreeing engines is a difference of nearly-equal numbers whose leading digits are engine noise.
+
+That was not coarse enough for a distance sitting on a boundary. Metformin measures 1.11e-07 in
+isolation and a little under 1e-07 inside a longer run, so **three runs of one milestone script on
+one machine published 1e-06 twice and 1e-07 once** — the exact failure the decade rounding exists
+to prevent, one boundary over. The kinetic class was checked the same way and is stable across
+three runs, so this is a near-boundary effect, not a general one.
+
+The fix lifts the distance by a factor of two before rounding up, so a value that close to a
+boundary lands on the same side of it in every observation. It is one-directional by construction:
+the margin is greater than one, so the published bound can only ever loosen, and it still never
+states better agreement than was measured. The cost is at most one decade — one committed kinetic
+bound moved from 1e-05 to 1e-04 — against a criterion three to five orders away. Every verdict is
+unchanged.
+
+The general lesson is the one the repository keeps relearning: a mitigation verified on the cases
+that motivated it is not verified at its boundary, and the boundary is where the next case sits.
 
 ## Status and what remains
 

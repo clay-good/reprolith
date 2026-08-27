@@ -408,3 +408,89 @@ def test_a_curve_claim_with_no_reference_abstains_instead_of_raising(
     # into the pass.
     assert certificate.overall is OverallVerdict.REPRODUCED
     assert claim_counts(certificate)["not-evaluable"] == 1
+
+
+_EVENT_MODEL = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="dosed">
+    <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="X" compartment="c" initialAmount="0" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="dose" value="100" constant="false"/>
+      <parameter id="k" value="0.1" constant="true"/>
+    </listOfParameters>
+    <listOfRules>
+      <rateRule variable="X">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply><times/><ci>k</ci><ci>dose</ci></apply>
+        </math>
+      </rateRule>
+    </listOfRules>
+    <listOfEvents>
+      <event id="reset_at_12h" useValuesFromTriggerTime="false">
+        <trigger initialValue="false" persistent="true">
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><gt/><csymbol encoding="text"
+              definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+              <cn> 12 </cn></apply>
+          </math>
+        </trigger>
+        <listOfEventAssignments>
+          <eventAssignment variable="dose">
+            <math xmlns="http://www.w3.org/1998/Math/MathML"><cn> 0 </cn></math>
+          </eventAssignment>
+        </listOfEventAssignments>
+      </event>
+    </listOfEvents>
+  </model>
+</sbml>
+"""
+
+
+def test_an_override_an_event_may_overwrite_is_disclosed_not_refused() -> None:
+    """The gap docs/findings-note.md left open when the event guard was reverted.
+
+    Refusing an override an event assigns to was measured to be wrong — an event overwrites its
+    target only when its trigger fires, and three real shapes each moved the answer threefold under
+    a refusal saying the override had no effect. What was left was a silence: the certificate
+    published the override and said nothing about the event that might replace it. It says so now,
+    without claiming the override *was* overwritten, which would need the trigger evaluated over
+    the window rather than a name lookup.
+    """
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith.certify import _events_overwriting
+
+    warnings = _events_overwriting(_EVENT_MODEL, (("dose", 50.0),))
+    assert len(warnings) == 1
+    assert "event 'reset_at_12h' assigns to 'dose'" in warnings[0]
+    assert "not evaluated" in warnings[0]
+
+
+def test_an_override_no_event_touches_is_left_unqualified() -> None:
+    """The check is targeted: the metformin model has two events and neither assigns to the dose
+    parameter its 1000 mg claim overrides, so that certificate carries no caution."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith.certify import _events_overwriting
+
+    assert _events_overwriting(_EVENT_MODEL, (("k", 0.2),)) == ()
+    metformin = (
+        Path(__file__).parent.parent
+        / "datasets" / "worked_examples" / "Zake2021_metformin_human_single_PO.xml"
+    ).read_text(encoding="utf-8")
+    assert _events_overwriting(metformin, (("Metformin_Dose_in_Lumen_in_mg", 779.9),)) == ()
+
+
+def test_the_caution_reaches_the_protocol_a_reader_sees() -> None:
+    """A warning nothing publishes is not a disclosure."""
+    from reprolith.certify import _run_protocol
+
+    protocol = _run_protocol(
+        duration=24.0, steps=480, read="[X] cmax", overrides=(("dose", 50.0),),
+        overwritten=("caution: event 'reset_at_12h' assigns to 'dose', which this claim overrides"
+                     " — whether it fires within the window was not evaluated",),
+    )
+    assert "overrides: dose=50.0" in protocol
+    assert "caution: event 'reset_at_12h'" in protocol

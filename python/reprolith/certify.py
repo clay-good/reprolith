@@ -100,6 +100,7 @@ def _run_protocol(
     steps: int,
     read: str,
     overrides: tuple[tuple[str, float], ...] = (),
+    overwritten: tuple[str, ...] = (),
 ) -> str:
     """Describe the run a time-course judgment rests on, for the certificate's protocol field.
 
@@ -124,7 +125,47 @@ def _run_protocol(
     stated = f"duration={duration!r}, steps={int(steps)}, read={read}"
     if overrides:
         stated += ", overrides: " + ", ".join(f"{name}={value!r}" for name, value in overrides)
+    if overwritten:
+        stated += "; " + "; ".join(overwritten)
     return stated
+
+
+def _events_overwriting(sbml: str, overrides: tuple[tuple[str, float], ...]) -> tuple[str, ...]:
+    """Warnings for overrides an event assignment may overwrite during the run.
+
+    An override that cannot reach the run is refused outright (:func:`_apply_overrides`). An event
+    is different, and refusing it was measured to be wrong: an event overwrites its target only
+    when its trigger fires, so an override still governs the run up to that moment and governs all
+    of it when the trigger is never satisfied in the window. Three real shapes each moved the
+    answer threefold under a refusal saying the override had no effect.
+
+    What was left was a silence: the certificate published the override and said nothing about the
+    event that might replace it. Evaluating the trigger over the protocol window needs the run,
+    not a name lookup, so this does not claim the override *was* overwritten — it states that an
+    event assigns to the same target and that whether it fires was not evaluated, which is exactly
+    what is known. A reader can then check the model; before, there was nothing to check against.
+    """
+    if not overrides:
+        return ()
+    from .sbml import _libsbml
+
+    libsbml = _libsbml()
+    model = libsbml.readSBMLFromString(sbml).getModel()
+    if model is None:
+        return ()
+    targets = {name for name, _ in overrides}
+    warnings: list[str] = []
+    for i in range(model.getNumEvents()):
+        event = model.getEvent(i)
+        name = event.getId() or event.getName() or f"event {i}"
+        for j in range(event.getNumEventAssignments()):
+            variable = event.getEventAssignment(j).getVariable()
+            if variable in targets:
+                warnings.append(
+                    f"caution: event {name!r} assigns to {variable!r}, which this claim overrides "
+                    "— whether it fires within the window was not evaluated"
+                )
+    return tuple(warnings)
 
 
 def _model_level_math(model: Any) -> list[Any]:
@@ -300,6 +341,7 @@ def certify_model(
                     steps=steps,
                     read=f"[{claim.species}] {claim.metric}",
                     overrides=claim.parameter_overrides,
+                    overwritten=_events_overwriting(sbml, claim.parameter_overrides),
                 ),
             )
         )
@@ -403,6 +445,7 @@ def certify_curves(
                     steps=claim.steps,
                     read=f"[{claim.species}] curve",
                     overrides=claim.parameter_overrides,
+                    overwritten=_events_overwriting(sbml, claim.parameter_overrides),
                 ),
             )
         )

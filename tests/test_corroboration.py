@@ -62,7 +62,8 @@ def test_the_published_distance_is_a_bound_the_engines_can_reproduce() -> None:
     model it moved the distance by 8% between runs, and it moves further between machines: a
     one-significant-figure bound of 4e-07 taken here was exceeded on CI at 4.55e-07. The published
     granularity is therefore the decade, rounded up, so it never claims better agreement than was
-    measured and a second machine reproduces it.
+    measured and a second machine reproduces it — and the distance is lifted by a margin first, so
+    a value sitting near a decade boundary does not land on either side of it by chance.
     """
     from reprolith.corroboration import EngineCorroboration
 
@@ -74,7 +75,12 @@ def test_the_published_distance_is_a_bound_the_engines_can_reproduce() -> None:
     assert bound(2.328e-06) == bound(2.143e-06) == 1e-05  # the pair that moved 8% between runs
     assert bound(3.2e-04) == 1e-03
     assert bound(3.515e-07) == bound(4.551e-07) == 1e-06  # this machine's value, and CI's
-    assert bound(1.0e-05) == 1e-05  # already a decade: unchanged, never rounded down
+    # The decade alone was not enough for a distance sitting near a boundary. Metformin measures
+    # 1.11e-07 in isolation and just under 1e-07 inside a longer run, so three runs of one
+    # milestone script on one machine published 1e-06 twice and 1e-07 once. Lifting the distance
+    # by the margin before rounding puts both draws on the same side of the boundary.
+    assert bound(9.9e-08) == bound(1.11e-07) == 1e-06
+    assert bound(1.0e-05) == 1e-04  # a decade of looseness is the price; it never rounds down
     assert bound(0.0) == 0.0
 
     # And it is genuinely an upper bound on every model in the committed corpus.
