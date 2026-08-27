@@ -245,7 +245,9 @@ scale so a rate cannot wander negative and no dependency's version can move the 
 objective, the optimizer, the starting values, and the dataset and grid all travel in the
 certificate's protocol, and a fit that does not converge inside its budget is refused rather than
 reported. Validated by recovering a rate constant that a closed-form regression gives exactly.
-Here too, what is missing is a *paper's* shipped dataset to point it at.
+Here too, what is missing is a *paper's* shipped dataset to point it at. Both this and the
+population path are written up in
+[docs/population-and-estimation.md](docs/population-and-estimation.md).
 
 **Spatial reaction-diffusion (PDE) models** are the sixth class: the reproducible result is a
 concentration profile over space, so a pure-Python finite-difference solver feeds the same curve

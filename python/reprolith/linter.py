@@ -432,11 +432,14 @@ def lint_estimation(
 ) -> LintResult:
     """Check a re-derived parameter estimate against a paper's reported estimate (inline estimation).
 
-    The estimation counterpart of :func:`lint_curve`: given a ``recovered`` estimate (the caller
-    ran the re-fit — the engine-dependent half) and the paper's ``reported`` estimate, judge them by
+    The estimation counterpart of :func:`lint_curve`: given a ``recovered`` estimate and the paper's
+    ``reported`` estimate, judge them by
     relative error against the documented estimation-level default tolerance, which is wider than a
     simulation scalar's because a re-fit is sensitive to the optimizer and its starting values.
     Deterministic and dependency-free — the same pair always yields the same scope-flagged verdict.
+    That is why the re-fit itself stays outside this function: it needs an engine, and this surface
+    is dispatchable with none present. :func:`reprolith.refit_parameters` is how a caller produces
+    a ``recovered`` estimate honestly, protocol included.
     """
     tol = _checked(
         tolerance or estimation_default_tolerance(),
@@ -472,9 +475,11 @@ def lint_distribution(
     bands, each a ``{"percentile": p, "curve": [...]}`` mapping. The verdict is governed by the
     worst-matched band (so a good median cannot mask a divergent tail) against the documented
     distributional default tolerance, wider than a single trajectory's to absorb population sampling
-    error. Deterministic and dependency-free. A diverged band makes the envelope un-judgeable, so
-    non-finite input abstains rather than returning a verdict — the same rule the certifying oracle
-    applies.
+    error. Deterministic and dependency-free, which is why simulating the population stays outside
+    this function — :func:`reprolith.simulate_population` is how a caller produces ``predicted``
+    bands honestly, with the variability model, the seed, and the percentile definition in a
+    protocol. A diverged band makes the envelope un-judgeable, so non-finite input abstains rather
+    than returning a verdict — the same rule the certifying oracle applies.
     """
     ref_bands = tuple(PercentileBand(float(b["percentile"]), tuple(b["curve"])) for b in reported)
     pred_bands = tuple(PercentileBand(float(b["percentile"]), tuple(b["curve"])) for b in predicted)
