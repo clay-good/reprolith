@@ -86,3 +86,48 @@ def test_the_published_distance_is_a_bound_the_engines_can_reproduce() -> None:
             spec["species"], duration=spec["duration"], steps=spec["steps"],
         )
         assert result.distance <= record["distance_at_most"]
+
+
+_PKPD = Path(__file__).parent.parent / "datasets"
+_METFORMIN = _PKPD / "worked_examples" / "Zake2021_metformin_human_single_PO.xml"
+
+
+def test_the_pkpd_claims_are_engine_independent_at_the_doses_they_were_certified_at() -> None:
+    """Roadmap #5, second class: PK/PD verdicts no longer rest, as far as any artifact showed, on
+    a single solver.
+
+    The overrides matter. Without them only the model's default arm is checkable, and for this
+    reconstruction that is one of its two claims — the other runs at 779.9 mg free base.
+    """
+    model = _METFORMIN.read_text(encoding="utf-8")
+    for overrides in ((), (("Metformin_Dose_in_Lumen_in_mg", 779.9),)):
+        result = corroborate_curve(
+            model, "mPlasmaVenous", duration=24.0, steps=480, overrides=overrides
+        )
+        assert result.stable, result.summary()
+
+
+def test_an_override_that_would_not_take_effect_is_refused_here_too() -> None:
+    """Corroboration applies overrides through the same function certification does, so a value
+    that cannot reach the run is refused rather than corroborated as if it had."""
+    model = _METFORMIN.read_text(encoding="utf-8")
+    with pytest.raises(ValueError, match="not in the model"):
+        corroborate_curve(
+            model, "mPlasmaVenous", duration=24.0, steps=480,
+            overrides=(("no_such_parameter", 1.0),),
+        )
+
+
+def test_overriding_the_dose_actually_changes_the_curve() -> None:
+    """A corroboration of two identical runs proves nothing about the override, so this checks the
+    arms are in fact different before the engine comparison is allowed to mean anything."""
+    from reprolith import simulate
+    from reprolith.certify import _apply_overrides
+
+    model = _METFORMIN.read_text(encoding="utf-8")
+    _, base = simulate(model, "mPlasmaVenous", duration=24.0, steps=480)
+    _, dosed = simulate(
+        _apply_overrides(model, (("Metformin_Dose_in_Lumen_in_mg", 779.9),)),
+        "mPlasmaVenous", duration=24.0, steps=480,
+    )
+    assert max(dosed) > 1.5 * max(base)

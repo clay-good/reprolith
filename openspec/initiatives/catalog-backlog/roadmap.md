@@ -78,7 +78,10 @@ a change under `openspec/changes/`.
 
 ### 5. Multi-engine matrix and cross-engine corroboration
 
-- **Type:** capability
+- **Type:** capability *(landed for both ODE classes: kinetic per model, PK/PD per claim at the
+  dose it was certified at, COPASI vs libRoadRunner, reported beside the certificates rather than
+  gating them. The other four classes have no second registered engine, so nothing is reported for
+  them — an absence, not a pass.)*
 - **Why (value):** Lifts a deferred fence. Running a reconstruction on more than one registered
   engine separates a model's behavior from a single solver's quirks, turning "engine-sensitive"
   from a hidden risk into a reported verdict — a real credibility multiplier.

@@ -79,6 +79,7 @@ def corroborate_curve(
     duration: float,
     steps: int,
     rel_tol: float = 0.02,
+    overrides: tuple[tuple[str, float], ...] = (),
 ) -> EngineCorroboration:
     """Run a species curve under both engines and report whether the verdict is engine-independent.
 
@@ -88,7 +89,18 @@ def corroborate_curve(
     curve is the model's behavior, not one solver's; above it, the result is engine-sensitive and
     should be flagged rather than trusted to a single engine. The criterion is applied to the
     *published* bound rather than the raw distance, so the record and its verdict never disagree.
+
+    ``overrides`` are the parameter values the claim sets before running, in the same
+    ``(name, value)`` form a certified claim carries — and they are applied through the same
+    function certification uses, so an override that would not take effect is refused here too. A
+    claim that runs at a non-default dose is otherwise uncorroborable: without them, the only arm
+    a model's curves can be checked on is its default one, which for the metformin reconstruction
+    is one of its two claims.
     """
+    if overrides:
+        from .certify import _apply_overrides
+
+        sbml = _apply_overrides(sbml, overrides)
     _, copasi_values = simulate(sbml, species, duration=duration, steps=steps)
     _, roadrunner_values = simulate_with_roadrunner(sbml, species, duration=duration, steps=steps)
     distance = normalized_curve_distance(copasi_values, roadrunner_values)

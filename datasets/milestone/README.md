@@ -2,11 +2,20 @@
 
 The ODE PK/PD bootstrap's self-validation run over the labelled test set, assembled so a stranger
 can follow it end to end: the labelled set, a certificate for every entry, and the agreement
-report. Regenerate it from the repository alone (no network, needs the `engine` extra) with:
+report. Regenerate it from the repository alone (no network, needs the `engine` extra, and the
+`corroborate` extra for `corroboration.json`) with:
 
 ```
 python scripts/run_milestone.py
 ```
+
+`corroboration.json` records, per certified claim, whether the same curve comes out of COPASI and
+libRoadRunner — **at the dose that claim was certified at**, overrides included. Metformin's two
+claims differ by a 779.9 mg free-base override; corroborating both on the model's default arm would
+compare one run to itself and report stability for an arm neither claim uses. Both are
+engine-independent to a published bound of 1e-06, four orders inside the criterion.
+`tests/test_pkpd_milestone.py` keys the audit off the bundles, so a claim added without regenerating
+this file fails rather than shipping a quietly one-engine verdict.
 
 ## The result in one line
 

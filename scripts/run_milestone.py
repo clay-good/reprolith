@@ -5,8 +5,9 @@ Seeds the catalog from the labelled test set, certifies every entry that has ver
 in the claims dataset (currently metformin, whose model ships in datasets/worked_examples/),
 honestly blocks the rest, scores agreement with ground truth, and writes the agreement report.
 
-Reproducible from the repository alone — no network — but needs the optional engine extra
-(``pip install -e ".[dev,engine]"``) to run the certified entries. Run from the repo root:
+Reproducible from the repository alone — no network — but needs the optional ``engine`` extra to
+run the certified entries and the ``corroborate`` extra (libRoadRunner) for the per-claim engine
+independence check (``pip install -e ".[dev,engine,corroborate]"``). Run from the repo root:
 
     python scripts/run_milestone.py
 """
@@ -21,6 +22,7 @@ from reprolith import (
     Catalog,
     EnginePin,
     certified_from_claims,
+    corroborate_curve,
     engine_pin,
     load_claims_dataset,
     run_test_set,
@@ -55,6 +57,7 @@ def _artifact_validates(sbml: str) -> bool:
 def main() -> None:
     catalog = Catalog()
     entries = seed_catalog(catalog)
+    corroboration: dict[str, dict[str, object]] = {}
 
     pin: EnginePin = engine_pin()  # the concrete installed COPASI version
     claims = load_claims_dataset(DATASETS / "pkpd_claims.json")
@@ -141,6 +144,34 @@ def main() -> None:
             json.dumps(bundle.to_dict(), indent=2, sort_keys=True) + "\n"
         )
 
+        # Engine independence, per claim: the same curve under both COPASI and libRoadRunner
+        # (spec: simulation-oracle). The kinetic milestone has reported this since it shipped and
+        # PK/PD never did, so the class carrying the one manuscript-checked reproduction in the
+        # corpus was also the one whose verdicts rested, as far as any artifact showed, on a
+        # single solver. Driven off the bundle's own recipe, overrides included, so what is
+        # corroborated is the run each claim actually made and not just the model's default arm.
+        model_sbml = (DATASETS / entry["model_file"]).read_text(encoding="utf-8")
+        for step in recipe:
+            result = corroborate_curve(
+                model_sbml,
+                step.output.strip("[]"),
+                duration=float(step.time_span.split("-", 1)[1]),
+                steps=int(step.steps or 480),
+                overrides=step.parameter_overrides,
+            )
+            corroboration[f"{accession}:{step.claim_id}"] = {
+                "engines": list(result.engines),
+                # A bound, not a measurement: COPASI is not bit-identical across repeated calls,
+                # and the distance between two agreeing engines amplifies that noise.
+                "distance_at_most": result.distance_bound(),
+                "engine_independent": result.stable,
+                "overrides": {name: value for name, value in step.parameter_overrides},
+            }
+
+    (DATASETS / "milestone" / "corroboration.json").write_text(
+        json.dumps(corroboration, indent=2, sort_keys=True) + "\n"
+    )
+
     # Persist the advanced catalog (lifecycle state, history, and difficulty) so the durable
     # registry reflects the run and can be reloaded — e.g. by the MCP server.
     # Atomic: this file is what both surfaces read at start-up and what a live MCP server
@@ -148,6 +179,8 @@ def main() -> None:
     # ~52 KB. A crash in that window leaves a blank catalog behind.
     write_json_atomically(DATASETS / "milestone" / "catalog.json", catalog.to_dict())
 
+    stable = sum(1 for c in corroboration.values() if c["engine_independent"])
+    print(f"engine-independent claims: {stable}/{len(corroboration)}")
     counts = Counter(cert.overall.value for cert in certificates)
     print(f"entries: {len(certificates)} | verdicts: {dict(counts)}")
     print(f"agreement: {report.agreements}/{report.total}")
