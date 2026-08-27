@@ -96,3 +96,79 @@ def test_the_report_says_what_the_archive_ships_and_what_can_be_adopted() -> Non
     assert found["adoptable_recipes"] == 1
     assert found["claims"]["targetable"] == 0
     assert found["claims"]["not_targetable"] == 2
+
+
+def _archive_with(members: dict[str, str], manifest: str) -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zf:
+        zf.writestr("manifest.xml", manifest)
+        for name, text in members.items():
+            zf.writestr(name, text)
+    return buffer.getvalue()
+
+
+_MINIMAL_SBML = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m">
+    <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="X" compartment="c" initialAmount="1" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters><parameter id="k" value="0.1" constant="true"/></listOfParameters>
+    <listOfRules>
+      <rateRule variable="X">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply><minus/><apply><times/><ci>k</ci><ci>X</ci></apply></apply>
+        </math>
+      </rateRule>
+    </listOfRules>
+  </model>
+</sbml>
+"""
+
+
+def test_a_member_whose_name_starts_with_a_dot_is_still_found() -> None:
+    """`lstrip("./")` takes a character *set*, so `.hidden.xml` lost its leading dot and matched
+    nothing. The archive reader's own normalizer strips a path prefix, not characters."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import build_experiment_sedml
+
+    sedml = build_experiment_sedml(_MINIMAL_SBML, duration=1.0, steps=10,
+                                   model_location=".model.xml")
+    manifest = f"""<?xml version="1.0" encoding="UTF-8"?>
+<omexManifest xmlns="{_SPEC}omex-manifest">
+  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>
+  <content location="./.model.xml" format="{_SPEC}sbml.level-3.version-2"/>
+  <content location="./e.sedml" format="{_SPEC}sed-ml" master="true"/>
+</omexManifest>
+"""
+    report = archive_report(
+        _archive_with({".model.xml": _MINIMAL_SBML, "e.sedml": sedml}, manifest)
+    )
+    assert report["found"]["readable"] is True
+    assert report["found"]["adoptable_recipes"] == 1
+
+
+def test_a_model_the_manifest_types_unconventionally_is_still_compared() -> None:
+    """A manifest format outside the COMBINE namespace is recorded verbatim, which looked like it
+    would leave no artifact typed "sbml" to compare against. It does not: ingestion records the
+    model it actually read under its own typing, and that wins over the manifest's. Asserted
+    because the report's guard for the opposite case reads as though this were reachable."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import build_experiment_sedml
+
+    sedml = build_experiment_sedml(_MINIMAL_SBML, duration=1.0, steps=10)
+    manifest = f"""<?xml version="1.0" encoding="UTF-8"?>
+<omexManifest xmlns="{_SPEC}omex-manifest">
+  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>
+  <content location="./model.xml" format="application/xml"/>
+  <content location="./experiment.sedml" format="{_SPEC}sed-ml" master="true"/>
+</omexManifest>
+"""
+    report = archive_report(
+        _archive_with({"model.xml": _MINIMAL_SBML, "experiment.sedml": sedml}, manifest)
+    )
+    assert report["found"]["readable"] is True
+    assert report["found"]["adoptable_recipes"] == 1
+    assert not any(item["kind"] == "mismatch" for item in report["fix_list"])

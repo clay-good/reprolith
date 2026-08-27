@@ -287,7 +287,7 @@ def archive_report(archive: str | os.PathLike[str] | bytes) -> dict[str, Any]:
        reproducer must reconstruct the run rather than read it.
     4. **Load-bearing gaps** the ingested model leaves open.
     """
-    from .omex import archive_mismatches, ingest_omex
+    from .omex import _normalize, archive_mismatches, ingest_omex
     from .sedml import parse_sedml_recipes
 
     found: dict[str, Any] = {
@@ -330,7 +330,14 @@ def archive_report(archive: str | os.PathLike[str] | bytes) -> dict[str, Any]:
     experiment = next(
         (a.filename for a in dossier.artifacts if a.detected_format == "sed-ml"), None
     )
-    if experiment is not None:
+    model = next((a.filename for a in dossier.artifacts if a.detected_format == "sbml"), None)
+    # Both are needed to compare one against the other, and both lookups are guarded. No archive
+    # `ingest_omex` accepts is known to reach this with no sbml-typed artifact — ingestion records
+    # the model it read under its own typing, which wins over the manifest's, even for a manifest
+    # that types the model `application/xml` (asserted in tests/test_archive_check.py). The guard
+    # is defensive: an unguarded `next()` here would surface as a RuntimeError out of a report
+    # whose whole purpose is to be readable.
+    if experiment is not None and model is not None:
         # Re-read from the archive rather than from the dossier: the dossier keeps what the
         # document *claimed*, and this asks whether the run behind those claims is adoptable.
         import zipfile
@@ -338,12 +345,11 @@ def archive_report(archive: str | os.PathLike[str] | bytes) -> dict[str, Any]:
 
         handle = BytesIO(archive) if isinstance(archive, bytes) else archive
         with zipfile.ZipFile(handle) as zf:
-            stored = {name.lstrip("./"): name for name in zf.namelist()}
-            sedml = zf.read(stored[experiment.lstrip("./")]).decode("utf-8")
-            model = next(
-                a.filename for a in dossier.artifacts if a.detected_format == "sbml"
-            )
-            sbml = zf.read(stored[model.lstrip("./")]).decode("utf-8")
+            # `_normalize`, not `lstrip("./")`: lstrip takes a *character set*, so a member named
+            # `.hidden.xml` loses its leading dot and no longer matches itself.
+            stored = {_normalize(name): name for name in zf.namelist()}
+            sedml = zf.read(stored[_normalize(experiment)]).decode("utf-8")
+            sbml = zf.read(stored[_normalize(model)]).decode("utf-8")
         recipes = parse_sedml_recipes(sedml)
         found["adoptable_recipes"] = len(recipes)
         for message in archive_mismatches(sedml, sbml):
