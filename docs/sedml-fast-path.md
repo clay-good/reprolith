@@ -193,6 +193,19 @@ Everything else is left alone, in both directions:
 `tests/test_manuscript_mismatch.py` runs it on the real document, the real model, and the real
 extracted claims; the 500 mg claim is silent because the archive does run it.
 
+An author reaches the same check from a terminal, before there is any certificate:
+
+```bash
+reprolith archive-check paper.omex --claims my_claims.json
+```
+
+It lands in the top tier of the fix list, alongside an experiment/model mismatch, because the two
+fail the same way: the run completes, produces a plausible number, and nothing says it was not the
+published one. Without `--claims` the comparison does not run and the report says so — the count of
+results compared is printed either way, so a clean fix list cannot stand in for a check nobody made.
+Reprolith's *own* exported archive passes it, which is the positive control: the 779.9 mg dose is a
+`changeAttribute` in the document it writes.
+
 ## Writing an archive
 
 Reading is only half of it. A reconstruction that leaves as a bare SBML string has its run

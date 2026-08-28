@@ -14,11 +14,15 @@ reproduction, so a partial, assumption-qualified, or estimation-level result can
 from __future__ import annotations
 
 import os
-from typing import Any
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from .enums import OverallVerdict, Verdict
 from .model import Certificate
 from .render import estimation_claims
+
+if TYPE_CHECKING:  # a type-only import: the archive check takes claims, it does not build them
+    from .certify import Claim
 
 # Impact buckets for the fix list, most urgent first. A claim a reproducer cannot even evaluate
 # outranks a wrong one; a wrong one outranks a partial; a load-bearing value the author left for
@@ -249,6 +253,9 @@ def render_presubmission_human(cert: Certificate) -> str:
 #: Fix-list priorities for an archive check, in the order an author should act. An archive that
 #: cannot be read at all is not on this scale — it has no report to prioritize.
 _ARCHIVE_MISMATCH_PRIORITY = 1
+#: Shares the top tier with an experiment/model mismatch, because they fail the same way: the run
+#: completes, produces a plausible number, and nothing says it was not the published one.
+_ARCHIVE_MANUSCRIPT_PRIORITY = 1
 _ARCHIVE_NO_CLAIM_PRIORITY = 2
 _ARCHIVE_UNADOPTABLE_PRIORITY = 3
 _ARCHIVE_GAP_PRIORITY = 4
@@ -262,7 +269,9 @@ _ARCHIVE_NOTE = (
 )
 
 
-def archive_report(archive: str | os.PathLike[str] | bytes) -> dict[str, Any]:
+def archive_report(
+    archive: str | os.PathLike[str] | bytes, *, claims: Sequence[Claim] = ()
+) -> dict[str, Any]:
     """An author-facing check of a COMBINE archive, before any certificate exists.
 
     :func:`presubmission_report` answers "given the verdict Reprolith reached, what should I fix?"
@@ -286,7 +295,15 @@ def archive_report(archive: str | os.PathLike[str] | bytes) -> dict[str, Any]:
     3. **A recipe that cannot be adopted verbatim.** A parameter scan or a modified model means a
        reproducer must reconstruct the run rather than read it.
     4. **Load-bearing gaps** the ingested model leaves open.
+
+    ``claims`` are the paper's own published results — the author has them, and nothing in an
+    archive does. Supplied, they add the check the archive cannot make on itself: whether the
+    experiment runs what the paper reports (:func:`reprolith.manuscript_mismatches`), which is the
+    other top-tier finding, since a document that runs a neighbouring arm produces a plausible
+    number and no sign of trouble. Omitted, that check does not run, and the report says so rather
+    than letting a clean fix list read as an archive that runs the paper's results.
     """
+    from .manuscript import manuscript_mismatches
     from .omex import _normalize, archive_mismatches, ingest_omex
     from .sedml import parse_sedml_recipes
 
@@ -295,6 +312,8 @@ def archive_report(archive: str | os.PathLike[str] | bytes) -> dict[str, Any]:
         "files": [],
         "claims": {"targetable": 0, "figure_referenced": 0, "not_targetable": 0},
         "adoptable_recipes": 0,
+        # Zero is not "they all pass": it is "nothing was compared". The renderer says which.
+        "manuscript_claims_checked": len(claims),
     }
     actions: list[dict[str, Any]] = []
     try:
@@ -359,6 +378,13 @@ def archive_report(archive: str | os.PathLike[str] | bytes) -> dict[str, Any]:
                 "fix": "make the experiment and the model agree; an override aimed at an element "
                        "that is not there runs the unmodified model and reports nothing",
             })
+        for message in manuscript_mismatches(sedml, sbml, claims):
+            actions.append({
+                "priority": _ARCHIVE_MANUSCRIPT_PRIORITY, "kind": "manuscript", "claim_id": None,
+                "quantity": None, "source_location": experiment, "issue": message,
+                "fix": "ship a run that produces the result your paper reports; a document that "
+                       "runs a neighbouring arm reproduces a plausible number and flags nothing",
+            })
         if targetable and not recipes:
             actions.append({
                 "priority": _ARCHIVE_UNADOPTABLE_PRIORITY, "kind": "recipe", "claim_id": None,
@@ -396,7 +422,13 @@ def archive_report(archive: str | os.PathLike[str] | bytes) -> dict[str, Any]:
         "ready_to_submit": ready,
         "readiness": (
             "this archive is readable, states its results, and its experiment agrees with its "
-            "model" if ready else
+            "model"
+            + (
+                f" and with the {len(claims)} result(s) your paper reports"
+                if claims
+                else " (nothing was compared against your paper's own reported results)"
+            )
+            if ready else
             "a reproducer would hit the items below before reaching a verdict"
         ),
         "found": found,
@@ -405,9 +437,11 @@ def archive_report(archive: str | os.PathLike[str] | bytes) -> dict[str, Any]:
     }
 
 
-def render_archive_human(archive: str | os.PathLike[str] | bytes) -> str:
+def render_archive_human(
+    archive: str | os.PathLike[str] | bytes, *, claims: Sequence[Claim] = ()
+) -> str:
     """A plain-text archive check an author can act on directly."""
-    report = archive_report(archive)
+    report = archive_report(archive, claims=claims)
     found = report["found"]
     lines = ["ARCHIVE REPRODUCIBILITY CHECK", ""]
     verdict = "READY TO SUBMIT" if report["ready_to_submit"] else "NOT YET READY"
@@ -418,13 +452,23 @@ def render_archive_human(archive: str | os.PathLike[str] | bytes) -> str:
         lines.append("WHAT THE ARCHIVE SHIPS")
         for artifact in found["files"]:
             lines.append(f"  - {artifact['filename']} ({artifact['detected_format']})")
-        claims = found["claims"]
+        # Not `claims`: that name is this function's parameter, the author's own reported results.
+        counts = found["claims"]
         lines.append(
-            f"  claims: {claims['targetable']} targetable "
-            f"({claims['figure_referenced']} figure-referenced, no values), "
-            f"{claims['not_targetable']} not targetable"
+            f"  claims: {counts['targetable']} targetable "
+            f"({counts['figure_referenced']} figure-referenced, no values), "
+            f"{counts['not_targetable']} not targetable"
         )
         lines.append(f"  runs a reproducer can adopt verbatim: {found['adoptable_recipes']}")
+        checked = found.get("manuscript_claims_checked", 0)
+        # An empty fix list must not be read as "it runs what the paper reports" when nothing was
+        # compared against the paper. The count is what separates a passed check from an absent one.
+        lines.append(
+            f"  results from your paper checked against this experiment: {checked}"
+            if checked
+            else "  results from your paper checked against this experiment: none supplied, so "
+            "whether it runs what your paper reports was not checked"
+        )
         lines.append("")
     lines.append("FIX BEFORE YOU SUBMIT (most impactful first)")
     if not report["fix_list"]:

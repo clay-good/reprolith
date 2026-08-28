@@ -68,6 +68,15 @@ find in it, since a file that cannot be read or states no result never reaches a
   because a malformed archive is the most actionable result there is
 - **AND** no model is run and no verdict is reached
 
+#### Scenario: Checking the archive against the paper's own results
+
+- **WHEN** the author supplies the results their paper reports alongside the archive
+- **THEN** a reported result the experiment does not run — an output the model does not declare,
+  an output the experiment never records, or a parameter value the run never holds — is reported
+  in the top tier of the fix list, since it fails as silently as an experiment/model mismatch
+- **AND** when no such results are supplied, the check says that this comparison did not run,
+  because an empty fix list must not read as an archive that runs what the paper reports
+
 #### Scenario: The check does not speak as a certificate
 
 - **WHEN** the archive check is rendered

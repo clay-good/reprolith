@@ -26,6 +26,7 @@ import sys
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from .certify import Claim
 from .export import build_bundle_sedml, build_omex_archive
 from .mcp_server import default_data_dir, load_repository
 from .model import RunMetadata
@@ -323,6 +324,36 @@ def _cmd_export(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
+def _load_claims(path: Path, accession: str | None) -> list[Claim]:
+    """The paper's own claims, read from a claims file.
+
+    Three shapes are accepted, because they are the three an author plausibly has: a bare list of
+    claim records, an object with a ``claims`` list, and the shape this repository's own
+    ``datasets/pkpd_claims.json`` uses — ``entries`` keyed by accession, which needs
+    ``--accession`` unless it holds exactly one.
+    """
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(data, dict) and "entries" in data:
+        entries = data["entries"]
+        if accession is None:
+            if len(entries) != 1:
+                raise ValueError(
+                    "this claims file holds several papers; name one with --accession "
+                    f"({', '.join(sorted(entries))})"
+                )
+            accession = next(iter(entries))
+        if accession not in entries:
+            raise ValueError(
+                f"no claims for {accession!r} in this file ({', '.join(sorted(entries))})"
+            )
+        records = entries[accession]["claims"]
+    elif isinstance(data, dict):
+        records = data["claims"]
+    else:
+        records = data
+    return [Claim.from_record(record) for record in records]
+
+
 def _cmd_archive_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Report what a reproducer would find in a COMBINE archive, before any certificate exists."""
     path = Path(args.archive)
@@ -331,11 +362,20 @@ def _cmd_archive_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     except OSError as unreadable:
         print(f"cannot read the archive: {unreadable}", file=sys.stderr)
         return 1
-    report = archive_report(archive)
+    claims: list[Claim] = []
+    if args.claims is not None:
+        try:
+            claims = _load_claims(Path(args.claims), args.accession)
+        except (OSError, ValueError, KeyError, TypeError) as unusable:
+            # A mistyped path, a shape this does not read, a record missing a field: all of them
+            # are the author's file rather than their archive, and none is worth a traceback.
+            print(f"cannot read the claims: {unusable}", file=sys.stderr)
+            return 1
+    report = archive_report(archive, claims=claims)
     if args.json:
         _print_json(report)
     else:
-        print(render_archive_human(archive))
+        print(render_archive_human(archive, claims=claims))
     # The exit code answers the question the command asks. An author wiring this into a
     # pre-submission hook needs "is this ready" to be actionable, and a report that always exits 0
     # says READY and NOT YET READY in the same voice.
@@ -429,6 +469,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="what a reproducer would find in a COMBINE archive (no model is run)",
     )
     p.add_argument("archive", help="the .omex archive to check")
+    p.add_argument(
+        "--claims", default=None,
+        help="a JSON file of the results your paper reports, so the check can also say whether "
+             "the archive runs them (without it, that is not checked)",
+    )
+    p.add_argument(
+        "--accession", default=None,
+        help="which paper's claims to read, when --claims holds more than one",
+    )
     add_json(p)
     p.set_defaults(func=_cmd_archive_check)
 

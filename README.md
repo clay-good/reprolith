@@ -101,13 +101,25 @@ reprolith certificates-for <id>      # every certificate digest for one paper, n
 reprolith self-validation            # the blind track record, per class and overall
 reprolith export <accession> \       # the reconstruction as a runnable COMBINE archive
   --model <model.xml> --out <out.omex>
-reprolith archive-check <file.omex>  # what a reproducer would find in your archive
+reprolith archive-check <file.omex> \ # what a reproducer would find in your archive
+  [--claims <claims.json>]
 ```
 
 `archive-check` is the author-facing counterpart: point it at a COMBINE archive and it says what a
 reproducer would find — whether the experiment and the model agree, whether the document states any
 published result, whether the run can be adopted verbatim — and exits non-zero when it cannot. It
 runs no model and issues no certificate, and it says so rather than borrowing a certificate's words.
+Give it `--claims` — the results your paper reports — and it also answers the question the archive
+cannot answer about itself: does the experiment *run* them? On the metformin paper's own archive
+that is one line, and it is the load-bearing one:
+
+```
+the manuscript's claim 'Cmax-1000mg' sets 'Metformin_Dose_in_Lumen_in_mg' to 779.9, which the
+archive never runs: the model states 389.92 and the experiment runs it at 389.2, 778.4, 1167.6
+```
+
+Without `--claims` that comparison does not run, and the report says so — a clean fix list never
+stands in for a check nobody made.
 What Reprolith's *own extraction* would not carry is listed separately and never as a fix, because
 some of it the archive omits and some of it the archive states perfectly well.
 

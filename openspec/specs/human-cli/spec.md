@@ -41,6 +41,15 @@ cannot become a divergent second implementation of Reprolith's contracts.
 - **AND** a recipe step the archive cannot state is reported to the terminal, never dropped
   silently
 
+#### Scenario: Checking an archive against the author's own paper
+
+- **WHEN** the archive check is given a file of the results the paper reports
+- **THEN** it reads that file in the shapes an author plausibly has — a list of claim records, an
+  object holding one, or several papers keyed by accession — and names the papers it holds when
+  the caller must choose between them
+- **AND** a claims file that cannot be read is reported as a message about the claims, distinct
+  from one about the archive, with a non-zero exit status
+
 ### Requirement: Scope statement inescapable in terminal output
 
 A verdict read from the terminal SHALL carry the same honest scoping as one read anywhere else.

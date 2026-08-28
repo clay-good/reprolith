@@ -14,6 +14,7 @@ Reading a real archive needs libSBML; the wording checks do not.
 from __future__ import annotations
 
 import io
+import json
 import zipfile
 from pathlib import Path
 
@@ -172,3 +173,75 @@ def test_a_model_the_manifest_types_unconventionally_is_still_compared() -> None
     assert report["found"]["readable"] is True
     assert report["found"]["adoptable_recipes"] == 1
     assert not any(item["kind"] == "mismatch" for item in report["fix_list"])
+
+
+def _paper_archive() -> bytes:
+    """The archive the metformin paper's own two files make (BioModels ships them unpackaged)."""
+    worked = Path(__file__).parent.parent / "datasets" / "worked_examples"
+    manifest = "\n".join([
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<omexManifest xmlns="http://identifiers.org/combine.specifications/omex-manifest">',
+        f'  <content location="." format="{_SPEC}omex"/>',
+        f'  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>',
+        f'  <content location="./Zake2021_Metformin_Human_single_PO_dose.xml" format="{_SPEC}sbml"/>',
+        f'  <content location="./experiment.sedml" format="{_SPEC}sed-ml" master="true"/>',
+        "</omexManifest>",
+    ])
+    return _archive_with(
+        {
+            "Zake2021_Metformin_Human_single_PO_dose.xml": (
+                worked / "Zake2021_metformin_human_single_PO.xml"
+            ).read_text(encoding="utf-8"),
+            "experiment.sedml": (
+                worked / "Zake2021_metformin_human_single_PO.sedml"
+            ).read_text(encoding="utf-8"),
+        },
+        manifest,
+    )
+
+
+def _metformin_claims() -> list[object]:
+    from reprolith import Claim
+
+    dataset = json.loads(
+        (Path(__file__).parent.parent / "datasets" / "pkpd_claims.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    return [
+        Claim.from_record(record)
+        for record in dataset["entries"]["BIOMD0000001028"]["claims"]
+    ]
+
+
+def test_without_the_paper_the_check_says_it_did_not_compare_against_it() -> None:
+    """A clean fix list must not read as "it runs what your paper reports" when nothing was
+    compared against the paper. The count is what separates a passed check from an absent one."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    report = archive_report(_paper_archive())
+    assert report["found"]["manuscript_claims_checked"] == 0
+    assert not [item for item in report["fix_list"] if item["kind"] == "manuscript"]
+    text = render_archive_human(_paper_archive())
+    assert "none supplied" in text and "was not checked" in text
+
+
+def test_the_papers_own_archive_does_not_run_the_dose_the_paper_reports() -> None:
+    """The document scans the dose over three values; the paper's 1000 mg claim is none of them.
+    Every file validates, which is exactly why this needs saying."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    report = archive_report(_paper_archive(), claims=_metformin_claims())
+    assert report["found"]["manuscript_claims_checked"] == 2
+    (item,) = [item for item in report["fix_list"] if item["kind"] == "manuscript"]
+    assert "Cmax-1000mg" in item["issue"] and "779.9" in item["issue"]
+    # It fails the same way an experiment/model mismatch does — silently — so it ranks with it.
+    assert item["priority"] == 1
+    assert report["fix_list"][0]["kind"] == "manuscript"
+
+
+def test_reprolith_own_export_runs_the_claims_it_was_built_from() -> None:
+    """The positive control: the exported archive carries the 779.9 override as a `changeAttribute`,
+    so the same check that fails the paper's document passes Reprolith's."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    report = archive_report(_ARCHIVE.read_bytes(), claims=_metformin_claims())
+    assert report["found"]["manuscript_claims_checked"] == 2
+    assert not [item for item in report["fix_list"] if item["kind"] == "manuscript"]

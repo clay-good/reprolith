@@ -429,6 +429,48 @@ def test_archive_check_json_is_the_report_object(tmp_path, capsys):
     assert "issues no certificate" in report["note"]
 
 
+def test_archive_check_reads_the_paper_claims_it_is_given(tmp_path, capsys):
+    """The archive runs the model's own dose; a claim at another one is the finding."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import build_experiment_sedml, build_omex_archive
+
+    archive = tmp_path / "a.omex"
+    archive.write_bytes(
+        build_omex_archive(
+            _EXPORT_MODEL, build_experiment_sedml(_EXPORT_MODEL, duration=24.0, steps=240)
+        )
+    )
+    claims = tmp_path / "claims.json"
+    claims.write_text(json.dumps({"claims": [{
+        "claim_id": "peak", "quantity": "peak", "species": "central", "reported": 1.0,
+        "source_location": "Table 1", "parameter_overrides": {"k": 99.0},
+    }]}), encoding="utf-8")
+
+    assert run(["archive-check", str(archive), "--claims", str(claims), "--json"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report["found"]["manuscript_claims_checked"] == 1
+    assert [item["kind"] for item in report["fix_list"]].count("manuscript") == 1
+
+
+def test_archive_check_names_the_papers_when_a_claims_file_holds_several(tmp_path, capsys):
+    archive = tmp_path / "a.omex"
+    archive.write_bytes(b"not a zip")
+    claims = tmp_path / "claims.json"
+    claims.write_text(
+        json.dumps({"entries": {"A": {"claims": []}, "B": {"claims": []}}}), encoding="utf-8"
+    )
+    assert run(["archive-check", str(archive), "--claims", str(claims)]) == 1
+    error = capsys.readouterr().err
+    assert "--accession" in error and "A, B" in error
+
+
+def test_archive_check_of_a_missing_claims_file_is_a_message(tmp_path, capsys):
+    archive = tmp_path / "a.omex"
+    archive.write_bytes(b"not a zip")
+    assert run(["archive-check", str(archive), "--claims", str(tmp_path / "nope.json")]) == 1
+    assert "cannot read the claims" in capsys.readouterr().err
+
+
 def test_archive_check_of_a_missing_file_is_a_message(tmp_path, capsys):
     assert run(["archive-check", str(tmp_path / "nope.omex")]) == 1
     assert "cannot read the archive" in capsys.readouterr().err
