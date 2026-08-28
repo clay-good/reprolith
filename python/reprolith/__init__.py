@@ -192,8 +192,10 @@ from .persistence import (
 from .population import PopulationRun, SubjectVariability, simulate_population
 from .presubmission import (
     archive_report,
+    pair_report,
     presubmission_report,
     render_archive_human,
+    render_pair_human,
     render_presubmission_human,
 )
 from .query import ReprolithQuery
@@ -444,6 +446,7 @@ __all__ = [
     "NoteBasis",
     "NoteKind",
     "OverallVerdict",
+    "pair_report",
     "PaperIdentity",
     "Parameter",
     "parse_boolean_network",
@@ -470,6 +473,7 @@ __all__ = [
     "render_badge",
     "render_human",
     "render_machine",
+    "render_pair_human",
     "render_presubmission_human",
     "render_registry",
     "ReproductionLevel",

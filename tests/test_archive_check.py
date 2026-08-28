@@ -267,3 +267,67 @@ def test_claims_supplied_for_an_archive_with_no_experiment_are_not_counted_as_ch
         _archive_with({"m.xml": _MINIMAL_SBML}, manifest), claims=_metformin_claims()
     )
     assert "checked against this experiment: none" in text
+
+
+_WORKED = Path(__file__).parent.parent / "datasets" / "worked_examples"
+
+
+def test_a_loose_document_and_model_are_checked_without_packaging_them() -> None:
+    """Most papers ship the two files loose — BioModels does, and so does this repository — and
+    an author should not have to build an archive to learn what a reproducer would hit."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import pair_report
+
+    report = pair_report(
+        (_WORKED / "Zake2021_metformin_human_single_PO.sedml").read_text(encoding="utf-8"),
+        (_WORKED / "Zake2021_metformin_human_single_PO.xml").read_text(encoding="utf-8"),
+        claims=_metformin_claims(),
+    )
+    assert report["found"]["assembled_from_loose_files"] is True
+    # The same finding the packaged archive gives, reached from the files as they actually ship.
+    (item,) = [item for item in report["fix_list"] if item["kind"] == "manuscript"]
+    assert "779.9" in item["issue"]
+
+
+def test_the_pair_check_says_the_manifest_around_it_was_generated() -> None:
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import render_pair_human
+
+    text = render_pair_human(
+        (_WORKED / "Zake2021_metformin_human_single_PO.sedml").read_text(encoding="utf-8"),
+        (_WORKED / "Zake2021_metformin_human_single_PO.xml").read_text(encoding="utf-8"),
+    )
+    assert "assembled here" in text
+    assert "not one yet" in text
+
+
+def test_a_model_named_differently_from_the_documents_source_is_reported() -> None:
+    """The model is stored where the document says it is, so the packaging cannot notice the
+    file has another name. A reproducer follows the document's source, so the caller that knows
+    the name says so and the disagreement is reported rather than smoothed over."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import pair_report
+
+    sedml = (_WORKED / "Zake2021_metformin_human_single_PO.sedml").read_text(encoding="utf-8")
+    sbml = (_WORKED / "Zake2021_metformin_human_single_PO.xml").read_text(encoding="utf-8")
+
+    assert not [
+        item for item in pair_report(
+            sedml, sbml, model_filename="Zake2021_Metformin_Human_single_PO_dose.xml"
+        )["fix_list"] if item["kind"] == "naming"
+    ]
+    (item,) = [
+        item for item in pair_report(sedml, sbml, model_filename="my_model.xml")["fix_list"]
+        if item["kind"] == "naming"
+    ]
+    assert "my_model.xml" in item["issue"]
+
+
+def test_a_document_running_no_single_model_has_nothing_to_check_against() -> None:
+    from reprolith import pair_report
+
+    report = pair_report("<sedML xmlns=\'http://sed-ml.org/sed-ml/level1/version4\'/>", _MINIMAL_SBML)
+    assert report["ready_to_submit"] is False
+    assert report["found"]["readable"] is False
+    assert len(report["fix_list"]) == 1
+    assert "0 model files" in report["fix_list"][0]["issue"]

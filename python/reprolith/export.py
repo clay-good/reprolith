@@ -34,8 +34,10 @@ import posixpath
 import re
 import xml.etree.ElementTree as ET
 import zipfile
+from collections.abc import Mapping
 from dataclasses import dataclass
 from io import BytesIO
+from types import MappingProxyType
 
 from .reconstruction import RecipeStep, ReconstructionBundle
 from .sedml import sedml_model_sources
@@ -561,6 +563,7 @@ def build_omex_archive(
     *,
     model_location: str = "model.xml",
     experiment_location: str = "experiment.sedml",
+    data_files: Mapping[str, str] = MappingProxyType({}),
 ) -> bytes:
     """Package a model and its experiment as a COMBINE archive, returned as bytes.
 
@@ -574,6 +577,13 @@ def build_omex_archive(
     what a reader resolves. Nothing is written to disk. The bytes are deterministic: members are
     stored in a fixed order with a fixed timestamp, so the same model and experiment give the same
     archive every time, and two exports can be compared by digest.
+
+    ``data_files`` are the data files the document's ``dataDescription`` elements name — the
+    paper's own recorded values — keyed by the ``source`` the document writes and stored where
+    that source resolves to, so a reader follows the same path it would in the author's own
+    directory. They are listed in the manifest as ``text/csv``, the one data format the reader
+    reads; a source that resolves outside the archive, or onto the model or the experiment, is
+    refused for the same reason their own locations are.
 
     Raises ``ValueError`` if the model is not parseable SBML, or if the model and the experiment
     would be stored at the same location.
@@ -608,10 +618,26 @@ def build_omex_archive(
             f"the experiment runs {sorted(named) or ['no model']}, but the archive stores the "
             f"model at '{model_location}'; the document's source is what a reader follows"
         )
+    stored_data: dict[str, str] = {}
+    for source, text in data_files.items():
+        location = posixpath.normpath(posixpath.join(base, source))
+        if not source or location != posixpath.normpath(location) or location.startswith(("/", "..")):
+            raise ValueError(
+                f"the data source {source!r} resolves to {location!r}, which is not a plain "
+                "relative path inside the archive"
+            )
+        if location in (model_location, experiment_location):
+            raise ValueError(
+                f"the data source {source!r} resolves onto '{location}'; an archive stores one "
+                "file per location"
+            )
+        stored_data[location] = text
+
     manifest = _manifest(
         model_location=model_location,
         model_format=_sbml_format(_model_root(model_sbml)),
         experiment_location=experiment_location,
+        data_locations=tuple(sorted(stored_data)),
     )
 
     buffer = BytesIO()
@@ -620,6 +646,7 @@ def build_omex_archive(
             ("manifest.xml", manifest),
             (model_location, model_sbml),
             (experiment_location, experiment_sedml),
+            *sorted(stored_data.items()),
         ):
             info = zipfile.ZipInfo(name, date_time=_FIXED_TIMESTAMP)
             info.compress_type = zipfile.ZIP_DEFLATED
@@ -628,7 +655,13 @@ def build_omex_archive(
     return buffer.getvalue()
 
 
-def _manifest(*, model_location: str, model_format: str, experiment_location: str) -> str:
+def _manifest(
+    *,
+    model_location: str,
+    model_format: str,
+    experiment_location: str,
+    data_locations: tuple[str, ...] = (),
+) -> str:
     """The archive's manifest: the archive itself, the manifest, the model, and the experiment."""
     root = ET.Element("omexManifest", {"xmlns": f"{_COMBINE_SPECIFICATIONS}omex-manifest"})
     for location, format_uri, master in (
@@ -640,6 +673,9 @@ def _manifest(*, model_location: str, model_format: str, experiment_location: st
             f"{_COMBINE_SPECIFICATIONS}sed-ml.level-{_SEDML_LEVEL}.version-{_SEDML_VERSION}",
             True,
         ),
+        # A data file is named by media type, not by a COMBINE specification URI: the manifest
+        # says what each file *is*, and a CSV of recorded values is not a specification.
+        *((f"./{location}", "text/csv", False) for location in data_locations),
     ):
         attributes = {"location": location, "format": format_uri}
         if master:

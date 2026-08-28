@@ -14,7 +14,9 @@ reproduction, so a partial, assumption-qualified, or estimation-level result can
 from __future__ import annotations
 
 import os
-from collections.abc import Sequence
+import posixpath
+from collections.abc import Mapping, Sequence
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
 from .enums import OverallVerdict, Verdict
@@ -442,11 +444,95 @@ def archive_report(
     }
 
 
+def pair_report(
+    sedml: str,
+    sbml: str,
+    *,
+    claims: Sequence[Claim] = (),
+    data_files: Mapping[str, str] = MappingProxyType({}),
+    model_filename: str | None = None,
+) -> dict[str, Any]:
+    """The same check for a document and a model that are not packaged as an archive.
+
+    Most papers ship the two files loose — BioModels does, and so does this repository — and an
+    author should not have to build a COMBINE archive to find out what a reproducer would hit. The
+    pair is packaged into the archive those files describe (:func:`reprolith.build_omex_archive`,
+    which stores the model where the document's own ``source`` says it is) and that archive is
+    checked, so the terminal and the archive path cannot reach different conclusions.
+
+    Two consequences are stated in the report rather than left implicit. The manifest was
+    *generated*, so nothing here can find a defect in the author's own manifest — there is none
+    yet. And the model is stored where the document's own ``source`` says it is, which means the
+    packaging cannot notice that the file supplied has a different name: ``model_filename`` is how
+    a caller that knows the name says so, and a disagreement is reported rather than smoothed over,
+    because a reproducer following the document looks for the name the document writes.
+
+    ``data_files`` are the data files the document names, keyed by the ``source`` it writes; the
+    caller reads them from beside the document. Without them a document that plots shipped values
+    reports them as missing, which for a loose pair would be the reader's doing, not the author's.
+    """
+    from .export import build_omex_archive
+    from .sedml import sedml_model_sources
+
+    sources = sedml_model_sources(sedml)
+    if len(sources) != 1:
+        return _unreadable(
+            f"the document runs {len(sources)} model files ({', '.join(sources) or 'none'}); "
+            "a check reads one document against the one model it names",
+            fix="name exactly one model file in the document",
+        )
+    try:
+        archive = build_omex_archive(
+            sbml,
+            sedml,
+            model_location=sources[0],
+            experiment_location="experiment.sedml",
+            data_files=data_files,
+        )
+    except ValueError as refused:
+        return _unreadable(str(refused), fix="make the document and the files you have agree")
+    report = archive_report(archive, claims=claims)
+    report["found"]["assembled_from_loose_files"] = True
+    if model_filename is not None and posixpath.basename(sources[0]) != model_filename:
+        report["fix_list"].append({
+            "priority": _ARCHIVE_UNADOPTABLE_PRIORITY,
+            "kind": "naming", "claim_id": None, "quantity": None,
+            "source_location": sources[0],
+            "issue": (
+                f"the document runs '{sources[0]}', and the model you have is named "
+                f"'{model_filename}'; a reproducer follows the document's own source"
+            ),
+            "fix": "ship the model under the name the document names, or correct the document",
+        })
+        report["fix_list"].sort(key=lambda item: item["priority"])
+        report["ready_to_submit"] = False
+        report["readiness"] = "a reproducer would hit the items below before reaching a verdict"
+    return report
+
+
+def _unreadable(issue: str, *, fix: str) -> dict[str, Any]:
+    """A report whose single finding is that there was nothing checkable to begin with."""
+    return {
+        "ready_to_submit": False,
+        "readiness": "these files cannot be read as one experiment: " + issue,
+        "found": {"readable": False, "assembled_from_loose_files": True},
+        "fix_list": [{
+            "priority": 0, "kind": "archive", "claim_id": None, "quantity": None,
+            "source_location": None, "issue": issue, "fix": fix,
+        }],
+        "note": _ARCHIVE_NOTE,
+    }
+
+
 def render_archive_human(
     archive: str | os.PathLike[str] | bytes, *, claims: Sequence[Claim] = ()
 ) -> str:
     """A plain-text archive check an author can act on directly."""
-    report = archive_report(archive, claims=claims)
+    return _render_report(archive_report(archive, claims=claims))
+
+
+def _render_report(report: dict[str, Any]) -> str:
+    """The plain-text rendering of an archive-shaped report, whatever assembled it."""
     found = report["found"]
     lines = ["ARCHIVE REPRODUCIBILITY CHECK", ""]
     verdict = "READY TO SUBMIT" if report["ready_to_submit"] else "NOT YET READY"
@@ -499,6 +585,26 @@ def render_archive_human(
     lines.append("WHAT THIS CHECK IS")
     lines.append(f"  {report['note']}")
     return "\n".join(lines)
+
+
+def render_pair_human(
+    sedml: str,
+    sbml: str,
+    *,
+    claims: Sequence[Claim] = (),
+    data_files: Mapping[str, str] = MappingProxyType({}),
+    model_filename: str | None = None,
+) -> str:
+    """The pair check as plain text, saying up front that the archive around it was generated."""
+    report = pair_report(
+        sedml, sbml, claims=claims, data_files=data_files, model_filename=model_filename
+    )
+    return "\n".join([
+        "These two files were checked as the archive they describe, which was assembled here.",
+        "A defect in your own manifest is therefore out of reach: there is not one yet.",
+        "",
+        _render_report(report),
+    ])
 
 
 __all__ = [

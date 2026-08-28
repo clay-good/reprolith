@@ -471,6 +471,28 @@ def test_archive_check_of_a_missing_claims_file_is_a_message(tmp_path, capsys):
     assert "cannot read the claims" in capsys.readouterr().err
 
 
+def test_archive_check_reads_a_loose_document_and_model(tmp_path, capsys):
+    """No packaging required: most papers ship the two files loose."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import build_experiment_sedml
+
+    model = tmp_path / "model.xml"
+    model.write_text(_EXPORT_MODEL, encoding="utf-8")
+    document = tmp_path / "experiment.sedml"
+    document.write_text(
+        build_experiment_sedml(_EXPORT_MODEL, duration=24.0, steps=240), encoding="utf-8"
+    )
+    assert run(["archive-check", "--sedml", str(document), "--model", str(model), "--json"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report["found"]["assembled_from_loose_files"] is True
+    assert {a["detected_format"] for a in report["found"]["files"]} == {"sbml", "sed-ml"}
+
+
+def test_archive_check_wants_either_an_archive_or_both_loose_files(tmp_path, capsys):
+    assert run(["archive-check", "--sedml", str(tmp_path / "a.sedml")]) == 1
+    assert "either an archive or both" in capsys.readouterr().err
+
+
 def test_archive_check_of_a_missing_file_is_a_message(tmp_path, capsys):
     assert run(["archive-check", str(tmp_path / "nope.omex")]) == 1
     assert "cannot read the archive" in capsys.readouterr().err

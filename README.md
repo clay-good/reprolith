@@ -106,6 +106,8 @@ reprolith export <accession> \       # the reconstruction as a runnable COMBINE 
   --model <model.xml> --out <out.omex>
 reprolith archive-check <file.omex> \ # what a reproducer would find in your archive
   [--claims <claims.json>]
+reprolith archive-check \             # ...or the two files loose, unpackaged
+  --sedml <exp.sedml> --model <model.xml>
 ```
 
 `archive-check` is the author-facing counterpart: point it at a COMBINE archive and it says what a
@@ -124,6 +126,12 @@ archive never runs: the model states 389.92 and the experiment runs it at 389.2,
 Without `--claims` that comparison does not run, and the report says so — a clean fix list never
 stands in for a check nobody made. It counts what was actually compared, not what it was handed:
 an archive with no experiment compares nothing, however many results you supply.
+
+Most papers ship the document and the model loose rather than packaged — BioModels does, and so
+does this repository — so `--sedml` and `--model` check them where they are. They are packaged into
+the archive they describe and that archive is checked, so the two forms cannot reach different
+conclusions; the report says the manifest was generated, since a defect in yours is out of reach
+when you do not have one yet.
 What Reprolith's *own extraction* would not carry is listed separately and never as a fix, because
 some of it the archive omits and some of it the archive states perfectly well.
 

@@ -235,11 +235,18 @@ Everything else is left alone, in both directions:
 `tests/test_manuscript_mismatch.py` runs it on the real document, the real model, and the real
 extracted claims; the 500 mg claim is silent because the archive does run it.
 
-An author reaches the same check from a terminal, before there is any certificate:
+An author reaches the same check from a terminal, before there is any certificate — and on the
+two files as they actually ship, packaged or not:
 
 ```bash
 reprolith archive-check paper.omex --claims my_claims.json
+reprolith archive-check --sedml paper.sedml --model paper.xml --claims my_claims.json
 ```
+
+The loose pair is packaged into the archive it describes and that archive is checked, so the two
+forms cannot disagree. What the pair form cannot see is a defect in the author's manifest, because
+there is not one yet — it says so instead of letting a clean result imply otherwise. The data files
+the document names are read from beside it, so a document that plots shipped values keeps them.
 
 It lands in the top tier of the fix list, alongside an experiment/model mismatch, because the two
 fail the same way: the run completes, produces a plausible number, and nothing says it was not the
@@ -263,7 +270,9 @@ archive = build_omex_archive(model, build_experiment_sedml(model, duration=24.0,
 Path("reconstruction.omex").write_bytes(archive)
 ```
 
-Two composable pieces: one writes the document, the other packages it. Both use only the standard
+`build_omex_archive` also takes the data files a document names (`data_files`), keyed by the
+`source` the document writes and stored where that source resolves — the same path a reader
+follows. Two composable pieces: one writes the document, the other packages it. Both use only the standard
 library, neither touches the filesystem, and the archive's bytes are deterministic — fixed member
 order, fixed timestamps — so the same model and experiment produce the same archive and it can be
 digested like any other artifact here.

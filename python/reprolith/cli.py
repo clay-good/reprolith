@@ -31,7 +31,12 @@ from .export import build_bundle_sedml, build_omex_archive
 from .mcp_server import default_data_dir, load_repository
 from .model import RunMetadata
 from .persistence import bundle_from_dict
-from .presubmission import archive_report, render_archive_human
+from .presubmission import (
+    archive_report,
+    pair_report,
+    render_archive_human,
+    render_pair_human,
+)
 from .query import ReprolithQuery
 from .render import render_human
 
@@ -354,12 +359,42 @@ def _load_claims(path: Path, accession: str | None) -> list[Claim]:
     return [Claim.from_record(record) for record in records]
 
 
+def _read_pair(args: argparse.Namespace) -> tuple[str, str, dict[str, str]]:
+    """The document, the model, and the data files the document names, read from beside it."""
+    from .sedml import sedml_data_sources
+
+    document, model = Path(args.sedml), Path(args.model)
+    sedml = document.read_text(encoding="utf-8")
+    data: dict[str, str] = {}
+    for source in sedml_data_sources(sedml):
+        beside = document.parent / source
+        if beside.is_file():
+            # Read from where the document says it is, exactly as a reader would. A source the
+            # author does not have is left out, and the check reports it as missing values.
+            data[source] = beside.read_text(encoding="utf-8")
+    return sedml, model.read_text(encoding="utf-8"), data
+
+
 def _cmd_archive_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Report what a reproducer would find in a COMBINE archive, before any certificate exists."""
-    path = Path(args.archive)
+    if (args.archive is None) == (args.sedml is None or args.model is None):
+        print(
+            "give either an archive or both --sedml and --model: a check reads one experiment "
+            "against the one model it names",
+            file=sys.stderr,
+        )
+        return 1
+    archive: bytes | None = None
+    pair: tuple[str, str, dict[str, str]] | None = None
     try:
-        archive = path.read_bytes()
+        if args.archive is not None:
+            archive = Path(args.archive).read_bytes()
+        else:
+            pair = _read_pair(args)
     except OSError as unreadable:
+        print(f"cannot read the archive: {unreadable}", file=sys.stderr)
+        return 1
+    except (UnicodeDecodeError, ValueError) as unreadable:
         print(f"cannot read the archive: {unreadable}", file=sys.stderr)
         return 1
     claims: list[Claim] = []
@@ -371,11 +406,23 @@ def _cmd_archive_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             # are the author's file rather than their archive, and none is worth a traceback.
             print(f"cannot read the claims: {unusable}", file=sys.stderr)
             return 1
-    report = archive_report(archive, claims=claims)
+    if archive is not None:
+        report = archive_report(archive, claims=claims)
+        rendered = render_archive_human(archive, claims=claims)
+    else:
+        assert pair is not None
+        sedml, sbml, data_files = pair
+        name = Path(args.model).name
+        report = pair_report(
+            sedml, sbml, claims=claims, data_files=data_files, model_filename=name
+        )
+        rendered = render_pair_human(
+            sedml, sbml, claims=claims, data_files=data_files, model_filename=name
+        )
     if args.json:
         _print_json(report)
     else:
-        print(render_archive_human(archive, claims=claims))
+        print(rendered)
     # The exit code answers the question the command asks. An author wiring this into a
     # pre-submission hook needs "is this ready" to be actionable, and a report that always exits 0
     # says READY and NOT YET READY in the same voice.
@@ -468,7 +515,12 @@ def build_parser() -> argparse.ArgumentParser:
         "archive-check",
         help="what a reproducer would find in a COMBINE archive (no model is run)",
     )
-    p.add_argument("archive", help="the .omex archive to check")
+    p.add_argument(
+        "archive", nargs="?", default=None,
+        help="the .omex archive to check (or use --sedml and --model for loose files)",
+    )
+    p.add_argument("--sedml", default=None, help="the simulation document, when it is not packaged")
+    p.add_argument("--model", default=None, help="the model the document names, when it is not packaged")
     p.add_argument(
         "--claims", default=None,
         help="a JSON file of the results your paper reports, so the check can also say whether "

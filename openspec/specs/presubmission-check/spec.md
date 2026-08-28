@@ -77,6 +77,13 @@ find in it, since a file that cannot be read or states no result never reaches a
 - **AND** when no such results are supplied, the check says that this comparison did not run,
   because an empty fix list must not read as an archive that runs what the paper reports
 
+#### Scenario: An unpackaged document and model
+
+- **WHEN** an author has a simulation document and its model as loose files
+- **THEN** the same check is available on the pair, by checking the archive those files describe
+- **AND** the report states that the archive around them was assembled, so a reader does not take
+  a clean result as evidence about a manifest that does not exist yet
+
 #### Scenario: The check does not speak as a certificate
 
 - **WHEN** the archive check is rendered

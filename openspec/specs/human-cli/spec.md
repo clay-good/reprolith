@@ -50,6 +50,16 @@ cannot become a divergent second implementation of Reprolith's contracts.
 - **AND** a claims file that cannot be read is reported as a message about the claims, distinct
   from one about the archive, with a non-zero exit status
 
+#### Scenario: Checking a document and a model that are not packaged
+
+- **WHEN** the archive check is given a simulation document and the model it names instead of an
+  archive
+- **THEN** it reports what a reproducer would find in the archive those two files describe, and
+  says that the manifest was generated rather than read, since the author does not have one yet
+- **AND** it reports a model whose filename is not the one the document's source names, because a
+  reproducer follows the document
+- **AND** it is an error to give both an archive and loose files, or neither
+
 ### Requirement: Scope statement inescapable in terminal output
 
 A verdict read from the terminal SHALL carry the same honest scoping as one read anywhere else.
