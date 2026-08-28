@@ -146,6 +146,7 @@ from .loop_notes import (
     load_loop_notes,
     required_subjects,
 )
+from .manuscript import manuscript_mismatches
 from .mcp_server import handle_request, serve_stdio
 from .model import (
     Assumption,
@@ -426,6 +427,7 @@ __all__ = [
     "LoopNote",
     "LoopNoteAudit",
     "LoopStage",
+    "manuscript_mismatches",
     "MAX_ENUMERABLE_NODES",
     "MAX_SAT_FIXED_POINTS",
     "ModelArtifact",

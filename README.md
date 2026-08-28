@@ -40,8 +40,12 @@ guessing — just: *does the described model produce the shown result?*
   version, so anyone can re-run it. A paper that ships a COMBINE archive is read straight out of
   it — the manifest names the model and the experiment, and one file becomes a dossier with
   structure and claims, including a check that the two files refer to the same model elements
-  (an override aimed at a parameter that is not there silently runs the unmodified model). A
-  reconstruction now leaves in that same form: a published bundle — per claim, the window, the
+  (an override aimed at a parameter that is not there silently runs the unmodified model) and a
+  check that the experiment they describe runs what the *paper* reports — both files can be
+  perfectly consistent and still never run the reported arm, which is what the shipped metformin
+  archive does: it scans the dose over 389.2, 778.4 and 1167.6 mg, and the paper's 1000 mg result
+  is 779.9 mg of free base.
+  A reconstruction now leaves in that same form: a published bundle — per claim, the window, the
   sample count, the output, and the parameter values that claim sets — is written as SED-ML and
   packaged with the model and a manifest, in deterministic bytes no Reprolith is needed to re-run.
   The overrides are the point: metformin's 779.9 mg free-base dose is what separates its two claims

@@ -223,7 +223,10 @@ def archive_mismatches(sedml: str, sbml: str) -> list[str]:
     one using a descendant axis or a function this resolver does not read, and one not anchored at
     the model document's root. Those are left unreported — a target this cannot resolve is not
     evidence that the model lacks the element, and reporting one accuses a correct archive. Neither is the SED-ML's
-    own well-formedness beyond its targets, nor anything about the manuscript, which is not read.
+    own well-formedness beyond its targets, nor the manuscript, which this does not read: whether
+    the experiment runs the result the *paper* reports is
+    :func:`reprolith.manuscript_mismatches`, and the two files can agree perfectly while failing
+    that.
 
     Raises ``ValueError`` if either document is not parseable XML.
     """

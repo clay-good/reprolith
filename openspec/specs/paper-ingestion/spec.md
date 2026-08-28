@@ -121,6 +121,28 @@ what it has to work with.
 - **AND** a reference ingestion cannot resolve is left unreported, because failing to resolve a
   reference is not evidence that the model lacks the element
 
+### Requirement: The archive and the manuscript must agree
+
+A shipped archive SHALL be compared against the paper's extracted claims, because an archive
+whose two files agree with each other can still describe a run that produces no result the
+paper reports.
+
+#### Scenario: The experiment does not run the reported result
+
+- **WHEN** a paper's extracted claims and its shipped simulation document are both available
+- **THEN** a claim whose output the archive's model does not declare, a claim whose output the
+  experiment never records, and a claim held at parameter values the experiment never runs are
+  each reported as a mismatch naming what the archive does instead
+- **AND** a comparison that cannot be made mechanically — an id more than one model element
+  carries, a target with no readable element id, a scan whose values the document does not
+  list, a change whose effect on a value is not computable — is not made, because failing to
+  read a document is not evidence that it disagrees
+- **AND** the run window is not compared, since a claim states its window in the manuscript's
+  units and a simulation states a number with no unit
+- **AND** a quantity the document records that no claim covers is not reported as a mismatch,
+  since claim extraction is partial and the difference is more often a gap in the extraction
+  than a defect in the archive
+
 ### Requirement: Ingestion is inspectable and revisable
 
 A dossier SHALL be reviewable and correctable without re-deriving it from scratch.

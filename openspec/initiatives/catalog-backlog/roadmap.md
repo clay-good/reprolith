@@ -61,10 +61,14 @@ a change under `openspec/changes/`.
 
 ### 4. SED-ML / OMEX adopt-and-verify fast-path
 
-- **Type:** capability *(intake landed: recipes, claims, and archive reading in `paper-ingestion`;
-  emitting an archive landed in `certificate-publication` — model, SED-ML, and manifest, written
-  deterministically. Surfacing archive-vs-*manuscript* mismatches is not built: archive-vs-model
-  mismatches are, but that compares the two files an archive ships, not either against prose)*
+- **Type:** capability *(DONE: intake — recipes, claims, and archive reading in `paper-ingestion`;
+  emitting an archive in `certificate-publication` — model, SED-ML, and manifest, written
+  deterministically; and now archive-vs-*manuscript* mismatches — `manuscript_mismatches` compares
+  the shipped experiment against the paper's extracted claims and reports an output the model does
+  not declare, one the experiment never records, and a value the run never holds. On the shipped
+  metformin archive that is one true line and no noise: the document scans the dose over
+  389.2/778.4/1167.6 mg and the paper's 1000 mg claim is 779.9 mg free base. What remains is
+  reaching it from the CLI, which needs a manuscript-claim source an author can point at.)*
 - **Why (value):** When a paper ships an executable simulation recipe and archive, reproduction
   is mostly "run it and check" — the highest certificate yield per unit effort, across every
   class at once. Also the cleanest momentum builder.
@@ -73,8 +77,10 @@ a change under `openspec/changes/`.
 - **Seed source:** Repositories and supplements that already carry recipes/archives.
 - **Difficulty:** Low–medium.
 - **Depends on:** MVP reconstruction + oracle.
-- **Done when:** A shipped-archive paper flows to a certificate with minimal reconstruction, and
-  mismatches between archive and manuscript are surfaced.
+- **Done when:** ~~A shipped-archive paper flows to a certificate with minimal reconstruction, and
+  mismatches between archive and manuscript are surfaced.~~ Both halves done: the end-to-end walk
+  is `tests/test_archive_end_to_end.py`, the manuscript comparison
+  `tests/test_manuscript_mismatch.py`.
 
 ### 5. Multi-engine matrix and cross-engine corroboration
 

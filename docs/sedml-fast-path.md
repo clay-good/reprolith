@@ -7,10 +7,11 @@ reconstructing the simulation settings by hand. This is the highest certificate 
 effort, and it applies across every ODE class.
 
 The document says more than that, though, and this page follows all of it: the recipe it writes
-down, the **claims** its plots stake, the **archive** it usually travels in, and whether the two
-files in that archive still agree with each other. One section walks an archive end to end, from a
-zip to a certificate, with no hand-written claim anywhere in between. The last section goes the
-other way: writing an archive, so a reconstruction leaves in the same standard form it arrived in.
+down, the **claims** its plots stake, the **archive** it usually travels in, whether the two files
+in that archive still agree with each other, and whether the experiment they describe runs what the
+**paper** reports. One section walks an archive end to end, from a zip to a certificate, with no
+hand-written claim anywhere in between. The last section goes the other way: writing an archive, so
+a reconstruction leaves in the same standard form it arrived in.
 
 ## Reading the recipe
 
@@ -155,6 +156,42 @@ It is a test rather than a thirty-first published certificate on purpose. This m
 certified through the [kinetic milestone](../datasets/kinetic/milestone/); a second certificate for
 the same model, with a reference computed the same way, would add a registry row and no information.
 What is worth proving is that the path runs.
+
+## Does it run what the paper reports?
+
+The check above compares an archive's two files with each other. Both can be perfectly consistent
+and still describe a run that produces no result the paper reports —
+`reprolith.manuscript_mismatches(sedml_text, sbml_text, claims)` is the other direction, and the
+shipped metformin archive is why it exists:
+
+```
+the manuscript's claim 'Cmax-1000mg' sets 'Metformin_Dose_in_Lumen_in_mg' to 779.9, which the
+archive never runs: the model states 389.92 and the experiment runs it at 389.2, 778.4, 1167.6
+```
+
+The paper reports a peak plasma concentration after a 1000 mg oral dose, which is 779.9 mg of free
+base in the model's own units. The document scans the dose over three values, none of them that
+one, and every file validates. A reproducer who adopts the document verbatim gets a near miss and
+no reason to suspect one — which is the whole failure mode.
+
+`claims` are the manuscript-extracted `Claim`s for the same paper (the ones in
+[`datasets/pkpd_claims.json`](../datasets/pkpd_claims.json)); the archive supplies the rest. Three
+things are compared, all mechanical: whether the model declares the output a claim reads, whether
+the experiment records it, and whether the values a claim holds at are among the ones the
+experiment runs — the model's own stated value, a `changeAttribute`, or a scan whose values the
+document lists.
+
+Everything else is left alone, in both directions:
+
+| Not compared | Why |
+| --- | --- |
+| The run window | A claim states 24 hours; a uniform time course states `outputEndTime="30"` and no unit at all. Reading that as hours is an assumption, and at the wrong one every archive is a mismatch. |
+| A quantity the document records that no claim covers | A document routinely reports more columns than a paper displays, and Reprolith's claim extraction is partial by construction. The difference is more often a gap in the extraction than a defect in the archive. |
+| An id more than one model element carries | A manuscript names an element by a bare id, and SBML lets a kinetic law's local parameter reuse a global name. Nothing says which was meant. |
+| A target with no readable element id, a scan whose values are not listed, a change whose effect is computed | Same rule as above: not reading a document is not evidence that it disagrees. |
+
+`tests/test_manuscript_mismatch.py` runs it on the real document, the real model, and the real
+extracted claims; the 500 mg claim is silent because the archive does run it.
 
 ## Writing an archive
 
