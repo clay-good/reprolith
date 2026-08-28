@@ -1980,6 +1980,66 @@ unchanged.
 The general lesson is the one the repository keeps relearning: a mitigation verified on the cases
 that motivated it is not verified at its boundary, and the boundary is where the next case sits.
 
+## Two files that agree with each other, and with nothing the paper says
+
+The last piece of the SED-ML fast-path was the one it had been deferring: an archive's experiment
+and its model can agree perfectly and still describe a run that produces no result the paper
+reports. Nothing in the archive can notice, because the manuscript is not in it.
+
+The case is the repository's own flagship. The metformin PBPK model's shipped document scans the
+dose over 389.2, 778.4 and 1167.6 mg. The paper's 1000 mg result is 779.9 mg of free base in the
+model's units. Every file validates, the run completes, and a reproducer adopting the document
+verbatim lands a few percent away from the published number with nothing to suggest they ran a
+different arm. `manuscript_mismatches` reports exactly that one line on those files and nothing
+else — the 500 mg claim is silent, because the archive does run it, and Reprolith's own exported
+archive passes the same check because it carries the dose as a `changeAttribute`.
+
+What it will not compare is the more interesting half. Not the run window: a claim states hours
+and a uniform time course states a unitless number, and reading `outputEndTime="30"` as thirty
+hours makes every archive in existence a mismatch. Not a recorded quantity no claim covers: claim
+extraction here is partial by construction, so that difference is more often a gap in Reprolith's
+own reading than a defect in the archive. Not an id two model elements carry, and not a parameter
+the model's own math determines. **Failing to read a document is not evidence that it disagrees**,
+and a false accusation against a correct archive costs more than a missed one.
+
+### Three defects in the same day's work, all one shape
+
+Re-auditing the diff within the hour found three, and they rhyme: each was **a number or an
+annotation standing in for a check** — which is what the capability itself was built to catch, one
+level up.
+
+The value check read a parameter's `value` attribute as what the model runs at. SBML makes that
+attribute inert for a parameter an assignment rule or an initial assignment sets, and this very
+model carries thirty-two initial assignments. Two harms, and the second is the bad one: a detail
+line naming a number nothing uses, and a *real* mismatch silenced whenever the inert value happens
+to equal the claim's.
+
+The data-description reader handed a generator that reads both a data source and the model — a
+trace normalized by its own data — the raw column as its reference values. Those are not the values
+of the ratio anyone plotted.
+
+And the author-facing report counted the claims it was *handed* as "checked against this
+experiment". An archive with no experiment compares nothing, however many results an author
+supplies. A count that says otherwise is precisely the defect the other two are.
+
+### The advice about a run nobody performs
+
+Then the same check was pointed at a class it was not written for: a real constraint-based archive,
+`e_coli_core`. It said *ship a SED-ML document whose plots are the curves your paper shows*. An
+fbc model is solved at steady state; there are no curves. The same held for a logical model, which
+advances in discrete update steps. The writer had refused to emit a time course for these models
+for months; the reader was judging them as if they were one, and telling an author whose files may
+be perfect to repair them.
+
+Those findings are now withheld and named rather than issued, and such an archive is never reported
+ready — "ready" would claim a reproducer knows what to check, and the questions were withheld, not
+answered.
+
+The method is worth more than the fix: **run the tool on a real file from a class it was not
+written for.** The previous round's lesson was to read the finished artifact as its reader; this
+one is to hand it an input its author never pictured. Both find things no amount of re-reading the
+code does.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
@@ -1987,7 +2047,10 @@ artifact (8.1), this note (8.2), and the discipline-loop record (7.3, 7.4) are a
 committed. Both deferred method fences are lifted: a population is simulated, not only judged, and
 an estimate is re-derived, not only compared — each validated against closed-form mathematics, and
 neither yet pointed at a paper, because no population figure and no shipped dataset are in the
-corpus. What remains is what finding 2 names: a scaled way to extract each paper's targetable
+corpus. The adopt-and-verify fast-path is closed on both sides now — an archive flows to a
+certificate, and where it disagrees with the paper the disagreement is reported — and the
+author-facing check reaches it, on an archive or on the two loose files most papers actually ship.
+What remains is what finding 2 names: a scaled way to extract each paper's targetable
 claims (tasks 2.1-2.3). Thirty of the thirty-one entries abstained for want of exactly that, so
 verdict *accuracy* across the set is still unestablished — the metformin example shows only that,
 given a claim, the rest of the pipeline delivers an honest, root-caused verdict.
