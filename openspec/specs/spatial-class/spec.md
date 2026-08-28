@@ -60,9 +60,10 @@ A spatial dossier SHALL capture the elements that determine the spatial dynamics
   records the domain as stated rather than as a gap, since the artifact ships it
 - **AND** anything the solver cannot honour is refused by name: a non-Cartesian or higher-
   dimensional geometry, a stated domain shape or more than one domain, an anisotropic coefficient,
-  a field-valued initial condition, a spatial species with no coefficient, a boundary condition
-  that is not zero flux, an advection term, a parameter standing for a coordinate, and any reaction
-  that is not a first-order decay — each of these read and ignored would produce a profile from a
+  a field-valued initial condition or one the model's own math overrides, a spatial species with no
+  coefficient or one the model holds fixed, a boundary condition that is not zero flux, an
+  advection term, a parameter standing for a coordinate, and any reaction that is not a first-order
+  decay — each of these read and ignored would produce a profile from a
   model nobody wrote, with no sign that it happened
 
 ### Requirement: Standard spatial reproduction targets

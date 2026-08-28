@@ -311,6 +311,43 @@ def test_a_species_with_no_uniform_initial_concentration_is_refused() -> None:
         ingest_spatial_sbml(_model(initial_concentration=None))
 
 
+def test_an_initial_value_the_model_overrides_is_not_read_off_the_inert_attribute() -> None:
+    """Measured: an `initialAssignment` of 42 read as the attribute's 1.0. SBML makes the attribute
+    inert once the model's own math sets it, and the profile this would carry is one the file
+    replaces — the same defect shape as a parameter whose value a rule determines."""
+    for construct in ("initial-assignment", "assignment-rule", "rate-rule"):
+        document = libsbml.readSBMLFromString(_model())
+        model = document.getModel()
+        if construct == "initial-assignment":
+            assignment = model.createInitialAssignment()
+            assignment.setSymbol("U")
+        elif construct == "assignment-rule":
+            assignment = model.createAssignmentRule()
+            assignment.setVariable("U")
+        else:
+            assignment = model.createRateRule()
+            assignment.setVariable("U")
+        assignment.setMath(libsbml.parseL3Formula("42"))
+
+        with pytest.raises(ValueError, match="inert"):
+            ingest_spatial_sbml(libsbml.writeSBMLToString(document))
+
+
+def test_a_species_the_model_holds_fixed_is_not_spread() -> None:
+    """A boundary or constant species does not move by SBML's own semantics; this solver evolves
+    every field it is handed."""
+    for attribute in ("boundary", "constant"):
+        document = libsbml.readSBMLFromString(_model())
+        species = document.getModel().getSpecies("U")
+        if attribute == "boundary":
+            species.setBoundaryCondition(True)
+        else:
+            species.setConstant(True)
+
+        with pytest.raises(ValueError, match="holds fixed"):
+            ingest_spatial_sbml(libsbml.writeSBMLToString(document))
+
+
 def test_a_model_where_nothing_diffuses_is_not_a_reaction_diffusion_model() -> None:
     with pytest.raises(ValueError, match="no species is marked spatial"):
         ingest_spatial_sbml(_model(spatial_species=False, with_diffusion=False))

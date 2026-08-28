@@ -948,8 +948,11 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
       ``boundaryMin``/``boundaryMax`` — that extent is the domain the grid spans;
     * each spatial species must carry exactly one **isotropic** diffusion coefficient (an
       anisotropic or single-coordinate one is a different equation from ``D ∇²c``);
-    * a species must state a uniform initial concentration, since a field-valued initial condition
-      is geometry this does not read;
+    * a species must state a uniform initial concentration that nothing else overrides — a
+      field-valued initial condition is geometry this does not read, and an initial assignment or a
+      rule makes the stated attribute inert, so reading it would carry a profile the model
+      replaces. A spatial species SBML holds fixed (a boundary or constant species) is refused for
+      the mirror reason: this solver evolves every field it is given;
     * a stated boundary condition must be **zero-flux** — this solver's boundaries are Neumann and
       nothing else, and running a Dirichlet model under them is a different model, quietly;
     * an **advection** coefficient, or a parameter standing for a coordinate, is refused: the first
@@ -1073,6 +1076,20 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
             )
         diffusivities[variable] = float(parameter.getValue())
 
+    # A value the model's own math sets makes the species' `initialConcentration` attribute inert,
+    # and reading it anyway reports a starting profile the file overrides — measured: an
+    # `initialAssignment` of 42 read as the attribute's 1.0. A rule on a spatial species is its own
+    # dynamics running against the PDE. Both are named rather than quietly lost.
+    overridden: dict[str, str] = {}
+    for i in range(model.getNumInitialAssignments()):
+        overridden[model.getInitialAssignment(i).getSymbol()] = "an initial assignment"
+    for i in range(model.getNumRules()):
+        rule = model.getRule(i)
+        if rule.isAssignment() or rule.isRate():
+            overridden[rule.getVariable()] = (
+                "an assignment rule" if rule.isAssignment() else "a rate rule"
+            )
+
     species: list[str] = []
     initial: dict[str, float] = {}
     for i in range(model.getNumSpecies()):
@@ -1081,6 +1098,18 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
         if entity_plugin is None or not entity_plugin.getIsSpatial():
             continue
         name = entity.getId()
+        if entity.getBoundaryCondition() or entity.getConstant():
+            raise ValueError(
+                f"species {name!r} is spatial and is a boundary or constant species, which SBML "
+                "holds fixed; this solver evolves every field it is given, so it would spread a "
+                "quantity the model says does not move"
+            )
+        if name in overridden:
+            raise ValueError(
+                f"species {name!r} is set by {overridden[name]}, which makes its stated initial "
+                "concentration inert; the profile this reader would carry is one the model "
+                "overrides"
+            )
         if name not in diffusivities:
             raise ValueError(
                 f"species {name!r} is spatial and declares no diffusion coefficient; how fast it "
