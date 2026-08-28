@@ -60,8 +60,9 @@ A spatial dossier SHALL capture the elements that determine the spatial dynamics
   since the artifact ships it
 - **AND** anything the solver cannot honour is refused by name: a non-Cartesian or higher-
   dimensional geometry, an anisotropic coefficient, a field-valued initial condition, a spatial
-  species with no coefficient, and a boundary condition that is not zero flux — running a Dirichlet
-  model under zero-flux walls is a different model with no sign that it happened
+  species with no coefficient, a boundary condition that is not zero flux, an advection term, and a
+  parameter standing for a coordinate — each of these read and ignored would produce a profile from
+  a model nobody wrote, with no sign that it happened
 
 ### Requirement: Standard spatial reproduction targets
 

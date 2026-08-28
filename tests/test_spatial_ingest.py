@@ -141,6 +141,72 @@ def test_zero_flux_is_the_one_boundary_condition_this_solver_imposes() -> None:
         ingest_spatial_sbml(_model(boundary=(libsbml.SPATIAL_BOUNDARYKIND_NEUMANN, 2.5)))
 
 
+def test_a_drift_term_is_refused_rather_than_dropped() -> None:
+    """Measured on the first version of this ingester: a velocity of 2.0 read as pure diffusion.
+    `∂c/∂t = D∇²c − v·∇c` is not the equation this steps, and a profile computed without the drift
+    comes from a model nobody wrote."""
+    document = libsbml.readSBMLFromString(_model())
+    model = document.getModel()
+    drift = model.createParameter()
+    drift.setId("v_U")
+    drift.setValue(2.0)
+    drift.setConstant(True)
+    coefficient = drift.getPlugin("spatial").createAdvectionCoefficient()
+    coefficient.setVariable("U")
+    coefficient.setCoordinate(libsbml.SPATIAL_COORDINATEKIND_CARTESIAN_X)
+
+    with pytest.raises(ValueError, match="advection coefficient"):
+        ingest_spatial_sbml(libsbml.writeSBMLToString(document))
+
+
+def test_a_parameter_standing_for_a_coordinate_is_refused() -> None:
+    """How a file writes a rate that varies with position; this solver's reaction term is local."""
+    document = libsbml.readSBMLFromString(_model())
+    model = document.getModel()
+    position = model.createParameter()
+    position.setId("x_pos")
+    position.setConstant(False)
+    reference = position.getPlugin("spatial").createSpatialSymbolReference()
+    reference.setSpatialRef("x")
+
+    with pytest.raises(ValueError, match="spatial coordinate"):
+        ingest_spatial_sbml(libsbml.writeSBMLToString(document))
+
+
+def test_two_species_and_an_offset_domain_read_as_they_are() -> None:
+    """A second diffusing species, a domain that does not start at zero, and a species the model
+    does not mark spatial — which is not this class's business and is left alone."""
+    document = libsbml.readSBMLFromString(_model(extent=(-5.0, 5.0)))
+    model = document.getModel()
+    second = model.createSpecies()
+    second.setId("V")
+    second.setCompartment("cell")
+    second.setInitialConcentration(0.0)
+    second.setHasOnlySubstanceUnits(False)
+    second.setBoundaryCondition(False)
+    second.setConstant(False)
+    second.getPlugin("spatial").setIsSpatial(True)
+    coefficient_parameter = model.createParameter()
+    coefficient_parameter.setId("D_V")
+    coefficient_parameter.setValue(0.5)
+    coefficient_parameter.setConstant(True)
+    coefficient = coefficient_parameter.getPlugin("spatial").createDiffusionCoefficient()
+    coefficient.setVariable("V")
+    coefficient.setType(libsbml.SPATIAL_DIFFUSIONKIND_ISOTROPIC)
+    ordinary = model.createSpecies()
+    ordinary.setId("W")
+    ordinary.setCompartment("cell")
+    ordinary.setInitialConcentration(3.0)
+    ordinary.setHasOnlySubstanceUnits(False)
+    ordinary.setBoundaryCondition(False)
+    ordinary.setConstant(False)
+
+    read = ingest_spatial_sbml(libsbml.writeSBMLToString(document))
+    assert read.species == ("U", "V")
+    assert read.diffusivities == (("U", 0.1), ("V", 0.5))
+    assert read.extent == (10.0,)  # -5 to 5, not the boundary values themselves
+
+
 def test_an_anisotropic_coefficient_is_a_different_equation() -> None:
     with pytest.raises(ValueError, match="not isotropic"):
         ingest_spatial_sbml(_model(isotropic=False))

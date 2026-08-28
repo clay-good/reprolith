@@ -951,7 +951,10 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
     * a species must state a uniform initial concentration, since a field-valued initial condition
       is geometry this does not read;
     * a stated boundary condition must be **zero-flux** — this solver's boundaries are Neumann and
-      nothing else, and running a Dirichlet model under them is a different model, quietly.
+      nothing else, and running a Dirichlet model under them is a different model, quietly;
+    * an **advection** coefficient, or a parameter standing for a coordinate, is refused: the first
+      is a drift term this scheme does not step, the second a quantity that varies with position,
+      and dropping either produces a profile from a model nobody wrote.
 
     Needs the ``engine`` extra (python-libsbml, which bundles the spatial package).
 
@@ -1007,6 +1010,25 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
         parameter_plugin = parameter.getPlugin("spatial")
         if parameter_plugin is None:
             continue
+        if parameter_plugin.isSetAdvectionCoefficient():
+            # ∂c/∂t = D∇²c − v·∇c is not the equation this solver steps. Reading the file and
+            # ignoring the drift term produces a pure-diffusion profile from a model that drifts,
+            # which is the substitution this whole ingester exists to refuse — measured: a
+            # velocity of 2.0 read as if it were not there.
+            raise ValueError(
+                f"parameter {parameter.getId()!r} declares an advection coefficient for "
+                f"{parameter_plugin.getAdvectionCoefficient().getVariable()!r}; this solver steps "
+                "diffusion with no drift term, and dropping it would run a different model"
+            )
+        if parameter_plugin.isSetSpatialSymbolReference():
+            # A parameter that *is* a coordinate is how a file writes a rate that varies with
+            # position. This solver's reaction term is local and space-independent, so the
+            # variation would silently vanish.
+            raise ValueError(
+                f"parameter {parameter.getId()!r} stands for a spatial coordinate "
+                f"({parameter_plugin.getSpatialSymbolReference().getSpatialRef()!r}); a quantity "
+                "that varies with position is beyond what this solver evaluates"
+            )
         if parameter_plugin.isSetBoundaryCondition():
             condition = parameter_plugin.getBoundaryCondition()
             kind = condition.getType()
