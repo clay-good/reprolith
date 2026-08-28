@@ -195,3 +195,11 @@ def test_a_value_the_model_computes_is_not_read_off_its_inert_attribute() -> Non
     # The same claim against the same model without the assignment is still reported, so the
     # suppression is the assignment's doing and not a hole in the check.
     assert manuscript_mismatches(_sedml(), _SBML, [claim])
+
+    # And the case that makes the suppression load-bearing rather than a duplicate of the "no
+    # stated value" one: a document that *does* set the parameter. Its change is overridden at run
+    # time by the assignment, so "the archive runs it at 1000" is not true about the run either —
+    # naming a value the model does not use is the defect, whichever side supplies the number.
+    # (Found by mutation: with this branch removed, the first assertion above still passed.)
+    change = f'<changeAttribute target="{_DOSE_TARGET}/@value" newValue="1000"/>'
+    assert manuscript_mismatches(_sedml(changes=change), assigned, [claim]) == []

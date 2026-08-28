@@ -56,3 +56,25 @@ published verdict changed (see [`findings-note.md`](findings-note.md) for the fu
   present budget produced 0 false failures in 15,000 trials.
 
 Read the record with any JSON reader; it is data, not a rendering of this page.
+
+## Checking that the checks fail
+
+A test that passes tells you nothing about whether it would fail. `scripts/mutation_check.py` runs
+the other direction: it removes one guard at a time from a *copy* of the package and asserts the
+named tests go red.
+
+```bash
+python scripts/mutation_check.py
+```
+
+Every entry is a defect this repository has already been wrong about once — a term silently
+dropped, a published schema nobody enforced, an attribute SBML makes inert read as a value — so the
+list doubles as the record of what has bitten. It is not in CI: it runs the suite once per
+mutation, and it is a deliberate pass, not a per-push gate.
+
+It fails two ways, and the second is the one worth having. A **surviving** mutation means the guard
+has no test, or the test never reaches the case that makes it load-bearing — which is how the
+manuscript check's suppression of a model-computed parameter was found passing with its branch
+deleted, because the test never gave the document a value to run. A **stale** anchor means the code
+moved and the list did not; that is reported as a failure rather than skipped, because a checker
+that quietly counts fewer things than it did last week is precisely the defect it exists to catch.
