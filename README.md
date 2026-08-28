@@ -138,7 +138,8 @@ when you do not have one yet.
 What Reprolith's *own extraction* would not carry is listed separately and never as a fix, because
 some of it the archive omits and some of it the archive states perfectly well.
 
-Every command reads except `export`, which writes the archive named by `--out`. It packages the
+Every command reads except `export`, which writes the archive named by `--out` — and says so when
+that replaced a file that was already there. It packages the
 published bundle for that accession — the window, the sample count, the output each claim reads,
 and the values that claim sets — and refuses a `--model` the bundle was not built from, since an
 archive built from another model packages a run the certificate never judged.

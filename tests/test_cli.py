@@ -526,3 +526,33 @@ def test_only_the_two_file_commands_sit_outside_the_query_surface():
         "backlog", "bundle", "catalog", "certificate", "certificates-for", "dossier", "gaps",
         "presubmission", "self-validation", "status", "verdict",
     }
+
+
+def test_export_to_a_path_it_cannot_write_is_a_message(tmp_path, capsys):
+    """A directory, a missing parent, a read-only location: ordinary mistakes for the only
+    command here that writes, and a traceback is not an answer to any of them."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    repo, _ = _write_repo(tmp_path)
+    model = _write_exportable_bundle(repo)
+    target = tmp_path / "a-directory"
+    target.mkdir()
+    assert run(["--data-dir", str(repo), "export", "ACC1", "--model", str(model),
+                "--out", str(target)]) == 1
+    assert "cannot write the archive" in capsys.readouterr().err
+
+
+def test_export_says_when_it_replaced_a_file(tmp_path, capsys):
+    """It is the one command that destroys something, and the person running it finds out here
+    rather than later."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    repo, _ = _write_repo(tmp_path)
+    model = _write_exportable_bundle(repo)
+    out = tmp_path / "archive.omex"
+
+    assert run(["--data-dir", str(repo), "export", "ACC1", "--model", str(model),
+                "--out", str(out)]) == 0
+    assert "replacing" not in capsys.readouterr().out
+
+    assert run(["--data-dir", str(repo), "export", "ACC1", "--model", str(model),
+                "--out", str(out)]) == 0
+    assert "replacing what was there" in capsys.readouterr().out

@@ -311,16 +311,27 @@ def _cmd_export(query: ReprolithQuery, args: argparse.Namespace) -> int:
         return 1
 
     out = Path(args.out)
-    out.write_bytes(archive)
+    # Whether the path already held something is read before writing, because afterwards it is
+    # this archive either way — and the one command that writes should say when it replaced a file
+    # rather than leave the person to notice later.
+    replaced = out.exists()
+    try:
+        out.write_bytes(archive)
+    except OSError as unwritable:
+        # A directory, a path whose parent does not exist, a read-only location: ordinary mistakes
+        # for the only command here that writes, and a traceback is not an answer to any of them.
+        print(f"cannot write the archive: {unwritable}", file=sys.stderr)
+        return 1
     if args.json:
         _print_json({
             "archive": str(out),
             "bytes": len(archive),
+            "replaced_existing_file": replaced,
             "expressed": list(experiment.expressed),
             "unexpressed": list(experiment.unexpressed),
         })
         return 0
-    print(f"wrote {out} ({len(archive)} bytes)")
+    print(f"wrote {out} ({len(archive)} bytes)" + (", replacing what was there" if replaced else ""))
     print(f"claims expressed: {', '.join(experiment.expressed)}")
     for line in experiment.unexpressed:
         # Printed, never swallowed: an archive short of a claim reads as a reconstruction that
