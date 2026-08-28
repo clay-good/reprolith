@@ -77,6 +77,16 @@ Two findings, both from real data:
    half of claim extraction now scales to 81 targets in a file Reprolith already shipped, and the
    values half scales to 2.
 
+   There is one route by which a document can close the values half itself, and it is now read: a
+   `dataDescription` names a data file the archive ships, and a curve plotted from it is the
+   paper's own recorded points rather than a result the model must regenerate. Those values are
+   read out of the archive and travel with that curve (`read_sedml_data`). It changes nothing for
+   the two documents in this corpus — neither uses one — and it is worth being exact about what it
+   would change if one did: it supplies the *measured* series a figure shows, not the paper's
+   claim about the model, and SED-ML does not say that the data curve is the reference for the
+   simulated curve beside it. Reprolith does not infer that pairing. So the wall moves for a
+   document that ships its data, and only as far as the document itself goes.
+
 ## The figure boundary is not PK/PD-specific — FBA hits it too
 
 The same wall recurs in the constraint-based class, which rules out "PK/PD figures are just

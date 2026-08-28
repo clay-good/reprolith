@@ -89,6 +89,48 @@ half of claim extraction, and leaves the "what values were shown" half where it 
 takes such a claim and abstains on it — `not-evaluable`, with the reason on the claim line — rather
 than running the model and judging it against nothing.
 
+## The values it ships
+
+A document can carry more than which curves are shown: a `dataDescription` names a data file the
+archive ships, and a `dataSource` selects one column of it. That column is the paper's own recorded
+series — the values half of claim extraction, supplied by the document rather than digitized off a
+figure.
+
+```python
+from reprolith import read_sedml_data, sedml_data_sources, enumerate_sedml_claims
+
+files = {source: read(source) for source in sedml_data_sources(sedml_text)}
+claims = enumerate_sedml_claims(sedml_text, data=read_sedml_data(sedml_text, files))
+```
+
+`ingest_omex` does both steps for an archive, since only the archive can resolve a source to a
+member. A file the document names and the archive does not contain becomes a gap: the values behind
+that curve are gone, and the curve says so instead of reading as one that never had data.
+
+The claim it produces is deliberately **not** a result to reproduce. A curve plotted from shipped
+data is what a model is checked *against*, not something it must regenerate — read as a target it
+would put the paper's measurements on the list of things the model owes, and then abstain on them
+for want of a reference the archive was shipping all along. So it is retained with `targetable`
+false, carrying those values as its reference data, and its source location names the data source.
+
+What is not inferred is the **pairing**. That a plot's data curve is the reference for the
+simulated curve beside it is a convention SED-ML has no vocabulary for, and attaching values across
+it would invent a comparison the document never made. A reviewer who knows the figure can promote
+one as a tracked revision — the same route a report's data set takes.
+
+Read conservatively, and absent rather than guessed at when it cannot be:
+
+| Not read | Why |
+| --- | --- |
+| A description in any format but CSV | NuML is an XML container this does not parse, and a column read out of a format nobody parsed is invented values. |
+| A `dataSource` with an `indexSet`, or with no slice, or with several | An index set names row labels; no slice selects the whole table. Neither is a series. |
+| A column whose header is missing, duplicated, or not numeric all the way down | A column picked by position and called by a name that does not identify it, or a reference series silently shorter than the curve it stands for. |
+
+No document in this repository's corpus uses a data description, so this changes nothing already
+published. `tests/test_sedml_data.py` works on a synthetic document that says so — and checks its
+conformance rather than asserting it: libSEDML, an independent implementation, reads it with zero
+errors.
+
 ## The archive around it
 
 A paper more often ships the whole experiment as a **COMBINE archive** (`.omex`): a zip whose

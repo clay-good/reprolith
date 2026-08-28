@@ -15,8 +15,11 @@ run from the one the document specifies.
 
 from __future__ import annotations
 
+import csv
+import io
 import re
 import xml.etree.ElementTree as ET
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 
 from .dossier import DossierClaim
@@ -202,16 +205,40 @@ class _Generator:
     quantity: str
     task_ref: str
     is_time: bool
+    #: The ``dataSource`` ids this generator's math reads. A generator built from one is not a run
+    #: at all — it is the data the document ships, which is why it is not a result to reproduce.
+    data_sources: tuple[str, ...] = ()
+
+
+def _data_source_ids(root: ET.Element) -> set[str]:
+    return {
+        element.get("id", "")
+        for element in root.iter()
+        if _localname(element.tag) == "dataSource" and element.get("id")
+    }
+
+
+def _referenced_names(element: ET.Element) -> set[str]:
+    """Every identifier the generator's MathML refers to, so a data source it reads is visible."""
+    return {
+        (node.text or "").strip()
+        for node in element.iter()
+        if _localname(node.tag) == "ci" and (node.text or "").strip()
+    }
 
 
 def _read_generators(root: ET.Element) -> dict[str, _Generator]:
     generators: dict[str, _Generator] = {}
+    data_ids = _data_source_ids(root)
     for element in root.iter():
         if _localname(element.tag) != "dataGenerator":
             continue
         gen_id = element.get("id")
         if not gen_id:
             continue
+        # SED-ML L1V4 lets a data generator read a data source by naming it in its own math, with
+        # no variable and no task; that is how a document plots the values it ships.
+        from_data = tuple(sorted(_referenced_names(element) & data_ids))
         quantity, task_ref, symbols, targets = "", "", 0, 0
         for variable in element.iter():
             if _localname(variable.tag) != "variable":
@@ -229,6 +256,7 @@ def _read_generators(root: ET.Element) -> dict[str, _Generator]:
             name=name,
             quantity=quantity or name,
             task_ref=task_ref,
+            data_sources=from_data,
             # Only a generator built from nothing but the time symbol is the axis. One that mixes
             # time with a species (a normalized trace) still asserts something about the species.
             is_time=symbols > 0 and targets == 0,
@@ -310,6 +338,108 @@ def _conditions(generator: _Generator, tasks: dict[str, _Task]) -> str:
     return f"{named}, model '{task.model_ref}', simulation '{task.sim_ref}'"
 
 
+#: The format URI a SED-ML data description gives a plain CSV table. The other standard format is
+#: NuML, an XML container this does not read: a column read out of a format nobody parsed would be
+#: guessed values, and a claim's reference is the last place to guess.
+_CSV_FORMATS = ("urn:sedml:format:csv",)
+
+
+def sedml_data_sources(sedml: str) -> tuple[str, ...]:
+    """The data *files* a SED-ML document's ``dataDescription`` elements reference, in order.
+
+    A document that plots the paper's own measured points ships them beside itself and names them
+    here. This is the lookup a caller needs to fetch those files (from a COMBINE archive, or from
+    disk) before :func:`read_sedml_data` can read them; raises ``ValueError`` if the text is not
+    parseable SED-ML.
+    """
+    try:
+        root = ET.fromstring(sedml)
+    except ET.ParseError as exc:
+        raise ValueError(f"not parseable SED-ML: {exc}") from exc
+    sources = [
+        element.get("source", "")
+        for element in root.iter()
+        if _localname(element.tag) == "dataDescription" and element.get("source")
+    ]
+    return tuple(dict.fromkeys(sources))
+
+
+def _csv_columns(text: str) -> dict[str, tuple[float, ...]]:
+    """A CSV read as ``header -> column``, keeping only columns that are numbers throughout.
+
+    A column with a non-numeric cell is dropped rather than partially read: a reference series
+    with holes silently shorter than the curve it stands for is worse than no reference at all.
+    """
+    rows = list(csv.reader(io.StringIO(text)))
+    if len(rows) < 2:
+        return {}
+    header = [cell.strip() for cell in rows[0]]
+    columns: dict[str, tuple[float, ...]] = {}
+    for index, name in enumerate(header):
+        if not name or header.count(name) > 1:
+            # An unnamed column cannot be selected by a slice, and a duplicated name cannot be
+            # resolved to one column — reading either would pick a column by position and call it
+            # by a name that does not identify it.
+            continue
+        values: list[float] = []
+        for row in rows[1:]:
+            if index >= len(row):
+                break
+            try:
+                values.append(float(row[index].strip()))
+            except ValueError:
+                break
+        else:
+            if values:
+                columns[name] = tuple(values)
+    return columns
+
+
+def read_sedml_data(sedml: str, files: Mapping[str, str]) -> dict[str, tuple[float, ...]]:
+    """The values each ``dataSource`` selects, keyed by its id.
+
+    ``files`` maps a ``dataDescription``'s ``source`` — the string the document writes, resolved
+    to content by the caller — to that file's text. Only what can be read without guessing is
+    returned, and a data source this cannot resolve is simply absent from the result:
+
+    * the description must declare a CSV format (NuML is an XML container this does not parse);
+    * the data source must select exactly one column, through a single ``slice`` whose ``value``
+      names a column of the file's header row (an ``indexSet`` names row labels, not values, and a
+      source with no slice selects the whole table rather than a series);
+    * that column must be numeric all the way down, with a name that identifies it uniquely.
+
+    Raises ``ValueError`` if the text is not parseable SED-ML.
+    """
+    try:
+        root = ET.fromstring(sedml)
+    except ET.ParseError as exc:
+        raise ValueError(f"not parseable SED-ML: {exc}") from exc
+
+    values: dict[str, tuple[float, ...]] = {}
+    for description in root.iter():
+        if _localname(description.tag) != "dataDescription":
+            continue
+        if description.get("format", "") not in _CSV_FORMATS:
+            continue
+        text = files.get(description.get("source", ""))
+        if text is None:
+            continue
+        columns = _csv_columns(text)
+        for source in description.iter():
+            if _localname(source.tag) != "dataSource":
+                continue
+            source_id = source.get("id")
+            if not source_id or source.get("indexSet"):
+                continue
+            slices = [c for c in source.iter() if _localname(c.tag) == "slice"]
+            if len(slices) != 1:
+                continue
+            column = columns.get(slices[0].get("value", ""))
+            if column is not None:
+                values[source_id] = column
+    return values
+
+
 def sedml_model_sources(sedml: str) -> tuple[str, ...]:
     """The model *files* a SED-ML document references, in document order, without repeats.
 
@@ -331,7 +461,9 @@ def sedml_model_sources(sedml: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys(s for s in sources if s and not s.startswith("#")))
 
 
-def enumerate_sedml_claims(sedml: str) -> tuple[DossierClaim, ...]:
+def enumerate_sedml_claims(
+    sedml: str, *, data: Mapping[str, Sequence[float]] | None = None
+) -> tuple[DossierClaim, ...]:
     """Enumerate the published results a SED-ML document stakes, as dossier claims.
 
     A SED-ML document's **plots** are the document's own statement of which curves are shown
@@ -356,11 +488,22 @@ def enumerate_sedml_claims(sedml: str) -> tuple[DossierClaim, ...]:
     A document that ships only reports therefore yields no targetable claims. That is an
     abstention, not a wrong answer: nothing in it says which of its columns the paper published.
 
-    Every claim is marked ``digitized-figure`` with no reference data, because a SED-ML document
-    says what to plot, never what values the paper's figure showed. The oracle abstains on a
-    claim with no reference rather than inventing one. Reference values shipped through a
-    ``dataDescription`` are not read yet, so a document carrying real experimental data is
-    currently marked figure-referenced like any other.
+    A simulated claim is marked ``digitized-figure`` with no reference data, because a SED-ML
+    document says what to plot, never what values the paper's figure showed. The oracle abstains
+    on a claim with no reference rather than inventing one.
+
+    **A curve the document plots from a shipped data file is different**, and is not a simulated
+    claim at all: it is the paper's own recorded values, which a model is checked *against* rather
+    than asked to regenerate. Such a curve is retained with ``targetable`` false, carrying those
+    values as its reference data when ``data`` supplies them (:func:`read_sedml_data`), and its
+    source location names the data source it came from. Reading it as a result to reproduce would
+    put the paper's measurements on the list of things the model must reproduce, and then abstain
+    on them for want of a reference the document was shipping all along.
+
+    What is deliberately *not* inferred is the pairing: that a plot's data curve is the reference
+    for its simulated curve is a convention SED-ML does not state, and attaching values across it
+    would invent a comparison the document never made. A reviewer who knows the figure can promote
+    one as a tracked revision — the same route a report's data set takes.
 
     Raises ``ValueError`` if the text is not parseable SED-ML.
     """
@@ -390,11 +533,31 @@ def enumerate_sedml_claims(sedml: str) -> tuple[DossierClaim, ...]:
                 continue
             plotted.add(ref or "")
             curve_id = curve.get("id") or f"{plot_id}_{_localname(curve.tag)}{index}"
+            location = f"{where}, {_localname(curve.tag)} '{curve_id}'"
+            if generator.data_sources:
+                shipped = tuple(
+                    float(value)
+                    for source in generator.data_sources
+                    for value in (data or {}).get(source, ())
+                ) if len(generator.data_sources) == 1 else ()
+                claims.append(DossierClaim(
+                    id=curve_id,
+                    quantity=curve.get("name") or generator.quantity,
+                    conditions=_conditions(generator, tasks),
+                    source_location=(
+                        f"{location}, plotted from data source "
+                        f"'{', '.join(generator.data_sources)}' the document ships"
+                    ),
+                    targetable=False,
+                    reference_kind=ReferenceKind.NUMERIC if shipped else None,
+                    reference_data=shipped,
+                ))
+                continue
             claims.append(DossierClaim(
                 id=curve_id,
                 quantity=curve.get("name") or generator.quantity,
                 conditions=_conditions(generator, tasks),
-                source_location=f"{where}, {_localname(curve.tag)} '{curve_id}'",
+                source_location=location,
                 reference_kind=ReferenceKind.DIGITIZED_FIGURE,
             ))
 
@@ -426,5 +589,7 @@ __all__ = [
     "SimulationRecipe",
     "enumerate_sedml_claims",
     "parse_sedml_recipes",
+    "read_sedml_data",
+    "sedml_data_sources",
     "sedml_model_sources",
 ]

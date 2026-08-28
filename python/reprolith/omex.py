@@ -27,7 +27,7 @@ from dataclasses import replace
 
 from .dossier import Dossier, Gap, GapKind, ModelArtifact
 from .ingest import ingest_sbml
-from .sedml import sedml_model_sources
+from .sedml import read_sedml_data, sedml_data_sources, sedml_model_sources
 
 #: The COMBINE specifications namespace every standard format URI is built on. A format is named
 #: by its final segment — ``.../sbml.level-2.version-4`` is SBML, ``.../sed-ml`` is SED-ML — and a
@@ -304,6 +304,19 @@ def ingest_omex(archive: str | os.PathLike[str] | bytes, *, entry: str) -> Dossi
                         "but the archive does not contain it"
                     )
 
+            # The document may also ship the paper's own recorded values, in files it names. They
+            # are read here because only the archive can resolve a source to a member; a file it
+            # names and does not contain is a gap below, never a silently empty reference.
+            data_files: dict[str, str] = {}
+            missing_data: list[str] = []
+            if sedml_text is not None:
+                for source in sedml_data_sources(sedml_text):
+                    location = _resolve(source, relative_to=experiment or "")
+                    if location in members:
+                        data_files[source] = zf.read(stored[location]).decode("utf-8")
+                    else:
+                        missing_data.append(source)
+
             model_text = zf.read(stored[model_location]).decode("utf-8")
     except zipfile.BadZipFile as exc:
         raise ValueError(f"not a readable COMBINE archive: {exc}") from exc
@@ -311,7 +324,11 @@ def ingest_omex(archive: str | os.PathLike[str] | bytes, *, entry: str) -> Dossi
         raise ValueError(f"an archive member is not readable text: {exc}") from exc
 
     dossier = ingest_sbml(
-        model_text, entry=entry, source_label=model_location, sedml=sedml_text
+        model_text,
+        entry=entry,
+        source_label=model_location,
+        sedml=sedml_text,
+        sedml_data=read_sedml_data(sedml_text, data_files) if sedml_text is not None else None,
     )
     # An experiment that refers to elements its own model does not have fails quietly — an
     # override that overrides nothing runs the unmodified model — so each mismatch is recorded as
@@ -349,7 +366,23 @@ def ingest_omex(archive: str | os.PathLike[str] | bytes, *, entry: str) -> Dossi
         for location, name in listed.items()
         if location not in members
     )
-    return replace(dossier, artifacts=artifacts, gaps=dossier.gaps + inconsistent + absent)
+    # A data file the document names and the archive does not ship: the values behind a plotted
+    # curve are simply gone, and the curve keeps its provenance with no reference rather than
+    # quietly reading as a curve the document never had data for.
+    unshipped = tuple(
+        Gap(
+            element=source,
+            kind=GapKind.OTHER,
+            detail=(
+                f"the experiment plots data from '{source}', which the archive does not contain; "
+                "the values behind that curve are not in this archive"
+            ),
+        )
+        for source in missing_data
+    )
+    return replace(
+        dossier, artifacts=artifacts, gaps=dossier.gaps + inconsistent + absent + unshipped
+    )
 
 
 __all__ = ["archive_mismatches", "ingest_omex"]

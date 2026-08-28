@@ -56,6 +56,21 @@ are exactly what the oracle will check.
 - **AND** a document that ships only reports yields no targetable claims, because nothing in it
   says which of its columns the paper published
 
+#### Scenario: Values a simulation document ships
+
+- **WHEN** a shipped simulation document plots a curve from a data file it names, and the archive
+  contains that file
+- **THEN** the curve is recorded with the file's values as its reference data and its data source
+  named in its provenance, and it is not targetable, because the paper's own recorded points are
+  what a model is checked against rather than a result it must regenerate
+- **AND** the values are not attached to any other claim, since a document does not state that a
+  plot's data curve is the reference for the simulated curve beside it
+- **AND** a data file the document names and the archive does not contain is recorded as a gap,
+  so a curve with no values reads as one whose data is missing rather than one that had none
+- **AND** a column that cannot be resolved without guessing — a format ingestion does not parse, a
+  source that selects no single column, a column that is not numeric throughout — yields no
+  reference data
+
 #### Scenario: Reference data for a claim
 
 - **WHEN** the paper provides the numeric values behind a claim (a data table, digitized

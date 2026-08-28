@@ -20,6 +20,7 @@ Uses the optional ``engine`` extra (python-libsbml), imported lazily.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .dossier import (
@@ -92,6 +93,7 @@ def ingest_sbml(
     entry: str,
     source_label: str = "SBML model file",
     sedml: str | None = None,
+    sedml_data: Mapping[str, Sequence[float]] | None = None,
 ) -> Dossier:
     """Parse a shipped SBML model into a dossier of its structure.
 
@@ -109,6 +111,11 @@ def ingest_sbml(
     plots are the document's own statement of which curves are shown results, so they become the
     dossier's claims (:func:`reprolith.enumerate_sedml_claims`); without it the dossier has model
     structure and no claims, because this path never reads the manuscript.
+
+    ``sedml_data`` carries the values the document's data sources select, read from the files it
+    ships (:func:`reprolith.read_sedml_data`). They are the paper's own recorded points, so they
+    travel with the non-targetable curve that plots them rather than becoming a result to
+    reproduce. Reading the files is the caller's job: this function takes text, not an archive.
     """
     libsbml = _libsbml()
     document = libsbml.readSBMLFromString(sbml)
@@ -228,7 +235,9 @@ def ingest_sbml(
 
     return Dossier(
         entry=entry,
-        claims=enumerate_sedml_claims(sedml) if sedml is not None else (),
+        claims=(
+            enumerate_sedml_claims(sedml, data=sedml_data) if sedml is not None else ()
+        ),
         state_variables=tuple(state_variables),
         equations=tuple(equations),
         parameters=tuple(parameters),

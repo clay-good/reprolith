@@ -233,6 +233,8 @@ from .sedml import (
     SimulationRecipe,
     enumerate_sedml_claims,
     parse_sedml_recipes,
+    read_sedml_data,
+    sedml_data_sources,
     sedml_model_sources,
 )
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
@@ -457,6 +459,7 @@ __all__ = [
     "react_diffuse_1d",
     "react_diffuse_2species",
     "Reaction",
+    "read_sedml_data",
     "reaction_essentiality",
     "RecipeStep",
     "ReconstructionBundle",
@@ -486,6 +489,7 @@ __all__ = [
     "Screening",
     "ScreeningResult",
     "search_protocol",
+    "sedml_data_sources",
     "sedml_model_sources",
     "seed_candidates",
     "seed_catalog",

@@ -16,7 +16,10 @@ its manuscript at scale is the piece that is not built; [`docs/findings-note.md`
 [`openspec/`](openspec/) say so in detail. Where a paper ships a **SED-ML** document, the half of that
 job the document already did is read from it: its plots say which curves the paper shows, and those
 become the dossier's claims. Their *values* are still not there, so such a claim is figure-referenced
-and the oracle abstains — see [`docs/sedml-fast-path.md`](docs/sedml-fast-path.md).
+and the oracle abstains — unless the document ships them: a curve plotted from a data file the
+archive carries travels with those values, as the paper's own recorded points rather than a result
+the model owes. No document in the corpus does that today. See
+[`docs/sedml-fast-path.md`](docs/sedml-fast-path.md).
 
 ---
 
