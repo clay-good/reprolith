@@ -382,7 +382,10 @@ def _csv_columns(text: str) -> dict[str, tuple[float, ...]]:
     rows = list(csv.reader(io.StringIO(text)))
     if len(rows) < 2:
         return {}
-    header = [cell.strip() for cell in rows[0]]
+    # A file saved by a spreadsheet often opens with a byte-order mark, which lands on the first
+    # header cell and on nothing else — so a slice naming the first column silently matched no
+    # column while every other slice worked. The mark is an encoding artifact, not part of a name.
+    header = [cell.strip().lstrip("\ufeff") for cell in rows[0]]
     columns: dict[str, tuple[float, ...]] = {}
     for index, name in enumerate(header):
         if not name or header.count(name) > 1:

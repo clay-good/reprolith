@@ -520,7 +520,10 @@ def pair_report(
             data_files=data_files,
         )
     except ValueError as refused:
-        return _unreadable(str(refused), fix="make the document and the files you have agree")
+        # One message covers several causes — an unparseable model, a source pointing elsewhere,
+        # a location that is not a plain relative path — so the fix names the file the message
+        # names rather than asserting which of them it was.
+        return _unreadable(str(refused), fix="repair the file this names, or the document that points at it")
     report = archive_report(archive, claims=claims)
     report["found"]["assembled_from_loose_files"] = True
     if model_filename is not None and posixpath.basename(sources[0]) != model_filename:

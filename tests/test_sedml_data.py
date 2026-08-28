@@ -247,3 +247,15 @@ def test_a_curve_that_reads_the_data_and_the_model_stays_a_simulated_claim() -> 
     assert claim.targetable
     assert claim.reference_data == ()
     assert claim.reference_kind is ReferenceKind.DIGITIZED_FIGURE
+
+
+def test_a_byte_order_mark_does_not_hide_the_first_column() -> None:
+    """A spreadsheet-saved CSV opens with a BOM, which lands on the first header cell and nothing
+    else — so a slice naming the first column silently matched nothing while the rest worked."""
+    document = _document(slice_value="time")
+    assert read_sedml_data(document, {"observed.csv": _CSV}) == {
+        "observedC": (0.0, 1.0, 2.0)
+    }
+    assert read_sedml_data(document, {"observed.csv": "\ufeff" + _CSV}) == {
+        "observedC": (0.0, 1.0, 2.0)
+    }
