@@ -239,6 +239,15 @@ def _read_generators(root: ET.Element) -> dict[str, _Generator]:
         # SED-ML L1V4 lets a data generator read a data source by naming it in its own math, with
         # no variable and no task; that is how a document plots the values it ships.
         from_data = tuple(sorted(_referenced_names(element) & data_ids))
+        model_variables = any(
+            _localname(v.tag) == "variable" and v.get("target") for v in element.iter()
+        )
+        if model_variables:
+            # A generator that reads a data source *and* the model — a trace normalized by its
+            # own data — still asserts something about the model, so it stays a simulated claim.
+            # Treating it as shipped data would hand it the raw column as its reference values,
+            # which are not the values of the ratio anyone plotted.
+            from_data = ()
         quantity, task_ref, symbols, targets = "", "", 0, 0
         for variable in element.iter():
             if _localname(variable.tag) != "variable":

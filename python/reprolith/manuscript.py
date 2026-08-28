@@ -68,12 +68,31 @@ def _leaf(target: str | None) -> str | None:
     return match.group(1) if match else None
 
 
+def _determined_by_math(root: ET.Element) -> set[str]:
+    """Ids whose value the model computes, so their ``value`` attribute states nothing.
+
+    SBML makes the attribute inert for a parameter an assignment rule or an initial assignment
+    sets — the metformin model carries thirty-two initial assignments — and reading it as "what
+    the model runs" is the shape of defect this module exists to catch, one level down: a number
+    that is there, is not a check, and can silence a real disagreement by coincidence.
+    """
+    determined: set[str] = set()
+    for element in root.iter():
+        tag = _localname(element.tag)
+        if tag == "initialAssignment" and element.get("symbol"):
+            determined.add(element.get("symbol", ""))
+        elif tag == "assignmentRule" and element.get("variable"):
+            determined.add(element.get("variable", ""))
+    return determined
+
+
 def _model_index(root: ET.Element) -> tuple[dict[str, int], dict[str, float]]:
     """``(id -> how many elements carry it, id -> its stated value)``.
 
     The count matters: a manuscript record names an element by a bare id, and SBML lets a kinetic
     law's local parameter reuse a global name. When an id is carried by more than one element
     there is no way to tell which the manuscript meant, so its value is not offered for comparison.
+    An id the model's own math determines is left out for the same reason: it has no stated value.
     """
     counts: dict[str, int] = {}
     values: dict[str, float] = {}
@@ -85,7 +104,12 @@ def _model_index(root: ET.Element) -> tuple[dict[str, int], dict[str, float]]:
         value = _number(element.get("value"))
         if value is not None:
             values[element_id] = value
-    return counts, {name: value for name, value in values.items() if counts[name] == 1}
+    computed = _determined_by_math(root)
+    return counts, {
+        name: value
+        for name, value in values.items()
+        if counts[name] == 1 and name not in computed
+    }
 
 
 def _observed(sedml_root: ET.Element) -> tuple[set[str], bool]:
@@ -220,6 +244,7 @@ def manuscript_mismatches(
         raise ValueError(f"not parseable SBML: {exc}") from exc
 
     counts, stated = _model_index(model_root)
+    computed = _determined_by_math(model_root)
     observed, observations_readable = _observed(sedml_root)
 
     problems: list[str] = []
@@ -239,6 +264,10 @@ def manuscript_mismatches(
                     f"{where} sets {parameter!r} to {value:g}, and the archive's model does not "
                     f"declare it"
                 )
+                continue
+            if parameter in computed:
+                # The model computes it, so what it runs at is not readable from the file. Naming
+                # a mismatch here would rest on the same inert attribute the check distrusts.
                 continue
             run = _values_run_for(sedml_root, parameter)
             if run is None:

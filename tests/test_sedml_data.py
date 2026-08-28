@@ -225,3 +225,25 @@ def test_a_data_file_the_archive_does_not_ship_is_a_gap_not_an_empty_reference()
     assert "does not contain" in gap.detail
     observed = next(c for c in dossier.claims if c.id == "c_obs")
     assert observed.reference_data == ()
+
+
+def test_a_curve_that_reads_the_data_and_the_model_stays_a_simulated_claim() -> None:
+    """A trace normalized by its own data asserts something about the model, and the raw column
+    is not the values of the ratio anyone plotted."""
+    mixed = _document().replace(
+        '<math xmlns="http://www.w3.org/1998/Math/MathML"><ci>observedC</ci></math>\n'
+        "    </dataGenerator>",
+        '<listOfVariables>\n'
+        '        <variable id="v_C2" '
+        "target=\"/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species[@id='C']\" "
+        'taskReference="task"/>\n'
+        "      </listOfVariables>\n"
+        '      <math xmlns="http://www.w3.org/1998/Math/MathML">'
+        "<apply><divide/><ci>v_C2</ci><ci>observedC</ci></apply></math>\n"
+        "    </dataGenerator>",
+    )
+    data = read_sedml_data(mixed, {"observed.csv": _CSV})
+    claim = next(c for c in enumerate_sedml_claims(mixed, data=data) if c.id == "c_obs")
+    assert claim.targetable
+    assert claim.reference_data == ()
+    assert claim.reference_kind is ReferenceKind.DIGITIZED_FIGURE

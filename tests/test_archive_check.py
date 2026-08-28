@@ -222,7 +222,7 @@ def test_without_the_paper_the_check_says_it_did_not_compare_against_it() -> Non
     assert report["found"]["manuscript_claims_checked"] == 0
     assert not [item for item in report["fix_list"] if item["kind"] == "manuscript"]
     text = render_archive_human(_paper_archive())
-    assert "none supplied" in text and "was not checked" in text
+    assert "checked against this experiment: none" in text and "was not checked" in text
 
 
 def test_the_papers_own_archive_does_not_run_the_dose_the_paper_reports() -> None:
@@ -245,3 +245,25 @@ def test_reprolith_own_export_runs_the_claims_it_was_built_from() -> None:
     report = archive_report(_ARCHIVE.read_bytes(), claims=_metformin_claims())
     assert report["found"]["manuscript_claims_checked"] == 2
     assert not [item for item in report["fix_list"] if item["kind"] == "manuscript"]
+
+
+def test_claims_supplied_for_an_archive_with_no_experiment_are_not_counted_as_checked() -> None:
+    """Nothing compares them: there is no experiment. A count that said otherwise would be a
+    number standing in for a check that never ran — the defect this whole check is about."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    manifest = "\n".join([
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<omexManifest xmlns="http://identifiers.org/combine.specifications/omex-manifest">',
+        f'  <content location="." format="{_SPEC}omex"/>',
+        f'  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>',
+        f'  <content location="./m.xml" format="{_SPEC}sbml"/>',
+        "</omexManifest>",
+    ])
+    report = archive_report(
+        _archive_with({"m.xml": _MINIMAL_SBML}, manifest), claims=_metformin_claims()
+    )
+    assert report["found"]["manuscript_claims_checked"] == 0
+    text = render_archive_human(
+        _archive_with({"m.xml": _MINIMAL_SBML}, manifest), claims=_metformin_claims()
+    )
+    assert "checked against this experiment: none" in text

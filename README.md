@@ -122,7 +122,8 @@ archive never runs: the model states 389.92 and the experiment runs it at 389.2,
 ```
 
 Without `--claims` that comparison does not run, and the report says so — a clean fix list never
-stands in for a check nobody made.
+stands in for a check nobody made. It counts what was actually compared, not what it was handed:
+an archive with no experiment compares nothing, however many results you supply.
 What Reprolith's *own extraction* would not carry is listed separately and never as a fix, because
 some of it the archive omits and some of it the archive states perfectly well.
 

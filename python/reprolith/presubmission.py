@@ -312,8 +312,12 @@ def archive_report(
         "files": [],
         "claims": {"targetable": 0, "figure_referenced": 0, "not_targetable": 0},
         "adoptable_recipes": 0,
-        # Zero is not "they all pass": it is "nothing was compared". The renderer says which.
-        "manuscript_claims_checked": len(claims),
+        # Zero is not "they all pass": it is "nothing was compared". The renderer says which. It
+        # counts what was actually compared, not what the caller handed in — an archive with no
+        # experiment compares nothing however many results the author supplies, and a count that
+        # said otherwise would be this module's own kind of defect: a number standing in for a
+        # check that never ran.
+        "manuscript_claims_checked": 0,
     }
     actions: list[dict[str, Any]] = []
     try:
@@ -378,6 +382,7 @@ def archive_report(
                 "fix": "make the experiment and the model agree; an override aimed at an element "
                        "that is not there runs the unmodified model and reports nothing",
             })
+        found["manuscript_claims_checked"] = len(claims)
         for message in manuscript_mismatches(sedml, sbml, claims):
             actions.append({
                 "priority": _ARCHIVE_MANUSCRIPT_PRIORITY, "kind": "manuscript", "claim_id": None,
@@ -424,8 +429,8 @@ def archive_report(
             "this archive is readable, states its results, and its experiment agrees with its "
             "model"
             + (
-                f" and with the {len(claims)} result(s) your paper reports"
-                if claims
+                f" and with the {found['manuscript_claims_checked']} result(s) your paper reports"
+                if found["manuscript_claims_checked"]
                 else " (nothing was compared against your paper's own reported results)"
             )
             if ready else
@@ -463,11 +468,14 @@ def render_archive_human(
         checked = found.get("manuscript_claims_checked", 0)
         # An empty fix list must not be read as "it runs what the paper reports" when nothing was
         # compared against the paper. The count is what separates a passed check from an absent one.
+        # "none" covers both ways the comparison does not happen — no results supplied, and no
+        # experiment to compare them against — without asserting which, since the line's job is to
+        # stop an empty fix list reading as a check that passed.
         lines.append(
             f"  results from your paper checked against this experiment: {checked}"
             if checked
-            else "  results from your paper checked against this experiment: none supplied, so "
-            "whether it runs what your paper reports was not checked"
+            else "  results from your paper checked against this experiment: none, so whether it "
+            "runs what your paper reports was not checked"
         )
         lines.append("")
     lines.append("FIX BEFORE YOU SUBMIT (most impactful first)")

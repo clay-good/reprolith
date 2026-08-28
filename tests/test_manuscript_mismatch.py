@@ -176,3 +176,22 @@ def test_the_shipped_metformin_archive_does_not_run_the_dose_the_paper_reports()
     assert "'Cmax-1000mg'" in message
     assert "779.9" in message
     assert "389.2, 778.4, 1167.6" in message
+
+
+def test_a_value_the_model_computes_is_not_read_off_its_inert_attribute() -> None:
+    """SBML makes `value` inert for a parameter an initial assignment sets. Reading it as what the
+    model runs is a number that is not a check — and can silence a real mismatch by coincidence."""
+    assigned = _SBML.replace(
+        "  </model>",
+        "    <listOfInitialAssignments>\n"
+        '      <initialAssignment symbol="dose">\n'
+        '        <math xmlns="http://www.w3.org/1998/Math/MathML"><cn>750</cn></math>\n'
+        "      </initialAssignment>\n"
+        "    </listOfInitialAssignments>\n"
+        "  </model>",
+    )
+    claim = _claim(parameter_overrides={"dose": 779.9})
+    assert manuscript_mismatches(_sedml(), assigned, [claim]) == []
+    # The same claim against the same model without the assignment is still reported, so the
+    # suppression is the assignment's doing and not a hole in the check.
+    assert manuscript_mismatches(_sedml(), _SBML, [claim])
