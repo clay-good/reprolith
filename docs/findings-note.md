@@ -2056,6 +2056,20 @@ computes over**, and the comparison reported no disagreement. That is the functi
 definition of the defect it exists to prevent, one construct to the left. It now reports each of
 them as having no stated value to compare, naming which construct determines it.
 
+Having found it three times by tripping over it, the fourth was found by looking. Every reader in
+the package that takes a number off an SBML attribute was checked against both constructs:
+
+| Reader | State |
+| --- | --- |
+| `manuscript_mismatches`, `ingest_spatial_sbml`, `compare_sbml_to_dossier` | had the defect; fixed |
+| `certify._apply_overrides` | already refused both — the surface that had learned it |
+| `ingest_fbc_sbml`, `ingest_stochastic_sbml`, `ingest_qual_sbml` | refuse a model carrying either construct outright |
+| `population._typical` | reads a parameter's value as the population median, and a rule-determined one is refused one call later by the override guard. No defect: a fix written for it was reverted, because a redundant check that changes an established message is a cost, not a repair |
+| `ingest_sbml` | records initial-assignment values, with a gap saying it does. The limit below |
+
+The two rows that are *not* defects are the reason to write this down: the next round should not
+re-audit them.
+
 One thing is deliberately **not** fixed. `ingest_sbml` excludes assignment-rule parameters from the
 dossier and still records initial-assignment ones, which is why those 32 values are in the metformin
 dossier at all. The consistent rule would drop them — and that moves the dossier's content digest,
