@@ -369,6 +369,10 @@ def archive_report(
     # performs — told to an author whose files may be perfect. The check says what it cannot judge
     # instead of issuing that fix.
     not_a_time_course: tuple[str, ...] = ()
+    # Bound before the branch that fills them: the reads below are guarded on `model`, and a name
+    # that only exists inside a guard is one short-circuit away from an UnboundLocalError out of a
+    # report whose whole purpose is to be readable.
+    sedml: str | None = None
     if model is not None:
         import zipfile
         from io import BytesIO
