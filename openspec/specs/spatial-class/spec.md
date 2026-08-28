@@ -55,14 +55,15 @@ A spatial dossier SHALL capture the elements that determine the spatial dynamics
 - **WHEN** a paper ships its model in the standard spatial interchange format (SBML Level 3
   `spatial`)
 - **THEN** ingestion reads what this class solves — the Cartesian domain's stated extent, one
-  isotropic diffusion coefficient per spatial species, and each species' uniform initial
-  concentration — and the resulting dossier records the domain as stated rather than as a gap,
-  since the artifact ships it
+  isotropic diffusion coefficient per spatial species, each species' uniform initial concentration,
+  and the first-order decay of a species where the file states one — and the resulting dossier
+  records the domain as stated rather than as a gap, since the artifact ships it
 - **AND** anything the solver cannot honour is refused by name: a non-Cartesian or higher-
-  dimensional geometry, an anisotropic coefficient, a field-valued initial condition, a spatial
-  species with no coefficient, a boundary condition that is not zero flux, an advection term, and a
-  parameter standing for a coordinate — each of these read and ignored would produce a profile from
-  a model nobody wrote, with no sign that it happened
+  dimensional geometry, a stated domain shape or more than one domain, an anisotropic coefficient,
+  a field-valued initial condition, a spatial species with no coefficient, a boundary condition
+  that is not zero flux, an advection term, a parameter standing for a coordinate, and any reaction
+  that is not a first-order decay — each of these read and ignored would produce a profile from a
+  model nobody wrote, with no sign that it happened
 
 ### Requirement: Standard spatial reproduction targets
 

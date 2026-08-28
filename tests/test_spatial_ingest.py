@@ -207,6 +207,95 @@ def test_two_species_and_an_offset_domain_read_as_they_are() -> None:
     assert read.extent == (10.0,)  # -5 to 5, not the boundary values themselves
 
 
+def _with_decay(rate: float, *, products: int = 0, reactant: str = "U") -> str:
+    """The one-dimensional model plus a decay reaction written with a local rate parameter."""
+    document = libsbml.readSBMLFromString(_model())
+    model = document.getModel()
+    reaction = model.createReaction()
+    reaction.setId("decay")
+    reaction.setReversible(False)
+    reaction.setFast(False)
+    consumed = reaction.createReactant()
+    consumed.setSpecies(reactant)
+    consumed.setStoichiometry(1.0)
+    consumed.setConstant(True)
+    for index in range(products):
+        made = reaction.createProduct()
+        made.setSpecies(reactant)
+        made.setStoichiometry(1.0)
+        made.setConstant(True)
+        made.setId(f"p{index}")
+    law = reaction.createKineticLaw()
+    local = law.createLocalParameter()
+    local.setId("k")
+    local.setValue(rate)
+    law.setMath(libsbml.parseL3Formula(f"k * {reactant}"))
+    return str(libsbml.writeSBMLToString(document))
+
+
+def test_first_order_decay_is_read_rather_than_dropped() -> None:
+    """Measured on the version before this one: a species decaying at 0.7 per unit time read as
+    pure diffusion. Decay is the one reaction term this solver takes as a number, so it is read —
+    and it is the morphogen-gradient case the class is built around."""
+    model = ingest_spatial_sbml(_with_decay(0.7))
+    assert model.decay == (("U", 0.7),)
+    assert model.decay_of("U") == pytest.approx(0.7)
+    # A species the file gives no decay reaction has none, rather than an invented zero-ish number.
+    assert model.decay_of("V") == 0.0
+    assert ingest_spatial_sbml(_model()).decay == ()
+
+
+def test_a_reaction_that_is_not_first_order_decay_is_refused() -> None:
+    """Anything else read and dropped gives a profile the model never produces."""
+    with pytest.raises(ValueError, match="not the first-order decay"):
+        ingest_spatial_sbml(_with_decay(0.7, products=1))
+
+
+def test_two_decay_reactions_for_one_species_are_ambiguous() -> None:
+    document = libsbml.readSBMLFromString(_with_decay(0.7))
+    model = document.getModel()
+    second = model.createReaction()
+    second.setId("decay2")
+    second.setReversible(False)
+    second.setFast(False)
+    consumed = second.createReactant()
+    consumed.setSpecies("U")
+    consumed.setStoichiometry(1.0)
+    consumed.setConstant(True)
+    law = second.createKineticLaw()
+    local = law.createLocalParameter()
+    local.setId("k2")
+    local.setValue(0.2)
+    law.setMath(libsbml.parseL3Formula("k2 * U"))
+
+    with pytest.raises(ValueError, match="more than one decay reaction"):
+        ingest_spatial_sbml(libsbml.writeSBMLToString(document))
+
+
+def test_a_stated_domain_shape_is_not_read_as_its_bounding_box() -> None:
+    """A geometry definition describes the region; this reader spans the extent as an interval."""
+    document = libsbml.readSBMLFromString(_model())
+    geometry = document.getModel().getPlugin("spatial").getGeometry()
+    analytic = geometry.createAnalyticGeometry()
+    analytic.setId("shape")
+    analytic.setIsActive(True)
+
+    with pytest.raises(ValueError, match="does not read"):
+        ingest_spatial_sbml(libsbml.writeSBMLToString(document))
+
+
+def test_several_domains_are_refused() -> None:
+    """Two regions have an interior boundary between them; this solver steps one uniform region."""
+    document = libsbml.readSBMLFromString(_model())
+    geometry = document.getModel().getPlugin("spatial").getGeometry()
+    second = geometry.createDomain()
+    second.setId("nucleus")
+    second.setDomainType("dt_cell")
+
+    with pytest.raises(ValueError, match="declares 2 domains"):
+        ingest_spatial_sbml(libsbml.writeSBMLToString(document))
+
+
 def test_an_anisotropic_coefficient_is_a_different_equation() -> None:
     with pytest.raises(ValueError, match="not isotropic"):
         ingest_spatial_sbml(_model(isotropic=False))

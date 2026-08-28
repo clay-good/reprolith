@@ -863,9 +863,18 @@ class SpatialModel:
     diffusivities: tuple[tuple[str, float], ...]
     initial: tuple[tuple[str, float], ...]
     extent: tuple[float, ...]
+    #: First-order decay constants read from the file's reactions, per species. This is the one
+    #: reaction term the class's solver takes as a number (:func:`diffuse_1d`'s ``decay``), and it
+    #: is the morphogen-gradient case: diffusion against linear decay. A species the file gives no
+    #: decay reaction has none, which is what ``decay_of`` returns.
+    decay: tuple[tuple[str, float], ...] = ()
 
     def diffusivity_of(self, species: str) -> float:
         return dict(self.diffusivities)[species]
+
+    def decay_of(self, species: str) -> float:
+        """The species' first-order decay constant, or zero where the file states none."""
+        return dict(self.decay).get(species, 0.0)
 
     def dossier(self, entry: str, *, source_location: str) -> Dossier:
         """This model as a spatial dossier — with the domain recorded as stated, because it is.

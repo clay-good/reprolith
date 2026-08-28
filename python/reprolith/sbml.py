@@ -954,7 +954,13 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
       nothing else, and running a Dirichlet model under them is a different model, quietly;
     * an **advection** coefficient, or a parameter standing for a coordinate, is refused: the first
       is a drift term this scheme does not step, the second a quantity that varies with position,
-      and dropping either produces a profile from a model nobody wrote.
+      and dropping either produces a profile from a model nobody wrote;
+    * a **reaction** is read only where it is the first-order decay of one spatial species — the
+      one reaction term this solver takes as a number, and the morphogen-gradient case. Any other
+      reaction is refused, because a reaction read and dropped is the same silent substitution;
+    * the geometry must describe **one domain** and must not state its *shape*: this reader spans
+      the coordinate components' extent as an interval or a rectangle, and a stated shape read as
+      its bounding box is a region the file does not describe.
 
     Needs the ``engine`` extra (python-libsbml, which bundles the spatial package).
 
@@ -1088,6 +1094,22 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
         species.append(name)
         initial[name] = float(entity.getInitialConcentration())
 
+    if geometry.getNumDomains() > 1:
+        raise ValueError(
+            f"the geometry declares {geometry.getNumDomains()} domains; this solver steps one "
+            "uniform region, and the interior boundaries between domains are not represented"
+        )
+    if geometry.getNumGeometryDefinitions() > 0:
+        # A geometry definition is the file describing the domain's *shape* — an analytic region, a
+        # sampled field, a CSG solid. This reader takes the coordinate components' extent and spans
+        # it as an interval or a rectangle, so a stated shape would be quietly replaced by its
+        # bounding box.
+        raise ValueError(
+            "the geometry defines the domain's shape, which this reader does not read; it spans "
+            "the stated extent as an interval or a rectangle, and reading a shape as its bounding "
+            "box would run the model over a region the file does not describe"
+        )
+
     # The stranded-coefficient check comes first because it is the more specific reason: a model
     # whose only species is not spatial fails both, and "you declared a diffusivity for something
     # that does not diffuse" says which line to look at.
@@ -1102,11 +1124,42 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
             "no species is marked spatial; this reads a reaction-diffusion model, and a model "
             "where nothing diffuses is not one"
         )
+    # A reaction is not decoration: a file whose species decays at 0.7 per unit time, read as pure
+    # diffusion, gives a profile the model never produces. The one reaction term this class's
+    # solver takes as a number is first-order decay, so that is what is read, and every other shape
+    # is refused by name rather than dropped.
+    decay: dict[str, float] = {}
+    for i in range(model.getNumReactions()):
+        reaction = model.getReaction(i)
+        reactants = [reaction.getReactant(j) for j in range(reaction.getNumReactants())]
+        products = reaction.getNumProducts()
+        modifiers = reaction.getNumModifiers()
+        decaying = reactants[0].getSpecies() if len(reactants) == 1 else ""
+        if (
+            len(reactants) != 1
+            or products
+            or modifiers
+            or reactants[0].getStoichiometry() != 1.0
+            or decaying not in species
+        ):
+            raise ValueError(
+                f"reaction {reaction.getId()!r} is not the first-order decay of one spatial "
+                "species, which is the only reaction term this solver takes as a number; a "
+                "reaction read and dropped would give a profile this model never produces"
+            )
+        if decaying in decay:
+            raise ValueError(
+                f"more than one decay reaction is declared for {decaying!r}; which rate it decays "
+                "at is the artifact's to say"
+            )
+        decay[decaying] = _mass_action_rate(reaction.getKineticLaw(), {decaying: 1})
+
     return SpatialModel(
         species=tuple(species),
         diffusivities=tuple(sorted(diffusivities.items())),
         initial=tuple(sorted(initial.items())),
         extent=tuple(extent),
+        decay=tuple(sorted(decay.items())),
     )
 
 
