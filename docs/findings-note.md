@@ -2040,6 +2040,29 @@ written for.** The previous round's lesson was to read the finished artifact as 
 one is to hand it an input its author never pictured. Both find things no amount of re-reading the
 code does.
 
+### The same inert attribute, in three places
+
+The ingester's own comment tells this story about assignment rules: SBML makes a parameter's
+`value` inert once a rule computes it, models ship whatever number was there, and recording it made
+the dossier "assert a number the model never holds". That rule reached `ingest_sbml`,
+`build_model_sbml`, and the override guard. It did not reach **initial assignments**, which do the
+same thing to the same attribute — and the gap turned up in three separate modules on one day.
+
+`manuscript_mismatches` read a claim's parameter off it (fixed the hour it shipped).
+`ingest_spatial_sbml` read a species' starting concentration off it, reporting 1.0 for a model that
+assigns 42. And `compare_sbml_to_dossier` compared against it: measured on the metformin model, **32
+of the dossier's values — every compartment volume — were compared against numbers the model
+computes over**, and the comparison reported no disagreement. That is the function's own stated
+definition of the defect it exists to prevent, one construct to the left. It now reports each of
+them as having no stated value to compare, naming which construct determines it.
+
+One thing is deliberately **not** fixed. `ingest_sbml` excludes assignment-rule parameters from the
+dossier and still records initial-assignment ones, which is why those 32 values are in the metformin
+dossier at all. The consistent rule would drop them — and that moves the dossier's content digest,
+the published gap counts, and the "45 of 69 extracted values state no unit" figure that three
+documents and a test quote. It is a deliberate change with its own blast radius, not a tail-end
+edit, so it is written down here with its number rather than done quietly.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

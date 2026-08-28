@@ -482,3 +482,70 @@ def test_a_shipped_sedml_document_gives_the_dossier_its_claims() -> None:
     # The rest of the dossier is untouched by the document it now carries claims from.
     assert with_recipe.state_variables == without.state_variables
     assert with_recipe.validate() == []
+
+
+def test_an_initial_assignment_leaves_no_stated_value_to_compare() -> None:
+    """SBML makes a parameter's `value` inert once an initial assignment sets it, exactly as an
+    assignment rule does. The check knew about rules and not about initial assignments, so on the
+    metformin model 32 of the dossier's values — every compartment volume — were compared against
+    numbers the model computes over, and it reported no disagreement.
+    """
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import Dossier, Parameter
+    from reprolith.sbml import compare_sbml_to_dossier
+
+    model = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m">
+    <listOfParameters>
+      <parameter id="V" value="1" constant="true"/>
+      <parameter id="k" value="2" constant="true"/>
+    </listOfParameters>
+    <listOfInitialAssignments>
+      <initialAssignment symbol="V">
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><cn>70</cn></math>
+      </initialAssignment>
+    </listOfInitialAssignments>
+  </model>
+</sbml>
+"""
+    dossier = Dossier(
+        entry="e",
+        parameters=(
+            Parameter(name="V", value=70.0, unit="L", source_location="Table 1"),
+            Parameter(name="k", value=2.0, unit="1/h", source_location="Table 1"),
+        ),
+    )
+    (line,) = compare_sbml_to_dossier(model, dossier)
+    # Not "dossier 70.0 != model 1": the model does not run 1, and saying so would be false about
+    # the artifact. And it names the construct that is actually there.
+    assert line.startswith("parameter V:")
+    assert "an initial assignment determines it" in line
+    assert "no stated value to compare" in line
+
+
+def test_a_rule_and_an_initial_assignment_are_not_reported_as_each_other() -> None:
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import Dossier, Parameter
+    from reprolith.sbml import compare_sbml_to_dossier
+
+    model = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m">
+    <listOfParameters>
+      <parameter id="R" value="1" constant="false"/>
+    </listOfParameters>
+    <listOfRules>
+      <assignmentRule variable="R">
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><cn>9</cn></math>
+      </assignmentRule>
+    </listOfRules>
+  </model>
+</sbml>
+"""
+    dossier = Dossier(
+        entry="e",
+        parameters=(Parameter(name="R", value=9.0, unit="L", source_location="Table 1"),),
+    )
+    (line,) = compare_sbml_to_dossier(model, dossier)
+    assert "a rule determines it" in line

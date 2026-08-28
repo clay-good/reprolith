@@ -198,6 +198,25 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
         for i in range(model.getNumRules())
         if model.getRule(i).isAssignment()
     }
+    # An initial assignment makes the same attribute inert, and was not in this set: measured on
+    # the metformin model, 32 of the dossier's values — every compartment volume among them — were
+    # compared against numbers the model computes over rather than reads, and the comparison
+    # reported no disagreement. That is this function's own definition of the defect, one construct
+    # to the left. Kept separate so the line it produces names the construct that is really there.
+    assignment_determined = {
+        model.getInitialAssignment(i).getSymbol()
+        for i in range(model.getNumInitialAssignments())
+    } - rule_determined
+    determined = rule_determined | assignment_determined
+
+    def _no_stated_value(kind: str, name: str, value: float) -> str:
+        """The line for a dossier element the model's own math determines, naming which construct."""
+        construct = "a rule" if name in rule_determined else "an initial assignment"
+        return (
+            f"{kind} {name}: stated by the dossier ({value}) but {construct} determines it in the "
+            "model, so there is no stated value to compare"
+        )
+
     # Every model parameter is *known* — dropping the rule-determined ones from this dict removed
     # them from `known` and `comparable_ics` too, so a faithfully ingested dossier reported its own
     # source file as "not present in the model". What has no stated value to compare is a narrower
@@ -207,7 +226,7 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
         for i in range(model.getNumParameters())
     }
     sbml_params = {
-        name: value for name, value in all_params.items() if name not in rule_determined
+        name: value for name, value in all_params.items() if name not in determined
     }
     local_values: dict[str, list[float]] = {}
     for i in range(model.getNumReactions()):
@@ -272,22 +291,19 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
                 f"parameter {parameter.name}: stated by the dossier ({parameter.value}) but "
                 "not present in the model"
             )
-        elif parameter.name in rule_determined:
-            # Present in the model, but with no stated value to compare: a rule computes it. Said
-            # plainly rather than passed over — "no disagreement" has to mean the values were
-            # compared, and falling through to nothing here is the silence this check exists to
-            # break. It is not the "not present in the model" the branch above reports, either.
-            mismatches.append(
-                f"parameter {parameter.name}: stated by the dossier ({parameter.value}) but a "
-                "rule determines it in the model, so there is no stated value to compare"
-            )
+        elif parameter.name in determined:
+            # Present in the model, but with no stated value to compare: the model's own math
+            # computes it. Said plainly rather than passed over — "no disagreement" has to mean the
+            # values were compared, and falling through to nothing here is the silence this check
+            # exists to break. It is not the "not present in the model" the branch above reports.
+            mismatches.append(_no_stated_value("parameter", parameter.name, parameter.value))
         else:
             # Every value the model holds under this name, the global included: reading only the
             # locals published "model 9.0" for a model whose global is 5.0 — the dossier's own
             # number, and the live value in another reaction — so the mismatch named a value the
             # model does not hold and the several-values wording never fired.
             held = list(local_values.get(parameter.name, ()))
-            if parameter.name in all_params and parameter.name not in rule_determined:
+            if parameter.name in all_params and parameter.name not in determined:
                 held.append(all_params[parameter.name])
             if held and any(_differs(parameter.value, value, rel_tol) for value in held):
                 distinct = sorted(set(held))
@@ -306,14 +322,11 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
                     f"parameter {parameter.name}: dossier {parameter.value} != model {stated}"
                 )
     for ic in dossier.initial_conditions:
-        if ic.name in rule_determined:
-            # The same three cases the parameter branch above distinguishes: an assignment rule
+        if ic.name in determined:
+            # The same three cases the parameter branch above distinguishes: the model's own math
             # determines this one, so it IS in the model and has no stated value to compare
             # against. Reported as "not present in the model", which is false about the artifact.
-            mismatches.append(
-                f"initial condition {ic.name}: stated by the dossier ({ic.value}) but a rule "
-                "determines it in the model, so there is no stated value to compare"
-            )
+            mismatches.append(_no_stated_value("initial condition", ic.name, ic.value))
         elif ic.name not in comparable_ics:
             # "No disagreement" has to mean the values were compared, so a dossier initial
             # condition with no counterpart anywhere in the model is reported rather than passed
