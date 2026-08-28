@@ -42,6 +42,11 @@ Point any MCP client at the `reprolith-mcp` command over stdio. For a Claude Des
 All read-only. A verdict is never a bare boolean — it carries the scope flag and per-claim
 qualifications.
 
+The `inputSchema` each tool publishes is enforced, not just advertised: an argument whose declared
+type it does not match is refused by name, and a paper lookup that names none of `title`, `doi`,
+`pubmed_id` or `accession` is told so. Neither comes back as an empty result — for a malformed
+call, `[]` or `null` reads as a fact about the paper rather than about the call.
+
 | Tool | Arguments | Returns |
 |---|---|---|
 | `list_catalog` | — | Catalog entries as blind views (no ground-truth label) |

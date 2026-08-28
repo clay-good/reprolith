@@ -825,8 +825,76 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
     raise KeyError(f"unknown tool: {name}")
 
 
+#: The identifier fields a paper can be named by. A tool that takes them takes nothing else, so a
+#: call carrying none of them is a call that names no paper.
+_IDENTIFIER_FIELDS = ("title", "doi", "pubmed_id", "accession")
+
+
 def _identifier_kwargs(arguments: dict[str, Any]) -> dict[str, Any]:
-    return {k: arguments[k] for k in ("title", "doi", "pubmed_id", "accession") if k in arguments}
+    """The identifier fields present, refusing a call that names no paper by any of them.
+
+    Silently ignoring the rest made a misspelled field — ``pmid`` for ``pubmed_id`` — into a
+    lookup with no identifier at all, which answers ``[]``: *this paper has no certificates*, a
+    confident wrong answer to a question nobody managed to ask. An agent gets told instead.
+    """
+    named = {k: arguments[k] for k in _IDENTIFIER_FIELDS if k in arguments}
+    if not named:
+        passed = ", ".join(sorted(arguments)) or "nothing"
+        raise ValueError(
+            f"name the paper by one of {', '.join(_IDENTIFIER_FIELDS)}; this call passed {passed}"
+        )
+    return named
+
+
+#: JSON Schema types, mapped to what they are in Python. ``bool`` is excluded from the numbers
+#: because it is an ``int`` here and is not one anywhere a caller means it.
+_JSON_TYPES: dict[str, Any] = {
+    "string": str,
+    "number": (int, float),
+    "integer": int,
+    "boolean": bool,
+    "array": list,
+    "object": dict,
+}
+
+
+def _declared_schema(name: str) -> dict[str, Any] | None:
+    for tool in TOOL_DEFINITIONS + EFFECTFUL_TOOLS:
+        if tool["name"] == name:
+            schema: dict[str, Any] = tool.get("inputSchema") or {}
+            return schema
+    return None
+
+
+def _validate_arguments(name: str, arguments: dict[str, Any]) -> None:
+    """Check the arguments against the types the tool's own published schema declares.
+
+    The schema is what ``tools/list`` hands every agent, and nothing was enforcing it: a digest
+    passed as a number reached the ledger, matched nothing, and came back ``null`` — indexed under
+    "no such certificate" rather than "that is not a digest". A published schema used as
+    documentation and not as a check is the same defect this repository keeps finding elsewhere.
+
+    Only declared properties are checked, and only their types: an undeclared property is left
+    alone, since a tool that ignores an extra field has always ignored it and a refusal here would
+    be a new rule, not a fix.
+    """
+    schema = _declared_schema(name)
+    for field, declared in ((schema or {}).get("properties") or {}).items():
+        if field not in arguments:
+            continue
+        expected = _JSON_TYPES.get(declared.get("type", ""))
+        value = arguments[field]
+        if expected is None:
+            continue
+        if isinstance(value, bool) is not (declared.get("type") == "boolean"):
+            raise TypeError(
+                f"{name}: '{field}' must be {declared['type']}, not "
+                f"{type(value).__name__}"
+            )
+        if not isinstance(value, expected):
+            raise TypeError(
+                f"{name}: '{field}' must be {declared['type']}, not {type(value).__name__}"
+            )
 
 
 def _result(request_id: Any, result: Any) -> dict[str, Any]:
@@ -888,9 +956,22 @@ def handle_request(
         return _result(request_id, {"tools": tools})
     if method == "tools/call":
         params = request.get("params") or {}
+        if not isinstance(params, dict):
+            # JSON-RPC allows positional params; every method here takes named ones, so an array
+            # is an invalid-params error rather than an AttributeError out of the handler.
+            return _error(request_id, -32602, "invalid params: expected an object")
         name = params.get("name", "")
         arguments = params.get("arguments") or {}
         try:
+            if not isinstance(arguments, dict):
+                # Reported as the tool error it is, in words. Left to reach a tool, a string here
+                # came back as "string indices must be integers" — a Python message published to
+                # an agent by the surface whose job is saying what went wrong.
+                raise TypeError(
+                    f"{name or 'this tool'}: 'arguments' must be an object, not "
+                    f"{type(arguments).__name__}"
+                )
+            _validate_arguments(name, arguments)
             if name in _EFFECTFUL_NAMES:
                 if catalog is None:
                     raise KeyError(f"{name} is not enabled on this read-only server")

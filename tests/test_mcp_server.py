@@ -1193,3 +1193,63 @@ def test_a_missing_agreement_report_is_refused_rather_than_skipped(tmp_path, mon
     # Unpatched, every declared class must have one — the count is the point, not just the loop.
     monkeypatch.undo()
     assert len(mcp_server.milestone_agreement_reports()) == len(real) == 6
+
+
+def test_positional_params_are_an_invalid_params_error_not_a_crash() -> None:
+    """JSON-RPC allows an array of params; every method here takes named ones. Reaching `.get` on
+    a list raised out of the handler, which is a server dying on a request it should refuse."""
+    query, _ = _fixture()
+    response = handle_request(
+        query, {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": [1, 2]}
+    )
+    assert response is not None
+    assert response["error"]["code"] == -32602
+    assert "expected an object" in response["error"]["message"]
+
+
+def test_arguments_that_are_not_an_object_are_refused_in_words() -> None:
+    """It came back as "string indices must be integers" — a Python message published to an agent
+    by the surface whose whole job is saying what went wrong."""
+    query, _ = _fixture()
+    payload, is_error = _call(query, "certificate", "notadict")
+    assert is_error
+    assert "'arguments' must be an object, not str" in payload
+
+
+def test_an_argument_of_the_wrong_type_is_refused_rather_than_looked_up() -> None:
+    """A digest passed as a number reached the ledger, matched nothing, and came back `null` —
+    filed under "no such certificate" instead of "that is not a digest". The schema every agent
+    is handed by tools/list is now the check it looks like."""
+    query, _ = _fixture()
+    payload, is_error = _call(query, "certificate", {"digest": 123})
+    assert is_error
+    assert "'digest' must be string, not int" in payload
+
+    payload, is_error = _call(query, "lint", {
+        "sbml": "x", "species": "y", "reference": 1, "duration": 1.0, "steps": 1,
+    })
+    assert is_error and "'reference' must be array, not int" in payload
+
+    # A bool is an int in Python and is not a number anywhere a caller means it.
+    payload, is_error = _call(query, "lint_estimation", {"reported": True, "recovered": 1.0})
+    assert is_error and "'reported' must be number, not bool" in payload
+
+
+def test_a_lookup_naming_no_paper_says_so_instead_of_answering_none() -> None:
+    """A misspelled field — `pmid` for `pubmed_id` — was ignored, leaving a lookup with no
+    identifier at all, which answers `[]`: this paper has no certificates. A confident wrong
+    answer to a question nobody managed to ask."""
+    query, _ = _fixture()
+    payload, is_error = _call(query, "certificates_for", {"pmid": "12345"})
+    assert is_error
+    assert "name the paper by one of" in payload and "passed pmid" in payload
+
+    payload, is_error = _call(query, "status", {})
+    assert is_error and "name the paper by one of" in payload
+
+
+def test_a_well_formed_lookup_is_untouched() -> None:
+    """The refusals above are about malformed calls; a real one still answers."""
+    query, digest = _fixture()
+    payload, is_error = _call(query, "certificates_for", {"doi": "10.1/x"})
+    assert not is_error and payload == [digest]

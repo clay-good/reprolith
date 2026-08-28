@@ -119,6 +119,15 @@ every agent on the stream.
   length, a network's node count — is bounded at the tool boundary and refused when it exceeds the
   ceiling, rather than occupying the server indefinitely
 
+#### Scenario: A call the schema does not describe is refused, not answered
+
+- **WHEN** a caller sends positional params, arguments that are not an object, an argument whose
+  type the tool's published schema does not declare, or a paper lookup naming no identifier
+- **THEN** each is refused with a message naming what was wrong — the published input schema is
+  enforced, not merely documented
+- **AND** none is answered with a lookup result, since an empty list or a null for a malformed
+  question reads as a fact about the paper rather than about the call
+
 ### Requirement: Work handoff is lease-aware
 
 The server SHALL let an agent claim and progress catalog work without colliding with other
