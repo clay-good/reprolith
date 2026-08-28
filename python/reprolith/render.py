@@ -305,6 +305,27 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
     return "\n".join(lines)
 
 
+#: What an author can do with this page. The registry publishes verdicts on other people's work,
+#: which is no use at all to the person deciding what to ship — and the check that is use to them
+#: needs no submission, no queue, and no certificate. It is stated where they will actually see it,
+#: and stated exactly: it reads their files and reaches no verdict, so nothing here can be read as
+#: a certificate obtained by running a command.
+_AUTHOR_BANNER = (
+    '<section class="authors"><h2>Writing one of these? Check it first</h2>'
+    "<p>Before you submit, you can see what a reproducer would find in your own archive — or in "
+    "the model and simulation document as they sit in your directory. It reads your files, runs "
+    "no model, reaches no verdict, and issues no certificate.</p>"
+    "<pre><code>pip install reprolith\n"
+    "reprolith archive-check paper.omex --claims my_claims.json\n"
+    "reprolith archive-check --sedml paper.sedml --model paper.xml --claims my_claims.json"
+    "</code></pre>"
+    "<p>With <code>--claims</code> — the results your paper reports — it also answers the question "
+    "nothing in your archive can: does the experiment you ship actually run them? Every file can "
+    "be valid, and the run can complete, while producing a neighbouring arm nobody published.</p>"
+    "</section>"
+)
+
+
 def _track_record_banner(self_validation: dict[str, Any]) -> str:
     """Render the blind self-validation summary as an HTML banner for the public registry.
 
@@ -466,6 +487,10 @@ def render_registry(
         ".track-record th,.track-record td{padding:.2rem .8rem;text-align:right;border-bottom:1px solid #eee}"
         ".track-record th:first-child,.track-record td:first-child{text-align:left}"
         ".track-record .tr-total{font-weight:600}"
+        ".authors{margin:1rem 0;padding:1rem;border:1px solid #ddd;border-radius:8px}"
+        ".authors h2{margin:.2rem 0}.authors p{color:#555;max-width:48rem;font-size:.9rem}"
+        ".authors pre{background:#f6f6f6;padding:.6rem;border-radius:6px;overflow-x:auto;"
+        "font-size:.85rem}"
     )
     script = (
         "const st={class:'all',verdict:'all'};"
@@ -485,6 +510,7 @@ def render_registry(
         f"<h1>{html.escape(title)}</h1>"
         f'<p class="disclaimer">{html.escape(scope_human)}</p>'
         f"{_track_record_banner(self_validation) if self_validation else ''}"
+        f"{_AUTHOR_BANNER}"
         '<div class="filters">'
         f"{buttons('class', classes)}{buttons('verdict', verdicts)}</div>"
         f'<main>{"".join(cards) if cards else "<p>No certificates yet.</p>"}</main>'

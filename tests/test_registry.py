@@ -7,6 +7,8 @@ registry must be rebuilt. Reading JSON needs no extras, so it runs in the core C
 
 from __future__ import annotations
 
+import argparse
+import re
 from pathlib import Path
 
 from reprolith import render_registry
@@ -171,3 +173,24 @@ def test_every_tool_backed_reference_names_the_tool_that_produced_it() -> None:
         )
         head = tool.split()[0]
         assert head in text, f"{accession} names no reference tool; expected {tool!r}"
+
+
+def test_the_registry_tells_an_author_what_they_can_run() -> None:
+    """The page publishes verdicts on other people's work, which is no use to the person deciding
+    what to ship. What is use to them needs no submission and no certificate — so it says so, and
+    says exactly what it is, since a command on a page of certificates must not read as a way to
+    obtain one."""
+    from reprolith.cli import build_parser
+
+    html = _REGISTRY.read_text(encoding="utf-8")
+    assert 'class="authors"' in html
+    assert "runs no model" in html
+    assert "issues no certificate" in html
+
+    shown = re.findall(r"^reprolith ([a-z][a-z-]*)", html, re.MULTILINE)
+    assert shown, "the author section shows no command; this check would pass vacuously"
+    parser = build_parser()
+    subcommands = next(
+        a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
+    ).choices
+    assert set(shown) <= set(subcommands), f"the registry shows commands that do not exist: {shown}"
