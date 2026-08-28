@@ -849,8 +849,43 @@ def spatial_dossier(
     return dossier
 
 
+@dataclass(frozen=True)
+class SpatialModel:
+    """A reaction-diffusion model read from a file: what diffuses, how fast, and over what.
+
+    The runtime shape of :func:`reprolith.ingest_spatial_sbml`, holding only what this class's
+    solver actually consumes. ``extent`` is the domain's physical size along each Cartesian axis
+    in the file's own units, in axis order, so a caller choosing a grid gets ``dx`` from a length
+    the file states rather than from a number nobody wrote down.
+    """
+
+    species: tuple[str, ...]
+    diffusivities: tuple[tuple[str, float], ...]
+    initial: tuple[tuple[str, float], ...]
+    extent: tuple[float, ...]
+
+    def diffusivity_of(self, species: str) -> float:
+        return dict(self.diffusivities)[species]
+
+    def dossier(self, entry: str, *, source_location: str) -> Dossier:
+        """This model as a spatial dossier — with the domain recorded as stated, because it is.
+
+        The class records an unstated domain or boundary as a load-bearing gap, which is what a
+        *paper* usually leaves out. A file carrying a geometry states it, and recording a gap here
+        would report the artifact as missing something it ships.
+        """
+        return spatial_dossier(
+            entry,
+            species=self.species,
+            diffusivities=dict(self.diffusivities),
+            source_location=source_location,
+            boundary_stated=True,
+        )
+
+
 __all__ = [
     "SpatialClaim",
+    "SpatialModel",
     "certify_spatial",
     "diffuse_1d",
     "diffuse_2d",

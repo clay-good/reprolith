@@ -194,14 +194,22 @@ a change under `openspec/changes/`.
   Poisson/binomial results. Now complete across the full class pattern: `stochastic_dossier` /
   `validate_stochastic` (unstated sampling protocol as a load-bearing gap), `certify_stochastic`,
   `ingest_stochastic_sbml`, the `lint_stochastic` inline linter, and a walkable 3/3 milestone.
-- **Spatial / PDE simulation class** — *DONE (bar ingestion)*: landed as `spatial-class`, a
-  pure-Python 1-D/2-D finite-difference reaction-diffusion solver reusing the curve oracle,
-  self-validated against closed-form results (Gaussian diffusion, Fisher-KPP and Nagumo front
-  speeds, morphogen decay length, the Turing dispersion relation and wavelength selection). Has
-  `spatial_dossier` / `validate_spatial` (unstated domain/boundary as a load-bearing gap),
-  `certify_spatial`, the `lint_diffusion` inline linter, and a walkable 3/3 milestone. Only
-  ingestion remains, and it is genuinely blocked: there is no standard single-file interchange
-  format for a reaction-diffusion model to ingest.
+- **Spatial / PDE simulation class** — *DONE*: landed as `spatial-class`, a pure-Python 1-D/2-D
+  finite-difference reaction-diffusion solver reusing the curve oracle, self-validated against
+  closed-form results (Gaussian diffusion, Fisher-KPP and Nagumo front speeds, morphogen decay
+  length, the Turing dispersion relation and wavelength selection). Has `spatial_dossier` /
+  `validate_spatial` (unstated domain/boundary as a load-bearing gap), `certify_spatial`, the
+  `lint_diffusion` inline linter, and a walkable 3/3 milestone. **Correction (2026-08-28):** this
+  entry said ingestion was blocked because "there is no standard single-file interchange format for
+  a reaction-diffusion model to ingest". There is one — the SBML Level 3 `spatial` package — and
+  the pinned libSBML reads it, which was never checked before the claim was written down.
+  `ingest_spatial_sbml` now reads the intersection that this solver runs (Cartesian geometry in one
+  or two components with a stated extent, one isotropic diffusion coefficient per spatial species,
+  a uniform initial concentration) and refuses the rest by name, zero-flux Neumann boundaries
+  included, since running a Dirichlet model under Neumann walls is a different model with no sign
+  that it happened. What *is* blocked is narrower and still true: no published spatial model is in
+  this corpus and none can be fetched here, so the reader is validated against files libSBML's own
+  spatial API wrote, not against one from the field.
 - **Whole-cell and very large QSP networks** — in-kind but often intractable under a single
   pinned engine; wait for item 5 and better resource handling.
 - **A hosted web dashboard** — valuable for outreach, but the certificate and MCP surface come

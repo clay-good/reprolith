@@ -229,6 +229,7 @@ from .sbml import (
     compare_sbml_to_dossier,
     ingest_fbc_sbml,
     ingest_qual_sbml,
+    ingest_spatial_sbml,
     ingest_stochastic_sbml,
 )
 from .scope import Scope
@@ -244,6 +245,7 @@ from .sedml import (
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
 from .spatial import (
     SpatialClaim,
+    SpatialModel,
     certify_spatial,
     diffuse_1d,
     diffuse_2d,
@@ -404,6 +406,7 @@ __all__ = [
     "ingest_omex",
     "ingest_qual_sbml",
     "ingest_sbml",
+    "ingest_spatial_sbml",
     "ingest_stochastic_sbml",
     "judge_attractor_set",
     "judge_curve",
@@ -513,6 +516,7 @@ __all__ = [
     "spatial_dossier",
     "spatial_solver_pin",
     "SpatialClaim",
+    "SpatialModel",
     "species_mean_variance",
     "stochastic_dossier",
     "stochastic_solver_pin",

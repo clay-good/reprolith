@@ -50,6 +50,19 @@ A spatial dossier SHALL capture the elements that determine the spatial dynamics
   under
 - **AND** each element cites its source location
 
+#### Scenario: Reading a shipped spatial model file
+
+- **WHEN** a paper ships its model in the standard spatial interchange format (SBML Level 3
+  `spatial`)
+- **THEN** ingestion reads what this class solves — the Cartesian domain's stated extent, one
+  isotropic diffusion coefficient per spatial species, and each species' uniform initial
+  concentration — and the resulting dossier records the domain as stated rather than as a gap,
+  since the artifact ships it
+- **AND** anything the solver cannot honour is refused by name: a non-Cartesian or higher-
+  dimensional geometry, an anisotropic coefficient, a field-valued initial condition, a spatial
+  species with no coefficient, and a boundary condition that is not zero flux — running a Dirichlet
+  model under zero-flux walls is a different model with no sign that it happened
+
 ### Requirement: Standard spatial reproduction targets
 
 The oracle for this class SHALL evaluate the spatial results papers report, using the curve oracle.

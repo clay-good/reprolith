@@ -20,6 +20,12 @@ spatial class runs every profile under a zero-flux boundary Reprolith imposes ra
 paper stated. Both are load-bearing assumptions, both are named on the certificate, and a class
 does not get to publish a clean pass for a result resting on its own choice.
 
+That zero-flux boundary is also why `ingest_spatial_sbml` refuses any other kind. A file in the
+SBML L3 `spatial` package can state a Dirichlet wall; this solver would run it under Neumann walls
+and produce a profile with nothing to say it had substituted one boundary for another. A refusal
+names it instead. (No published spatial model is in this corpus, so that reader is checked against
+files libSBML's own spatial API wrote — the spec's reference implementation, not the field.)
+
 ## What makes each row honest
 
 - **Blind by construction.** The ground-truth label lives on the catalog entry but has no field in

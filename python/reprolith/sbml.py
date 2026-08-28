@@ -23,6 +23,7 @@ from .dossier import Dossier, EquationKind
 from .engine import EngineUnavailable
 from .fba import FbaModel
 from .logical import BooleanNetwork, parse_boolean_network
+from .spatial import SpatialModel
 from .stochastic import Reaction
 
 
@@ -935,6 +936,158 @@ def _resolved_substance_units(model: Any, unit_id: str) -> str:
     return str(_libsbml().UnitKind_toString(unit.getKind()))
 
 
+def ingest_spatial_sbml(sbml: str) -> SpatialModel:
+    """Parse an SBML Level 3 **spatial** model into what the reaction-diffusion solver runs.
+
+    The last of the six classes to get an ingester, and the roadmap said it was blocked on there
+    being no standard single-file format for a reaction-diffusion model. There is one: the SBML
+    L3 ``spatial`` package, which the pinned libSBML reads. What it expresses is far wider than
+    this class solves, so this reads the intersection and refuses the rest by name:
+
+    * the geometry must be **Cartesian**, in one or two coordinate components, each with a stated
+      ``boundaryMin``/``boundaryMax`` — that extent is the domain the grid spans;
+    * each spatial species must carry exactly one **isotropic** diffusion coefficient (an
+      anisotropic or single-coordinate one is a different equation from ``D ∇²c``);
+    * a species must state a uniform initial concentration, since a field-valued initial condition
+      is geometry this does not read;
+    * a stated boundary condition must be **zero-flux** — this solver's boundaries are Neumann and
+      nothing else, and running a Dirichlet model under them is a different model, quietly.
+
+    Needs the ``engine`` extra (python-libsbml, which bundles the spatial package).
+
+    No published spatial model is in this repository's corpus and none can be fetched here, so what
+    this is validated against is the spec's own reference implementation writing the files it reads
+    (``tests/test_spatial_ingest.py`` builds them through libSBML's spatial API, not by hand) —
+    not a file from the field. That is a weaker claim than the other five ingesters can make.
+    """
+    libsbml = _libsbml()
+    document = libsbml.readSBMLFromString(sbml)
+    model = document.getModel()
+    if model is None:
+        raise ValueError("the artifact is not readable SBML")
+    _refuse_unreadable_document(document)
+
+    plugin = model.getPlugin("spatial")
+    if plugin is None or not plugin.isSetGeometry():
+        raise ValueError(
+            "the artifact declares no spatial geometry; a reaction-diffusion model is read from "
+            "the SBML L3 spatial package, and without a geometry nothing says what it spans"
+        )
+    geometry = plugin.getGeometry()
+    if geometry.getCoordinateSystem() != libsbml.SPATIAL_GEOMETRYKIND_CARTESIAN:
+        raise ValueError(
+            "the geometry is not Cartesian; this solver steps a uniform Cartesian grid, and "
+            "reading another coordinate system onto it would solve a different equation"
+        )
+    axes = [
+        geometry.getCoordinateComponent(i) for i in range(geometry.getNumCoordinateComponents())
+    ]
+    if not 1 <= len(axes) <= 2:
+        raise ValueError(
+            f"the geometry has {len(axes)} coordinate components; this class solves in one or two "
+            "dimensions"
+        )
+    extent: list[float] = []
+    for axis in axes:
+        if not (axis.isSetBoundaryMin() and axis.isSetBoundaryMax()):
+            raise ValueError(
+                f"coordinate component {axis.getId()!r} states no boundaryMin/boundaryMax, so the "
+                "domain it spans is not stated"
+            )
+        low, high = axis.getBoundaryMin().getValue(), axis.getBoundaryMax().getValue()
+        if not high > low:
+            raise ValueError(
+                f"coordinate component {axis.getId()!r} spans {low} to {high}, which is not a domain"
+            )
+        extent.append(float(high - low))
+
+    diffusivities: dict[str, float] = {}
+    for i in range(model.getNumParameters()):
+        parameter = model.getParameter(i)
+        parameter_plugin = parameter.getPlugin("spatial")
+        if parameter_plugin is None:
+            continue
+        if parameter_plugin.isSetBoundaryCondition():
+            condition = parameter_plugin.getBoundaryCondition()
+            kind = condition.getType()
+            # Zero-flux is what this solver imposes. A Dirichlet wall, or a flux that is not zero,
+            # is a different problem — and one that would run here without complaint.
+            zero_flux = (
+                kind == libsbml.SPATIAL_BOUNDARYKIND_NEUMANN
+                and parameter.isSetValue()
+                and parameter.getValue() == 0.0
+            )
+            if not zero_flux:
+                raise ValueError(
+                    f"parameter {parameter.getId()!r} states a boundary condition on "
+                    f"{condition.getVariable()!r} that is not zero flux; this solver's boundaries "
+                    "are zero-flux Neumann, and running another kind under them is a different "
+                    "model with no sign that it happened"
+                )
+            continue
+        if not parameter_plugin.isSetDiffusionCoefficient():
+            continue
+        coefficient = parameter_plugin.getDiffusionCoefficient()
+        if coefficient.getType() != libsbml.SPATIAL_DIFFUSIONKIND_ISOTROPIC:
+            raise ValueError(
+                f"the diffusion coefficient for {coefficient.getVariable()!r} is not isotropic; "
+                "this solver steps D∇²c with one D per species"
+            )
+        if not parameter.isSetValue():
+            raise ValueError(
+                f"the diffusion coefficient for {coefficient.getVariable()!r} states no value"
+            )
+        variable = coefficient.getVariable()
+        if variable in diffusivities:
+            raise ValueError(
+                f"more than one diffusion coefficient is declared for {variable!r}; which one the "
+                "model diffuses by is the artifact's to say"
+            )
+        diffusivities[variable] = float(parameter.getValue())
+
+    species: list[str] = []
+    initial: dict[str, float] = {}
+    for i in range(model.getNumSpecies()):
+        entity = model.getSpecies(i)
+        entity_plugin = entity.getPlugin("spatial")
+        if entity_plugin is None or not entity_plugin.getIsSpatial():
+            continue
+        name = entity.getId()
+        if name not in diffusivities:
+            raise ValueError(
+                f"species {name!r} is spatial and declares no diffusion coefficient; how fast it "
+                "spreads is what this class solves for"
+            )
+        if not entity.isSetInitialConcentration():
+            raise ValueError(
+                f"species {name!r} states no uniform initial concentration; a field-valued initial "
+                "condition is geometry this does not read"
+            )
+        species.append(name)
+        initial[name] = float(entity.getInitialConcentration())
+
+    # The stranded-coefficient check comes first because it is the more specific reason: a model
+    # whose only species is not spatial fails both, and "you declared a diffusivity for something
+    # that does not diffuse" says which line to look at.
+    unmatched = sorted(set(diffusivities) - set(species))
+    if unmatched:
+        raise ValueError(
+            "diffusion coefficients are declared for "
+            f"{', '.join(repr(name) for name in unmatched)}, which the model does not mark spatial"
+        )
+    if not species:
+        raise ValueError(
+            "no species is marked spatial; this reads a reaction-diffusion model, and a model "
+            "where nothing diffuses is not one"
+        )
+    return SpatialModel(
+        species=tuple(species),
+        diffusivities=tuple(sorted(diffusivities.items())),
+        initial=tuple(sorted(initial.items())),
+        extent=tuple(extent),
+    )
+
+
 def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[int]]:
     """Parse an SBML reaction network into the species, reactions, and initial counts the SSA runs.
 
@@ -1121,5 +1274,6 @@ __all__ = [
     "compare_sbml_to_dossier",
     "ingest_fbc_sbml",
     "ingest_qual_sbml",
+    "ingest_spatial_sbml",
     "ingest_stochastic_sbml",
 ]
