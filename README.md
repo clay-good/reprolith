@@ -127,6 +127,9 @@ Without `--claims` that comparison does not run, and the report says so — a cl
 stands in for a check nobody made. It counts what was actually compared, not what it was handed:
 an archive with no experiment compares nothing, however many results you supply.
 
+[`docs/author-check.md`](docs/author-check.md) is the guide for the author running it: the two
+input forms, the claims-file schema, and what it deliberately will not tell you.
+
 Most papers ship the document and the model loose rather than packaged — BioModels does, and so
 does this repository — so `--sedml` and `--model` check them where they are. They are packaged into
 the archive they describe and that archive is checked, so the two forms cannot reach different

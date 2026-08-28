@@ -1,0 +1,101 @@
+# Before you submit: what a reproducer will find
+
+You have a model, a simulation document, and a paper. Someone will eventually try to re-run your
+work from those files. This is the check that tells you what they will hit, before a reviewer does
+— it runs no model, reaches no verdict, and issues no certificate.
+
+```bash
+pip install reprolith
+reprolith archive-check paper.omex --claims my_claims.json
+reprolith archive-check --sedml paper.sedml --model paper.xml --claims my_claims.json
+```
+
+Both forms answer the same question. Use the second if your files are loose, which most papers'
+are: they are packaged into the archive they describe and that archive is checked. The exit status
+is the answer — `0` when a reproducer can read your files and knows what to check, non-zero
+otherwise — so it drops into a pre-submission hook or a CI job.
+
+## What it checks
+
+| | What a reproducer would hit |
+| --- | --- |
+| **Can they open it?** | A zip with no manifest, a manifest listing files that are not there, several experiments with none marked master, an experiment running more than one model. Each refusal names the ambiguity; a file that cannot be read is the whole report. |
+| **Do your two files agree?** | An override aimed at a parameter the model does not have overrides nothing, so the run silently reproduces the *unmodified* model and looks fine. Every target is resolved by its nesting in the model, so an override aimed at the right name inside the wrong parent is caught. |
+| **Does it say what you published?** | A document whose outputs are all `report`s states no published result: it can be run, but there is nothing to check it against. A `plot` is your own statement that a curve is a shown result. |
+| **Can they adopt your run verbatim?** | A parameter scan, a model the document modifies, or a window that does not start at zero all mean a reproducer must reconstruct the run rather than read it. |
+| **Does it run what your paper reports?** | Only with `--claims`. See below — this is the one nothing in your archive can answer, and the one that fails most quietly. |
+
+## The claims file
+
+Nothing in an archive knows what your paper says. You do. `--claims` takes a JSON file of the
+results your paper reports:
+
+```json
+{
+  "claims": [
+    {
+      "claim_id": "Cmax-1000mg",
+      "quantity": "plasma Cmax after 1000 mg single oral dose",
+      "species": "mPlasmaVenous",
+      "reported": 11.2,
+      "source_location": "Table 4",
+      "metric": "cmax",
+      "parameter_overrides": {"Metformin_Dose_in_Lumen_in_mg": 779.9}
+    }
+  ]
+}
+```
+
+| Field | What it is |
+| --- | --- |
+| `claim_id` | your own name for the result |
+| `quantity` | what the paper reports, in words |
+| `species` | the model element the value is read from |
+| `reported` | the number your paper prints |
+| `source_location` | where in the paper it is — the table, the figure panel |
+| `metric` | how the number comes off the trajectory: `cmax`, `auc`, or `final` |
+| `parameter_overrides` | the values that claim holds at — the dose, the condition |
+
+A bare list of those records works too, as does a file holding several papers under `entries`
+keyed by accession — the shape [`datasets/pkpd_claims.json`](../datasets/pkpd_claims.json) uses —
+with `--accession` to pick one.
+
+`parameter_overrides` is the field that earns the check. On the metformin PBPK model's own shipped
+files, the paper's 1000 mg dose is 779.9 mg of free base in the model's units, and the document
+scans the dose over 389.2, 778.4 and 1167.6 mg:
+
+```
+FIX BEFORE YOU SUBMIT (most impactful first)
+  - the manuscript's claim 'Cmax-1000mg' sets 'Metformin_Dose_in_Lumen_in_mg' to 779.9, which the
+    archive never runs: the model states 389.92 and the experiment runs it at 389.2, 778.4, 1167.6
+      fix: ship a run that produces the result your paper reports; a document that runs a
+           neighbouring arm reproduces a plausible number and flags nothing
+```
+
+Every file validates. The run completes. The number is close. That is the failure this exists for.
+
+## What it will not tell you
+
+It is built to under-report rather than accuse a correct archive, so a comparison it cannot make
+mechanically is one it does not make:
+
+- **The run window.** Your claim says 24 hours; a uniform time course says `outputEndTime="30"` and
+  no unit at all.
+- **Outputs no claim covers.** A document routinely records more columns than a paper shows, and
+  the claims file you wrote is yours — the difference is more often a gap in it than in your files.
+- **An id two model elements carry**, a target it cannot resolve, a scan whose values are not
+  listed, a change whose effect it would have to compute, or a parameter your model's own math
+  determines. Failing to read something is not evidence that it disagrees.
+- **Your manifest, when you have no archive.** The loose-file form generates one; it says so.
+
+And the separate list headed "what Reprolith's own extraction would not carry" is **not** a fix
+list. Some of it your archive genuinely omits; some of it your archive states perfectly well and
+Reprolith cannot represent. Nothing distinguishes the two, so nothing there is asked of you and
+none of it decides readiness.
+
+## After it is green
+
+A green check means a reproducer can read your files and knows what to check — not that your model
+is right, and not that it is safe to use on anyone. If you want the verdict itself, submit the
+model and get a [certificate](../README.md): per claim, reproduced or not, with the reason, and the
+scope statement that says what it does and does not mean.
