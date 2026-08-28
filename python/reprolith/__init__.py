@@ -73,6 +73,8 @@ from .export import (
     build_bundle_sedml,
     build_experiment_sedml,
     build_omex_archive,
+    packages_no_time_course_describes,
+    what_a_package_means,
 )
 from .fba import (
     FbaModel,
@@ -447,6 +449,7 @@ __all__ = [
     "NoteKind",
     "OverallVerdict",
     "pair_report",
+    "packages_no_time_course_describes",
     "PaperIdentity",
     "Parameter",
     "parse_boolean_network",
@@ -533,5 +536,6 @@ __all__ = [
     "VerificationDecision",
     "VerificationItem",
     "VerificationQueue",
+    "what_a_package_means",
     "worst_point_deviation",
 ]

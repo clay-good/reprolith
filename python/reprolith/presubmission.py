@@ -305,6 +305,7 @@ def archive_report(
     number and no sign of trouble. Omitted, that check does not run, and the report says so rather
     than letting a clean fix list read as an archive that runs the paper's results.
     """
+    from .export import packages_no_time_course_describes, what_a_package_means
     from .manuscript import manuscript_mismatches
     from .omex import _normalize, archive_mismatches, ingest_omex
     from .sedml import parse_sedml_recipes
@@ -362,9 +363,13 @@ def archive_report(
     # that types the model `application/xml` (asserted in tests/test_archive_check.py). The guard
     # is defensive: an unguarded `next()` here would surface as a RuntimeError out of a report
     # whose whole purpose is to be readable.
-    if experiment is not None and model is not None:
-        # Re-read from the archive rather than from the dossier: the dossier keeps what the
-        # document *claimed*, and this asks whether the run behind those claims is adoptable.
+    # What kind of model it is decides which of these questions even apply. A constraint-based
+    # model is solved at steady state and a logical one advances in discrete steps, so "ship a
+    # SED-ML document whose plots are the curves your paper shows" is advice about a run nobody
+    # performs — told to an author whose files may be perfect. The check says what it cannot judge
+    # instead of issuing that fix.
+    not_a_time_course: tuple[str, ...] = ()
+    if model is not None:
         import zipfile
         from io import BytesIO
 
@@ -373,8 +378,21 @@ def archive_report(
             # `_normalize`, not `lstrip("./")`: lstrip takes a *character set*, so a member named
             # `.hidden.xml` loses its leading dot and no longer matches itself.
             stored = {_normalize(name): name for name in zf.namelist()}
-            sedml = zf.read(stored[_normalize(experiment)]).decode("utf-8")
             sbml = zf.read(stored[_normalize(model)]).decode("utf-8")
+            sedml = (
+                zf.read(stored[_normalize(experiment)]).decode("utf-8")
+                if experiment is not None
+                else None
+            )
+        not_a_time_course = packages_no_time_course_describes(sbml)
+        found["not_a_time_course"] = [
+            {"package": package, "means": what_a_package_means(package)}
+            for package in not_a_time_course
+        ]
+
+    if experiment is not None and model is not None and sedml is not None:
+        # Re-read from the archive rather than from the dossier: the dossier keeps what the
+        # document *claimed*, and this asks whether the run behind those claims is adoptable.
         recipes = parse_sedml_recipes(sedml)
         found["adoptable_recipes"] = len(recipes)
         for message in archive_mismatches(sedml, sbml):
@@ -392,7 +410,7 @@ def archive_report(
                 "fix": "ship a run that produces the result your paper reports; a document that "
                        "runs a neighbouring arm reproduces a plausible number and flags nothing",
             })
-        if targetable and not recipes:
+        if targetable and not recipes and not not_a_time_course:
             actions.append({
                 "priority": _ARCHIVE_UNADOPTABLE_PRIORITY, "kind": "recipe", "claim_id": None,
                 "quantity": None, "source_location": experiment,
@@ -403,7 +421,7 @@ def archive_report(
                        "curve you publish, so a reproducer runs what you ran",
             })
 
-    if not targetable:
+    if not targetable and not not_a_time_course:
         actions.append({
             "priority": _ARCHIVE_NO_CLAIM_PRIORITY, "kind": "claims", "claim_id": None,
             "quantity": None, "source_location": experiment,
@@ -424,10 +442,19 @@ def archive_report(
     ]
 
     actions.sort(key=lambda item: item["priority"])
-    ready = not actions
-    return {
-        "ready_to_submit": ready,
-        "readiness": (
+    # A model no time course describes cannot come out ready: the questions this check answers
+    # about published results are the time-course ones, and they were withheld rather than
+    # answered. Green would say a reproducer knows what to check, which nothing here established.
+    ready = not actions and not not_a_time_course
+    if not_a_time_course:
+        readiness = (
+            "this check reads a time-course experiment, and this model is "
+            + "; ".join(what_a_package_means(package) for package in not_a_time_course)
+            + " — so whether it states its published results is not something this judged. What "
+            "it could check is above"
+        )
+    elif ready:
+        readiness = (
             "this archive is readable, states its results, and its experiment agrees with its "
             "model"
             + (
@@ -435,9 +462,12 @@ def archive_report(
                 if found["manuscript_claims_checked"]
                 else " (nothing was compared against your paper's own reported results)"
             )
-            if ready else
-            "a reproducer would hit the items below before reaching a verdict"
-        ),
+        )
+    else:
+        readiness = "a reproducer would hit the items below before reaching a verdict"
+    return {
+        "ready_to_submit": ready,
+        "readiness": readiness,
         "found": found,
         "fix_list": actions,
         "note": _ARCHIVE_NOTE,
@@ -566,11 +596,32 @@ def _render_report(report: dict[str, Any]) -> str:
         lines.append("")
     lines.append("FIX BEFORE YOU SUBMIT (most impactful first)")
     if not report["fix_list"]:
-        lines.append("  (nothing — a reproducer can read this archive and knows what to check)")
+        # An empty list means two different things, and the headline above says which: nothing
+        # to fix, or nothing this check was in a position to ask. Printing the first under a NOT
+        # YET READY verdict is a report contradicting itself on its face.
+        lines.append(
+            "  (nothing — a reproducer can read this archive and knows what to check)"
+            if report["ready_to_submit"]
+            else "  (nothing this check is in a position to ask of you — see below)"
+        )
     for item in report["fix_list"]:
         where = f"{item['quantity']}: " if item["quantity"] else ""
         lines.append(f"  - {where}{item['issue']}")
         lines.append(f"      fix: {item['fix']}")
+    packages = found.get("not_a_time_course") or []
+    if packages:
+        lines.append("")
+        lines.append("WHAT THIS CHECK DID NOT JUDGE")
+        for package in packages:
+            lines.append(
+                f"  - your model declares the SBML '{package['package']}' package, so it is "
+                f"{package['means']}."
+            )
+        lines.append(
+            "    Whether the experiment states your published results, and whether a reproducer "
+            "can adopt it verbatim, are time-course questions; they were withheld rather than "
+            "answered, and nothing above asks you to make this model into a time course."
+        )
     gaps = found.get("extraction_gaps") or []
     if gaps:
         lines.append("")

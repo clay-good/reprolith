@@ -87,6 +87,13 @@ mechanically is one it does not make:
   listed, a change whose effect it would have to compute, or a parameter your model's own math
   determines. Failing to read something is not evidence that it disagrees.
 - **Your manifest, when you have no archive.** The loose-file form generates one; it says so.
+- **Whether a constraint-based, logical, spatial or multi-component model states its published
+  results.** Those questions are time-course questions — a model declaring the SBML `fbc` package
+  is solved at steady state, a `qual` one advances in discrete update steps — so they are withheld
+  and named under "what this check did not judge", rather than answered with advice about a run
+  nobody performs. What still applies (can they open it, do your two files agree, does it run the
+  values your paper reports) is still checked. Such a model is never reported ready, because
+  "ready" would claim a reproducer knows what to check, which nothing here established.
 
 And the separate list headed "what Reprolith's own extraction would not carry" is **not** a fix
 list. Some of it your archive genuinely omits; some of it your archive states perfectly well and

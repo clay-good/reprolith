@@ -331,3 +331,45 @@ def test_a_document_running_no_single_model_has_nothing_to_check_against() -> No
     assert report["found"]["readable"] is False
     assert len(report["fix_list"]) == 1
     assert "0 model files" in report["fix_list"][0]["issue"]
+
+
+def _fbc_archive() -> bytes:
+    """A real constraint-based model, packaged as an archive with no experiment."""
+    core = Path(__file__).parent.parent / "datasets" / "constraint_based" / "e_coli_core.xml"
+    manifest = "\n".join([
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<omexManifest xmlns="http://identifiers.org/combine.specifications/omex-manifest">',
+        f'  <content location="." format="{_SPEC}omex"/>',
+        f'  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>',
+        f'  <content location="./model.xml" format="{_SPEC}sbml"/>',
+        "</omexManifest>",
+    ])
+    return _archive_with({"model.xml": core.read_text(encoding="utf-8")}, manifest)
+
+
+def test_a_constraint_based_author_is_not_told_to_ship_plots_of_curves() -> None:
+    """"Ship a SED-ML document whose plots are the curves your paper shows" is advice about a run
+    nobody performs, told to an author whose files may be perfect. It is withheld and named."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    report = archive_report(_fbc_archive())
+    assert [item["kind"] for item in report["fix_list"]] == []
+    assert [entry["package"] for entry in report["found"]["not_a_time_course"]] == ["fbc"]
+    assert "solved at steady state" in report["readiness"]
+
+
+def test_a_model_this_check_cannot_judge_is_not_reported_as_ready() -> None:
+    """Green would say a reproducer knows what to check, which nothing here established."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    assert archive_report(_fbc_archive())["ready_to_submit"] is False
+    text = render_archive_human(_fbc_archive())
+    assert "WHAT THIS CHECK DID NOT JUDGE" in text
+    # And the fix list does not congratulate the author under a NOT YET READY headline.
+    assert "a reproducer can read this archive and knows what to check" not in text
+
+
+def test_a_time_course_model_is_judged_as_before() -> None:
+    """The withholding is the package's doing, not a hole: an ODE archive still gets the items."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    report = archive_report(_ARCHIVE.read_bytes())
+    assert report["found"]["not_a_time_course"] == []
+    assert [item["kind"] for item in report["fix_list"]] == ["claims"]

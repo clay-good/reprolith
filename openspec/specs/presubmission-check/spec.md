@@ -84,6 +84,17 @@ find in it, since a file that cannot be read or states no result never reaches a
 - **AND** the report states that the archive around them was assembled, so a reader does not take
   a clean result as evidence about a manifest that does not exist yet
 
+#### Scenario: A model no time course describes
+
+- **WHEN** the archive's model declares an SBML package that means it is not run as a uniform
+  time course — constraint-based, logical, spatial, or multi-component
+- **THEN** the findings that presume a time course — that the document states published results,
+  and that a run can be adopted verbatim — are withheld and named as not judged, rather than
+  issued as fixes about a run nobody performs
+- **AND** the archive is not reported ready, since readiness would claim a reproducer knows what
+  to check and nothing established that
+- **AND** everything that still applies is still checked and reported
+
 #### Scenario: The check does not speak as a certificate
 
 - **WHEN** the archive check is rendered

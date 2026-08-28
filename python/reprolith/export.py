@@ -101,27 +101,48 @@ _PACKAGE_NAMESPACE = re.compile(
 )
 
 
-def _refuse_a_model_no_time_course_describes(root: ET.Element) -> None:
-    """Refuse a model whose SBML package means it is not run as a uniform time course.
+def packages_no_time_course_describes(model_sbml: str) -> tuple[str, ...]:
+    """The SBML packages this model declares that mean it is not run as a uniform time course.
+
+    ``fbc``, ``qual``, ``spatial`` and ``multi``: a constraint-based model is solved at steady
+    state, a logical one advances in discrete update steps. Empty for a model a time course does
+    describe, including one carrying packages that only annotate (``layout``, ``comp``).
 
     Namespace *declarations* are not visible through ElementTree, so this reads the namespaces the
     document actually uses — on any element or attribute — which is what a package's presence
     amounts to in practice: an fbc model carries ``fbc:required`` on its root and an fbc objective
-    inside its model.
+    inside its model. Raises ``ValueError`` if the text is not parseable XML.
     """
+    return _packages_no_time_course_describes(_model_root(model_sbml))
+
+
+def _packages_no_time_course_describes(root: ET.Element) -> tuple[str, ...]:
     used = {_namespace(root.tag)}
     for element in root.iter():
         used.add(_namespace(element.tag))
         used.update(_namespace(key) for key in element.attrib if key.startswith("{"))
+    found = []
     for namespace in sorted(used):
         match = _PACKAGE_NAMESPACE.match(namespace)
         package = match.group(1) if match else ""
-        if package in _NOT_A_TIME_COURSE:
-            raise ValueError(
-                f"the model uses the SBML '{package}' package, so it is "
-                f"{_NOT_A_TIME_COURSE[package]}; a uniform time course would describe a run "
-                "nobody performs, and would look valid doing it"
-            )
+        if package in _NOT_A_TIME_COURSE and package not in found:
+            found.append(package)
+    return tuple(found)
+
+
+def what_a_package_means(package: str) -> str:
+    """How a model carrying this package is actually run, in a phrase."""
+    return _NOT_A_TIME_COURSE[package]
+
+
+def _refuse_a_model_no_time_course_describes(root: ET.Element) -> None:
+    """Refuse a model whose SBML package means it is not run as a uniform time course."""
+    for package in _packages_no_time_course_describes(root):
+        raise ValueError(
+            f"the model uses the SBML '{package}' package, so it is "
+            f"{_NOT_A_TIME_COURSE[package]}; a uniform time course would describe a run "
+            "nobody performs, and would look valid doing it"
+        )
 
 
 def _model_root(model_sbml: str) -> ET.Element:
@@ -690,4 +711,6 @@ __all__ = [
     "build_bundle_sedml",
     "build_experiment_sedml",
     "build_omex_archive",
+    "packages_no_time_course_describes",
+    "what_a_package_means",
 ]
