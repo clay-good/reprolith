@@ -280,6 +280,10 @@ def render_presubmission_human(cert: Certificate) -> str:
 
 #: Fix-list priorities for an archive check, in the order an author should act. An archive that
 #: cannot be read at all is not on this scale — it has no report to prioritize.
+#: Above everything else: a reaction that states no rate is not a defect in what a reproducer
+#: checks, it is a defect in whether there is a run to check at all — and the two engines here
+#: disagree about which, one refusing the file and one integrating it with that flux at zero.
+_ARCHIVE_NO_RATE_LAW_PRIORITY = 0
 _ARCHIVE_MISMATCH_PRIORITY = 1
 #: Shares the top tier with an experiment/model mismatch, because they fail the same way: the run
 #: completes, produces a plausible number, and nothing says it was not the published one.
@@ -331,7 +335,11 @@ def archive_report(
     number and no sign of trouble. Omitted, that check does not run, and the report says so rather
     than letting a clean fix list read as an archive that runs the paper's results.
     """
-    from .export import packages_no_time_course_describes, what_a_package_means
+    from .export import (
+        packages_no_time_course_describes,
+        reactions_without_rate_laws,
+        what_a_package_means,
+    )
     from .manuscript import manuscript_mismatches
     from .omex import _normalize, archive_mismatches, ingest_omex
     from .sedml import parse_sedml_recipes
@@ -419,6 +427,25 @@ def archive_report(
             {"package": package, "means": what_a_package_means(package)}
             for package in not_a_time_course
         ]
+        # Only for a model a time course describes: a constraint-based or logical model has no
+        # rate laws by construction, and reporting every reaction of one would send an author to
+        # repair a file that is already right.
+        rate_less = () if not_a_time_course else reactions_without_rate_laws(sbml)
+        found["reactions_without_rate_laws"] = list(rate_less)
+        if rate_less:
+            shown = ", ".join(rate_less[:5]) + (" and others" if len(rate_less) > 5 else "")
+            actions.append({
+                "priority": _ARCHIVE_NO_RATE_LAW_PRIORITY, "kind": "rate-law", "claim_id": None,
+                "quantity": None, "source_location": model,
+                "issue": f"{len(rate_less)} of your reactions state no rate law ({shown}); "
+                         "reproducers will not agree on what your model does — COPASI refuses a "
+                         "file like this outright, and libRoadRunner refuses a kineticLaw whose "
+                         "math is empty but integrates one that is simply absent, taking that "
+                         "reaction's rate as zero with no warning printed",
+                "fix": "give every reaction a kineticLaw with math in it; a reaction left without "
+                       "one is not a slower path through your model, it is a path that is not "
+                       "there, and one of the two engines will publish that as your result",
+            })
 
     if experiment is not None and model is not None and sedml is not None:
         # Re-read from the archive rather than from the dossier: the dossier keeps what the

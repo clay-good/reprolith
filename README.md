@@ -153,9 +153,10 @@ reprolith claims-check \              # is each value printed in the table it ci
 ```
 
 `archive-check` is the author-facing counterpart: point it at a COMBINE archive and it says what a
-reproducer would find — whether the experiment and the model agree, whether the document states any
-published result, whether the run can be adopted verbatim — and exits non-zero when it cannot. It
-runs no model and issues no certificate, and it says so rather than borrowing a certificate's words.
+reproducer would find — whether every reaction states a rate law, whether the experiment and the
+model agree, whether the document states any published result, whether the run can be adopted
+verbatim — and exits non-zero when it cannot. It runs no model and issues no certificate, and it
+says so rather than borrowing a certificate's words.
 Give it `--claims` — the results your paper reports — and it also answers the question the archive
 cannot answer about itself: does the experiment *run* them? On the metformin paper's own archive
 that is one line, and it is the load-bearing one:

@@ -35,8 +35,10 @@ _MODELS = [
 ]
 
 #: The fixes that only make sense for a model a time course describes. Telling the author of a
-#: constraint-based or logical model to do either is advice about a run nobody performs.
-_TIME_COURSE_ONLY = {"claims", "recipe"}
+#: constraint-based or logical model to do any of these is advice about a run nobody performs —
+#: `rate-law` most literally of all: e_coli_core has no rate laws for any of its 95 reactions and
+#: is not missing a thing.
+_TIME_COURSE_ONLY = {"claims", "recipe", "rate-law"}
 
 
 def _archive(sbml: str) -> bytes:

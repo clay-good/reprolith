@@ -77,6 +77,7 @@ from .export import (
     build_experiment_sedml,
     build_omex_archive,
     packages_no_time_course_describes,
+    reactions_without_rate_laws,
     what_a_package_means,
 )
 from .fba import (
@@ -460,6 +461,7 @@ __all__ = [
     "OverallVerdict",
     "pair_report",
     "packages_no_time_course_describes",
+    "reactions_without_rate_laws",
     "PaperIdentity",
     "Parameter",
     "parse_boolean_network",

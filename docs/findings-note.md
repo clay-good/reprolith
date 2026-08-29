@@ -3146,6 +3146,54 @@ while the AUC simulations show 0.9h"* looked unambiguous and put `auc` on two ha
 reader cannot express still has to make a sentence ambiguous, or the ambiguity check only sees the
 half of the vocabulary it likes.
 
+## One hundred and eighteen reactions, and rate laws for none of them
+
+The four certified entries are all one paper. The survey says a fifth paper is in principle
+reachable — [PMC5732473](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5732473/) prints a results
+table and deposits SBML — so the obvious next move was to run its model. It is
+[MODEL1711210003](https://www.ebi.ac.uk/biomodels/MODEL1711210003), an estradiol PBPK model coupled
+to a genome-scale network.
+
+It does not run, and the reason is worth writing down: **it ships 118 reactions and a rate law for
+none of them.** 114 carry `<kineticLaw><math/></kineticLaw>` — the element present and empty, which
+libSBML reports as 114 "container must not be empty" errors and then hands the model back anyway —
+and the other 4 carry no `kineticLaw` at all. The deposited file is the reaction topology of the
+model. The dynamics live in the companion FBA file and in whatever ran them, neither of which is
+SBML.
+
+So the entry is genuinely not reachable, and no extraction capability would change that. What is
+worth building is the check that says so *before* an author deposits.
+
+### The shape that is dangerous is the one that runs
+
+The two engines here were pointed at a three-species model where one reaction of two states no
+rate. They do not agree, and they do not agree in the direction that matters:
+
+| | no `kineticLaw` element | `kineticLaw` with empty `math` |
+| --- | --- | --- |
+| COPASI | refuses the file | refuses the file |
+| libRoadRunner | **runs it, that flux taken as zero** | refuses the file |
+
+The loud shape is the harmless one. The quiet shape produces a complete, plausible time course:
+`A` decays into `B` exactly as it should, and `C` — everything downstream of the rate-less
+reaction — sits at `0.0` for the whole run, with no warning and no failed step. One reproducer
+cannot load the file at all; the next gets a curve with a transport step silently missing from it.
+
+That is why this is a check rather than an engine's error message, and why it is worth running on a
+model that *does* load. `reactions_without_rate_laws` reports both shapes — the author's fix is the
+same either way — and `archive-check` leads its fix list with the finding, above every mismatch,
+because everything else in that list assumes there is a run to check.
+
+### The gate that keeps it from being wrong
+
+The cost of this check being wrong is telling an author to repair a file that is already correct,
+and there is an entire model class it would be wrong about: a constraint-based model has no rate
+laws by construction, and `e_coli_core` would be reported for all 95 of its reactions. The check is
+gated on `packages_no_time_course_describes` — the model's own declared package, not a list of
+exceptions — so the next fbc model is excluded for the same reason this one is. Swept over every
+model committed in this repository, it reports nothing on all twelve that a time course describes,
+and the two classes it must not speak about are excluded by their own packages.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
@@ -3172,10 +3220,12 @@ What would lift it, in the order the measurements support:
 
 * **Figures.** Reading tables reaches three papers in ten of the open-access subset. The other
   seven put their results in pictures, and nothing here digitizes one.
-* **Prose.** The values this corpus checks are all read from tables; the same paper states two of
-  them in a sentence as well, and no path exists to read that.
 * **Papers whose model is not runnable here.** Nine non-curated SBML entries and an R script.
-  Extracting their claims perfectly would still produce no certificate.
+  Extracting their claims perfectly would still produce no certificate — and the one of them whose
+  paper *does* print a results table was opened and measured: it deposits 118 reactions and a rate
+  law for none of them (above).
+
+Prose is no longer on that list: it is built, and measured to reach no paper the tables miss.
 
 What *is* established, and was not this morning: the engine's three verdict paths have all now run
 on real published numbers. A clean unqualified `reproduced`. Two distinct root-caused failures, one

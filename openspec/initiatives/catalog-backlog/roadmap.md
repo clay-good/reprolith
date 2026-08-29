@@ -132,7 +132,13 @@ a change under `openspec/changes/`.
   candidate reader (`propose_claims_from_prose`) reaches two of the ten open-access papers and
   both already state their results in a table — the seven figure-only papers state none in their
   text either. It broadens what can be read from a paper already reachable and moves the corpus's
-  reach by nothing.
+  reach by nothing. **The one non-curated entry whose paper prints a table was opened**
+  (MODEL1711210003, an estradiol PBPK/genome-scale model): it deposits 118 reactions and a rate law
+  for none of them — 114 with an empty `<kineticLaw><math/>` and 4 with no `kineticLaw` at all — so
+  it is reaction topology, not a runnable model, and no extraction capability would reach it. That
+  is now a check (`reactions_without_rate_laws`, leading `archive-check`'s fix list) rather than
+  only a note, because libRoadRunner runs an absent law with its flux silently at zero while COPASI
+  refuses the same file.
 
 ---
 

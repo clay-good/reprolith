@@ -23,6 +23,7 @@ otherwise — so it drops into a pre-submission hook or a CI job.
 
 | | What a reproducer would hit |
 | --- | --- |
+| **Will it run at all?** | A reaction with no `kineticLaw`, or one whose `math` is empty, states no rate. The engines disagree about what that means: COPASI refuses the file either way, and libRoadRunner refuses an empty `math` but integrates an *absent* law with that reaction's rate taken as zero — a complete, plausible curve with everything downstream of it sitting at 0.0, no warning printed. This leads the fix list, because everything below it assumes there is a run to check. Not asked of a constraint-based or logical model, which has no rate laws by construction. |
 | **Can they open it?** | A zip with no manifest, a manifest listing files that are not there, several experiments with none marked master, an experiment running more than one model. Each refusal names the ambiguity; a file that cannot be read is the whole report. |
 | **Do your two files agree?** | An override aimed at a parameter the model does not have overrides nothing, so the run silently reproduces the *unmodified* model and looks fine. Every target is resolved by its nesting in the model, so an override aimed at the right name inside the wrong parent is caught. |
 | **Does it say what you published?** | A document whose outputs are all `report`s states no published result: it can be run, but there is nothing to check it against. A `plot` is your own statement that a curve is a shown result. |

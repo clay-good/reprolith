@@ -130,6 +130,47 @@ def _packages_no_time_course_describes(root: ET.Element) -> tuple[str, ...]:
     return tuple(found)
 
 
+def reactions_without_rate_laws(model_sbml: str) -> tuple[str, ...]:
+    """The reactions in this model that state no rate, in document order.
+
+    A reaction states a rate through a ``kineticLaw`` holding ``math``. Both ways of missing one
+    are reported, because the author's fix is the same, but they do not behave alike and the
+    quieter one is the reason this is a check rather than an engine's error message:
+
+    * **No ``kineticLaw`` element.** COPASI refuses the file; libRoadRunner integrates it to
+      completion with that reaction's rate taken as zero — the species downstream of it stays at
+      0.0 for the whole run, no warning, no failed step. The same deposited file is unloadable to
+      one reproducer and a complete, plausible time course to the next.
+    * **A ``kineticLaw`` whose ``math`` is empty.** Both engines refuse it.
+
+    So the danger is not the refusal, it is the run: this is worth checking on a file that loads.
+
+    Only meaningful for a model a time course describes. A constraint-based or logical model has
+    no rate laws by construction and every reaction would be reported — callers gate on
+    :func:`packages_no_time_course_describes` first. Raises ``ValueError`` if the text is not
+    parseable SBML.
+    """
+    return _reactions_without_rate_laws(_model_root(model_sbml))
+
+
+def _reactions_without_rate_laws(root: ET.Element) -> tuple[str, ...]:
+    without = []
+    for reaction in root.iter():
+        if _localname(reaction.tag) != "reaction":
+            continue
+        law = next((c for c in reaction if _localname(c.tag) == "kineticLaw"), None)
+        math = (
+            None if law is None else next((c for c in law if _localname(c.tag) == "math"), None)
+        )
+        # An empty `math` is as rate-less as an absent one, and this is not hypothetical: 114 of
+        # the 118 reactions in BioModels MODEL1711210003 carry `<kineticLaw><math/></kineticLaw>`,
+        # which libSBML reports as 114 "container must not be empty" errors and still hands back
+        # as a model. `len(math)` — not `math is None` — is what separates them.
+        if math is None or len(math) == 0:
+            without.append(reaction.get("id") or reaction.get("name") or "(unnamed reaction)")
+    return tuple(without)
+
+
 def what_a_package_means(package: str) -> str:
     """How a model carrying this package is actually run, in a phrase."""
     return _NOT_A_TIME_COURSE[package]
