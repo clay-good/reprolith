@@ -2780,6 +2780,31 @@ itself by supplying `undetermined_shortfall` — but it is unreachable, because 
 caller that passes a scale and there is none. Written down so the next round does not chase either
 of them.
 
+## Reading the five-claim certificate as its reader
+
+The method the eighteenth pass named, applied to what today changed. Two things a reader trips on,
+and only one of them was a defect.
+
+**Six copies of one clause.** The El Messaoudi arm's protocol read
+`preceded by 12.0 at Metformin_Dose_in_Lumen_in_mg=389.93` six times over. Everything a person
+needs from it — six doses, twelve hours apart, all the same — is exactly what the repetition
+buries. Identical *adjacent* segments are counted now (`6 x 12.0 at …`), and only identical
+adjacent ones, because a count that merged two different doses would be a protocol nobody could
+re-run.
+
+**And one that looked worse than it is.** `Cmax-500mg` is the only claim of the five that reads as
+an unqualified pass, and it runs the model at its default 389.92 while asserting "after 500 mg
+single oral dose" — an identification nothing in the model states. The parameter's own note gives
+metformin's free-base molar mass and nothing else. That looks exactly like a claim reading clean
+because the assumption it rests on is baked into a default rather than applied as an override,
+which is a shape this record has found before.
+
+It is not. The comparison never uses the conversion: the reference is the paper's own Table 6 row
+labelled 500, the run is the model as shipped, and the label is the *paper's* word for its own
+simulation. The assumption exists to reach the doses the model does **not** default to, and every
+claim that needs it carries it. Written down because the wrong reading is the more natural one,
+and because a later round that "fixes" this would be qualifying a claim that earned its clean pass.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

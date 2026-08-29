@@ -157,10 +157,23 @@ def _run_protocol(
         # A prior administration changes the state the reported window starts from, so a reader
         # who re-runs the window alone gets a different number. It is part of the protocol for
         # exactly the reason the window and the sample count are.
+        # Consecutive identical administrations are collapsed to a count. Six repetitions of the
+        # same clause is not a record a person reads: the El Messaoudi arm's protocol ran to six
+        # copies of "12.0 at Metformin_Dose_in_Lumen_in_mg=389.93", and the fact a reader needs
+        # from it — six doses, twelve hours apart, all the same — is the one the repetition
+        # buries. Only *identical adjacent* segments collapse, so nothing that differs is merged.
+        runs: list[tuple[int, float, tuple[tuple[str, float], ...]]] = []
+        for segment_duration, segment_overrides in prior:
+            if runs and runs[-1][1:] == (segment_duration, segment_overrides):
+                count, *rest = runs[-1]
+                runs[-1] = (count + 1, *rest)  # type: ignore[assignment]
+            else:
+                runs.append((1, segment_duration, segment_overrides))
         stated += "; preceded by " + "; ".join(
-            f"{segment_duration!r} at "
+            (f"{count} x " if count > 1 else "")
+            + f"{segment_duration!r} at "
             + (", ".join(f"{name}={value!r}" for name, value in segment_overrides) or "no override")
-            for segment_duration, segment_overrides in prior
+            for count, segment_duration, segment_overrides in runs
         )
     if overwritten:
         stated += "; " + "; ".join(overwritten)

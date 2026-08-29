@@ -288,3 +288,25 @@ def test_the_auc_guard_measures_the_scheduled_run_not_the_default_one() -> None:
     assert _metric(times, values, "auc") != pytest.approx(
         _metric(plain_times, plain_values, "auc"), rel=0.05
     )
+
+
+def test_identical_consecutive_administrations_are_counted_not_repeated() -> None:
+    """Read as its reader: six copies of one clause buries the fact a person needs from it.
+
+    Only *identical adjacent* segments collapse, so a schedule whose doses differ is written out
+    in full — a count that merged two different doses would be a protocol nobody could re-run.
+    """
+    from reprolith.certify import _run_protocol
+
+    six = tuple((12.0, ((_DOSE, 389.93),)) for _ in range(6))
+    collapsed = _run_protocol(
+        duration=24.0, steps=480, read="[mPlasmaVenous] cmax",
+        overrides=((_DOSE, 389.93),), prior=six,
+    )
+    assert f"preceded by 6 x 12.0 at {_DOSE}=389.93" in collapsed
+    assert collapsed.count("12.0 at") == 1
+
+    mixed = ((12.0, ((_DOSE, 292.45),)), (12.0, ((_DOSE, 389.93),)), (12.0, ((_DOSE, 389.93),)))
+    written = _run_protocol(duration=24.0, steps=480, read="[x] cmax", prior=mixed)
+    assert "292.45" in written and "2 x 12.0" in written
+    assert written.count("12.0 at") == 2  # the differing one is not merged into the run
