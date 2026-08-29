@@ -71,3 +71,36 @@ def test_the_published_certificate_count_the_readme_states_is_the_count() -> Non
         "the README no longer states a certificate count in any wording this knows; add it to "
         "_WORDED_COUNTS so the claim stays checked"
     )
+
+
+def test_the_front_pages_reproduction_split_is_the_certificates_split() -> None:
+    """The strongest sentence on the page — "fifty-seven reproduce, six do not" — is checkable.
+
+    It is also the one most likely to go stale: every claim added to the corpus moves it, and a
+    front page that overstates how much reproduces is the single worst thing this repository could
+    publish about itself.
+    """
+    import json
+
+    reproduced = missed = 0
+    for path in _ROOT.glob("datasets/milestone/certificates/*.json"):
+        certificate = json.loads(path.read_text(encoding="utf-8"))
+        for assessment in certificate["assessments"]:
+            if assessment["verdict"] == "reproduced":
+                reproduced += 1
+            else:
+                missed += 1
+    assert (reproduced, missed) == (57, 6), (reproduced, missed)
+    assert "Fifty-seven reproduce. Six do not" in _README
+    assert "**sixty-three claims**" in _README and reproduced + missed == 63
+
+
+def test_the_front_page_does_not_claim_the_extraction_it_has_not_built() -> None:
+    """It reads a paper's tables and says so; it does not read prose and must keep saying so.
+
+    The paragraph describing sixty-three claims read from a paper sits four lines above the one
+    admitting extraction is unbuilt, and an edit to either can quietly turn that into a
+    contradiction.
+    """
+    assert "Reading claims out of prose is not built at all." in _README
+    assert "at scale* is the piece that is not built" in _README

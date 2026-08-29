@@ -7,26 +7,40 @@ their own paper. Reprolith rebuilds the model from the paper, re-runs it, and ch
 output against the paper's own figures and tables — then hands you a **certificate**:
 reproduced, partially, or not — for each result, with the reason.
 
-That is what it is *for*, and it is worth being exact about how much of it is done today: of the
-thirty-one published certificates, **two** check a reconstruction against numbers read from a
-paper — **sixty-three claims** between them, and every one is a number that paper's *own model*
-reports. They cover both of its published Cmax tables: ten tissues at 500, 1000 and 1500 mg after a
-single dose and again under twice-daily dosing, plus three validation arms that each follow an
-earlier dose. Two of the paper's twelve tissue rows are left unclaimed on purpose — the model
-splits Intestine and Kidney into several compartments, and which one the row means is a judgement
-about the paper, not something to guess.
+That is what it is *for*, and it is worth being exact about how much of it is done today.
 
-**Fifty-seven reproduce. Six do not**, and the certificate says why for each: three because the
-deposited model runs four of the eight administrations its own name states, which matters only for
-a tissue slow enough to still be accumulating; three because one cell of the paper's table
-contradicts the rest of its own row. That is the output this project exists to produce. Every
-one of those rows is quoted in [`datasets/manuscripts/`](datasets/manuscripts/) and a test checks
-the certificates' reference values against them, because for most of this repository's life
-nothing did: one of the first two was recorded as 6.2, a number the paper does not contain. The rest check Reprolith's engine against an independent
-tool — COBRApy, libRoadRunner, CANA — or against closed-form mathematics, re-running the same
-model file. Each certificate now says which on its own claim line. Reading a paper's claims out of
-its manuscript at scale is the piece that is not built; [`docs/findings-note.md`](docs/findings-note.md) and
-[`openspec/`](openspec/) say so in detail. Where a paper ships a **SED-ML** document, the half of that
+Of the thirty-one published certificates, **two** check a reconstruction against numbers read from
+a paper. Between them they carry **sixty-three claims** — every one a number that paper's own model
+reports, covering both of its published Cmax tables: ten tissues at 500, 1000 and 1500 mg after a
+single dose, again under twice-daily dosing, and three validation arms that each follow an earlier
+dose.
+
+**Fifty-seven reproduce. Six do not, and the certificate says why for each.** Three because the
+deposited model runs four of the eight administrations its own name states — which matters only for
+a tissue slow enough to still be accumulating, so the cause is recorded per claim rather than as a
+verdict on the model. Three because one cell of the paper's table contradicts the rest of its own
+row: its Brain Cmax equals plasma's, while that row's AUC and mean concentration are four fifths of
+plasma's, as they are in the paper's other table and in the model. Each of those six publishes what
+was measured, the cell it implicates, and that the fault is a hypothesis. That is the output this
+project exists to produce.
+
+Two things are deliberately not claimed. The paper's Intestine and Kidney rows: the model splits
+each across three compartments, and which one the row means is a judgement about the paper. And
+anything not committed: every reference value is quoted from the article in
+[`datasets/manuscripts/`](datasets/manuscripts/) and checked against it by a test, because for most
+of this repository's life nothing did — one of the first two was recorded as 6.2, a number the
+paper does not contain.
+
+The other twenty-nine certificates check Reprolith's engine against an independent tool — COBRApy,
+libRoadRunner, CANA — or against closed-form mathematics, re-running the same model file. Each
+certificate says which on its own claim line. Getting a paper's claims out of its manuscript *at scale* is the piece that is not built.
+`claims-propose` reads candidates out of a paper's **tables**, which is how those sixty-three
+arrived — but a curator still chooses which candidate is a claim and which model output it reads,
+and measured on this test set, only **three papers in ten** of the open-access subset print a
+reported model output in a table at all
+([`datasets/manuscripts/table_survey.json`](datasets/manuscripts/table_survey.json)). The rest put
+their results in figures. Reading claims out of prose is not built at all.
+[`docs/findings-note.md`](docs/findings-note.md) and [`openspec/`](openspec/) say so in detail. Where a paper ships a **SED-ML** document, the half of that
 job the document already did is read from it: its plots say which curves the paper shows, and those
 become the dossier's claims. Their *values* are still not there, so such a claim is figure-referenced
 and the oracle abstains — unless the document ships them: a curve plotted from a data file the
