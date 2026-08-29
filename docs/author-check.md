@@ -9,6 +9,7 @@ pip install reprolith
 reprolith claims-template --model paper.xml --sedml paper.sedml --out my_claims.json
 reprolith archive-check paper.omex --claims my_claims.json
 reprolith archive-check --sedml paper.sedml --model paper.xml --claims my_claims.json
+reprolith params-check --model paper.xml --parameters my_parameters.json
 ```
 
 The first line writes the claims file the other two read; see [the claims file](#the-claims-file).
@@ -28,6 +29,7 @@ otherwise — so it drops into a pre-submission hook or a CI job.
 | **Do your two files agree?** | An override aimed at a parameter the model does not have overrides nothing, so the run silently reproduces the *unmodified* model and looks fine. Every target is resolved by its nesting in the model, so an override aimed at the right name inside the wrong parent is caught. |
 | **Does it say what you published?** | A document whose outputs are all `report`s states no published result: it can be run, but there is nothing to check it against. A `plot` is your own statement that a curve is a shown result. |
 | **Can they adopt your run verbatim?** | A parameter scan, a model the document modifies, or a window that does not start at zero all mean a reproducer must reconstruct the run rather than read it. |
+| **Does your model carry the values you published?** | Only `params-check`, and only for the parameters you pair up. Your paper's parameter table says `Kt:p` for liver is 5.5; your deposit says whatever it says. Every reproduction in this repository would pass a model whose inputs differ from its paper, because reproductions check outputs. |
 | **Does it run what your paper reports?** | Only with `--claims`. See below — this is the one nothing in your archive can answer, and the one that fails most quietly. |
 
 ## The claims file
@@ -107,6 +109,28 @@ FIX BEFORE YOU SUBMIT (most impactful first)
 ```
 
 Every file validates. The run completes. The number is close. That is the failure this exists for.
+
+## The parameters file
+
+`params-check` reads a JSON file pairing each model parameter id with the value your paper reports
+for it:
+
+```json
+{"parameters": [
+  {"parameter": "Ktp_Liver", "reported": 5.5, "source_location": "Table 3, Liver row"}
+]}
+```
+
+The pairing is yours to make and is never inferred. "Lungs" is `Ktp_Lung` and "Intestine" is
+`Ktp_IntestineVascular`, and no rule would produce either — a check that guessed would report a
+mismatch against a parameter you never meant.
+
+Two things it will not do. It compares **at the precision your paper printed**: a table printing
+`0.7` against a model carrying `0.73` agrees, because the table cannot tell `0.73` from `0.749`,
+and demanding equality would accuse a correct deposit. And it never compares a value an
+`initialAssignment` or a rule overrides — the number in that `value` attribute is not what runs, so
+agreement with it would be the most confident wrong answer available. Those are reported as *not
+compared*, separately from a mismatch, and they do not fail the command.
 
 ## Starting from your paper instead of your model
 

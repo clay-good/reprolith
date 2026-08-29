@@ -43,7 +43,12 @@ _WANTED = {
     # were calculated for the IV experimental data").
     "BIOMD0000001027": {
         "pmcid": "PMC8026019",
-        "tables": {"pone.0249594.t001": 20},
+        # Table 3 is not a results table and no claim cites it: it is the paper's *parameter*
+        # table, the tissue-plasma partition coefficients, and it is here so the deposited model's
+        # own Ktp_* values can be checked against the numbers the paper prints for them
+        # (datasets/pkpd_parameters.json). It describes the mouse tissues, so it is stored with the
+        # mouse oral-dose entry, though all four deposited models carry the same coefficients.
+        "tables": {"pone.0249594.t001": 20, "pone.0249594.t003": 11},
     },
     # And its intravenous mouse model, whose Table 2 reports an exposure and a half-life and no
     # peak — the paper says why: "due to the IV curves' decreasing nature, only AUC24 and T1/2

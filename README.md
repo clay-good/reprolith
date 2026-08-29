@@ -150,6 +150,8 @@ reprolith claims-propose \            # candidate claims from the tables your pa
   --tables <tables.json> [--out <candidates.json>]
 reprolith claims-check \              # is each value printed in the table it cites?
   --claims <claims.json> --tables <tables.json>
+reprolith params-check \              # does your model carry the values your paper reports?
+  --model <model.xml> --parameters <parameters.json>
 ```
 
 `archive-check` is the author-facing counterpart: point it at a COMBINE archive and it says what a
@@ -165,6 +167,14 @@ that is one line, and it is the load-bearing one:
 the manuscript's claim 'Cmax-1000mg' sets 'Metformin_Dose_in_Lumen_in_mg' to 779.9, which the
 archive never runs: the model states 389.92 and the experiment runs it at 389.2, 778.4, 1167.6
 ```
+
+`params-check` asks the question in the other direction, about the model's **inputs**. Every
+certificate here checks a model's outputs; nothing checked whether the deposit carries the
+parameter values its own paper reports. Pair each parameter id with the number your paper prints —
+the pairing is yours, and never guessed — and it compares them at the precision the paper printed,
+refusing to compare any value an `initialAssignment` or a rule makes inert. On the four deposited
+metformin models it comes back clean: all ten tissue-plasma partition coefficients in each are the
+ones the paper's Table 3 prints.
 
 `claims-template` writes that file, so an author is not starting from a blank one: it emits one
 stub per curve the document plots — the document's own statement of which curves are shown results

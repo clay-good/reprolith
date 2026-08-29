@@ -3245,6 +3245,39 @@ an earlier version of it did not: a state variable is a species *or* a rate rule
 these models declare no species at all and keep their entire state in parameters, and probing
 species alone would have reported them as un-runnable for a reason that was about the probe.
 
+## Nothing had ever checked a model's inputs
+
+Every certificate in this repository checks a model's **outputs** against numbers a paper prints.
+The four deposited metformin models each declare ten tissue-plasma partition coefficients, the
+paper prints all ten in its Table 3, and until now nothing compared the two. A deposit carrying a
+coefficient its own paper does not report would have reproduced every claim in the corpus and said
+nothing: the coefficients are what the reproduction *runs*, so a wrong one moves the outputs and
+the tolerance absorbs it or the failure is root-caused to something else.
+
+So `params-check` asks the other question, and the answer is clean: **40 of 40 agree** — ten
+coefficients in each of the four models, all of them the numbers the paper prints. That includes
+the human models, which carry the *mouse* coefficients, which is what the paper says it did:
+"transferable Kt:p values … are transferable among different species."
+
+Two rules keep the check from accusing a correct deposit.
+
+**It compares at the precision the paper printed, and no finer.** The paper prints `0.7` for
+adipose and the model carries `0.73`. Demanding equality would report a mismatch the paper's own
+table cannot support — it cannot tell `0.73` from `0.749` — so the answer is agreement, and the
+limit travels with it: this establishes the model is *consistent with* the printed value, not that
+it holds the value the authors fitted. The paper's own arithmetic confirms the unrounded one, as it
+happens: its "calculated–estimated, %" column reads 82.5% for adipose, which is `(0.73 − 0.4)/0.4`
+and not `(0.7 − 0.4)/0.4`.
+
+**It never compares a value an `initialAssignment` or a rule overrides.** That number is not what
+runs, and agreement with it would be the most confident wrong answer available. This repository has
+been caught by that exact shape three times in three different readers, so it is a distinct
+outcome — *not compared* — reported apart from a mismatch, and it does not fail the command.
+
+The pairing of a table row to a parameter id is the curator's, written down in
+`datasets/pkpd_parameters.json` and never inferred: "Lungs" is `Ktp_Lung` and "Intestine" is
+`Ktp_IntestineVascular`, and no rule would produce either.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

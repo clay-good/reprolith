@@ -524,7 +524,10 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     subcommands = next(
         a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
     ).choices
-    named = {"export", "archive-check", "claims-template", "claims-check", "claims-propose"}
+    named = {
+        "export", "archive-check", "claims-template", "claims-check", "claims-propose",
+        "params-check",
+    }
     file_based = {name for name in subcommands if name in named}
     assert file_based == named
     documented = (
@@ -740,3 +743,53 @@ def test_a_file_with_no_claims_key_says_what_it_found(tmp_path, capsys):
     assert run(["archive-check", str(archive), "--claims", str(claims)]) == 1
     error = capsys.readouterr().err
     assert "holds no claims" in error and "stuff" in error
+
+
+def test_params_check_reports_a_value_the_model_does_not_carry(tmp_path, capsys):
+    """The model-side counterpart of claims-check: the paper's Table 3 says 0.7 and the deposit
+    says 9.9, which every reproduction in the corpus would pass without noticing."""
+    model = tmp_path / "model.xml"
+    model.write_text(
+        '<?xml version="1.0"?><sbml xmlns="http://www.sbml.org/sbml/level2/version4" '
+        'level="2" version="4"><model id="m"><listOfParameters>'
+        '<parameter id="Ktp_Liver" value="9.9"/></listOfParameters></model></sbml>',
+        encoding="utf-8",
+    )
+    parameters = tmp_path / "parameters.json"
+    parameters.write_text(json.dumps({"parameters": [
+        {"parameter": "Ktp_Liver", "reported": 0.7, "source_location": "Table 3, Liver row"},
+    ]}), encoding="utf-8")
+
+    assert run(["params-check", "--model", str(model), "--parameters", str(parameters)]) == 1
+    printed = capsys.readouterr().out
+    assert "MISMATCH" in printed and "not 0.7" in printed
+
+
+def test_params_check_does_not_fail_on_a_value_it_could_not_compare(tmp_path, capsys):
+    """An inert value was not compared, and a submission hook must not read that as wrong."""
+    model = tmp_path / "model.xml"
+    model.write_text(
+        '<?xml version="1.0"?><sbml xmlns="http://www.sbml.org/sbml/level2/version4" '
+        'level="2" version="4"><model id="m"><listOfParameters>'
+        '<parameter id="k" value="9.9"/></listOfParameters><listOfInitialAssignments>'
+        '<initialAssignment symbol="k"><math '
+        'xmlns="http://www.w3.org/1998/Math/MathML"><cn>1</cn></math></initialAssignment>'
+        '</listOfInitialAssignments></model></sbml>',
+        encoding="utf-8",
+    )
+    parameters = tmp_path / "parameters.json"
+    parameters.write_text(json.dumps({"parameters": [
+        {"parameter": "k", "reported": 0.7, "source_location": "Table 3"},
+    ]}), encoding="utf-8")
+    assert run(["params-check", "--model", str(model), "--parameters", str(parameters)]) == 0
+    printed = capsys.readouterr().out
+    assert "not compared" in printed and "MISMATCH" not in printed
+
+
+def test_params_check_on_something_that_is_not_sbml_is_a_message(tmp_path, capsys):
+    model = tmp_path / "model.xml"
+    model.write_text("not xml at all", encoding="utf-8")
+    parameters = tmp_path / "parameters.json"
+    parameters.write_text(json.dumps({"parameters": []}), encoding="utf-8")
+    assert run(["params-check", "--model", str(model), "--parameters", str(parameters)]) == 1
+    assert "cannot read the model" in capsys.readouterr().err

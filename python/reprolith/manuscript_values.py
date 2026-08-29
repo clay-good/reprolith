@@ -1,4 +1,10 @@
-"""Checking a claims file's reference values against the paper's own printed tables.
+"""Checking a repository's numbers against the paper's own printed tables.
+
+Two halves, and they check different things. :func:`check_claim_values` asks whether a *claim's*
+reference value is printed in the table it cites — the curator's transcription against the paper.
+:func:`check_parameter_values` asks whether the *model* carries a parameter value the paper prints
+— the deposited artifact against the paper. Nothing had ever asked the second question of any model
+in this repository.
 
 Every reference value in this repository except two is checked against its generator — COBRApy,
 libRoadRunner, CANA, closed-form mathematics. The two that come from a *manuscript* were checked
@@ -29,7 +35,10 @@ mechanical questions of every claim: **is the value you state printed in the tab
 
 from __future__ import annotations
 
+import decimal
+import math
 import re
+import xml.etree.ElementTree as ET
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -148,6 +157,165 @@ def check_claim_values(
     return tuple(results)
 
 
+@dataclass(frozen=True)
+class ParameterCheck:
+    """What was found for one parameter: what the paper prints, and what the model carries."""
+
+    parameter: str
+    reported: float
+    #: The value the model declares. ``None`` when it declares no such parameter, or declares one
+    #: with no value.
+    carried: float | None
+    #: ``True`` agrees at the precision the paper printed, ``False`` disagrees, ``None`` not
+    #: comparable — which is a different fact from disagreeing, and is never folded into it.
+    agrees: bool | None
+    detail: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "parameter": self.parameter,
+            "reported": self.reported,
+            "carried": self.carried,
+            "agrees": self.agrees,
+            "detail": self.detail,
+        }
+
+
+def _localname(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def _declared_parameters(model_sbml: str) -> tuple[dict[str, float | None], set[str]]:
+    """The model's own parameters by id, and the ids whose declared value is inert.
+
+    Dependency-free on purpose: this module runs on the core gate, where libSBML is not installed.
+
+    The second half is the point. A parameter an ``initialAssignment`` or an ``assignment``/``rate``
+    rule sets does not run at the number in its ``value`` attribute, and this repository has been
+    caught three times over reading such an attribute as if it were live. Comparing one against a
+    paper would produce the most confident wrong answer available: agreement with a number that
+    never reaches the integrator.
+
+    Only the model's own ``listOfParameters`` is read. A parameter local to a reaction is scoped to
+    that reaction and is not what a paper's parameter table names.
+    """
+    try:
+        root = ET.fromstring(model_sbml)
+    except ET.ParseError as exc:
+        raise ValueError(f"not parseable SBML: {exc}") from exc
+    model = next(
+        (c for c in root.iter() if _localname(c.tag) == "model"),
+        None,
+    )
+    if model is None:
+        raise ValueError("the SBML document contains no model element")
+    values: dict[str, float | None] = {}
+    overridden: set[str] = set()
+    for container in model:
+        name = _localname(container.tag)
+        if name == "listOfParameters":
+            for parameter in container:
+                if _localname(parameter.tag) != "parameter":
+                    continue
+                identifier = parameter.get("id")
+                if not identifier:
+                    continue
+                raw = parameter.get("value")
+                try:
+                    values[identifier] = None if raw is None else float(raw)
+                except ValueError:
+                    values[identifier] = None
+        elif name == "listOfInitialAssignments":
+            overridden.update(
+                assignment.get("symbol") or "" for assignment in container
+            )
+        elif name == "listOfRules":
+            overridden.update(rule.get("variable") or "" for rule in container)
+    overridden.discard("")
+    return values, overridden
+
+
+def _printed_decimals(value: float) -> int:
+    """How many decimal places a paper printed, read off the value as it was transcribed."""
+    exponent = decimal.Decimal(repr(float(value))).as_tuple().exponent
+    return -int(exponent) if isinstance(exponent, int) and exponent < 0 else 0
+
+
+def check_parameter_values(
+    model_sbml: str, parameters: Sequence[Mapping[str, Any]]
+) -> tuple[ParameterCheck, ...]:
+    """Check a model's declared parameter values against the ones a paper's table prints.
+
+    ``parameters`` are records naming the model parameter and the value the paper reports for it
+    (``parameter``, ``reported``, and a ``source_location`` this does not read). Which model
+    parameter a paper's row names is a curator's judgment and is never guessed here: rows are
+    paired with ids in a committed file, the way reference values are.
+
+    **Agreement is at the precision the paper printed, and no finer.** A paper printing ``0.7`` for
+    a model carrying ``0.73`` agrees — it cannot distinguish ``0.73`` from ``0.749``, and demanding
+    equality would accuse a correct deposition of a mismatch its own source cannot support. The
+    consequence travels with the answer: this establishes that the model is consistent with the
+    printed value, not that it holds the value the authors fitted.
+    """
+    values, overridden = _declared_parameters(model_sbml)
+    results: list[ParameterCheck] = []
+    for record in parameters:
+        identifier = str(record.get("parameter") or "")
+        raw = record.get("reported")
+        if raw is None:
+            results.append(ParameterCheck(
+                identifier, math.nan, None, None,
+                "no reported value to check (an unfilled row)",
+            ))
+            continue
+        reported = float(raw)
+        if identifier not in values:
+            results.append(ParameterCheck(
+                identifier, reported, None, False,
+                f"the model declares no parameter {identifier!r}",
+            ))
+            continue
+        if identifier in overridden:
+            results.append(ParameterCheck(
+                identifier, reported, values[identifier], None,
+                f"{identifier} is set by an initialAssignment or a rule, so the number in its "
+                "value attribute is not what runs and comparing it would answer about the wrong "
+                "quantity",
+            ))
+            continue
+        carried = values[identifier]
+        if carried is None:
+            results.append(ParameterCheck(
+                identifier, reported, None, None,
+                f"{identifier} declares no value, so there is nothing to compare",
+            ))
+            continue
+        places = _printed_decimals(reported)
+        rounded = round(carried, places)
+        agrees = math.isclose(rounded, reported, rel_tol=0.0, abs_tol=1e-9)
+        results.append(ParameterCheck(
+            identifier, reported, carried, agrees,
+            (
+                f"the model carries {carried:g}, which is {reported:g} at the "
+                f"{places} decimal place(s) the paper prints"
+                if agrees
+                else f"the model carries {carried:g}, which is {rounded:g} at the "
+                f"{places} decimal place(s) the paper prints, not {reported:g}"
+            ),
+        ))
+    return tuple(results)
+
+
+def disagreeing_parameters(checks: Sequence[ParameterCheck]) -> tuple[ParameterCheck, ...]:
+    """The checks that came back false — a value the model does not carry.
+
+    Only ``False``, never ``None``, for the reason :func:`unsupported_claims` gives: a parameter
+    whose declared value is inert was not compared, and reporting it beside one that genuinely
+    disagrees would turn "not checked" into "wrong".
+    """
+    return tuple(check for check in checks if check.agrees is False)
+
+
 def unsupported_claims(checks: Sequence[ValueCheck]) -> tuple[ValueCheck, ...]:
     """The checks that came back false — a value the cited table does not print.
 
@@ -158,4 +326,11 @@ def unsupported_claims(checks: Sequence[ValueCheck]) -> tuple[ValueCheck, ...]:
     return tuple(check for check in checks if check.found is False)
 
 
-__all__ = ["ValueCheck", "check_claim_values", "unsupported_claims"]
+__all__ = [
+    "ParameterCheck",
+    "ValueCheck",
+    "check_claim_values",
+    "check_parameter_values",
+    "disagreeing_parameters",
+    "unsupported_claims",
+]

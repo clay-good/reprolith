@@ -153,7 +153,14 @@ from .loop_notes import (
     required_subjects,
 )
 from .manuscript import manuscript_mismatches
-from .manuscript_values import ValueCheck, check_claim_values, unsupported_claims
+from .manuscript_values import (
+    ParameterCheck,
+    ValueCheck,
+    check_claim_values,
+    check_parameter_values,
+    disagreeing_parameters,
+    unsupported_claims,
+)
 from .mcp_server import handle_request, serve_stdio
 from .model import (
     Assumption,
@@ -297,6 +304,7 @@ from .verification import (
 __version__ = "0.0.1"
 
 __all__ = [
+    "ParameterCheck",
     "__version__",
     "advance_to_outcome",
     "AgreementReport",
@@ -341,6 +349,7 @@ __all__ = [
     "Citation",
     "Claim",
     "check_claim_values",
+    "check_parameter_values",
     "claim_counts",
     "claims_template",
     "ClaimAssessment",
@@ -361,6 +370,7 @@ __all__ = [
     "diffuse_1d",
     "diffuse_2d",
     "Dossier",
+    "disagreeing_parameters",
     "dossier_digest",
     "dossier_from_dict",
     "DossierClaim",

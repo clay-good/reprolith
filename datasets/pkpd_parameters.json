@@ -1,0 +1,225 @@
+{
+  "description": "The tissue-plasma partition coefficients the source paper prints, paired by hand with the parameter ids the deposited models declare for them. This is the model-side counterpart of datasets/pkpd_claims.json: those are results a paper reports and this reproduces, and these are inputs a paper reports and the deposited artifact should already carry. Which parameter a paper's row names is a curator's judgment and is written down here rather than inferred - 'Lungs' is Ktp_Lung and 'Intestine' is Ktp_IntestineVascular, and no rule would produce either. The paper's Table 3 describes mouse tissues; all four deposited models carry the same coefficients, which is what the paper says it did: 'we assume the transport processes in humans to be similar to those in mice, and transferable Kt:p values integrate both the active and passive components of metformin transport, which are tissue-specific, and are transferable among different species'. The rows Table 3 prints are quoted in datasets/manuscripts/BIOMD0000001027_tables.json so this can be checked offline.",
+  "entries": {
+    "BIOMD0000001027": {
+      "model": "Zake2021_Metformin_Mice_PO.xml",
+      "parameters": [
+        {
+          "parameter": "Ktp_IntestineVascular",
+          "reported": 4.6,
+          "source_location": "Table 3, Intestine row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Stomach",
+          "reported": 3.2,
+          "source_location": "Table 3, Stomach row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Liver",
+          "reported": 5.5,
+          "source_location": "Table 3, Liver row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Lung",
+          "reported": 3.0,
+          "source_location": "Table 3, Lungs row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Brain",
+          "reported": 0.8,
+          "source_location": "Table 3, Brain row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Muscle",
+          "reported": 4.1,
+          "source_location": "Table 3, Muscle row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Adipose",
+          "reported": 0.7,
+          "source_location": "Table 3, Adipose row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Heart",
+          "reported": 2.5,
+          "source_location": "Table 3, Heart row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Remainder",
+          "reported": 0.8,
+          "source_location": "Table 3, Remainder row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Kidney",
+          "reported": 4.5,
+          "source_location": "Table 3, Kidney row, 'Estimated Kt:p' column"
+        }
+      ]
+    },
+    "BIOMD0000001028": {
+      "model": "Zake2021_metformin_human_single_PO.xml",
+      "parameters": [
+        {
+          "parameter": "Ktp_IntestineVascular",
+          "reported": 4.6,
+          "source_location": "Table 3, Intestine row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Stomach",
+          "reported": 3.2,
+          "source_location": "Table 3, Stomach row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Liver",
+          "reported": 5.5,
+          "source_location": "Table 3, Liver row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Lung",
+          "reported": 3.0,
+          "source_location": "Table 3, Lungs row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Brain",
+          "reported": 0.8,
+          "source_location": "Table 3, Brain row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Muscle",
+          "reported": 4.1,
+          "source_location": "Table 3, Muscle row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Adipose",
+          "reported": 0.7,
+          "source_location": "Table 3, Adipose row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Heart",
+          "reported": 2.5,
+          "source_location": "Table 3, Heart row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Remainder",
+          "reported": 0.8,
+          "source_location": "Table 3, Remainder row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Kidney",
+          "reported": 4.5,
+          "source_location": "Table 3, Kidney row, 'Estimated Kt:p' column"
+        }
+      ]
+    },
+    "BIOMD0000001029": {
+      "model": "Zake2021_Metformin_Human_multiple_PO_dose.xml",
+      "parameters": [
+        {
+          "parameter": "Ktp_IntestineVascular",
+          "reported": 4.6,
+          "source_location": "Table 3, Intestine row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Stomach",
+          "reported": 3.2,
+          "source_location": "Table 3, Stomach row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Liver",
+          "reported": 5.5,
+          "source_location": "Table 3, Liver row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Lung",
+          "reported": 3.0,
+          "source_location": "Table 3, Lungs row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Brain",
+          "reported": 0.8,
+          "source_location": "Table 3, Brain row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Muscle",
+          "reported": 4.1,
+          "source_location": "Table 3, Muscle row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Adipose",
+          "reported": 0.7,
+          "source_location": "Table 3, Adipose row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Heart",
+          "reported": 2.5,
+          "source_location": "Table 3, Heart row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Remainder",
+          "reported": 0.8,
+          "source_location": "Table 3, Remainder row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Kidney",
+          "reported": 4.5,
+          "source_location": "Table 3, Kidney row, 'Estimated Kt:p' column"
+        }
+      ]
+    },
+    "BIOMD0000001039": {
+      "model": "Zake2021_Metformin_Mice_IV.xml",
+      "parameters": [
+        {
+          "parameter": "Ktp_IntestineVascular",
+          "reported": 4.6,
+          "source_location": "Table 3, Intestine row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Stomach",
+          "reported": 3.2,
+          "source_location": "Table 3, Stomach row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Liver",
+          "reported": 5.5,
+          "source_location": "Table 3, Liver row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Lung",
+          "reported": 3.0,
+          "source_location": "Table 3, Lungs row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Brain",
+          "reported": 0.8,
+          "source_location": "Table 3, Brain row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Muscle",
+          "reported": 4.1,
+          "source_location": "Table 3, Muscle row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Adipose",
+          "reported": 0.7,
+          "source_location": "Table 3, Adipose row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Heart",
+          "reported": 2.5,
+          "source_location": "Table 3, Heart row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Remainder",
+          "reported": 0.8,
+          "source_location": "Table 3, Remainder row, 'Estimated Kt:p' column"
+        },
+        {
+          "parameter": "Ktp_Kidney",
+          "reported": 4.5,
+          "source_location": "Table 3, Kidney row, 'Estimated Kt:p' column"
+        }
+      ]
+    }
+  }
+}

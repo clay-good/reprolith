@@ -30,22 +30,29 @@ def test_every_command_line_the_guide_shows_parses() -> None:
     for line in lines:
         parsed = parser.parse_args(line.split()[1:])  # raises SystemExit if the guide is wrong
         assert parsed.command in {
-            "archive-check", "claims-template", "claims-check", "claims-propose",
+            "archive-check", "claims-template", "claims-check", "claims-propose", "params-check",
         }
     # Both halves of the loop the guide describes are shown: the file is written, then read.
     assert {parser.parse_args(line.split()[1:]).command for line in lines} == {
-        "archive-check", "claims-template", "claims-check", "claims-propose"
+        "archive-check", "claims-template", "claims-check", "claims-propose", "params-check"
     }
+
+
+def _json_block_containing(needle: str) -> str:
+    blocks = [b for b in re.findall(r"```json\n(.*?)```", _DOC, re.DOTALL) if needle in b]
+    assert len(blocks) == 1, f"expected exactly one JSON block holding {needle}, found {len(blocks)}"
+    return blocks[0]
 
 
 def test_the_claims_file_the_guide_shows_is_a_claims_file(tmp_path: Path) -> None:
     """A schema drifts one field at a time, and every field here is required or defaulted."""
     from reprolith.cli import _load_claims
 
-    block = re.search(r"```json\n(.*?)```", _DOC, re.DOTALL)
-    assert block is not None, "the guide shows no claims file"
+    # By content, not by position: the guide shows more than one JSON file now, and a test that
+    # took the first block would start validating whichever one happened to be printed earliest.
+    block = _json_block_containing('"claims"')
     path = tmp_path / "claims.json"
-    path.write_text(block.group(1), encoding="utf-8")
+    path.write_text(block, encoding="utf-8")
     (claim,) = _load_claims(path, None)
     assert claim.claim_id == "Cmax-1000mg"
     assert claim.parameter_overrides == (("Metformin_Dose_in_Lumen_in_mg", 779.9),)
@@ -73,3 +80,18 @@ def test_the_finding_the_guide_prints_is_the_finding_it_produces() -> None:
     for fragment in ("Cmax-1000mg", "779.9", "389.92", "389.2, 778.4, 1167.6"):
         assert fragment in item["issue"], fragment
         assert fragment in _DOC, f"the guide no longer shows {fragment}"
+
+
+def test_the_parameters_file_the_guide_shows_is_a_parameters_file(tmp_path: Path) -> None:
+    """The same drift, one file over: a reader copies this block, and a renamed field would leave
+    them with a check that silently compares nothing."""
+    from reprolith import check_parameter_values
+    from reprolith.cli import _claim_records
+
+    path = tmp_path / "parameters.json"
+    path.write_text(_json_block_containing('"parameters"'), encoding="utf-8")
+    records = _claim_records(path, None)
+    sbml = (_WORKED / "Zake2021_Metformin_Mice_PO.xml").read_text(encoding="utf-8")
+    (check,) = check_parameter_values(sbml, records)
+    assert check.parameter == "Ktp_Liver"
+    assert check.agrees is True, check.detail

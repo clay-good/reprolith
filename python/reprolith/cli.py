@@ -30,7 +30,12 @@ from .certify import Claim
 from .claim_candidates import propose_claims
 from .claims_template import claims_template, unfilled_claims
 from .export import build_bundle_sedml, build_omex_archive
-from .manuscript_values import check_claim_values, unsupported_claims
+from .manuscript_values import (
+    check_claim_values,
+    check_parameter_values,
+    disagreeing_parameters,
+    unsupported_claims,
+)
 from .mcp_server import default_data_dir, load_repository
 from .model import RunMetadata
 from .persistence import bundle_from_dict
@@ -380,12 +385,12 @@ def _records_of(holder: dict[str, Any]) -> list[dict[str, Any]]:
     unedited candidates file reaching a check that needs real claims is refused for the reason
     that actually applies — no model output named — rather than for the key it is stored under.
     """
-    for key in ("claims", "candidates"):
+    for key in ("claims", "candidates", "parameters"):
         if key in holder:
             return list(holder[key])
     raise ValueError(
         "this file holds no claims: expected a 'claims' list (or 'candidates', as "
-        f"claims-propose writes), and it has {', '.join(sorted(holder)) or 'nothing'}"
+        f"claims-propose writes, or 'parameters'), and it has {', '.join(sorted(holder)) or 'nothing'}"
     )
 
 
@@ -462,6 +467,38 @@ def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     # Non-zero only for a value the cited table does not print. An unchecked claim is not a
     # finding, so it must not fail a pre-submission hook.
     return 1 if unsupported_claims(checks) else 0
+
+
+def _cmd_params_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Check a model's declared parameter values against the ones the paper reports for them."""
+    try:
+        records = _claim_records(Path(args.parameters), args.accession)
+        model = Path(args.model).read_text(encoding="utf-8")
+    except OSError as unreadable:
+        print(f"cannot read the parameters: {unreadable}", file=sys.stderr)
+        return 1
+    except (UnicodeDecodeError, ValueError, KeyError, TypeError) as unusable:
+        print(f"cannot read the parameters: {unusable}", file=sys.stderr)
+        return 1
+    try:
+        checks = check_parameter_values(model, records)
+    except ValueError as unreadable:
+        print(f"cannot read the model: {unreadable}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        _print_json({"checks": [c.to_dict() for c in checks]})
+    else:
+        print(f"{len(checks)} PARAMETER(S) CHECKED AGAINST {Path(args.model).name}")
+        for check in checks:
+            mark = {True: "ok", False: "MISMATCH", None: "not compared"}[check.agrees]
+            print(f"  [{check.parameter}] {mark}: {check.detail}")
+        uncompared = [c for c in checks if c.agrees is None]
+        if uncompared:
+            # Never folded in with the mismatches, for the reason claims-check gives: a value that
+            # could not be compared is not a value that is wrong.
+            print(f"  ({len(uncompared)} parameter(s) were not compared — see the reason on each)")
+    return 1 if disagreeing_parameters(checks) else 0
 
 
 def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
@@ -726,6 +763,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_json(p)
     p.set_defaults(func=_cmd_claims_check)
+
+    p = sub.add_parser(
+        "params-check",
+        help="check your model's parameter values against the ones your paper reports",
+    )
+    p.add_argument("--model", required=True, help="the SBML model file to read the values from")
+    p.add_argument(
+        "--parameters", required=True,
+        help="a JSON file pairing each model parameter id with the value your paper reports for "
+             "it — the shape datasets/pkpd_parameters.json uses",
+    )
+    p.add_argument(
+        "--accession", default=None,
+        help="which paper's parameters to read, when the file holds more than one",
+    )
+    add_json(p)
+    p.set_defaults(func=_cmd_params_check)
 
     p = sub.add_parser(
         "claims-propose",

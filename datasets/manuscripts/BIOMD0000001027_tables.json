@@ -239,6 +239,77 @@
           "21"
         ]
       ]
+    },
+    "Table 3": {
+      "caption": "A comparison of metformin tissue-plasma partition coefficients in various mice tissues calculated using the method from Rogers et al. [14] and estimated in the model using parameter estimation, n.a.\u2013data not available.",
+      "rows": [
+        [
+          "Tissue",
+          "Calculated Kt:p",
+          "Estimated Kt:p",
+          "Calculated\u2013estimated, %"
+        ],
+        [
+          "Intestine",
+          "3.0",
+          "4.6",
+          "53.3"
+        ],
+        [
+          "Stomach",
+          "n.a.",
+          "3.2",
+          "n.a."
+        ],
+        [
+          "Liver",
+          "7.0",
+          "5.5",
+          "-21.4"
+        ],
+        [
+          "Lungs",
+          "2.7",
+          "3.0",
+          "11.1"
+        ],
+        [
+          "Brain",
+          "2.0",
+          "0.8",
+          "-60.0"
+        ],
+        [
+          "Muscle",
+          "4.9",
+          "4.1",
+          "-16.3"
+        ],
+        [
+          "Adipose",
+          "0.4",
+          "0.7",
+          "82.5"
+        ],
+        [
+          "Heart",
+          "3.1",
+          "2.5",
+          "- 19.3"
+        ],
+        [
+          "Remainder",
+          "n.a.",
+          "0.8",
+          "n.a."
+        ],
+        [
+          "Kidney",
+          "4.3",
+          "4.5",
+          "4.7"
+        ]
+      ]
     }
   }
 }
