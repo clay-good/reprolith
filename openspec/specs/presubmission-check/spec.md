@@ -110,6 +110,44 @@ find in it, since a file that cannot be read or states no result never reaches a
   covers both something the archive omits and something the archive states fully that Reprolith
   cannot represent — and telling an author to repair a correct file is worse than saying nothing
 
+### Requirement: The claims file can be generated from the author's own files
+
+The check against the paper's own results needs an input the author's files do not carry. An
+author SHALL be able to generate that file from the model and simulation document they already
+have, so the one input the check cannot derive is the only one they write.
+
+#### Scenario: What the template contains
+
+- **WHEN** a template is generated from a model and its simulation document
+- **THEN** each curve the document plots becomes one claim stub naming the model output it reads,
+  because a plot is the document's own statement that a curve is a shown result
+- **AND** the model outputs a claim can read, the parameters a claim can set, and the parameters
+  the model's own math determines are each listed, so a stub can also be written by hand
+- **AND** a parameter the model's own math determines is never offered as one a claim can set,
+  since an override aimed at one is refused when the claim is run
+
+#### Scenario: A template never states a result
+
+- **WHEN** a template is generated from any model
+- **THEN** no stub carries a reported value or a source location
+- **AND** a claims file still carrying those blanks is refused, naming each one, rather than
+  checked — a value read off the model would be compared against the model that produced it, and
+  the comparison would pass by construction
+
+#### Scenario: A model with no simulation document
+
+- **WHEN** a template is generated from a model alone
+- **THEN** no claim stub is written, and the reason is stated: a model says what can be read and
+  never what the paper showed
+- **AND** the lists needed to write stubs by hand are still provided
+
+#### Scenario: A curve no single output explains
+
+- **WHEN** a plotted curve is an expression over several model elements, or reads an element no
+  time course records, or plots values the document itself ships
+- **THEN** the stub names no output — or, for shipped values, is not a stub at all — and the
+  reason is reported, rather than a plausible output being guessed at
+
 ### Requirement: Runnable over the MCP surface
 
 An author or their agent SHALL be able to run the check through the same read-only MCP surface as

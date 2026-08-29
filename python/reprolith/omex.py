@@ -233,6 +233,83 @@ def archive_mismatches(sedml: str, sbml: str) -> list[str]:
     return [message for _, message in _archive_mismatches(sedml, sbml)]
 
 
+def _locate(
+    zf: zipfile.ZipFile, stored: dict[str, str], members: set[str]
+) -> tuple[str | None, str | None, str, list[tuple[str, str, bool]]]:
+    """``(experiment location, experiment text, model location, manifest contents)``.
+
+    The manifest says which member is the experiment and the experiment says which is the model;
+    every way that can fail to single out one pair is refused here by name, so both readers of an
+    archive — :func:`ingest_omex` and :func:`archive_documents` — refuse the same archives for the
+    same stated reason rather than one of them guessing.
+    """
+    contents = _read_manifest(zf, stored)
+    experiment = _choose_experiment(contents)
+
+    sedml_text: str | None = None
+    if experiment is not None:
+        if experiment not in members:
+            raise ValueError(
+                f"the archive's manifest lists the experiment '{experiment}', "
+                "but the archive does not contain it"
+            )
+        sedml_text = zf.read(stored[experiment]).decode("utf-8")
+        sources = sedml_model_sources(sedml_text)
+        resolved = tuple(dict.fromkeys(_resolve(s, relative_to=experiment) for s in sources))
+        if len(resolved) != 1:
+            raise ValueError(
+                f"the experiment '{experiment}' runs {len(resolved)} model files "
+                f"({', '.join(resolved) or 'none'}); a dossier is the extraction of one "
+                "model, and which of them the paper's figures came from is the archive's "
+                "to say"
+            )
+        model_location = resolved[0]
+        if model_location not in members:
+            raise ValueError(
+                f"the experiment '{experiment}' runs '{model_location}', "
+                "which the archive does not contain"
+            )
+    else:
+        models = [loc for loc, name, _ in contents if name == "sbml"]
+        if len(models) != 1:
+            raise ValueError(
+                f"the archive ships no SED-ML experiment and {len(models)} SBML models; "
+                "with no experiment to name the model, only a single-model archive says "
+                "what the dossier is of"
+            )
+        model_location = models[0]
+        if model_location not in members:
+            raise ValueError(
+                f"the archive's manifest lists the model '{model_location}', "
+                "but the archive does not contain it"
+            )
+    return experiment, sedml_text, model_location, contents
+
+
+def archive_documents(
+    archive: str | os.PathLike[str] | bytes,
+) -> tuple[str | None, str]:
+    """The archive's experiment and model as text: ``(SED-ML or None, SBML)``.
+
+    :func:`ingest_omex` turns an archive into a dossier; this hands back the two documents
+    themselves, for a caller that reads them rather than ingesting them — writing a claims file
+    from what the document plots, for one. The same refusals apply, from the same code.
+    """
+    handle: str | os.PathLike[str] | io.BytesIO
+    handle = io.BytesIO(archive) if isinstance(archive, bytes) else archive
+    try:
+        with zipfile.ZipFile(handle) as zf:
+            stored = {_normalize(member): member for member in zf.namelist()}
+            _experiment, sedml_text, model_location, _contents = _locate(
+                zf, stored, set(stored)
+            )
+            return sedml_text, zf.read(stored[model_location]).decode("utf-8")
+    except zipfile.BadZipFile as exc:
+        raise ValueError(f"not a readable COMBINE archive: {exc}") from exc
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"an archive member is not readable text: {exc}") from exc
+
+
 def ingest_omex(archive: str | os.PathLike[str] | bytes, *, entry: str) -> Dossier:
     """Ingest a COMBINE archive into a dossier: its model's structure and its document's claims.
 
@@ -263,46 +340,7 @@ def ingest_omex(archive: str | os.PathLike[str] | bytes, *, entry: str) -> Dossi
             # normalized name and reads go through the name the zip actually stores.
             stored = {_normalize(member): member for member in zf.namelist()}
             members = set(stored)
-            contents = _read_manifest(zf, stored)
-            experiment = _choose_experiment(contents)
-
-            sedml_text: str | None = None
-            if experiment is not None:
-                if experiment not in members:
-                    raise ValueError(
-                        f"the archive's manifest lists the experiment '{experiment}', "
-                        "but the archive does not contain it"
-                    )
-                sedml_text = zf.read(stored[experiment]).decode("utf-8")
-                sources = sedml_model_sources(sedml_text)
-                resolved = tuple(dict.fromkeys(_resolve(s, relative_to=experiment) for s in sources))
-                if len(resolved) != 1:
-                    raise ValueError(
-                        f"the experiment '{experiment}' runs {len(resolved)} model files "
-                        f"({', '.join(resolved) or 'none'}); a dossier is the extraction of one "
-                        "model, and which of them the paper's figures came from is the archive's "
-                        "to say"
-                    )
-                model_location = resolved[0]
-                if model_location not in members:
-                    raise ValueError(
-                        f"the experiment '{experiment}' runs '{model_location}', "
-                        "which the archive does not contain"
-                    )
-            else:
-                models = [loc for loc, name, _ in contents if name == "sbml"]
-                if len(models) != 1:
-                    raise ValueError(
-                        f"the archive ships no SED-ML experiment and {len(models)} SBML models; "
-                        "with no experiment to name the model, only a single-model archive says "
-                        "what the dossier is of"
-                    )
-                model_location = models[0]
-                if model_location not in members:
-                    raise ValueError(
-                        f"the archive's manifest lists the model '{model_location}', "
-                        "but the archive does not contain it"
-                    )
+            experiment, sedml_text, model_location, contents = _locate(zf, stored, members)
 
             # The document may also ship the paper's own recorded values, in files it names. They
             # are read here because only the archive can resolve a source to a member; a file it

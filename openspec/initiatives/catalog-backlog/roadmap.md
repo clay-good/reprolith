@@ -67,8 +67,12 @@ a change under `openspec/changes/`.
   the shipped experiment against the paper's extracted claims and reports an output the model does
   not declare, one the experiment never records, and a value the run never holds. On the shipped
   metformin archive that is one true line and no noise: the document scans the dose over
-  389.2/778.4/1167.6 mg and the paper's 1000 mg claim is 779.9 mg free base. What remains is
-  reaching it from the CLI, which needs a manuscript-claim source an author can point at.)*
+  389.2/778.4/1167.6 mg and the paper's 1000 mg claim is 779.9 mg free base. It is reachable from
+  the CLI now — `archive-check --claims` — and the file that check needs is generated rather than
+  hand-written: `claims-template` turns the author's model and document into one stub per plotted
+  curve, with the two fields only the author has left blank and refused if left that way. What
+  remains is unchanged and is *extraction*: reading a paper's reported numbers out of its
+  manuscript, which nothing here does and this deliberately does not pretend to.)*
 - **Why (value):** When a paper ships an executable simulation recipe and archive, reproduction
   is mostly "run it and check" — the highest certificate yield per unit effort, across every
   class at once. Also the cleanest momentum builder.

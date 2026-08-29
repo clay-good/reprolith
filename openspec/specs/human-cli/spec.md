@@ -6,9 +6,11 @@ The CLI is Reprolith's human-facing surface at a terminal, the counterpart to th
 MCP server. It exposes the same read-only query model — browse the catalog, read a certificate,
 list its gaps, see the blind self-validation track record — so a person can obtain a verdict
 without speaking JSON-RPC or writing Python. It re-presents what the engine already produced; it
-computes no verdict of its own. One command writes: `export` turns a published reconstruction into
-a runnable COMBINE archive, because a reconstruction nobody can re-run without Reprolith is not a
-published artifact.
+computes no verdict of its own. Two commands write, and both write a file the caller names, never
+repository state: `export` turns a published reconstruction into a runnable COMBINE archive,
+because a reconstruction nobody can re-run without Reprolith is not a published artifact, and
+`claims-template` writes the claims file the archive check reads, because the one input that check
+cannot derive was also the one nothing helped an author produce.
 
 ## Requirements
 
@@ -49,6 +51,15 @@ cannot become a divergent second implementation of Reprolith's contracts.
   the caller must choose between them
 - **AND** a claims file that cannot be read is reported as a message about the claims, distinct
   from one about the archive, with a non-zero exit status
+
+#### Scenario: Writing the claims file the check reads
+
+- **WHEN** an author asks for a claims template, giving an archive or a model with its document
+- **THEN** the template is written to the path named, or to standard output when none is, and the
+  terminal says how many stubs it holds and what could not be turned into one
+- **AND** a note the terminal abbreviates is counted rather than dropped, so a shortened summary
+  never reads as the whole of what was found
+- **AND** it is an error to give both an archive and a model, or neither
 
 #### Scenario: Checking a document and a model that are not packaged
 

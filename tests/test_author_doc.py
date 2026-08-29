@@ -29,7 +29,11 @@ def test_every_command_line_the_guide_shows_parses() -> None:
     assert lines, "the guide shows no commands; this check would pass vacuously"
     for line in lines:
         parsed = parser.parse_args(line.split()[1:])  # raises SystemExit if the guide is wrong
-        assert parsed.command == "archive-check"
+        assert parsed.command in {"archive-check", "claims-template"}
+    # Both halves of the loop the guide describes are shown: the file is written, then read.
+    assert {parser.parse_args(line.split()[1:]).command for line in lines} == {
+        "archive-check", "claims-template"
+    }
 
 
 def test_the_claims_file_the_guide_shows_is_a_claims_file(tmp_path: Path) -> None:

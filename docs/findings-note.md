@@ -2077,6 +2077,47 @@ the published gap counts, and the "45 of 69 extracted values state no unit" figu
 documents and a test quote. It is a deliberate change with its own blast radius, not a tail-end
 edit, so it is written down here with its number rather than done quietly.
 
+## The check had one input, and nothing wrote it
+
+`archive-check --claims` makes the one comparison nothing in an archive can make on itself: does
+the shipped experiment run the result the *paper* reports? It is the check that catches the
+metformin archive scanning 389.2, 778.4 and 1167.6 mg while the paper's 1000 mg claim is 779.9 mg
+of free base — every file valid, the run completing, the number plausible.
+
+It needs a claims file. Nothing in the repository wrote one. The guide showed the schema and left
+the author with a blank editor, which is the shape of gap that makes a capability sit unused: the
+expensive half was built and the cheap half decided who could reach it.
+
+`claims-template` writes it from the files the author already has. One stub per curve the
+document plots — a plot being the document's own statement that a curve is a shown result, the
+same line `enumerate_sedml_claims` draws — each naming the model output it reads, beside the
+outputs a claim can read and the parameters a claim can set. On the metformin document that is 81
+stubs from 81 curves; the author deletes the ones the paper does not show.
+
+**What it must never do is the whole design.** A template that filled in `reported` from the
+model would hand the check the model's own output as the paper's claim, and the comparison would
+pass by construction — which is precisely the failure the check exists to catch, moved one file
+upstream. So `reported` and `source_location` come out blank on every stub of every input, and a
+file still carrying those blanks is refused by the loader with each one named, rather than parsed
+into a claim with no reference. That property is tested over all 81 stubs of the real document,
+not only the synthetic two-species one, and deleting it fails three tests.
+
+Three things are reported rather than guessed at, each for the same reason: a curve that is an
+expression over several elements (a claim reads one output), a curve reading something no time
+course records (the metformin document plots 35 reaction fluxes), and a curve plotting values the
+document itself ships (the paper's own recorded points, not a result the model owes). Each leaves
+the output blank and says why, so the blank is what the loader reports rather than an id that
+resolves and then fails one step further from its explanation.
+
+The recurring inert-attribute lesson reached this the first time rather than the fourth: a
+parameter an `initialAssignment` or an `assignmentRule` determines is listed apart from the
+settable ones, because an override aimed at one is refused when the claim runs. On the metformin
+model that is 78 of the 94 parameters, and the dose a claim actually sets is in the other 16.
+
+This is **not** manuscript extraction, and the surfaces say so where they could be misread. It
+makes the author-supplied path cheap; reading a paper's numbers out of its prose is still what
+finding 2 names, and still not built.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
@@ -2087,7 +2128,9 @@ neither yet pointed at a paper, because no population figure and no shipped data
 corpus. The adopt-and-verify fast-path is closed on both sides now — an archive flows to a
 certificate, and where it disagrees with the paper the disagreement is reported — and the
 author-facing check reaches it, on an archive or on the two loose files most papers actually ship.
-What remains is what finding 2 names: a scaled way to extract each paper's targetable
-claims (tasks 2.1-2.3). Thirty of the thirty-one entries abstained for want of exactly that, so
+The author-facing path is now writable end to end — the claims file the check needs is generated
+from the author's own files, with the two fields only they have left blank and refused if left
+that way. What remains is what finding 2 names, unchanged by that: a scaled way to extract each
+paper's targetable claims (tasks 2.1-2.3). Thirty of the thirty-one entries abstained for want of exactly that, so
 verdict *accuracy* across the set is still unestablished — the metformin example shows only that,
 given a claim, the rest of the pipeline delivers an honest, root-caused verdict.

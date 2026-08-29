@@ -337,3 +337,27 @@ def test_a_target_anchored_somewhere_else_is_unresolvable_not_missing() -> None:
     elsewhere = _SEDML.replace("/sbml:sbml/sbml:model/sbml:listOfSpecies/", "sbml:model/sbml:listOfSpecies/")
     assert elsewhere != _SEDML
     assert archive_mismatches(elsewhere, _SBML) == []
+
+
+def test_the_two_readers_of_an_archive_locate_the_same_pair() -> None:
+    """`archive_documents` hands back the documents `ingest_omex` ingests, from the same code.
+
+    The locating logic — which member is the experiment, which model it runs, and every way that
+    can fail to single out one pair — is shared. Two readers resolving an archive independently
+    is how they come to disagree about what it ships.
+    """
+    from reprolith.omex import archive_documents
+
+    sedml, model = archive_documents(_kholodenko_archive())
+    assert sedml == _SEDML
+    assert model == _SBML
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    assert ingest_omex(_kholodenko_archive(), entry="BIOMD0000000010").claims
+
+
+def test_a_reader_of_the_documents_refuses_what_ingestion_refuses() -> None:
+    """A zip with no manifest is not an archive, whichever reader opens it."""
+    from reprolith.omex import archive_documents
+
+    with pytest.raises(ValueError, match="no manifest.xml"):
+        archive_documents(_archive({"model.xml": _SBML}))

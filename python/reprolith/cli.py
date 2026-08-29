@@ -27,6 +27,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .certify import Claim
+from .claims_template import claims_template, unfilled_claims
 from .export import build_bundle_sedml, build_omex_archive
 from .mcp_server import default_data_dir, load_repository
 from .model import RunMetadata
@@ -367,6 +368,15 @@ def _load_claims(path: Path, accession: str | None) -> list[Claim]:
         records = data["claims"]
     else:
         records = data
+    blanks = unfilled_claims(records)
+    if blanks:
+        # A template passed in unfilled is the ordinary mistake, and it used to arrive as a
+        # TypeError from float(None) inside Claim.from_record. Every blank is named at once, so
+        # one run says everything there is to write.
+        raise ValueError(
+            "this claims file still has the blanks a template leaves for you:\n  - "
+            + "\n  - ".join(blanks)
+        )
     return [Claim.from_record(record) for record in records]
 
 
@@ -384,6 +394,58 @@ def _read_pair(args: argparse.Namespace) -> tuple[str, str, dict[str, str]]:
             # author does not have is left out, and the check reports it as missing values.
             data[source] = beside.read_text(encoding="utf-8")
     return sedml, model.read_text(encoding="utf-8"), data
+
+
+def _cmd_claims_template(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Write the claims file the author-facing check needs, from the files the author has."""
+    if (args.archive is None) == (args.model is None):
+        print(
+            "give either an archive or --model (with --sedml, if you have a document): a "
+            "template is written for the one model whose results your paper reports",
+            file=sys.stderr,
+        )
+        return 1
+    try:
+        if args.archive is not None:
+            from .omex import archive_documents
+
+            sedml, model = archive_documents(Path(args.archive).read_bytes())
+        else:
+            model = Path(args.model).read_text(encoding="utf-8")
+            sedml = (
+                Path(args.sedml).read_text(encoding="utf-8") if args.sedml is not None else None
+            )
+        template = claims_template(model, sedml=sedml, accession=args.accession)
+    except OSError as unreadable:
+        print(f"cannot read the model: {unreadable}", file=sys.stderr)
+        return 1
+    except (UnicodeDecodeError, ValueError) as unreadable:
+        print(f"cannot read the model: {unreadable}", file=sys.stderr)
+        return 1
+
+    rendered = json.dumps(template, indent=2, sort_keys=True) + "\n"
+    if args.out is None:
+        print(rendered, end="")
+        return 0
+    try:
+        Path(args.out).write_text(rendered, encoding="utf-8")
+    except OSError as unwritable:
+        print(f"cannot write the template: {unwritable}", file=sys.stderr)
+        return 1
+    body = template["entries"][args.accession] if args.accession is not None else template
+    print(f"wrote {args.out}")
+    print(f"  {len(body['claims'])} claim(s) to fill in, from the curves your document plots")
+    for withheld in body.get("withheld", ()):
+        print(f"  withheld: {withheld}")
+    # A document plotting forty reaction fluxes produces forty near-identical notes, and a
+    # summary nobody reads is worse than a shorter one — but a truncation that does not say it
+    # truncated reads as "that was all of them", so the remainder is counted, not dropped.
+    notes = body["notes"]
+    for note in notes[:5]:
+        print(f"  note: {note}")
+    if len(notes) > 5:
+        print(f"  ... and {len(notes) - 5} more note(s), all of them in the file's 'notes'")
+    return 0
 
 
 def _cmd_archive_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
@@ -543,6 +605,27 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_json(p)
     p.set_defaults(func=_cmd_archive_check)
+
+    p = sub.add_parser(
+        "claims-template",
+        help="write the claims file archive-check needs, with the blanks left for you",
+    )
+    p.add_argument(
+        "archive", nargs="?", default=None,
+        help="the .omex archive to read the model and document out of (or use --model)",
+    )
+    p.add_argument("--model", default=None, help="the model file, when it is not packaged")
+    p.add_argument(
+        "--sedml", default=None,
+        help="the simulation document, when you have one; without it no claim is written, "
+             "because a model says what can be read and never what your paper showed",
+    )
+    p.add_argument(
+        "--accession", default=None,
+        help="wrap the result under this accession, the shape a multi-paper claims file uses",
+    )
+    p.add_argument("--out", default=None, help="write here instead of to standard output")
+    p.set_defaults(func=_cmd_claims_template)
 
     p = sub.add_parser(
         "export",

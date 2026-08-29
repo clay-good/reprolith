@@ -108,6 +108,8 @@ reprolith archive-check <file.omex> \ # what a reproducer would find in your arc
   [--claims <claims.json>]
 reprolith archive-check \             # ...or the two files loose, unpackaged
   --sedml <exp.sedml> --model <model.xml>
+reprolith claims-template \           # write the claims file archive-check reads
+  --model <model.xml> [--sedml <exp.sedml>] [--out <claims.json>]
 ```
 
 `archive-check` is the author-facing counterpart: point it at a COMBINE archive and it says what a
@@ -122,6 +124,16 @@ that is one line, and it is the load-bearing one:
 the manuscript's claim 'Cmax-1000mg' sets 'Metformin_Dose_in_Lumen_in_mg' to 779.9, which the
 archive never runs: the model states 389.92 and the experiment runs it at 389.2, 778.4, 1167.6
 ```
+
+`claims-template` writes that file, so an author is not starting from a blank one: it emits one
+stub per curve the document plots — the document's own statement of which curves are shown results
+— each naming the model output it reads, alongside the parameters a claim can set and the ones the
+model's own math determines and will overwrite. It never writes a `reported` value. A template that
+read one off the model would hand the check the model's own output as the paper's claim, and the
+comparison would pass by construction — the failure the check exists to catch, moved one file
+upstream. Reading the numbers out of a *manuscript* is still not built, and this does not pretend
+to: the two fields only the author has are left blank, and a file still carrying them is refused
+rather than checked.
 
 Without `--claims` that comparison does not run, and the report says so — a clean fix list never
 stands in for a check nobody made. It counts what was actually compared, not what it was handed:

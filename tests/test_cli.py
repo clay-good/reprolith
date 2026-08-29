@@ -498,12 +498,12 @@ def test_archive_check_of_a_missing_file_is_a_message(tmp_path, capsys):
     assert "cannot read the archive" in capsys.readouterr().err
 
 
-def test_only_the_two_file_commands_sit_outside_the_query_surface():
+def test_only_the_file_commands_sit_outside_the_query_surface():
     """Parity is the repository's central claim, so its exceptions are pinned rather than assumed.
 
     `export` and `archive-check` act on a file the MCP server has no path to, and both are written
-    up in docs/mcp-server.md with the reason. A third command joining them means that question was
-    not asked, so this fails until it is.
+    up in docs/mcp-server.md with the reason. A further command joining them means that question
+    was not asked, so this fails until it is.
     """
     import argparse
 
@@ -513,8 +513,9 @@ def test_only_the_two_file_commands_sit_outside_the_query_surface():
     subcommands = next(
         a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
     ).choices
-    file_based = {name for name in subcommands if name in {"export", "archive-check"}}
-    assert file_based == {"export", "archive-check"}
+    named = {"export", "archive-check", "claims-template"}
+    file_based = {name for name in subcommands if name in named}
+    assert file_based == named
     documented = (
         Path(__file__).parent.parent / "docs" / "mcp-server.md"
     ).read_text(encoding="utf-8")
@@ -556,3 +557,46 @@ def test_export_says_when_it_replaced_a_file(tmp_path, capsys):
     assert run(["--data-dir", str(repo), "export", "ACC1", "--model", str(model),
                 "--out", str(out)]) == 0
     assert "replacing what was there" in capsys.readouterr().out
+
+
+def test_claims_template_writes_a_file_with_the_blanks_left_to_fill(tmp_path, capsys):
+    """The command that closes the loop: the check needs a claims file, this writes one."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import build_experiment_sedml
+
+    model = tmp_path / "m.xml"
+    model.write_text(_EXPORT_MODEL, encoding="utf-8")
+    document = tmp_path / "m.sedml"
+    document.write_text(
+        build_experiment_sedml(_EXPORT_MODEL, duration=24.0, steps=240), encoding="utf-8"
+    )
+    out = tmp_path / "claims.json"
+
+    assert run(["claims-template", "--model", str(model), "--sedml", str(document),
+                "--out", str(out)]) == 0
+    assert "wrote" in capsys.readouterr().out
+    written = json.loads(out.read_text(encoding="utf-8"))
+    assert all(c["reported"] is None for c in written["claims"])
+    assert written["readable_outputs"]
+
+
+def test_claims_template_without_a_document_writes_no_claims(tmp_path, capsys):
+    """A model says what can be read, never what the paper showed."""
+    model = tmp_path / "m.xml"
+    model.write_text(_EXPORT_MODEL, encoding="utf-8")
+    assert run(["claims-template", "--model", str(model)]) == 0
+    written = json.loads(capsys.readouterr().out)
+    assert written["claims"] == []
+    assert written["notes"]
+
+
+def test_claims_template_needs_exactly_one_source(tmp_path, capsys):
+    assert run(["claims-template"]) == 1
+    assert "either an archive or --model" in capsys.readouterr().err
+
+
+def test_claims_template_of_an_unreadable_model_is_a_message(tmp_path, capsys):
+    model = tmp_path / "m.xml"
+    model.write_text("not xml at all", encoding="utf-8")
+    assert run(["claims-template", "--model", str(model)]) == 1
+    assert "cannot read the model" in capsys.readouterr().err

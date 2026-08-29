@@ -149,13 +149,14 @@ returns.
 
 ### What the CLI has that the server does not
 
-Two commands work on a **file**, not on repository state, and have no MCP tool:
+Three commands work on a **file**, not on repository state, and have no MCP tool:
 
 | Command | Why it is not a tool |
 | --- | --- |
 | `reprolith export` | The server holds catalogs, certificates, dossiers, and bundles — never model bytes. An agent would have to send the model over JSON-RPC and take an archive back as base64. The bundle it exports is already readable through the `bundle` tool, and the same library the CLI calls is importable. |
+| `reprolith claims-template` | It writes the claims file `archive-check` reads, out of the author's own model and simulation document — two files the server has no path to, for an author who has no entry in this repository yet. It is also the one command whose output is meant to be edited by hand before it is used again, which is a file on disk, not a JSON-RPC result. |
 | `reprolith archive-check` | Same shape: the archive is a file the server has no path to. It also needs libSBML to read the model, and the inline lint tools are dependency-free by contract — a tool that worked only where an optional extra happened to be installed would answer differently on two servers reading the same state, which is the one thing this surface exists to prevent. |
 
 This is an absence, not a divergence: neither command reads or writes anything the query surface
 covers, so nothing either surface reports about a paper can disagree. `tests/test_cli.py` pins the
-set, so adding a third without deciding this question fails.
+set, so adding a fourth without deciding this question fails.

@@ -31,6 +31,7 @@ from .certify import (
     certify_model,
     certify_population,
 )
+from .claims_template import claims_template, unfilled_claims
 from .constraint_based import (
     certify_constraint_based,
     constraint_based_dossier,
@@ -336,6 +337,7 @@ __all__ = [
     "Citation",
     "Claim",
     "claim_counts",
+    "claims_template",
     "ClaimAssessment",
     "close_gap",
     "coefficient_of_variation",
@@ -530,6 +532,7 @@ __all__ = [
     "ToleranceSource",
     "Transition",
     "undetermined_shortfall",
+    "unfilled_claims",
     "UpdateScheme",
     "validate_constraint_based",
     "validate_logical",

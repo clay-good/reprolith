@@ -6,9 +6,13 @@ work from those files. This is the check that tells you what they will hit, befo
 
 ```bash
 pip install reprolith
+reprolith claims-template --model paper.xml --sedml paper.sedml --out my_claims.json
 reprolith archive-check paper.omex --claims my_claims.json
 reprolith archive-check --sedml paper.sedml --model paper.xml --claims my_claims.json
 ```
+
+The first line writes the claims file the other two read; see [the claims file](#the-claims-file).
+It is the only step that needs anything from you, and it needs two things per published result.
 
 Both forms answer the same question. Use the second if your files are loose, which most papers'
 are: they are packaged into the archive they describe and that archive is checked. The exit status
@@ -28,7 +32,29 @@ otherwise — so it drops into a pre-submission hook or a CI job.
 ## The claims file
 
 Nothing in an archive knows what your paper says. You do. `--claims` takes a JSON file of the
-results your paper reports:
+results your paper reports.
+
+**You do not have to write it from scratch.** `claims-template` writes it out of the files you
+already have, with everything derivable filled in:
+
+```bash
+reprolith claims-template --model paper.xml --sedml paper.sedml --out my_claims.json
+reprolith claims-template paper.omex --out my_claims.json
+```
+
+One stub per curve your document plots — because a plot is your own statement that a curve is a
+shown result — each naming the model output it reads. Delete the ones your paper does not report,
+fill in `reported` and `source_location` on what is left, and pass the file back to
+`archive-check`. It never writes a `reported` value: a template that read one off your model would
+hand the check your model's own output as your paper's claim, and the comparison would pass by
+construction, which is the exact failure the check exists to catch.
+
+Without `--sedml` it writes no stubs at all — a model states what *can* be read and never what
+your paper showed — but it still lists both things you need to write them by hand: every output a
+claim can read, and every parameter a claim can set. A parameter your model's own math determines
+is listed apart, under `model_determines`, because an override aimed at one is refused later.
+
+The fields, whether you write them or edit them:
 
 ```json
 {
