@@ -100,6 +100,27 @@ FIX BEFORE YOU SUBMIT (most impactful first)
 
 Every file validates. The run completes. The number is close. That is the failure this exists for.
 
+## Checking your claims against your own paper
+
+The claims file says what your paper reports. Nothing checked that it does — and in this
+repository's own corpus, one of exactly two manuscript-read reference values turned out to be a
+number the paper does not contain. It passed every check for months, because it was inside
+tolerance.
+
+```bash
+reprolith claims-check --claims my_claims.json --tables my_tables.json
+```
+
+`--tables` is the rows of the tables your paper prints, as JSON — `{"Table 6": {"rows": [[...]]}}`,
+or the shape [`datasets/manuscripts/`](../datasets/manuscripts/) uses. For each claim it asks one
+mechanical question: **is the number you state printed in the table you cite?** It exits non-zero
+only when the answer is no.
+
+It will not tell you *which* cell is the right one — that is your judgment, and a check that
+guessed would accuse correct claims. A claim citing a figure panel or a sentence, or a table you
+did not supply, is reported as **not checked**, never as wrong, and never fails the command: an
+absence of evidence is not evidence of absence.
+
 ## What it will not tell you
 
 It is built to under-report rather than accuse a correct archive, so a comparison it cannot make

@@ -29,6 +29,7 @@ from typing import Any
 from .certify import Claim
 from .claims_template import claims_template, unfilled_claims
 from .export import build_bundle_sedml, build_omex_archive
+from .manuscript_values import check_claim_values, unsupported_claims
 from .mcp_server import default_data_dir, load_repository
 from .model import RunMetadata
 from .persistence import bundle_from_dict
@@ -341,13 +342,12 @@ def _cmd_export(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
-def _load_claims(path: Path, accession: str | None) -> list[Claim]:
-    """The paper's own claims, read from a claims file.
+def _claim_records(path: Path, accession: str | None) -> list[dict[str, Any]]:
+    """The claims file's raw records, before they become :class:`Claim` objects.
 
-    Three shapes are accepted, because they are the three an author plausibly has: a bare list of
-    claim records, an object with a ``claims`` list, and the shape this repository's own
-    ``datasets/pkpd_claims.json`` uses — ``entries`` keyed by accession, which needs
-    ``--accession`` unless it holds exactly one.
+    The value check reads records rather than claims: an unfilled one has no ``reported`` and
+    would be refused on the way to a ``Claim``, and "this template is not filled in yet" is
+    something the check should report rather than fail on.
     """
     data = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(data, dict) and "entries" in data:
@@ -368,6 +368,18 @@ def _load_claims(path: Path, accession: str | None) -> list[Claim]:
         records = data["claims"]
     else:
         records = data
+    return list(records)
+
+
+def _load_claims(path: Path, accession: str | None) -> list[Claim]:
+    """The paper's own claims, read from a claims file.
+
+    Three shapes are accepted, because they are the three an author plausibly has: a bare list of
+    claim records, an object with a ``claims`` list, and the shape this repository's own
+    ``datasets/pkpd_claims.json`` uses — ``entries`` keyed by accession, which needs
+    ``--accession`` unless it holds exactly one.
+    """
+    records = _claim_records(path, accession)
     blanks = unfilled_claims(records)
     if blanks:
         # A template passed in unfilled is the ordinary mistake, and it used to arrive as a
@@ -394,6 +406,44 @@ def _read_pair(args: argparse.Namespace) -> tuple[str, str, dict[str, str]]:
             # author does not have is left out, and the check reports it as missing values.
             data[source] = beside.read_text(encoding="utf-8")
     return sedml, model.read_text(encoding="utf-8"), data
+
+
+def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Check a claims file's reported values against the tables the paper prints."""
+    try:
+        records = _claim_records(Path(args.claims), args.accession)
+        tables = json.loads(Path(args.tables).read_text(encoding="utf-8"))
+    except OSError as unreadable:
+        print(f"cannot read the claims: {unreadable}", file=sys.stderr)
+        return 1
+    except (UnicodeDecodeError, ValueError, KeyError, TypeError) as unusable:
+        print(f"cannot read the claims: {unusable}", file=sys.stderr)
+        return 1
+    rows = tables.get("tables", tables) if isinstance(tables, dict) else {}
+    if not isinstance(rows, dict) or not rows:
+        print(
+            "the tables file holds no tables: expected {'Table 6': {'rows': [[...]]}}, or the "
+            "shape datasets/manuscripts/ uses, which nests that under 'tables'",
+            file=sys.stderr,
+        )
+        return 1
+
+    checks = check_claim_values(records, rows)
+    if args.json:
+        _print_json({"checks": [c.to_dict() for c in checks]})
+    else:
+        print(f"CLAIMS CHECKED AGAINST {len(rows)} TABLE(S): {', '.join(sorted(rows))}")
+        for check in checks:
+            mark = {True: "ok", False: "NOT FOUND", None: "not checked"}[check.found]
+            print(f"  [{check.claim_id}] {mark}: {check.detail}")
+        unchecked = [c for c in checks if c.found is None]
+        if unchecked:
+            # Never folded in with the failures: a value read from a figure panel or a sentence is
+            # not a defect, and an absence of evidence is not evidence of absence.
+            print(f"  ({len(unchecked)} claim(s) were not checked — see the reason on each)")
+    # Non-zero only for a value the cited table does not print. An unchecked claim is not a
+    # finding, so it must not fail a pre-submission hook.
+    return 1 if unsupported_claims(checks) else 0
 
 
 def _cmd_claims_template(query: ReprolithQuery, args: argparse.Namespace) -> int:
@@ -605,6 +655,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_json(p)
     p.set_defaults(func=_cmd_archive_check)
+
+    p = sub.add_parser(
+        "claims-check",
+        help="check a claims file's reported values against the tables your paper prints",
+    )
+    p.add_argument("--claims", required=True, help="the claims file to check")
+    p.add_argument(
+        "--tables", required=True,
+        help="the paper's table rows as JSON — the shape datasets/manuscripts/ uses",
+    )
+    p.add_argument(
+        "--accession", default=None,
+        help="which paper's claims to read, when --claims holds more than one",
+    )
+    add_json(p)
+    p.set_defaults(func=_cmd_claims_check)
 
     p = sub.add_parser(
         "claims-template",

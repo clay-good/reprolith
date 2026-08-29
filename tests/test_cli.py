@@ -513,7 +513,7 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     subcommands = next(
         a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
     ).choices
-    named = {"export", "archive-check", "claims-template"}
+    named = {"export", "archive-check", "claims-template", "claims-check"}
     file_based = {name for name in subcommands if name in named}
     assert file_based == named
     documented = (
@@ -600,3 +600,55 @@ def test_claims_template_of_an_unreadable_model_is_a_message(tmp_path, capsys):
     model.write_text("not xml at all", encoding="utf-8")
     assert run(["claims-template", "--model", str(model)]) == 1
     assert "cannot read the model" in capsys.readouterr().err
+
+
+def test_claims_check_reports_a_value_the_cited_table_does_not_print(tmp_path, capsys):
+    """The command form of the check that would have caught the corpus's one wrong value."""
+    tables = tmp_path / "tables.json"
+    tables.write_text(json.dumps({"tables": {"Table 6": {"rows": [["Plasma", "500", "6.1"]]}}}),
+                      encoding="utf-8")
+    claims = tmp_path / "claims.json"
+    claims.write_text(json.dumps({"claims": [{
+        "claim_id": "Cmax", "quantity": "peak", "species": "p", "reported": 6.2,
+        "source_location": "Table 6, plasma row",
+    }]}), encoding="utf-8")
+
+    assert run(["claims-check", "--claims", str(claims), "--tables", str(tables)]) == 1
+    printed = capsys.readouterr().out
+    assert "NOT FOUND" in printed and "6.2 is not printed in Table 6" in printed
+
+
+def test_claims_check_passes_a_value_the_table_prints(tmp_path, capsys):
+    tables = tmp_path / "tables.json"
+    tables.write_text(json.dumps({"tables": {"Table 6": {"rows": [["Plasma", "500", "6.1"]]}}}),
+                      encoding="utf-8")
+    claims = tmp_path / "claims.json"
+    claims.write_text(json.dumps({"claims": [{
+        "claim_id": "Cmax", "quantity": "peak", "species": "p", "reported": 6.1,
+        "source_location": "Table 6, plasma row",
+    }]}), encoding="utf-8")
+    assert run(["claims-check", "--claims", str(claims), "--tables", str(tables)]) == 0
+    assert "ok:" in capsys.readouterr().out
+
+
+def test_claims_check_does_not_fail_on_a_claim_it_cannot_check(tmp_path, capsys):
+    """A value read from a figure is unchecked, not wrong, and must not fail a submission hook."""
+    tables = tmp_path / "tables.json"
+    tables.write_text(json.dumps({"tables": {"Table 6": {"rows": [["Plasma", "6.1"]]}}}),
+                      encoding="utf-8")
+    claims = tmp_path / "claims.json"
+    claims.write_text(json.dumps({"claims": [{
+        "claim_id": "Cmax", "quantity": "peak", "species": "p", "reported": 9.9,
+        "source_location": "Figure 3B",
+    }]}), encoding="utf-8")
+    assert run(["claims-check", "--claims", str(claims), "--tables", str(tables)]) == 0
+    assert "not checked" in capsys.readouterr().out
+
+
+def test_claims_check_of_a_tables_file_with_no_tables_is_a_message(tmp_path, capsys):
+    tables = tmp_path / "tables.json"
+    tables.write_text(json.dumps({"tables": {}}), encoding="utf-8")
+    claims = tmp_path / "claims.json"
+    claims.write_text(json.dumps({"claims": []}), encoding="utf-8")
+    assert run(["claims-check", "--claims", str(claims), "--tables", str(tables)]) == 1
+    assert "holds no tables" in capsys.readouterr().err

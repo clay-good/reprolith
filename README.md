@@ -114,6 +114,8 @@ reprolith archive-check \             # ...or the two files loose, unpackaged
   --sedml <exp.sedml> --model <model.xml>
 reprolith claims-template \           # write the claims file archive-check reads
   --model <model.xml> [--sedml <exp.sedml>] [--out <claims.json>]
+reprolith claims-check \              # is each value printed in the table it cites?
+  --claims <claims.json> --tables <tables.json>
 ```
 
 `archive-check` is the author-facing counterpart: point it at a COMBINE archive and it says what a

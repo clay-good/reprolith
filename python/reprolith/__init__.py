@@ -151,6 +151,7 @@ from .loop_notes import (
     required_subjects,
 )
 from .manuscript import manuscript_mismatches
+from .manuscript_values import ValueCheck, check_claim_values, unsupported_claims
 from .mcp_server import handle_request, serve_stdio
 from .model import (
     Assumption,
@@ -337,6 +338,7 @@ __all__ = [
     "certify_stochastic",
     "Citation",
     "Claim",
+    "check_claim_values",
     "claim_counts",
     "claims_template",
     "ClaimAssessment",
@@ -534,8 +536,10 @@ __all__ = [
     "ToleranceSource",
     "Transition",
     "undetermined_shortfall",
+    "unsupported_claims",
     "unfilled_claims",
     "UpdateScheme",
+    "ValueCheck",
     "validate_constraint_based",
     "validate_logical",
     "validate_spatial",

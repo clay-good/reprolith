@@ -148,6 +148,35 @@ have, so the one input the check cannot derive is the only one they write.
 - **THEN** the stub names no output — or, for shipped values, is not a stub at all — and the
   reason is reported, rather than a plausible output being guessed at
 
+### Requirement: A claim's reference value can be checked against the paper's own tables
+
+A reference value read from a manuscript is the one kind this engine cannot check against a
+generator, and a wrong one inside tolerance passes every other check. An author or curator SHALL
+be able to ask whether each value a claims file states is printed in the source it cites.
+
+#### Scenario: A value the cited table does not print
+
+- **WHEN** a claims file is checked against the rows of the tables the paper prints
+- **THEN** a claim whose reported value does not appear in the table it cites is reported, naming
+  the value and the table
+- **AND** the check is non-zero only for that finding
+
+#### Scenario: What the check declines to decide
+
+- **WHEN** a claim cites a table
+- **THEN** only whether the value appears in it is answered, never which cell is the right one,
+  because that is the curator's judgment and a guess would accuse a correct claim
+- **AND** a value is matched as the paper prints it rather than by rounding, since rounding would
+  accept the number the paper would have printed instead of the one it did
+
+#### Scenario: A claim that cannot be checked
+
+- **WHEN** a claim cites a figure, a sentence, or a table that was not supplied
+- **THEN** it is reported as not checked, separately from the values that were checked and failed,
+  and it does not make the check fail
+- **AND** an unfilled claim template is reported the same way, since a value not yet written is
+  not a wrong value
+
 ### Requirement: Runnable over the MCP surface
 
 An author or their agent SHALL be able to run the check through the same read-only MCP surface as

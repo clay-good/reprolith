@@ -2300,6 +2300,16 @@ committed source is not evidence, whatever the certificate around it says.** Twe
 thirty certificates had one and it was checked; the thirtieth, the one the front page leads with,
 did not.
 
+And a one-off test would only have fixed the one entry. `check_claim_values` and
+`reprolith claims-check` ask the same question of any claims file against any quoted tables, so
+entry thirty-two arrives with the check already built. It asks the weakest question that catches
+this defect — *is the number you state printed in the table you cite* — and refuses the stronger
+ones on purpose: which cell is the right one is the curator's judgment, and a value matched by
+rounding would accept the number a paper *would have* printed rather than the one it did. A claim
+citing a figure or a table nobody supplied is **not checked**, in its own list, and never fails the
+command; folding that in with the failures would report an absence of evidence as evidence of
+absence, which is the mistake the whole module is written to avoid.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
