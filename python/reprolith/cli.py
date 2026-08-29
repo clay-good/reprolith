@@ -27,6 +27,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .certify import Claim
+from .claim_candidates import propose_claims
 from .claims_template import claims_template, unfilled_claims
 from .export import build_bundle_sedml, build_omex_archive
 from .manuscript_values import check_claim_values, unsupported_claims
@@ -446,6 +447,43 @@ def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 1 if unsupported_claims(checks) else 0
 
 
+def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Propose candidate claims from the tables the paper prints."""
+    try:
+        loaded = json.loads(Path(args.tables).read_text(encoding="utf-8"))
+    except OSError as unreadable:
+        print(f"cannot read the tables: {unreadable}", file=sys.stderr)
+        return 1
+    except (UnicodeDecodeError, ValueError) as unusable:
+        print(f"cannot read the tables: {unusable}", file=sys.stderr)
+        return 1
+    tables = loaded.get("tables", loaded) if isinstance(loaded, dict) else {}
+    if not isinstance(tables, dict) or not tables:
+        print(
+            "the tables file holds no tables: expected {'Table 6': {'rows': [[...]]}}, or the "
+            "shape datasets/manuscripts/ uses, which nests that under 'tables'",
+            file=sys.stderr,
+        )
+        return 1
+
+    proposed = propose_claims(tables, accession=args.accession)
+    rendered = json.dumps(proposed, indent=2, sort_keys=True) + "\n"
+    if args.out is None:
+        print(rendered, end="")
+        return 0
+    try:
+        Path(args.out).write_text(rendered, encoding="utf-8")
+    except OSError as unwritable:
+        print(f"cannot write the candidates: {unwritable}", file=sys.stderr)
+        return 1
+    body = proposed["entries"][args.accession] if args.accession is not None else proposed
+    print(f"wrote {args.out}")
+    print(f"  {len(body['candidates'])} candidate(s) from {', '.join(body['tables_read'])}")
+    for note in body["notes"]:
+        print(f"  note: {note}")
+    return 0
+
+
 def _cmd_claims_template(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Write the claims file the author-facing check needs, from the files the author has."""
     if (args.archive is None) == (args.model is None):
@@ -671,6 +709,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_json(p)
     p.set_defaults(func=_cmd_claims_check)
+
+    p = sub.add_parser(
+        "claims-propose",
+        help="propose candidate claims from the tables your paper prints (you pick)",
+    )
+    p.add_argument(
+        "--tables", required=True,
+        help="the paper's table rows as JSON — the shape datasets/manuscripts/ uses",
+    )
+    p.add_argument(
+        "--accession", default=None,
+        help="wrap the result under this accession, the shape a multi-paper claims file uses",
+    )
+    p.add_argument("--out", default=None, help="write here instead of to standard output")
+    p.set_defaults(func=_cmd_claims_propose)
 
     p = sub.add_parser(
         "claims-template",

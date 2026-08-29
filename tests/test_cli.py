@@ -513,7 +513,7 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     subcommands = next(
         a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
     ).choices
-    named = {"export", "archive-check", "claims-template", "claims-check"}
+    named = {"export", "archive-check", "claims-template", "claims-check", "claims-propose"}
     file_based = {name for name in subcommands if name in named}
     assert file_based == named
     documented = (
@@ -652,3 +652,42 @@ def test_claims_check_of_a_tables_file_with_no_tables_is_a_message(tmp_path, cap
     claims.write_text(json.dumps({"claims": []}), encoding="utf-8")
     assert run(["claims-check", "--claims", str(claims), "--tables", str(tables)]) == 1
     assert "holds no tables" in capsys.readouterr().err
+
+
+def test_claims_propose_writes_candidates_from_a_papers_tables(tmp_path, capsys):
+    """The paper half of a claims file: every number a table prints, none of them a claim yet."""
+    tables = tmp_path / "tables.json"
+    tables.write_text(json.dumps({"tables": {"Table 6": {"rows": [
+        ["Tissue", "Dose, mg", "Cmax, nmol/mL"],
+        ["Plasma", "500", "6.1"],
+    ]}}}), encoding="utf-8")
+    out = tmp_path / "candidates.json"
+    assert run(["claims-propose", "--tables", str(tables), "--out", str(out)]) == 0
+    assert "1 candidate(s)" in capsys.readouterr().out
+    written = json.loads(out.read_text(encoding="utf-8"))
+    (candidate,) = written["candidates"]
+    assert candidate["reported"] == 6.1 and candidate["species"] == ""
+    assert candidate["metric"] == "cmax"
+
+
+def test_claims_propose_of_a_tables_file_with_no_tables_is_a_message(tmp_path, capsys):
+    tables = tmp_path / "tables.json"
+    tables.write_text(json.dumps({"tables": {}}), encoding="utf-8")
+    assert run(["claims-propose", "--tables", str(tables)]) == 1
+    assert "holds no tables" in capsys.readouterr().err
+
+
+def test_claims_propose_output_is_checkable_against_the_same_tables(tmp_path, capsys):
+    """The two halves compose: what it proposes, `claims-check` confirms is in the paper."""
+    tables = tmp_path / "tables.json"
+    tables.write_text(json.dumps({"tables": {"Table 6": {"rows": [
+        ["Tissue", "Dose, mg", "Cmax, nmol/mL"],
+        ["Plasma", "500", "6.1"],
+    ]}}}), encoding="utf-8")
+    proposed = tmp_path / "candidates.json"
+    assert run(["claims-propose", "--tables", str(tables), "--out", str(proposed)]) == 0
+    picked = json.loads(proposed.read_text(encoding="utf-8"))["candidates"]
+    claims = tmp_path / "claims.json"
+    claims.write_text(json.dumps({"claims": picked}), encoding="utf-8")
+    assert run(["claims-check", "--claims", str(claims), "--tables", str(tables)]) == 0
+    assert "ok:" in capsys.readouterr().out

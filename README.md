@@ -114,6 +114,8 @@ reprolith archive-check \             # ...or the two files loose, unpackaged
   --sedml <exp.sedml> --model <model.xml>
 reprolith claims-template \           # write the claims file archive-check reads
   --model <model.xml> [--sedml <exp.sedml>] [--out <claims.json>]
+reprolith claims-propose \            # candidate claims from the tables your paper prints
+  --tables <tables.json> [--out <candidates.json>]
 reprolith claims-check \              # is each value printed in the table it cites?
   --claims <claims.json> --tables <tables.json>
 ```

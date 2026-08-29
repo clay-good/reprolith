@@ -100,6 +100,27 @@ FIX BEFORE YOU SUBMIT (most impactful first)
 
 Every file validates. The run completes. The number is close. That is the failure this exists for.
 
+## Starting from your paper instead of your model
+
+`claims-template` starts from the model and leaves the number blank. If you would rather start
+from the paper, `claims-propose` reads the tables it prints:
+
+```bash
+reprolith claims-propose --tables my_tables.json --out candidates.json
+```
+
+Every number a table prints on its own in a cell becomes a candidate, with the row and column that
+name it as its source location, and a `metric` where the column heading states one (`Cmax`, `AUC`).
+Delete the ones your model is not asked to reproduce — a table carries measured values, fitted
+values, percentage differences and doses side by side — and name the model output each survivor
+reads.
+
+It never proposes the model output. Matching a table's "Plasma" to your `mPlasmaVenous` is a
+judgment, and a wrong match checks a real number against the wrong species, which is worse than no
+candidate at all. It also refuses a table whose rows are not all the width of its header: a cell
+spanning rows is written once, and reading the rest positionally puts a value under the wrong
+column.
+
 ## Checking your claims against your own paper
 
 The claims file says what your paper reports. Nothing checked that it does — and in this

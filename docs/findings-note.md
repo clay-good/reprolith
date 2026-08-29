@@ -2310,6 +2310,47 @@ citing a figure or a table nobody supplied is **not checked**, in its own list, 
 command; folding that in with the failures would report an absence of evidence as evidence of
 absence, which is the mistake the whole module is written to avoid.
 
+## The half of a claims file that comes from the paper
+
+Thirty of the thirty-one PK/PD entries abstain, all for one reason: nobody has said which of each
+paper's results to target. Today's earlier work gave an author the *model* half of a claims file —
+one stub per plotted curve, naming the output it reads, with the number blank. `claims-propose`
+gives the *paper* half: every number a table prints on its own in a cell, with the row's own labels
+and the column heading as its source location.
+
+The evidence it works is that it rediscovers, from the tables alone, the two claims a human
+extracted from this paper by hand — 6.1 and 11.2 nmol/mL, both with `metric: cmax`, both located
+to "Table 6, Tissue Plasma, Dose, mg 500 / 1000, Cmax, nmol/mL column". That is a stronger source
+location than the hand-written one it replaces, which said "Table 4, Zaharenko dataset" and was
+wrong.
+
+**What it refuses is the design.** It never names a model output: matching a table's "Plasma" to
+`mPlasmaVenous` is a judgment, and a wrong match checks a real number against the wrong species —
+worse than proposing nothing. It states a metric only where the column heading states one, because
+a defaulted `cmax` is a claim about the paper the paper did not make; "Tmax, h" and "Cmax measured-
+fitted, %" both come back blank. A cell reading "5.7 (2.1)" states two things and is not proposed.
+And a table whose rows are not all the width of its header is skipped and named, rather than
+aligned — which brings up the part worth recording.
+
+### A row span is how a number ends up under the wrong heading
+
+JATS writes a cell that spans rows once, on the row it starts. Read positionally, the rows beneath
+it come back one cell short, and every value in them shifts a column to the left: the metformin
+paper's Table 6 has a `Plasma` cell spanning three doses, so its 1000 mg row reads as though 76.1
+were the dose and 11.2 the AUC. That is precisely how a reference value becomes a number the paper
+prints *somewhere else* — the defect this morning's corpus fix was about, arriving by a different
+route.
+
+So the spans are resolved once, in `scripts/fetch_manuscript_tables.py`, and what is committed is
+rectangular. A test asserts it, and the proposer refuses any table that is not — because the fix
+belongs in the data, and a reader that quietly tolerates ragged input is a reader that will one day
+align it wrongly.
+
+The three commands now compose: `claims-template` from the model, `claims-propose` from the paper,
+`claims-check` to confirm each surviving value is printed where it says it is. What still has no
+tool is the join between the first two — which table row is which model output — and it is left to
+the curator on purpose.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

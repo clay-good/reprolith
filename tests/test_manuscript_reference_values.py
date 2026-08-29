@@ -33,14 +33,26 @@ def _plasma_cmax(dose: str) -> str:
     """The plasma Cmax the paper's Table 6 prints for a single oral dose, as it is printed."""
     rows = _TABLES["tables"]["Table 6"]["rows"]
     header = rows[0]
-    cmax = header.index("Cmax, nmol/mL")
-    # The first body row carries the tissue name and the rest continue it, so the dose is the
-    # cell before the numbers on the first and the first cell after that.
+    tissue, mg, cmax = (
+        header.index("Tissue"), header.index("Dose, mg"), header.index("Cmax, nmol/mL")
+    )
     for row in rows[1:]:
-        cells = row[1:] if row[0] == "Plasma" else row
-        if cells[0] == dose:
-            return cells[cmax - 1]
+        if row[tissue] == "Plasma" and row[mg] == dose:
+            return row[cmax]
     raise AssertionError(f"Table 6 has no plasma row for {dose} mg")
+
+
+def test_the_quoted_rows_are_rectangular() -> None:
+    """A cell spanning rows is written once in JATS, and the rows under it come back short.
+
+    Aligning a value to a column header by position across ragged rows lands it under the wrong
+    header — which is exactly how a reference value becomes a number the paper prints somewhere
+    else. `scripts/fetch_manuscript_tables.py` resolves the spans, so this holds by construction
+    and fails if that stops being true.
+    """
+    for label, table in _TABLES["tables"].items():
+        widths = {len(row) for row in table["rows"]}
+        assert len(widths) == 1, f"{label} has rows of differing widths: {sorted(widths)}"
 
 
 def test_each_metformin_claim_states_the_number_the_paper_prints() -> None:
@@ -64,8 +76,15 @@ def test_the_measured_values_are_a_different_number_and_are_not_what_is_claimed(
     claims back at measured values, the numbers move and this fails.
     """
     rows = _TABLES["tables"]["Table 4"]["rows"]
+    header = rows[0]
+    study, tissue, kind, cmax = (
+        header.index("Study"), header.index("Tissue"), header.index("Type"),
+        header.index("Cmax, nmol/mL"),
+    )
     measured = {
-        row[0]: row[3] for row in rows if row and row[0] in ("Zaharenko, 500mg", "Chung 1000mg")
+        row[study]: row[cmax]
+        for row in rows[1:]
+        if row[tissue] == "Plasma" and row[kind] == "Measured"
     }
     assert measured == {"Zaharenko, 500mg": "5.7", "Chung 1000mg": "12.9"}
     reported = {

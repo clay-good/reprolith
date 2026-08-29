@@ -30,7 +30,11 @@ a phase done until its verification holds.
     retained non-targetable (`enumerate_sedml_claims`), verified against a manual read of the
     BioModels SED-ML for Kholodenko — four curves, two figures. Reference *data* is not there:
     the document says what to plot, not what the figure showed, so every claim is
-    figure-referenced. Reading claims from manuscript prose is still not built.
+    figure-referenced. Reading claims from manuscript *prose* is still not built — but reading
+    them from the paper's own **tables** is: `propose_claims` / `reprolith claims-propose` turns
+    every number a table prints into a candidate with the row and column that name it, and
+    rediscovers the two metformin claims a human extracted by hand. Which candidate is a claim,
+    and which model output it reads, is left to the curator by design.
 - [ ] 2.3 Record gaps and extraction-confidence; never fill gaps at this stage → verify: a paper with a missing parameter yields a gap, not a value
   - Partly done for the same reason. On the artifact path a symbol no declaration covers, an
     unstated unit, an unstated initial value, and a construct the dossier cannot represent are

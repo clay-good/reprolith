@@ -102,6 +102,37 @@ are exactly what the oracle will check.
 - **THEN** the claim records that its reference is a figure image, so the oracle knows it
   must compare against digitized or reported summary values rather than raw data
 
+### Requirement: Candidate claims can be read from the paper's own tables
+
+The claims a reproduction targets are the input nothing else supplies, and thirty of the
+thirty-one seeded PK/PD entries abstain for want of them. A curator SHALL be able to obtain
+candidates from the tables the paper prints, and the result SHALL be a proposal they choose from,
+never an extraction presented as decided.
+
+#### Scenario: What is proposed
+
+- **WHEN** the rows of a paper's tables are read for candidate claims
+- **THEN** every cell that is a number on its own becomes one candidate, carrying the value and a
+  source location naming the table, the row's own labels, and the column
+- **AND** a metric is stated only where the column heading states one, since a defaulted metric is
+  a claim about the paper the paper did not make
+- **AND** a column that gives the row's conditions — a dose, a study, a tissue — supplies those
+  conditions rather than becoming a candidate of its own
+
+#### Scenario: What is never proposed
+
+- **WHEN** candidates are proposed
+- **THEN** no candidate names a model output, because matching a table's row label to a model
+  element is a judgment, and a wrong match checks a real number against the wrong element
+- **AND** the result states that these are candidates and not claims, since a table prints
+  measured values, fitted values, differences and conditions side by side
+
+#### Scenario: A table whose rows do not line up
+
+- **WHEN** a table's rows are not all the width of its header, as happens when a cell spans rows
+- **THEN** nothing is proposed from it and the reason is stated, because putting a value under a
+  column by position across a span reports a number under the wrong heading
+
 ### Requirement: Artifact intake and typing
 
 Ingestion SHALL accept whatever the paper ships and classify it, so reconstruction knows
