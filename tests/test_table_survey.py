@@ -100,6 +100,33 @@ def test_the_other_papers_numeric_tables_are_inputs_not_outputs() -> None:
     assert sum(t["candidates"] for p in others.values() for t in p["tables"]) > 100
 
 
+def test_the_entries_that_clear_both_blockers_are_the_ones_already_claimed() -> None:
+    """A paper stating results is half of what a certificate needs; a runnable model is the other.
+
+    Two of the three papers that state results in tables belong to entries shipping no runnable
+    SBML — one an R script, one a non-curated hybrid whose other half is a separate file — so
+    extracting their claims would still not produce a certificate. On this set the entries that
+    clear both are exactly the four variants of the one paper this repository already has claims
+    for, which is why "thirty abstain for want of claims" is not the whole account.
+    """
+    runnable = {
+        e["accession"]
+        for e in _ENTRIES
+        if e["model_format"] == "SBML" and e["curation"] == "CURATED"
+    }
+    assert len(runnable) == 21
+    clearing_both = {
+        e["accession"]
+        for e in _ENTRIES
+        if e["accession"] in runnable
+        and e["open_access"]
+        and any(t["candidates_stating_a_metric"] for t in _PAPERS.get(e["pmcid"], {}).get("tables", ()))
+    }
+    assert clearing_both == {
+        "BIOMD0000001027", "BIOMD0000001028", "BIOMD0000001029", "BIOMD0000001039"
+    }
+
+
 def test_the_survey_states_the_limits_of_its_own_denominator() -> None:
     """Entries outnumber papers, so an entry count is not a paper count.
 

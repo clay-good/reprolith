@@ -3,217 +3,279 @@
   "entries": [
     {
       "accession": "BIOMD0000000765",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "16180117"
     },
     {
       "accession": "BIOMD0000000241",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "8422743"
     },
     {
       "accession": "BIOMD0000000619",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC5026379",
       "pubmed_id": "27636091"
     },
     {
       "accession": "BIOMD0000000948",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "19056600"
     },
     {
       "accession": "BIOMD0000000624",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC5026379",
       "pubmed_id": "27636091"
     },
     {
       "accession": "BIOMD0000000512",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC3910012",
       "pubmed_id": "24429592"
     },
     {
       "accession": "BIOMD0000000490",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC4026633",
       "pubmed_id": "24026253"
     },
     {
       "accession": "BIOMD0000000238",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "17009101"
     },
     {
       "accession": "BIOMD0000000494",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "23206386"
     },
     {
       "accession": "BIOMD0000000534",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC3910013",
       "pubmed_id": "24402116"
     },
     {
       "accession": "BIOMD0000000535",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC3910013",
       "pubmed_id": "24402116"
     },
     {
       "accession": "BIOMD0000000537",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC3910013",
       "pubmed_id": "24402116"
     },
     {
       "accession": "BIOMD0000000536",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC3910013",
       "pubmed_id": "24402116"
     },
     {
       "accession": "BIOMD0000000321",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "11587490"
     },
     {
       "accession": "BIOMD0000000320",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "11587490"
     },
     {
       "accession": "BIOMD0000000673",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "16906456"
     },
     {
       "accession": "BIOMD0000001039",
+      "curation": "CURATED",
       "doi": "10.1371/journal.pone.0249594",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC8026019",
       "pubmed_id": ""
     },
     {
       "accession": "BIOMD0000001028",
+      "curation": "CURATED",
       "doi": "10.1371/journal.pone.0249594",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC8026019",
       "pubmed_id": ""
     },
     {
       "accession": "BIOMD0000001029",
+      "curation": "CURATED",
       "doi": "10.1371/journal.pone.0249594",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC8026019",
       "pubmed_id": ""
     },
     {
       "accession": "BIOMD0000001027",
+      "curation": "CURATED",
       "doi": "10.1371/journal.pone.0249594",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC8026019",
       "pubmed_id": ""
     },
     {
       "accession": "BIOMD0000000608",
+      "curation": "CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC3853972",
       "pubmed_id": "24074340"
     },
     {
       "accession": "MODEL2003190002",
+      "curation": "NON_CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "21168463"
     },
     {
       "accession": "MODEL2301090001",
+      "curation": "NON_CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC8646028",
       "pubmed_id": "34880771"
     },
     {
       "accession": "MODEL2003190006",
+      "curation": "NON_CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "24120727"
     },
     {
       "accession": "MODEL2412180001",
+      "curation": "NON_CURATED",
       "doi": "10.1111/bcpt.13321",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": ""
     },
     {
       "accession": "MODEL2301090002",
+      "curation": "NON_CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC9637881",
       "pubmed_id": "36353484"
     },
     {
       "accession": "MODEL1006230040",
+      "curation": "NON_CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "16758333"
     },
     {
       "accession": "MODEL2211040001",
+      "curation": "NON_CURATED",
       "doi": "10.1111/bcp.13504",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "PMC5903247",
       "pubmed_id": ""
     },
     {
       "accession": "MODEL1711210003",
+      "curation": "NON_CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": true,
       "pmcid": "PMC5732473",
       "pubmed_id": "29246152"
     },
     {
       "accession": "MODEL2412270001",
+      "curation": "NON_CURATED",
       "doi": "10.1208/s12248-021-00623-8",
+      "model_format": "R",
       "open_access": true,
       "pmcid": "PMC8397660",
       "pubmed_id": ""
     },
     {
       "accession": "MODEL6963432821",
+      "curation": "NON_CURATED",
       "doi": "",
+      "model_format": "SBML",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "17024552"
@@ -221,7 +283,8 @@
   ],
   "limits": [
     "A paper is reached through the identifier the model repository records, by PubMed id or by DOI. An entry naming no paper cannot be reached, and several entries name the same paper, so the entry count is a floor and not a paper count.",
-    "'A results table' is read off propose_claims: a table whose candidates state a metric is naming quantities a reproduction targets. That is a signal, not a proof, so the per-table counts are kept."
+    "'A results table' is read off propose_claims: a table whose candidates state a metric is naming quantities a reproduction targets. That is a signal, not a proof, so the per-table counts are kept.",
+    "Each entry's model format and curation status travel beside its paper, because a paper stating reproducible results is only half of what a certificate needs: an entry shipping an R script or a non-curated hybrid cannot be run whatever its paper says."
   ],
   "papers": {
     "PMC3853972": {

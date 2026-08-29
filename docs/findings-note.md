@@ -2440,6 +2440,30 @@ Both identifiers are followed now. The limit that remains is stated in the file 
 one: entries outnumber papers — four metformin variants cite one article — so a rate quoted per
 entry counts that paper four times, and the paper count is the one to quote.
 
+### "Thirty abstain for want of claims" is not the whole account
+
+Chasing the two newly-found results-table papers to their entries turned up the other half of the
+problem. One ships an **R script** as its model; the other a **non-curated** PBPK/genome-scale
+hybrid whose second half is a separate non-SBML file. Extracting either paper's claims perfectly
+would still produce no certificate, because there is nothing here to run.
+
+So the survey now records each entry's model format and curation status beside its paper, and the
+two conditions can be crossed:
+
+| | |
+| --- | --- |
+| entries shipping a curated SBML model | 21 of 31 |
+| entries whose paper states results in a table | 4 (all one paper) |
+| entries clearing **both** | **4 — the metformin variants** |
+
+That is the honest state of the seeded set: the entries a certificate could be produced for today
+are exactly the four variants of the one paper this repository already has claims for. Nine
+entries ship SBML that is not curated, one ships no SBML at all, and the rest state their results
+in figures.
+
+It also names the immediate work, which is not a better extractor: **three of those four are the
+same paper's other model variants**, sharing tables that have already been read and checked.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

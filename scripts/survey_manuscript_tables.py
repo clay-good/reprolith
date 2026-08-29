@@ -74,15 +74,23 @@ def main() -> None:
             metadata = _get_json(_BIOMODELS.format(accession=accession))
             link = (metadata.get("publication") or {}).get("link", "")
         except Exception:  # noqa: BLE001 - a repository that will not answer is a data point
-            link = ""
+            metadata, link = {}, ""
         # The repository cross-references a paper by PubMed id *or* by DOI, and reading only the
         # first understates reach: seven entries link by DOI alone, four of them to the one paper
         # this repository has committed claims for. A survey whose denominator depends on which
         # identifier a curator happened to use is measuring the curator, not the literature.
+        # The claim gap is not the only reason an entry abstains, and reporting only the paper
+        # side would put the whole shortfall on it. Two of the three papers that *do* state
+        # results in tables belong to entries shipping no runnable SBML — one an R script, one a
+        # non-curated hybrid whose other half is a separate file — so extracting their claims
+        # would still not produce a certificate.
         records.append({
             "accession": accession,
             "pubmed_id": link.rsplit("/", 1)[-1] if "pubmed" in link else "",
             "doi": link.split("/doi/", 1)[-1] if "/doi/" in link else "",
+            "model_format": ((metadata.get("format") or {}).get("name") or "")
+            if isinstance(metadata, dict) else "",
+            "curation": (metadata.get("curationStatus") or "") if isinstance(metadata, dict) else "",
         })
 
     by_pubmed = _search("EXT_ID:{}", [r["pubmed_id"] for r in records if r["pubmed_id"]])
@@ -143,6 +151,10 @@ def main() -> None:
             "'A results table' is read off propose_claims: a table whose candidates state a "
             "metric is naming quantities a reproduction targets. That is a signal, not a proof, "
             "so the per-table counts are kept.",
+            "Each entry's model format and curation status travel beside its paper, because a "
+            "paper stating reproducible results is only half of what a certificate needs: an "
+            "entry shipping an R script or a non-curated hybrid cannot be run whatever its "
+            "paper says.",
         ],
         "entries": records,
         "papers": papers,
@@ -159,7 +171,11 @@ def main() -> None:
     )
     print(f"wrote {path.relative_to(REPO)}")
     print(f"  {len(records)} entries, {len(identified)} naming a paper, {reachable} open access")
+    curated_sbml = sum(
+        1 for r in records if r["model_format"] == "SBML" and r["curation"] == "CURATED"
+    )
     print(f"  {len(papers)} distinct papers; {with_results} print a results table")
+    print(f"  {curated_sbml} of {len(records)} entries ship a curated SBML model")
 
 
 if __name__ == "__main__":
