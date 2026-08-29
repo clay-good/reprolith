@@ -20,6 +20,7 @@ Uses the optional ``engine`` extra (python-libsbml), imported lazily.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -336,6 +337,11 @@ def _read_reactions(
     * **Every species it names is a state variable this dossier declares.** A boundary or constant
       species is skipped at intake on purpose, so a law reading one refers to something the
       rebuilt model does not have.
+    * **No ``fast`` reaction.** It is solved as a pseudo-equilibrium constraint rather than
+      integrated, and a rebuild emits an ordinary reaction that runs and is a different model.
+    * **A stated stoichiometry on every species reference.** libSBML returns NaN for one it does
+      not have — a species reference a rule computes — and a NaN travelled into the dossier as a
+      recorded number.
     """
     if not model.getNumReactions():
         return (), (), ""
@@ -360,14 +366,46 @@ def _read_reactions(
     for i in range(model.getNumReactions()):
         reaction = model.getReaction(i)
         law = reaction.getKineticLaw()
-        math = law.getMath() if law is not None else None
-        if math is None:
+        # Not `math`: this module imports the standard library's, and the shadow made a
+        # stoichiometry check below call `isfinite` on an ASTNode.
+        law_math = law.getMath() if law is not None else None
+        if law_math is None:
             return (), (), f"reaction '{reaction.getId()}' states no rate law"
         named = (
             [sr.getSpecies() for sr in reaction.getListOfReactants()]
             + [sr.getSpecies() for sr in reaction.getListOfProducts()]
             + [sr.getSpecies() for sr in reaction.getListOfModifiers()]
         )
+        if reaction.isSetFast() and reaction.getFast():
+            # A `fast` reaction is solved as a pseudo-equilibrium constraint, not integrated with
+            # the rest. A rebuild emits an ordinary reaction, which runs and is a different model
+            # with nothing to show it happened.
+            return (), (), (
+                f"reaction '{reaction.getId()}' is marked fast, which a rebuild would emit as an "
+                "ordinary reaction and integrate rather than solve at equilibrium"
+            )
+        unstated = sorted({
+            reference.getSpecies()
+            for reference in list(reaction.getListOfReactants())
+            + list(reaction.getListOfProducts())
+            if not math.isfinite(reference.getStoichiometry())
+            or (
+                reference.isSetStoichiometryMath()
+                if hasattr(reference, "isSetStoichiometryMath")
+                else False
+            )
+        })
+        if unstated:
+            # Asked as "is there a number", not "is the attribute present". Level 2 defaults an
+            # omitted stoichiometry to 1 and reports the attribute unset, so testing the attribute
+            # refused every Level 2 model in the corpus. What has no number is a reference a rule
+            # or an initial assignment computes, where libSBML hands back NaN — which travelled
+            # into the dossier as a recorded value — and a Level 2 `stoichiometryMath`, where the
+            # number is an expression this does not carry.
+            return (), (), (
+                f"reaction '{reaction.getId()}' states no stoichiometry for "
+                f"{', '.join(unstated)}, so there is no number to carry"
+            )
         outside = sorted({name for name in named if name not in declared})
         if outside:
             return (), (), (
@@ -394,7 +432,7 @@ def _read_reactions(
             ))
         carried.append(DossierReaction(
             id=reaction.getId(),
-            rate_expression=str(libsbml.formulaToL3String(math)),
+            rate_expression=str(libsbml.formulaToL3String(law_math)),
             source_location=source,
             reactants=tuple(
                 (sr.getSpecies(), float(sr.getStoichiometry()))

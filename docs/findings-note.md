@@ -2241,6 +2241,24 @@ it never read: a floor that cannot see what it never counted, for the third time
 `needed` now includes what each rate law reads and what each reaction's participants are, and the
 test deletes a state variable from a carried dossier and requires the sweep to name it.
 
+### Round three: two SBML constructs the refusal list did not name
+
+Re-auditing the same code against the standard rather than against the corpus found two more, both
+in the first version of the carry.
+
+A species reference whose stoichiometry a **rule** computes has no stated number, and libSBML hands
+back **NaN** for it — which went straight into the dossier as a recorded value. That is the
+inert-attribute defect a fourth time, on a fourth element type. And a **`fast`** reaction is solved
+as a pseudo-equilibrium constraint rather than integrated; the rebuild emitted an ordinary reaction
+that ran, validated, and was a different model.
+
+The first fix for the stoichiometry was wrong in a way worth recording: it asked
+`isSetStoichiometry()`, which is "is the attribute present", and Level 2 defaults an omitted
+stoichiometry to 1 while reporting the attribute unset — so it refused every Level 2 model in the
+corpus, MAPK included. The question is *is there a number*, and it is `isfinite` on the value, plus
+Level 2's `stoichiometryMath`. Neither construct appears in the corpus, so both refusals are
+carried by synthetic models; the corpus is not the standard.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

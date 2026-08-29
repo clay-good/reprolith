@@ -278,3 +278,87 @@ def test_the_adopted_model_sweep_can_see_a_reaction_model_missing_a_state() -> N
     )
     reported = compare_sbml_to_dossier(source, broken)
     assert any(line.startswith(f"{lost}: ") for line in reported), reported
+
+
+_UNSTATED_STOICHIOMETRY = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m">
+    <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="A" compartment="c" initialAmount="10" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>
+      <species id="B" compartment="c" initialAmount="0" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="k" value="1" constant="true"/>
+      <parameter id="s" value="3" constant="false"/>
+    </listOfParameters>
+    <listOfReactions>
+      <reaction id="J0" reversible="false">
+        <listOfReactants>
+          <speciesReference id="sr" species="A" constant="false"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="B" stoichiometry="1" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><times/><ci>k</ci><ci>A</ci></apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+    <listOfRules>
+      <assignmentRule variable="sr">
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><ci>s</ci></math>
+      </assignmentRule>
+    </listOfRules>
+  </model>
+</sbml>
+"""
+
+_FAST = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4">
+  <model id="m">
+    <listOfCompartments><compartment id="c" size="1"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="A" compartment="c" initialAmount="10"/>
+      <species id="B" compartment="c" initialAmount="0"/>
+    </listOfSpecies>
+    <listOfParameters><parameter id="k" value="1"/></listOfParameters>
+    <listOfReactions>
+      <reaction id="J0" reversible="false" fast="true">
+        <listOfReactants><speciesReference species="A" stoichiometry="1"/></listOfReactants>
+        <listOfProducts><speciesReference species="B" stoichiometry="1"/></listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply><times/><ci>k</ci><ci>A</ci></apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>
+"""
+
+
+def test_a_stoichiometry_the_model_computes_is_not_carried_as_a_number() -> None:
+    """It arrived as NaN, which the dossier recorded as if it were a measurement.
+
+    A species reference whose stoichiometry a rule sets has no stated one — the same inert
+    attribute as a parameter under an assignment, one element type over — and libSBML hands back
+    NaN for it rather than failing.
+    """
+    dossier = ingest_sbml(_UNSTATED_STOICHIOMETRY, entry="x")
+    assert dossier.reactions == ()
+    (gap,) = [g for g in dossier.gaps if g.element == "reaction network"]
+    assert "states no stoichiometry for A" in gap.detail
+
+
+def test_a_fast_reaction_is_not_carried_as_an_ordinary_one() -> None:
+    """It is solved at pseudo-equilibrium, not integrated; a rebuild would integrate it."""
+    dossier = ingest_sbml(_FAST, entry="x")
+    assert dossier.reactions == ()
+    (gap,) = [g for g in dossier.gaps if g.element == "reaction network"]
+    assert "marked fast" in gap.detail
