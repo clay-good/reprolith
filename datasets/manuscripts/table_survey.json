@@ -3,193 +3,224 @@
   "entries": [
     {
       "accession": "BIOMD0000000765",
+      "doi": "",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "16180117"
     },
     {
       "accession": "BIOMD0000000241",
+      "doi": "",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "8422743"
     },
     {
       "accession": "BIOMD0000000619",
+      "doi": "",
       "open_access": true,
       "pmcid": "PMC5026379",
       "pubmed_id": "27636091"
     },
     {
       "accession": "BIOMD0000000948",
+      "doi": "",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "19056600"
     },
     {
       "accession": "BIOMD0000000624",
+      "doi": "",
       "open_access": true,
       "pmcid": "PMC5026379",
       "pubmed_id": "27636091"
     },
     {
       "accession": "BIOMD0000000512",
+      "doi": "",
       "open_access": true,
       "pmcid": "PMC3910012",
       "pubmed_id": "24429592"
     },
     {
       "accession": "BIOMD0000000490",
+      "doi": "",
       "open_access": true,
       "pmcid": "PMC4026633",
       "pubmed_id": "24026253"
     },
     {
       "accession": "BIOMD0000000238",
+      "doi": "",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "17009101"
     },
     {
       "accession": "BIOMD0000000494",
+      "doi": "",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "23206386"
     },
     {
       "accession": "BIOMD0000000534",
+      "doi": "",
       "open_access": true,
       "pmcid": "PMC3910013",
       "pubmed_id": "24402116"
     },
     {
       "accession": "BIOMD0000000535",
+      "doi": "",
       "open_access": true,
       "pmcid": "PMC3910013",
       "pubmed_id": "24402116"
     },
     {
       "accession": "BIOMD0000000537",
+      "doi": "",
       "open_access": true,
       "pmcid": "PMC3910013",
       "pubmed_id": "24402116"
     },
     {
       "accession": "BIOMD0000000536",
+      "doi": "",
       "open_access": true,
       "pmcid": "PMC3910013",
       "pubmed_id": "24402116"
     },
     {
       "accession": "BIOMD0000000321",
+      "doi": "",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "11587490"
     },
     {
       "accession": "BIOMD0000000320",
+      "doi": "",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "11587490"
     },
     {
       "accession": "BIOMD0000000673",
+      "doi": "",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "16906456"
     },
     {
       "accession": "BIOMD0000001039",
-      "open_access": false,
-      "pmcid": "",
+      "doi": "10.1371/journal.pone.0249594",
+      "open_access": true,
+      "pmcid": "PMC8026019",
       "pubmed_id": ""
     },
     {
       "accession": "BIOMD0000001028",
-      "open_access": false,
-      "pmcid": "",
+      "doi": "10.1371/journal.pone.0249594",
+      "open_access": true,
+      "pmcid": "PMC8026019",
       "pubmed_id": ""
     },
     {
       "accession": "BIOMD0000001029",
-      "open_access": false,
-      "pmcid": "",
+      "doi": "10.1371/journal.pone.0249594",
+      "open_access": true,
+      "pmcid": "PMC8026019",
       "pubmed_id": ""
     },
     {
       "accession": "BIOMD0000001027",
-      "open_access": false,
-      "pmcid": "",
+      "doi": "10.1371/journal.pone.0249594",
+      "open_access": true,
+      "pmcid": "PMC8026019",
       "pubmed_id": ""
     },
     {
       "accession": "BIOMD0000000608",
+      "doi": "",
       "open_access": true,
       "pmcid": "PMC3853972",
       "pubmed_id": "24074340"
     },
     {
       "accession": "MODEL2003190002",
+      "doi": "",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "21168463"
     },
     {
       "accession": "MODEL2301090001",
+      "doi": "",
       "open_access": true,
       "pmcid": "PMC8646028",
       "pubmed_id": "34880771"
     },
     {
       "accession": "MODEL2003190006",
+      "doi": "",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "24120727"
     },
     {
       "accession": "MODEL2412180001",
+      "doi": "10.1111/bcpt.13321",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": ""
     },
     {
       "accession": "MODEL2301090002",
+      "doi": "",
       "open_access": true,
       "pmcid": "PMC9637881",
       "pubmed_id": "36353484"
     },
     {
       "accession": "MODEL1006230040",
+      "doi": "",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "16758333"
     },
     {
       "accession": "MODEL2211040001",
+      "doi": "10.1111/bcp.13504",
       "open_access": false,
-      "pmcid": "",
+      "pmcid": "PMC5903247",
       "pubmed_id": ""
     },
     {
       "accession": "MODEL1711210003",
+      "doi": "",
       "open_access": true,
       "pmcid": "PMC5732473",
       "pubmed_id": "29246152"
     },
     {
       "accession": "MODEL2412270001",
-      "open_access": false,
-      "pmcid": "",
+      "doi": "10.1208/s12248-021-00623-8",
+      "open_access": true,
+      "pmcid": "PMC8397660",
       "pubmed_id": ""
     },
     {
       "accession": "MODEL6963432821",
+      "doi": "",
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "17024552"
     }
   ],
   "limits": [
-    "A paper is reached only through the PubMed id in the model repository's metadata; seven entries carry none, including the one entry that has committed claims, so 'reachable' is a floor and not a census.",
+    "A paper is reached through the identifier the model repository records, by PubMed id or by DOI. An entry naming no paper cannot be reached, and several entries name the same paper, so the entry count is a floor and not a paper count.",
     "'A results table' is read off propose_claims: a table whose candidates state a metric is naming quantities a reproduction targets. That is a signal, not a proof, so the per-table counts are kept."
   ],
   "papers": {
@@ -292,6 +323,68 @@
           "candidates_stating_a_metric": 20,
           "caption": "Pharmacokinetic parameters for three models",
           "label": "Table 1"
+        }
+      ]
+    },
+    "PMC8026019": {
+      "tables": [
+        {
+          "candidates": 144,
+          "candidates_stating_a_metric": 0,
+          "caption": "Metformin pharmacokinetic parameter comparison of experimental data [1] and model simulations in plasma, portal vein, in",
+          "label": "Table 1"
+        },
+        {
+          "candidates": 32,
+          "candidates_stating_a_metric": 8,
+          "caption": "Metformin pharmacokinetic parameter comparison of experimental data [1] and model simulations in plasma, intestine, and ",
+          "label": "Table 2"
+        },
+        {
+          "candidates": 25,
+          "candidates_stating_a_metric": 0,
+          "caption": "A comparison of metformin tissue-plasma partition coefficients in various mice tissues calculated using the method from ",
+          "label": "Table 3"
+        },
+        {
+          "candidates": 48,
+          "candidates_stating_a_metric": 12,
+          "caption": "Metformin pharmacokinetic parameter comparison of experimental data and model simulations in plasma and red blood cells ",
+          "label": "Table 4"
+        },
+        {
+          "candidates": 64,
+          "candidates_stating_a_metric": 16,
+          "caption": "Validation results of plasma metformin concentration pharmacokinetic parameters\u2013a comparison of model predictions and ex",
+          "label": "Table 5"
+        },
+        {
+          "candidates": 180,
+          "candidates_stating_a_metric": 72,
+          "caption": "Metformin pharmacokinetic parameters for different tissues following a single 500mg, 1000mg, and 1500mg PO dose in human",
+          "label": "Table 6"
+        },
+        {
+          "candidates": 216,
+          "candidates_stating_a_metric": 72,
+          "caption": "Metformin pharmacokinetic parameters for different tissues following a twice-daily dosing regimen of 500mg, 1000mg, and ",
+          "label": "Table 7"
+        }
+      ]
+    },
+    "PMC8397660": {
+      "tables": [
+        {
+          "candidates": 30,
+          "candidates_stating_a_metric": 0,
+          "caption": "Model Parameters for Avadomide PD and Neutrophil Life Cycle (Median) Model for GBM, DLBCL, and MM",
+          "label": "Table I."
+        },
+        {
+          "candidates": 119,
+          "candidates_stating_a_metric": 26,
+          "caption": "Summary of Simulation Results for Different Avadomide Dosing Schedules in Virtual DLBCL Cohort",
+          "label": "Table II"
         }
       ]
     },

@@ -13,9 +13,9 @@ Dev-only and network-bound, like the `regenerate_*_references.py` scripts. It wr
 
 Two limits travel in the output rather than being left for a reader to discover:
 
-* It reaches a paper only through the PubMed id in the model repository's own metadata. Seven of
-  the thirty-one carry none — including the metformin entry, whose paper *is* open access and is
-  the one entry with committed claims — so "reachable" is a floor, not a census.
+* It reaches a paper only through the identifier the model repository records, by PubMed id or by
+  DOI. An entry naming no paper at all cannot be reached, and several entries name the *same*
+  paper, so the entry count is not a paper count.
 * "Has a results table" is read off `propose_claims`: a table whose candidates state a metric
   (Cmax, AUC) is naming quantities a reproduction targets, and a parameter table does not. That
   is a signal, not a proof, and the counts are reported per table so the judgment stays visible.
@@ -48,6 +48,20 @@ def _get_json(url: str) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
+def _search(term: str, values: list[str]) -> dict[str, dict]:
+    """Europe PMC results for a list of identifiers, keyed by both the pmid and the lowercased DOI."""
+    if not values:
+        return {}
+    query = urllib.parse.quote("(" + " OR ".join(term.format(v) for v in values) + ")")
+    found: dict[str, dict] = {}
+    for result in _get_json(_SEARCH.format(query=query))["resultList"]["result"]:
+        if result.get("pmid"):
+            found[result["pmid"]] = result
+        if result.get("doi"):
+            found[result["doi"].casefold()] = result
+    return found
+
+
 def main() -> None:
     entries = json.loads(
         (REPO / "datasets" / "pkpd_test_set.json").read_text(encoding="utf-8")
@@ -61,19 +75,24 @@ def main() -> None:
             link = (metadata.get("publication") or {}).get("link", "")
         except Exception:  # noqa: BLE001 - a repository that will not answer is a data point
             link = ""
+        # The repository cross-references a paper by PubMed id *or* by DOI, and reading only the
+        # first understates reach: seven entries link by DOI alone, four of them to the one paper
+        # this repository has committed claims for. A survey whose denominator depends on which
+        # identifier a curator happened to use is measuring the curator, not the literature.
         records.append({
             "accession": accession,
             "pubmed_id": link.rsplit("/", 1)[-1] if "pubmed" in link else "",
+            "doi": link.split("/doi/", 1)[-1] if "/doi/" in link else "",
         })
 
-    identified = [r["pubmed_id"] for r in records if r["pubmed_id"]]
-    query = urllib.parse.quote("(" + " OR ".join(f"EXT_ID:{p}" for p in identified) + ")")
-    found = {
-        result.get("pmid"): result
-        for result in _get_json(_SEARCH.format(query=query))["resultList"]["result"]
-    }
+    by_pubmed = _search("EXT_ID:{}", [r["pubmed_id"] for r in records if r["pubmed_id"]])
+    by_doi = _search('DOI:"{}"', [r["doi"] for r in records if r["doi"] and not r["pubmed_id"]])
     for record in records:
-        result = found.get(record["pubmed_id"]) or {}
+        result = (
+            by_pubmed.get(record["pubmed_id"])
+            or by_doi.get((record["doi"] or "").casefold())
+            or {}
+        )
         record["pmcid"] = result.get("pmcid") or ""
         record["open_access"] = result.get("isOpenAccess") == "Y" and bool(record["pmcid"])
 
@@ -118,9 +137,9 @@ def main() -> None:
             "table rather than a figure. Regenerate with scripts/survey_manuscript_tables.py."
         ),
         "limits": [
-            "A paper is reached only through the PubMed id in the model repository's metadata; "
-            "seven entries carry none, including the one entry that has committed claims, so "
-            "'reachable' is a floor and not a census.",
+            "A paper is reached through the identifier the model repository records, by PubMed "
+            "id or by DOI. An entry naming no paper cannot be reached, and several entries name "
+            "the same paper, so the entry count is a floor and not a paper count.",
             "'A results table' is read off propose_claims: a table whose candidates state a "
             "metric is naming quantities a reproduction targets. That is a signal, not a proof, "
             "so the per-table counts are kept.",
@@ -132,13 +151,14 @@ def main() -> None:
     path.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     reachable = sum(1 for r in records if r["open_access"])
+    identified = [r for r in records if r["pubmed_id"] or r["doi"]]
     with_results = sum(
         1
         for paper in papers.values()
         if any(t["candidates_stating_a_metric"] for t in paper["tables"])
     )
     print(f"wrote {path.relative_to(REPO)}")
-    print(f"  {len(records)} entries, {len(identified)} with a pubmed id, {reachable} open access")
+    print(f"  {len(records)} entries, {len(identified)} naming a paper, {reachable} open access")
     print(f"  {len(papers)} distinct papers; {with_results} print a results table")
 
 

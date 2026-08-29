@@ -2407,25 +2407,38 @@ stands and is now committed as `datasets/manuscripts/table_survey.json`:
 | | |
 | --- | --- |
 | seeded PK/PD entries | 31 |
-| carrying a PubMed id in the repository's metadata | 24 |
-| resolving to open-access full text | 12 (8 distinct papers) |
-| whose tables include a **reported model output** | **1** |
+| naming a paper the repository can be followed to | 31 |
+| resolving to open-access full text | 17 entries, **10 distinct papers** |
+| whose tables include a **reported model output** | **3** |
 
 The other seven papers are not short of numbers — their tables hold over a hundred candidates
 between them — but every one is a parameter set, a study overview, or a diagnostic. Inputs and
 metadata, not results. Their results are in figures.
 
 So the figure boundary is now a number rather than an assertion: on this set, reading tables
-reaches **one paper in eight** of the open-access subset. A table reader is worth having and does
+reaches **three papers in ten** of the open-access subset. A table reader is worth having and does
 not close the claim gap, and the next thing that would is not a better table reader.
 
-Two limits travel inside the file rather than being left for a reader to find. A paper is reached
-only through the PubMed id the model repository records, and **seven entries carry none** —
-including the metformin entry, whose paper is open access and is the one entry with committed
-claims. And "has a results table" is read off whether a table's candidates state a metric, which
-is a signal rather than a proof, so the per-table counts are kept. A reachability figure without
-those two sentences reads as a census of the literature instead of a census of one repository's
-cross-references.
+One of the three is the paper this repository already has committed claims for, which is the
+survey validating itself: pointed at the whole set with no special-casing, its own tooling reaches
+the entry a human extracted by hand, and finds its results tables. The other two are new.
+
+### The first version of that table was wrong, for a reason worth keeping
+
+It said 24 of 31 named a paper, 12 were open access over 8 papers, and **one** printed a results
+table. Every one of those numbers was an artifact of how the survey found a paper: it read the
+model repository's cross-reference only when that reference was a **PubMed id**. Seven entries
+cite their paper by **DOI** instead — and four of those seven are the metformin entries, whose
+paper is open access, prints its results in five tables, and is the one entry in this repository
+with committed claims.
+
+So the first survey measured which identifier a curator happened to use, and reported it as a fact
+about the literature. It also excluded, from a census of "which papers state reproducible results",
+the single paper this project has already proven states them.
+
+Both identifiers are followed now. The limit that remains is stated in the file and is a different
+one: entries outnumber papers — four metformin variants cite one article — so a rate quoted per
+entry counts that paper four times, and the paper count is the one to quote.
 
 ## Status and what remains
 

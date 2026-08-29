@@ -1,9 +1,13 @@
 """What the committed survey says, and that it still adds up.
 
 `propose_claims` reads candidate claims out of a paper's tables. The survey measures how far that
-gets on the seeded PK/PD set — and the number that matters is small: of the eight open-access
-papers it can reach, **one** prints a reported model output in a table. The rest print parameter
-sets, study overviews and diagnostics, and their results live in figures.
+gets on the seeded PK/PD set — and the number that matters is small: of the ten open-access papers
+it can reach, **three** print a reported model output in a table. The rest print parameter sets,
+study overviews and diagnostics, and their results live in figures.
+
+One of the three is the paper this repository already has committed claims for, which is the
+survey validating itself: pointed at the whole set, its own tooling finds the entry a human
+extracted by hand.
 
 That is the figure boundary this repository's findings note describes, measured rather than
 asserted. It is also the reason a table reader alone does not close the claim gap.
@@ -38,23 +42,50 @@ def test_the_survey_covers_the_whole_seeded_set() -> None:
 def test_the_counts_partition() -> None:
     """Open access implies a PMC id implies a paper that was actually read."""
     open_access = [e for e in _ENTRIES if e["open_access"]]
-    assert all(e["pmcid"] and e["pubmed_id"] for e in open_access)
+    assert all(e["pmcid"] and (e["pubmed_id"] or e["doi"]) for e in open_access)
     assert {e["pmcid"] for e in open_access} == set(_PAPERS)
 
 
-def test_one_of_the_reachable_papers_prints_a_results_table() -> None:
-    """The measurement the whole survey exists for, and it is a small number."""
-    with_results = {
+def test_a_paper_is_reached_by_either_identifier_the_repository_records() -> None:
+    """Reading only the PubMed link measured which identifier a curator used, not the literature.
+
+    Seven entries cross-reference their paper by DOI alone — four of them the metformin paper,
+    which is open access, prints its results in tables, and is the one entry with committed
+    claims. The first version of this survey called all seven unreachable and published a
+    results-table rate over a denominator that had dropped them.
+    """
+    by_doi_only = [e for e in _ENTRIES if e["doi"] and not e["pubmed_id"]]
+    assert len(by_doi_only) == 7
+    assert any(e["open_access"] for e in by_doi_only)
+    assert all(e["pubmed_id"] or e["doi"] for e in _ENTRIES)
+
+
+def _with_results() -> set[str]:
+    return {
         pmcid
         for pmcid, paper in _PAPERS.items()
         if any(t["candidates_stating_a_metric"] for t in paper["tables"])
     }
-    assert len(with_results) == 1, sorted(with_results)
-    (only,) = with_results
-    (results_table,) = [
-        t for t in _PAPERS[only]["tables"] if t["candidates_stating_a_metric"]
-    ]
-    assert "pharmacokinetic parameters" in results_table["caption"].casefold()
+
+
+def test_three_of_the_reachable_papers_print_a_results_table() -> None:
+    """The measurement the whole survey exists for, and it is a small number."""
+    assert len(_PAPERS) == 10
+    assert len(_with_results()) == 3, sorted(_with_results())
+
+
+def test_the_survey_finds_the_paper_whose_claims_are_already_committed() -> None:
+    """Its own tooling, pointed at the whole set, reaches the one a human extracted by hand."""
+    metformin = next(
+        e["pmcid"] for e in _ENTRIES if e["accession"] == "BIOMD0000001028"
+    )
+    assert metformin in _with_results()
+    captions = " ".join(
+        t["caption"].casefold()
+        for t in _PAPERS[metformin]["tables"]
+        if t["candidates_stating_a_metric"]
+    )
+    assert "metformin pharmacokinetic parameters" in captions
 
 
 def test_the_other_papers_numeric_tables_are_inputs_not_outputs() -> None:
@@ -70,13 +101,12 @@ def test_the_other_papers_numeric_tables_are_inputs_not_outputs() -> None:
 
 
 def test_the_survey_states_the_limits_of_its_own_denominator() -> None:
-    """Seven entries carry no PubMed id at all — including the one entry that has claims.
+    """Entries outnumber papers, so an entry count is not a paper count.
 
-    A reachability figure that did not say so would read as a census of the literature rather than
-    of one repository's cross-references.
+    Four of the thirty-one entries are variants of the same metformin model and cite one paper.
+    A rate quoted over entries would count that paper four times.
     """
-    assert len([e for e in _ENTRIES if not e["pubmed_id"]]) == 7
-    unreachable = {e["accession"] for e in _ENTRIES if not e["pubmed_id"]}
-    assert "BIOMD0000001028" in unreachable  # the metformin entry, whose paper is open access
+    reachable = [e for e in _ENTRIES if e["open_access"]]
+    assert len(reachable) > len(_PAPERS)  # 17 entries, 10 papers
     limits = " ".join(_SURVEY["limits"]).casefold()
-    assert "floor" in limits and "not a census" in limits
+    assert "floor" in limits and "not a paper count" in limits
