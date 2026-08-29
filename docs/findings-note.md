@@ -2161,6 +2161,21 @@ applied only to readers: **sweep the defect shape across every surface, not ever
 inert-attribute rule reached four readers in a day. It never reached the *writer*, and the writer
 was the reason the fourth reader could not simply be made consistent.
 
+### And the same construct again, two lines over
+
+Sweeping the fix rather than tripping over it caught the half the first pass missed. An initial
+assignment makes a *species'* `initialAmount` and a `parameter + rateRule` state variable's value
+inert in exactly the way it makes a constant's inert, and the first pass excluded constants only.
+A model whose species starts at 3 and whose rate-driven parameter starts at 2 produced a dossier
+recording 7 and 99 — the same defect, on the values a certificate's initial conditions rest on.
+Both are still state variables: they have an initial condition, in math, so `build_model_sbml`
+emits them without an `initialAmount` and lets the assignment supply it. A state variable with
+*neither* a stated value nor an assignment is still a gap, which is its own test, because a fix
+that swallows the case it resembles is worse than the defect.
+
+No committed artifact moved for it — no model in the corpus uses the construct — which is the
+reason to write it down: it was found by sweeping, not by anything failing.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

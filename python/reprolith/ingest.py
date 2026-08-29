@@ -125,12 +125,33 @@ def ingest_sbml(
 
     source = f"{source_label}"
     state_variables: list[str] = []
+    # An *initial* assignment does the same thing to the same attribute, one construct to the
+    # left: SBML makes the target's `value` inert the moment one exists, and the model runs
+    # whatever the expression evaluates to. The rule had reached three readers and not this one,
+    # so the metformin dossier recorded thirty-two compartment volumes at numbers the model
+    # computes over — two thirds of its parameters — and `compare_sbml_to_dossier` published "no
+    # disagreement" across all of them. The expression is carried as an equation below, so this
+    # drops a wrong number rather than dropping the parameter: the target is still declared, from
+    # the equation that determines it.
+    initial_assignment_targets = {
+        model.getInitialAssignment(i).getSymbol()
+        for i in range(model.getNumInitialAssignments())
+    }
+
     initial_conditions: list[Parameter] = []
     unstated_ics: list[str] = []
     for i in range(model.getNumSpecies()):
         species = model.getSpecies(i)
         if species.getConstant() or species.getBoundaryCondition():
             continue  # a fixed input, not a dynamic state variable
+        if species.getId() in initial_assignment_targets:
+            # Determined at the start of the run by an initial assignment, which makes the
+            # species' own `initialAmount` inert. It is still a state variable — the expression is
+            # carried as an `initial-assignment` equation — but there is no stated value to
+            # record, and recording the inert one asserted a starting concentration the model
+            # never holds. Not an unstated-value gap either: the model states it, in math.
+            state_variables.append(species.getId())
+            continue
         value = _initial_amount(model, species)
         if value is None:
             # No stated initial value: never fabricated, but it used to vanish with no gap either
@@ -189,18 +210,6 @@ def ingest_sbml(
         for i in range(model.getNumRules())
         if model.getRule(i).isAssignment()
     }
-    # An *initial* assignment does the same thing to the same attribute, one construct to the
-    # left: SBML makes the target's `value` inert the moment one exists, and the model runs
-    # whatever the expression evaluates to. The rule had reached three readers and not this one,
-    # so the metformin dossier recorded thirty-two compartment volumes at numbers the model
-    # computes over — two thirds of its parameters — and `compare_sbml_to_dossier` published "no
-    # disagreement" across all of them. The expression is carried as an equation below, so this
-    # drops a wrong number rather than dropping the parameter: the target is still declared, from
-    # the equation that determines it.
-    initial_assignment_targets = {
-        model.getInitialAssignment(i).getSymbol()
-        for i in range(model.getNumInitialAssignments())
-    }
 
     parameters: list[Parameter] = []
     for i in range(model.getNumParameters()):
@@ -218,7 +227,11 @@ def ingest_sbml(
         )
         if parameter.getId() in rate_targets:
             state_variables.append(parameter.getId())
-            initial_conditions.append(extracted)
+            if parameter.getId() not in initial_assignment_targets:
+                # The `parameter + rateRule` idiom's initial condition — unless an initial
+                # assignment computes it, in which case the attribute is inert here exactly as it
+                # is on a species or a constant.
+                initial_conditions.append(extracted)
         elif parameter.getId() not in assignment_targets | initial_assignment_targets:
             parameters.append(extracted)
 

@@ -66,7 +66,14 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
         e for e in dossier.equations if e.kind is EquationKind.INITIAL_ASSIGNMENT
     ]
     equations = governing
-    missing_ics = [v for v in dossier.state_variables if v not in ics]
+    # A state variable an initial assignment determines has no stated initial value, by design:
+    # the expression is what the model runs, and recording the inert attribute beside it was the
+    # defect this kind exists to remove. It is not missing an initial condition — it has one, in
+    # math — so it is emitted without an `initialAmount` and the assignment supplies it.
+    started_by_assignment = {e.target for e in initial_assignments}
+    missing_ics = [
+        v for v in dossier.state_variables if v not in ics and v not in started_by_assignment
+    ]
     missing_eqs = [v for v in dossier.state_variables if v not in governing]
     if missing_ics:
         raise ValueError(f"cannot build: state variables without an initial condition: {missing_ics}")
@@ -110,7 +117,8 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
         species = model.createSpecies()
         species.setId(name)
         species.setCompartment("c")
-        species.setInitialAmount(float(ics[name].value))
+        if name in ics:
+            species.setInitialAmount(float(ics[name].value))
         species.setHasOnlySubstanceUnits(True)
         species.setBoundaryCondition(False)
         species.setConstant(False)

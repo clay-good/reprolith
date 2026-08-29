@@ -627,3 +627,86 @@ def test_a_rebuilt_model_runs_the_assigned_value_not_the_inert_one() -> None:
     assert original[-1] == pytest.approx(round_tripped[-1], rel=1e-6)
     # And it is the assigned value that ran, not the stated one: e^-1, not e^-99.
     assert round_tripped[-1] == pytest.approx(0.36787944, rel=1e-5)
+
+
+def test_an_initial_assignment_on_a_state_variable_is_carried_too() -> None:
+    """The same rule one construct over, found by sweeping the fix rather than tripping over it.
+
+    A species' `initialAmount` and the `parameter + rateRule` idiom's value are made inert by an
+    initial assignment exactly as a constant's are, and the first pass at this fix covered
+    parameters only: the dossier recorded S=7 and A=99 for a model that starts them at 3 and 2.
+    Both are state variables still — they have an initial condition, in math — so this drops the
+    wrong number without dropping the state, and a state variable with *neither* is still a gap.
+    """
+    pytest.importorskip("libsbml")
+    pytest.importorskip("COPASI", reason="the optional 'engine' extra is not installed")
+    from reprolith import build_model_sbml, ingest_sbml
+    from reprolith.engine import simulate
+
+    source = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m">
+    <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="S" compartment="c" initialAmount="7" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="start" value="2" constant="true"/>
+      <parameter id="A" value="99" constant="false"/>
+    </listOfParameters>
+    <listOfInitialAssignments>
+      <initialAssignment symbol="A">
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><ci>start</ci></math>
+      </initialAssignment>
+      <initialAssignment symbol="S">
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><cn>3</cn></math>
+      </initialAssignment>
+    </listOfInitialAssignments>
+    <listOfRules>
+      <rateRule variable="A">
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><cn>0</cn></math>
+      </rateRule>
+      <rateRule variable="S">
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><cn>0</cn></math>
+      </rateRule>
+    </listOfRules>
+  </model>
+</sbml>
+"""
+    dossier = ingest_sbml(source, entry="m")
+    assert set(dossier.state_variables) == {"S", "A"}
+    assert dossier.initial_conditions == ()  # 7 and 99 are inert; neither is recorded
+    assert not [g for g in dossier.gaps if g.kind.value == "initial-condition"]
+
+    rebuilt = build_model_sbml(dossier)
+    for name, expected in (("A", 2.0), ("S", 3.0)):
+        assert simulate(source, name, duration=1.0, steps=2)[1][0] == pytest.approx(expected)
+        assert simulate(rebuilt, name, duration=1.0, steps=2)[1][0] == pytest.approx(expected)
+
+
+def test_a_state_variable_with_no_initial_value_at_all_is_still_a_gap() -> None:
+    """The fix above must not swallow the case it looks like: nothing states the value."""
+    pytest.importorskip("libsbml")
+    from reprolith import ingest_sbml
+
+    source = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m">
+    <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="S" compartment="c" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfRules>
+      <rateRule variable="S">
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><cn>0</cn></math>
+      </rateRule>
+    </listOfRules>
+  </model>
+</sbml>
+"""
+    dossier = ingest_sbml(source, entry="m")
+    assert [g.kind.value for g in dossier.gaps if g.kind.value == "initial-condition"] == [
+        "initial-condition"
+    ]
