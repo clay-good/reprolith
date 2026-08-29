@@ -2924,6 +2924,36 @@ discipline-loop note failed `test_loop_notes`, exactly as designed. The note car
 measurements above, and its basis is `observed` rather than `spec` — the first failure-mode note
 in the record that a run produced rather than a specification anticipated.
 
+## The most serious thing it says was its least explained line
+
+Reading the new certificate as the people it is about — the paper's authors — found the worst
+defect of the day.
+
+The gap report rendered the brain claims as the bare token **`apparent-manuscript-error`**. That
+is this engine asserting that a named paper's table is wrong, printed beside that paper's DOI, with
+**none** of the evidence for it: not the measured discrepancy, not the cell it implicates, not the
+ratios that make the case, and no sign that a fault is — in `Fault`'s own words — *"always a
+hypothesis, never a proven cause"*. The line directly above it, about an assumption Reprolith
+supplied, explained itself in full.
+
+The cause is one call. The report took the **first** of `(root_cause, implicated, fault_hypothesis,
+discrepancy)` and dropped the rest, above a comment saying that `implicated` and `fault_hypothesis`
+"are causes too" and that the author-facing surface "already reads all three; this is the same rule
+on the neighbouring surface". It was not the same rule: that surface joins them, this one chose
+one. **A comment claiming a parity the code lacks**, which is a shape this record has named before
+— and it was harmless for as long as every shortfall was `uncategorized` against the claim's own
+quantity, because then the first field was the only informative one. The first real cause in the
+corpus turned a latent defect into the front page.
+
+It publishes all of it now, in the order a reader needs it — what was measured, the category and
+the cell it implicates, and the fault marked as a hypothesis:
+
+> relative error 0.2012; apparent-manuscript-error, Table 7's Brain Cmax, which equals plasma's
+> while its AUC24 and Cmean are 0.80 of plasma's; fault hypothesis: manuscript
+
+The public registry page carries the same sentence. An accusation without its evidence is worth
+less than no accusation, and this one is aimed at people who can check it.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

@@ -72,18 +72,34 @@ def gap_items(cert: Certificate) -> list[dict[str, Any]]:
             continue
         # `implicated` and `fault_hypothesis` are causes too, and falling straight through to the
         # abstention sentence told a reader a claim had no evaluable output when the certificate
-        # says it was evaluated and missed. `presubmission._claim_issue_and_fix` already reads all
-        # three; this is the same rule on the neighbouring surface.
+        # says it was evaluated and missed.
+        #
+        # Every part that is present, not the first one. `next(...)` took whichever came first and
+        # dropped the rest, which was invisible while every shortfall was `uncategorized` against
+        # the claim's own quantity — and became the worst line in the document the moment a real
+        # cause existed. The twice-daily entry's brain claims rendered as the bare token
+        # `apparent-manuscript-error`: this engine's most serious statement, that a named paper's
+        # table is wrong, printed beside that paper's DOI with none of the evidence for it and no
+        # sign that `Fault` is, in its own words, "always a hypothesis, never a proven cause".
+        # `presubmission._claim_issue_and_fix` was already carrying the evidence on the
+        # neighbouring surface, which is what the comment here used to claim and the code did not.
+        measured = (a.discrepancy or "").strip()
+        cause = ", ".join(
+            part for part in ((a.root_cause or "").strip(), (a.implicated or "").strip()) if part
+        )
+        hypothesis = (a.fault_hypothesis or "").strip()
+        stated = "; ".join(
+            part
+            for part in (
+                measured,
+                cause,
+                f"fault hypothesis: {hypothesis}" if hypothesis else "",
+            )
+            if part
+        )
         # Stripped, and for every verdict this renders: `require_stated_cause` only strips for
         # partial and failed, so a whitespace root cause on a not-evaluable claim printed as "   ".
-        needs = next(
-            (
-                (text or "").strip()
-                for text in (a.root_cause, a.implicated, a.fault_hypothesis, a.discrepancy)
-                if (text or "").strip()
-            ),
-            "evaluable output or reference data for this claim",
-        )
+        needs = stated or "evaluable output or reference data for this claim"
         items.append(
             {
                 "claim_id": a.claim_id,

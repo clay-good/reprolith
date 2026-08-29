@@ -409,3 +409,68 @@ def test_a_gap_report_downgrades_a_badge_and_never_upgrades_one() -> None:
 
     abstained = build_certificate(paper=paper, engine_pin=pin, gap_report=gaps, assessments=[])
     assert "#9f9f9f" in render_badge(abstained), "an abstention must not be upgraded to amber"
+
+
+def test_a_failed_claim_publishes_every_part_of_its_cause() -> None:
+    """The most serious thing this engine says must not be its least explained line.
+
+    The gap report took the *first* of (root cause, implicated, fault hypothesis, discrepancy) and
+    dropped the rest. That was invisible while every shortfall was `uncategorized` against the
+    claim's own quantity, and became the worst line in the document the moment a real cause
+    existed: the twice-daily metformin entry's brain claims rendered as the bare token
+    `apparent-manuscript-error` — this engine asserting that a named paper's table is wrong,
+    printed beside that paper's DOI, with none of the evidence and no sign that a fault is, in
+    `Fault`'s own words, "always a hypothesis, never a proven cause".
+    """
+    from reprolith import (
+        Attribution,
+        ClaimAssessment,
+        FailureMode,
+        Fault,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+    )
+    from reprolith.render import render_human
+
+    assessment = ClaimAssessment(
+        claim_id="Cmax-brain",
+        quantity="Brain Cmax",
+        verdict=Verdict.FAILED,
+        source_location="Table 7, Brain row",
+        discrepancy="relative error 0.2012",
+        root_cause=FailureMode.MANUSCRIPT_ERROR.value,
+        implicated="Table 7's Brain Cmax, which equals plasma's while its AUC24 is 0.80 of it",
+        fault_hypothesis=Fault.MANUSCRIPT.value,
+    )
+    certificate = build_certificate(
+        paper=PaperIdentity(title="a paper", doi="10.0/x"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[assessment],
+    )
+    missing = [
+        line for line in render_human(certificate, RUN).splitlines()
+        if "Cmax-brain" in line and "Brain Cmax" in line
+    ]
+    (line,) = [line for line in missing if "relative error" in line]
+    assert "relative error 0.2012" in line          # what was measured
+    assert "apparent-manuscript-error" in line       # the category
+    assert "AUC24 is 0.80 of it" in line             # the evidence for it
+    assert "fault hypothesis: manuscript" in line    # and that it is a hypothesis
+    assert Attribution  # the shape these three fields come from
+
+
+def test_an_unevaluable_claim_still_falls_back_to_a_sentence() -> None:
+    """The fallback the join must not swallow: a claim with nothing to say about a cause."""
+    from reprolith import ClaimAssessment, PaperIdentity, Verdict, build_certificate
+    from reprolith.render import render_human
+
+    certificate = build_certificate(
+        paper=PaperIdentity(title="a paper", doi="10.0/x"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[ClaimAssessment(
+            claim_id="c", quantity="q", verdict=Verdict.NOT_EVALUABLE, source_location="Figure 1",
+        )],
+    )
+    text = render_human(certificate, RUN)
+    assert "evaluable output or reference data for this claim" in text
