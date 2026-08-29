@@ -71,8 +71,12 @@ a change under `openspec/changes/`.
   the CLI now — `archive-check --claims` — and the file that check needs is generated rather than
   hand-written: `claims-template` turns the author's model and document into one stub per plotted
   curve, with the two fields only the author has left blank and refused if left that way. What
-  remains is unchanged and is *extraction*: reading a paper's reported numbers out of its
-  manuscript, which nothing here does and this deliberately does not pretend to.)*
+  remains is *extraction*, and half of it is now built: `claims-propose` reads candidate claims out
+  of a paper's own **tables** (`claims-check` then confirms each value is printed where it says it
+  is), which took the corpus from one certified-against-a-paper entry to two. Reading results out
+  of manuscript **prose** is still not built. Measured on this set: reading tables reaches three
+  papers in ten of the open-access subset, and the rest state their results in figures —
+  `datasets/manuscripts/table_survey.json`.)*
 - **Why (value):** When a paper ships an executable simulation recipe and archive, reproduction
   is mostly "run it and check" — the highest certificate yield per unit effort, across every
   class at once. Also the cleanest momentum builder.
@@ -115,6 +119,10 @@ a change under `openspec/changes/`.
 - **Depends on:** `catalog-seeding` licensing/quality gates; ≥1 class past its gate.
 - **Done when:** Un-curated papers flow into certificates and structured gap reports at a
   sustained cadence.
+- **Measured (2026-08-29):** on the seeded set, 21 of 31 entries ship a curated SBML model, 9 ship
+  SBML that is not curated, and 1 ships an R script. A paper stating reproducible results is only
+  half of what a certificate needs, and the entries clearing both conditions today are exactly the
+  four variants of the one paper already certified (`datasets/manuscripts/table_survey.json`).
 
 ---
 

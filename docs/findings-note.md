@@ -2572,8 +2572,23 @@ corpus. The adopt-and-verify fast-path is closed on both sides now — an archiv
 certificate, and where it disagrees with the paper the disagreement is reported — and the
 author-facing check reaches it, on an archive or on the two loose files most papers actually ship.
 The author-facing path is now writable end to end — the claims file the check needs is generated
-from the author's own files, with the two fields only they have left blank and refused if left
-that way. What remains is what finding 2 names, unchanged by that: a scaled way to extract each
-paper's targetable claims (tasks 2.1-2.3). Thirty of the thirty-one entries abstained for want of exactly that, so
+from the author's own files, from the paper's tables, or both, and checked against the paper before
+it is used. Two entries are now certified against numbers read from a paper rather than one, and
+both entries' cited rows are committed and pinned by a test.
+
+What remains is no longer one sentence, because it has been measured rather than assumed:
+
+* **The claim gap is real but is not the only blocker.** Of the thirty-one seeded entries, 21 ship
+  a curated SBML model, 4 belong to a paper stating results in a table, and 4 clear both — all of
+  them the one paper already certified. Nine ship SBML that is not curated and one ships an R
+  script, so extracting their claims perfectly would still produce no certificate.
+* **Reading tables reaches three papers in ten** of the open-access subset. The rest state their
+  results in figures, which is the boundary this note has described for months and now has a
+  number attached to.
+* **The first claim blocked by Reprolith rather than by the literature** is on the record: two
+  verified reference values whose protocol is a pre-dose twelve hours before the main dose, which
+  a claim's `parameter_overrides` cannot express.
+
+Tasks 2.1-2.3 are still open, and the half of them that a table reader closes is closed. Thirty of the thirty-one entries abstained for want of exactly that, so
 verdict *accuracy* across the set is still unestablished — the metformin example shows only that,
 given a claim, the rest of the pipeline delivers an honest, root-caused verdict.
