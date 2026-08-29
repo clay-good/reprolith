@@ -2176,6 +2176,51 @@ that swallows the case it resembles is worse than the defect.
 No committed artifact moved for it — no model in the corpus uses the construct — which is the
 reason to write it down: it was found by sweeping, not by anything failing.
 
+## The dynamics the dossier had no shape for
+
+The remaining half of the same problem. `ingest_sbml` carried a rule-based model well and a
+**reaction**-based one not at all: rules became equations, reactions became a load-bearing gap
+whose own text said the state variables it had just listed had no law of motion. A model rebuilt
+from such a dossier did not move. Kholodenko's ten-reaction MAPK cascade — the model the gap was
+written about — was the case.
+
+It was the largest thing intake read past, and it had no shape to be read into. An equation is
+`target = expression`; a reaction is a stoichiometry *and* a rate law, and the ODE system is
+derived from the two. So `DossierReaction` carries it in the form the artifact states it. Deriving
+the ODEs instead would have been the tempting shortcut and the wrong one: the derivation makes
+choices the artifact did not — concentration or amount, which compartment divides what — and a
+dossier that makes them silently describes a model the paper never wrote.
+
+**Carried only where a rebuild reproduces the model as itself**, and the gap now names the reason
+when it does not, because "not carried" and "has none" are different facts:
+
+| Refused | Why |
+| --- | --- |
+| more than one compartment | reconstruction puts every species in one; a second is lost |
+| a compartment of size ≠ 1 | every concentration in every rate law comes out divided by a different volume |
+| a function definition | a law calling one refers to something a rebuild does not declare |
+| a reaction with no rate law | it states no dynamics; a reaction in the dossier that moves nothing |
+| a law naming a boundary or constant species | intake skips those on purpose, so a rebuild has no such element |
+
+That covers three of the six committed kinetic models and refuses the metformin PBPK model on its
+21 compartments — which it already carried a gap about.
+
+**The proof is a round trip, not an inspection**: ingest, rebuild, run both under the same engine,
+compare every state variable. MAPK comes back at **7.5e-15** relative over a hundred time units.
+The repressilator (twelve reactions *and* nine assignment rules) at 1.4e-9 at t=0.01, 1.2e-7 at
+t=1, 1.1e-6 at t=50 — a residual that *grows with the run*, which is what integration error does
+through two files of identical math and different element order, and what a changed rate law does
+not. Both ends are asserted, so a real difference cannot hide inside a tolerance chosen for the
+long run.
+
+One guard has no case in the corpus and is tested anyway: SBML lets a kinetic law's own parameter
+shadow a global of the same name, and hoisting one to the model changes which value the law reads.
+A synthetic reaction with a local `k` of 2 under a global `k` of 1000 runs five hundred times too
+fast if the distinction is lost, with every file still valid.
+
+A reaction-free dossier's dictionary is unchanged — `reactions` and `compartments` are omitted when
+empty — so nothing written before this moved its digest.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

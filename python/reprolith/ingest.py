@@ -25,6 +25,7 @@ from typing import Any
 
 from .dossier import (
     Dossier,
+    DossierReaction,
     Equation,
     EquationKind,
     ExtractionConfidence,
@@ -266,6 +267,10 @@ def ingest_sbml(
             )
         )
 
+    reactions, compartments, reaction_refusal = _read_reactions(
+        model, source, libsbml, state_variables
+    )
+
     fatal = any(
         document.getError(i).getSeverity() >= libsbml.LIBSBML_SEV_ERROR
         for i in range(document.getNumErrors())
@@ -279,10 +284,12 @@ def ingest_sbml(
         ),
         state_variables=tuple(state_variables),
         equations=tuple(equations),
+        reactions=reactions,
+        compartments=compartments,
         parameters=tuple(parameters),
         initial_conditions=tuple(initial_conditions),
         artifacts=(artifact,),
-        gaps=_unread_constructs(model)
+        gaps=_unread_constructs(model, reaction_refusal=reaction_refusal)
         + _unstated_initial_values(tuple(unstated_ics))
         + _unresolved_symbols(
             model,
@@ -303,6 +310,113 @@ _L2_PREDEFINED_UNITS = {
     "length": "metre",
     "time": "second",
 }
+
+
+def _read_reactions(
+    model: Any, source: str, libsbml: Any, state_variables: Sequence[str]
+) -> tuple[tuple[DossierReaction, ...], tuple[Parameter, ...], str]:
+    """The reaction network, when this dossier can carry one; otherwise the reason it cannot.
+
+    A reaction-based model's laws of motion live in its reactions, and this path used to read
+    past all of them — a ten-reaction cascade produced state variables and nothing that moved
+    them. They are carried in the form the artifact states them (a stoichiometry and a rate law),
+    not derived into ODEs, because the derivation is a semantic choice the artifact did not make.
+
+    Carried only for the intersection a rebuild reproduces as *itself*, and the third value is the
+    reason when it is not — named, never silent, because "no reactions carried" and "this model
+    has none" are different facts:
+
+    * **One compartment, of size 1.** Reconstruction puts every species in one compartment, so a
+      second one is lost, and a size other than 1 makes every concentration in every rate law out
+      by that volume. Both produce a model that runs and is not this one.
+    * **No function definitions.** A law that calls one refers to something a rebuild does not
+      declare, and libSBML writes it out as a call to a missing function.
+    * **A rate law on every reaction.** A reaction without one states no dynamics; carrying it
+      would put a reaction in the dossier that moves nothing.
+    * **Every species it names is a state variable this dossier declares.** A boundary or constant
+      species is skipped at intake on purpose, so a law reading one refers to something the
+      rebuilt model does not have.
+    """
+    if not model.getNumReactions():
+        return (), (), ""
+    compartments = [model.getCompartment(i) for i in range(model.getNumCompartments())]
+    if len(compartments) != 1:
+        return (), (), f"the model has {len(compartments)} compartments, and a rebuild has one"
+    only = compartments[0]
+    size = float(only.getSize()) if only.isSetSize() else None
+    if size != 1.0:
+        return (), (), (
+            f"compartment '{only.getId()}' has size {size}, and a rebuild would divide every "
+            "concentration in every rate law by a different volume"
+        )
+    if model.getNumFunctionDefinitions():
+        return (), (), (
+            f"{model.getNumFunctionDefinitions()} functionDefinition(s) the rate laws may call "
+            "are not carried, so a law calling one would refer to a function that is not there"
+        )
+
+    declared = set(state_variables)
+    carried: list[DossierReaction] = []
+    for i in range(model.getNumReactions()):
+        reaction = model.getReaction(i)
+        law = reaction.getKineticLaw()
+        math = law.getMath() if law is not None else None
+        if math is None:
+            return (), (), f"reaction '{reaction.getId()}' states no rate law"
+        named = (
+            [sr.getSpecies() for sr in reaction.getListOfReactants()]
+            + [sr.getSpecies() for sr in reaction.getListOfProducts()]
+            + [sr.getSpecies() for sr in reaction.getListOfModifiers()]
+        )
+        outside = sorted({name for name in named if name not in declared})
+        if outside:
+            return (), (), (
+                f"reaction '{reaction.getId()}' names {', '.join(outside)}, which this dossier "
+                "does not declare as a state variable (a boundary or constant species is skipped "
+                "at intake)"
+            )
+        locals_: list[Parameter] = []
+        for j in range(law.getNumParameters()):
+            local = law.getParameter(j)
+            if not local.isSetValue():
+                return (), (), (
+                    f"reaction '{reaction.getId()}' has a local parameter "
+                    f"'{local.getId()}' with no value"
+                )
+            stated, normalized = _resolve_unit(model, local.getUnits())
+            locals_.append(Parameter(
+                name=local.getId(),
+                value=float(local.getValue()),
+                unit=stated,
+                normalized_unit=normalized,
+                source_location=source,
+                confidence=ExtractionConfidence.QUOTED,
+            ))
+        carried.append(DossierReaction(
+            id=reaction.getId(),
+            rate_expression=str(libsbml.formulaToL3String(math)),
+            source_location=source,
+            reactants=tuple(
+                (sr.getSpecies(), float(sr.getStoichiometry()))
+                for sr in reaction.getListOfReactants()
+            ),
+            products=tuple(
+                (sr.getSpecies(), float(sr.getStoichiometry()))
+                for sr in reaction.getListOfProducts()
+            ),
+            modifiers=tuple(sr.getSpecies() for sr in reaction.getListOfModifiers()),
+            local_parameters=tuple(locals_),
+            reversible=bool(reaction.getReversible()),
+        ))
+
+    compartment = Parameter(
+        name=only.getId(),
+        value=1.0,
+        unit=only.getUnits() or "dimensionless",
+        source_location=source,
+        confidence=ExtractionConfidence.QUOTED,
+    )
+    return tuple(carried), (compartment,), ""
 
 
 def _resolve_unit(model: Any, unit_id: str) -> tuple[str, str | None]:
@@ -479,7 +593,7 @@ _SEMANTIC_PACKAGES = frozenset(
 )
 
 
-def _unread_constructs(model: Any) -> tuple[Gap, ...]:
+def _unread_constructs(model: Any, *, reaction_refusal: str = "") -> tuple[Gap, ...]:
     """Record, as load-bearing gaps, the constructs this ingester reads past.
 
     Rules become equations here, so unlike the stochastic and fbc ingesters this path can carry
@@ -556,17 +670,20 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
             load_bearing=True,
             carried_by_artifact=False,
         ))
-    if model.getNumReactions():
-        # The largest thing this path reads past, and for a reaction-based model it is the model:
-        # the rules it does read are observables and volumes, so a dossier of a 10-reaction
-        # cascade records eight state variables and nothing that moves any of them.
+    if model.getNumReactions() and reaction_refusal:
+        # The largest thing this path can read past, and for a reaction-based model it is the
+        # model: the rules it does read are observables and volumes, so a dossier of a
+        # 10-reaction cascade recorded eight state variables and nothing that moved any of them.
+        # `_read_reactions` carries the network where a rebuild reproduces it as itself; the gap
+        # is what is left, and it names *why* rather than restating that reactions exist.
         gaps.append(Gap(
             element="reaction network",
             kind=GapKind.EQUATION,
             detail=(
                 f"the artifact's dynamics are {model.getNumReactions()} reaction(s), which this "
-                "dossier records no equation for; the state variables listed here have no stated "
-                "law of motion, and a model rebuilt from the dossier alone does not move"
+                f"dossier does not carry: {reaction_refusal}. The state variables listed here "
+                "have no stated law of motion, and a model rebuilt from the dossier alone does "
+                "not move"
             ),
             load_bearing=True,
             carried_by_artifact=True,

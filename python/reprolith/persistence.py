@@ -26,6 +26,7 @@ from .certificate import (
 from .dossier import (
     Dossier,
     DossierClaim,
+    DossierReaction,
     Equation,
     EquationKind,
     ExtractionConfidence,
@@ -234,6 +235,20 @@ def dossier_from_dict(record: dict[str, Any]) -> Dossier:
                           validates=a["validates"])
             for a in record["artifacts"]
         ),
+        reactions=tuple(
+            DossierReaction(
+                id=r["id"],
+                rate_expression=r["rate_expression"],
+                source_location=r["source_location"],
+                reactants=tuple((name, float(value)) for name, value in r["reactants"]),
+                products=tuple((name, float(value)) for name, value in r["products"]),
+                modifiers=tuple(r["modifiers"]),
+                local_parameters=tuple(_parameter_from(p) for p in r["local_parameters"]),
+                reversible=r["reversible"],
+            )
+            for r in record.get("reactions", ())
+        ),
+        compartments=tuple(_parameter_from(c) for c in record.get("compartments", ())),
     )
 
 

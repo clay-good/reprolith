@@ -195,20 +195,31 @@ def test_an_initial_assignment_is_carried_rather_than_recorded_as_a_gap() -> Non
     assert len(dossier.parameters) == 16
 
 
-def test_a_reaction_network_is_recorded_as_a_gap_not_read_past() -> None:
-    """The dossier's own dynamics are the largest thing this path does not carry.
+def test_a_reaction_network_is_carried_or_the_gap_says_why_not() -> None:
+    """The dossier's own dynamics were the largest thing this path did not carry.
 
     Rules become equations, so the ingester looked complete on a rule-based PK/PD model — but a
     reaction-based model's laws of motion live in its reactions, and none of them were read or
     recorded. A ten-reaction cascade produced eight state variables, zero equations, and zero
     gaps, which `estimate_difficulty` then published as "low: a valid shipped model and no gaps".
+
+    The cascade is carried now (`tests/test_reaction_carry.py` runs the round trip). What is
+    checked here is the other side: a network a rebuild would not reproduce as itself is still a
+    load-bearing gap, and the gap names the reason rather than restating that reactions exist.
     """
     from reprolith import GapKind, estimate_difficulty, ingest_sbml
 
     mapk = (Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.xml")
     dossier = ingest_sbml(mapk.read_text(encoding="utf-8"), entry="BIOMD0000000010")
     assert dossier.state_variables  # it does record the states
-    reaction_gaps = [g for g in dossier.gaps if g.element == "reaction network"]
+    assert len(dossier.reactions) == 10
+    assert not [g for g in dossier.gaps if g.element == "reaction network"]
+
+    two_compartments = (
+        Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000021.xml"
+    )
+    refused = ingest_sbml(two_compartments.read_text(encoding="utf-8"), entry="BIOMD0000000021")
+    reaction_gaps = [g for g in refused.gaps if g.element == "reaction network"]
     assert len(reaction_gaps) == 1
     assert reaction_gaps[0].kind is GapKind.EQUATION and reaction_gaps[0].load_bearing
     # The gap is real and load-bearing for anything rebuilt from the dossier alone — but the

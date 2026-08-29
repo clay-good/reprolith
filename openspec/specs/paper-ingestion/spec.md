@@ -42,6 +42,16 @@ stages depend on, and SHALL never silently invent content.
 - **AND** the element remains declared by that expression, so a model rebuilt from the dossier
   still has it — dropping the value must not drop the element
 
+#### Scenario: A model whose dynamics are reactions
+
+- **WHEN** the artifact's laws of motion are a reaction network
+- **THEN** the reactions are carried in the form the artifact states them — a stoichiometry and a
+  rate law, with the law's own local parameters travelling with it — rather than derived into
+  equations, since the derivation makes semantic choices the artifact did not
+- **AND** a network a model rebuilt from the dossier would not reproduce as itself is not carried,
+  and the gap recorded in its place names which condition it failed, because "not carried" and
+  "the model has none" are different facts
+
 ### Requirement: Claims are first-class and enumerable
 
 The dossier SHALL enumerate the concrete published results the paper stakes, because these

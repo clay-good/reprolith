@@ -583,7 +583,7 @@
   "gaps": [
     {
       "carried_by_artifact": true,
-      "detail": "the artifact's dynamics are 35 reaction(s), which this dossier records no equation for; the state variables listed here have no stated law of motion, and a model rebuilt from the dossier alone does not move",
+      "detail": "the artifact's dynamics are 35 reaction(s), which this dossier does not carry: the model has 21 compartments, and a rebuild has one. The state variables listed here have no stated law of motion, and a model rebuilt from the dossier alone does not move",
       "element": "reaction network",
       "kind": "equation",
       "load_bearing": true

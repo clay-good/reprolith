@@ -166,6 +166,55 @@ class Equation:
 
 
 @dataclass(frozen=True)
+class DossierReaction:
+    """A reaction the artifact's dynamics are written as: what it converts, and how fast.
+
+    A reaction-based model's laws of motion are not equations — they are a stoichiometry and a
+    rate law, and the ODE system is derived from them. The dossier used to record neither, so a
+    ten-reaction cascade produced state variables, no equations, and a `reaction network` gap
+    saying the largest part of the model was not carried. This carries it in the form the artifact
+    states it, rather than deriving an ODE the artifact never wrote: the derivation is a choice
+    about semantics (concentration or amount, which compartment divides what) and a dossier that
+    makes it silently describes a model the paper did not.
+
+    ``local_parameters`` are the kinetic law's own, which SBML lets shadow a global of the same
+    name — so they travel with the reaction, not with the model.
+    """
+
+    id: str
+    rate_expression: str
+    source_location: str
+    reactants: tuple[tuple[str, float], ...] = ()
+    products: tuple[tuple[str, float], ...] = ()
+    modifiers: tuple[str, ...] = ()
+    local_parameters: tuple[Parameter, ...] = ()
+    reversible: bool = False
+
+    def __post_init__(self) -> None:
+        if not self.id.strip():
+            raise ValueError("reaction id is required")
+        if not self.rate_expression.strip():
+            raise ValueError(
+                "a reaction without a rate law states no dynamics; record it as a Gap, not as a "
+                "reaction with an empty law"
+            )
+        if not self.source_location.strip():
+            raise ValueError("every extracted element must cite its source location")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "rate_expression": self.rate_expression,
+            "source_location": self.source_location,
+            "reactants": [[name, value] for name, value in self.reactants],
+            "products": [[name, value] for name, value in self.products],
+            "modifiers": list(self.modifiers),
+            "local_parameters": [p.to_dict() for p in self.local_parameters],
+            "reversible": self.reversible,
+        }
+
+
+@dataclass(frozen=True)
 class DossierClaim:
     """A concrete published result a reproduction can target — the oracle's checklist.
 
@@ -238,6 +287,14 @@ class Dossier:
     claims: tuple[DossierClaim, ...] = ()
     gaps: tuple[Gap, ...] = ()
     artifacts: tuple[ModelArtifact, ...] = field(default=())
+    #: The reactions the model's dynamics are written as, when it is a reaction network this
+    #: ingester can carry. Empty for a rule-based model, and omitted from :meth:`to_dict` then, so
+    #: every dossier written before reactions were carried keeps its bytes and its digest.
+    reactions: tuple[DossierReaction, ...] = ()
+    #: The single compartment a carried reaction network's species live in, when there is one.
+    #: A rate law may name it, so rebuilding under a compartment of another name leaves the law
+    #: referring to something that is not there.
+    compartments: tuple[Parameter, ...] = ()
 
     def validate(self) -> list[str]:
         """Structural problems that make the dossier ill-formed; empty when well-formed."""
@@ -246,6 +303,8 @@ class Dossier:
         problems += _duplicates("initial condition", [p.name for p in self.initial_conditions])
         problems += _duplicates("claim id", [c.id for c in self.claims])
         problems += _duplicates("state variable", list(self.state_variables))
+        problems += _duplicates("reaction id", [r.id for r in self.reactions])
+        problems += _duplicates("compartment", [c.name for c in self.compartments])
         return problems
 
     def targetable_claims(self) -> tuple[DossierClaim, ...]:
@@ -257,7 +316,7 @@ class Dossier:
         return tuple(g for g in self.gaps if g.load_bearing)
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        record: dict[str, Any] = {
             "entry": self.entry,
             "state_variables": list(self.state_variables),
             "equations": [e.to_dict() for e in self.equations],
@@ -267,6 +326,11 @@ class Dossier:
             "gaps": [g.to_dict() for g in self.gaps],
             "artifacts": [a.to_dict() for a in self.artifacts],
         }
+        if self.reactions:
+            record["reactions"] = [r.to_dict() for r in self.reactions]
+        if self.compartments:
+            record["compartments"] = [c.to_dict() for c in self.compartments]
+        return record
 
 
 def estimate_difficulty(dossier: Dossier) -> str:

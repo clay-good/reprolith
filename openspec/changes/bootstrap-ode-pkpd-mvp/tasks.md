@@ -20,9 +20,11 @@ a phase done until its verification holds.
 
 - [ ] 2.1 Produce a PK/PD dossier: compartment structure, rate expressions, PD link, parameters+units, initial conditions, dosing → verify: on a hand-checked paper, every element cites a source location
   - Partly done: `ingest_sbml` / `ingest_omex` produce this from a *shipped artifact*, every
-    element citing the file it came from. Reading compartment structure, the PD link, and the
-    dosing protocol out of manuscript prose is not built; the metformin worked example did it
-    by hand.
+    element citing the file it came from — including, since the reaction carry, a reaction-based
+    model's own laws of motion (stoichiometry and rate law) where a rebuild reproduces the model
+    as itself, and a named reason where it would not. Reading compartment structure, the PD link,
+    and the dosing protocol out of manuscript prose is not built; the metformin worked example did
+    it by hand.
 - [ ] 2.2 Enumerate targetable claims (curves and reported metrics) with reference data or figure-reference marking → verify: claim count and types match a manual read
   - Partly done: a shipped SED-ML document's plots are enumerated as claims and its reports are
     retained non-targetable (`enumerate_sedml_claims`), verified against a manual read of the

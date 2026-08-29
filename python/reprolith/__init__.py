@@ -42,6 +42,7 @@ from .determinism import certificate_digest, same_modulo_run_metadata
 from .dossier import (
     Dossier,
     DossierClaim,
+    DossierReaction,
     Equation,
     EquationKind,
     ExtractionConfidence,
@@ -359,6 +360,7 @@ __all__ = [
     "dossier_digest",
     "dossier_from_dict",
     "DossierClaim",
+    "DossierReaction",
     "DossierHistory",
     "DossierRevision",
     "engine_pin",

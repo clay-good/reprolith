@@ -74,7 +74,18 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
     missing_ics = [
         v for v in dossier.state_variables if v not in ics and v not in started_by_assignment
     ]
-    missing_eqs = [v for v in dossier.state_variables if v not in governing]
+    # A species a carried reaction network moves has its law of motion in the reactions, not in a
+    # rule. Requiring a rate equation for it would refuse every reaction-based dossier — the shape
+    # this build was extended to accept.
+    moved_by_reaction = {
+        name
+        for reaction in dossier.reactions
+        for name, _ in reaction.reactants + reaction.products
+    }
+    missing_eqs = [
+        v for v in dossier.state_variables
+        if v not in governing and v not in moved_by_reaction
+    ]
     if missing_ics:
         raise ValueError(f"cannot build: state variables without an initial condition: {missing_ics}")
     if missing_eqs:
@@ -108,15 +119,19 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
     model = document.createModel()
     model.setId(_sid(dossier.entry))
 
+    # The dossier's own compartment when it carries one, because a rate law may name it: rebuilt
+    # under a compartment of another name, the law refers to something that is not there. Its size
+    # is 1 by the same rule that let the reactions be carried at all.
+    compartment_id = dossier.compartments[0].name if dossier.compartments else "c"
     compartment = model.createCompartment()
-    compartment.setId("c")
+    compartment.setId(compartment_id)
     compartment.setConstant(True)
     compartment.setSize(1.0)
 
     for name in dossier.state_variables:
         species = model.createSpecies()
         species.setId(name)
-        species.setCompartment("c")
+        species.setCompartment(compartment_id)
         if name in ics:
             species.setInitialAmount(float(ics[name].value))
         species.setHasOnlySubstanceUnits(True)
@@ -153,7 +168,7 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
 
     # State variables first, in their declared order, so a dossier whose equations only govern
     # state variables emits byte-identical SBML to before equations carried a kind.
-    ordered = [governing[name] for name in dossier.state_variables] + [
+    ordered = [governing[name] for name in dossier.state_variables if name in governing] + [
         e for e in dossier.equations
         if e.target not in set(dossier.state_variables)
         and e.kind is not EquationKind.INITIAL_ASSIGNMENT
@@ -172,6 +187,38 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
         )
         rule.setVariable(equation.target)
         rule.setMath(math)
+
+    for carried in dossier.reactions:
+        reaction = model.createReaction()
+        reaction.setId(carried.id)
+        reaction.setReversible(carried.reversible)
+        reaction.setFast(False)
+        for species, stoichiometry in carried.reactants:
+            reference = reaction.createReactant()
+            reference.setSpecies(species)
+            reference.setStoichiometry(float(stoichiometry))
+            reference.setConstant(True)
+        for species, stoichiometry in carried.products:
+            reference = reaction.createProduct()
+            reference.setSpecies(species)
+            reference.setStoichiometry(float(stoichiometry))
+            reference.setConstant(True)
+        for species in carried.modifiers:
+            reaction.createModifier().setSpecies(species)
+        math = libsbml.parseL3Formula(carried.rate_expression)
+        if math is None:
+            raise ValueError(
+                f"could not parse the rate law for reaction {carried.id!r}: "
+                f"{carried.rate_expression!r}"
+            )
+        law = reaction.createKineticLaw()
+        law.setMath(math)
+        # A local parameter may shadow a global of the same name, so it has to be emitted inside
+        # the law it belongs to; hoisting it to the model would change which value the law reads.
+        for local in carried.local_parameters:
+            emitted = law.createLocalParameter() if level >= 3 else law.createParameter()
+            emitted.setId(local.name)
+            emitted.setValue(float(local.value))
 
     for equation in initial_assignments:
         math = libsbml.parseL3Formula(equation.expression)
