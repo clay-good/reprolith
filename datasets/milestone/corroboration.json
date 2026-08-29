@@ -443,7 +443,7 @@
     "prior_administrations": []
   },
   "BIOMD0000001028:Cmax-muscle-500mg": {
-    "distance_at_most": 1e-06,
+    "distance_at_most": 1e-07,
     "engine_independent": true,
     "engines": [
       "copasi",
@@ -898,6 +898,36 @@
   },
   "BIOMD0000001029:Cmax-stomach-500mg-twice-daily": {
     "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001039:AUC24-liver": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001039:AUC24-plasma": {
+    "distance_at_most": 1e-08,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001039:AUC24-stomach": {
+    "distance_at_most": 1e-07,
     "engine_independent": true,
     "engines": [
       "copasi",

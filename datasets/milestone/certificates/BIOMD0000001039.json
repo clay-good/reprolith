@@ -1,0 +1,75 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": false,
+      "claim_id": "AUC24-plasma",
+      "discrepancy": null,
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": null,
+      "protocol": "duration=24.0, steps=960, read=[mPlasmaVenous] auc",
+      "quantity": "Plasma AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
+      "reference_kind": "numeric",
+      "root_cause": "the AUC moves 22.2% between 960 and 1920 samples, wider than the 5.0% that separates a pass from a failure here; at this resolution the number is a property of the grid, so no verdict is established",
+      "source_location": "Table 2, Plasma row, Fitted (the paper simulates 91.4 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
+      "tolerance": null,
+      "tolerance_source": null,
+      "verdict": "not-evaluable"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "AUC24-stomach",
+      "discrepancy": "relative error 0.0107",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "protocol": "duration=24.0, steps=960, read=[mStomach] auc",
+      "quantity": "Stomach AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "Table 2, Stomach row, Fitted (the paper simulates 529.5 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "AUC24-liver",
+      "discrepancy": "relative error 0.7475",
+      "fault_hypothesis": "reconstruction",
+      "implicated": "Liver AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "protocol": "duration=24.0, steps=960, read=[mLiver] auc",
+      "quantity": "Liver AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
+      "reference_kind": "numeric",
+      "root_cause": "uncategorized",
+      "source_location": "Table 2, Liver row, Fitted (the paper simulates 523.5 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "failed"
+    }
+  ],
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": "deterministic-lsoda (judge rev 4942b917c80b)",
+    "engine": "copasi",
+    "version": "4.46.300 (Source)"
+  },
+  "gap_report": [
+    "unit not stated by the artifact: units \u2014 11 of 34 extracted values state no unit in the artifact (Ktp_Adipose, Ktp_Brain, Ktp_Heart, Ktp_IntestineVascular, Ktp_Kidney, \u2026); their magnitudes are recorded, their units are not"
+  ],
+  "overall": "partially-reproduced",
+  "paper": {
+    "doi": "10.1371/journal.pone.0249594",
+    "pubmed_id": null,
+    "title": "Zake2021 - PBPK model of metformin in mice: single dose intravenous"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

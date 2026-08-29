@@ -1,0 +1,828 @@
+{
+  "artifacts": [
+    {
+      "detected_format": "sbml",
+      "filename": "BioModels BIOMD0000001039",
+      "validates": true
+    }
+  ],
+  "claims": [],
+  "entry": "BIOMD0000001039",
+  "equations": [
+    {
+      "expression": "129.16 * (mUrine / Urine) * Compartment_5 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgUrine"
+    },
+    {
+      "expression": "129.16 * (mFeces / Feces) * Compartment_6 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgFeces"
+    },
+    {
+      "expression": "ModelValue_1 * 0.0549",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Liver"
+    },
+    {
+      "expression": "ModelValue_1 * 0.0056",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "KidneyPlasma"
+    },
+    {
+      "expression": "129.16 * (mKidneyPlasma / KidneyPlasma) * Compartment_2 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgKidneyPlasma"
+    },
+    {
+      "expression": "ModelValue_1 * 0.3585",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Remainder"
+    },
+    {
+      "expression": "129.16 * (mRemainder / Remainder) * Compartment_3 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgRemainder"
+    },
+    {
+      "expression": "ModelValue_1 * 0.0375",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "PlasmaVenous"
+    },
+    {
+      "expression": "ModelValue_1 * 0.005",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Heart"
+    },
+    {
+      "expression": "129.16 * (mHeart / Heart) * Compartment_7 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgHeart"
+    },
+    {
+      "expression": "ModelValue_1 * 0.384",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Muscle"
+    },
+    {
+      "expression": "129.16 * (mMuscle / Muscle) * Compartment_8 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgMuscle"
+    },
+    {
+      "expression": "ModelValue_1 * 0.0165",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Brain"
+    },
+    {
+      "expression": "ModelValue_1 * 0.07",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Adipose"
+    },
+    {
+      "expression": "129.16 * (mAdipose / Adipose) * Compartment_10 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgAdipose"
+    },
+    {
+      "expression": "ModelValue_1 * 0.0125",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "PlasmaArterial"
+    },
+    {
+      "expression": "ModelValue_1 * 0.0073",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Lung"
+    },
+    {
+      "expression": "ModelValue_1 * 0.0058",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "PortalVein"
+    },
+    {
+      "expression": "129.16 * (mPortalVein / PortalVein) * Compartment_13 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgPortalVein"
+    },
+    {
+      "expression": "ModelValue_1 * 0.006",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Stomach"
+    },
+    {
+      "expression": "ModelValue_1 * 0.0025",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "IntestineEnterocytes"
+    },
+    {
+      "expression": "129.16 * (mIntestineEnterocytes / IntestineEnterocytes) * Compartment_15 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgIntestineEnterocytes"
+    },
+    {
+      "expression": "ModelValue_1 * 0.0056",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "KidneyTissue"
+    },
+    {
+      "expression": "ModelValue_1 * 0.0228",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "IntestineVascular"
+    },
+    {
+      "expression": "ModelValue_1 * 0.0056",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "KidneyTubular"
+    },
+    {
+      "expression": "(Compartment_2 * (mKidneyPlasma / KidneyPlasma) + Compartment_16 * (mKidneyTissue / KidneyTissue) + Compartment_19 * (mKidneyTubular / KidneyTubular)) / (Compartment_2 + Compartment_16 + Compartment_19)",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mKidneySum"
+    },
+    {
+      "expression": "ModelValue_3 * 0.005",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "QAdipose"
+    },
+    {
+      "expression": "ModelValue_3 * 0.033",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "QBrain"
+    },
+    {
+      "expression": "ModelValue_3 * 0.066",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "QHeart"
+    },
+    {
+      "expression": "ModelValue_3 * 0.091",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "QKidney"
+    },
+    {
+      "expression": "ModelValue_3 * 0.159",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "QMuscle"
+    },
+    {
+      "expression": "ModelValue_3 * 0.411",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "QRemainder"
+    },
+    {
+      "expression": "129.16 * (mLiver / Liver) * Compartment_1 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgLiver"
+    },
+    {
+      "expression": "129.16 * (mIntestineLumen / IntestineLumen) * Compartment_0 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgIntestineLumen"
+    },
+    {
+      "expression": "129.16 * (mBrain / Brain) * Compartment_9 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgBrain"
+    },
+    {
+      "expression": "129.16 * Compartment_16 * (mKidneyTissue / KidneyTissue) / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgKidneyTissues"
+    },
+    {
+      "expression": "129.16 * (mIntestineVascular / IntestineVascular) * Compartment_17 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgIntestineVascular"
+    },
+    {
+      "expression": "129.16 * (mStomachLumen / StomachLumen) * Compartment_18 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgStomachLumen"
+    },
+    {
+      "expression": "mPlasmaArterial / PlasmaArterial",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mArterialPlasma__for_kidney"
+    },
+    {
+      "expression": "129.16 * Compartment_19 * (mKidneyTubular / KidneyTubular) / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgKidneyTubular"
+    },
+    {
+      "expression": "mgKidneyPlasma + mgKidneyTissues + mgKidneyTubular",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgKidneyTotal"
+    },
+    {
+      "expression": "mgIntestineEnterocytes + mgIntestineVascular",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgIntestineTotal"
+    },
+    {
+      "expression": "129.16 * (mPlasmaVenous / PlasmaVenous) * Compartment_4 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgPlasmaVenous"
+    },
+    {
+      "expression": "129.16 * (mPlasmaArterial / PlasmaArterial) * Compartment_11 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgPlasmaArterial"
+    },
+    {
+      "expression": "129.16 * (mLung / Lung) * Compartment_12 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgLung"
+    },
+    {
+      "expression": "129.16 * (mStomach / Stomach) * Compartment_14 / 1000000",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mgStomach"
+    },
+    {
+      "expression": "ModelValue_3 * 0.02",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "QLiverArtery"
+    },
+    {
+      "expression": "ModelValue_3 * 0.02",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "QStomach"
+    },
+    {
+      "expression": "ModelValue_3 * 0.06",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "QPortalVein"
+    },
+    {
+      "expression": "ModelValue_3 * 0.135",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "QIntestineVascular"
+    },
+    {
+      "expression": "ModelValue_35 + ModelValue_36 + ModelValue_37",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "QPortalVeinOut"
+    },
+    {
+      "expression": "ModelValue_47 + ModelValue_34",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "QLiverOut"
+    },
+    {
+      "expression": "((mIntestineEnterocytes / IntestineEnterocytes) * Compartment_15 + Compartment_17 * (mIntestineVascular / IntestineVascular)) / (Compartment_15 + Compartment_17)",
+      "kind": "assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mIntestineSum"
+    },
+    {
+      "expression": "(1000000 * Metformin_Dose_in_Plasma_in_mg / (129.16 * PlasmaVenous)) * PlasmaVenous",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "mPlasmaVenous"
+    },
+    {
+      "expression": "Adipose",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_10"
+    },
+    {
+      "expression": "Brain",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_9"
+    },
+    {
+      "expression": "Feces",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_6"
+    },
+    {
+      "expression": "Heart",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_7"
+    },
+    {
+      "expression": "IntestineEnterocytes",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_15"
+    },
+    {
+      "expression": "IntestineLumen",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_0"
+    },
+    {
+      "expression": "IntestineVascular",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_17"
+    },
+    {
+      "expression": "KidneyPlasma",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_2"
+    },
+    {
+      "expression": "KidneyTissue",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_16"
+    },
+    {
+      "expression": "KidneyTubular",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_19"
+    },
+    {
+      "expression": "Liver",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_1"
+    },
+    {
+      "expression": "Lung",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_12"
+    },
+    {
+      "expression": "Muscle",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_8"
+    },
+    {
+      "expression": "PlasmaArterial",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_11"
+    },
+    {
+      "expression": "PlasmaVenous",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_4"
+    },
+    {
+      "expression": "PortalVein",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_13"
+    },
+    {
+      "expression": "Remainder",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_3"
+    },
+    {
+      "expression": "StomachLumen",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_18"
+    },
+    {
+      "expression": "Stomach",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_14"
+    },
+    {
+      "expression": "Urine",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "Compartment_5"
+    },
+    {
+      "expression": "Body_Weight",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "ModelValue_1"
+    },
+    {
+      "expression": "Cardiac_Output",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "ModelValue_3"
+    },
+    {
+      "expression": "Metformin_Dose_in_Lumen_in_mg",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "ModelValue_0"
+    },
+    {
+      "expression": "QIntestineVascular",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "ModelValue_37"
+    },
+    {
+      "expression": "QLiverArtery",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "ModelValue_34"
+    },
+    {
+      "expression": "QPortalVeinOut",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "ModelValue_47"
+    },
+    {
+      "expression": "QPortalVein",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "ModelValue_36"
+    },
+    {
+      "expression": "QStomach",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001039",
+      "target": "ModelValue_35"
+    }
+  ],
+  "gaps": [
+    {
+      "carried_by_artifact": true,
+      "detail": "the artifact's dynamics are 33 reaction(s), which this dossier does not carry: the model has 20 compartments, and a rebuild has one. The state variables listed here have no stated law of motion, and a model rebuilt from the dossier alone does not move",
+      "element": "reaction network",
+      "kind": "equation",
+      "load_bearing": true
+    },
+    {
+      "carried_by_artifact": true,
+      "detail": "18 of 20 compartment(s) are not unit-sized (IntestineLumen=0.6, Liver=1.50975, KidneyPlasma=0.154, Remainder=9.85875, PlasmaVenous=1.03125); the dossier records no compartment, and a model rebuilt from it places every species in a single compartment of size 1",
+      "element": "compartment volumes",
+      "kind": "other",
+      "load_bearing": true
+    },
+    {
+      "carried_by_artifact": true,
+      "detail": "4 functionDefinition(s) are referenced by the model's own expressions and are not recorded here, so an equation that calls one cannot be evaluated from this dossier",
+      "element": "function definitions",
+      "kind": "equation",
+      "load_bearing": true
+    },
+    {
+      "carried_by_artifact": true,
+      "detail": "the artifact carries 1 event(s) \u2014 a state change at a moment in time, usually a dose \u2014 which this dossier cannot represent; a model rebuilt from it alone runs without them",
+      "element": "events",
+      "kind": "dosing",
+      "load_bearing": true
+    },
+    {
+      "detail": "11 of 34 extracted values state no unit in the artifact (Ktp_Adipose, Ktp_Brain, Ktp_Heart, Ktp_IntestineVascular, Ktp_Kidney, \u2026); their magnitudes are recorded, their units are not",
+      "element": "units",
+      "kind": "unit",
+      "load_bearing": true
+    }
+  ],
+  "initial_conditions": [
+    {
+      "confidence": "quoted",
+      "name": "mLiver",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mKidneyPlasma",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mRemainder",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mHeart",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mMuscle",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mAdipose",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mBrain",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mFeces",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mUrine",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mIntestineLumen",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mPlasmaArterial",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mLung",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mPortalVein",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mStomach",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mIntestineEnterocytes",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mKidneyTissue",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mIntestineVascular",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mStomachLumen",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "mKidneyTubular",
+      "normalized_unit": "10^-9 mole",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "substance",
+      "value": 0.0
+    }
+  ],
+  "parameters": [
+    {
+      "confidence": "quoted",
+      "name": "Metformin_Dose_in_Lumen_in_mg",
+      "normalized_unit": "10^-3 gram",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unit_0",
+      "value": 0.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "Body_Weight",
+      "normalized_unit": "10^-3 litre",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unit_1",
+      "value": 27.5
+    },
+    {
+      "confidence": "quoted",
+      "name": "Metformin_Dose_in_Plasma_in_mg",
+      "normalized_unit": "10^-3 gram",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unit_0",
+      "value": 1.375
+    },
+    {
+      "confidence": "quoted",
+      "name": "Cardiac_Output",
+      "normalized_unit": "10^-3 litre * (3600*10^2 second)^-1",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unit_2",
+      "value": 838.8
+    },
+    {
+      "confidence": "quoted",
+      "name": "Ktp_Liver",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unstated",
+      "value": 5.5
+    },
+    {
+      "confidence": "quoted",
+      "name": "Ktp_Brain",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unstated",
+      "value": 0.8
+    },
+    {
+      "confidence": "quoted",
+      "name": "Ktp_Adipose",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unstated",
+      "value": 0.73
+    },
+    {
+      "confidence": "quoted",
+      "name": "Ktp_Heart",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unstated",
+      "value": 2.50008880523789
+    },
+    {
+      "confidence": "quoted",
+      "name": "Ktp_Kidney",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unstated",
+      "value": 4.5
+    },
+    {
+      "confidence": "quoted",
+      "name": "Ktp_Muscle",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unstated",
+      "value": 4.1
+    },
+    {
+      "confidence": "quoted",
+      "name": "Ktp_Remainder",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unstated",
+      "value": 0.8
+    },
+    {
+      "confidence": "quoted",
+      "name": "Ktp_Lung",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unstated",
+      "value": 3.0
+    },
+    {
+      "confidence": "quoted",
+      "name": "Ktp_Stomach",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unstated",
+      "value": 3.20000000001417
+    },
+    {
+      "confidence": "quoted",
+      "name": "Ktp_IntestineVascular",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unstated",
+      "value": 4.6
+    },
+    {
+      "confidence": "quoted",
+      "name": "Qgfr",
+      "source_location": "BioModels BIOMD0000001039",
+      "unit": "unstated",
+      "value": 20.0
+    }
+  ],
+  "state_variables": [
+    "mLiver",
+    "mKidneyPlasma",
+    "mRemainder",
+    "mPlasmaVenous",
+    "mHeart",
+    "mMuscle",
+    "mAdipose",
+    "mBrain",
+    "mFeces",
+    "mUrine",
+    "mIntestineLumen",
+    "mPlasmaArterial",
+    "mLung",
+    "mPortalVein",
+    "mStomach",
+    "mIntestineEnterocytes",
+    "mKidneyTissue",
+    "mIntestineVascular",
+    "mStomachLumen",
+    "mKidneyTubular"
+  ]
+}

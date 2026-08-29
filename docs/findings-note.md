@@ -3075,6 +3075,38 @@ Which is the counterpart of the finding that produced the guard: the same metric
 paper's *intravenous* mouse model does not converge at all, and the paper says why in prose. One
 metric, two models, and the difference is the shape of the curve.
 
+## One entry, three verdicts
+
+The intravenous mouse model was the last of the paper's four, and it had been written off twice —
+once for having no Cmax to claim, once for an AUC that would not converge. Both were true and
+neither was the whole picture. Its three claims land on **three different verdicts**, which no
+other entry in this corpus does:
+
+| | | |
+| --- | --- | --- |
+| **Stomach** | `reproduced` | 523.85 against 529.5 — 1.07% |
+| **Liver** | `failed` | 914.84 against 523.5 — 74.75%, **no cause established** |
+| **Plasma** | `not-evaluable` | the AUC still moves 22.2% when the run is sampled twice as finely |
+
+Each is the honest answer to a different question. The stomach exposure reproduces. The liver
+exposure does not, and nothing here has diagnosed why — so it publishes `uncategorized` with the
+fault laid at the reconstruction, which is what an undiagnosed miss is *supposed* to look like and
+the first time this corpus has produced one. And the plasma exposure is not judged at all, because
+an intravenous bolus puts nearly all of its area in the first minutes of a twenty-four hour window
+and a trapezoidal sum over a uniform grid cannot see it — the guard written this morning, firing on
+a real published number for the first time.
+
+An entry that holds a pass, a failure and an abstention at once is also the sharpest illustration of
+why a binary ground-truth label cannot score this engine. Its label says `reproduced`.
+
+### A guard caught the paper's own typo
+
+`require_same_paper` refused the certificate outright: the catalog's title says *"single dose
+intravenous"* and the deposited model's own `name` attribute says *"single dose intavenous"*. The
+check compares the two sides of a filing and neither title named the other, so it would not file the
+certificate — which is exactly its job, and the misspelling is in the artifact rather than in
+anything here.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

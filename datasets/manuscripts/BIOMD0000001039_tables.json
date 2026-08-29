@@ -1,0 +1,88 @@
+{
+  "description": "The rows of the source paper's own tables that the committed claims for BIOMD0000001028 are read from, quoted here so a test can check the reference values against the paper offline. Regenerate with scripts/fetch_manuscript_tables.py, which reads the open-access full text from Europe PMC.",
+  "paper": {
+    "title": "Physiologically based metformin pharmacokinetics model of mice and scale-up to humans for the estimation of concentrations in various tissues",
+    "doi": "10.1371/journal.pone.0249594",
+    "pmcid": "PMC8026019",
+    "license": "CC BY 4.0 (\u00a9 2021 Zake et al.)"
+  },
+  "tables": {
+    "Table 2": {
+      "caption": "Metformin pharmacokinetic parameter comparison of experimental data [1] and model simulations in plasma, intestine, and stomach following a single 50mg/kg intravenous dose in mice.",
+      "rows": [
+        [
+          "Tissue",
+          "Type",
+          "T1/2, h",
+          "T1/2 measured- fitted, %",
+          "AUC24, nmol*h/mL",
+          "AUC measured- fitted, %"
+        ],
+        [
+          "Intestine",
+          "Measured",
+          "0.8",
+          "46",
+          "452.5",
+          "21"
+        ],
+        [
+          "Intestine",
+          "Fitted",
+          "1.2",
+          "46",
+          "549.5",
+          "21"
+        ],
+        [
+          "Plasma",
+          "Measured",
+          "0.5",
+          "72",
+          "26.1",
+          "250"
+        ],
+        [
+          "Plasma",
+          "Fitted",
+          "0.9",
+          "72",
+          "91.4",
+          "250"
+        ],
+        [
+          "Stomach",
+          "Measured",
+          "1.0",
+          "-13",
+          "182.9",
+          "190"
+        ],
+        [
+          "Stomach",
+          "Fitted",
+          "0.9",
+          "-13",
+          "529.5",
+          "190"
+        ],
+        [
+          "Liver",
+          "Measured",
+          "0.7",
+          "17",
+          "191.2",
+          "173"
+        ],
+        [
+          "Liver",
+          "Fitted",
+          "0.8",
+          "17",
+          "523.5",
+          "173"
+        ]
+      ]
+    }
+  }
+}

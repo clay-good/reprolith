@@ -9,25 +9,29 @@ reproduced, partially, or not — for each result, with the reason.
 
 That is what it is *for*, and it is worth being exact about how much of it is done today.
 
-Of the thirty-two published certificates, **three** check a reconstruction against numbers read
-from a paper. Between them they carry **seventy-seven claims** — every one a number that paper's own model
-reports, covering all three of its published Cmax tables: ten tissues at 500, 1000 and 1500 mg after
-a single human dose, again under twice-daily dosing, seven tissues after a single 50 mg/kg dose in
-mice — their peak and their 24-hour exposure both, and three validation arms that each follow an earlier dose.
+Of the thirty-three published certificates, **four** check a reconstruction against numbers read
+from a paper — one for each model that paper deposited. Between them they carry **eighty claims**,
+every one a number the paper's own model reports: ten tissues at 500, 1000 and 1500 mg after a
+single human dose, again under twice-daily dosing, seven tissues in mice by peak and by 24-hour
+exposure, three validation arms that each follow an earlier dose, and the intravenous mouse model's
+three exposures.
 
 The mouse entry is the first in this class to come back **`reproduced`** — a clean, unqualified
 pass. Seven tissues, worst error 0.17%, and no assumption: that paper dosed its mice with metformin
 rather than the hydrochloride salt, so nothing had to be converted. It is also the first agreement
 the blind self-validation run has recorded for this class, which stood at 0 of 31 this morning.
 
-**Seventy-one reproduce. Six do not, and the certificate says why for each.** Three because the
+**Seventy-two reproduce, seven do not, and one cannot be evaluated — each with its reason.** Three because the
 deposited model runs four of the eight administrations its own name states — which matters only for
 a tissue slow enough to still be accumulating, so the cause is recorded per claim rather than as a
 verdict on the model. Three because one cell of the paper's table contradicts the rest of its own
 row: its Brain Cmax equals plasma's, while that row's AUC and mean concentration are four fifths of
-plasma's, as they are in the paper's other table and in the model. Each of those six publishes what
-was measured, the cell it implicates, and that the fault is a hypothesis. That is the output this
-project exists to produce.
+plasma's — and the reconstruction regenerates that row's AUC to 0.07% while missing its Cmax by
+20%, so it reproduces every other number the paper published for that tissue. One more misses by
+75% with **no cause established**, and says exactly that rather than inventing one. And one claim
+cannot be evaluated at all: an intravenous exposure whose value still moves 22% when the run is
+sampled twice as finely, so no verdict is stated. Each publishes what was measured, what it
+implicates, and that a fault is a hypothesis. That is the output this project exists to produce.
 
 Two things are deliberately not claimed. The paper's Intestine and Kidney rows: the model splits
 each across three compartments, and which one the row means is a judgement about the paper. And

@@ -45,6 +45,13 @@ _WANTED = {
         "pmcid": "PMC8026019",
         "tables": {"pone.0249594.t001": 20},
     },
+    # And its intravenous mouse model, whose Table 2 reports an exposure and a half-life and no
+    # peak — the paper says why: "due to the IV curves' decreasing nature, only AUC24 and T1/2
+    # values were calculated for the IV experimental data".
+    "BIOMD0000001039": {
+        "pmcid": "PMC8026019",
+        "tables": {"pone.0249594.t002": 12},
+    },
     # The same paper, its twice-daily table: the multiple-dose human model is a separate entry.
     "BIOMD0000001029": {
         "pmcid": "PMC8026019",

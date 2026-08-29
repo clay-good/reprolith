@@ -53,7 +53,8 @@ def test_the_readme_sends_a_reader_to_help_for_the_commands_it_omits() -> None:
 #: wrong in a way no reader can detect, so the number and the word are pinned together.
 #: Longest first: "thirty" is a substring of "thirty-one", so a shorter spelling that happens to
 #: be a prefix would match the longer sentence and check the wrong number.
-_WORDED_COUNTS = {"thirty-one": 31, "thirty-two": 32, "thirty-three": 33, "thirty": 30}
+_WORDED_COUNTS = {"thirty-one": 31, "thirty-two": 32, "thirty-three": 33,
+                  "thirty-four": 34, "thirty": 30}
 
 
 def test_the_published_certificate_count_the_readme_states_is_the_count() -> None:
@@ -90,9 +91,9 @@ def test_the_front_pages_reproduction_split_is_the_certificates_split() -> None:
                 reproduced += 1
             else:
                 missed += 1
-    assert (reproduced, missed) == (71, 6), (reproduced, missed)
-    assert "Seventy-one reproduce. Six do not" in _README
-    assert "**seventy-seven claims**" in _README and reproduced + missed == 77
+    assert (reproduced, missed) == (72, 8), (reproduced, missed)
+    assert "Seventy-two reproduce, seven do not, and one cannot be evaluated" in _README
+    assert "**eighty claims**" in _README and reproduced + missed == 80
 
 
 def test_the_front_page_does_not_claim_the_extraction_it_has_not_built() -> None:

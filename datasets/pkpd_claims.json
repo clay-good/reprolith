@@ -932,6 +932,41 @@
           "metric": "auc"
         }
       ]
+    },
+    "BIOMD0000001039": {
+      "model_file": "worked_examples/Zake2021_Metformin_Mice_IV.xml",
+      "paper": {
+        "title": "Zake2021 - PBPK model of metformin in mice: single dose intravenous",
+        "doi": "10.1371/journal.pone.0249594"
+      },
+      "duration": 24.0,
+      "steps": 960,
+      "claims": [
+        {
+          "claim_id": "AUC24-plasma",
+          "quantity": "Plasma AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
+          "species": "mPlasmaVenous",
+          "reported": 91.4,
+          "source_location": "Table 2, Plasma row, Fitted (the paper simulates 91.4 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
+          "metric": "auc"
+        },
+        {
+          "claim_id": "AUC24-stomach",
+          "quantity": "Stomach AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
+          "species": "mStomach",
+          "reported": 529.5,
+          "source_location": "Table 2, Stomach row, Fitted (the paper simulates 529.5 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
+          "metric": "auc"
+        },
+        {
+          "claim_id": "AUC24-liver",
+          "quantity": "Liver AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
+          "species": "mLiver",
+          "reported": 523.5,
+          "source_location": "Table 2, Liver row, Fitted (the paper simulates 523.5 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
+          "metric": "auc"
+        }
+      ]
     }
   }
 }

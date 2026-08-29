@@ -21,7 +21,6 @@
         "BIOMD0000000673",
         "BIOMD0000000765",
         "BIOMD0000000948",
-        "BIOMD0000001039",
         "MODEL1006230040",
         "MODEL1711210003",
         "MODEL2003190002",
@@ -36,7 +35,7 @@
       "basis": "observed",
       "stage": "ingest",
       "resolution": "explained",
-      "note": "28 of the thirty-one PK/PD entries disagree with their BioModels label because Reprolith returned blocked, not because it judged the paper wrong. Reprolith holds no extracted claims for these papers, so the run reports run.NO_CLAIMS_REASON and abstains without fetching or opening anything; a blocked verdict can never equal a reproduced or not-reproduced label, which is what makes the raw agreement 0/31. The reason text used to say the claims had not been extracted 'from the shipped model artifact', which named an inspection that never happened \u2014 no artifact is read on this path at all. Explained rather than fixed: the responsible stage is ingestion, and the missing input is each paper's targetable claims read from its manuscript, which is not automated.",
+      "note": "27 of the thirty-one PK/PD entries disagree with their BioModels label because Reprolith returned blocked, not because it judged the paper wrong. Reprolith holds no extracted claims for these papers, so the run reports run.NO_CLAIMS_REASON and abstains without fetching or opening anything; a blocked verdict can never equal a reproduced or not-reproduced label, which is what makes the raw agreement 0/31. The reason text used to say the claims had not been extracted 'from the shipped model artifact', which named an inspection that never happened \u2014 no artifact is read on this path at all. Explained rather than fixed: the responsible stage is ingestion, and the missing input is each paper's targetable claims read from its manuscript, which is not automated.",
       "evidence": [
         {
           "path": "python/reprolith/run.py",
@@ -440,6 +439,29 @@
           ]
         },
         "tests/test_twice_daily_shortfalls.py",
+        "docs/findings-note.md"
+      ]
+    },
+    {
+      "id": "pkpd-mice-iv-three-verdicts-one-entry",
+      "kind": "disagreement",
+      "subjects": [
+        "BIOMD0000001039"
+      ],
+      "basis": "observed",
+      "stage": "oracle",
+      "resolution": "explained",
+      "note": "This entry disagrees with its reproduced label for a reason no other entry in the set has: it was evaluated and came back mixed. Its paper reports an exposure and a half-life for the intravenous mouse model and no peak \u2014 the article says why, 'due to the IV curves' decreasing nature, only AUC24 and T1/2 values were calculated for the IV experimental data' \u2014 so all three claims read an AUC, and the three land on three different verdicts. Stomach reproduces at 1.07%. Liver misses by 74.75% with no cause established, so it publishes the uncategorized shortfall faulted to the reconstruction, which is what an undiagnosed miss is supposed to look like. And plasma abstains: its AUC moves 22.2% between 960 and 1920 samples, because an intravenous bolus puts almost all of its area in the first minutes of a twenty-four hour window and a trapezoidal sum over a uniform grid cannot see it. Explained, not fixed: a binary label cannot express one entry holding a pass, a failure and an abstention at once, and the liver miss is recorded as undiagnosed rather than attributed to a cause nobody has established.",
+      "evidence": [
+        {
+          "path": "datasets/milestone/certificates/BIOMD0000001039.json",
+          "quotes": [
+            "\"verdict\": \"not-evaluable\"",
+            "\"verdict\": \"failed\"",
+            "\"root_cause\": \"uncategorized\""
+          ]
+        },
+        "datasets/manuscripts/BIOMD0000001039_tables.json",
         "docs/findings-note.md"
       ]
     }
