@@ -111,3 +111,21 @@ def test_the_guard_only_applies_to_the_metric_that_needs_it() -> None:
     )
     (assessment,) = cert.assessments
     assert assessment.verdict is Verdict.REPRODUCED
+
+
+def test_a_curve_claim_has_no_free_grid_to_converge_over() -> None:
+    """Why the guard above has no curve counterpart, written down so it is not chased again.
+
+    An AUC's sample count is a free numerical choice with no bearing on what the paper reported,
+    which is what makes "measure it again at twice the resolution" meaningful. A curve claim's
+    grid is the claim: `judge_curve` refuses a reference and a prediction of different lengths, so
+    a claim's `steps` is fixed by how many points its reference has. Doubling it would not refine
+    the same comparison — it would be a different one, against a reference that does not exist.
+    """
+    from reprolith import judge_curve
+
+    with pytest.raises(ValueError, match="same points"):
+        judge_curve(
+            claim_id="c", quantity="q", source_location="Figure 1",
+            reference=(1.0, 2.0, 3.0), predicted=(1.0, 2.0, 3.0, 4.0),
+        )

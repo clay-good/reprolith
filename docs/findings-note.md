@@ -2596,6 +2596,17 @@ reverse. And it cost the corpus nothing to adopt, because every committed claim 
 precisely because the metric it protects has never been used, and the first real use of it would
 have been the one that got it wrong.
 
+**The sweep that follows it comes back clean, and that is worth recording too.** `_metric` is
+called from one place, so there is no sibling front-end computing an unguarded AUC — the shape
+this record keeps finding, a rule reaching one surface and not its neighbour, is not present here.
+And the curve comparison, which the same docstring says "moves with the sample count", needs no
+counterpart: `judge_curve` refuses a reference and a prediction of different lengths, so a curve
+claim's grid *is* the claim. An AUC's sample count is a free numerical choice with no bearing on
+what the paper reported, which is exactly what makes "measure it again at twice the resolution"
+meaningful; doubling a curve claim's grid would not refine the comparison, it would be a different
+comparison against a reference that does not exist. That asymmetry is now a test, so the next round
+does not chase it.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
