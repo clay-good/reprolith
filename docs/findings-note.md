@@ -3042,6 +3042,39 @@ Which is the same shape as the corrected value itself: a number in a document th
 re-derives goes quietly out of date, and a citation check that passes tells you only that the
 words are still there.
 
+## The accusation, checked with a second metric
+
+The brain claim says a cell of the paper's table is wrong. That rested on the table's own internal
+arithmetic — Brain's AUC and mean concentration are 0.80 of plasma's, its Cmax is 1.00 — which is
+an argument from the paper about the paper. The engine can do better than that, and it did:
+
+| Table 7, twice-daily 500 mg | AUC24 | Cmax |
+| --- | --- | --- |
+| **Brain** | 67.4 vs 67.4 — **0.07%** | 5.512 vs 6.9 — **20.1%** |
+| **Red blood cells** | 57.1 vs 90.3 — 36.8% | 2.710 vs 3.2 — 15.3% |
+| Plasma | 84.3 vs 84.2 — 0.13% | 6.891 vs 6.9 — 0.13% |
+| Liver | 701.1 vs 700.4 — 0.09% | 76.797 vs 76.7 — 0.13% |
+
+**The model reproduces the paper's Brain row exactly, and fails on one cell of it.** That is a far
+stronger statement than the ratio argument: not "these numbers are mutually inconsistent" but "we
+regenerate every other number you published for this tissue".
+
+And the two causes separate cleanly under a second metric, which is what makes it evidence rather
+than coincidence. A **manuscript error** is one cell: the rest of the row reproduces. An
+**incomplete protocol** is the whole profile: red blood cells miss on exposure *and* peak, because
+four doses of eight leaves an accumulating tissue short everywhere, not at one point.
+
+## The first AUC claims in the corpus
+
+The convergence guard added this morning was, in its own note, "free precisely because the metric it
+protects has never been used". It is used now. The mouse entry's Table 1 publishes a 24-hour
+exposure beside every Cmax, and all seven reproduce — worst **0.37%**, every one converging four to
+seven orders inside the pass tolerance, on a smooth oral profile where the guard costs nothing.
+
+Which is the counterpart of the finding that produced the guard: the same metric on the same
+paper's *intravenous* mouse model does not converge at all, and the paper says why in prose. One
+metric, two models, and the difference is the shape of the curve.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

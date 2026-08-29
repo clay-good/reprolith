@@ -10,17 +10,17 @@ reproduced, partially, or not — for each result, with the reason.
 That is what it is *for*, and it is worth being exact about how much of it is done today.
 
 Of the thirty-two published certificates, **three** check a reconstruction against numbers read
-from a paper. Between them they carry **seventy claims** — every one a number that paper's own model
+from a paper. Between them they carry **seventy-seven claims** — every one a number that paper's own model
 reports, covering all three of its published Cmax tables: ten tissues at 500, 1000 and 1500 mg after
 a single human dose, again under twice-daily dosing, seven tissues after a single 50 mg/kg dose in
-mice, and three validation arms that each follow an earlier dose.
+mice — their peak and their 24-hour exposure both, and three validation arms that each follow an earlier dose.
 
 The mouse entry is the first in this class to come back **`reproduced`** — a clean, unqualified
 pass. Seven tissues, worst error 0.17%, and no assumption: that paper dosed its mice with metformin
 rather than the hydrochloride salt, so nothing had to be converted. It is also the first agreement
 the blind self-validation run has recorded for this class, which stood at 0 of 31 this morning.
 
-**Sixty-four reproduce. Six do not, and the certificate says why for each.** Three because the
+**Seventy-one reproduce. Six do not, and the certificate says why for each.** Three because the
 deposited model runs four of the eight administrations its own name states — which matters only for
 a tissue slow enough to still be accumulating, so the cause is recorded per claim rather than as a
 verdict on the model. Three because one cell of the paper's table contradicts the rest of its own

@@ -874,6 +874,62 @@
           "reported": 21.8,
           "source_location": "Table 1, Brain row, Fitted (the paper simulates 21.8 nmol/mL after a single 50 mg/kg PO dose)",
           "metric": "cmax"
+        },
+        {
+          "claim_id": "AUC24-plasma",
+          "quantity": "Plasma AUC over 24 h after a single 50 mg/kg oral dose in mice",
+          "species": "mPlasmaVenous",
+          "reported": 105.3,
+          "source_location": "Table 1, Plasma row, Fitted (the paper simulates 105.3 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+          "metric": "auc"
+        },
+        {
+          "claim_id": "AUC24-portal-vein",
+          "quantity": "Portal vein AUC over 24 h after a single 50 mg/kg oral dose in mice",
+          "species": "mPortalVein",
+          "reported": 142.9,
+          "source_location": "Table 1, Portal vein row, Fitted (the paper simulates 142.9 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+          "metric": "auc"
+        },
+        {
+          "claim_id": "AUC24-liver",
+          "quantity": "Liver AUC over 24 h after a single 50 mg/kg oral dose in mice",
+          "species": "mLiver",
+          "reported": 768.7,
+          "source_location": "Table 1, Liver row, Fitted (the paper simulates 768.7 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+          "metric": "auc"
+        },
+        {
+          "claim_id": "AUC24-heart",
+          "quantity": "Heart AUC over 24 h after a single 50 mg/kg oral dose in mice",
+          "species": "mHeart",
+          "reported": 263.2,
+          "source_location": "Table 1, Heart row, Fitted (the paper simulates 263.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+          "metric": "auc"
+        },
+        {
+          "claim_id": "AUC24-muscle",
+          "quantity": "Muscle AUC over 24 h after a single 50 mg/kg oral dose in mice",
+          "species": "mMuscle",
+          "reported": 431.2,
+          "source_location": "Table 1, Muscle row, Fitted (the paper simulates 431.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+          "metric": "auc"
+        },
+        {
+          "claim_id": "AUC24-adipose",
+          "quantity": "Adipose AUC over 24 h after a single 50 mg/kg oral dose in mice",
+          "species": "mAdipose",
+          "reported": 76.8,
+          "source_location": "Table 1, Adipose row, Fitted (the paper simulates 76.8 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+          "metric": "auc"
+        },
+        {
+          "claim_id": "AUC24-brain",
+          "quantity": "Brain AUC over 24 h after a single 50 mg/kg oral dose in mice",
+          "species": "mBrain",
+          "reported": 84.2,
+          "source_location": "Table 1, Brain row, Fitted (the paper simulates 84.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+          "metric": "auc"
         }
       ]
     }

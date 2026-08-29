@@ -70,6 +70,62 @@
       "protocol": "Table 1, Brain row, Fitted (the paper simulates 21.8 nmol/mL after a single 50 mg/kg PO dose)",
       "steps": 960,
       "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "AUC24-plasma",
+      "metric": "auc",
+      "output": "[mPlasmaVenous]",
+      "protocol": "Table 1, Plasma row, Fitted (the paper simulates 105.3 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "AUC24-portal-vein",
+      "metric": "auc",
+      "output": "[mPortalVein]",
+      "protocol": "Table 1, Portal vein row, Fitted (the paper simulates 142.9 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "AUC24-liver",
+      "metric": "auc",
+      "output": "[mLiver]",
+      "protocol": "Table 1, Liver row, Fitted (the paper simulates 768.7 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "AUC24-heart",
+      "metric": "auc",
+      "output": "[mHeart]",
+      "protocol": "Table 1, Heart row, Fitted (the paper simulates 263.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "AUC24-muscle",
+      "metric": "auc",
+      "output": "[mMuscle]",
+      "protocol": "Table 1, Muscle row, Fitted (the paper simulates 431.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "AUC24-adipose",
+      "metric": "auc",
+      "output": "[mAdipose]",
+      "protocol": "Table 1, Adipose row, Fitted (the paper simulates 76.8 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "AUC24-brain",
+      "metric": "auc",
+      "output": "[mBrain]",
+      "protocol": "Table 1, Brain row, Fitted (the paper simulates 84.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
     }
   ],
   "source_dossier": "BIOMD0000001027"

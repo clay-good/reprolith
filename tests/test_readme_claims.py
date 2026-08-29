@@ -90,9 +90,9 @@ def test_the_front_pages_reproduction_split_is_the_certificates_split() -> None:
                 reproduced += 1
             else:
                 missed += 1
-    assert (reproduced, missed) == (64, 6), (reproduced, missed)
-    assert "Sixty-four reproduce. Six do not" in _README
-    assert "**seventy claims**" in _README and reproduced + missed == 70
+    assert (reproduced, missed) == (71, 6), (reproduced, missed)
+    assert "Seventy-one reproduce. Six do not" in _README
+    assert "**seventy-seven claims**" in _README and reproduced + missed == 77
 
 
 def test_the_front_page_does_not_claim_the_extraction_it_has_not_built() -> None:
