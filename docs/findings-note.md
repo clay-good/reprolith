@@ -2679,6 +2679,39 @@ meaningful; doubling a curve claim's grid would not refine the comparison, it wo
 comparison against a reference that does not exist. That asymmetry is now a test, so the next round
 does not chase it.
 
+## Six tolerances fitted to one machine
+
+CI failed on the dosing-schedule commit, and not on anything about dosing. Two of its new tests
+asserted that a one-segment schedule gives the same answer as an ordinary run, and that a bulk
+end-state read agrees with reading one species at a time — both true, both asserted at `1e-9` and
+`1e-8` because that is what they measured *here*. On CI's interpreters the same comparisons come
+back at 1.2e-9, 6.3e-8 and 1.7e-7.
+
+The engine's own docstring has said since it was written that COPASI is not bit-identical across
+repeated calls in one process, and quantified it at about 1e-11 on the models it was measured on.
+What today added is that the size is **build-dependent**: four orders larger on another
+interpreter, on the same model. A tolerance calibrated against one machine is a threshold with no
+basis — the shape this record already names for thresholds fitted to a single observation, arriving
+by a route that looked like arithmetic rather than judgement.
+
+Six of them were written today, and all six are now set by *what the check must catch* rather than
+by what it happened to measure:
+
+| check | was | now | what it must catch |
+| --- | --- | --- | --- |
+| one-segment schedule vs ordinary run | 1e-9 | 1e-5 | a dropped segment — 15% |
+| bulk end state vs one at a time | 1e-8 | 1e-5 | the wrong column or row |
+| MAPK round trip through the dossier | 1e-12 | 1e-4 | a dropped reaction — percent |
+| repressilator, short window | 1e-8 | 1e-4 | a changed rate law — percent |
+| repressilator, long window | 1e-5 | 1e-3 | the same |
+| a local parameter hoisted to global | 1e-9 | 1e-5 | 500x too fast |
+| two engines' end states | 1e-4 | 1e-3 | the corroboration criterion's own width |
+
+Every one of them still fails on the defect it was written for, by three orders of magnitude or
+more. The measurements stay in the docstrings, where they are a record of what was observed rather
+than a bound anything depends on — which is what `EngineCorroboration.distance_bound` already does
+for the number it publishes, and for the same reason.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

@@ -66,8 +66,13 @@ def test_a_one_segment_schedule_is_the_ordinary_run() -> None:
     times, values = _run_schedule(_MODEL, "mPlasmaVenous", schedule=schedule, steps=480)
     plain_times, plain_values = simulate(_MODEL, "mPlasmaVenous", duration=24.0, steps=480)
     assert times == plain_times
-    # Not bit-identical: COPASI is not, across repeated calls in one process (see `simulate`).
-    assert max(values) == pytest.approx(max(plain_values), rel=1e-9)
+    # Not bit-identical, and the gap is not the same size everywhere. COPASI differs across
+    # repeated calls in one process (see `simulate`), and how much depends on the build: this
+    # agreed to 1e-11 locally and to 1.2e-9 and 1.7e-7 on two of CI's interpreters. A tolerance
+    # fitted to one machine is a threshold with no basis, so this one is set where the *claim*
+    # lives — the failure it must catch is the segment being dropped, which moves the answer by
+    # 15%, not by parts in ten million.
+    assert max(values) == pytest.approx(max(plain_values), rel=1e-5)
 
 
 def test_the_carried_state_is_an_amount_not_a_concentration() -> None:
@@ -219,9 +224,11 @@ def test_each_engine_reads_its_own_end_state() -> None:
     copasi = final_state(_MODEL, names, duration=12.0, steps=240)
     roadrunner = final_state_with_roadrunner(_MODEL, names, duration=12.0, steps=240)
     assert set(copasi) == set(roadrunner) == set(names)
-    # Independent implementations, so they agree closely without being the same code.
+    # Independent implementations, so they agree closely without being the same code — to about
+    # 1e-6 here. The bound is the one the corroboration criterion itself uses for "these two
+    # engines agree", rather than a number fitted to this machine.
     for name in names:
-        assert roadrunner[name] == pytest.approx(copasi[name], rel=1e-4), name
+        assert roadrunner[name] == pytest.approx(copasi[name], rel=1e-3), name
 
 
 def test_the_bulk_end_state_agrees_with_reading_one_species_at_a_time() -> None:
@@ -229,9 +236,11 @@ def test_the_bulk_end_state_agrees_with_reading_one_species_at_a_time() -> None:
 
     Not exactly, and the reason is documented in `simulate`: COPASI is not bit-identical across
     repeated calls in one process. These are two separate runs of the same model, so they differ
-    by the engine's own last-place noise — measured here at 3e-10 relative, against the ~1e-11
-    that docstring records for the models it was measured on. A tolerance below that would be a
-    test of the engine's determinism, which it does not have, rather than of this function.
+    by the engine's own last-place noise — 3e-10 relative on the machine this was written on, and
+    6.3e-8 on one of CI's interpreters. A tolerance below that is a test of the engine's
+    determinism, which it does not have, rather than of this function; and one fitted to a single
+    machine is a threshold with no basis. What this must catch is a bulk read that returns the
+    wrong column or the wrong row, which is not a near miss.
     """
     from reprolith.engine import final_state, simulate
 
@@ -239,7 +248,7 @@ def test_the_bulk_end_state_agrees_with_reading_one_species_at_a_time() -> None:
     bulk = final_state(_MODEL, names, duration=12.0, steps=240)
     for name in names:
         one_at_a_time = simulate(_MODEL, name, duration=12.0, steps=240)[1][-1]
-        assert bulk[name] == pytest.approx(one_at_a_time, rel=1e-8), name
+        assert bulk[name] == pytest.approx(one_at_a_time, rel=1e-5), name
 
 
 def test_the_auc_guard_measures_the_scheduled_run_not_the_default_one() -> None:

@@ -49,7 +49,12 @@ def test_a_ten_reaction_cascade_rebuilds_as_itself() -> None:
     dossier = ingest_sbml(source, entry="BIOMD0000000010")
     assert len(dossier.reactions) == 10
     assert not [g for g in dossier.gaps if g.element == "reaction network"]
-    assert _round_trip(source, duration=100.0, steps=50) < 1e-12  # measured 7.5e-15
+    # 7.5e-15 on the machine this was written on. The bound is set by what it must catch — a
+    # dropped reaction, a mistranslated rate law, a stoichiometry read from the wrong column, all
+    # of which move a trajectory by percent — not by that measurement, because COPASI's own
+    # cross-call noise is build-dependent and reaches 1.7e-7 on one of CI's interpreters. A
+    # tolerance fitted to one machine is a threshold with no basis.
+    assert _round_trip(source, duration=100.0, steps=50) < 1e-4
 
 
 def test_a_model_whose_reactions_and_rules_both_matter_rebuilds_too() -> None:
@@ -58,17 +63,20 @@ def test_a_model_whose_reactions_and_rules_both_matter_rebuilds_too() -> None:
     The residual is integration, not a difference in the model. Measured: 1.4e-9 at t=0.01, 1.2e-7
     at t=1, 1.1e-6 at t=50 — it grows with the run, which is what integration error does and what a
     changed rate law does not. CVODE takes slightly different steps through two files whose
-    element order differs, and this is a stiff oscillator. Asserted at both ends, so a real change
-    in the math cannot hide inside a tolerance chosen for the long run. The MAPK cascade, which is
-    not oscillatory, comes back at 7.5e-15 over a hundred time units.
+    element order differs, and this is a stiff oscillator. The MAPK cascade, which is not
+    oscillatory, comes back at 7.5e-15 over a hundred time units.
+
+    Both ends are asserted so that a real change in the math cannot hide inside a tolerance chosen
+    for the long run — but each bound is set an order or more above the *largest* noise seen
+    anywhere, not fitted to the number measured here. A changed rate law moves these by percent.
     """
     pytest.importorskip("COPASI", reason="the optional 'engine' extra is not installed")
     source = (_KINETIC / "BIOMD0000000012.xml").read_text(encoding="utf-8")
     dossier = ingest_sbml(source, entry="BIOMD0000000012")
     assert len(dossier.reactions) == 12
     assert len([e for e in dossier.equations]) == 9  # the rules are carried as before
-    assert _round_trip(source, duration=0.01, steps=2) < 1e-8
-    assert _round_trip(source, duration=50.0, steps=50) < 1e-5
+    assert _round_trip(source, duration=0.01, steps=2) < 1e-4
+    assert _round_trip(source, duration=50.0, steps=50) < 1e-3
 
 
 def test_a_local_parameter_stays_local_when_it_shadows_a_global() -> None:
@@ -118,7 +126,9 @@ def test_a_local_parameter_stays_local_when_it_shadows_a_global() -> None:
     rebuilt = build_model_sbml(dossier)
     original = simulate(source, "B", duration=1.0, steps=10)[1][-1]
     after = simulate(rebuilt, "B", duration=1.0, steps=10)[1][-1]
-    assert after == pytest.approx(original, rel=1e-9)
+    # Above the engine's own cross-call noise on every build, and far below the failure this
+    # catches: hoisting the local `k` runs the reaction five hundred times too fast.
+    assert after == pytest.approx(original, rel=1e-5)
     # And it is the local 2 that ran: 10 * (1 - e^-2), not a species exhausted instantly.
     assert after == pytest.approx(10.0 * (1.0 - pow(2.718281828459045, -2.0)), rel=1e-4)
 
