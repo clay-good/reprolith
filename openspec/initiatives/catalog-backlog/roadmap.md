@@ -139,7 +139,12 @@ a change under `openspec/changes/`.
   is now a check (`reactions_without_rate_laws`, leading `archive-check`'s fix list) rather than
   only a note, because no engine says what is wrong: libRoadRunner runs an absent law with its flux
   silently at zero, and COPASI imports the file and abandons the run partway with every sample it
-  did return finite.
+  did return finite. **And "entries whose models run" is measured out too**
+  (`datasets/non_curated_survey.json`): probed over a ladder of durations, **5 of the 9 non-curated
+  SBML models run**, and joining the two surveys they are disjoint — the one entry whose paper
+  prints a results table is the estradiol model that does not run, and of the five that do, four
+  name no reachable paper and the fifth's prints no table. Nothing is waiting on a better engine.
+  Figure digitization is the only lift left.
 
 ---
 

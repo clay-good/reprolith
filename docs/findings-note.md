@@ -3210,6 +3210,41 @@ exceptions — so the next fbc model is excluded for the same reason this one is
 model committed in this repository, it reports nothing on all twelve that a time course describes,
 and the two classes it must not speak about are excluded by their own packages.
 
+## "Entries whose models run" was never the lift
+
+The roadmap has carried two candidate lifts for the corpus's reach: figure digitization, and
+entries whose models run. The first had a number attached to it — seven of ten open-access papers
+put their results in pictures. The second never did, so all nine non-curated SBML entries were
+fetched and probed: loaded, counted, and handed to the pinned engine over a ladder of durations
+from 0.1 to 10,000 with the longest completed course recorded.
+
+**Five of the nine run.** Four complete the longest course on the ladder and one stops after 1.0.
+Of the four that do not: one is the estradiol model above with no rate laws, one will not import at
+all, and two abandon the course at the very first duration.
+
+Then the two surveys were joined, and they turn out to be **disjoint**:
+
+| | has a paper stating a result this can read | does not |
+| --- | --- | --- |
+| **model runs** | **0** | 5 |
+| **model does not run** | 1 | 3 |
+
+The single non-curated entry whose paper prints a results table is the estradiol model — the one
+that does not run. Of the five that do run, four name no paper this repository can reach at all and
+the fifth's paper prints no results table. Every entry fails, and no two fail on the same side.
+
+So the lift was never models. Five already run, and running them buys nothing, because nothing has
+said what their published result is. The corpus is blocked on **claims**, which is where the table
+survey and the prose measurement had already pointed, and this closes the other direction: there is
+no reserve of unreached entries waiting on a better engine.
+
+The probe is deliberately weak, and says so in the file it writes. Nothing here knows the time scale
+a paper used, so "completes a course" is a floor for runnable and "completes none" is a floor for
+not-runnable — no claim is reproduced and no verdict is reached. One thing it does get right that
+an earlier version of it did not: a state variable is a species *or* a rate rule's target. Three of
+these models declare no species at all and keep their entire state in parameters, and probing
+species alone would have reported them as un-runnable for a reason that was about the probe.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
@@ -3236,12 +3271,10 @@ What would lift it, in the order the measurements support:
 
 * **Figures.** Reading tables reaches three papers in ten of the open-access subset. The other
   seven put their results in pictures, and nothing here digitizes one.
-* **Papers whose model is not runnable here.** Nine non-curated SBML entries and an R script.
-  Extracting their claims perfectly would still produce no certificate — and the one of them whose
-  paper *does* print a results table was opened and measured: it deposits 118 reactions and a rate
-  law for none of them (above).
-
-Prose is no longer on that list: it is built, and measured to reach no paper the tables miss.
+* **Figures, and only figures.** That list used to have three items on it. Prose came off it —
+  built, and measured to reach no paper the tables miss. Runnable models came off it too: five of
+  the nine non-curated entries already run, and not one of them has a paper stating a result this
+  can read. Both measurements are committed, and both point the same way.
 
 What *is* established, and was not this morning: the engine's three verdict paths have all now run
 on real published numbers. A clean unqualified `reproduced`. Two distinct root-caused failures, one
