@@ -3114,27 +3114,37 @@ artifact (8.1), this note (8.2), and the discipline-loop record (7.3, 7.4) are a
 committed. Both deferred method fences are lifted: a population is simulated, not only judged, and
 an estimate is re-derived, not only compared — each validated against closed-form mathematics, and
 neither yet pointed at a paper, because no population figure and no shipped dataset are in the
-corpus. The adopt-and-verify fast-path is closed on both sides now — an archive flows to a
-certificate, and where it disagrees with the paper the disagreement is reported — and the
-author-facing check reaches it, on an archive or on the two loose files most papers actually ship.
-The author-facing path is now writable end to end — the claims file the check needs is generated
-from the author's own files, from the paper's tables, or both, and checked against the paper before
-it is used. Two entries are now certified against numbers read from a paper rather than one, and
-both entries' cited rows are committed and pinned by a test.
+corpus. The adopt-and-verify fast-path is closed on both sides, and the author-facing check reaches
+it on an archive or on the two loose files most papers actually ship.
 
-What remains is no longer one sentence, because it has been measured rather than assumed:
+**The claim corpus reached the ceiling the survey predicted.** It began the day as one entry with
+two claims, one of which was a number its paper does not contain. It is now **four entries — every
+model that paper deposited — carrying eighty claims: 72 reproduce, 7 fail with stated causes, and
+1 is honestly not evaluable.** Every reference value is quoted from the article, committed, and
+checked against it by a test.
 
-* **The claim gap is real but is not the only blocker.** Of the thirty-one seeded entries, 21 ship
-  a curated SBML model, 4 belong to a paper stating results in a table, and 4 clear both — all of
-  them the one paper already certified. Nine ship SBML that is not curated and one ships an R
-  script, so extracting their claims perfectly would still produce no certificate.
-* **Reading tables reaches three papers in ten** of the open-access subset. The rest state their
-  results in figures, which is the boundary this note has described for months and now has a
-  number attached to.
-* **The first claim blocked by Reprolith rather than by the literature** is on the record: two
-  verified reference values whose protocol is a pre-dose twelve hours before the main dose, which
-  a claim's `parameter_overrides` cannot express.
+That ceiling is not modesty, it is the measurement: of the thirty-one seeded entries, 21 ship a
+curated SBML model, four belong to a paper that states results in a table, and the four that clear
+both conditions are exactly the four now certified. Nine ship SBML that is not curated, one ships
+an R script, and the rest publish their results in figures. **No further entry in this test set is
+reachable**, by this route, from anything already built.
 
-Tasks 2.1-2.3 are still open, and the half of them that a table reader closes is closed. Thirty of the thirty-one entries abstained for want of exactly that, so
-verdict *accuracy* across the set is still unestablished — the metformin example shows only that,
-given a claim, the rest of the pipeline delivers an honest, root-caused verdict.
+What would lift it, in the order the measurements support:
+
+* **Figures.** Reading tables reaches three papers in ten of the open-access subset. The other
+  seven put their results in pictures, and nothing here digitizes one.
+* **Prose.** The values this corpus checks are all read from tables; the same paper states two of
+  them in a sentence as well, and no path exists to read that.
+* **Papers whose model is not runnable here.** Nine non-curated SBML entries and an R script.
+  Extracting their claims perfectly would still produce no certificate.
+
+What *is* established, and was not this morning: the engine's three verdict paths have all now run
+on real published numbers. A clean unqualified `reproduced`. Two distinct root-caused failures, one
+of them an argument that a published table is wrong, corroborated by regenerating every other
+number in that row. An undiagnosed miss that says `uncategorized` rather than inventing a cause.
+And an abstention where the number cannot be established at any sampling this engine will call
+converged. Every one of those exposed a latent defect in a surface written when no claim had ever
+failed — the certificate, the author-facing report, the loop-note record, and the claim shape
+itself.
+
+Tasks 2.1-2.3 remain open for the half a table reader does not close.

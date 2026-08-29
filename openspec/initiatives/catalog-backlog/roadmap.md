@@ -73,7 +73,9 @@ a change under `openspec/changes/`.
   curve, with the two fields only the author has left blank and refused if left that way. What
   remains is *extraction*, and half of it is now built: `claims-propose` reads candidate claims out
   of a paper's own **tables** (`claims-check` then confirms each value is printed where it says it
-  is), which took the corpus from one certified-against-a-paper entry to two. Reading results out
+  is), which took the corpus from one certified-against-a-paper entry to four — every model that
+  paper deposited, with the engine's pass, failure and abstention paths all exercised on real
+  published numbers for the first time. Reading results out
   of manuscript **prose** is still not built. Measured on this set: reading tables reaches three
   papers in ten of the open-access subset, and the rest state their results in figures —
   `datasets/manuscripts/table_survey.json`.)*
@@ -121,8 +123,12 @@ a change under `openspec/changes/`.
   sustained cadence.
 - **Measured (2026-08-29):** on the seeded set, 21 of 31 entries ship a curated SBML model, 9 ship
   SBML that is not curated, and 1 ships an R script. A paper stating reproducible results is only
-  half of what a certificate needs, and the entries clearing both conditions today are exactly the
-  four variants of the one paper already certified (`datasets/manuscripts/table_survey.json`).
+  half of what a certificate needs, and the entries clearing both conditions are exactly the four
+  variants of the one paper already certified (`datasets/manuscripts/table_survey.json`) — **all
+  four of which are now certified**, carrying 80 claims (72 reproduce, 7 fail with stated causes,
+  1 abstains). No further entry in this test set is reachable from what is built: the remaining
+  papers either publish their results in figures or ship no runnable model. Lifting it needs
+  figure digitization, prose extraction, or entries whose models run — in that order of yield.
 
 ---
 
