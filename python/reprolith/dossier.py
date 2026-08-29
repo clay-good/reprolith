@@ -123,16 +123,24 @@ class Gap:
 
 
 class EquationKind(str, Enum):
-    """Whether an equation gives a variable's *rate of change* or its *value*.
+    """Whether an equation gives a variable's *rate of change*, its *value*, or its *start*.
 
     The distinction is load-bearing: ``dY/dt = 2X`` and ``Y = 2X`` are different models, so an
     equation that loses its kind on the way through the dossier is rebuilt as a different model
     than the one the source stated. Rate is the default because the dossier's original and
     still most common content is an ODE right-hand side.
+
+    ``INITIAL_ASSIGNMENT`` is the third: it holds only at the start of the run, and after that the
+    target keeps whatever the rest of the model does to it. It is not an assignment with a
+    narrower window — an assignment recomputed every step and a value set once are different
+    models — and it is not a stated value, because SBML makes the target's own ``value``
+    attribute inert the moment one exists. The metformin model ships thirty-two of them, and the
+    dossier used to record the inert attribute as a quoted parameter for every one.
     """
 
     RATE = "rate"  # dTarget/dt = expression
     ASSIGNMENT = "assignment"  # target = expression, at all times
+    INITIAL_ASSIGNMENT = "initial-assignment"  # target = expression, at the start of the run
 
 
 @dataclass(frozen=True)

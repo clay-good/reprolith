@@ -386,6 +386,198 @@
       "kind": "assignment",
       "source_location": "BioModels BIOMD0000001028",
       "target": "_03_7__IntestineLumen____IntestineVascular__Diffusion__Coefficient"
+    },
+    {
+      "expression": "Adipose",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_10"
+    },
+    {
+      "expression": "Brain",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_9"
+    },
+    {
+      "expression": "Enterocytes",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_15"
+    },
+    {
+      "expression": "Feces",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_6"
+    },
+    {
+      "expression": "Heart",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_7"
+    },
+    {
+      "expression": "IntestineLumen",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_0"
+    },
+    {
+      "expression": "IntestineVascular",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_17"
+    },
+    {
+      "expression": "KidneyPlasma",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_2"
+    },
+    {
+      "expression": "KidneyTissue",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_16"
+    },
+    {
+      "expression": "KidneyTubular",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_20"
+    },
+    {
+      "expression": "Liver",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_1"
+    },
+    {
+      "expression": "Lung",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_12"
+    },
+    {
+      "expression": "Muscle",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_8"
+    },
+    {
+      "expression": "PlasmaArterial",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_11"
+    },
+    {
+      "expression": "PlasmaVenous",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_4"
+    },
+    {
+      "expression": "PortalVein",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_13"
+    },
+    {
+      "expression": "RBC",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_19"
+    },
+    {
+      "expression": "Remainder",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_3"
+    },
+    {
+      "expression": "StomachLumen",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_18"
+    },
+    {
+      "expression": "Stomach",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_14"
+    },
+    {
+      "expression": "Urine",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "Compartment_5"
+    },
+    {
+      "expression": "Body_Weight",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "ModelValue_1"
+    },
+    {
+      "expression": "Cardiac_Output",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "ModelValue_2"
+    },
+    {
+      "expression": "Intestine_Coefficient",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "ModelValue_55"
+    },
+    {
+      "expression": "IntestineSurffaceCoefficient",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "ModelValue_61"
+    },
+    {
+      "expression": "Kidney_Coefficient",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "ModelValue_56"
+    },
+    {
+      "expression": "Metformin_Dose_in_Lumen_in_mg",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "ModelValue_0"
+    },
+    {
+      "expression": "QIntestineVascular",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "ModelValue_36"
+    },
+    {
+      "expression": "QLiverArtery",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "ModelValue_33"
+    },
+    {
+      "expression": "QPortalVeinOut",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "ModelValue_46"
+    },
+    {
+      "expression": "QPortalVein",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "ModelValue_35"
+    },
+    {
+      "expression": "QStomach",
+      "kind": "initial-assignment",
+      "source_location": "BioModels BIOMD0000001028",
+      "target": "ModelValue_34"
     }
   ],
   "gaps": [
@@ -418,14 +610,7 @@
       "load_bearing": true
     },
     {
-      "carried_by_artifact": true,
-      "detail": "32 initialAssignment(s) override initial values at the start of the run; the initial conditions recorded here are the stated ones, not the assigned ones",
-      "element": "initial assignments",
-      "kind": "initial-condition",
-      "load_bearing": true
-    },
-    {
-      "detail": "45 of 69 extracted values state no unit in the artifact (Compartment_0, Compartment_1, Compartment_10, Compartment_11, Compartment_12, \u2026); their magnitudes are recorded, their units are not",
+      "detail": "13 of 37 extracted values state no unit in the artifact (Intestine_Coefficient, Kidney_Coefficient, Ktp_Adipose, Ktp_Brain, Ktp_Heart, \u2026); their magnitudes are recorded, their units are not",
       "element": "units",
       "kind": "unit",
       "load_bearing": true
@@ -716,230 +901,6 @@
       "source_location": "BioModels BIOMD0000001028",
       "unit": "unstated",
       "value": 320.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_10",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 15050.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_9",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 1400.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_15",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 84.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_6",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 1000.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_7",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 350.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_0",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 500.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_17",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 630.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_2",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 102.2
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_16",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 102.2
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_20",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 102.2
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_1",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 1799.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_12",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 532.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_8",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 28000.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_11",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 749.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_4",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 2247.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_13",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 196.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_19",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 2198.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_3",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 16310.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_18",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 350.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_14",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 147.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "Compartment_5",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 1000.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "ModelValue_1",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 70000.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "ModelValue_2",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 312000.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "ModelValue_55",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 0.7
-    },
-    {
-      "confidence": "quoted",
-      "name": "ModelValue_61",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 2187.5
-    },
-    {
-      "confidence": "quoted",
-      "name": "ModelValue_56",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 320.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "ModelValue_0",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 389.92
-    },
-    {
-      "confidence": "quoted",
-      "name": "ModelValue_36",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 33072.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "ModelValue_33",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 14352.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "ModelValue_46",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 56472.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "ModelValue_35",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 19968.0
-    },
-    {
-      "confidence": "quoted",
-      "name": "ModelValue_34",
-      "source_location": "BioModels BIOMD0000001028",
-      "unit": "unstated",
-      "value": 3432.0
     }
   ],
   "state_variables": [

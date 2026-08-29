@@ -30,6 +30,18 @@ stages depend on, and SHALL never silently invent content.
 - **AND** ingestion never fills the gap with a guessed value; guessing is reserved for
   reconstruction, where it is separately recorded as an assumption
 
+#### Scenario: A value the model's own math determines
+
+- **WHEN** the artifact determines an element's value by an assignment rule or an initial
+  assignment, which makes the element's stated `value` attribute inert
+- **THEN** that stated value is not recorded as an extracted parameter, since the model never
+  holds it and a comparison against it can only agree by coincidence
+- **AND** the expression that determines it is carried instead, marked with whether it holds
+  throughout the run or only at its start, because a value recomputed every step and one set once
+  rebuild as different models
+- **AND** the element remains declared by that expression, so a model rebuilt from the dossier
+  still has it — dropping the value must not drop the element
+
 ### Requirement: Claims are first-class and enumerable
 
 The dossier SHALL enumerate the concrete published results the paper stakes, because these

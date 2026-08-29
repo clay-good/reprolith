@@ -1868,7 +1868,8 @@ also checked all eighty backticked `module.symbol` references added today agains
 green being exactly the one already self-reported and recorded above. Nothing new failed.
 
 **Most numbers hold, several to more precision than they were written with.** The 45 of 69 unstated
-metformin units, the 8 of 8 Level 2 gap, the 119 shadowed ids, the 87 and 27 seeds, the 71 and 66
+metformin units (13 of 37 since initial assignments stopped being read as quoted parameters —
+see below), the 8 of 8 Level 2 gap, the 119 shadowed ids, the 87 and 27 seeds, the 71 and 66
 standard errors, the six span-over-level ratios and the 0.103 midpoint, the 14.6 / 2.8 / 0.8 / 0.0
 zero-variance measurements, the 2.968e-12 FVA agreement on *E. coli* core, the 1.3e11 unit
 inversion, the 2247 mL compartment and its 2199% consequence, the Li et al. basins summing to 2048,
@@ -1925,7 +1926,8 @@ nothing reads, expecting an error and getting a number.
 The archive check's first output listed metformin's 35 reactions and its events under *fix before
 you submit*, with the fix `state this in the archive`. The archive states both perfectly well;
 Reprolith's dossier cannot represent them. The same gap shape covers that and a genuine omission —
-45 of that model's 69 values state no unit — and nothing in the shape distinguishes them, so the
+45 of that model's 69 values stated no unit at the time, 13 of 37 now — and nothing in the shape
+distinguishes them, so the
 report now puts all of them in their own section, never as a fix, and lets none of them decide
 readiness. Telling an author to repair a correct file is worse than saying nothing.
 
@@ -2070,12 +2072,15 @@ the package that takes a number off an SBML attribute was checked against both c
 The two rows that are *not* defects are the reason to write this down: the next round should not
 re-audit them.
 
-One thing is deliberately **not** fixed. `ingest_sbml` excludes assignment-rule parameters from the
-dossier and still records initial-assignment ones, which is why those 32 values are in the metformin
-dossier at all. The consistent rule would drop them — and that moves the dossier's content digest,
-the published gap counts, and the "45 of 69 extracted values state no unit" figure that three
-documents and a test quote. It is a deliberate change with its own blast radius, not a tail-end
-edit, so it is written down here with its number rather than done quietly.
+One thing was deliberately **not** fixed at the time. `ingest_sbml` excluded assignment-rule
+parameters from the dossier and still recorded initial-assignment ones, which is why those 32
+values were in the metformin dossier at all. The consistent rule would drop them — and that moves
+the dossier's content digest, the published gap counts, and the "45 of 69 extracted values state no
+unit" figure that three documents and a test quote. It was a deliberate change with its own blast
+radius, not a tail-end edit, so it was written down here with its number rather than done quietly.
+
+**It is done now, and dropping was only half of it** — see "The value the dossier had no way to
+carry" below.
 
 ## The check had one input, and nothing wrote it
 
@@ -2117,6 +2122,44 @@ model that is 78 of the 94 parameters, and the dose a claim actually sets is in 
 This is **not** manuscript extraction, and the surfaces say so where they could be misread. It
 makes the author-supplied path cheap; reading a paper's numbers out of its prose is still what
 finding 2 names, and still not built.
+
+## The value the dossier had no way to carry
+
+The last round left one defect written down rather than fixed: `ingest_sbml` dropped
+assignment-rule parameters, because SBML makes their `value` inert, and still recorded
+**initial**-assignment ones, which does the same thing to the same attribute. On the metformin
+model that was **32 of the dossier's 48 parameters** — every compartment volume, each recorded as
+a quoted number the model computes over.
+
+The note said the consistent rule would drop them and named the blast radius. Dropping was the
+wrong fix on its own, and that is the finding: an initial-assignment target is a real parameter of
+the model, and a dossier that simply forgets it declares a model that cannot be rebuilt — the
+equations referring to it have nothing to refer to. The assignment-rule case looked like a
+precedent because those targets are *already* carried, as `assignment` equations. Initial
+assignments had no such carrier, so "be consistent with the neighbour" quietly meant "delete
+information the neighbour keeps".
+
+So the carrier was built first. `EquationKind.INITIAL_ASSIGNMENT` is the third kind — `target =
+expression`, at the start of the run and not recomputed after it, which is neither a rate nor an
+assignment and rebuilds as a different model if it is emitted as either. `ingest_sbml` reads the
+32 expressions; `build_model_sbml` emits them as `initialAssignment` elements and declares their
+targets constant and value-less. Only then does dropping the inert value lose nothing.
+
+The proof is a round trip, not an inspection. A one-species decay whose rate constant states 99
+and is assigned `base * 2` = 1.0: SBML says the model runs 1.0, the dossier used to record 99, and
+a model rebuilt from it decayed ninety-nine times too fast with every file valid. Ingested and
+rebuilt, it now runs e⁻¹, matching the original under the same engine.
+
+What moved, as predicted: the metformin dossier's parameters 48 → 16, its equations 63 → 95, its
+gaps 6 → 5 (the "32 initialAssignments override initial values" gap is not a gap once the dossier
+carries them), and the published units figure from **45 of 69 to 13 of 37** — the 32 that left were
+alias parameters whose units were as inert as their values. Every certificate, render and the
+registry were regenerated; `algorithm_revision` moved with `sbml`.
+
+The method that would have caught this a round earlier is the one the last round already named and
+applied only to readers: **sweep the defect shape across every surface, not every reader.** The
+inert-attribute rule reached four readers in a day. It never reached the *writer*, and the writer
+was the reason the fourth reader could not simply be made consistent.
 
 ## Status and what remains
 

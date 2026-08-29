@@ -53,7 +53,7 @@
     "version": "4.46.300 (Source)"
   },
   "gap_report": [
-    "unit not stated by the artifact: units \u2014 45 of 69 extracted values state no unit in the artifact (Compartment_0, Compartment_1, Compartment_10, Compartment_11, Compartment_12, \u2026); their magnitudes are recorded, their units are not"
+    "unit not stated by the artifact: units \u2014 13 of 37 extracted values state no unit in the artifact (Intestine_Coefficient, Kidney_Coefficient, Ktp_Adipose, Ktp_Brain, Ktp_Heart, \u2026); their magnitudes are recorded, their units are not"
   ],
   "overall": "partially-reproduced",
   "paper": {

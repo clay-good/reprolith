@@ -153,11 +153,11 @@ def test_a_concentration_in_a_non_unit_compartment_is_refused() -> None:
 def test_constructs_the_dossier_cannot_represent_are_recorded_as_load_bearing_gaps() -> None:
     """An event is the most common PK/PD construct there is, and it was dropped without a trace.
 
-    Rules become equations on this path, so most of a model survives — but an event (a dose), an
-    initial assignment (an override of the values just recorded), and a conversion factor (a
-    rescaling of every amount) do not. They are recorded rather than refused because the artifact
-    itself stays runnable: adopt-and-verify uses the author's own file. It is the dossier that
-    cannot carry them, and a reconstruction built from one now carries the gap into its certificate.
+    Rules become equations on this path, so most of a model survives — but an event (a dose) and a
+    conversion factor (a rescaling of every amount) do not. They are recorded rather than refused
+    because the artifact itself stays runnable: adopt-and-verify uses the author's own file. It is
+    the dossier that cannot carry them, and a reconstruction built from one now carries the gap
+    into its certificate.
     """
     pytest.importorskip("libsbml")
     from reprolith import ingest_sbml
@@ -167,8 +167,32 @@ def test_constructs_the_dossier_cannot_represent_are_recorded_as_load_bearing_ga
     dossier = ingest_sbml(metformin, entry="BIOMD0000001028")
     kinds = {gap.kind.value for gap in dossier.gaps}
     assert "dosing" in kinds  # the oral dose is an event
-    assert "initial-condition" in kinds  # 32 initial assignments override the stated values
     assert all(gap.load_bearing for gap in dossier.gaps)
+
+
+def test_an_initial_assignment_is_carried_rather_than_recorded_as_a_gap() -> None:
+    """It used to be a gap, and the value it makes inert used to be a quoted parameter.
+
+    SBML makes a target's `value` attribute inert the moment an initialAssignment sets it — the
+    same rule the ingester already applied to assignment rules, one construct to the left. The
+    metformin model's thirty-two of them were being recorded as quoted parameters at the numbers
+    the model computes over: two thirds of that dossier's parameters. The expression is carried
+    now, so the target is still declared and the wrong number is gone.
+    """
+    pytest.importorskip("libsbml")
+    from reprolith import EquationKind, ingest_sbml
+
+    shipped = Path(__file__).parent.parent / "datasets" / "worked_examples"
+    metformin = (shipped / "Zake2021_metformin_human_single_PO.xml").read_text(encoding="utf-8")
+    dossier = ingest_sbml(metformin, entry="BIOMD0000001028")
+
+    carried = [e for e in dossier.equations if e.kind is EquationKind.INITIAL_ASSIGNMENT]
+    assert len(carried) == 32
+    assert not [g for g in dossier.gaps if g.element == "initial assignments"]
+    # Every one of them is gone from `parameters`, and nothing else is.
+    determined = {e.target for e in carried}
+    assert determined.isdisjoint({p.name for p in dossier.parameters})
+    assert len(dossier.parameters) == 16
 
 
 def test_a_reaction_network_is_recorded_as_a_gap_not_read_past() -> None:
@@ -549,3 +573,57 @@ def test_a_rule_and_an_initial_assignment_are_not_reported_as_each_other() -> No
     )
     (line,) = compare_sbml_to_dossier(model, dossier)
     assert "a rule determines it" in line
+
+
+def test_a_rebuilt_model_runs_the_assigned_value_not_the_inert_one() -> None:
+    """The defect, end to end: the stale attribute used to become the rebuilt model's constant.
+
+    `k` states 99 and is assigned `base * 2` = 1.0 at the start of the run. SBML says the model
+    runs 1.0; the dossier used to record 99, and a model rebuilt from it decayed ninety-nine times
+    too fast while every file involved stayed valid. Both engines are the same one, so this is not
+    a cross-engine check — it is the round trip through the dossier, which is where the value was
+    lost.
+    """
+    pytest.importorskip("libsbml")
+    pytest.importorskip("COPASI", reason="the optional 'engine' extra is not installed")
+    from reprolith import build_model_sbml, ingest_sbml
+    from reprolith.engine import simulate
+
+    source = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="decay">
+    <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="C" compartment="c" initialAmount="1" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="base" value="0.5" constant="true"/>
+      <parameter id="k" value="99" constant="true"/>
+    </listOfParameters>
+    <listOfInitialAssignments>
+      <initialAssignment symbol="k">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply><times/><ci>base</ci><cn>2</cn></apply>
+        </math>
+      </initialAssignment>
+    </listOfInitialAssignments>
+    <listOfRules>
+      <rateRule variable="C">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply><minus/><apply><times/><ci>k</ci><ci>C</ci></apply></apply>
+        </math>
+      </rateRule>
+    </listOfRules>
+  </model>
+</sbml>
+"""
+    dossier = ingest_sbml(source, entry="decay")
+    assert [p.name for p in dossier.parameters] == ["base"]  # `k` has no stated value to record
+
+    rebuilt = build_model_sbml(dossier)
+    _, original = simulate(source, "C", duration=1.0, steps=10)
+    _, round_tripped = simulate(rebuilt, "C", duration=1.0, steps=10)
+    assert original[-1] == pytest.approx(round_tripped[-1], rel=1e-6)
+    # And it is the assigned value that ran, not the stated one: e^-1, not e^-99.
+    assert round_tripped[-1] == pytest.approx(0.36787944, rel=1e-5)

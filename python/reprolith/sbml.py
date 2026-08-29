@@ -46,16 +46,28 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
     a clear error names what is missing. Each equation is emitted as the kind of rule it was
     extracted as: a rate equation becomes a rate rule, an assignment equation becomes an
     assignment rule (``Y = 2X`` is not ``dY/dt = 2X``), and a parameter an equation determines
-    is emitted non-constant. An equation targeting something the model does not declare is
+    is emitted non-constant, and an initial-assignment equation becomes an ``initialAssignment``
+    whose target is declared constant, because a value set once at the start and one recomputed
+    every step are different models. An equation targeting something the model does not declare is
     refused rather than dropped. Parameter units are carried in the dossier for provenance but
     are not yet emitted as SBML unit definitions (an MVP simplification).
     """
     libsbml = _libsbml()
 
     ics = {p.name: p for p in dossier.initial_conditions}
-    equations = {e.target: e for e in dossier.equations}
+    # An initial assignment is not a governing equation: it fixes a starting value and says
+    # nothing about how the target moves afterwards. Keeping it out of this map is what stops an
+    # initial assignment on a species from satisfying the "every state variable has a rate
+    # equation" check below, and from making its target non-constant further down.
+    governing = {
+        e.target: e for e in dossier.equations if e.kind is not EquationKind.INITIAL_ASSIGNMENT
+    }
+    initial_assignments = [
+        e for e in dossier.equations if e.kind is EquationKind.INITIAL_ASSIGNMENT
+    ]
+    equations = governing
     missing_ics = [v for v in dossier.state_variables if v not in ics]
-    missing_eqs = [v for v in dossier.state_variables if v not in equations]
+    missing_eqs = [v for v in dossier.state_variables if v not in governing]
     if missing_ics:
         raise ValueError(f"cannot build: state variables without an initial condition: {missing_ics}")
     if missing_eqs:
@@ -67,10 +79,18 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
     # `parameters`). A rate equation is different — its target is a state variable and still needs
     # an initial condition, which the check above enforces.
     assignment_targets = {e.target for e in dossier.equations if e.kind is EquationKind.ASSIGNMENT}
+    # An initial-assignment target is in the same position: ingestion drops its stated value,
+    # because SBML makes that value inert, so the equation is the only thing that declares it.
+    initial_assignment_targets = {e.target for e in initial_assignments}
     declared = (
-        set(dossier.state_variables) | {p.name for p in dossier.parameters} | assignment_targets
+        set(dossier.state_variables)
+        | {p.name for p in dossier.parameters}
+        | assignment_targets
+        | initial_assignment_targets
     )
-    undeclared = sorted(t for t in equations if t not in declared)
+    undeclared = sorted(
+        target for target in {e.target for e in dossier.equations} if target not in declared
+    )
     if undeclared:
         raise ValueError(
             "cannot build: equations for variables the dossier does not declare: "
@@ -112,10 +132,23 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
         sbml_parameter.setId(target)
         sbml_parameter.setConstant(False)
 
+    # An initial-assignment target is declared value-less too, but *constant*: the assignment sets
+    # it once at the start and nothing recomputes it, which is a different model from an
+    # assignment rule and has to emit as one.
+    already = {p.name for p in dossier.parameters} | assignment_targets
+    for target in sorted(initial_assignment_targets - already):
+        if target in set(dossier.state_variables):
+            continue
+        sbml_parameter = model.createParameter()
+        sbml_parameter.setId(target)
+        sbml_parameter.setConstant(True)
+
     # State variables first, in their declared order, so a dossier whose equations only govern
     # state variables emits byte-identical SBML to before equations carried a kind.
-    ordered = [equations[name] for name in dossier.state_variables] + [
-        e for e in dossier.equations if e.target not in set(dossier.state_variables)
+    ordered = [governing[name] for name in dossier.state_variables] + [
+        e for e in dossier.equations
+        if e.target not in set(dossier.state_variables)
+        and e.kind is not EquationKind.INITIAL_ASSIGNMENT
     ]
     for equation in ordered:
         math = libsbml.parseL3Formula(equation.expression)
@@ -131,6 +164,17 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
         )
         rule.setVariable(equation.target)
         rule.setMath(math)
+
+    for equation in initial_assignments:
+        math = libsbml.parseL3Formula(equation.expression)
+        if math is None:
+            raise ValueError(
+                f"could not parse the initial assignment for {equation.target!r}: "
+                f"{equation.expression!r}"
+            )
+        assignment = model.createInitialAssignment()
+        assignment.setSymbol(equation.target)
+        assignment.setMath(math)
 
     errors = _fatal_errors(document, libsbml)
     if errors:

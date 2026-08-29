@@ -189,6 +189,18 @@ def ingest_sbml(
         for i in range(model.getNumRules())
         if model.getRule(i).isAssignment()
     }
+    # An *initial* assignment does the same thing to the same attribute, one construct to the
+    # left: SBML makes the target's `value` inert the moment one exists, and the model runs
+    # whatever the expression evaluates to. The rule had reached three readers and not this one,
+    # so the metformin dossier recorded thirty-two compartment volumes at numbers the model
+    # computes over — two thirds of its parameters — and `compare_sbml_to_dossier` published "no
+    # disagreement" across all of them. The expression is carried as an equation below, so this
+    # drops a wrong number rather than dropping the parameter: the target is still declared, from
+    # the equation that determines it.
+    initial_assignment_targets = {
+        model.getInitialAssignment(i).getSymbol()
+        for i in range(model.getNumInitialAssignments())
+    }
 
     parameters: list[Parameter] = []
     for i in range(model.getNumParameters()):
@@ -207,7 +219,7 @@ def ingest_sbml(
         if parameter.getId() in rate_targets:
             state_variables.append(parameter.getId())
             initial_conditions.append(extracted)
-        elif parameter.getId() not in assignment_targets:
+        elif parameter.getId() not in assignment_targets | initial_assignment_targets:
             parameters.append(extracted)
 
     equations: list[Equation] = []
@@ -224,6 +236,20 @@ def ingest_sbml(
                 expression=str(libsbml.formulaToL3String(math)),
                 source_location=source,
                 kind=EquationKind.RATE if rule.isRate() else EquationKind.ASSIGNMENT,
+            )
+        )
+
+    for i in range(model.getNumInitialAssignments()):
+        assignment = model.getInitialAssignment(i)
+        math = assignment.getMath()
+        if math is None:
+            continue
+        equations.append(
+            Equation(
+                target=assignment.getSymbol(),
+                expression=str(libsbml.formulaToL3String(math)),
+                source_location=source,
+                kind=EquationKind.INITIAL_ASSIGNMENT,
             )
         )
 
@@ -445,10 +471,14 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
 
     Rules become equations here, so unlike the stochastic and fbc ingesters this path can carry
     most of a model — but not all of it. An event doses at a moment in time (the single most common
-    PK/PD construct there is), an initial assignment overrides the initial values the dossier just
-    recorded, and a conversion factor rescales every amount. Dropping any of them silently produces
-    a dossier that describes a different model than the artifact, and the shipped worked example
-    carries thirty-two initial assignments and an oral-dose event — so this is not hypothetical.
+    PK/PD construct there is) and a conversion factor rescales every amount. Dropping either of
+    them silently produces a dossier that describes a different model than the artifact, and the
+    shipped worked example carries an oral-dose event — so this is not hypothetical.
+
+    Initial assignments used to be listed here too, and are not any more: they are *carried* now,
+    as ``initial-assignment`` equations, which is why the parameters they determine no longer
+    appear with the inert value SBML leaves on them. A construct the dossier represents is not a
+    gap in it.
 
     They are recorded rather than refused because the artifact itself stays usable: adopt-and-verify
     runs the author's own file, where the constructs are still in force. It is the *dossier* that
@@ -570,18 +600,6 @@ def _unread_constructs(model: Any) -> tuple[Gap, ...]:
                 f"the artifact carries {model.getNumEvents()} event(s) — a state change at a moment "
                 "in time, usually a dose — which this dossier cannot represent; a model rebuilt "
                 "from it alone runs without them"
-            ),
-            load_bearing=True,
-            carried_by_artifact=True,
-        ))
-    if model.getNumInitialAssignments():
-        gaps.append(Gap(
-            element="initial assignments",
-            kind=GapKind.INITIAL_CONDITION,
-            detail=(
-                f"{model.getNumInitialAssignments()} initialAssignment(s) override initial values at "
-                "the start of the run; the initial conditions recorded here are the stated ones, not "
-                "the assigned ones"
             ),
             load_bearing=True,
             carried_by_artifact=True,
