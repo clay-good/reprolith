@@ -134,16 +134,21 @@ def reactions_without_rate_laws(model_sbml: str) -> tuple[str, ...]:
     """The reactions in this model that state no rate, in document order.
 
     A reaction states a rate through a ``kineticLaw`` holding ``math``. Both ways of missing one
-    are reported, because the author's fix is the same, but they do not behave alike and the
-    quieter one is the reason this is a check rather than an engine's error message:
+    are reported, because the author's fix is the same. What none of the engines does is *say so*,
+    and that is why this is a check rather than an engine's error message. On a model where one
+    reaction of three states no rate:
 
-    * **No ``kineticLaw`` element.** COPASI refuses the file; libRoadRunner integrates it to
-      completion with that reaction's rate taken as zero — the species downstream of it stays at
-      0.0 for the whole run, no warning, no failed step. The same deposited file is unloadable to
-      one reproducer and a complete, plausible time course to the next.
-    * **A ``kineticLaw`` whose ``math`` is empty.** Both engines refuse it.
+    * **COPASI** imports the file either way, starts the run, and abandons it partway — 2 of 5
+      requested samples, every one of them finite. It is Reprolith's own completion check that
+      turns that into an error; read as-is it is a short trajectory, not a refusal.
+    * **libRoadRunner** refuses a ``kineticLaw`` whose ``math`` is empty, with an LLVM message
+      about AST nodes — and integrates one that is simply *absent* to completion, that reaction's
+      rate taken as zero: the species downstream of it sits at 0.0 for the whole run, no warning,
+      no failed step.
 
-    So the danger is not the refusal, it is the run: this is worth checking on a file that loads.
+    So one reproducer gets a truncated course, the next an error about compilers, and the next a
+    complete and plausible curve with a transport step missing from it. None of them is told that a
+    reaction states no rate, which is the one fact that explains all three.
 
     Only meaningful for a model a time course describes. A constraint-based or logical model has
     no rate laws by construction and every reaction would be reported — callers gate on

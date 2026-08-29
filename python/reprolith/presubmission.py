@@ -438,10 +438,11 @@ def archive_report(
                 "priority": _ARCHIVE_NO_RATE_LAW_PRIORITY, "kind": "rate-law", "claim_id": None,
                 "quantity": None, "source_location": model,
                 "issue": f"{len(rate_less)} of your reactions state no rate law ({shown}); "
-                         "reproducers will not agree on what your model does — COPASI refuses a "
-                         "file like this outright, and libRoadRunner refuses a kineticLaw whose "
-                         "math is empty but integrates one that is simply absent, taking that "
-                         "reaction's rate as zero with no warning printed",
+                         "reproducers will not agree on what your model does, and none of them "
+                         "will be told why — COPASI imports it and then abandons the run partway, "
+                         "returning a short trajectory rather than an error, and libRoadRunner "
+                         "refuses a kineticLaw whose math is empty but integrates one that is "
+                         "simply absent, taking that reaction's rate as zero with nothing printed",
                 "fix": "give every reaction a kineticLaw with math in it; a reaction left without "
                        "one is not a slower path through your model, it is a path that is not "
                        "there, and one of the two engines will publish that as your result",

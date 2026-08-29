@@ -137,8 +137,9 @@ a change under `openspec/changes/`.
   for none of them — 114 with an empty `<kineticLaw><math/>` and 4 with no `kineticLaw` at all — so
   it is reaction topology, not a runnable model, and no extraction capability would reach it. That
   is now a check (`reactions_without_rate_laws`, leading `archive-check`'s fix list) rather than
-  only a note, because libRoadRunner runs an absent law with its flux silently at zero while COPASI
-  refuses the same file.
+  only a note, because no engine says what is wrong: libRoadRunner runs an absent law with its flux
+  silently at zero, and COPASI imports the file and abandons the run partway with every sample it
+  did return finite.
 
 ---
 

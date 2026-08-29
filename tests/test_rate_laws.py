@@ -6,16 +6,21 @@ a results table — ships 118 reactions and rate laws for none of them: 114 carr
 ``<kineticLaw><math/></kineticLaw>`` and 4 carry no ``kineticLaw`` at all. libSBML reports the 114
 as "container must not be empty" and hands the model back anyway.
 
-What makes it worth a check rather than an engine's error message is measured in the two engine
-tests below. The two rate-less shapes do not behave alike:
+What makes it worth a check rather than an engine's error message is measured in the engine tests
+below. No engine says a reaction states no rate; each fails its own way:
 
-* a reaction with **no** ``kineticLaw`` — COPASI refuses the file; libRoadRunner integrates it to
-  completion with that reaction's rate taken as zero, no warning printed. Same file, one reproducer
-  gets nothing and the next gets a plausible curve with a transport step missing.
-* a ``kineticLaw`` whose ``math`` is **empty** — both engines refuse.
+* **COPASI** imports either shape, starts the run, and abandons it at t=1.0 of 4.0 — 2 of 5
+  samples, all finite. Reprolith's completion check is what turns that into an error.
+* **libRoadRunner** refuses an empty ``math`` with an LLVM message about AST nodes, and integrates
+  an *absent* ``kineticLaw`` to completion with that reaction's rate taken as zero and nothing
+  printed.
 
-The check reports both, because the author's fix is the same either way; the report's wording names
-only what was measured, and the tests below are what would catch it going stale.
+The wording in the earlier version of this file said COPASI "refuses the file". It does not, and
+the measurement that said so was an artifact of the harness: ``importSBML`` takes a *filename*, so
+handing it SBML text makes it try to open a file named by the whole document and fail. The engine
+path here goes through ``reprolith.simulate``, which uses ``importSBMLFromString`` as the rest of
+the repository does — a test that asserts an engine refuses something has to be run through the
+loader the engine actually offers, or it passes for any string at all.
 """
 
 from __future__ import annotations
@@ -134,45 +139,57 @@ def test_the_constraint_based_model_is_excluded_by_its_package_not_by_a_special_
     assert len(reactions_without_rate_laws(text)) > 50
 
 
-def test_an_absent_kinetic_law_runs_under_one_engine_and_not_the_other() -> None:
-    """The measurement the report's wording rests on. If this ever stops holding — if COPASI
-    starts loading these files, or libRoadRunner starts refusing them — the report is telling
-    authors something about reproducers that is no longer true."""
+def test_libroadrunner_integrates_an_absent_rate_law_as_zero_and_says_nothing() -> None:
+    """The quiet failure, and the reason the check exists. If libRoadRunner ever starts refusing
+    these files, the report is telling authors something about reproducers that is no longer
+    true."""
     roadrunner = pytest.importorskip(
         "roadrunner", reason="the optional 'corroborate' extra (libRoadRunner) is not installed"
     )
-    copasi = pytest.importorskip(
-        "COPASI", reason="the optional 'engine' extra (python-copasi) is not installed"
-    )
-
-    runner = roadrunner.RoadRunner(_NO_KINETIC_LAW)
-    result = runner.simulate(0, 4, 5)
+    result = roadrunner.RoadRunner(_NO_KINETIC_LAW).simulate(0, 4, 5)
     columns = {name.strip("[]"): index for index, name in enumerate(result.colnames)}
     final = list(result)[-1]
-    # It ran, and r2's flux was zero throughout: everything downstream of the rate-less reaction
-    # stayed exactly at its initial value while B accumulated the whole of A.
+    # r2's flux was zero throughout: everything downstream of the rate-less reaction stayed at its
+    # initial value while B accumulated the whole of A. Nothing in the result says so.
     assert final[columns["C"]] == 0.0
     assert final[columns["B"]] > 8.0
 
-    model = copasi.CRootContainer.addDatamodel()
-    with pytest.raises(Exception):  # noqa: B017 - COPASI raises its own exception type
-        model.importSBML(_NO_KINETIC_LAW)
 
-
-def test_an_empty_math_element_is_refused_by_both_engines() -> None:
-    """The other shape, and the one the estradiol model ships 114 times. Unlike an absent law it
-    is loud in both engines — which is why the silent one above is the finding that matters."""
+def test_libroadrunner_refuses_an_empty_math_element() -> None:
+    """The other shape, and the one the estradiol model ships 114 times: loud here, and silent
+    above — which is why the check reports both and trusts neither engine to."""
     roadrunner = pytest.importorskip(
         "roadrunner", reason="the optional 'corroborate' extra (libRoadRunner) is not installed"
     )
-    copasi = pytest.importorskip(
-        "COPASI", reason="the optional 'engine' extra (python-copasi) is not installed"
-    )
     with pytest.raises(RuntimeError):
         roadrunner.RoadRunner(_EMPTY_MATH)
-    model = copasi.CRootContainer.addDatamodel()
-    with pytest.raises(Exception):  # noqa: B017 - COPASI raises its own exception type
-        model.importSBML(_EMPTY_MATH)
+
+
+@pytest.mark.parametrize("shape", ["absent", "empty"])
+def test_the_pinned_engine_imports_it_and_then_abandons_the_run(shape: str) -> None:
+    """COPASI does *not* refuse these files — it imports them, starts the course, and stops partway
+    with every sample it did produce finite. What turns that into an error is Reprolith's own
+    completion check, not the engine, so an author gets a short trajectory and no diagnosis."""
+    pytest.importorskip(
+        "COPASI", reason="the optional 'engine' extra (python-copasi) is not installed"
+    )
+    from reprolith import simulate
+    from reprolith.engine import NonFiniteSimulation
+
+    text = _NO_KINETIC_LAW if shape == "absent" else _EMPTY_MATH
+    with pytest.raises(NonFiniteSimulation) as refused:
+        simulate(text, species="B", duration=4.0, steps=4)
+    assert "did not complete the time course" in str(refused.value)
+
+    # The control: the same model with every rate stated runs the whole course.
+    stated = _NO_KINETIC_LAW.replace(
+        '<listOfProducts><speciesReference species="C"/></listOfProducts>\n      </reaction>',
+        '<listOfProducts><speciesReference species="C"/></listOfProducts>\n'
+        '        <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML">'
+        "<apply><times/><ci>k</ci><ci>B</ci></apply></math></kineticLaw>\n      </reaction>",
+    )
+    _, values = simulate(stated, species="C", duration=4.0, steps=4)
+    assert values[-1] > 2.0
 
 
 def _archive(sbml: str) -> bytes:
@@ -207,7 +224,7 @@ def test_the_author_check_leads_with_it() -> None:
     assert "2 of your reactions state no rate law (r2, r3)" in issue
     # The wording has to be true of a file holding either shape, because most hold both: this
     # fixture's r2 is absent and its r3 is empty, and the engines treat those differently.
-    assert "refuses a kineticLaw whose math is empty" in issue
+    assert "abandons the run partway" in issue
     assert "integrates one that is simply absent" in issue
     rendered = render_archive_human(_archive(_ONE_LAW_MISSING))
     assert "state no rate law" in rendered

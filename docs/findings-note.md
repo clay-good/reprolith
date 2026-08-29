@@ -3164,25 +3164,41 @@ SBML.
 So the entry is genuinely not reachable, and no extraction capability would change that. What is
 worth building is the check that says so *before* an author deposits.
 
-### The shape that is dangerous is the one that runs
+### Three engines, three failures, and not one of them says why
 
-The two engines here were pointed at a three-species model where one reaction of two states no
-rate. They do not agree, and they do not agree in the direction that matters:
+The two engines here were pointed at a model where one reaction of three states no rate:
 
 | | no `kineticLaw` element | `kineticLaw` with empty `math` |
 | --- | --- | --- |
-| COPASI | refuses the file | refuses the file |
-| libRoadRunner | **runs it, that flux taken as zero** | refuses the file |
+| COPASI (the pinned engine) | imports it, abandons the run at t=1.0 of 4.0 | same |
+| libRoadRunner | **runs it to completion, that flux taken as zero** | `ASTNode is NULL` |
 
-The loud shape is the harmless one. The quiet shape produces a complete, plausible time course:
-`A` decays into `B` exactly as it should, and `C` — everything downstream of the rate-less
-reaction — sits at `0.0` for the whole run, with no warning and no failed step. One reproducer
-cannot load the file at all; the next gets a curve with a transport step silently missing from it.
+Not one of those is "this reaction states no rate", which is the single fact that explains all
+three. COPASI does not refuse anything: it imports the file, starts the course, and returns 2 of 5
+samples, every one of them finite — it is Reprolith's own completion check that turns that into an
+error, and a caller reading the series as-is has a short trajectory and no reason to doubt it.
+libRoadRunner is loud about the empty shape and silent about the absent one, which is the wrong way
+round: the silent case produces a complete, plausible time course in which `A` decays into `B`
+exactly as it should while `C` — everything downstream of the rate-less reaction — sits at `0.0`
+for the whole run.
 
-That is why this is a check rather than an engine's error message, and why it is worth running on a
-model that *does* load. `reactions_without_rate_laws` reports both shapes — the author's fix is the
-same either way — and `archive-check` leads its fix list with the finding, above every mismatch,
-because everything else in that list assumes there is a run to check.
+So `reactions_without_rate_laws` reports both shapes — the author's fix is the same either way —
+and `archive-check` leads its fix list with the finding, above every mismatch, because everything
+else in that list assumes there is a run to check.
+
+### The measurement that was an artifact of its own harness
+
+The first version of this section said COPASI *refuses* these files, and the test under it asserted
+exactly that. Both were wrong, and wrong in the way that is hardest to see: `importSBML` takes a
+**filename**. Handed a document it tries to open a file named by the whole of that document, fails,
+and raises — so an assertion that "COPASI rejects this SBML" passes for any string on earth,
+including a model that is perfectly fine. The known-good metformin model failing the same way is
+what exposed it, and only because it was run as a control.
+
+The engine tests now go through `reprolith.simulate`, which uses `importSBMLFromString` as the rest
+of the repository does, and each carries a control: the same model with every rate stated, which
+must run the whole course. A test that an engine refuses something proves nothing unless something
+it accepts is run beside it.
 
 ### The gate that keeps it from being wrong
 
