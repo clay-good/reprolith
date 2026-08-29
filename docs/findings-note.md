@@ -2221,6 +2221,26 @@ fast if the distinction is lost, with every file still valid.
 A reaction-free dossier's dictionary is unchanged — `reactions` and `compartments` are omitted when
 empty — so nothing written before this moved its digest.
 
+### Auditing it found three, and the third was the interesting one
+
+**A check guarding the way in and not the way out.** Ingestion refuses to carry a multi-compartment
+network; `build_model_sbml` emitted the first compartment and dropped the rest. The result runs,
+validates, and is not the model the dossier describes — every species in the second compartment
+silently relocated. A hand-authored or reviewer-corrected dossier reaches that path, and reviewer
+correction is a supported route. Both conditions are now refused on the way out as well as in.
+
+**A justification that stopped being true.** `compare_sbml_to_dossier` returns early for any model
+with reactions, because — its own comment said — such a dossier already carries the `reaction
+network` gap saying the dynamics are missing. A carried network has no such gap, so the reason no
+longer covered it.
+
+**And the trap in fixing that.** Simply removing the early return would have been worse than
+leaving it. The sweep's `needed` set is built from the model's *rules*, and MAPK has none — so on
+exactly the models the fix opened it up to, it would have reported "no disagreement" over a model
+it never read: a floor that cannot see what it never counted, for the third time in this record.
+`needed` now includes what each rate law reads and what each reaction's participants are, and the
+test deletes a state variable from a carried dossier and requires the sweep to name it.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

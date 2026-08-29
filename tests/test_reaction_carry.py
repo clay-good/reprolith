@@ -198,3 +198,83 @@ def test_a_reaction_free_dossier_carries_no_reactions_and_no_gap_about_them() ->
     assert not [g for g in dossier.gaps if g.element == "reaction network"]
     # And its dictionary is unchanged, so no dossier written before this keeps a different digest.
     assert "reactions" not in dossier.to_dict()
+
+
+def _reaction_dossier(**overrides: object):
+    """A minimal hand-authored reaction dossier — the path a reviewer correction reaches."""
+    from reprolith import Dossier, DossierReaction, Parameter
+
+    fields: dict[str, object] = {
+        "entry": "x",
+        "state_variables": ("A", "B"),
+        "initial_conditions": (
+            Parameter(name="A", value=1.0, unit="mole", source_location="s"),
+            Parameter(name="B", value=0.0, unit="mole", source_location="s"),
+        ),
+        "reactions": (
+            DossierReaction(
+                id="J0", rate_expression="k * A", source_location="s",
+                reactants=(("A", 1.0),), products=(("B", 1.0),),
+                local_parameters=(
+                    Parameter(name="k", value=1.0, unit="per_second", source_location="s"),
+                ),
+            ),
+        ),
+        "compartments": (Parameter(name="c1", value=1.0, unit="litre", source_location="s"),),
+    }
+    fields.update(overrides)
+    return Dossier(**fields)  # type: ignore[arg-type]
+
+
+def test_a_second_compartment_is_refused_on_the_way_out_too() -> None:
+    """Ingestion refuses to carry one; this is the way out, which a hand-authored dossier reaches.
+
+    Emitting the first and dropping the rest built a model that ran, validated, and was not the
+    one the dossier described — every species in the second compartment silently relocated.
+    """
+    from reprolith import Parameter
+
+    dossier = _reaction_dossier(compartments=(
+        Parameter(name="c1", value=1.0, unit="litre", source_location="s"),
+        Parameter(name="c2", value=1.0, unit="litre", source_location="s"),
+    ))
+    with pytest.raises(ValueError, match="2 compartments"):
+        build_model_sbml(dossier)
+
+
+def test_a_compartment_of_another_size_is_refused_on_the_way_out_too() -> None:
+    """A rebuild gives it size 1, so every concentration a rate law reads moves with the volume."""
+    from reprolith import Parameter
+
+    dossier = _reaction_dossier(compartments=(
+        Parameter(name="c1", value=5.0, unit="litre", source_location="s"),
+    ))
+    with pytest.raises(ValueError, match="size 5"):
+        build_model_sbml(dossier)
+
+
+def test_the_adopted_model_sweep_can_see_a_reaction_model_missing_a_state() -> None:
+    """Opening the sweep to carried networks without this made it report on what it never read.
+
+    It used to return early for any model with reactions, justified by the `reaction network` gap
+    standing in for the dynamics. A carried network has no such gap, so the sweep should run — but
+    its `needed` set came from *rules*, and MAPK has none, so it would have reported "no
+    disagreement" over a model it had not looked at. What a reaction network needs is what its
+    laws read and what its participants are.
+    """
+    import dataclasses
+
+    from reprolith import compare_sbml_to_dossier
+
+    source = (_KINETIC / "BIOMD0000000010.xml").read_text(encoding="utf-8")
+    dossier = ingest_sbml(source, entry="BIOMD0000000010")
+    assert compare_sbml_to_dossier(source, dossier) == []
+
+    lost = dossier.initial_conditions[0].name
+    broken = dataclasses.replace(
+        dossier,
+        initial_conditions=dossier.initial_conditions[1:],
+        state_variables=tuple(v for v in dossier.state_variables if v != lost),
+    )
+    reported = compare_sbml_to_dossier(source, broken)
+    assert any(line.startswith(f"{lost}: ") for line in reported), reported

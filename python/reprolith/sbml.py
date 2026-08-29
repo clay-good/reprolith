@@ -122,6 +122,23 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
     # The dossier's own compartment when it carries one, because a rate law may name it: rebuilt
     # under a compartment of another name, the law refers to something that is not there. Its size
     # is 1 by the same rule that let the reactions be carried at all.
+    if len(dossier.compartments) > 1:
+        # Ingestion refuses to carry a multi-compartment network on the way *in*; this is the way
+        # out, which a hand-authored or reviewer-corrected dossier also reaches. Emitting the
+        # first and dropping the rest builds a model that runs, is valid, and is not the one the
+        # dossier describes — every species in the second compartment silently relocated.
+        raise ValueError(
+            "cannot build: the dossier states "
+            f"{len(dossier.compartments)} compartments ("
+            + ", ".join(c.name for c in dossier.compartments)
+            + "), and a rebuild puts every species in one"
+        )
+    if dossier.compartments and dossier.compartments[0].value != 1.0:
+        raise ValueError(
+            f"cannot build: compartment {dossier.compartments[0].name!r} states size "
+            f"{dossier.compartments[0].value}, and a rebuild gives it size 1 — every "
+            "concentration a rate law reads would come out divided by a different volume"
+        )
     compartment_id = dossier.compartments[0].name if dossier.compartments else "c"
     compartment = model.createCompartment()
     compartment.setId(compartment_id)
@@ -237,20 +254,27 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
     return str(libsbml.writeSBMLToString(document))
 
 
+def _names_in_math(math: Any) -> set[str]:
+    """Every plain identifier a MathML tree refers to (not `time`, not function names)."""
+    libsbml = _libsbml()
+    names: set[str] = set()
+    stack = [math]
+    while stack:
+        node = stack.pop()
+        if node.getType() == libsbml.AST_NAME:
+            names.add(node.getName())
+        stack.extend(node.getChild(k) for k in range(node.getNumChildren()))
+    return names
+
+
 def _rule_names_in(model: Any, target: str) -> set[str]:
     """Every plain identifier a rule's math refers to (not `time`, not function names)."""
-    libsbml = _libsbml()
     names: set[str] = set()
     for i in range(model.getNumRules()):
         rule = model.getRule(i)
         if rule.getVariable() != target or rule.getMath() is None:
             continue
-        stack = [rule.getMath()]
-        while stack:
-            node = stack.pop()
-            if node.getType() == libsbml.AST_NAME:
-                names.add(node.getName())
-            stack.extend(node.getChild(k) for k in range(node.getNumChildren()))
+        names |= _names_in_math(rule.getMath())
     return names
 
 
@@ -447,10 +471,14 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
     #
     # Scoped to species, and only for a model this ingester reads as rules. Parameters are excluded
     # because a curated model's local reaction parameters number in the hundreds and a rules-only
-    # dossier is not claiming to carry them; a model built from *reactions* is excluded outright
-    # because its dossier already carries the `reaction network` gap saying so. Reporting either
-    # here would bury the one thing this sweep is for under 119 lines of wolf-crying.
-    if model.getNumReactions():
+    # dossier is not claiming to carry them; a model built from *reactions* whose network this
+    # dossier does not carry is excluded outright, because it already carries the `reaction
+    # network` gap saying so. Reporting either here would bury the one thing this sweep is for
+    # under 119 lines of wolf-crying.
+    # A network the dossier *does* carry is a different case, and the reason above stops applying
+    # to it: there is no gap standing in for the dynamics, so a value the reactions need and the
+    # dossier lacks is exactly what this sweep exists to find.
+    if model.getNumReactions() and not dossier.reactions:
         return mismatches
     stated_by_dossier = (
         {p.name for p in dossier.parameters}
@@ -481,6 +509,21 @@ def compare_sbml_to_dossier(sbml: str, dossier: Dossier, *, rel_tol: float = 1e-
     needed = set(model_rule_targets)
     for target in model_rule_targets:
         needed |= _rule_names_in(model, target)
+    # A carried reaction network's dynamics are not in any rule, so sourcing `needed` from rules
+    # alone made this sweep vacuous on exactly the models it was just opened up to: MAPK has no
+    # rules at all, so nothing was ever in `needed` and the check reported "no disagreement" over
+    # a model it had not looked at. What a reaction network needs is what its laws read and what
+    # its participants are.
+    for i in range(model.getNumReactions()):
+        reaction = model.getReaction(i)
+        law = reaction.getKineticLaw()
+        math = law.getMath() if law is not None else None
+        if math is not None:
+            local = {law.getParameter(j).getId() for j in range(law.getNumParameters())}
+            needed |= _names_in_math(math) - local
+        needed |= {sr.getSpecies() for sr in reaction.getListOfReactants()}
+        needed |= {sr.getSpecies() for sr in reaction.getListOfProducts()}
+        needed |= {sr.getSpecies() for sr in reaction.getListOfModifiers()}
     # Species *and* the parameter-plus-rateRule idiom this ingester supports on purpose: a
     # PK/PD model that ships no species holds its whole state that way, so sweeping species alone
     # left the class with the most state to lose entirely unchecked.
