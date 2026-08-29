@@ -114,10 +114,16 @@ never an extraction presented as decided.
 - **WHEN** the rows of a paper's tables are read for candidate claims
 - **THEN** every cell that is a number on its own becomes one candidate, carrying the value and a
   source location naming the table, the row's own labels, and the column
-- **AND** a metric is stated only where the column heading states one, since a defaulted metric is
-  a claim about the paper the paper did not make
-- **AND** a column that gives the row's conditions — a dose, a study, a tissue — supplies those
-  conditions rather than becoming a candidate of its own
+- **AND** a value the paper prints with a stated spread is a candidate carrying that spread
+  beside it, never folded into the value and never dropped, since a paper reporting a mean and a
+  variation reported both
+- **AND** a metric is stated only where the paper's own wording states one — a column heading, or
+  a row label when the heading states none and the row names exactly one — since a defaulted
+  metric is a claim about the paper the paper did not make
+- **AND** a column that gives the row's conditions supplies those conditions rather than becoming
+  a candidate of its own, recognised both by what its heading says and by its holding no numbers,
+  since a vocabulary cannot anticipate every word a paper uses and a measurement alone would make
+  a numeric dose column a result
 
 #### Scenario: What is never proposed
 

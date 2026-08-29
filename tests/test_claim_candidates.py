@@ -122,3 +122,66 @@ def test_everything_proposed_is_printed_where_it_says_it_is() -> None:
     assert all(check.found is True for check in checks), [
         c.detail for c in checks if c.found is not True
     ]
+
+
+_SIDEWAYS = {"Table 1": {"rows": [
+    ["Dose", "Parameter", "In vivo", "PBPK"],
+    ["i.v. - 0.3 mg", "AUC", "10.2 ± 1.18", "10.4 ± 0.23"],
+    ["Oral - 2 mg", "Cmax", "0.44 ± 0.24", "0.34 ± 0.19"],
+    ["Oral - 2 mg", "Tmax", "3.8 ± 0.4", "2.5 ± 0.34"],
+]}}
+
+
+def test_a_value_with_a_stated_spread_is_a_candidate_and_keeps_its_spread() -> None:
+    """The rule that only bare numbers count was found wrong by running this on a real paper.
+
+    The first paper outside this corpus that it was pointed at prints every result as
+    `value ± spread`, and a survey built on the bare-number rule counted its results table as
+    holding none — which would have published "no paper in this set reports a reproducible value
+    in a table" as a measurement. The sign is unambiguous, unlike parentheses, which may hold a
+    range, an interval, or an n.
+    """
+    proposed = propose_claims(_SIDEWAYS)["candidates"]
+    first = next(c for c in proposed if c["reported"] == 10.2)
+    assert first["reported_spread"] == 1.18
+    assert "reported as 10.2 ± 1.18" in first["source_location"]
+
+
+def test_a_quantity_named_down_the_side_still_states_its_metric() -> None:
+    """AUC and Cmax as row labels, the models across the top — a common results layout."""
+    by_value = {c["reported"]: c for c in propose_claims(_SIDEWAYS)["candidates"]}
+    assert by_value[10.2]["metric"] == "auc"
+    assert by_value[0.44]["metric"] == "cmax"
+    assert by_value[3.8]["metric"] == ""  # Tmax is a time, not a way of reading a trajectory
+    # And the label that says what the number is travels in the source location.
+    assert "Parameter AUC" in by_value[10.2]["source_location"]
+
+
+def test_a_label_column_is_measured_as_well_as_named() -> None:
+    """A "Parameter" column holds no numbers, so it is a label whatever it is called.
+
+    A vocabulary alone would have to anticipate every word a paper uses for the side of its
+    table, and measuring alone would make a dose column — whose cells are numbers — a result.
+    """
+    proposed = propose_claims(_SIDEWAYS)["candidates"]
+    assert not [c for c in proposed if c["quantity"].startswith("Parameter")]
+    assert not [c for c in proposed if c["quantity"].startswith("Dose")]
+    # Every candidate comes from one of the two model columns.
+    assert {c["quantity"].split(" (")[0] for c in proposed} == {"In vivo", "PBPK"}
+
+
+def test_a_row_naming_two_metrics_proposes_neither() -> None:
+    """An ambiguous row gets a blank metric, never a guessed one."""
+    tables = {"Table 1": {"rows": [
+        ["Parameter", "Also", "Value"],
+        ["AUC", "Cmax", "1.0"],
+    ]}}
+    (candidate,) = propose_claims(tables)["candidates"]
+    assert candidate["metric"] == ""
+
+
+def test_a_bare_number_carries_no_spread_field() -> None:
+    """Absent, not zero: a paper that stated no spread did not state a spread of nothing."""
+    tables = {"Table 1": {"rows": [["Tissue", "Cmax"], ["Plasma", "6.1"]]}}
+    (candidate,) = propose_claims(tables)["candidates"]
+    assert "reported_spread" not in candidate

@@ -19,10 +19,18 @@ Nothing here is guessed:
     certificate checking the wrong species against a real number — worse than no candidate at all.
     Every candidate's ``species`` is blank, and the loader refuses a claims file that still is.
 
-``a metric is proposed only where the column names one``
+``a metric is proposed only where the paper's own wording names one``
     A column headed "Cmax" says how the number comes off a trajectory; one headed "Amount at Cmax"
-    does not, and neither does "AUC measured-fitted, %". Where the column does not say, the field
-    is blank rather than defaulted, because a defaulted metric is a claim about the paper.
+    does not, and neither does "AUC measured-fitted, %". A table may instead put the quantity down
+    the side — "AUC", "Cmax", "Tmax" as row labels with the models across the top — and that
+    wording states it too, taken only when the heading states none and the row names exactly one.
+    Where neither says, the field is blank rather than defaulted, because a defaulted metric is a
+    claim about the paper.
+
+``a value's stated spread is carried, not consumed``
+    A paper printing ``10.2 ± 1.18`` reported 10.2 and said how far it varies. The value is the
+    candidate and the spread travels beside it, because nothing here compares distributions yet
+    and dropping it would lose the paper's own account of what counts as a difference.
 
 ``a ragged table is refused, not aligned``
     A cell spanning rows is written once, so reading cells positionally puts a value under the
@@ -40,6 +48,16 @@ from typing import Any
 #: which one the column means is not mechanical, so it is not proposed.
 _NUMERIC = re.compile(r"^[-+]?\d[\d  ,]*(?:\.\d+)?(?:[eE][-+]?\d+)?$")
 
+#: A value with its stated spread — ``10.2 ± 1.18``. Unlike parentheses, which may hold a range,
+#: a confidence interval, or an ``n``, the sign says exactly one thing: this is the value, and
+#: that is how far it varies. Refusing these cost more than it saved — the first paper this tool
+#: was pointed at outside its own corpus prints every result that way, and a survey built on the
+#: bare-number rule counted its results table as holding none.
+_WITH_SPREAD = re.compile(
+    r"^([-+]?\d[\d  ,]*(?:\.\d+)?(?:[eE][-+]?\d+)?)\s*(?:±|\+/-|\+-)\s*"
+    r"(\d[\d  ,]*(?:\.\d+)?(?:[eE][-+]?\d+)?)$"
+)
+
 #: Column headings whose wording states how a number comes off a time course. Matched on the
 #: heading's first word only: "Cmax, nmol/mL" names a peak, and "Cmax measured-fitted, %" is a
 #: comparison between two numbers rather than one of them.
@@ -50,8 +68,22 @@ _METRICS = {"cmax": "cmax", "auc": "auc", "auc24": "auc"}
 _CONDITIONS = re.compile(r"^(dose|study|tissue|type|group|subject|species|model)\b", re.IGNORECASE)
 
 
-def _is_number(cell: str) -> bool:
-    return bool(_NUMERIC.match(cell.strip()))
+def _value_and_spread(cell: str) -> tuple[str, str] | None:
+    """``(value, stated spread)`` for a cell that is a number, or ``None`` when it is not.
+
+    The spread is ``""`` for a bare number. It is never folded into the value and never dropped:
+    a paper reporting ``10.2 ± 1.18`` reported 10.2, and how far it varies is part of what it
+    said.
+    """
+    text = cell.strip()
+    if _NUMERIC.match(text):
+        return text, ""
+    spread = _WITH_SPREAD.match(text)
+    return (spread.group(1), spread.group(2)) if spread else None
+
+
+def _to_float(text: str) -> float:
+    return float(text.replace(" ", "").replace(",", "").replace("\u202f", ""))
 
 
 def _metric_for(heading: str) -> str:
@@ -93,15 +125,35 @@ def propose_claims(
                 "it. Resolve its row and column spans first"
             )
             continue
-        label_columns = [i for i, head in enumerate(header) if _CONDITIONS.match(head)]
+        # A column is the row's label rather than a result in two ways, and both are needed. Its
+        # heading may say so — a dose is a condition even though its cells are numbers — or it may
+        # simply hold no numbers at all, which catches a "Parameter" column reading AUC/Cmax/Tmax
+        # without a vocabulary that has to anticipate every word a paper might use. Measuring
+        # alone would make a dose a result; the vocabulary alone lost the row label that says what
+        # the number *is*, on the first paper outside this corpus it was pointed at.
+        label_columns = [
+            i for i, head in enumerate(header)
+            if _CONDITIONS.match(head)
+            or not any(_value_and_spread(str(row[i])) for row in rows[1:])
+        ]
         for index, row in enumerate(rows[1:], start=1):
             conditions = ", ".join(
                 f"{header[i]} {row[i]}" for i in label_columns if str(row[i]).strip()
             )
+            # A table may put the quantity in a row label instead of a column heading — "AUC" and
+            # "Cmax" down the side, the models across the top — and that wording states a metric
+            # exactly as a heading does. Taken only when the heading states none and the row names
+            # exactly one, so an ambiguous row proposes no metric rather than a guessed one.
+            stated = {_metric_for(str(row[i])) for i in label_columns} - {""}
+            row_metric = next(iter(stated)) if len(stated) == 1 else ""
             for column, heading in enumerate(header):
                 cell = str(row[column]).strip()
-                if column in label_columns or not _is_number(cell):
+                if column in label_columns:
                     continue
+                parsed = _value_and_spread(cell)
+                if parsed is None:
+                    continue
+                value, spread = parsed
                 where = ", ".join(
                     part for part in (conditions, f"{heading} column") if part
                 )
@@ -109,17 +161,26 @@ def propose_claims(
                 if claim_id in seen:
                     continue
                 seen.add(claim_id)
-                candidates.append({
+                record: dict[str, Any] = {
                     "claim_id": claim_id,
                     "quantity": f"{heading}{f' ({conditions})' if conditions else ''}",
                     # Never proposed: which model output this row names is a judgment about the
                     # paper, and a wrong one checks a real number against the wrong species.
                     "species": "",
-                    "reported": float(cell.replace(" ", "").replace(",", "").replace(" ", "")),
-                    "source_location": f"{label}, {where}" if where else label,
-                    "metric": _metric_for(heading),
+                    "reported": _to_float(value),
+                    "source_location": (
+                        f"{label}, {where}" if where else label
+                    ) + (f" (reported as {cell})" if spread else ""),
+                    "metric": _metric_for(heading) or row_metric,
                     "parameter_overrides": {},
-                })
+                }
+                if spread:
+                    # Carried, not consumed: the oracle here compares scalars, so nothing reads
+                    # this yet — and dropping a stated spread on the way past would lose the one
+                    # thing that says how much of a difference the paper itself calls a
+                    # difference.
+                    record["reported_spread"] = _to_float(spread)
+                candidates.append(record)
     if not candidates and not notes:
         notes.append("no table printed a number on its own in a cell, so nothing was proposed")
     notes.append(

@@ -2363,6 +2363,43 @@ candidates the metformin tables produce come back confirmed by `check_claim_valu
 that mis-numbered a column, mis-read a cell, or dropped a thousands separator would emit a value
 its own cited table does not print, and the two read those rows by different code paths.
 
+### The survey that would have published a false measurement
+
+Pointing the proposer at the rest of the test set was meant to be a survey: of the thirty-one
+entries, how many papers are open access, and how many print a reproducible result in a table?
+Twenty-four carry a PubMed id in BioModels' metadata, twelve resolve to open-access full text, and
+a scan of every table in those eight papers came back reading: **parameter tables, study
+overviews, and diagnostics — no reported model outputs.** That would have been a clean, quotable
+number confirming the figure boundary this note already describes.
+
+It was wrong, and the tool was wrong in the same way. One of those papers has a table headed
+*"Pharmacokinetic parameters for three models"* whose body is exactly what a reproduction targets —
+in vivo against three model variants, AUC and Tmax and Cmax down the side. The scan scored it zero
+because every cell reads `10.2 ± 1.18`, and both the scan and `propose_claims` counted only cells
+that are a bare number. A floor that cannot see what it never counted, for the fourth time in this
+record, and this time it was about to be published as a fact about the literature rather than about
+the code.
+
+So the rule changed rather than the survey: a value with a stated spread is a candidate, the value
+is the candidate and the spread travels beside it in `reported_spread`, and the source location
+quotes the cell as printed. The `±` is unambiguous in a way parentheses are not — those may hold a
+range, an interval, or an *n* — so `5.7 (2.1)` is still refused.
+
+The same paper broke a second rule. Its quantities are down the *side* — a `Parameter` column
+reading AUC, Cmax, Tmax — and label columns were being recognised by a vocabulary of headings,
+which did not include "Parameter". So the row label that says what the number *is* was dropped
+from every candidate's source location. A column is now a label if its heading says so **or if
+none of its cells is a number**, because a vocabulary has to anticipate every word a paper might
+use and a measurement does not. Measuring alone is not enough either: a `Dose, mg` column is
+numeric and is still a condition. Both, or the tool is wrong in one direction or the other.
+
+A metric is now read from a row label too, on the same rule as a heading: only where the wording
+states one, only when the heading states none, and only when the row names exactly one.
+
+**The survey is not published, and that is the point.** It was built on a filter that could not see
+a third of what it was counting, and its answer looked entirely plausible. The measurement will be
+worth making again once the tool it rests on has been pointed at more than one paper.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
