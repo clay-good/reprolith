@@ -24,9 +24,35 @@ from pathlib import Path
 
 _ROOT = Path(__file__).parent.parent
 _CLAIMS = json.loads((_ROOT / "datasets" / "pkpd_claims.json").read_text(encoding="utf-8"))
-_TABLES = json.loads(
-    (_ROOT / "datasets" / "manuscripts" / "BIOMD0000001028_tables.json").read_text(encoding="utf-8")
-)
+_MANUSCRIPTS = _ROOT / "datasets" / "manuscripts"
+_TABLES = json.loads((_MANUSCRIPTS / "BIOMD0000001028_tables.json").read_text(encoding="utf-8"))
+
+
+def test_every_claimed_entry_has_its_cited_rows_committed() -> None:
+    """The rule generalised: a manuscript-read value with no committed source is not evidence.
+
+    Written for one entry and now covering two, so the second was not allowed in without the
+    thing the first turned out to be missing.
+    """
+    for accession in _CLAIMS["entries"]:
+        path = _MANUSCRIPTS / f"{accession}_tables.json"
+        assert path.is_file(), f"{accession} claims a paper's numbers with no rows committed"
+
+
+def test_every_committed_claim_states_a_number_its_cited_table_prints() -> None:
+    """The same check the `claims-check` capability makes, run over the whole corpus."""
+    from reprolith import check_claim_values, unsupported_claims
+
+    for accession, entry in _CLAIMS["entries"].items():
+        tables = json.loads(
+            (_MANUSCRIPTS / f"{accession}_tables.json").read_text(encoding="utf-8")
+        )["tables"]
+        checks = check_claim_values(entry["claims"], tables)
+        assert unsupported_claims(checks) == (), [c.detail for c in unsupported_claims(checks)]
+        # And every one was actually checked — an unchecked claim would pass the line above.
+        assert all(c.found is True for c in checks), [
+            c.detail for c in checks if c.found is not True
+        ]
 
 
 def _plasma_cmax(dose: str) -> str:

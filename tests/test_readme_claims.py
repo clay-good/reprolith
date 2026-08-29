@@ -51,7 +51,9 @@ def test_the_readme_sends_a_reader_to_help_for_the_commands_it_omits() -> None:
 
 #: How the README words each certificate count it states. A count that changes makes the sentence
 #: wrong in a way no reader can detect, so the number and the word are pinned together.
-_WORDED_COUNTS = {"thirty": 30}
+#: Longest first: "thirty" is a substring of "thirty-one", so a shorter spelling that happens to
+#: be a prefix would match the longer sentence and check the wrong number.
+_WORDED_COUNTS = {"thirty-one": 31, "thirty-two": 32, "thirty": 30}
 
 
 def test_the_published_certificate_count_the_readme_states_is_the_count() -> None:

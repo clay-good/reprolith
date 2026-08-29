@@ -3,8 +3,8 @@
   "agreements": 0,
   "confusion": {
     "not-reproduced->blocked": 10,
-    "reproduced->blocked": 20,
-    "reproduced->partially-reproduced": 1
+    "reproduced->blocked": 19,
+    "reproduced->partially-reproduced": 2
   },
   "disagreements": 31,
   "per_entry": [
@@ -135,7 +135,7 @@
       "source": "BioModels manual-curation status. See Tiwari et al. 2021, 'Reproducibility in systems biology modelling', Mol Syst Biol (doi:10.15252/msb.20209982): ~49% of published models did not reproduce from the manuscript, and these remained outside the curated branch. Curation status is therefore an independent reproducibility signal, not Reprolith's own verdict."
     },
     {
-      "actual": "blocked",
+      "actual": "partially-reproduced",
       "agree": false,
       "entry": "BIOMD0000001029",
       "expected": "reproduced",

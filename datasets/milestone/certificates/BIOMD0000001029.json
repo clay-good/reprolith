@@ -1,0 +1,86 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": false,
+      "claim_id": "Cmax-500mg-twice-daily",
+      "discrepancy": "relative error 0.0013",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "protocol": "duration=48.0, steps=960, read=[mPlasmaVenous] cmax",
+      "quantity": "plasma Cmax under twice-daily 500 mg oral dosing",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "Table 7, plasma row, 500 mg twice-daily regimen (the paper simulates 6.9 nmol/mL)",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": true,
+      "claim_id": "Cmax-1000mg-twice-daily",
+      "discrepancy": "relative error 0.0008",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "protocol": "duration=48.0, steps=960, read=[mPlasmaVenous] cmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9",
+      "quantity": "plasma Cmax under twice-daily 1000 mg oral dosing",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "Table 7, plasma row, 1000 mg twice-daily regimen (the paper simulates 12.8 nmol/mL)",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": true,
+      "claim_id": "Cmax-1500mg-twice-daily",
+      "discrepancy": "relative error 0.0033",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "protocol": "duration=48.0, steps=960, read=[mPlasmaVenous] cmax, overrides: Metformin_Dose_in_Lumen_in_mg=1169.85",
+      "quantity": "plasma Cmax under twice-daily 1500 mg oral dosing",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "Table 7, plasma row, 1500 mg twice-daily regimen (the paper simulates 18.5 nmol/mL)",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [
+    {
+      "alternatives": [],
+      "attributed_to": "reprolith",
+      "basis": "model default 389.92 mg equals 500 mg HCl expressed as free base; clinical doses are the HCl salt",
+      "chosen": "779.9 mg and 1169.85 mg free base (x 129.16/165.62)",
+      "description": "the stated 1000 mg and 1500 mg oral doses are metformin HCl; the model's dose input is free base",
+      "id": "dose-salt-form",
+      "load_bearing": true,
+      "verification_item": null
+    }
+  ],
+  "engine_pin": {
+    "algorithm": "deterministic-lsoda (judge rev 4e34687bd0f2)",
+    "engine": "copasi",
+    "version": "4.46.300 (Source)"
+  },
+  "gap_report": [
+    "unit not stated by the artifact: units \u2014 13 of 37 extracted values state no unit in the artifact (Intestine_Coefficient, Kidney_Coefficient, Ktp_Adipose, Ktp_Brain, Ktp_Heart, \u2026); their magnitudes are recorded, their units are not"
+  ],
+  "overall": "partially-reproduced",
+  "paper": {
+    "doi": "10.1371/journal.pone.0249594",
+    "pubmed_id": null,
+    "title": "Zake2021 - PBPK model of metformin in humans, eight PO administrations with 12h interval"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

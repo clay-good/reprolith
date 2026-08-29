@@ -1,0 +1,56 @@
+{
+  "description": "The rows of the source paper's own tables that the committed claims for BIOMD0000001028 are read from, quoted here so a test can check the reference values against the paper offline. Regenerate with scripts/fetch_manuscript_tables.py, which reads the open-access full text from Europe PMC.",
+  "paper": {
+    "title": "Physiologically based metformin pharmacokinetics model of mice and scale-up to humans for the estimation of concentrations in various tissues",
+    "doi": "10.1371/journal.pone.0249594",
+    "pmcid": "PMC8026019",
+    "license": "CC BY 4.0 (\u00a9 2021 Zake et al.)"
+  },
+  "tables": {
+    "Table 7": {
+      "caption": "Metformin pharmacokinetic parameters for different tissues following a twice-daily dosing regimen of 500mg, 1000mg, and 1500mg PO dose in humans.",
+      "rows": [
+        [
+          "Tissue",
+          "Dose, mg",
+          "AUC24, nmol*h/mL",
+          "Cmax, nmol/mL",
+          "Cmean, nmol/mL",
+          "Amount at Cmax, mg",
+          "Tmax, h",
+          "T1/2, h"
+        ],
+        [
+          "Plasma",
+          "500",
+          "84.2",
+          "6.9",
+          "3.5",
+          "2.7",
+          "25.9",
+          "3.9"
+        ],
+        [
+          "Plasma",
+          "1000",
+          "154.6",
+          "12.8",
+          "6.5",
+          "4.9",
+          "25.8",
+          "3.9"
+        ],
+        [
+          "Plasma",
+          "1500",
+          "221.4",
+          "18.5",
+          "9.2",
+          "7.2",
+          "25.7",
+          "3.9"
+        ]
+      ]
+    }
+  }
+}

@@ -2464,6 +2464,49 @@ in figures.
 It also names the immediate work, which is not a better extractor: **three of those four are the
 same paper's other model variants**, sharing tables that have already been read and checked.
 
+## The second entry, and a model named for twice the doses it carries
+
+The survey's own conclusion named the work: three of the four entries clearing both blockers are
+the same paper's other model variants, sharing tables already read and checked. One of them is
+**BIOMD0000001029**, the twice-daily human model, and the paper's Table 7 gives its plasma Cmax at
+three dose levels.
+
+It reproduces, at every level:
+
+| regimen | paper (Table 7) | reconstruction | relative error |
+| --- | --- | --- | --- |
+| 500 mg twice daily | 6.9 nmol/mL | 6.8907 | 0.13% |
+| 1000 mg twice daily | 12.8 | 12.7894 | 0.08% |
+| 1500 mg twice daily | 18.5 | 18.5611 | 0.33% |
+
+That is the second entry in this repository certified against numbers read from a paper, and the
+first one whose reference values were checked against the source *before* they were committed
+rather than months afterwards — `claims-check` was run on them, and the test that pins the values
+now iterates over every claimed entry rather than naming metformin, so a third cannot arrive
+without its cited rows.
+
+The two larger doses are assumption-qualified for the same reason the single-dose entry's is: the
+paper's doses are metformin hydrochloride and the model's input is free base, so 1000 mg and
+1500 mg enter as 779.9 and 1169.85. The 500 mg arm needs no assumption — it is the model's own
+default.
+
+### The model's name says eight doses; it carries four
+
+`Dose_0_001h`, `Dose__12h`, `Dose_24h`, `Dose_36h`. Four events, in a model whose own name is
+*"eight PO administrations with 12h interval"*. Nothing in the file marks the difference, and every
+file involved is valid.
+
+The honest thing is to say how much it matters, not to assert either way, so it was measured:
+cloning the dose event out to 48, 60, 72 and 84 hours moves the plasma Cmax from **6.8907 to
+6.8943** — 0.05%. Under twelve-hour dosing with a 3.9-hour half-life the peak is a steady-state
+plateau by the third dose, so a claim about Cmax is not load-bearing on the missing four. A claim
+about the regimen's *duration* — a trough at 96 hours, an AUC over the full course — would be, and
+none is made.
+
+This is the shape of finding the whole project is for: a deposited model that does not do what its
+own description says, found by running it rather than by reading it, with the consequence for each
+claim measured rather than assumed.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

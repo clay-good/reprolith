@@ -181,7 +181,10 @@ def test_self_validation_json_splits_abstentions(capsys):
     # PK/PD's disagreements are abstentions, not wrong verdicts (the "0 wrong verdicts" story)
     pkpd = report["by_class"]["ode-pkpd"]
     assert pkpd["agreements"] == 0
-    assert overall["abstentions"] >= 30
+    # 29 of the 31 seeded entries still have no extracted claims. Two do — the metformin
+    # single-dose and twice-daily human models — so this is a ceiling that falls as claims land,
+    # not a constant.
+    assert overall["abstentions"] == 29
 
 
 def test_presubmission_report(tmp_path, capsys):
