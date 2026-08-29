@@ -93,3 +93,22 @@ def test_an_unfilled_template_is_unchecked_rather_than_a_failure() -> None:
     (check,) = check_claim_values([_claim(reported=None)], _TABLES)
     assert check.found is None and "unfilled" in check.detail
     assert unsupported_claims([check]) == ()
+
+
+def test_a_table_supplied_with_no_rows_accuses_nobody() -> None:
+    """A malformed input must not turn into a finding against every claim citing that table."""
+    (check,) = check_claim_values(
+        [_claim(source_location="Table 6")], {"Table 6": {"caption": "…", "rows": []}}
+    )
+    assert check.found is None
+    assert "no rows" in check.detail
+    assert unsupported_claims([check]) == ()
+
+
+def test_a_value_printed_with_a_trailing_zero_still_matches() -> None:
+    """The paper prints '840.0'; a claim states 840."""
+    tables = {"Table 6": {"rows": [["Kidney", "500", "840.0"]]}}
+    (check,) = check_claim_values(
+        [_claim(reported=840, source_location="Table 6")], tables
+    )
+    assert check.found is True

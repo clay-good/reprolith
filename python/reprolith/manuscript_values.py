@@ -122,7 +122,17 @@ def check_claim_values(
                 ),
             ))
             continue
-        printed = _numbers_in(tables[label].get("rows", ()))
+        rows = tables[label].get("rows") or ()
+        if not rows:
+            # A table supplied with no rows prints nothing, and treating that as "the value is
+            # absent" turns a malformed input into an accusation against every claim citing it —
+            # the one outcome this module exists to avoid.
+            results.append(ValueCheck(
+                claim_id, value, label, None,
+                f"{label} was supplied with no rows, so nothing in it could be compared",
+            ))
+            continue
+        printed = _numbers_in(rows)
         spellings = {repr(value).rstrip("0").rstrip("."), f"{value:g}", str(value)}
         if value == int(value):
             spellings.add(str(int(value)))
