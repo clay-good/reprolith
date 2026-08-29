@@ -414,7 +414,12 @@ def test_the_published_metformin_bundle_exports_to_a_runnable_archive() -> None:
     ).read_text(encoding="utf-8")
 
     experiment = build_bundle_sedml(bundle, model)
-    assert experiment.expressed == ("Cmax-500mg", "Cmax-1000mg")
+    # Every claim without a schedule, in recipe order — counted from the bundle rather than
+    # listed here, because this entry's claims went from two to thirty-three.
+    assert experiment.expressed == tuple(
+        step.claim_id for step in bundle.recipe if not step.schedule
+    )
+    assert len(experiment.expressed) > 2
     # The entry's validation-arm claims run after a pre-dose, which a uniform time course cannot
     # state. They are listed with the reason rather than written as a plain run — which would ship
     # a document that runs the reported window alone and reproduces a neighbouring arm, the
@@ -428,10 +433,19 @@ def test_the_published_metformin_bundle_exports_to_a_runnable_archive() -> None:
         any(claim_id in reason for reason in experiment.unexpressed) for claim_id in scheduled
     )
 
+    # One change per distinct dose arm, and every one of them addresses the dose parameter.
+    # Written as a single expected pair, this said "the 779.9 override is in the document"; the
+    # entry now has three arms, and what matters is unchanged — each arm's dose is written, and
+    # nothing else is.
     changes = [e for e in ET.fromstring(experiment.sedml).iter() if e.tag.endswith("changeAttribute")]
-    assert [(c.get("target").rsplit("[@id=", 1)[1], c.get("newValue")) for c in changes] == [
-        ("'Metformin_Dose_in_Lumen_in_mg']/@value", "779.9")
-    ]
+    written = {(c.get("target").rsplit("[@id=", 1)[1], c.get("newValue")) for c in changes}
+    expected = {
+        ("'Metformin_Dose_in_Lumen_in_mg']/@value", repr(float(value)))
+        for step in bundle.recipe if not step.schedule
+        for _, value in step.parameter_overrides
+    }
+    assert written == expected
+    assert ("'Metformin_Dose_in_Lumen_in_mg']/@value", "779.9") in written
     # Both arms record the same output, and the recipe's `[mPlasmaVenous]` addresses the species.
     assert archive_mismatches(experiment.sedml, model) == []
 
@@ -462,8 +476,13 @@ def test_an_independent_sedml_library_reads_the_exported_bundle_without_error() 
 
     document = libsedml.readSedMLFromString(build_bundle_sedml(bundle, model).sedml)
     assert document.getNumErrors() == 0, document.getErrorLog().toString()
-    assert document.getNumTasks() == 2
-    assert document.getNumModels() == 2
+    # One task and one model per *distinct run*, not per claim: thirty-three claims over three
+    # dose arms is three modified models plus the base one, and four tasks. Written per claim it
+    # was thirty of each, telling a reproducer to integrate the same model ten times to read ten
+    # of its species.
+    arms = {step.parameter_overrides for step in bundle.recipe if not step.schedule}
+    assert document.getNumTasks() == len(arms)
+    assert document.getNumModels() == len(arms)
 
 
 def test_the_exported_document_reproduces_the_published_number_when_run() -> None:
@@ -515,7 +534,7 @@ def test_the_published_worked_example_archive_is_what_the_export_produces_today(
         sys.path.pop(0)
 
     archive, expressed, unexpressed = export()
-    assert expressed == ("Cmax-500mg", "Cmax-1000mg")
+    assert expressed[:2] == ("Cmax-500mg", "Cmax-1000mg")
     # The pre-dose arms are named, not written: see the test above for why. Every claim of the
     # entry is accounted for, one way or the other — a claim in neither list would be dropped.
     claims = json.loads(

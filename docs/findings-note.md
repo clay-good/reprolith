@@ -2805,6 +2805,63 @@ simulation. The assumption exists to reach the doses the model does **not** defa
 claim that needs it carries it. Written down because the wrong reading is the more natural one,
 and because a later round that "fixes" this would be qualifying a claim that earned its clean pass.
 
+## Thirty tissues, and a dose written two ways
+
+Every claim in this corpus read one species. The paper's Table 6 publishes a simulated Cmax for
+**twelve tissues at three doses** — thirty-six numbers — and one of them was checked. The other
+thirty-five had a committed source and no verdict.
+
+Ten of the twelve map to exactly one species the model declares. Two do not: the model splits
+Intestine into a lumen, an enterocyte and a vascular compartment, and Kidney into plasma, tissue
+and tubular, so *which* one the paper's row means is a judgement about the paper — the same
+judgement `claims-propose` refuses to make, and refusing it here too costs two rows out of twelve.
+
+The ten reproduce, at every dose:
+
+| | worst | where |
+| --- | --- | --- |
+| 500 mg | 1.64% | red blood cells |
+| 1000 mg | 1.80% | red blood cells |
+| 1500 mg | 1.07% | red blood cells |
+
+Every other tissue is inside 1%, and eight of thirty are inside 0.1%. The red-blood-cell rows are
+the paper's own rounding: it prints 1.0, 1.9 and 2.7, and the model gives 1.016, 1.866 and 2.671.
+The metformin single-dose entry now carries **thirty-three claims**, all reproduced, each checked
+against a committed row.
+
+### The dose that was written two ways, and one that was wrong
+
+Generating twenty-eight claims mechanically exposed something a hand-written corpus had hidden.
+The free-base dose is derived — the paper states hydrochloride, the model's input is free base, and
+the assumption block gives the factor — and nothing had ever checked the arithmetic.
+
+The 1500 mg twice-daily claim ran at **1169.85**. The conversion gives **1169.79**. It reproduced
+— 18.5611 against the paper's 18.5, a 0.33% error inside a 5% tolerance — so no verdict, no gate,
+and no reader could see it. A wrong number that still passes is invisible from inside the pipeline,
+which is the third time today that sentence has been the finding.
+
+And the 1000 mg dose was written **779.9** in one claim and **779.86** in another: both correct
+roundings of 779.8575, and two derived models in the exported archive for one arm.
+
+`tests/test_dose_conversion.py` makes the arithmetic checkable rather than trusted. Every dose any
+claim sets must be the exact conversion of one of the paper's stated doses, rounded to one or two
+decimals — checked as an exact rounding rather than within a tolerance, because a relative bound
+cannot tell a legitimate one-decimal rounding from that typo: both sit 5.5e-5 from the true value.
+It also holds one stated dose to one spelling, and requires the assumption block to name the
+numbers the claims actually run.
+
+### A document telling a reproducer to run the same model ten times
+
+Thirty expressible claims produced thirty SED-ML tasks and twenty-one models over **three distinct
+runs**. Every 500 mg claim reads a different species of one identical simulation, and each was
+being written as its own task; every 1000 mg claim minted its own derived model carrying the same
+`changeAttribute`.
+
+A task is a run. Two claims reading different outputs of the same run are one task with two data
+generators, and ten claims setting the same dose are one modified model. The exported archive is
+now 4 models, 1 time course, 4 tasks and 30 reports — which is what actually happened — and it is
+*smaller* than it was with two claims' worth of duplication in it.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

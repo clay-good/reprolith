@@ -92,11 +92,16 @@ def test_the_report_says_what_the_archive_ships_and_what_can_be_adopted() -> Non
     pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     found = archive_report(_ARCHIVE.read_bytes())["found"]
     assert {a["detected_format"] for a in found["files"]} == {"sbml", "sed-ml"}
-    # One of the two tasks is over the base model; the other carries the dose override, and an
-    # adopted recipe carries no overrides.
+    # Exactly one task runs the base model; the rest carry a dose override, and an adopted recipe
+    # carries none. That stays one however many claims the entry grows, because the claims share
+    # a task per distinct dose arm.
     assert found["adoptable_recipes"] == 1
+    # Every output the exported document writes is a `report`, never a `plot`: re-reading it must
+    # not manufacture published results the paper never staked. So the archive states no
+    # targetable claim, and one non-targetable one per claim it expresses.
     assert found["claims"]["targetable"] == 0
-    assert found["claims"]["not_targetable"] == 2
+    expressed = [c for c in _metformin_claims() if not c.schedule]
+    assert found["claims"]["not_targetable"] == len(expressed)
 
 
 def _archive_with(members: dict[str, str], manifest: str) -> bytes:
@@ -230,7 +235,7 @@ def test_the_papers_own_archive_does_not_run_the_dose_the_paper_reports() -> Non
     Every file validates, which is exactly why this needs saying."""
     pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     report = archive_report(_paper_archive(), claims=_metformin_claims())
-    assert report["found"]["manuscript_claims_checked"] == 5
+    assert report["found"]["manuscript_claims_checked"] == len(_metformin_claims())
     manuscript = [item for item in report["fix_list"] if item["kind"] == "manuscript"]
     assert any(
         "Cmax-1000mg" in item["issue"] and "779.9" in item["issue"] for item in manuscript
@@ -265,7 +270,7 @@ def test_reprolith_own_export_runs_the_claims_it_was_built_from() -> None:
     """
     pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     report = archive_report(_ARCHIVE.read_bytes(), claims=_metformin_claims())
-    assert report["found"]["manuscript_claims_checked"] == 5
+    assert report["found"]["manuscript_claims_checked"] == len(_metformin_claims())
     claims = _metformin_claims()
     reported = {
         claim.claim_id

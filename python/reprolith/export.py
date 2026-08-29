@@ -440,6 +440,8 @@ def build_bundle_sedml(
     expressed: list[str] = []
     unexpressed: list[str] = []
     known_runs: dict[tuple[float, int], str] = {}
+    known_tasks: dict[tuple[str, str], str] = {}
+    known_models: dict[tuple[tuple[str, float], ...], str] = {}
 
     for step in bundle.recipe:
         plan, reason = _plan(step, index=index, parameters=parameters)
@@ -464,25 +466,40 @@ def build_bundle_sedml(
 
         model_ref = "model"
         if step.parameter_overrides:
-            model_ref = f"model{ordinal}"
-            derived = ET.SubElement(models, "model", {
-                "id": model_ref,
-                "name": step.claim_id,
-                "language": _model_language(root),
-                "source": "#model",
-            })
-            changes = ET.SubElement(derived, "listOfChanges")
-            for name, value in step.parameter_overrides:
-                ET.SubElement(changes, "changeAttribute", {
-                    "target": _target(name, index) + "/@value",
-                    "newValue": repr(float(value)),
+            # Same rule as the task below, one level down: ten claims setting the same dose are
+            # one modified model, not ten identical ones. Keyed on the overrides themselves, so
+            # two claims that set anything differently still get their own.
+            model_ref = known_models.get(step.parameter_overrides, "")
+            if not model_ref:
+                model_ref = f"model{ordinal}"
+                known_models[step.parameter_overrides] = model_ref
+                derived = ET.SubElement(models, "model", {
+                    "id": model_ref,
+                    "name": step.claim_id,
+                    "language": _model_language(root),
+                    "source": "#model",
                 })
+                changes = ET.SubElement(derived, "listOfChanges")
+                for name, value in step.parameter_overrides:
+                    ET.SubElement(changes, "changeAttribute", {
+                        "target": _target(name, index) + "/@value",
+                        "newValue": repr(float(value)),
+                    })
 
-        task = f"task{ordinal}"
-        ET.SubElement(tasks, "task", {
-            "id": task, "name": step.claim_id,
-            "modelReference": model_ref, "simulationReference": run,
-        })
+        # A task is a run, so two claims that read different outputs of the *same* run are one
+        # task with two data generators, not two identical tasks. Written per claim, the metformin
+        # bundle's thirty claims produced thirty tasks over three distinct runs — a document
+        # telling a reproducer to integrate the same model ten times to read ten of its species.
+        # Shared only on the pair that defines the run: the model (overrides included, since a
+        # derived model is minted per claim that has any) and the time course.
+        task = known_tasks.get((model_ref, run))
+        if task is None:
+            task = f"task{ordinal}"
+            known_tasks[(model_ref, run)] = task
+            ET.SubElement(tasks, "task", {
+                "id": task, "name": step.claim_id,
+                "modelReference": model_ref, "simulationReference": run,
+            })
 
         output_id = plan.output
         _add_generator(

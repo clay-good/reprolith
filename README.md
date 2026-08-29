@@ -9,10 +9,12 @@ reproduced, partially, or not — for each result, with the reason.
 
 That is what it is *for*, and it is worth being exact about how much of it is done today: of the
 thirty-one published certificates, **two** check a reconstruction against numbers read from a
-paper — eight claims between them: metformin's plasma Cmax after a single oral dose (6.1 and
-11.2 nmol/mL), after three of the paper's validation arms that each follow earlier doses (3.9, 9.4
-and 6.8), and under twice-daily dosing (6.9, 12.8 and 18.5), all of which are what that paper's
-*own model* reports. Every
+paper — **thirty-six claims** between them, and every one is what that paper's *own model*
+reports. They cover its whole published Cmax table: ten tissues at 500, 1000 and 1500 mg, plus
+three validation arms that each follow an earlier dose, plus the twice-daily regimen. Two of the
+paper's twelve tissue rows are left unclaimed on purpose — the model splits Intestine and Kidney
+into several compartments, and which one the row means is a judgement about the paper, not
+something to guess. Every
 one of those rows is quoted in [`datasets/manuscripts/`](datasets/manuscripts/) and a test checks
 the certificates' reference values against them, because for most of this repository's life
 nothing did: one of the first two was recorded as 6.2, a number the paper does not contain. The rest check Reprolith's engine against an independent

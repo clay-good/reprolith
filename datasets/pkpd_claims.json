@@ -128,6 +128,306 @@
             }
           ],
           "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-red-blood-cells-500mg",
+          "quantity": "Red blood cells Cmax after a 500 mg single oral dose",
+          "species": "mRBC",
+          "reported": 1.0,
+          "source_location": "Table 6, Red blood cells row, 500 mg single PO dose (the paper simulates 1.0 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-adipose-500mg",
+          "quantity": "Adipose Cmax after a 500 mg single oral dose",
+          "species": "mAdipose",
+          "reported": 4.1,
+          "source_location": "Table 6, Adipose row, 500 mg single PO dose (the paper simulates 4.1 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-brain-500mg",
+          "quantity": "Brain Cmax after a 500 mg single oral dose",
+          "species": "mBrain",
+          "reported": 4.9,
+          "source_location": "Table 6, Brain row, 500 mg single PO dose (the paper simulates 4.9 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-remainder-500mg",
+          "quantity": "Remainder Cmax after a 500 mg single oral dose",
+          "species": "mRemainder",
+          "reported": 4.8,
+          "source_location": "Table 6, Remainder row, 500 mg single PO dose (the paper simulates 4.8 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-muscle-500mg",
+          "quantity": "Muscle Cmax after a 500 mg single oral dose",
+          "species": "mMuscle",
+          "reported": 18.1,
+          "source_location": "Table 6, Muscle row, 500 mg single PO dose (the paper simulates 18.1 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-lungs-500mg",
+          "quantity": "Lungs Cmax after a 500 mg single oral dose",
+          "species": "mLung",
+          "reported": 18.2,
+          "source_location": "Table 6, Lungs row, 500 mg single PO dose (the paper simulates 18.2 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-stomach-500mg",
+          "quantity": "Stomach Cmax after a 500 mg single oral dose",
+          "species": "mStomach",
+          "reported": 19.3,
+          "source_location": "Table 6, Stomach row, 500 mg single PO dose (the paper simulates 19.3 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-heart-500mg",
+          "quantity": "Heart Cmax after a 500 mg single oral dose",
+          "species": "mHeart",
+          "reported": 15.2,
+          "source_location": "Table 6, Heart row, 500 mg single PO dose (the paper simulates 15.2 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-liver-500mg",
+          "quantity": "Liver Cmax after a 500 mg single oral dose",
+          "species": "mLiver",
+          "reported": 71.8,
+          "source_location": "Table 6, Liver row, 500 mg single PO dose (the paper simulates 71.8 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-red-blood-cells-1000mg",
+          "quantity": "Red blood cells Cmax after a 1000 mg single oral dose",
+          "species": "mRBC",
+          "reported": 1.9,
+          "source_location": "Table 6, Red blood cells row, 1000 mg single PO dose (the paper simulates 1.9 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-adipose-1000mg",
+          "quantity": "Adipose Cmax after a 1000 mg single oral dose",
+          "species": "mAdipose",
+          "reported": 7.5,
+          "source_location": "Table 6, Adipose row, 1000 mg single PO dose (the paper simulates 7.5 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-brain-1000mg",
+          "quantity": "Brain Cmax after a 1000 mg single oral dose",
+          "species": "mBrain",
+          "reported": 9.0,
+          "source_location": "Table 6, Brain row, 1000 mg single PO dose (the paper simulates 9.0 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-remainder-1000mg",
+          "quantity": "Remainder Cmax after a 1000 mg single oral dose",
+          "species": "mRemainder",
+          "reported": 8.9,
+          "source_location": "Table 6, Remainder row, 1000 mg single PO dose (the paper simulates 8.9 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-muscle-1000mg",
+          "quantity": "Muscle Cmax after a 1000 mg single oral dose",
+          "species": "mMuscle",
+          "reported": 33.0,
+          "source_location": "Table 6, Muscle row, 1000 mg single PO dose (the paper simulates 33.0 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-lungs-1000mg",
+          "quantity": "Lungs Cmax after a 1000 mg single oral dose",
+          "species": "mLung",
+          "reported": 33.7,
+          "source_location": "Table 6, Lungs row, 1000 mg single PO dose (the paper simulates 33.7 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-stomach-1000mg",
+          "quantity": "Stomach Cmax after a 1000 mg single oral dose",
+          "species": "mStomach",
+          "reported": 35.9,
+          "source_location": "Table 6, Stomach row, 1000 mg single PO dose (the paper simulates 35.9 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-heart-1000mg",
+          "quantity": "Heart Cmax after a 1000 mg single oral dose",
+          "species": "mHeart",
+          "reported": 28.1,
+          "source_location": "Table 6, Heart row, 1000 mg single PO dose (the paper simulates 28.1 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-liver-1000mg",
+          "quantity": "Liver Cmax after a 1000 mg single oral dose",
+          "species": "mLiver",
+          "reported": 134.7,
+          "source_location": "Table 6, Liver row, 1000 mg single PO dose (the paper simulates 134.7 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-plasma-1500mg",
+          "quantity": "Plasma Cmax after a 1500 mg single oral dose",
+          "species": "mPlasmaVenous",
+          "reported": 16.3,
+          "source_location": "Table 6, Plasma row, 1500 mg single PO dose (the paper simulates 16.3 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-red-blood-cells-1500mg",
+          "quantity": "Red blood cells Cmax after a 1500 mg single oral dose",
+          "species": "mRBC",
+          "reported": 2.7,
+          "source_location": "Table 6, Red blood cells row, 1500 mg single PO dose (the paper simulates 2.7 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-adipose-1500mg",
+          "quantity": "Adipose Cmax after a 1500 mg single oral dose",
+          "species": "mAdipose",
+          "reported": 10.8,
+          "source_location": "Table 6, Adipose row, 1500 mg single PO dose (the paper simulates 10.8 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-brain-1500mg",
+          "quantity": "Brain Cmax after a 1500 mg single oral dose",
+          "species": "mBrain",
+          "reported": 13.1,
+          "source_location": "Table 6, Brain row, 1500 mg single PO dose (the paper simulates 13.1 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-remainder-1500mg",
+          "quantity": "Remainder Cmax after a 1500 mg single oral dose",
+          "species": "mRemainder",
+          "reported": 12.9,
+          "source_location": "Table 6, Remainder row, 1500 mg single PO dose (the paper simulates 12.9 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-muscle-1500mg",
+          "quantity": "Muscle Cmax after a 1500 mg single oral dose",
+          "species": "mMuscle",
+          "reported": 47.2,
+          "source_location": "Table 6, Muscle row, 1500 mg single PO dose (the paper simulates 47.2 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-lungs-1500mg",
+          "quantity": "Lungs Cmax after a 1500 mg single oral dose",
+          "species": "mLung",
+          "reported": 49.0,
+          "source_location": "Table 6, Lungs row, 1500 mg single PO dose (the paper simulates 49.0 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-stomach-1500mg",
+          "quantity": "Stomach Cmax after a 1500 mg single oral dose",
+          "species": "mStomach",
+          "reported": 52.1,
+          "source_location": "Table 6, Stomach row, 1500 mg single PO dose (the paper simulates 52.1 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-heart-1500mg",
+          "quantity": "Heart Cmax after a 1500 mg single oral dose",
+          "species": "mHeart",
+          "reported": 40.8,
+          "source_location": "Table 6, Heart row, 1500 mg single PO dose (the paper simulates 40.8 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-liver-1500mg",
+          "quantity": "Liver Cmax after a 1500 mg single oral dose",
+          "species": "mLiver",
+          "reported": 196.9,
+          "source_location": "Table 6, Liver row, 1500 mg single PO dose (the paper simulates 196.9 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
         }
       ],
       "assumptions": [
@@ -152,7 +452,7 @@
         {
           "id": "dose-salt-form",
           "description": "the stated 1000 mg and 1500 mg oral doses are metformin HCl; the model's dose input is free base",
-          "chosen": "779.9 mg and 1169.85 mg free base (x 129.16/165.62)",
+          "chosen": "779.9 mg and 1169.79 mg free base (x 129.16/165.62)",
           "basis": "model default 389.92 mg equals 500 mg HCl expressed as free base; clinical doses are the HCl salt",
           "load_bearing": true
         }
@@ -186,7 +486,7 @@
           "source_location": "Table 7, plasma row, 1500 mg twice-daily regimen (the paper simulates 18.5 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
-            "Metformin_Dose_in_Lumen_in_mg": 1169.85
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
           "assumption_qualified": true
         }

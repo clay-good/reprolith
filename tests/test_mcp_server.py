@@ -206,7 +206,14 @@ def test_bundle_tool_serves_the_stored_reconstruction_bundle() -> None:
     bundle, is_error = _call(query, "bundle", {"accession": "BIOMD0000001028"})
     assert not is_error
     assert bundle["origin"] == "author-supplied"  # the metformin model was adopted
-    assert len(bundle["recipe"]) == 5  # a recipe step per claim, and this entry now has five
+    # One recipe step per claim, counted from the claims dataset rather than written here: this
+    # entry has grown from two claims to thirty-three, and a literal makes that a chore.
+    _entry = json.loads(
+        (Path(__file__).parent.parent / "datasets" / "pkpd_claims.json").read_text(
+            encoding="utf-8"
+        )
+    )["entries"]["BIOMD0000001028"]
+    assert len(bundle["recipe"]) == len(_entry["claims"])
     assert bundle["assumptions"]  # the salt-form assumption travels
 
 

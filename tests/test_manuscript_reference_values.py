@@ -123,10 +123,17 @@ def test_the_measured_values_are_a_different_number_and_are_not_what_is_claimed(
         if row[tissue] == "Plasma" and row[kind] == "Measured"
     }
     assert measured == {"Zaharenko, 500mg": "5.7", "Chung 1000mg": "12.9"}
-    reported = {
-        c["reported"] for c in _CLAIMS["entries"]["BIOMD0000001028"]["claims"]
+    # Stated on the *source* rather than on the value. A bare-number check said the same thing
+    # until the corpus grew a claim reporting 12.9 for a completely different quantity — the
+    # 1500 mg Remainder Cmax — and started failing on a coincidence. What must not happen is a
+    # claim pointing at Table 4, which is where the measured data lives.
+    cited = {
+        c["claim_id"]: c["source_location"]
+        for c in _CLAIMS["entries"]["BIOMD0000001028"]["claims"]
     }
-    assert reported.isdisjoint({5.7, 12.9})
+    assert cited
+    for claim_id, source in cited.items():
+        assert "Table 4" not in source, (claim_id, source)
 
 
 def test_the_quoted_rows_carry_the_papers_licence_and_identity() -> None:

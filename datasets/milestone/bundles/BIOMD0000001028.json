@@ -140,6 +140,287 @@
       ],
       "steps": 480,
       "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-red-blood-cells-500mg",
+      "metric": "cmax",
+      "output": "[mRBC]",
+      "protocol": "Table 6, Red blood cells row, 500 mg single PO dose (the paper simulates 1.0 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-adipose-500mg",
+      "metric": "cmax",
+      "output": "[mAdipose]",
+      "protocol": "Table 6, Adipose row, 500 mg single PO dose (the paper simulates 4.1 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-brain-500mg",
+      "metric": "cmax",
+      "output": "[mBrain]",
+      "protocol": "Table 6, Brain row, 500 mg single PO dose (the paper simulates 4.9 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-remainder-500mg",
+      "metric": "cmax",
+      "output": "[mRemainder]",
+      "protocol": "Table 6, Remainder row, 500 mg single PO dose (the paper simulates 4.8 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-muscle-500mg",
+      "metric": "cmax",
+      "output": "[mMuscle]",
+      "protocol": "Table 6, Muscle row, 500 mg single PO dose (the paper simulates 18.1 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-lungs-500mg",
+      "metric": "cmax",
+      "output": "[mLung]",
+      "protocol": "Table 6, Lungs row, 500 mg single PO dose (the paper simulates 18.2 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-stomach-500mg",
+      "metric": "cmax",
+      "output": "[mStomach]",
+      "protocol": "Table 6, Stomach row, 500 mg single PO dose (the paper simulates 19.3 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-heart-500mg",
+      "metric": "cmax",
+      "output": "[mHeart]",
+      "protocol": "Table 6, Heart row, 500 mg single PO dose (the paper simulates 15.2 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-liver-500mg",
+      "metric": "cmax",
+      "output": "[mLiver]",
+      "protocol": "Table 6, Liver row, 500 mg single PO dose (the paper simulates 71.8 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-red-blood-cells-1000mg",
+      "metric": "cmax",
+      "output": "[mRBC]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 6, Red blood cells row, 1000 mg single PO dose (the paper simulates 1.9 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-adipose-1000mg",
+      "metric": "cmax",
+      "output": "[mAdipose]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 6, Adipose row, 1000 mg single PO dose (the paper simulates 7.5 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-brain-1000mg",
+      "metric": "cmax",
+      "output": "[mBrain]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 6, Brain row, 1000 mg single PO dose (the paper simulates 9.0 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-remainder-1000mg",
+      "metric": "cmax",
+      "output": "[mRemainder]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 6, Remainder row, 1000 mg single PO dose (the paper simulates 8.9 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-muscle-1000mg",
+      "metric": "cmax",
+      "output": "[mMuscle]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 6, Muscle row, 1000 mg single PO dose (the paper simulates 33.0 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-lungs-1000mg",
+      "metric": "cmax",
+      "output": "[mLung]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 6, Lungs row, 1000 mg single PO dose (the paper simulates 33.7 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-stomach-1000mg",
+      "metric": "cmax",
+      "output": "[mStomach]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 6, Stomach row, 1000 mg single PO dose (the paper simulates 35.9 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-heart-1000mg",
+      "metric": "cmax",
+      "output": "[mHeart]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 6, Heart row, 1000 mg single PO dose (the paper simulates 28.1 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-liver-1000mg",
+      "metric": "cmax",
+      "output": "[mLiver]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 6, Liver row, 1000 mg single PO dose (the paper simulates 134.7 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-plasma-1500mg",
+      "metric": "cmax",
+      "output": "[mPlasmaVenous]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 6, Plasma row, 1500 mg single PO dose (the paper simulates 16.3 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-red-blood-cells-1500mg",
+      "metric": "cmax",
+      "output": "[mRBC]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 6, Red blood cells row, 1500 mg single PO dose (the paper simulates 2.7 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-adipose-1500mg",
+      "metric": "cmax",
+      "output": "[mAdipose]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 6, Adipose row, 1500 mg single PO dose (the paper simulates 10.8 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-brain-1500mg",
+      "metric": "cmax",
+      "output": "[mBrain]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 6, Brain row, 1500 mg single PO dose (the paper simulates 13.1 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-remainder-1500mg",
+      "metric": "cmax",
+      "output": "[mRemainder]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 6, Remainder row, 1500 mg single PO dose (the paper simulates 12.9 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-muscle-1500mg",
+      "metric": "cmax",
+      "output": "[mMuscle]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 6, Muscle row, 1500 mg single PO dose (the paper simulates 47.2 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-lungs-1500mg",
+      "metric": "cmax",
+      "output": "[mLung]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 6, Lungs row, 1500 mg single PO dose (the paper simulates 49.0 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-stomach-1500mg",
+      "metric": "cmax",
+      "output": "[mStomach]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 6, Stomach row, 1500 mg single PO dose (the paper simulates 52.1 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-heart-1500mg",
+      "metric": "cmax",
+      "output": "[mHeart]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 6, Heart row, 1500 mg single PO dose (the paper simulates 40.8 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-liver-1500mg",
+      "metric": "cmax",
+      "output": "[mLiver]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 6, Liver row, 1500 mg single PO dose (the paper simulates 196.9 nmol/mL)",
+      "steps": 480,
+      "time_span": "0-24.0"
     }
   ],
   "source_dossier": "BIOMD0000001028"
