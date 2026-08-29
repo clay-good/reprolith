@@ -2689,10 +2689,15 @@ back at 1.2e-9, 6.3e-8 and 1.7e-7.
 
 The engine's own docstring has said since it was written that COPASI is not bit-identical across
 repeated calls in one process, and quantified it at about 1e-11 on the models it was measured on.
-What today added is that the size is **build-dependent**: four orders larger on another
-interpreter, on the same model. A tolerance calibrated against one machine is a threshold with no
-basis — the shape this record already names for thresholds fitted to a single observation, arriving
-by a route that looked like arithmetic rather than judgement.
+What today added is that the size depends on the **installed build**, and the first explanation for
+that was wrong. "A newer interpreter is noisier" fits the CI evidence — 3.9 passed, 3.11 and 3.12
+failed — and is refuted by building a local 3.12 environment and measuring: **6.2e-12 and 1.8e-11**,
+the same as 3.9 here. It is the platform-and-version build of `python-copasi`, not the interpreter,
+and the consequence is worse than the wrong diagnosis was: **no local environment can see it**.
+
+Which makes the rule the only defence. A tolerance calibrated against one machine is a threshold
+with no basis — the shape this record already names for thresholds fitted to a single observation,
+arriving by a route that looked like arithmetic rather than judgement.
 
 Six of them were written today, and all six are now set by *what the check must catch* rather than
 by what it happened to measure:
