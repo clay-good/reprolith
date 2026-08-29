@@ -236,19 +236,29 @@ def test_the_bulk_end_state_agrees_with_reading_one_species_at_a_time() -> None:
 
     Not exactly, and the reason is documented in `simulate`: COPASI is not bit-identical across
     repeated calls in one process. These are two separate runs of the same model, so they differ
-    by the engine's own last-place noise — 3e-10 relative on the machine this was written on, and
-    6.3e-8 on one of CI's interpreters. A tolerance below that is a test of the engine's
-    determinism, which it does not have, rather than of this function; and one fitted to a single
-    machine is a threshold with no basis. What this must catch is a bulk read that returns the
-    wrong column or the wrong row, which is not a near miss.
+    by the engine's own last-place noise.
+
+    Compared against each species' **own scale** — the largest value it reaches over the run — and
+    not against its end value, which is the mistake two rounds of loosening a relative tolerance
+    were papering over. `mStomachLumen` starts near 390 and has decayed to 0.053 by twelve hours,
+    so an absolute difference of 1e-6 is 2e-5 *relative to what is left*: the denominator is
+    vanishing, not the agreement failing. That is the same reasoning `judge_scalar` already
+    applies through `zero_scale` — a value with no magnitude has nothing for a relative tolerance
+    to mean anything against — arriving here by a different route.
+
+    What this must catch is a bulk read that returns the wrong column or the wrong row, which is
+    not a near miss on any scale.
     """
     from reprolith.engine import final_state, simulate
 
     names = ("mPlasmaVenous", "mStomachLumen", "mLiver")
     bulk = final_state(_MODEL, names, duration=12.0, steps=240)
     for name in names:
-        one_at_a_time = simulate(_MODEL, name, duration=12.0, steps=240)[1][-1]
-        assert bulk[name] == pytest.approx(one_at_a_time, rel=1e-5), name
+        series = simulate(_MODEL, name, duration=12.0, steps=240)[1]
+        scale = max(abs(value) for value in series)
+        assert abs(bulk[name] - series[-1]) <= 1e-5 * scale, (
+            name, bulk[name], series[-1], scale
+        )
 
 
 def test_the_auc_guard_measures_the_scheduled_run_not_the_default_one() -> None:

@@ -2729,6 +2729,24 @@ more. The measurements stay in the docstrings, where they are a record of what w
 than a bound anything depends on — which is what `EngineCorroboration.distance_bound` already does
 for the number it publishes, and for the same reason.
 
+### And one of them was not a tolerance problem at all
+
+The bulk end-state check failed again at the loosened bound — 1.8e-5, on **Linux 3.9**, the one
+build that had passed. Loosening it a third time would have been the third wrong answer to the same
+question.
+
+`mStomachLumen` starts near 390 and has decayed to **0.053** by twelve hours. The absolute
+difference between the two reads is 1e-6. Against what is left, that is 2e-5; against what the
+species ever was, it is 1e-10. The comparison was dividing by a vanishing denominator, and every
+loosening was buying a little more room in a quantity that keeps shrinking.
+
+It is compared against each species' own scale now — the largest value it reaches over the run —
+and the worst case is **3.9e-9 against a 1e-5 budget**, three orders of headroom on a denominator
+that does not move. Which is exactly what `judge_scalar` already does through `zero_scale`, in the
+words of its own docstring: a value with no magnitude has nothing for a relative tolerance to mean
+anything against. The engine layer met the same problem and did not recognise it, twice, because
+each failure looked like the previous one.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
