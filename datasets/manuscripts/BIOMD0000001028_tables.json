@@ -1,0 +1,127 @@
+{
+  "description": "The rows of the source paper's own tables that the committed claims for BIOMD0000001028 are read from, quoted here so a test can check the reference values against the paper offline. Regenerate with scripts/fetch_manuscript_tables.py, which reads the open-access full text from Europe PMC.",
+  "paper": {
+    "title": "Physiologically based metformin pharmacokinetics model of mice and scale-up to humans for the estimation of concentrations in various tissues",
+    "doi": "10.1371/journal.pone.0249594",
+    "pmcid": "PMC8026019",
+    "license": "CC BY 4.0 (\u00a9 2021 Zake et al.)"
+  },
+  "tables": {
+    "Table 4": {
+      "caption": "Metformin pharmacokinetic parameter comparison of experimental data and model simulations in plasma and red blood cells following a single 500mg PO dose in humans [20] and simulations for plasma following a single 1000mg PO dose in humans [36].",
+      "rows": [
+        [
+          "Study",
+          "Tissue",
+          "Type",
+          "Cmax, nmol/mL",
+          "Cmax measured- fitted, %",
+          "Tmax, h",
+          "Tmax measured\u2014fitted, %",
+          "AUC24, nmol*h/mL",
+          "AUC measured- fitted, %",
+          "T1/2, h",
+          "T1/2 measured-fitted, %"
+        ],
+        [
+          "Zaharenko, 500mg",
+          "Plasma",
+          "Measured",
+          "5.7",
+          "7.0",
+          "3",
+          "-33.3",
+          "45.1",
+          "-6.4",
+          "4.9",
+          "-24.3"
+        ],
+        [
+          "Fitted",
+          "6.1",
+          "2",
+          "42.2",
+          "3.7"
+        ],
+        [
+          "Red blood cells",
+          "Measured",
+          "1.0",
+          "0.0",
+          "10",
+          "0.0",
+          "18.7",
+          "3.2",
+          "21.0",
+          "12.3"
+        ],
+        [
+          "Fitted",
+          "1.0",
+          "10",
+          "19.3",
+          "23.6"
+        ],
+        [
+          "Chung 1000mg",
+          "Plasma",
+          "Measured",
+          "12.9",
+          "-2.3",
+          "2",
+          "-10.0",
+          "74.1",
+          "17.0",
+          "2.7",
+          "44.1"
+        ],
+        [
+          "Fitted",
+          "12.6",
+          "1.8",
+          "86.7",
+          "3.9"
+        ]
+      ]
+    },
+    "Table 6": {
+      "caption": "Metformin pharmacokinetic parameters for different tissues following a single 500mg, 1000mg, and 1500mg PO dose in humans.",
+      "rows": [
+        [
+          "Tissue",
+          "Dose, mg",
+          "AUC24, nmol*h/mL",
+          "Cmax, nmol/mL",
+          "Tmax, h",
+          "Amount at Cmax, mg",
+          "T1/2, h"
+        ],
+        [
+          "Plasma",
+          "500",
+          "42.2",
+          "6.1",
+          "2.0",
+          "2.3",
+          "3.7"
+        ],
+        [
+          "1000",
+          "76.1",
+          "11.2",
+          "1.9",
+          "4.3",
+          "3.7"
+        ],
+        [
+          "1500",
+          "109.0",
+          "16.3",
+          "1.8",
+          "6.3",
+          "3.7"
+        ]
+      ]
+    }
+  }
+}

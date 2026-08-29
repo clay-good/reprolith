@@ -8,8 +8,12 @@ output against the paper's own figures and tables — then hands you a **certifi
 reproduced, partially, or not — for each result, with the reason.
 
 That is what it is *for*, and it is worth being exact about how much of it is done today: of the
-thirty published certificates, one checks a reconstruction against numbers read from a paper
-(metformin's two plasma Cmax values). The rest check Reprolith's engine against an independent
+thirty published certificates, one checks a reconstruction against numbers read from a paper —
+metformin's two plasma Cmax values, 6.1 and 11.2 nmol/mL, which are what that paper's *own model*
+reports for a single 500 mg and 1000 mg oral dose. Those rows are quoted in
+[`datasets/manuscripts/`](datasets/manuscripts/) and a test checks the certificate's reference
+values against them, because for most of this repository's life nothing did: one of the two was
+recorded as 6.2, a number the paper does not contain. The rest check Reprolith's engine against an independent
 tool — COBRApy, libRoadRunner, CANA — or against closed-form mathematics, re-running the same
 model file. Each certificate now says which on its own claim line. Reading a paper's claims out of
 its manuscript at scale is the piece that is not built; [`docs/findings-note.md`](docs/findings-note.md) and

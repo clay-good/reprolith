@@ -2259,6 +2259,47 @@ corpus, MAPK included. The question is *is there a number*, and it is `isfinite`
 Level 2's `stoichiometryMath`. Neither construct appears in the corpus, so both refusals are
 carried by synthetic models; the corpus is not the standard.
 
+## The one number read from a paper, checked against the paper
+
+Everything else in this corpus is checked against its generator. The FBA growth rates reproduce
+under COBRApy, the kinetic curves under libRoadRunner, the attractors under CANA, the closed-form
+results against the mathematics. Two numbers are the exception — metformin's plasma Cmax at 500 and
+1000 mg — and they are the entire basis of the README's "one checks a reconstruction against
+numbers read from a paper". Nothing had ever checked them against the paper.
+
+**One of them is not in it.** The 500 mg value was recorded as **6.2 nmol/mL**, cited to Table 4.
+The paper prints **6.1** — in Table 6, in Table 4's own `Fitted` row, and in the sentence of its
+Results that gives both values in words. 6.2 appears nowhere in the article.
+
+**And both cited the wrong place.** Table 4 is the comparison against *measured* data: 5.7 nmol/mL
+at 500 mg (Zaharenko) and 12.9 at 1000 mg (Chung). The values the claims target — 6.1 and 11.2 —
+are the paper's own **simulation**, which is Table 6. The 1000 mg claim's source read "Chung
+dataset", naming the experiment whose number is 12.9 while carrying 11.2.
+
+The distinction is not pedantic. Reproducing a paper's own model output is exactly what a
+reproducibility certificate attests to; reproducing an *experiment* is not, and a certificate that
+looks like it claims the second is claiming something it cannot support. The dataset's own
+description now says which kind each value is, and gives both pairs so the difference is on the
+record.
+
+Neither correction changed a verdict — 6.1 and 6.2 are both inside a 5% tolerance on the same
+simulated peak — which is the uncomfortable part. A wrong reference value that still passes is
+invisible from inside the pipeline, and it stayed invisible through nineteen audit passes. The only
+thing that finds it is going back to the source.
+
+So the source is now committed. `datasets/manuscripts/` quotes the cited rows under the article's
+CC BY 4.0, `scripts/fetch_manuscript_tables.py` regenerates them from Europe PMC's open-access full
+text (the fetching is dev-only, the way `regenerate_*_references.py` is), and a test in the
+dependency-free gate reads only the committed rows. It checks that each claim states the number the
+paper prints, that each cites the table the number is in, and — so the first check cannot pass by
+coincidence — that the *measured* values are a different pair and are not what is claimed.
+
+The general lesson has a name in this record already, from the eighteenth pass: read the finished
+artifact as its reader. This is the version of it that points outward. **A reference value with no
+committed source is not evidence, whatever the certificate around it says.** Twenty-nine of the
+thirty certificates had one and it was checked; the thirtieth, the one the front page leads with,
+did not.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

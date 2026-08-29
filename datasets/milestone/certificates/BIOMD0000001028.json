@@ -3,7 +3,7 @@
     {
       "assumption_qualified": false,
       "claim_id": "Cmax-500mg",
-      "discrepancy": "relative error 0.0216",
+      "discrepancy": "relative error 0.0055",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
@@ -12,7 +12,7 @@
       "quantity": "plasma Cmax after 500 mg single oral dose",
       "reference_kind": "numeric",
       "root_cause": null,
-      "source_location": "Table 4, Zaharenko dataset (reported 6.2 nmol/mL)",
+      "source_location": "Table 6, plasma row, 500 mg single PO dose (the paper simulates 6.1 nmol/mL)",
       "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
@@ -29,7 +29,7 @@
       "quantity": "plasma Cmax after 1000 mg single oral dose",
       "reference_kind": "numeric",
       "root_cause": null,
-      "source_location": "Chung dataset (reported 11.2 nmol/mL)",
+      "source_location": "Table 6, plasma row, 1000 mg single PO dose (the paper simulates 11.2 nmol/mL)",
       "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
       "tolerance_source": "class-default",
       "verdict": "reproduced"

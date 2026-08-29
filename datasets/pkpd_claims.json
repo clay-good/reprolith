@@ -1,5 +1,5 @@
 {
-  "description": "Verified targetable claims extracted from the manuscripts of test-set entries, keyed by BioModels accession. Each entry drives certify_model to produce a certificate in the blind run. A claim's reference value comes from the paper (cited in source_location), not from re-running the model. Entries are added only after a claim has been extracted and its reproduction verified by hand; the rest of the test set is honestly blocked until then.",
+  "description": "Verified targetable claims extracted from the manuscripts of test-set entries, keyed by BioModels accession. Each entry drives certify_model to produce a certificate in the blind run. A claim's reference value is a number the paper itself prints (cited in source_location), not one from re-running the model here. It may be a value the paper measured or one the paper's own model produced — the source_location says which, and the two differ: for BIOMD0000001028 the measured plasma Cmax values are 5.7 and 12.9 nmol/mL and the simulated ones 6.1 and 11.2, and it is the simulated ones a reproduction targets. datasets/manuscripts/ quotes the cited rows so the values can be checked against the paper offline. Entries are added only after a claim has been extracted and its reproduction verified by hand; the rest of the test set is honestly blocked until then.",
   "entries": {
     "BIOMD0000001028": {
       "model_file": "worked_examples/Zake2021_metformin_human_single_PO.xml",
@@ -14,8 +14,8 @@
           "claim_id": "Cmax-500mg",
           "quantity": "plasma Cmax after 500 mg single oral dose",
           "species": "mPlasmaVenous",
-          "reported": 6.2,
-          "source_location": "Table 4, Zaharenko dataset (reported 6.2 nmol/mL)",
+          "reported": 6.1,
+          "source_location": "Table 6, plasma row, 500 mg single PO dose (the paper simulates 6.1 nmol/mL)",
           "metric": "cmax"
         },
         {
@@ -23,7 +23,7 @@
           "quantity": "plasma Cmax after 1000 mg single oral dose",
           "species": "mPlasmaVenous",
           "reported": 11.2,
-          "source_location": "Chung dataset (reported 11.2 nmol/mL)",
+          "source_location": "Table 6, plasma row, 1000 mg single PO dose (the paper simulates 11.2 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {"Metformin_Dose_in_Lumen_in_mg": 779.9},
           "assumption_qualified": true
