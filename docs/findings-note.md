@@ -2507,6 +2507,60 @@ This is the shape of finding the whole project is for: a deposited model that do
 own description says, found by running it rather than by reading it, with the consequence for each
 claim measured rather than assumed.
 
+## Two arms that "did not reproduce", and why that verdict would have been wrong
+
+The same paper's Table 5 validates the human single-dose model against four published datasets at
+250, 500 and 750 mg. Its "Fitted" column is the model's own output, so those are four more claims
+for an entry already certified — and running them was cheap, because the model is committed.
+
+Two of the four came back badly:
+
+| arm | paper | dose changed alone | relative error |
+| --- | --- | --- | --- |
+| Gusler 500 mg | 6.1 | 6.0663 | 0.55% |
+| Chung 1000 mg | 11.2 | 11.2496 | 0.44% |
+| **Chung 250 mg** | **3.9** | **3.3091** | **15.2%** |
+| **Wen 750 mg** | **9.4** | **8.6816** | **7.6%** |
+
+A claims file recording those four would have published two `not-reproduced` verdicts against a
+model that reproduces them perfectly well. The paper says why, in its own Results, one paragraph
+above the table:
+
+> the human model was validated ... 250 mg dose dataset from Chung **with one 375 mg pre-dose 12
+> hours before the main dose** ... 750 mg dataset from Wen **with one 500 mg pre-dose 12 hours
+> before the main dose**
+
+The two arms that failed are exactly the two with a pre-dose, and the one that has none is the one
+that reproduces. That is a hypothesis until it is run, so it was run — a 375 mg dose at t=0 and the
+250 mg at t=12, reading the peak after the second:
+
+| arm | paper | with the pre-dose the paper states | relative error |
+| --- | --- | --- | --- |
+| Chung 250 mg | 3.9 | 4.0207 | 3.1% |
+| Wen 750 mg | 9.4 | **9.4036** | **0.04%** |
+
+Both reproduce. Nothing is wrong with the model, the paper, or the numbers: what is missing is a
+**protocol**, and the protocol is in the prose.
+
+### What that costs, precisely
+
+A Reprolith claim carries `parameter_overrides` — a dose is a parameter, and setting one is how
+every claim in this corpus expresses its arm. A *pre-dose twelve hours earlier* is not a parameter
+value; it is a second administration, and the shape has no way to say it. So these two claims are
+**reproducible, verified by hand, and not expressible**, which is a different kind of blocked from
+every other entry in the set and the first one that is Reprolith's own limit rather than the
+literature's.
+
+It is also the first measured case of a claim whose protocol the *paper* states fully and the
+*artifact* does not: the deposited single-dose model has one dose event, and the run the paper
+describes needs two. `archive_mismatches` and `manuscript_mismatches` both look for disagreements
+between files; neither can see a run that no file expresses.
+
+The finding is recorded rather than the claims, because a verdict of `not-reproduced` on those two
+arms would have been wrong, and a verdict of `reproduced` cannot be produced by anything committed
+here. What it names for the roadmap is concrete: a claim needs a dosing schedule, not only a
+parameter override — with two verified reference values already waiting for it.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
