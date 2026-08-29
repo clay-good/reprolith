@@ -2351,6 +2351,18 @@ The three commands now compose: `claims-template` from the model, `claims-propos
 tool is the join between the first two — which table row is which model output — and it is left to
 the curator on purpose.
 
+They did not compose on the first try, which is the audit finding. `claims-propose` writes its
+records under `candidates` deliberately — a number a table prints is not yet a claim — and both
+checks read `claims`, so a candidates file reached either of them as `cannot read the claims:
+'claims'`, a bare `KeyError` repr. Both keys are read now, so an unedited candidates file is
+refused for the reason that actually applies (**no model output named**) rather than for the key it
+is stored under, and a file with neither key is told which keys were expected and which it has.
+
+Reading one tool's output with the other is also a real cross-check, so it is a test: all 63
+candidates the metformin tables produce come back confirmed by `check_claim_values`. A proposer
+that mis-numbered a column, mis-read a cell, or dropped a thousands separator would emit a value
+its own cited table does not print, and the two read those rows by different code paths.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

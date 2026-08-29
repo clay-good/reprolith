@@ -364,12 +364,29 @@ def _claim_records(path: Path, accession: str | None) -> list[dict[str, Any]]:
             raise ValueError(
                 f"no claims for {accession!r} in this file ({', '.join(sorted(entries))})"
             )
-        records = entries[accession]["claims"]
+        records = _records_of(entries[accession])
     elif isinstance(data, dict):
-        records = data["claims"]
+        records = _records_of(data)
     else:
         records = data
     return list(records)
+
+
+def _records_of(holder: dict[str, Any]) -> list[dict[str, Any]]:
+    """The claim records in an object, under either key a Reprolith file uses.
+
+    ``claims-propose`` writes them under ``candidates``, deliberately: a number a table prints is
+    not yet a claim. Both keys are read here so the two commands compose without a rename, and an
+    unedited candidates file reaching a check that needs real claims is refused for the reason
+    that actually applies — no model output named — rather than for the key it is stored under.
+    """
+    for key in ("claims", "candidates"):
+        if key in holder:
+            return list(holder[key])
+    raise ValueError(
+        "this file holds no claims: expected a 'claims' list (or 'candidates', as "
+        f"claims-propose writes), and it has {', '.join(sorted(holder)) or 'nothing'}"
+    )
 
 
 def _load_claims(path: Path, accession: str | None) -> list[Claim]:

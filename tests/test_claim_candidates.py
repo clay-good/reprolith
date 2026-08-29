@@ -103,3 +103,22 @@ def test_a_thousands_separator_is_read_as_one_number() -> None:
     tables = {"Table 1": {"rows": [["Tissue", "AUC24"], ["Kidney", "7 235.1"]]}}
     (candidate,) = propose_claims(tables)["candidates"]
     assert candidate["reported"] == 7235.1
+
+
+def test_everything_proposed_is_printed_where_it_says_it_is() -> None:
+    """The two new tools check each other: 63 candidates, all confirmed against their own tables.
+
+    A proposer that mis-read a cell, mis-numbered a column, or dropped a thousands separator would
+    produce a value the cited table does not print — which is exactly what `check_claim_values`
+    reports. Running one over the other is a genuine cross-check, not a restatement: they read the
+    rows by different code paths and agree on every number.
+    """
+    from reprolith import check_claim_values, unsupported_claims
+
+    candidates = propose_claims(_TABLES)["candidates"]
+    assert len(candidates) > 20
+    checks = check_claim_values(candidates, _TABLES)
+    assert unsupported_claims(checks) == ()
+    assert all(check.found is True for check in checks), [
+        c.detail for c in checks if c.found is not True
+    ]

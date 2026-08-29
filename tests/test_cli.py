@@ -691,3 +691,41 @@ def test_claims_propose_output_is_checkable_against_the_same_tables(tmp_path, ca
     claims.write_text(json.dumps({"claims": picked}), encoding="utf-8")
     assert run(["claims-check", "--claims", str(claims), "--tables", str(tables)]) == 0
     assert "ok:" in capsys.readouterr().out
+
+
+def test_a_candidates_file_is_read_by_the_checks_without_a_rename(tmp_path, capsys):
+    """`claims-propose` writes `candidates` on purpose; the checks read both keys."""
+    tables = tmp_path / "tables.json"
+    tables.write_text(json.dumps({"tables": {"Table 6": {"rows": [
+        ["Tissue", "Cmax, nmol/mL"], ["Plasma", "6.1"],
+    ]}}}), encoding="utf-8")
+    out = tmp_path / "candidates.json"
+    assert run(["claims-propose", "--tables", str(tables), "--out", str(out)]) == 0
+    capsys.readouterr()
+    assert run(["claims-check", "--claims", str(out), "--tables", str(tables)]) == 0
+    assert "ok:" in capsys.readouterr().out
+
+
+def test_an_unedited_candidates_file_is_refused_for_the_reason_that_applies(tmp_path, capsys):
+    """Not "no 'claims' key" — the model output nobody has named yet."""
+    tables = tmp_path / "tables.json"
+    tables.write_text(json.dumps({"tables": {"Table 6": {"rows": [
+        ["Tissue", "Cmax, nmol/mL"], ["Plasma", "6.1"],
+    ]}}}), encoding="utf-8")
+    out = tmp_path / "candidates.json"
+    assert run(["claims-propose", "--tables", str(tables), "--out", str(out)]) == 0
+    capsys.readouterr()
+    archive = tmp_path / "a.omex"
+    archive.write_bytes(b"not a zip")
+    assert run(["archive-check", str(archive), "--claims", str(out)]) == 1
+    assert "'species' is blank" in capsys.readouterr().err
+
+
+def test_a_file_with_no_claims_key_says_what_it_found(tmp_path, capsys):
+    claims = tmp_path / "claims.json"
+    claims.write_text(json.dumps({"stuff": []}), encoding="utf-8")
+    archive = tmp_path / "a.omex"
+    archive.write_bytes(b"not a zip")
+    assert run(["archive-check", str(archive), "--claims", str(claims)]) == 1
+    error = capsys.readouterr().err
+    assert "holds no claims" in error and "stuff" in error
