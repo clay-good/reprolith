@@ -37,6 +37,7 @@ from fetch_manuscript_tables import _grid, _localname, _text  # noqa: E402
 
 sys.path.insert(0, str(REPO / "python"))
 from reprolith import propose_claims  # noqa: E402
+from reprolith.claim_candidates import propose_claims_from_prose  # noqa: E402
 
 _BIOMODELS = "https://www.ebi.ac.uk/biomodels/{accession}?format=json"
 _SEARCH = "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query={query}&format=json&pageSize=100"
@@ -120,7 +121,28 @@ def main() -> None:
             caption = next((_text(x) for x in wrap if _localname(x.tag) == "caption"), "")
             tables[label] = {"caption": caption, "rows": _grid(wrap)}
         proposed = propose_claims(tables)["candidates"]
+        # And what the running text states, for the question the table counts raise on their own:
+        # if seven papers in ten put their results in figures, does their *prose* carry them
+        # instead? Counted the same way — a candidate attributed to a model and naming a quantity
+        # is the prose equivalent of a table whose candidates state a metric.
+        paragraphs = [
+            _text(paragraph)
+            for paragraph in root.iter()
+            if _localname(paragraph.tag) == "p"
+            and not any(_localname(child.tag) == "table-wrap" for child in paragraph.iter())
+        ]
+        prose = propose_claims_from_prose(" ".join(paragraphs))["candidates"]
         papers[pmcid] = {
+            "prose": {
+                "candidates": len(prose),
+                "attributed_to_a_model": sum(
+                    1 for c in prose if c["attribution"] in ("simulated", "both")
+                ),
+                "naming_a_quantity": sum(
+                    1 for c in prose
+                    if c["metric"] and c["attribution"] in ("simulated", "both")
+                ),
+            },
             "tables": [
                 {
                     "label": label,
@@ -148,6 +170,10 @@ def main() -> None:
             "A paper is reached through the identifier the model repository records, by PubMed "
             "id or by DOI. An entry naming no paper cannot be reached, and several entries name "
             "the same paper, so the entry count is a floor and not a paper count.",
+            "The prose counts answer whether text reaches the papers whose tables do not: "
+            "measured, it does not. The papers that state results in a table state them in prose "
+            "as well, and the ones that do not state them in neither — their results are in the "
+            "figures.",
             "'A results table' is read off propose_claims: a table whose candidates state a "
             "metric is naming quantities a reproduction targets. That is a signal, not a proof, "
             "so the per-table counts are kept.",
@@ -174,7 +200,9 @@ def main() -> None:
     curated_sbml = sum(
         1 for r in records if r["model_format"] == "SBML" and r["curation"] == "CURATED"
     )
+    prose_reaching = sum(1 for p in papers.values() if p["prose"]["naming_a_quantity"])
     print(f"  {len(papers)} distinct papers; {with_results} print a results table")
+    print(f"  {prose_reaching} state a model's result in prose naming the quantity")
     print(f"  {curated_sbml} of {len(records)} entries ship a curated SBML model")
 
 

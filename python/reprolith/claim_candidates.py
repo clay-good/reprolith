@@ -204,4 +204,139 @@ def propose_claims(
     return body
 
 
-__all__ = ["propose_claims"]
+#: A number followed by a unit, in prose. The unit is what separates a reported quantity from a
+#: figure number, a citation, a year, or a count of datasets — a bare number in a sentence is
+#: almost never a result, and admitting one buries the ones that are.
+_PROSE_VALUE = re.compile(
+    r"(?<![\w.])([-+]?\d[\d ,]*(?:\.\d+)?)\s*"
+    r"(nmol\*h/mL|nmol/mL|µg/mL|ug/mL|mg/L|ng/mL|mmol/L|µM|nM|h|hours?|min)\b"
+)
+
+#: Words that say whose number a sentence is quoting. Recorded, never acted on: a reproduction
+#: targets what the paper's *model* produced, and a sentence reporting an experiment is a
+#: different thing — but which one a sentence means is a reading, so both are reported with the
+#: sentence attached and the curator decides.
+_SIMULATED = ("simulat", "model predict", "model shows", "fitted", "predicted")
+_MEASURED = ("measured", "experimental", "observed", "reported in the")
+
+
+def _prose_metric(sentence: str) -> str:
+    """The metric a sentence names, or ``""`` when it names none or more than one.
+
+    `_metric_for` reads a column *heading*, where the metric is the first word; a sentence has to
+    be scanned. Wording counts as naming one only when it is unambiguous — "reach a maximum of"
+    and "Cmax" both say a peak — and a sentence naming two ("T1/2 is measured at 0.50h while the
+    AUC…") names none, because which one a given number belongs to is exactly the reading this
+    module refuses to make.
+    """
+    lowered = sentence.casefold()
+    # Quantities this can *recognise*, which is a wider set than the ones it can express. A
+    # half-life is not a metric here, and leaving it out of this vocabulary was a real error: the
+    # sentence "T1/2 is measured at 0.50h while the AUC simulations show 0.9h" then looked
+    # unambiguous, and put `auc` on two half-lives. A term it cannot express still has to make a
+    # sentence ambiguous, or the ambiguity check only sees the half of the vocabulary it likes.
+    terms = {
+        term
+        for phrase, term in (
+            ("cmax", "cmax"), ("maximum", "cmax"), ("peak", "cmax"),
+            ("auc", "auc"), ("area under", "auc"),
+            ("t1/2", ""), ("half-life", ""), ("half life", ""),
+            ("tmax", ""), ("time of maximal", ""),
+            ("clearance", ""), ("volume of distribution", ""),
+        )
+        if phrase in lowered
+    }
+    return next(iter(terms)) if len(terms) == 1 else ""
+
+
+def _sentences(text: str) -> list[str]:
+    """The text split into sentences, crudely and on purpose.
+
+    A sentence splitter that understood abbreviations would still be wrong often enough to matter,
+    and what this needs from a sentence is only that it be short enough to read and long enough to
+    carry the number's context. Splitting on terminal punctuation followed by a space does that.
+    """
+    return [part.strip() for part in re.split(r"(?<=[.!?])\s+", text) if part.strip()]
+
+
+def propose_claims_from_prose(
+    text: str, *, accession: str | None = None
+) -> dict[str, Any]:
+    """Candidate claims for every value the *prose* of a paper states, with its sentence.
+
+    The table reader (:func:`propose_claims`) reaches three papers in ten of this repository's
+    open-access subset; the rest put their results in figures, and their text is the only other
+    place a number can be read from. This reads it, under the same rule: a candidate is a
+    proposal, never a claim.
+
+    It is much noisier than the table reader, and deliberately does not try to be less so. What it
+    can do mechanically is attach the evidence: every candidate carries the **whole sentence** it
+    came from, so a curator sees at once that "the measured value is 26.1 nmol*h/mL" is the
+    experiment and "the simulated value is 91.4 nmol*h/mL" is the model. Which of those a
+    reproduction targets is the reading it refuses to make; ``attribution`` records which words
+    were present and nothing more.
+
+    A number with no unit beside it is not proposed. In prose a bare number is a figure reference,
+    a citation, a year, or a count far more often than it is a result, and admitting them buries
+    the ones that are.
+    """
+    candidates: list[dict[str, Any]] = []
+    notes: list[str] = []
+    seen: set[tuple[float, str, int]] = set()
+
+    for index, sentence in enumerate(_sentences(text)):
+        lowered = sentence.casefold()
+        simulated = any(word in lowered for word in _SIMULATED)
+        measured = any(word in lowered for word in _MEASURED)
+        attribution = (
+            "both" if simulated and measured
+            else "simulated" if simulated
+            else "measured" if measured
+            else "unattributed"
+        )
+        for match in _PROSE_VALUE.finditer(sentence):
+            value = _to_float(match.group(1))
+            unit = match.group(2)
+            key = (value, unit, index)
+            if key in seen:
+                continue
+            seen.add(key)
+            candidates.append({
+                "claim_id": f"prose-s{index}-{len(candidates)}",
+                "quantity": f"{unit} value stated in the text",
+                # Never proposed, for the reason the table reader gives: which model output a
+                # sentence names is a judgement, and a wrong one checks a real number against the
+                # wrong element.
+                "species": "",
+                "reported": value,
+                "unit": unit,
+                "source_location": sentence if len(sentence) <= 300 else sentence[:297] + "…",
+                "metric": _prose_metric(sentence),
+                "attribution": attribution,
+                "parameter_overrides": {},
+            })
+    if not candidates:
+        notes.append(
+            "no sentence states a number with a unit beside it, so nothing was proposed; a bare "
+            "number in prose is a figure reference or a citation far more often than a result"
+        )
+    notes.append(
+        "These are candidates, not claims, and prose is noisier than a table: a sentence may be "
+        "quoting an experiment rather than the model. Each candidate carries its whole sentence "
+        "and, in 'attribution', which words were present — read it before promoting one."
+    )
+    body: dict[str, Any] = {
+        "description": (
+            "Candidate claims read from the running text of a paper. Delete the ones that are not "
+            "results your model should reproduce — many will be measurements, or values quoted "
+            "from other work — then name the model output each survivor reads."
+        ),
+        "candidates": candidates,
+        "notes": notes,
+    }
+    if accession is not None:
+        return {"description": body["description"], "entries": {accession: body}}
+    return body
+
+
+__all__ = ["propose_claims", "propose_claims_from_prose"]

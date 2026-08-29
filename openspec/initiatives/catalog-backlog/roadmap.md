@@ -128,7 +128,11 @@ a change under `openspec/changes/`.
   four of which are now certified**, carrying 80 claims (72 reproduce, 7 fail with stated causes,
   1 abstains). No further entry in this test set is reachable from what is built: the remaining
   papers either publish their results in figures or ship no runnable model. Lifting it needs
-  figure digitization, prose extraction, or entries whose models run — in that order of yield.
+  figure digitization or entries whose models run. **Prose extraction is measured out**: a prose
+  candidate reader (`propose_claims_from_prose`) reaches two of the ten open-access papers and
+  both already state their results in a table — the seven figure-only papers state none in their
+  text either. It broadens what can be read from a paper already reachable and moves the corpus's
+  reach by nothing.
 
 ---
 

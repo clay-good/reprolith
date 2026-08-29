@@ -185,3 +185,85 @@ def test_a_bare_number_carries_no_spread_field() -> None:
     tables = {"Table 1": {"rows": [["Tissue", "Cmax"], ["Plasma", "6.1"]]}}
     (candidate,) = propose_claims(tables)["candidates"]
     assert "reported_spread" not in candidate
+
+
+def test_prose_finds_the_two_values_the_corpus_committed() -> None:
+    """The sentence that states them is the same paper's, and the numbers are the committed ones."""
+    from reprolith.claim_candidates import propose_claims_from_prose
+
+    sentence = (
+        "The model simulations show that after a single 500mg and 1000mg PO dose metformin "
+        "hydrochloride concentrations in plasma reach a maximum of 6.1 nmol/mL (0.79 mg/L) and "
+        "11.2 nmol/mL (1.45 mg/L) respectively."
+    )
+    proposed = propose_claims_from_prose(sentence)["candidates"]
+    found = {c["reported"] for c in proposed if c["unit"] == "nmol/mL"}
+    assert {6.1, 11.2} <= found
+    for candidate in proposed:
+        assert candidate["species"] == ""            # never guessed, as in the table reader
+        assert candidate["attribution"] == "simulated"
+        assert candidate["metric"] == "cmax"         # "reach a maximum of"
+        assert sentence[:40] in candidate["source_location"]
+
+
+def test_a_number_with_no_unit_is_not_a_result() -> None:
+    """In prose a bare number is a figure reference or a citation far more often than a value."""
+    from reprolith.claim_candidates import propose_claims_from_prose
+
+    proposed = propose_claims_from_prose(
+        "See Fig 4 and reference 36 for details of the 12 datasets."
+    )
+    assert proposed["candidates"] == []
+    assert any("bare number" in note for note in proposed["notes"])
+
+
+def test_a_sentence_quoting_an_experiment_is_marked_not_dropped() -> None:
+    """Which number a reproduction targets is the reading this refuses to make."""
+    from reprolith.claim_candidates import propose_claims_from_prose
+
+    proposed = propose_claims_from_prose(
+        "The measured value is 26.1 nmol*h/mL, and the simulated value is 91.4 nmol*h/mL."
+    )["candidates"]
+    assert {c["reported"] for c in proposed} == {26.1, 91.4}
+    # Both words are in the sentence, so neither number is claimed for either side.
+    assert {c["attribution"] for c in proposed} == {"both"}
+
+
+def test_a_quantity_it_cannot_express_still_makes_a_sentence_ambiguous() -> None:
+    """The error this was written with: T1/2 was not in the vocabulary, so a sentence naming a
+    half-life *and* an AUC looked unambiguous and put `auc` on two half-lives."""
+    from reprolith.claim_candidates import propose_claims_from_prose
+
+    proposed = propose_claims_from_prose(
+        "T1/2 is measured at 0.50h while the AUC simulations show 0.9h."
+    )["candidates"]
+    assert proposed
+    assert all(c["metric"] == "" for c in proposed)
+
+
+def test_the_survey_records_that_prose_does_not_reach_what_tables_miss() -> None:
+    """The measurement that decides whether prose extraction is worth pursuing for reach.
+
+    Of the ten open-access papers, three state a result in a table. Their *prose* states results
+    too — but the seven that have no results table have none in their text either: their numbers
+    are in the figures. So reading prose broadens what can be read from a paper already reachable,
+    and reaches no new paper.
+    """
+    import json
+    from pathlib import Path
+
+    survey = json.loads(
+        (Path(__file__).parent.parent / "datasets" / "manuscripts" / "table_survey.json")
+        .read_text(encoding="utf-8")
+    )
+    papers = survey["papers"]
+    with_table = {
+        pmcid for pmcid, paper in papers.items()
+        if any(t["candidates_stating_a_metric"] for t in paper["tables"])
+    }
+    with_prose = {
+        pmcid for pmcid, paper in papers.items() if paper["prose"]["naming_a_quantity"]
+    }
+    assert with_prose <= with_table, sorted(with_prose - with_table)
+    assert with_prose, "no paper states a result in prose; this check would pass vacuously"
+    assert " ".join(survey["limits"]).count("figures") >= 1

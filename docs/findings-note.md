@@ -3107,6 +3107,45 @@ check compares the two sides of a filing and neither title named the other, so i
 certificate — which is exactly its job, and the misspelling is in the artifact rather than in
 anything here.
 
+## Reading the prose, and finding out it does not help
+
+The roadmap's next lift after tables was prose. The paper this corpus is built on states two of its
+committed values in a sentence as well as in a table — *"concentrations in plasma reach a maximum
+of 6.1 nmol/mL (0.79 mg/L) and 11.2 nmol/mL (1.45 mg/L)"* — so a prose reader was built to the same
+rule as the table one: a candidate is a proposal, the model output is never guessed, and every
+candidate carries its **whole sentence**, because "the measured value is 26.1 nmol\*h/mL, and the
+simulated value is 91.4" needs the reader to see which half is which.
+
+It works. It rediscovers 6.1 and 11.2 with `metric: cmax` from "reach a maximum of", and ignores
+"Fig 4" and "reference 36" because a number with no unit beside it is a citation far more often
+than a result.
+
+**And it does not reach a single paper the table reader misses.** Measured across all ten
+open-access papers in the set:
+
+| | papers |
+| --- | --- |
+| state a result in a **table** | 3 |
+| state a result in **prose**, naming the quantity | 2 |
+| state one in prose but **not** in a table | **0** |
+
+The seven papers with no results table have none in their text either. Their numbers are in the
+figures, and the prose that surrounds those figures does not restate them. So prose extraction
+broadens what can be read from a paper *already reachable* — worth having, and the natural
+companion to the table reader — and moves the reach of this corpus by nothing at all.
+
+That reorders what remains: **figure digitization is not the next lift after prose, it is the only
+one.** The measurement is committed beside the table counts so the ordering rests on evidence
+rather than on which capability was easiest to imagine building.
+
+### The vocabulary that had to include what it cannot express
+
+One error worth keeping. A sentence names a metric only if it names exactly one, and the first
+version's vocabulary held only the metrics this engine *supports* — so *"T1/2 is measured at 0.50h
+while the AUC simulations show 0.9h"* looked unambiguous and put `auc` on two half-lives. A term the
+reader cannot express still has to make a sentence ambiguous, or the ambiguity check only sees the
+half of the vocabulary it likes.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
