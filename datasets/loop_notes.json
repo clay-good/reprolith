@@ -21,8 +21,6 @@
         "BIOMD0000000673",
         "BIOMD0000000765",
         "BIOMD0000000948",
-        "BIOMD0000001027",
-        "BIOMD0000001029",
         "BIOMD0000001039",
         "MODEL1006230040",
         "MODEL1711210003",
@@ -38,7 +36,7 @@
       "basis": "observed",
       "stage": "ingest",
       "resolution": "explained",
-      "note": "Thirty of the thirty-one PK/PD entries disagree with their BioModels label because Reprolith returned blocked, not because it judged the paper wrong. Reprolith holds no extracted claims for these papers, so the run reports run.NO_CLAIMS_REASON and abstains without fetching or opening anything; a blocked verdict can never equal a reproduced or not-reproduced label, which is what makes the raw agreement 0/31. The reason text used to say the claims had not been extracted 'from the shipped model artifact', which named an inspection that never happened \u2014 no artifact is read on this path at all. Explained rather than fixed: the responsible stage is ingestion, and the missing input is each paper's targetable claims read from its manuscript, which is not automated.",
+      "note": "28 of the thirty-one PK/PD entries disagree with their BioModels label because Reprolith returned blocked, not because it judged the paper wrong. Reprolith holds no extracted claims for these papers, so the run reports run.NO_CLAIMS_REASON and abstains without fetching or opening anything; a blocked verdict can never equal a reproduced or not-reproduced label, which is what makes the raw agreement 0/31. The reason text used to say the claims had not been extracted 'from the shipped model artifact', which named an inspection that never happened \u2014 no artifact is read on this path at all. Explained rather than fixed: the responsible stage is ingestion, and the missing input is each paper's targetable claims read from its manuscript, which is not automated.",
       "evidence": [
         {
           "path": "python/reprolith/run.py",
@@ -55,12 +53,13 @@
       "id": "pkpd-metformin-more-careful-than-its-label",
       "kind": "disagreement",
       "subjects": [
-        "BIOMD0000001028"
+        "BIOMD0000001028",
+        "BIOMD0000001029"
       ],
       "basis": "observed",
       "stage": "oracle",
       "resolution": "explained",
-      "note": "The one certified PK/PD entry disagrees upward: the label is a binary reproduced, and Reprolith published partially-reproduced. Both claims matched well inside tolerance (relative error 0.0216 and 0.0045), but the 1000 mg claim rests on a load-bearing salt-form assumption Reprolith had to make itself, and an assumption-qualified assessment cannot carry a clean reproduced overall. Explained, not fixed: down-grading the verdict is the honesty invariant working, and the binary label has no way to express it.",
+      "note": "Two certified PK/PD entries disagree upward: their labels are a binary reproduced, and Reprolith published partially-reproduced for each. The human single-dose entry's thirty-three claims all reproduce (its two plasma ones at relative error 0.0055 and 0.0045), and the twice-daily entry reproduces twenty-four of thirty \u2014 but every claim at a dose the model does not default to rests on a load-bearing salt-form assumption Reprolith had to make itself, and an assumption-qualified assessment cannot carry a clean reproduced overall. Explained, not fixed: the downgrade is the honesty invariant working, and a binary label has no way to express it. The mouse oral-dose entry is the counter-example that shows the rule is about the assumption and not about the class \u2014 its mice were dosed with metformin rather than the hydrochloride salt, nothing has to be converted, and it certifies as a clean reproduced.",
       "evidence": [
         {
           "path": "datasets/milestone/certificates/BIOMD0000001028.json",

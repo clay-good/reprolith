@@ -809,6 +809,73 @@
           "assumption_qualified": true
         }
       ]
+    },
+    "BIOMD0000001027": {
+      "model_file": "worked_examples/Zake2021_Metformin_Mice_PO.xml",
+      "paper": {
+        "title": "Zake2021 - PBPK model of metformin in mice: single dose peroral",
+        "doi": "10.1371/journal.pone.0249594"
+      },
+      "duration": 24.0,
+      "steps": 960,
+      "claims": [
+        {
+          "claim_id": "Cmax-plasma",
+          "quantity": "Plasma Cmax after a single 50 mg/kg oral dose in mice",
+          "species": "mPlasmaVenous",
+          "reported": 27.2,
+          "source_location": "Table 1, Plasma row, Fitted (the paper simulates 27.2 nmol/mL after a single 50 mg/kg PO dose)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-portal-vein",
+          "quantity": "Portal vein Cmax after a single 50 mg/kg oral dose in mice",
+          "species": "mPortalVein",
+          "reported": 40.7,
+          "source_location": "Table 1, Portal vein row, Fitted (the paper simulates 40.7 nmol/mL after a single 50 mg/kg PO dose)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-liver",
+          "quantity": "Liver Cmax after a single 50 mg/kg oral dose in mice",
+          "species": "mLiver",
+          "reported": 216.6,
+          "source_location": "Table 1, Liver row, Fitted (the paper simulates 216.6 nmol/mL after a single 50 mg/kg PO dose)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-heart",
+          "quantity": "Heart Cmax after a single 50 mg/kg oral dose in mice",
+          "species": "mHeart",
+          "reported": 68.1,
+          "source_location": "Table 1, Heart row, Fitted (the paper simulates 68.1 nmol/mL after a single 50 mg/kg PO dose)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-muscle",
+          "quantity": "Muscle Cmax after a single 50 mg/kg oral dose in mice",
+          "species": "mMuscle",
+          "reported": 107.3,
+          "source_location": "Table 1, Muscle row, Fitted (the paper simulates 107.3 nmol/mL after a single 50 mg/kg PO dose)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-adipose",
+          "quantity": "Adipose Cmax after a single 50 mg/kg oral dose in mice",
+          "species": "mAdipose",
+          "reported": 19.1,
+          "source_location": "Table 1, Adipose row, Fitted (the paper simulates 19.1 nmol/mL after a single 50 mg/kg PO dose)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-brain",
+          "quantity": "Brain Cmax after a single 50 mg/kg oral dose in mice",
+          "species": "mBrain",
+          "reported": 21.8,
+          "source_location": "Table 1, Brain row, Fitted (the paper simulates 21.8 nmol/mL after a single 50 mg/kg PO dose)",
+          "metric": "cmax"
+        }
+      ]
     }
   }
 }

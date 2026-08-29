@@ -152,10 +152,24 @@ def test_required_subjects_track_the_catalogue_not_a_restatement() -> None:
 
 
 def test_abstentions_are_disagreements_that_still_owe_an_explanation() -> None:
-    """A blocked verdict never matches a label, so it needs a note like any other disagreement."""
+    """A blocked verdict never matches a label, so it needs a note like any other disagreement.
+
+    Counted as "every PK/PD entry that did not match its label", which is what a disagreement is,
+    rather than as the literal 31 — the mouse oral-dose entry became the class's first agreement
+    and the count moved. The other five classes disagree nowhere.
+    """
+    import json
+    from pathlib import Path
+
     subjects = disagreement_subjects(committed_reports())
     assert "BIOMD0000001028" in subjects
-    assert len(subjects) == 31  # the PK/PD run; the other five classes disagree nowhere
+    report = json.loads(
+        (Path(__file__).parent.parent / "datasets/milestone/agreement_report.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert len(subjects) == report["total"] - report["agreements"]
+    assert report["agreements"] >= 1, "no PK/PD entry agrees; this check would pass vacuously"
 
 
 def test_a_citation_of_source_must_find_the_words_in_code_that_runs(tmp_path) -> None:

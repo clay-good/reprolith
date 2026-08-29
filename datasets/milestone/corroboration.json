@@ -1,4 +1,74 @@
 {
+  "BIOMD0000001027:Cmax-adipose": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001027:Cmax-brain": {
+    "distance_at_most": 1e-07,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001027:Cmax-heart": {
+    "distance_at_most": 1e-07,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001027:Cmax-liver": {
+    "distance_at_most": 1e-07,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001027:Cmax-muscle": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001027:Cmax-plasma": {
+    "distance_at_most": 1e-07,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001027:Cmax-portal-vein": {
+    "distance_at_most": 1e-07,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
   "BIOMD0000001028:Cmax-1000mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
@@ -303,7 +373,7 @@
     "prior_administrations": []
   },
   "BIOMD0000001028:Cmax-muscle-500mg": {
-    "distance_at_most": 1e-06,
+    "distance_at_most": 1e-07,
     "engine_independent": true,
     "engines": [
       "copasi",

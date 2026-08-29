@@ -178,13 +178,21 @@ def test_self_validation_json_splits_abstentions(capsys):
             == overall["labelled_entries"])
     # a single blended agreement_rate must NOT be presented — it would misrepresent abstentions
     assert "agreement_rate" not in overall
-    # PK/PD's disagreements are abstentions, not wrong verdicts (the "0 wrong verdicts" story)
+    # PK/PD's non-agreements are abstentions or partials, never a verdict contradicting a label.
+    # It had one agreement for the first time when the mouse oral-dose entry came back cleanly
+    # `reproduced`; before that the class had none, and the two human entries are partial because
+    # they rest on a load-bearing assumption. Counted from the report itself, because both of
+    # these move as claims land.
     pkpd = report["by_class"]["ode-pkpd"]
-    assert pkpd["agreements"] == 0
-    # 29 of the 31 seeded entries still have no extracted claims. Two do — the metformin
-    # single-dose and twice-daily human models — so this is a ceiling that falls as claims land,
-    # not a constant.
-    assert overall["abstentions"] == 29
+    assert pkpd["agreements"] >= 1
+    assert pkpd["matched"] + pkpd["abstained"] + pkpd["other"] == pkpd["total"]
+    entries = json.loads(
+        (Path(__file__).parent.parent / "datasets" / "pkpd_claims.json").read_text(encoding="utf-8")
+    )["entries"]
+    # Every entry without extracted claims abstains, and every entry with them is certified — so
+    # the abstention count is the seeded set minus the claims dataset, and it falls as claims land.
+    assert overall["abstentions"] == pkpd["total"] - len(entries)
+    assert pkpd["abstained"] == pkpd["total"] - len(entries)
 
 
 def test_presubmission_report(tmp_path, capsys):

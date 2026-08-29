@@ -2991,6 +2991,57 @@ The `gaps` view is now pinned by a test, because it inherits whatever the render
 later change there could strip the evidence from the surface an *agent* reads with no person in the
 loop to notice.
 
+## The first clean pass, and the table nobody had fetched
+
+The paper's mouse models had been written off. Its Table 2 — the intravenous one — reports AUC and
+half-life and no Cmax, the AUC does not converge on a bolus profile, and the guard added this
+morning abstains on it. That looked like the end of the paper.
+
+It was not. **Table 1 had never been fetched.** The survey pulled Tables 2, 4, 5, 6 and 7 because
+those were the ones a claim already cited, and Table 1 is the *oral* mouse table: Cmax, Tmax, AUC
+and half-life for nine tissues, the paper's own fitted values. And the article says in as many
+words why Table 2 has no Cmax — *"due to the IV curves' decreasing nature, only AUC24 and T1/2
+values were calculated for the IV experimental data"* — which is the same fact the convergence
+guard discovered numerically, stated in the prose.
+
+Seven of the nine tissues map to one species each. They reproduce at **worst 0.17%**:
+
+| plasma | portal vein | liver | heart | muscle | adipose | brain |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0.16% | 0.09% | 0.05% | 0.02% | 0.17% | 0.05% | 0.03% |
+
+And with **no assumption at all**: the mice were dosed with metformin, not the hydrochloride salt,
+so nothing has to be converted and the model's default dose is already the paper's. That makes
+BIOMD0000001027 the first entry in this class to certify as **`reproduced`** — an unqualified pass,
+which the overall-verdict rule forbids to any certificate resting on a load-bearing assumption, and
+which the two human entries therefore cannot reach.
+
+It is also **the first agreement the blind self-validation run has recorded for this class**. That
+number was 0 of 31 this morning and had been zero for the life of the repository; the surface
+reporting it already carried the right caveat and needed no change.
+
+The lesson is small and cheap: the survey fetched the tables that were *already cited*. A results
+table nobody had claimed from was invisible to it, and it was the one that turned an entry written
+off as blocked into the corpus's only clean pass.
+
+### And the record it invalidated
+
+The discipline-loop audit refused the commit, correctly, twice over. A `disagreement` note existed
+explaining why BIOMD0000001027 abstained, and it no longer abstains — an orphaned note, "explaining
+nothing", which is a failure by that audit's own rule. Its sibling listed thirty entries as
+abstaining; three of them now certify.
+
+Rewriting it turned up something the audit could not see. The note on the metformin entry quoted
+"relative error 0.0216 and 0.0045" for its two claims — and 0.0216 is the error against **6.2**,
+the reference value that turned out not to be in the paper and was corrected this morning. Against
+the paper's actual 6.1 it is 0.0055. The note had been stale since that correction, and every one
+of its evidence citations still matched, because they quote the certificate's *assumption* block
+and not its numbers.
+
+Which is the same shape as the corrected value itself: a number in a document that nothing
+re-derives goes quietly out of date, and a citation check that passes tells you only that the
+words are still there.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

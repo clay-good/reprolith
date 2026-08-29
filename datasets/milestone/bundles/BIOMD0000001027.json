@@ -1,0 +1,76 @@
+{
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": "deterministic-lsoda (judge rev 4942b917c80b)",
+    "engine": "copasi",
+    "version": "4.46.300 (Source)"
+  },
+  "entry": "BIOMD0000001027",
+  "mismatches": null,
+  "model": {
+    "detected_format": "sbml",
+    "filename": "worked_examples/Zake2021_Metformin_Mice_PO.xml",
+    "validates": true
+  },
+  "non_reconstructable": [],
+  "origin": "author-supplied",
+  "recipe": [
+    {
+      "claim_id": "Cmax-plasma",
+      "metric": "cmax",
+      "output": "[mPlasmaVenous]",
+      "protocol": "Table 1, Plasma row, Fitted (the paper simulates 27.2 nmol/mL after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-portal-vein",
+      "metric": "cmax",
+      "output": "[mPortalVein]",
+      "protocol": "Table 1, Portal vein row, Fitted (the paper simulates 40.7 nmol/mL after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-liver",
+      "metric": "cmax",
+      "output": "[mLiver]",
+      "protocol": "Table 1, Liver row, Fitted (the paper simulates 216.6 nmol/mL after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-heart",
+      "metric": "cmax",
+      "output": "[mHeart]",
+      "protocol": "Table 1, Heart row, Fitted (the paper simulates 68.1 nmol/mL after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-muscle",
+      "metric": "cmax",
+      "output": "[mMuscle]",
+      "protocol": "Table 1, Muscle row, Fitted (the paper simulates 107.3 nmol/mL after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-adipose",
+      "metric": "cmax",
+      "output": "[mAdipose]",
+      "protocol": "Table 1, Adipose row, Fitted (the paper simulates 19.1 nmol/mL after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    },
+    {
+      "claim_id": "Cmax-brain",
+      "metric": "cmax",
+      "output": "[mBrain]",
+      "protocol": "Table 1, Brain row, Fitted (the paper simulates 21.8 nmol/mL after a single 50 mg/kg PO dose)",
+      "steps": 960,
+      "time_span": "0-24.0"
+    }
+  ],
+  "source_dossier": "BIOMD0000001027"
+}

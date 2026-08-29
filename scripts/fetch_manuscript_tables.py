@@ -37,6 +37,14 @@ _WANTED = {
         # other tissue had no committed source to be checked against.
         "tables": {"pone.0249594.t004": 8, "pone.0249594.t005": 9, "pone.0249594.t006": 40},
     },
+    # The same paper's mouse oral-dose model, and its Table 1 — the only results table in this
+    # article that reports a Cmax for the *mice*: Table 2 is the intravenous one, and the paper
+    # says why it has none ("due to the IV curves' decreasing nature, only AUC24 and T1/2 values
+    # were calculated for the IV experimental data").
+    "BIOMD0000001027": {
+        "pmcid": "PMC8026019",
+        "tables": {"pone.0249594.t001": 20},
+    },
     # The same paper, its twice-daily table: the multiple-dose human model is a separate entry.
     "BIOMD0000001029": {
         "pmcid": "PMC8026019",

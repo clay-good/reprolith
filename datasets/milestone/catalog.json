@@ -840,7 +840,7 @@
       "state": "certified"
     },
     {
-      "difficulty": null,
+      "difficulty": "high",
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
@@ -852,18 +852,48 @@
           "at": "blind-run",
           "from_state": "queued",
           "missing_inputs": [],
-          "reason": "blind run (lifecycle step; nothing was ingested)",
+          "reason": "blind run",
           "to_state": "ingesting"
         },
         {
           "actor": "reprolith",
           "at": "blind-run",
           "from_state": "ingesting",
-          "missing_inputs": [
-            "Reprolith holds no extracted claims for this paper, so there was nothing to reproduce and no model was run; extracting a paper's targetable claims from its manuscript is not automated yet, and claims are contributed by hand to datasets/pkpd_claims.json"
-          ],
+          "missing_inputs": [],
           "reason": "blind run",
-          "to_state": "blocked"
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
         }
       ],
       "identifiers": {
@@ -878,7 +908,7 @@
       "sources": [
         "https://www.ebi.ac.uk/biomodels/"
       ],
-      "state": "blocked"
+      "state": "certified"
     },
     {
       "difficulty": null,
