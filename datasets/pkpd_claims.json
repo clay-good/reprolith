@@ -489,6 +489,324 @@
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
           "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-red-blood-cells-500mg-twice-daily",
+          "quantity": "Red blood cells Cmax under twice-daily 500 mg oral dosing",
+          "species": "mRBC",
+          "reported": 3.2,
+          "source_location": "Table 7, Red blood cells row, 500 mg twice-daily regimen (the paper simulates 3.2 nmol/mL)",
+          "metric": "cmax",
+          "shortfall": {
+            "mode": "artifact-runs-less-of-the-protocol-than-the-paper-states",
+            "implicated": "the four dose events the model carries, against the eight its own name states",
+            "fault": "reconstruction"
+          }
+        },
+        {
+          "claim_id": "Cmax-adipose-500mg-twice-daily",
+          "quantity": "Adipose Cmax under twice-daily 500 mg oral dosing",
+          "species": "mAdipose",
+          "reported": 4.6,
+          "source_location": "Table 7, Adipose row, 500 mg twice-daily regimen (the paper simulates 4.6 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-brain-500mg-twice-daily",
+          "quantity": "Brain Cmax under twice-daily 500 mg oral dosing",
+          "species": "mBrain",
+          "reported": 6.9,
+          "source_location": "Table 7, Brain row, 500 mg twice-daily regimen (the paper simulates 6.9 nmol/mL)",
+          "metric": "cmax",
+          "shortfall": {
+            "mode": "apparent-manuscript-error",
+            "implicated": "Table 7's Brain Cmax, which equals plasma's while its AUC24 and Cmean are 0.80 of plasma's",
+            "fault": "manuscript"
+          }
+        },
+        {
+          "claim_id": "Cmax-remainder-500mg-twice-daily",
+          "quantity": "Remainder Cmax under twice-daily 500 mg oral dosing",
+          "species": "mRemainder",
+          "reported": 5.5,
+          "source_location": "Table 7, Remainder row, 500 mg twice-daily regimen (the paper simulates 5.5 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-muscle-500mg-twice-daily",
+          "quantity": "Muscle Cmax under twice-daily 500 mg oral dosing",
+          "species": "mMuscle",
+          "reported": 21.6,
+          "source_location": "Table 7, Muscle row, 500 mg twice-daily regimen (the paper simulates 21.6 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-lungs-500mg-twice-daily",
+          "quantity": "Lungs Cmax under twice-daily 500 mg oral dosing",
+          "species": "mLung",
+          "reported": 20.6,
+          "source_location": "Table 7, Lungs row, 500 mg twice-daily regimen (the paper simulates 20.6 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-stomach-500mg-twice-daily",
+          "quantity": "Stomach Cmax under twice-daily 500 mg oral dosing",
+          "species": "mStomach",
+          "reported": 21.9,
+          "source_location": "Table 7, Stomach row, 500 mg twice-daily regimen (the paper simulates 21.9 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-heart-500mg-twice-daily",
+          "quantity": "Heart Cmax under twice-daily 500 mg oral dosing",
+          "species": "mHeart",
+          "reported": 17.2,
+          "source_location": "Table 7, Heart row, 500 mg twice-daily regimen (the paper simulates 17.2 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-liver-500mg-twice-daily",
+          "quantity": "Liver Cmax under twice-daily 500 mg oral dosing",
+          "species": "mLiver",
+          "reported": 76.7,
+          "source_location": "Table 7, Liver row, 500 mg twice-daily regimen (the paper simulates 76.7 nmol/mL)",
+          "metric": "cmax"
+        },
+        {
+          "claim_id": "Cmax-red-blood-cells-1000mg-twice-daily",
+          "quantity": "Red blood cells Cmax under twice-daily 1000 mg oral dosing",
+          "species": "mRBC",
+          "reported": 5.9,
+          "source_location": "Table 7, Red blood cells row, 1000 mg twice-daily regimen (the paper simulates 5.9 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true,
+          "shortfall": {
+            "mode": "artifact-runs-less-of-the-protocol-than-the-paper-states",
+            "implicated": "the four dose events the model carries, against the eight its own name states",
+            "fault": "reconstruction"
+          }
+        },
+        {
+          "claim_id": "Cmax-adipose-1000mg-twice-daily",
+          "quantity": "Adipose Cmax under twice-daily 1000 mg oral dosing",
+          "species": "mAdipose",
+          "reported": 8.6,
+          "source_location": "Table 7, Adipose row, 1000 mg twice-daily regimen (the paper simulates 8.6 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-brain-1000mg-twice-daily",
+          "quantity": "Brain Cmax under twice-daily 1000 mg oral dosing",
+          "species": "mBrain",
+          "reported": 12.8,
+          "source_location": "Table 7, Brain row, 1000 mg twice-daily regimen (the paper simulates 12.8 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true,
+          "shortfall": {
+            "mode": "apparent-manuscript-error",
+            "implicated": "Table 7's Brain Cmax, which equals plasma's while its AUC24 and Cmean are 0.80 of plasma's",
+            "fault": "manuscript"
+          }
+        },
+        {
+          "claim_id": "Cmax-remainder-1000mg-twice-daily",
+          "quantity": "Remainder Cmax under twice-daily 1000 mg oral dosing",
+          "species": "mRemainder",
+          "reported": 10.1,
+          "source_location": "Table 7, Remainder row, 1000 mg twice-daily regimen (the paper simulates 10.1 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-muscle-1000mg-twice-daily",
+          "quantity": "Muscle Cmax under twice-daily 1000 mg oral dosing",
+          "species": "mMuscle",
+          "reported": 39.5,
+          "source_location": "Table 7, Muscle row, 1000 mg twice-daily regimen (the paper simulates 39.5 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-lungs-1000mg-twice-daily",
+          "quantity": "Lungs Cmax under twice-daily 1000 mg oral dosing",
+          "species": "mLung",
+          "reported": 38.3,
+          "source_location": "Table 7, Lungs row, 1000 mg twice-daily regimen (the paper simulates 38.3 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-stomach-1000mg-twice-daily",
+          "quantity": "Stomach Cmax under twice-daily 1000 mg oral dosing",
+          "species": "mStomach",
+          "reported": 40.7,
+          "source_location": "Table 7, Stomach row, 1000 mg twice-daily regimen (the paper simulates 40.7 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-heart-1000mg-twice-daily",
+          "quantity": "Heart Cmax under twice-daily 1000 mg oral dosing",
+          "species": "mHeart",
+          "reported": 31.9,
+          "source_location": "Table 7, Heart row, 1000 mg twice-daily regimen (the paper simulates 31.9 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-liver-1000mg-twice-daily",
+          "quantity": "Liver Cmax under twice-daily 1000 mg oral dosing",
+          "species": "mLiver",
+          "reported": 143.8,
+          "source_location": "Table 7, Liver row, 1000 mg twice-daily regimen (the paper simulates 143.8 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 779.9
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-red-blood-cells-1500mg-twice-daily",
+          "quantity": "Red blood cells Cmax under twice-daily 1500 mg oral dosing",
+          "species": "mRBC",
+          "reported": 8.4,
+          "source_location": "Table 7, Red blood cells row, 1500 mg twice-daily regimen (the paper simulates 8.4 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true,
+          "shortfall": {
+            "mode": "artifact-runs-less-of-the-protocol-than-the-paper-states",
+            "implicated": "the four dose events the model carries, against the eight its own name states",
+            "fault": "reconstruction"
+          }
+        },
+        {
+          "claim_id": "Cmax-adipose-1500mg-twice-daily",
+          "quantity": "Adipose Cmax under twice-daily 1500 mg oral dosing",
+          "species": "mAdipose",
+          "reported": 12.3,
+          "source_location": "Table 7, Adipose row, 1500 mg twice-daily regimen (the paper simulates 12.3 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-brain-1500mg-twice-daily",
+          "quantity": "Brain Cmax under twice-daily 1500 mg oral dosing",
+          "species": "mBrain",
+          "reported": 18.7,
+          "source_location": "Table 7, Brain row, 1500 mg twice-daily regimen (the paper simulates 18.7 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true,
+          "shortfall": {
+            "mode": "apparent-manuscript-error",
+            "implicated": "Table 7's Brain Cmax, which equals plasma's while its AUC24 and Cmean are 0.80 of plasma's",
+            "fault": "manuscript"
+          }
+        },
+        {
+          "claim_id": "Cmax-remainder-1500mg-twice-daily",
+          "quantity": "Remainder Cmax under twice-daily 1500 mg oral dosing",
+          "species": "mRemainder",
+          "reported": 14.7,
+          "source_location": "Table 7, Remainder row, 1500 mg twice-daily regimen (the paper simulates 14.7 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-muscle-1500mg-twice-daily",
+          "quantity": "Muscle Cmax under twice-daily 1500 mg oral dosing",
+          "species": "mMuscle",
+          "reported": 56.6,
+          "source_location": "Table 7, Muscle row, 1500 mg twice-daily regimen (the paper simulates 56.6 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-lungs-1500mg-twice-daily",
+          "quantity": "Lungs Cmax under twice-daily 1500 mg oral dosing",
+          "species": "mLung",
+          "reported": 55.6,
+          "source_location": "Table 7, Lungs row, 1500 mg twice-daily regimen (the paper simulates 55.6 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-stomach-1500mg-twice-daily",
+          "quantity": "Stomach Cmax under twice-daily 1500 mg oral dosing",
+          "species": "mStomach",
+          "reported": 59.0,
+          "source_location": "Table 7, Stomach row, 1500 mg twice-daily regimen (the paper simulates 59.0 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-heart-1500mg-twice-daily",
+          "quantity": "Heart Cmax under twice-daily 1500 mg oral dosing",
+          "species": "mHeart",
+          "reported": 46.3,
+          "source_location": "Table 7, Heart row, 1500 mg twice-daily regimen (the paper simulates 46.3 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-liver-1500mg-twice-daily",
+          "quantity": "Liver Cmax under twice-daily 1500 mg oral dosing",
+          "species": "mLiver",
+          "reported": 210.1,
+          "source_location": "Table 7, Liver row, 1500 mg twice-daily regimen (the paper simulates 210.1 nmol/mL)",
+          "metric": "cmax",
+          "parameter_overrides": {
+            "Metformin_Dose_in_Lumen_in_mg": 1169.79
+          },
+          "assumption_qualified": true
         }
       ]
     }

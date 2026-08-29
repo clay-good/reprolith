@@ -12,7 +12,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "deterministic-lsoda (judge rev 68ea3261c480)",
+    "algorithm": "deterministic-lsoda (judge rev 4942b917c80b)",
     "engine": "copasi",
     "version": "4.46.300 (Source)"
   },
@@ -53,6 +53,276 @@
         "Metformin_Dose_in_Lumen_in_mg": 1169.79
       },
       "protocol": "Table 7, plasma row, 1500 mg twice-daily regimen (the paper simulates 18.5 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-red-blood-cells-500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mRBC]",
+      "protocol": "Table 7, Red blood cells row, 500 mg twice-daily regimen (the paper simulates 3.2 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-adipose-500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mAdipose]",
+      "protocol": "Table 7, Adipose row, 500 mg twice-daily regimen (the paper simulates 4.6 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-brain-500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mBrain]",
+      "protocol": "Table 7, Brain row, 500 mg twice-daily regimen (the paper simulates 6.9 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-remainder-500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mRemainder]",
+      "protocol": "Table 7, Remainder row, 500 mg twice-daily regimen (the paper simulates 5.5 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-muscle-500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mMuscle]",
+      "protocol": "Table 7, Muscle row, 500 mg twice-daily regimen (the paper simulates 21.6 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-lungs-500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mLung]",
+      "protocol": "Table 7, Lungs row, 500 mg twice-daily regimen (the paper simulates 20.6 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-stomach-500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mStomach]",
+      "protocol": "Table 7, Stomach row, 500 mg twice-daily regimen (the paper simulates 21.9 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-heart-500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mHeart]",
+      "protocol": "Table 7, Heart row, 500 mg twice-daily regimen (the paper simulates 17.2 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-liver-500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mLiver]",
+      "protocol": "Table 7, Liver row, 500 mg twice-daily regimen (the paper simulates 76.7 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-red-blood-cells-1000mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mRBC]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 7, Red blood cells row, 1000 mg twice-daily regimen (the paper simulates 5.9 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-adipose-1000mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mAdipose]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 7, Adipose row, 1000 mg twice-daily regimen (the paper simulates 8.6 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-brain-1000mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mBrain]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 7, Brain row, 1000 mg twice-daily regimen (the paper simulates 12.8 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-remainder-1000mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mRemainder]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 7, Remainder row, 1000 mg twice-daily regimen (the paper simulates 10.1 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-muscle-1000mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mMuscle]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 7, Muscle row, 1000 mg twice-daily regimen (the paper simulates 39.5 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-lungs-1000mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mLung]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 7, Lungs row, 1000 mg twice-daily regimen (the paper simulates 38.3 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-stomach-1000mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mStomach]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 7, Stomach row, 1000 mg twice-daily regimen (the paper simulates 40.7 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-heart-1000mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mHeart]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 7, Heart row, 1000 mg twice-daily regimen (the paper simulates 31.9 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-liver-1000mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mLiver]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 779.9
+      },
+      "protocol": "Table 7, Liver row, 1000 mg twice-daily regimen (the paper simulates 143.8 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-red-blood-cells-1500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mRBC]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 7, Red blood cells row, 1500 mg twice-daily regimen (the paper simulates 8.4 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-adipose-1500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mAdipose]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 7, Adipose row, 1500 mg twice-daily regimen (the paper simulates 12.3 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-brain-1500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mBrain]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 7, Brain row, 1500 mg twice-daily regimen (the paper simulates 18.7 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-remainder-1500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mRemainder]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 7, Remainder row, 1500 mg twice-daily regimen (the paper simulates 14.7 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-muscle-1500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mMuscle]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 7, Muscle row, 1500 mg twice-daily regimen (the paper simulates 56.6 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-lungs-1500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mLung]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 7, Lungs row, 1500 mg twice-daily regimen (the paper simulates 55.6 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-stomach-1500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mStomach]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 7, Stomach row, 1500 mg twice-daily regimen (the paper simulates 59.0 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-heart-1500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mHeart]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 7, Heart row, 1500 mg twice-daily regimen (the paper simulates 46.3 nmol/mL)",
+      "steps": 960,
+      "time_span": "0-48.0"
+    },
+    {
+      "claim_id": "Cmax-liver-1500mg-twice-daily",
+      "metric": "cmax",
+      "output": "[mLiver]",
+      "parameter_overrides": {
+        "Metformin_Dose_in_Lumen_in_mg": 1169.79
+      },
+      "protocol": "Table 7, Liver row, 1500 mg twice-daily regimen (the paper simulates 210.1 nmol/mL)",
       "steps": 960,
       "time_span": "0-48.0"
     }

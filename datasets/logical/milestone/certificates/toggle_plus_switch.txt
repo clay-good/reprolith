@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 33c59460258f)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 201029beba37)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

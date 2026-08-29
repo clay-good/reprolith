@@ -40,7 +40,10 @@ _WANTED = {
     # The same paper, its twice-daily table: the multiple-dose human model is a separate entry.
     "BIOMD0000001029": {
         "pmcid": "PMC8026019",
-        "tables": {"pone.0249594.t007": 4},
+        # Table 7 in full, for the same reason Table 6 is: twelve tissues at three doses is
+        # every simulated Cmax this model's paper publishes, and a claim about any row
+        # but plasma had no committed source to be checked against.
+        "tables": {"pone.0249594.t007": 40},
     },
 }
 

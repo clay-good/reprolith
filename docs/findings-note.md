@@ -2499,9 +2499,13 @@ file involved is valid.
 The honest thing is to say how much it matters, not to assert either way, so it was measured:
 cloning the dose event out to 48, 60, 72 and 84 hours moves the plasma Cmax from **6.8907 to
 6.8943** — 0.05%. Under twelve-hour dosing with a 3.9-hour half-life the peak is a steady-state
-plateau by the third dose, so a claim about Cmax is not load-bearing on the missing four. A claim
-about the regimen's *duration* — a trough at 96 hours, an AUC over the full course — would be, and
-none is made.
+plateau by the third dose, so *that* claim is not load-bearing on the missing four.
+
+**And the conclusion drawn from it was too wide.** It said "a claim about Cmax is not load-bearing
+on the missing four", which is true of plasma and false of the paper's other tissues: red blood
+cells have a 21.7-hour half-life, are still accumulating at the fourth dose, and come out **15%
+short**. One measurement on one compartment was generalised to a metric. See "Two tissues that do
+not reproduce" below, where it is measured on each.
 
 This is the shape of finding the whole project is for: a deposited model that does not do what its
 own description says, found by running it rather than by reading it, with the consequence for each
@@ -2861,6 +2865,64 @@ A task is a run. Two claims reading different outputs of the same run are one ta
 generators, and ten claims setting the same dose are one modified model. The exported archive is
 now 4 models, 1 time course, 4 tasks and 30 reports — which is what actually happened — and it is
 *smaller* than it was with two claims' worth of duplication in it.
+
+## Two tissues that do not reproduce, for two different reasons
+
+The same expansion, applied to the twice-daily entry's Table 7: ten tissues at three doses.
+Twenty-four reproduce, worst 0.59%. **Six do not**, and they are the first non-reproducing claims
+this corpus has ever published — the engine's failure path had never been exercised on real data.
+
+They miss consistently at every dose, which is the signal that made them worth chasing rather than
+loosening: red blood cells 15.3 / 15.7 / 15.2%, brain 20.1 / 20.1 / 20.6%. Two entirely different
+causes, both established by measurement.
+
+### The artifact runs less of the protocol than the paper states
+
+The deposited model is named *"eight PO administrations with 12h interval"* and carries four dose
+events — the discrepancy this record already noted, and dismissed for Cmax on one compartment's
+evidence. Supplying the four missing administrations:
+
+| | half-life | as deposited | with all eight | paper |
+| --- | --- | --- | --- | --- |
+| plasma | 3.9 h | 6.891 | 6.894 | 6.9 |
+| red blood cells | 21.7 h | 2.710 | **3.163** | 3.2 |
+
+15.3% short becomes 1.1%. Nothing in the file is missing or wrong; what is short is the *run*, and
+which claims that reaches depends on each tissue's half-life. That is why it had to become a
+failure mode nameable **per claim** rather than a property of the model:
+`artifact-runs-less-of-the-protocol-than-the-paper-states`, the first PK/PD root cause a blind
+verdict in this repository has actually attributed.
+
+### A table cell that contradicts its own row
+
+Brain does not move when the doses are supplied — 5.512 to 5.515 against the paper's 6.9. So the
+missing doses are not its cause, and the paper's own numbers say what is:
+
+| Brain ÷ plasma | Table 6 (single dose) | Table 7 (twice daily) |
+| --- | --- | --- |
+| AUC24 | 0.79 | 0.80 |
+| Cmean | — | 0.80 |
+| **Cmax** | **0.80** | **1.00** |
+
+Every quantity in Table 7's Brain row is four fifths of plasma's except Cmax, which is exactly
+equal to it. The model gives 0.80. A Cmax equal to plasma's cannot sit above an AUC and a Cmean
+that are four fifths of it, and 0.80 × 6.9 = 5.52, which is what the model produces.
+`apparent-manuscript-error`, faulted to the manuscript — the first time this engine has said that
+about a published table, and it says it with the paper's own arithmetic.
+
+### What had to change to say either of them
+
+A dataset claim could not state a root cause. `Claim.from_record` parsed everything except
+`shortfall`, with a docstring explaining that dataset claims "are the reproducing,
+default-tolerance case" — true until today. Without it both findings would have published
+`uncategorized`, *fault: reconstruction*, which is the right answer when nobody has diagnosed a
+miss and a false one when somebody has. A half-written attribution is refused rather than
+defaulted.
+
+And the repository's own governance caught the rest: adding a failure mode with no
+discipline-loop note failed `test_loop_notes`, exactly as designed. The note carries the
+measurements above, and its basis is `observed` rather than `spec` — the first failure-mode note
+in the record that a run produced rather than a specification anticipated.
 
 ## Status and what remains
 

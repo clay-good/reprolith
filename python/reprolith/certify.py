@@ -26,6 +26,8 @@ from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import (
     Attribution,
     ComparisonMethod,
+    FailureMode,
+    Fault,
     PercentileBand,
     ReferenceKind,
     Tolerance,
@@ -85,8 +87,15 @@ class Claim:
         """Build a claim from a plain dict (a claims-dataset record).
 
         ``parameter_overrides`` may be given as a ``{name: value}`` mapping; ``reference_kind``
-        as its string value. The engine-facing fields (``tolerance``, ``shortfall``) are not
-        parsed here — dataset claims are the reproducing, default-tolerance case.
+        as its string value. ``tolerance`` is still not parsed here — a dataset claim is judged at
+        the documented class default.
+
+        ``shortfall`` is, because a dataset claim that does *not* reproduce is no longer
+        hypothetical. Without it such a claim reaches ``undetermined_shortfall`` and publishes
+        "cause uncategorized, fault with the reconstruction" — which is the honest answer when
+        nobody has diagnosed the miss, and a false one when somebody has. The metformin
+        twice-daily entry has two: a tissue the deposited model runs too short a protocol to
+        reach, and a table cell whose value contradicts its own row.
         """
         overrides = record.get("parameter_overrides", {})
         return cls(
@@ -105,7 +114,31 @@ class Claim:
             ),
             reference_kind=ReferenceKind(record.get("reference_kind", "numeric")),
             assumption_qualified=bool(record.get("assumption_qualified", False)),
+            shortfall=_shortfall_from(record.get("shortfall")),
         )
+
+
+def _shortfall_from(record: dict[str, Any] | None) -> Attribution | None:
+    """A claim record's stated root cause, or ``None`` when it states none.
+
+    Refuses an incomplete one rather than filling a default: a half-written attribution publishes
+    a cause nobody chose, which is worse than the honest `undetermined_shortfall` a missing one
+    falls back to.
+    """
+    if not record:
+        return None
+    missing = sorted({"mode", "implicated", "fault"} - set(record))
+    if missing:
+        raise ValueError(
+            f"a claim's shortfall states {', '.join(sorted(record))} and needs "
+            f"{', '.join(missing)} as well: a root cause is a category, the element it implicates, "
+            "and whose fault it looks like"
+        )
+    return Attribution(
+        mode=FailureMode(record["mode"]),
+        implicated=str(record["implicated"]),
+        fault=Fault(record["fault"]),
+    )
 
 
 def _metric(times: Sequence[float], values: Sequence[float], metric: str) -> float:

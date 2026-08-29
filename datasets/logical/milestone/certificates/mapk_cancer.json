@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "synchronous-update, sat-fixed-points (z3 5.0.0) (rev 33c59460258f)",
+    "algorithm": "synchronous-update, sat-fixed-points (z3 5.0.0) (rev 201029beba37)",
     "engine": "reprolith-logical",
     "version": "0.0.1"
   },

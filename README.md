@@ -9,12 +9,17 @@ reproduced, partially, or not — for each result, with the reason.
 
 That is what it is *for*, and it is worth being exact about how much of it is done today: of the
 thirty-one published certificates, **two** check a reconstruction against numbers read from a
-paper — **thirty-six claims** between them, and every one is what that paper's *own model*
-reports. They cover its whole published Cmax table: ten tissues at 500, 1000 and 1500 mg, plus
-three validation arms that each follow an earlier dose, plus the twice-daily regimen. Two of the
-paper's twelve tissue rows are left unclaimed on purpose — the model splits Intestine and Kidney
-into several compartments, and which one the row means is a judgement about the paper, not
-something to guess. Every
+paper — **sixty-three claims** between them, and every one is a number that paper's *own model*
+reports. They cover both of its published Cmax tables: ten tissues at 500, 1000 and 1500 mg after a
+single dose and again under twice-daily dosing, plus three validation arms that each follow an
+earlier dose. Two of the paper's twelve tissue rows are left unclaimed on purpose — the model
+splits Intestine and Kidney into several compartments, and which one the row means is a judgement
+about the paper, not something to guess.
+
+**Fifty-seven reproduce. Six do not**, and the certificate says why for each: three because the
+deposited model runs four of the eight administrations its own name states, which matters only for
+a tissue slow enough to still be accumulating; three because one cell of the paper's table
+contradicts the rest of its own row. That is the output this project exists to produce. Every
 one of those rows is quoted in [`datasets/manuscripts/`](datasets/manuscripts/) and a test checks
 the certificates' reference values against them, because for most of this repository's life
 nothing did: one of the first two was recorded as 6.2, a number the paper does not contain. The rest check Reprolith's engine against an independent

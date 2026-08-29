@@ -85,6 +85,14 @@ class FailureMode(str, Enum):
     ENGINE_SENSITIVITY = "engine-algorithm-sensitivity"
     MANUSCRIPT_ERROR = "apparent-manuscript-error"
     ASSUMPTION_DEPENDENCE = "load-bearing-assumption-dependence"
+    # The shipped model runs a *shorter* protocol than the paper describes — the deposited
+    # metformin multiple-dose model is named "eight PO administrations with 12h interval" and
+    # carries four dose events. Distinct from a missing parameter: nothing is absent from the
+    # file, and every value in it is right; the run it performs is shorter than the reported one.
+    # Which tissues that reaches depends on their half-lives — plasma is at steady state by the
+    # third dose and moves 0.05%, red blood cells have a 21.7-hour half-life and come out 15% low
+    # — so it is a cause that must be nameable per claim rather than as a property of the model.
+    INCOMPLETE_PROTOCOL = "artifact-runs-less-of-the-protocol-than-the-paper-states"
     # Constraint-based (FBA) root causes (spec: constraint-based-class). LP solver sensitivity is
     # named by the shared ``ENGINE_SENSITIVITY`` above.
     UNSPECIFIED_MEDIUM = "unspecified-medium-or-exchange-bounds"
