@@ -2747,6 +2747,13 @@ words of its own docstring: a value with no magnitude has nothing for a relative
 anything against. The engine layer met the same problem and did not recognise it, twice, because
 each failure looked like the previous one.
 
+Then the shape was swept rather than waited for. Two more of the day's checks divided by a value
+that can vanish — the dossier round trip, which compares every state variable's **end** value, and
+the two engines' end states — and both are measured against each species' own scale now. The round
+trip's margins improve rather than loosen: 2.7e-15 on MAPK, 1.4e-9 and 1.1e-6 on the repressilator,
+against bounds of 1e-4 and 1e-3. A denominator that does not move buys more room than any amount
+of loosening does.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

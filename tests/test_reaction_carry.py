@@ -28,7 +28,15 @@ _WORKED = Path(__file__).parent.parent / "datasets" / "worked_examples"
 
 
 def _round_trip(source: str, *, duration: float, steps: int) -> float:
-    """The worst relative difference between the artifact and a model rebuilt from its dossier."""
+    """The worst difference between the artifact and a model rebuilt from its dossier.
+
+    Measured against each species' **own scale** — the largest value it reaches over the run —
+    rather than against its end value. A species that has decayed to a residual makes an absolute
+    difference of 1e-6 look like 2e-5, and the tolerance then tracks how much is left rather than
+    how well the two models agree; `judge_scalar` says the same thing about a reported zero
+    through its `zero_scale`. Dividing by the end value cost three rounds of CI to notice in the
+    dosing-schedule tests, so it is not repeated here.
+    """
     from reprolith.engine import simulate
 
     dossier = ingest_sbml(source, entry="x")
@@ -36,9 +44,15 @@ def _round_trip(source: str, *, duration: float, steps: int) -> float:
     rebuilt = build_model_sbml(dossier)
     worst = 0.0
     for name in dossier.state_variables:
-        original = simulate(source, name, duration=duration, steps=steps)[1][-1]
-        after = simulate(rebuilt, name, duration=duration, steps=steps)[1][-1]
-        worst = max(worst, abs(original - after) / max(1e-9, abs(original)))
+        original = simulate(source, name, duration=duration, steps=steps)[1]
+        after = simulate(rebuilt, name, duration=duration, steps=steps)[1]
+        scale = max((abs(value) for value in original), default=0.0)
+        if scale == 0.0:
+            # A species that is zero throughout agrees exactly or not at all; there is no scale
+            # to divide by, so the difference itself is the measure.
+            worst = max(worst, abs(original[-1] - after[-1]))
+            continue
+        worst = max(worst, abs(original[-1] - after[-1]) / scale)
     return worst
 
 

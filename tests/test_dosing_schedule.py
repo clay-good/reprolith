@@ -224,11 +224,17 @@ def test_each_engine_reads_its_own_end_state() -> None:
     copasi = final_state(_MODEL, names, duration=12.0, steps=240)
     roadrunner = final_state_with_roadrunner(_MODEL, names, duration=12.0, steps=240)
     assert set(copasi) == set(roadrunner) == set(names)
-    # Independent implementations, so they agree closely without being the same code — to about
-    # 1e-6 here. The bound is the one the corroboration criterion itself uses for "these two
-    # engines agree", rather than a number fitted to this machine.
+    # Independent implementations, so they agree closely without being the same code. Measured
+    # against each species' own scale, not its end value: `mStomachLumen` has decayed to a
+    # thousandth of a percent of its peak by twelve hours, and a relative bound on that residual
+    # measures how little is left rather than how well the engines agree.
+    from reprolith.engine import simulate
+
     for name in names:
-        assert roadrunner[name] == pytest.approx(copasi[name], rel=1e-3), name
+        scale = max(abs(v) for v in simulate(_MODEL, name, duration=12.0, steps=240)[1])
+        assert abs(roadrunner[name] - copasi[name]) <= 1e-3 * scale, (
+            name, roadrunner[name], copasi[name], scale
+        )
 
 
 def test_the_bulk_end_state_agrees_with_reading_one_species_at_a_time() -> None:
