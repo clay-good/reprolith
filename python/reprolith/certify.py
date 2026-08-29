@@ -15,6 +15,7 @@ Uses the optional ``engine`` extra (COPASI to run, libsbml to apply parameter ov
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -24,9 +25,11 @@ from .engine import simulate
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import (
     Attribution,
+    ComparisonMethod,
     PercentileBand,
     ReferenceKind,
     Tolerance,
+    default_tolerance,
     judge_curve,
     judge_distribution,
     judge_estimation,
@@ -228,8 +231,10 @@ def _fully_shadowed_ids(model: Any) -> set[str]:
     from .sbml import _libsbml as _sbml_module
 
     libsbml = _sbml_module()
-    for math in _model_level_math(model):
-        for name in _symbols_in(libsbml.formulaToString(math) or ""):
+    # Not `math`: this module now imports the standard library's, and the same shadow already
+    # made an `isfinite` call land on an ASTNode once today, in the ingester.
+    for expression in _model_level_math(model):
+        for name in _symbols_in(libsbml.formulaToString(expression) or ""):
             referencing.setdefault(name, []).append(False)
     for i in range(model.getNumReactions()):
         law = model.getReaction(i).getKineticLaw()
@@ -301,6 +306,37 @@ def _apply_overrides(sbml: str, overrides: tuple[tuple[str, float], ...]) -> str
     return str(libsbml.writeSBMLToString(document))
 
 
+def _auc_is_established(
+    model: str, species: str, *, duration: float, steps: int, within: float
+) -> tuple[bool, float]:
+    """``(established, relative change)`` for an AUC read off a uniform grid at ``steps``.
+
+    An AUC is a trapezoidal sum over the sample points, so unlike a peak or an end value it is a
+    property of the *grid* as well as of the model. On a smooth PK profile that costs nothing —
+    the metformin human model's 24-hour AUC agrees to six figures between 240 and 1920 samples.
+    On a bolus intravenous profile it costs everything: the same model family in mice gives 658,
+    406, 280, 218, 188 and 174 as the sample count doubles from 240 to 7680, still moving 7.9% at
+    the last step. A verdict computed on the first of those numbers is a verdict about the grid.
+
+    So the number is measured against itself at twice the resolution, and compared to the *pass*
+    tolerance the claim will be judged against. When its own sampling uncertainty is wider than
+    the width that separates a pass from a failure, the comparison cannot tell them apart, and
+    :func:`certify_model` abstains rather than publishing whichever side of the line it landed on.
+    This can only turn a judgment into an abstention, never the reverse.
+    """
+    coarse_times, coarse_values = simulate(model, species, duration=duration, steps=steps)
+    fine_times, fine_values = simulate(model, species, duration=duration, steps=steps * 2)
+    coarse = _metric(coarse_times, coarse_values, "auc")
+    fine = _metric(fine_times, fine_values, "auc")
+    scale = max(abs(coarse), abs(fine))
+    if not math.isfinite(coarse) or not math.isfinite(fine) or scale == 0.0:
+        # Non-finite output is the existing abstention's business, and an AUC of exactly zero has
+        # no relative change to measure; neither is this check's to rule on.
+        return True, 0.0
+    change = abs(fine - coarse) / scale
+    return change <= within, change
+
+
 def certify_model(
     sbml: str,
     *,
@@ -331,6 +367,41 @@ def certify_model(
         model = _apply_overrides(sbml, claim.parameter_overrides) if claim.parameter_overrides else sbml
         times, values = simulate(model, claim.species, duration=duration, steps=steps)
         predicted = _metric(times, values, claim.metric)
+        if claim.metric == "auc":
+            # The width the claim will actually be judged against: its own tolerance when it
+            # states one, else the documented class default for this comparison.
+            pass_width = (
+                claim.tolerance
+                or default_tolerance(
+                    ComparisonMethod.SCALAR_RELATIVE_ERROR, claim.reference_kind
+                )
+            ).reproduced_within
+            established, change = _auc_is_established(
+                model, claim.species, duration=duration, steps=steps, within=pass_width
+            )
+            if not established:
+                assessments.append(replace(
+                    not_evaluable(
+                        claim_id=claim.claim_id,
+                        quantity=claim.quantity,
+                        source_location=claim.source_location,
+                        reason=(
+                            f"the AUC moves {change:.1%} between {steps} and {steps * 2} samples, "
+                            f"wider than the {pass_width:.1%} that separates a pass from a "
+                            "failure here; at this resolution the number is a property of the "
+                            "grid, so no verdict is established"
+                        ),
+                        reference_kind=claim.reference_kind,
+                    ),
+                    protocol=_run_protocol(
+                        duration=duration,
+                        steps=steps,
+                        read=f"[{claim.species}] {claim.metric}",
+                        overrides=claim.parameter_overrides,
+                        overwritten=_events_overwriting(sbml, claim.parameter_overrides),
+                    ),
+                ))
+                continue
         assessment = (
             judge_scalar(
                 claim_id=claim.claim_id,

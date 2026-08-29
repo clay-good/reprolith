@@ -2561,6 +2561,41 @@ arms would have been wrong, and a verdict of `reproduced` cannot be produced by 
 here. What it names for the roadmap is concrete: a claim needs a dosing schedule, not only a
 parameter override — with two verified reference values already waiting for it.
 
+## An AUC is a property of the sample grid, and nothing said so
+
+Chasing the mouse intravenous model — the fourth metformin variant, whose Table 2 reports plasma
+AUC over 24 hours — turned up something about the engine rather than about the paper. The AUC does
+not converge:
+
+| samples | 240 | 480 | 960 | 1920 | 3840 | 7680 |
+| --- | --- | --- | --- | --- | --- | --- |
+| AUC24 | 658 | 406 | 280 | 218 | 188 | 174 |
+
+Still moving 7.9% at the last doubling. The same measurement on the *human oral* model agrees to
+six figures from 240 samples up — 41.4469, 41.4468, 41.4468, 41.4468 — which is why nothing had
+ever noticed. A bolus intravenous profile puts almost all of its area in the first minutes of a
+twenty-four hour window, and a trapezoidal sum over a uniform grid cannot see it.
+
+`_metric(..., "auc")` has always been a sum over the sample points, and the protocol string has
+always recorded the sample count, and the docstring beside it has always said "an AUC and a curve
+distance both move with the sample count". All true, all published, and none of it a **check**: an
+AUC claim could be judged `reproduced` or `not-reproduced` on a number that was an artifact of
+`steps`, and the certificate would look exactly the same either way.
+
+The rule now applied is the one the numbers themselves suggest. The AUC is measured again at twice
+the resolution, and the change is compared against the width that separates a pass from a failure
+for that claim. **When the metric's own sampling uncertainty is wider than that width, the
+comparison cannot tell a pass from a failure**, so the claim abstains — `not-evaluable`, with the
+two sample counts and both numbers in the reason. On the mouse model at 480 samples that reads:
+*the AUC moves 30.9% between 480 and 960 samples, wider than the 5.0% that separates a pass from a
+failure here.*
+
+It is one-directional by construction: it can turn a judgment into an abstention and never the
+reverse. And it cost the corpus nothing to adopt, because every committed claim reads a peak —
+`cmax` — and not one of them integrates. That is the uncomfortable half: the guard was free
+precisely because the metric it protects has never been used, and the first real use of it would
+have been the one that got it wrong.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
