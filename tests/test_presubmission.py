@@ -87,7 +87,9 @@ def test_fix_list_is_ordered_by_impact() -> None:
     assert [p for _, p in kinds_priorities] == [1, 2, 3, 5, 6]
     assert report["fix_list"][0]["claim_id"] == "blind"
     assert report["fix_list"][1]["claim_id"] == "fail"
-    assert report["fix_list"][1]["fix"] == "dose units (mg vs mg/kg)"
+    # The fix now phrases the implicated element as an instruction and names the fault direction
+    # as a hypothesis; what must not change is that the element itself is still in it.
+    assert "dose units (mg vs mg/kg)" in report["fix_list"][1]["fix"]
 
 
 def test_partial_is_not_ready_even_though_no_claim_failed() -> None:
@@ -297,3 +299,56 @@ def test_an_assumption_the_author_cannot_clear_says_so() -> None:
     engine_limit = report(author_can_close=False)
     assert "nothing in the paper can clear this one" in engine_limit["fix"]
     assert "limit of Reprolith's engine" in engine_limit["fix"]
+
+
+def _failed_claim(*, fault: str, implicated: str):
+    from reprolith import ClaimAssessment, Verdict
+
+    return ClaimAssessment(
+        claim_id="c", quantity="Brain Cmax", verdict=Verdict.FAILED,
+        source_location="Table 7, Brain row",
+        discrepancy="relative error 0.2012",
+        root_cause="apparent-manuscript-error",
+        implicated=implicated,
+        fault_hypothesis=fault,
+    )
+
+
+def test_the_fix_for_a_suspected_manuscript_error_is_an_instruction_and_a_hypothesis() -> None:
+    """Read as the author being judged: a noun phrase under "FIX BEFORE YOU SUBMIT" is not a fix.
+
+    The field it used was `implicated`, which is by definition the element implicated — so an
+    author was handed the finding restated, with nothing to do about it and no indication that
+    Reprolith was accusing their *table* rather than their model, or that a fault is a hypothesis
+    they should check. `Fault` says "always a hypothesis, never a proven cause"; this surface
+    never passed that on.
+    """
+    from reprolith.presubmission import _claim_issue_and_fix
+
+    issue, fix = _claim_issue_and_fix(
+        _failed_claim(fault="manuscript", implicated="Table 7's Brain Cmax, which equals plasma's")
+    )
+    assert issue == "relative error 0.2012"
+    assert fix.startswith("check Table 7's Brain Cmax")
+    assert "hypothesis" in fix
+    assert "reported value is wrong rather than the model" in fix
+    assert "confirm it against your own run" in fix
+
+
+def test_the_fix_for_a_reconstruction_shortfall_points_at_the_model_instead() -> None:
+    """The other direction has to read differently, or naming the fault buys the author nothing."""
+    from reprolith.presubmission import _claim_issue_and_fix
+
+    _, fix = _claim_issue_and_fix(
+        _failed_claim(fault="reconstruction", implicated="the four dose events the model carries")
+    )
+    assert fix.startswith("reconcile the model with what your paper reports")
+    assert "the shipped model, not the reported value, is what falls short" in fix
+
+
+def test_a_shortfall_with_no_stated_fault_still_says_something_usable() -> None:
+    """`undetermined_shortfall` names no fault, and that path must not lose the implicated element."""
+    from reprolith.presubmission import _claim_issue_and_fix
+
+    _, fix = _claim_issue_and_fix(_failed_claim(fault="", implicated="the peak concentration"))
+    assert fix == "the peak concentration"

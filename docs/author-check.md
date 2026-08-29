@@ -149,6 +149,29 @@ guessed would accuse correct claims. A claim citing a figure panel or a sentence
 did not supply, is reported as **not checked**, never as wrong, and never fails the command: an
 absence of evidence is not evidence of absence.
 
+## When a fix list says your paper is wrong
+
+Reprolith can conclude that the number your table reports is the thing that does not fit, rather
+than your model. When it does, the fix list says so in as many words, and says it as a hypothesis:
+
+```
+fix: check Table 7's Brain Cmax, which equals plasma's while its AUC24 and Cmean are 0.80 of
+     plasma's — Reprolith's hypothesis is that the reported value is wrong rather than the
+     model, so confirm it against your own run before changing anything
+```
+
+The other direction reads differently on purpose, so that naming the fault is worth something:
+
+```
+fix: reconcile the model with what your paper reports: the four dose events the model carries,
+     against the eight its own name states. Reprolith's hypothesis is that the shipped model,
+     not the reported value, is what falls short
+```
+
+A fault is always a hypothesis and never a proven cause. What it rests on is in the line above it
+— the measured discrepancy — and in the element it names, which is chosen so you can check the
+claim yourself without re-running anything.
+
 ## What it will not tell you
 
 It is built to under-report rather than accuse a correct archive, so a comparison it cannot make

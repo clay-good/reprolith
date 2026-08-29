@@ -2954,6 +2954,35 @@ the cell it implicates, and the fault marked as a hypothesis:
 The public registry page carries the same sentence. An accusation without its evidence is worth
 less than no accusation, and this one is aimed at people who can check it.
 
+## "FIX BEFORE YOU SUBMIT" followed by a noun phrase
+
+The same read, one surface over. The pre-submission report is the thing this project most wants an
+author to run, and under a heading reading *FIX BEFORE YOU SUBMIT* it offered:
+
+> fix: Table 7's Brain Cmax, which equals plasma's while its AUC24 and Cmean are 0.80 of plasma's
+
+That is the finding, restated. It is not a fix, and an author cannot act on it. The field it came
+from is `implicated`, which is by definition *the element implicated* — a noun phrase, correct in
+its own right and wrong in that slot. It had been the fix text since the surface was written, and
+was unnoticeable while every implicated element was the claim's own quantity.
+
+**And it never named the fault direction.** An author told to fix a claim needs to know whether
+Reprolith believes their *model* fell short or their *table* has a typo — those are different
+pieces of work, and one of them is "check whether we are right about your paper". The two now read
+differently, and both say the fault is a hypothesis:
+
+> fix: check Table 7's Brain Cmax … — Reprolith's hypothesis is that the reported value is wrong
+> rather than the model, so confirm it against your own run before changing anything
+
+> fix: reconcile the model with what your paper reports: the four dose events the model carries …
+> Reprolith's hypothesis is that the shipped model, not the reported value, is what falls short
+
+`Fault` has said "always a hypothesis, never a proven cause" since it was written. Today is the
+second surface found not passing that on — the certificate was the first, three commits ago. Both
+were silent for the same reason: until this morning no claim in the corpus had a cause worth
+stating, so every field carrying one was a placeholder and nothing that dropped or mis-slotted it
+could be seen.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

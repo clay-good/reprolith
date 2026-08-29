@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any
 
 from .enums import OverallVerdict, Verdict
 from .model import Certificate
+from .oracle import Fault
 from .render import estimation_claims
 
 if TYPE_CHECKING:  # a type-only import: the archive check takes claims, it does not build them
@@ -64,17 +65,42 @@ _REPRODUCED_BUT_NOT_READY = (
 
 
 def _claim_issue_and_fix(assessment: Any) -> tuple[str, str]:
-    """Phrase a non-reproducing claim as an author-facing issue and a concrete fix."""
+    """Phrase a non-reproducing claim as an author-facing issue and a concrete fix.
+
+    The fix has to be an **instruction**, and it used to be `implicated` — which is by definition
+    the element implicated, a noun phrase. Under a heading reading *FIX BEFORE YOU SUBMIT*, an
+    author was handed "Table 7's Brain Cmax, which equals plasma's while its AUC24 and Cmean are
+    0.80 of plasma's": the finding, restated, with nothing to do about it.
+
+    And it never said whose fault Reprolith thinks it is. That matters most exactly where the
+    stakes are highest: an author told to fix a claim needs to know whether the tool believes
+    their *model* fell short or their *table* has a typo, and that this is a hypothesis they
+    should check rather than a defect they must accept. `Fault` says so in its own docstring —
+    "always a hypothesis, never a proven cause" — and this surface never passed it on.
+    """
     if assessment.verdict is Verdict.NOT_EVALUABLE:
         issue = "a reproducer cannot evaluate this claim"
         fix = assessment.root_cause or "supply evaluable output or digitizable reference data"
         return issue, fix
     issue = assessment.discrepancy or f"{assessment.verdict.value} reproduction"
-    fix = (
-        assessment.implicated
-        or assessment.root_cause
-        or "reconcile the reconstructed output with the reported value within tolerance"
-    )
+    implicated = (assessment.implicated or "").strip()
+    fault = (assessment.fault_hypothesis or "").strip()
+    if fault == Fault.MANUSCRIPT.value and implicated:
+        fix = (
+            f"check {implicated} — Reprolith's hypothesis is that the reported value is wrong "
+            "rather than the model, so confirm it against your own run before changing anything"
+        )
+    elif fault == Fault.RECONSTRUCTION.value and implicated:
+        fix = (
+            f"reconcile the model with what your paper reports: {implicated}. Reprolith's "
+            "hypothesis is that the shipped model, not the reported value, is what falls short"
+        )
+    else:
+        fix = (
+            implicated
+            or assessment.root_cause
+            or "reconcile the reconstructed output with the reported value within tolerance"
+        )
     return issue, fix
 
 
