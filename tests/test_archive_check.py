@@ -230,7 +230,7 @@ def test_the_papers_own_archive_does_not_run_the_dose_the_paper_reports() -> Non
     Every file validates, which is exactly why this needs saying."""
     pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     report = archive_report(_paper_archive(), claims=_metformin_claims())
-    assert report["found"]["manuscript_claims_checked"] == 4
+    assert report["found"]["manuscript_claims_checked"] == 5
     manuscript = [item for item in report["fix_list"] if item["kind"] == "manuscript"]
     assert any(
         "Cmax-1000mg" in item["issue"] and "779.9" in item["issue"] for item in manuscript
@@ -238,10 +238,14 @@ def test_the_papers_own_archive_does_not_run_the_dose_the_paper_reports() -> Non
     # The two validation-arm claims state their dose in a schedule, not in `parameter_overrides`,
     # and the archive runs neither of those either — so this check must see them. Reading the
     # top-level field alone it saw nothing and said nothing about them.
-    for claim_id, dose in (("Cmax-250mg-Chung", "194.96"), ("Cmax-750mg-Wen", "584.89")):
+    for claim in _metformin_claims():
+        if not claim.schedule:
+            continue
+        dose = f"{claim.schedule[-1][1][0][1]:g}"
         assert any(
-            claim_id in item["issue"] and dose in item["issue"] for item in manuscript
-        ), (claim_id, [i["issue"] for i in manuscript])
+            f"'{claim.claim_id}'" in item["issue"] and dose in item["issue"]
+            for item in manuscript
+        ), (claim.claim_id, dose, [i["issue"] for i in manuscript])
     item = manuscript[0]
     # It fails the same way an experiment/model mismatch does — silently — so it ranks with it.
     assert item["priority"] == 1
@@ -261,15 +265,21 @@ def test_reprolith_own_export_runs_the_claims_it_was_built_from() -> None:
     """
     pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     report = archive_report(_ARCHIVE.read_bytes(), claims=_metformin_claims())
-    assert report["found"]["manuscript_claims_checked"] == 4
+    assert report["found"]["manuscript_claims_checked"] == 5
+    claims = _metformin_claims()
     reported = {
-        claim_id
+        claim.claim_id
         for item in report["fix_list"] if item["kind"] == "manuscript"
-        for claim_id in ("Cmax-500mg", "Cmax-1000mg", "Cmax-250mg-Chung", "Cmax-750mg-Wen")
-        if claim_id in item["issue"]
+        for claim in claims
+        # Quoted, because these ids nest: "Cmax-500mg" is a prefix of
+        # "Cmax-500mg-El-Messaoudi", and a bare substring match reported the wrong claim. The
+        # same trap as the README's spelled-out counts, two hours apart.
+        if f"'{claim.claim_id}'" in item["issue"]
     }
-    # The two the document does state are run exactly as certified: no finding against them.
-    assert reported == {"Cmax-250mg-Chung", "Cmax-750mg-Wen"}
+    # Exactly the scheduled ones: those the document does state are run as certified, and no
+    # finding stands against them. Derived from the claims so a sixth does not make this a chore.
+    assert reported == {claim.claim_id for claim in claims if claim.schedule}
+    assert reported, "no claim here has a schedule; this check would pass vacuously"
 
 
 def test_claims_supplied_for_an_archive_with_no_experiment_are_not_counted_as_checked() -> None:

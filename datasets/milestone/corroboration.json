@@ -40,6 +40,55 @@
     "overrides": {},
     "prior_administrations": []
   },
+  "BIOMD0000001028:Cmax-500mg-El-Messaoudi": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 389.93
+    },
+    "prior_administrations": [
+      {
+        "duration": 12.0,
+        "overrides": {
+          "Metformin_Dose_in_Lumen_in_mg": 389.93
+        }
+      },
+      {
+        "duration": 12.0,
+        "overrides": {
+          "Metformin_Dose_in_Lumen_in_mg": 389.93
+        }
+      },
+      {
+        "duration": 12.0,
+        "overrides": {
+          "Metformin_Dose_in_Lumen_in_mg": 389.93
+        }
+      },
+      {
+        "duration": 12.0,
+        "overrides": {
+          "Metformin_Dose_in_Lumen_in_mg": 389.93
+        }
+      },
+      {
+        "duration": 12.0,
+        "overrides": {
+          "Metformin_Dose_in_Lumen_in_mg": 389.93
+        }
+      },
+      {
+        "duration": 12.0,
+        "overrides": {
+          "Metformin_Dose_in_Lumen_in_mg": 389.93
+        }
+      }
+    ]
+  },
   "BIOMD0000001028:Cmax-750mg-Wen": {
     "distance_at_most": 1e-06,
     "engine_independent": true,

@@ -206,7 +206,7 @@ def test_bundle_tool_serves_the_stored_reconstruction_bundle() -> None:
     bundle, is_error = _call(query, "bundle", {"accession": "BIOMD0000001028"})
     assert not is_error
     assert bundle["origin"] == "author-supplied"  # the metformin model was adopted
-    assert len(bundle["recipe"]) == 4  # a recipe step per claim, and this entry now has four
+    assert len(bundle["recipe"]) == 5  # a recipe step per claim, and this entry now has five
     assert bundle["assumptions"]  # the salt-form assumption travels
 
 

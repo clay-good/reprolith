@@ -3,8 +3,8 @@ REPRODUCTION CERTIFICATE — Zake2021 - PBPK model of metformin in humans, singl
 Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev 1b9244a508ec)
 
 OVERALL: partially-reproduced
-  claims by verdict: reproduced=4, partial=0, failed=0, not-evaluable=0
-  assumption-qualified claims: Cmax-1000mg, Cmax-250mg-Chung, Cmax-750mg-Wen
+  claims by verdict: reproduced=5, partial=0, failed=0, not-evaluable=0
+  assumption-qualified claims: Cmax-1000mg, Cmax-250mg-Chung, Cmax-750mg-Wen, Cmax-500mg-El-Messaoudi
 
 CLAIMS
   [Cmax-500mg] plasma Cmax after 500 mg single oral dose: reproduced (source Table 6, plasma row, 500 mg single PO dose (the paper simulates 6.1 nmol/mL) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
@@ -15,6 +15,8 @@ CLAIMS
       protocol: duration=24.0, steps=480, read=[mPlasmaVenous] cmax, overrides: Metformin_Dose_in_Lumen_in_mg=194.96; preceded by 12.0 at Metformin_Dose_in_Lumen_in_mg=292.45
   [Cmax-750mg-Wen] plasma Cmax after a 750 mg oral dose, 500 mg administered 12 h earlier: reproduced [assumption-qualified] (source Table 5, Wen 750m row, Fitted (the paper simulates 9.4 nmol/mL) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       protocol: duration=24.0, steps=480, read=[mPlasmaVenous] cmax, overrides: Metformin_Dose_in_Lumen_in_mg=584.89; preceded by 12.0 at Metformin_Dose_in_Lumen_in_mg=389.93
+  [Cmax-500mg-El-Messaoudi] plasma Cmax after a 500 mg oral dose, the seventh of a twice-daily course: reproduced [assumption-qualified] (source Table 5, El Messaoudi 500mg row, Fitted (the paper simulates 6.8 nmol/mL) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      protocol: duration=24.0, steps=480, read=[mPlasmaVenous] cmax, overrides: Metformin_Dose_in_Lumen_in_mg=389.93; preceded by 12.0 at Metformin_Dose_in_Lumen_in_mg=389.93; 12.0 at Metformin_Dose_in_Lumen_in_mg=389.93; 12.0 at Metformin_Dose_in_Lumen_in_mg=389.93; 12.0 at Metformin_Dose_in_Lumen_in_mg=389.93; 12.0 at Metformin_Dose_in_Lumen_in_mg=389.93; 12.0 at Metformin_Dose_in_Lumen_in_mg=389.93
 
 ASSUMPTIONS (supplied by Reprolith, not the paper)
   [dose-salt-form] the stated oral doses are metformin HCl; the model's dose input is free base -> each dose x 129.16/165.62 (779.9 mg free base for 1000 mg, 292.45 for 375, 194.96 for 250, 389.93 for 500, 584.89 for 750) [load-bearing]
@@ -24,6 +26,7 @@ WHAT WAS MISSING
   [Cmax-1000mg] plasma Cmax after 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Cmax-250mg-Chung] plasma Cmax after a 250 mg oral dose, 375 mg administered 12 h earlier: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Cmax-750mg-Wen] plasma Cmax after a 750 mg oral dose, 500 mg administered 12 h earlier: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Cmax-500mg-El-Messaoudi] plasma Cmax after a 500 mg oral dose, the seventh of a twice-daily course: reproduced only under an assumption Reprolith supplied, not a clean pass
   the stated oral doses are metformin HCl; the model's dose input is free base — Reprolith assumed each dose x 129.16/165.62 (779.9 mg free base for 1000 mg, 292.45 for 375, 194.96 for 250, 389.93 for 500, 584.89 for 750) (model default 389.92 mg equals 500 mg HCl expressed as free base; clinical doses are the HCl salt)
   unit not stated by the artifact: units — 13 of 37 extracted values state no unit in the artifact (Intestine_Coefficient, Kidney_Coefficient, Ktp_Adipose, Ktp_Brain, Ktp_Heart, …); their magnitudes are recorded, their units are not
 

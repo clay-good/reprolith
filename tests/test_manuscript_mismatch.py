@@ -176,11 +176,16 @@ def test_the_shipped_metformin_archive_does_not_run_the_dose_the_paper_reports()
     # — a claim that runs after a prior administration — and reading the top-level field alone
     # this check saw nothing for either, and said nothing about the two whose dose is hardest for
     # a reader to find.
-    assert len(messages) == 3, messages
+    # Every claim whose dose this document never reaches, and it reports each of them. The
+    # scheduled ones state that dose in a *schedule* rather than in `parameter_overrides` — a
+    # claim that runs after a prior administration — and reading the top-level field alone this
+    # check saw nothing for them, and said nothing about the doses hardest for a reader to find.
     joined = " | ".join(messages)
-    for claim_id, dose in (
-        ("Cmax-1000mg", "779.9"), ("Cmax-250mg-Chung", "194.96"), ("Cmax-750mg-Wen", "584.89")
-    ):
+    expected = {"Cmax-1000mg": "779.9"} | {
+        claim.claim_id: f"{claim.schedule[-1][1][0][1]:g}" for claim in claims if claim.schedule
+    }
+    assert len(messages) == len(expected), messages
+    for claim_id, dose in expected.items():
         assert f"'{claim_id}'" in joined and dose in joined, claim_id
     assert "389.2, 778.4, 1167.6" in joined
 

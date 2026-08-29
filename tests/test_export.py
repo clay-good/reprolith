@@ -415,12 +415,18 @@ def test_the_published_metformin_bundle_exports_to_a_runnable_archive() -> None:
 
     experiment = build_bundle_sedml(bundle, model)
     assert experiment.expressed == ("Cmax-500mg", "Cmax-1000mg")
-    # The entry's two validation-arm claims run after a pre-dose, which a uniform time course
-    # cannot state. They are listed with the reason rather than written as a plain run — which
-    # would ship a document that runs the reported window alone and reproduces a neighbouring
-    # arm, the failure this whole worked example is about.
-    assert len(experiment.unexpressed) == 2
+    # The entry's validation-arm claims run after a pre-dose, which a uniform time course cannot
+    # state. They are listed with the reason rather than written as a plain run — which would ship
+    # a document that runs the reported window alone and reproduces a neighbouring arm, the
+    # failure this whole worked example is about. Counted from the bundle rather than written
+    # here, so adding another such claim does not make this a chore.
+    scheduled = [step.claim_id for step in bundle.recipe if step.schedule]
+    assert scheduled, "no claim in this bundle has a schedule; this check would pass vacuously"
+    assert len(experiment.unexpressed) == len(scheduled)
     assert all("prior administration" in reason for reason in experiment.unexpressed)
+    assert all(
+        any(claim_id in reason for reason in experiment.unexpressed) for claim_id in scheduled
+    )
 
     changes = [e for e in ET.fromstring(experiment.sedml).iter() if e.tag.endswith("changeAttribute")]
     assert [(c.get("target").rsplit("[@id=", 1)[1], c.get("newValue")) for c in changes] == [
@@ -498,6 +504,7 @@ def test_the_published_worked_example_archive_is_what_the_export_produces_today(
     """A committed binary is only honest if it is checkable. The bytes are deterministic, so this
     regenerates the published archive and compares — a drifted artifact fails rather than sitting
     there looking current."""
+    import json
     import sys
     from pathlib import Path
 
@@ -509,8 +516,12 @@ def test_the_published_worked_example_archive_is_what_the_export_produces_today(
 
     archive, expressed, unexpressed = export()
     assert expressed == ("Cmax-500mg", "Cmax-1000mg")
-    # The pre-dose arms are named, not written: see the test above for why.
-    assert len(unexpressed) == 2
+    # The pre-dose arms are named, not written: see the test above for why. Every claim of the
+    # entry is accounted for, one way or the other — a claim in neither list would be dropped.
+    claims = json.loads(
+        (Path(__file__).parent.parent / "datasets/pkpd_claims.json").read_text(encoding="utf-8")
+    )["entries"]["BIOMD0000001028"]["claims"]
+    assert len(expressed) + len(unexpressed) == len(claims)
     assert ARCHIVE.read_bytes() == archive, (
         "datasets/worked_examples/metformin_reconstruction.omex is stale; regenerate it with "
         "python scripts/export_worked_example_archive.py"

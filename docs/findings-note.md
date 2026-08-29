@@ -2567,9 +2567,21 @@ event administers every dose and nothing is added to the model. Adding an event 
 reconstruction — a run the artifact does not describe — and would have to be declared as one. The
 claim is judged over the last segment; the ones before it condition the state it starts from.
 
-Both arms now certify from the committed corpus: **3.9 → 3.8595** (1.0%) and **9.4 → 9.4034**
-(0.04%), the second agreeing to four decimals with the independent by-hand run that added an event
-instead. Metformin's single-dose entry carries four claims where it carried two.
+All three of the paper's pre-dosed arms now certify from the committed corpus:
+
+| arm | protocol | paper | reconstruction | error |
+| --- | --- | --- | --- | --- |
+| Chung 250 mg | 375 mg 12 h earlier | 3.9 | 3.8595 | 1.0% |
+| Wen 750 mg | 500 mg 12 h earlier | 9.4 | 9.4034 | **0.04%** |
+| El Messaoudi 500 mg | six 500 mg doses, 12 h apart | 6.8 | 6.8943 | 1.4% |
+
+The second agrees to four decimals with an independent by-hand run that added an event to the
+model instead. The third is a **seven-segment** schedule and was not part of the design target —
+it is the check that the shape generalises past the two segments it was built for, and its answer
+lands on the same 6.894 steady-state plateau the *twice-daily* model reaches, which is two
+different models and two different mechanisms arriving at one number.
+
+Metformin's single-dose entry carries five claims where it carried two.
 
 The interesting part is what else had to change, because three of the four were surfaces that
 would otherwise have reported a run nobody made:
