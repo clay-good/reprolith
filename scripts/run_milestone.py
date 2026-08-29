@@ -116,9 +116,13 @@ def main() -> None:
                        # SBML concentration notation: `simulate` reads the engine's concentration
                        # data, and a bare species id is the *amount* to anyone who resolves the
                        # symbol as SBML defines it — 2247x apart on this model's real compartments.
-                       output=f"[{c.species}]", time_span=f"0-{entry['duration']}",
+                       output=f"[{c.species}]",
+                       # A scheduled claim's window is its *last* segment, not the entry's
+                       # default: the run the claim reports starts where the prior doses left off.
+                       time_span=f"0-{c.schedule[-1][0] if c.schedule else entry['duration']}",
                        steps=int(entry.get("steps", 480)),
-                       parameter_overrides=c.parameter_overrides, metric=c.metric)
+                       parameter_overrides=c.parameter_overrides, metric=c.metric,
+                       schedule=c.schedule)
             for rec in entry["claims"]
         )
         bundle = ReconstructionBundle(
@@ -158,6 +162,11 @@ def main() -> None:
                 duration=float(step.time_span.split("-", 1)[1]),
                 steps=int(step.steps or 480),
                 overrides=step.parameter_overrides,
+                # Without this the scheduled claims were corroborated against the model's default
+                # arm and published `engine_independent` under their own claim ids — the exact
+                # "not just the model's default arm" failure the comment above claims to prevent,
+                # by a route it did not cover.
+                schedule=step.schedule,
             )
             corroboration[f"{accession}:{step.claim_id}"] = {
                 "engines": list(result.engines),
@@ -165,7 +174,19 @@ def main() -> None:
                 # and the distance between two agreeing engines amplifies that noise.
                 "distance_at_most": result.distance_bound(),
                 "engine_independent": result.stable,
-                "overrides": {name: value for name, value in step.parameter_overrides},
+                # The values in force for the window that was corroborated. For a scheduled step
+                # they live in its last segment, and reading `parameter_overrides` alone showed
+                # `{}` for a claim that runs at 194.96 mg — a record saying the default arm ran.
+                "overrides": {
+                    name: value
+                    for name, value in (
+                        step.schedule[-1][1] if step.schedule else step.parameter_overrides
+                    )
+                },
+                "prior_administrations": [
+                    {"duration": duration, "overrides": {n: v for n, v in overrides}}
+                    for duration, overrides in step.schedule[:-1]
+                ],
             }
 
     (DATASETS / "milestone" / "corroboration.json").write_text(

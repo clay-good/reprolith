@@ -103,6 +103,119 @@
         ]
       ]
     },
+    "Table 5": {
+      "caption": "Validation results of plasma metformin concentration pharmacokinetic parameters\u2013a comparison of model predictions and experimental results of four different datasets in humans.",
+      "rows": [
+        [
+          "Study",
+          "Type",
+          "Cmax, nmol/mL",
+          "Cmax measured\u2014fitted, %",
+          "Tmax, h",
+          "Tmax measured\u2014fitted, %",
+          "AUC24, nmol*h/mL",
+          "AUC measured\u2014fitted, %",
+          "T1/2, h",
+          "T1/2 measured\u2014fitted, %"
+        ],
+        [
+          "Chung 250mg",
+          "Measured",
+          "4.5",
+          "-13.3",
+          "2.5",
+          "-24.0",
+          "26.8",
+          "0.4",
+          "2.3",
+          "56.5"
+        ],
+        [
+          "Chung 250mg",
+          "Fitted",
+          "3.9",
+          "-13.3",
+          "1.9",
+          "-24.0",
+          "26.9",
+          "0.4",
+          "3.6",
+          "56.5"
+        ],
+        [
+          "Gusler 500mg",
+          "Measured",
+          "5.5",
+          "10.9",
+          "3.5",
+          "-42.9",
+          "39.6",
+          "6.6",
+          "3.9",
+          "-4.9"
+        ],
+        [
+          "Gusler 500mg",
+          "Fitted",
+          "6.1",
+          "10.9",
+          "2.0",
+          "-42.9",
+          "42.2",
+          "6.6",
+          "3.7",
+          "-4.9"
+        ],
+        [
+          "Wen 750m",
+          "Measured",
+          "10.5",
+          "-10.5",
+          "1.5",
+          "26.7",
+          "51.9",
+          "25.0",
+          "2.7",
+          "44.4"
+        ],
+        [
+          "Wen 750m",
+          "Fitted",
+          "9.4",
+          "-10.5",
+          "1.9",
+          "26.7",
+          "64.9",
+          "25.0",
+          "3.9",
+          "44.4"
+        ],
+        [
+          "El Messaoudi 500mg",
+          "Measured",
+          "8.3",
+          "-18.0",
+          "3.0",
+          "-36.7",
+          "63.6",
+          "-24.4",
+          "4",
+          "-2.5"
+        ],
+        [
+          "El Messaoudi 500mg",
+          "Fitted",
+          "6.8",
+          "-18.0",
+          "1.9",
+          "-36.7",
+          "48.1",
+          "-24.4",
+          "3.9",
+          "-2.5"
+        ]
+      ]
+    },
     "Table 6": {
       "caption": "Metformin pharmacokinetic parameters for different tissues following a single 500mg, 1000mg, and 1500mg PO dose in humans.",
       "rows": [

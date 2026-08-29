@@ -138,13 +138,18 @@ def test_the_published_bundle_can_re_run_the_claims_it_describes() -> None:
     `RecipeStep` carried no sample count, no parameter override, and no metric, so the two steps
     were identical where the claims differ by dose: running the bundle strictly as published gave
     the 500 mg answer to both, and the 779.9 mg free-base figure survived only as prose in the
-    assumption block. This runs the recipe and nothing else, and checks it lands on the paper's
-    two reported values.
+    assumption block. This runs the recipe and nothing else, and checks it lands on the values the
+    paper reports.
+
+    The expected values are read from the claims dataset rather than written here. They used to be
+    a literal, and one of them was **6.2** — the number that turned out not to be in the paper at
+    all, still sitting in this test months after it was written, passing because it is inside the
+    tolerance. A second copy of a reference value is a second thing to get wrong.
     """
     import json
 
     from reprolith import simulate
-    from reprolith.certify import _apply_overrides, _metric
+    from reprolith.certify import _apply_overrides, _metric, _run_schedule
     from reprolith.persistence import bundle_from_dict
 
     root = Path(__file__).parent.parent / "datasets"
@@ -156,14 +161,29 @@ def test_the_published_bundle_can_re_run_the_claims_it_describes() -> None:
         )
     )
     sbml = (root / bundle.model.filename).read_text(encoding="utf-8")
-    reported = {"Cmax-500mg": 6.2, "Cmax-1000mg": 11.2}
+    claims = json.loads((root / "pkpd_claims.json").read_text(encoding="utf-8"))
+    reported = {
+        c["claim_id"]: c["reported"]
+        for c in claims["entries"]["BIOMD0000001028"]["claims"]
+    }
+    assert set(reported) == {s.claim_id for s in bundle.recipe}
 
     for step in bundle.recipe:
-        model = _apply_overrides(sbml, step.parameter_overrides) if step.parameter_overrides else sbml
         duration = float(step.time_span.split("-")[-1])
-        times, values = simulate(model, step.output, duration=duration, steps=step.steps)
+        if step.schedule:
+            # A step with prior administrations is re-run the way it was certified: the same
+            # segments, in order, each starting from where the last ended.
+            times, values = _run_schedule(
+                sbml, step.output, schedule=step.schedule, steps=step.steps
+            )
+        else:
+            model = (
+                _apply_overrides(sbml, step.parameter_overrides)
+                if step.parameter_overrides else sbml
+            )
+            times, values = simulate(model, step.output, duration=duration, steps=step.steps)
         got = _metric(times, values, step.metric)
-        assert got == pytest.approx(reported[step.claim_id], rel=0.05)
+        assert got == pytest.approx(reported[step.claim_id], rel=0.05), step.claim_id
 
     # And the two steps are no longer the same run: the dose the 1000 mg claim sets is in the recipe.
     doses = {s.claim_id: dict(s.parameter_overrides) for s in bundle.recipe}

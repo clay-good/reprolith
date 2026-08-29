@@ -66,7 +66,9 @@ def test_the_finding_the_guide_prints_is_the_finding_it_produces() -> None:
         (_WORKED / "Zake2021_metformin_human_single_PO.xml").read_text(encoding="utf-8"),
         claims=claims,
     )
-    (item,) = [item for item in report["fix_list"] if item["kind"] == "manuscript"]
+    manuscript = [item for item in report["fix_list"] if item["kind"] == "manuscript"]
+    # The guide shows one of these findings as its example; the entry now has more than one.
+    (item,) = [i for i in manuscript if "Cmax-1000mg" in i["issue"]]
     # The guide wraps the line to fit the page; compare the parts that carry the meaning.
     for fragment in ("Cmax-1000mg", "779.9", "389.92", "389.2, 778.4, 1167.6"):
         assert fragment in item["issue"], fragment

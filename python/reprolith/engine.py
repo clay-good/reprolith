@@ -16,6 +16,7 @@ the package. Install it with the ``engine`` extra.
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from typing import Any
 
 from .model import EnginePin
@@ -175,6 +176,56 @@ def simulate(
         copasi.CRootContainer.removeDatamodel(datamodel)
 
 
+def final_state(
+    sbml: str, species: Sequence[str], *, duration: float, steps: int
+) -> dict[str, float]:
+    """Every named species' value at the end of one run, from a single simulation.
+
+    :func:`simulate` returns one series, so carrying a whole model's state from one run into the
+    next through it costs one full simulation *per species* — twenty-one of them for the metformin
+    PBPK model, and twenty times the wall clock of the run it is carrying. The engine's time
+    series already holds every column; this reads them.
+
+    The values are concentrations, exactly as :func:`simulate` returns, so a caller writing them
+    back as amounts has to multiply by the compartment size — which is the mistake that made a
+    carried dose silently vanish, and is why this says so here.
+    """
+    _require_advancing_run(duration, steps)
+    copasi = _copasi()
+    datamodel = copasi.CRootContainer.addDatamodel()
+    try:
+        if not datamodel.importSBMLFromString(sbml):
+            raise ValueError("the pinned engine could not import the SBML model")
+        task = datamodel.getTask("Time-Course")
+        task.setMethodType(copasi.CTaskEnum.Method_deterministic)
+        task.setScheduled(True)
+        problem = task.getProblem()
+        problem.setAutomaticStepSize(False)
+        problem.setOutputStartTime(0.0)
+        problem.setDuration(float(duration))
+        problem.setStepNumber(int(steps))
+        task.initialize(copasi.CCopasiTask.OUTPUT_UI)
+        completed = task.process(True)
+        series = task.getTimeSeries()
+        recorded = series.getRecordedSteps()
+        if not completed or recorded != int(steps) + 1:
+            reached = float(series.getData(recorded - 1, 0)) if recorded else 0.0
+            raise NonFiniteSimulation(
+                "the pinned engine did not complete the time course: it stopped at "
+                f"t={reached} of {float(duration)} ({recorded} of {int(steps) + 1} samples)"
+            )
+        ending: dict[str, float] = {}
+        for name in species:
+            column = _species_column(series, name, datamodel)
+            (value,) = require_finite(
+                (float(series.getConcentrationData(recorded - 1, column)),), name
+            )
+            ending[name] = value
+        return ending
+    finally:
+        copasi.CRootContainer.removeDatamodel(datamodel)
+
+
 def _roadrunner() -> Any:
     try:
         import roadrunner
@@ -239,6 +290,35 @@ def simulate_with_roadrunner(
     return times, require_finite(values, species)
 
 
+def final_state_with_roadrunner(
+    sbml: str, species: Sequence[str], *, duration: float, steps: int
+) -> dict[str, float]:
+    """The corroboration engine's counterpart of :func:`final_state`.
+
+    A segmented run carries the state at the end of each segment into the next. Reading that state
+    with a *different* engine from the one running the segments makes the corroborated run half
+    COPASI — so it would no longer be an independent implementation of the same thing, which is
+    the entire point of running it. Each engine reads its own end state.
+    """
+    _require_advancing_run(duration, steps)
+    roadrunner = _roadrunner()
+    runner = roadrunner.RoadRunner(sbml)
+    names = [_observable_id(name) for name in species]
+    runner.timeCourseSelections = ["time"] + [f"[{name}]" for name in names]
+    result = runner.simulate(0.0, float(duration), int(steps) + 1)
+    if len(result) != int(steps) + 1:
+        reached = float(duration) * max(len(result) - 1, 0) / int(steps)
+        raise NonFiniteSimulation(
+            "the corroboration engine did not complete the time course: it stopped at "
+            f"t={reached} of {float(duration)} ({len(result)} of {int(steps) + 1} samples)"
+        )
+    last = result[-1]
+    return {
+        original: require_finite((float(last[position + 1]),), original)[0]
+        for position, original in enumerate(species)
+    }
+
+
 def require_finite(values: tuple[float, ...], species: str) -> tuple[float, ...]:
     """Return ``values`` unless any is non-finite (inf/nan), in which case raise.
 
@@ -289,6 +369,8 @@ __all__ = [
     "NonFiniteSimulation",
     "engine_pin",
     "engine_version",
+    "final_state",
+    "final_state_with_roadrunner",
     "roadrunner_pin",
     "roadrunner_version",
     "simulate",

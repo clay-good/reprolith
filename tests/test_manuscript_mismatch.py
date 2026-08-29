@@ -171,11 +171,18 @@ def test_the_shipped_metformin_archive_does_not_run_the_dose_the_paper_reports()
 
     messages = manuscript_mismatches(sedml, sbml, claims)
 
-    assert len(messages) == 1, messages
-    (message,) = messages
-    assert "'Cmax-1000mg'" in message
-    assert "779.9" in message
-    assert "389.2, 778.4, 1167.6" in message
+    # Three of the entry's four claims run at a dose this document never reaches, and it reports
+    # all three. Two of them state that dose in a *schedule* rather than in `parameter_overrides`
+    # — a claim that runs after a prior administration — and reading the top-level field alone
+    # this check saw nothing for either, and said nothing about the two whose dose is hardest for
+    # a reader to find.
+    assert len(messages) == 3, messages
+    joined = " | ".join(messages)
+    for claim_id, dose in (
+        ("Cmax-1000mg", "779.9"), ("Cmax-250mg-Chung", "194.96"), ("Cmax-750mg-Wen", "584.89")
+    ):
+        assert f"'{claim_id}'" in joined and dose in joined, claim_id
+    assert "389.2, 778.4, 1167.6" in joined
 
 
 def test_a_value_the_model_computes_is_not_read_off_its_inert_attribute() -> None:

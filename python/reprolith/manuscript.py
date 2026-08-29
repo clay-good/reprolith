@@ -258,7 +258,13 @@ def manuscript_mismatches(
             problems.append(
                 f"{where} reads {claim.species!r}, which the archive's experiment never records"
             )
-        for parameter, value in claim.parameter_overrides:
+        # A claim that runs after prior administrations states its own values in its **last**
+        # segment — `Claim` refuses to carry both — so reading `parameter_overrides` alone saw
+        # nothing for it and quietly compared no values at all. The check that exists to say "the
+        # archive never runs the dose your paper reports" would have said nothing about exactly
+        # the claims whose dose is hardest to see.
+        stated_by_claim = claim.schedule[-1][1] if claim.schedule else claim.parameter_overrides
+        for parameter, value in stated_by_claim:
             if parameter not in counts:
                 problems.append(
                     f"{where} sets {parameter!r} to {value:g}, and the archive's model does not "

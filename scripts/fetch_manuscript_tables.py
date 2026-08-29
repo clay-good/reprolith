@@ -32,7 +32,7 @@ _EUROPE_PMC = "https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/fullText
 _WANTED = {
     "BIOMD0000001028": {
         "pmcid": "PMC8026019",
-        "tables": {"pone.0249594.t004": 8, "pone.0249594.t006": 4},
+        "tables": {"pone.0249594.t004": 8, "pone.0249594.t005": 9, "pone.0249594.t006": 4},
     },
     # The same paper, its twice-daily table: the multiple-dose human model is a separate entry.
     "BIOMD0000001029": {

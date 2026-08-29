@@ -18,7 +18,12 @@ import math
 from dataclasses import dataclass, replace
 
 from .engine import ENGINE as _COPASI_ENGINE
-from .engine import ROADRUNNER_ENGINE, simulate, simulate_with_roadrunner
+from .engine import (
+    ROADRUNNER_ENGINE,
+    final_state_with_roadrunner,
+    simulate,
+    simulate_with_roadrunner,
+)
 from .oracle import normalized_curve_distance
 
 #: How far a raw distance is lifted before it is rounded up to a decade. Two: the measured
@@ -97,6 +102,7 @@ def corroborate_curve(
     steps: int,
     rel_tol: float = 0.02,
     overrides: tuple[tuple[str, float], ...] = (),
+    schedule: tuple[tuple[float, tuple[tuple[str, float], ...]], ...] = (),
 ) -> EngineCorroboration:
     """Run a species curve under both engines and report whether the verdict is engine-independent.
 
@@ -113,13 +119,35 @@ def corroborate_curve(
     claim that runs at a non-default dose is otherwise uncorroborable: without them, the only arm
     a model's curves can be checked on is its default one, which for the metformin reconstruction
     is one of its two claims.
-    """
-    if overrides:
-        from .certify import _apply_overrides
 
-        sbml = _apply_overrides(sbml, overrides)
-    _, copasi_values = simulate(sbml, species, duration=duration, steps=steps)
-    _, roadrunner_values = simulate_with_roadrunner(sbml, species, duration=duration, steps=steps)
+    ``schedule`` is the claim's prior administrations, when it has them. It replaces ``overrides``
+    rather than joining them — the schedule's last segment carries the claim's own values — and
+    both engines walk the same segments, carrying state forward the same way.
+    """
+    if schedule:
+        # A claim with prior administrations is a different run from the model's default arm, and
+        # corroborating the default one would publish engine agreement about a run the claim never
+        # made — with the claim's id on it. Both engines walk the same segments.
+        from .certify import _run_schedule
+
+        _, copasi_values = _run_schedule(sbml, species, schedule=schedule, steps=steps)
+        _, roadrunner_values = _run_schedule(
+            sbml, species, schedule=schedule, steps=steps,
+            run=simulate_with_roadrunner,
+            # Its own end state too: reading it with COPASI would make the corroborated run half
+            # COPASI, and a corroboration that shares half its arithmetic with the thing it is
+            # corroborating is not one.
+            read_final_state=final_state_with_roadrunner,
+        )
+    else:
+        if overrides:
+            from .certify import _apply_overrides
+
+            sbml = _apply_overrides(sbml, overrides)
+        _, copasi_values = simulate(sbml, species, duration=duration, steps=steps)
+        _, roadrunner_values = simulate_with_roadrunner(
+            sbml, species, duration=duration, steps=steps
+        )
     distance = normalized_curve_distance(copasi_values, roadrunner_values)
     result = EngineCorroboration(
         species=species,

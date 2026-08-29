@@ -230,9 +230,19 @@ def test_the_papers_own_archive_does_not_run_the_dose_the_paper_reports() -> Non
     Every file validates, which is exactly why this needs saying."""
     pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     report = archive_report(_paper_archive(), claims=_metformin_claims())
-    assert report["found"]["manuscript_claims_checked"] == 2
-    (item,) = [item for item in report["fix_list"] if item["kind"] == "manuscript"]
-    assert "Cmax-1000mg" in item["issue"] and "779.9" in item["issue"]
+    assert report["found"]["manuscript_claims_checked"] == 4
+    manuscript = [item for item in report["fix_list"] if item["kind"] == "manuscript"]
+    assert any(
+        "Cmax-1000mg" in item["issue"] and "779.9" in item["issue"] for item in manuscript
+    )
+    # The two validation-arm claims state their dose in a schedule, not in `parameter_overrides`,
+    # and the archive runs neither of those either — so this check must see them. Reading the
+    # top-level field alone it saw nothing and said nothing about them.
+    for claim_id, dose in (("Cmax-250mg-Chung", "194.96"), ("Cmax-750mg-Wen", "584.89")):
+        assert any(
+            claim_id in item["issue"] and dose in item["issue"] for item in manuscript
+        ), (claim_id, [i["issue"] for i in manuscript])
+    item = manuscript[0]
     # It fails the same way an experiment/model mismatch does — silently — so it ranks with it.
     assert item["priority"] == 1
     assert report["fix_list"][0]["kind"] == "manuscript"
@@ -240,11 +250,26 @@ def test_the_papers_own_archive_does_not_run_the_dose_the_paper_reports() -> Non
 
 def test_reprolith_own_export_runs_the_claims_it_was_built_from() -> None:
     """The positive control: the exported archive carries the 779.9 override as a `changeAttribute`,
-    so the same check that fails the paper's document passes Reprolith's."""
+    so the same check that fails the paper's document passes Reprolith's — for the claims the
+    document can state.
+
+    Two of this entry's four claims run after a prior administration, which a uniform time course
+    cannot express, and the export lists them as unexpressed rather than writing them as plain
+    runs. So the archive genuinely does not run their doses, and this check reporting that is the
+    two halves agreeing: the writer says it could not state them, and the reader says they are not
+    there. What must not happen is the archive claiming to run them.
+    """
     pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     report = archive_report(_ARCHIVE.read_bytes(), claims=_metformin_claims())
-    assert report["found"]["manuscript_claims_checked"] == 2
-    assert not [item for item in report["fix_list"] if item["kind"] == "manuscript"]
+    assert report["found"]["manuscript_claims_checked"] == 4
+    reported = {
+        claim_id
+        for item in report["fix_list"] if item["kind"] == "manuscript"
+        for claim_id in ("Cmax-500mg", "Cmax-1000mg", "Cmax-250mg-Chung", "Cmax-750mg-Wen")
+        if claim_id in item["issue"]
+    }
+    # The two the document does state are run exactly as certified: no finding against them.
+    assert reported == {"Cmax-250mg-Chung", "Cmax-750mg-Wen"}
 
 
 def test_claims_supplied_for_an_archive_with_no_experiment_are_not_counted_as_checked() -> None:
@@ -284,9 +309,9 @@ def test_a_loose_document_and_model_are_checked_without_packaging_them() -> None
         claims=_metformin_claims(),
     )
     assert report["found"]["assembled_from_loose_files"] is True
-    # The same finding the packaged archive gives, reached from the files as they actually ship.
-    (item,) = [item for item in report["fix_list"] if item["kind"] == "manuscript"]
-    assert "779.9" in item["issue"]
+    # The same findings the packaged archive gives, reached from the files as they actually ship.
+    manuscript = [item for item in report["fix_list"] if item["kind"] == "manuscript"]
+    assert any("779.9" in item["issue"] for item in manuscript)
 
 
 def test_the_pair_check_says_the_manifest_around_it_was_generated() -> None:

@@ -87,11 +87,21 @@ def test_each_metformin_claim_states_the_number_the_paper_prints() -> None:
     assert float(_plasma_cmax("1000")) == claims["Cmax-1000mg"]["reported"]
 
 
-def test_each_claim_cites_the_table_its_number_is_actually_in() -> None:
-    """Both used to cite Table 4, which prints different numbers for the same two doses."""
-    claims = {c["claim_id"]: c for c in _CLAIMS["entries"]["BIOMD0000001028"]["claims"]}
-    for claim in claims.values():
-        assert "Table 6" in claim["source_location"], claim["source_location"]
+def test_each_claim_cites_a_table_and_not_a_bare_assertion() -> None:
+    """Both used to cite Table 4, which prints different numbers for the same two doses.
+
+    Which table is right differs per claim now — the single-dose arms are Table 6, the validation
+    arms Table 5 — so what is checked here is that every claim names one at all, and
+    `test_every_committed_claim_states_a_number_its_cited_table_prints` checks that the number is
+    in the table it names. A claim citing nothing would pass that one by being unchecked.
+    """
+    import re
+
+    for accession, entry in _CLAIMS["entries"].items():
+        for claim in entry["claims"]:
+            assert re.search(r"\btable\s+\w+", claim["source_location"], re.IGNORECASE), (
+                accession, claim["claim_id"], claim["source_location"]
+            )
 
 
 def test_the_measured_values_are_a_different_number_and_are_not_what_is_claimed() -> None:

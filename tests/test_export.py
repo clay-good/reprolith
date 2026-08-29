@@ -415,7 +415,12 @@ def test_the_published_metformin_bundle_exports_to_a_runnable_archive() -> None:
 
     experiment = build_bundle_sedml(bundle, model)
     assert experiment.expressed == ("Cmax-500mg", "Cmax-1000mg")
-    assert experiment.unexpressed == ()
+    # The entry's two validation-arm claims run after a pre-dose, which a uniform time course
+    # cannot state. They are listed with the reason rather than written as a plain run — which
+    # would ship a document that runs the reported window alone and reproduces a neighbouring
+    # arm, the failure this whole worked example is about.
+    assert len(experiment.unexpressed) == 2
+    assert all("prior administration" in reason for reason in experiment.unexpressed)
 
     changes = [e for e in ET.fromstring(experiment.sedml).iter() if e.tag.endswith("changeAttribute")]
     assert [(c.get("target").rsplit("[@id=", 1)[1], c.get("newValue")) for c in changes] == [
@@ -503,7 +508,9 @@ def test_the_published_worked_example_archive_is_what_the_export_produces_today(
         sys.path.pop(0)
 
     archive, expressed, unexpressed = export()
-    assert (expressed, unexpressed) == (("Cmax-500mg", "Cmax-1000mg"), ())
+    assert expressed == ("Cmax-500mg", "Cmax-1000mg")
+    # The pre-dose arms are named, not written: see the test above for why.
+    assert len(unexpressed) == 2
     assert ARCHIVE.read_bytes() == archive, (
         "datasets/worked_examples/metformin_reconstruction.omex is stale; regenerate it with "
         "python scripts/export_worked_example_archive.py"

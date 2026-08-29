@@ -66,6 +66,34 @@ auditable and contestable.
 - **THEN** its origin is recorded (a model-class default, a paper-stated precision, or a
   reviewer override), never an unexplained magic number
 
+### Requirement: A claim's protocol may be more than one administration
+
+A published result is often reported for an arm that begins from a prior dose, and a claim whose
+protocol cannot say so is judged against a run the paper did not describe. A claim SHALL be able
+to state prior administrations, and everything that reports the run SHALL carry them.
+
+#### Scenario: Prior administrations condition the reported window
+
+- **WHEN** a claim states a schedule of administrations
+- **THEN** each segment runs the adopted model with its own values, starting from the state the
+  previous segment ended in, so the model's own dosing machinery administers every dose and
+  nothing is added to the model
+- **AND** the claim is judged over the final segment, since that is the arm the paper reports
+- **AND** a claim states a schedule or plain parameter overrides and not both, because the
+  overrides are the one-segment spelling and carrying both leaves it unsaid which segment they
+  belong to
+
+#### Scenario: The prior administrations travel with the verdict
+
+- **WHEN** a scheduled claim is judged
+- **THEN** its protocol records the prior administrations as well as the reported window, since a
+  reader who re-runs that window alone gets a different number
+- **AND** a cross-engine check of that claim runs the same segments under each engine, because
+  corroborating the unscheduled model would report engine agreement about a run the claim never
+  made
+- **AND** a published experiment document that cannot state a run beginning from another run's end
+  lists the claim with that reason rather than writing it as a single run
+
 ### Requirement: Distributional (population) claims are compared honestly
 
 Many PK/PD and QSP figures report a population, not a single trajectory — a percentile

@@ -81,6 +81,13 @@ The fields, whether you write them or edit them:
 | `source_location` | where in the paper it is — the table, the figure panel |
 | `metric` | how the number comes off the trajectory: `cmax`, `auc`, or `final` |
 | `parameter_overrides` | the values that claim holds at — the dose, the condition |
+| `schedule` | when the arm begins from an earlier dose: a list of `{"duration": …, "parameter_overrides": {…}}` segments run in order, the last one being the arm you report |
+
+If your result is reported for an arm that follows an earlier administration — a pre-dose the
+evening before, a loading dose — `schedule` is how to say so. Each segment runs your model with its
+own values, starting from where the previous segment ended, so your own dosing machinery gives
+every dose and nothing is added to your model. Use `schedule` **or** `parameter_overrides`, not
+both: the overrides are the one-segment spelling of the same thing.
 
 A bare list of those records works too, as does a file holding several papers under `entries`
 keyed by accession — the shape [`datasets/pkpd_claims.json`](../datasets/pkpd_claims.json) uses —

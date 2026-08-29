@@ -29,13 +29,59 @@
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
           "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-250mg-Chung",
+          "quantity": "plasma Cmax after a 250 mg oral dose, 375 mg administered 12 h earlier",
+          "species": "mPlasmaVenous",
+          "reported": 3.9,
+          "source_location": "Table 5, Chung 250mg row, Fitted (the paper simulates 3.9 nmol/mL)",
+          "metric": "cmax",
+          "schedule": [
+            {
+              "duration": 12.0,
+              "parameter_overrides": {
+                "Metformin_Dose_in_Lumen_in_mg": 292.45
+              }
+            },
+            {
+              "duration": 24.0,
+              "parameter_overrides": {
+                "Metformin_Dose_in_Lumen_in_mg": 194.96
+              }
+            }
+          ],
+          "assumption_qualified": true
+        },
+        {
+          "claim_id": "Cmax-750mg-Wen",
+          "quantity": "plasma Cmax after a 750 mg oral dose, 500 mg administered 12 h earlier",
+          "species": "mPlasmaVenous",
+          "reported": 9.4,
+          "source_location": "Table 5, Wen 750m row, Fitted (the paper simulates 9.4 nmol/mL)",
+          "metric": "cmax",
+          "schedule": [
+            {
+              "duration": 12.0,
+              "parameter_overrides": {
+                "Metformin_Dose_in_Lumen_in_mg": 389.93
+              }
+            },
+            {
+              "duration": 24.0,
+              "parameter_overrides": {
+                "Metformin_Dose_in_Lumen_in_mg": 584.89
+              }
+            }
+          ],
+          "assumption_qualified": true
         }
       ],
       "assumptions": [
         {
           "id": "dose-salt-form",
-          "description": "the stated 1000 mg oral dose is metformin HCl; the model's dose input is free base",
-          "chosen": "779.9 mg free base (1000 mg HCl x 129.16/165.62)",
+          "description": "the stated oral doses are metformin HCl; the model's dose input is free base",
+          "chosen": "each dose x 129.16/165.62 (779.9 mg free base for 1000 mg, 292.45 for 375, 194.96 for 250, 389.93 for 500, 584.89 for 750)",
           "basis": "model default 389.92 mg equals 500 mg HCl expressed as free base; clinical doses are the HCl salt",
           "load_bearing": true
         }

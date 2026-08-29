@@ -8,7 +8,27 @@
     ],
     "overrides": {
       "Metformin_Dose_in_Lumen_in_mg": 779.9
-    }
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:Cmax-250mg-Chung": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 194.96
+    },
+    "prior_administrations": [
+      {
+        "duration": 12.0,
+        "overrides": {
+          "Metformin_Dose_in_Lumen_in_mg": 292.45
+        }
+      }
+    ]
   },
   "BIOMD0000001028:Cmax-500mg": {
     "distance_at_most": 1e-06,
@@ -17,7 +37,27 @@
       "copasi",
       "roadrunner"
     ],
-    "overrides": {}
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:Cmax-750mg-Wen": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 584.89
+    },
+    "prior_administrations": [
+      {
+        "duration": 12.0,
+        "overrides": {
+          "Metformin_Dose_in_Lumen_in_mg": 389.93
+        }
+      }
+    ]
   },
   "BIOMD0000001029:Cmax-1000mg-twice-daily": {
     "distance_at_most": 1e-06,
@@ -28,7 +68,8 @@
     ],
     "overrides": {
       "Metformin_Dose_in_Lumen_in_mg": 779.9
-    }
+    },
+    "prior_administrations": []
   },
   "BIOMD0000001029:Cmax-1500mg-twice-daily": {
     "distance_at_most": 1e-06,
@@ -39,7 +80,8 @@
     ],
     "overrides": {
       "Metformin_Dose_in_Lumen_in_mg": 1169.85
-    }
+    },
+    "prior_administrations": []
   },
   "BIOMD0000001029:Cmax-500mg-twice-daily": {
     "distance_at_most": 1e-06,
@@ -48,6 +90,7 @@
       "copasi",
       "roadrunner"
     ],
-    "overrides": {}
+    "overrides": {},
+    "prior_administrations": []
   }
 }

@@ -70,7 +70,8 @@ class RecipeStep:
     A recipe exists to be re-run, so it has to carry what makes one run differ from another:
     ``steps`` is the sample count (an area and a peak both move with it), ``parameter_overrides``
     are the values this claim sets before running (a dose is what distinguishes two claims on one
-    model), and ``metric`` names what is read out of the trajectory. Without them the shipped
+    model), ``metric`` names what is read out of the trajectory, and ``schedule`` carries any
+    prior administrations the run starts from. Without them the shipped
     metformin bundle's two steps were identical where the claims differ by dose, and re-running it
     as published gave both the 500 mg answer.
 
@@ -85,6 +86,13 @@ class RecipeStep:
     steps: int | None = None
     parameter_overrides: tuple[tuple[str, float], ...] = ()
     metric: str | None = None
+    #: Prior administrations run before this step's own window, as ``(duration, overrides)``
+    #: segments. A step that carries them is a different run from the same model at the same dose
+    #: without them — the metformin paper's 250 mg validation arm reads 3.3 nmol/mL alone and 3.9
+    #: after its 375 mg pre-dose — so a recipe that omitted them would re-run as a neighbouring
+    #: arm, which is the defect `parameter_overrides` was added to this record to fix, one level
+    #: up. Omitted at its default, so a recipe that states none is written exactly as before.
+    schedule: tuple[tuple[float, tuple[tuple[str, float], ...]], ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         record: dict[str, Any] = {
@@ -99,6 +107,11 @@ class RecipeStep:
             record["parameter_overrides"] = {n: v for n, v in self.parameter_overrides}
         if self.metric is not None:
             record["metric"] = self.metric
+        if self.schedule:
+            record["schedule"] = [
+                {"duration": duration, "parameter_overrides": {n: v for n, v in overrides}}
+                for duration, overrides in self.schedule
+            ]
         return record
 
 

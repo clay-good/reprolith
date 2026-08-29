@@ -263,6 +263,12 @@ def _recipe_step_from(record: dict[str, Any]) -> RecipeStep:
         steps=record.get("steps"),
         parameter_overrides=tuple((k, float(v)) for k, v in overrides.items()),
         metric=record.get("metric"),
+        schedule=tuple(
+            (float(segment["duration"]), tuple(
+                (k, float(v)) for k, v in (segment.get("parameter_overrides") or {}).items()
+            ))
+            for segment in record.get("schedule", ())
+        ),
     )
 
 

@@ -16,12 +16,12 @@ Uses the optional ``engine`` extra (COPASI to run, libsbml to apply parameter ov
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from typing import Any
 
 from .certificate import build_certificate
-from .engine import simulate
+from .engine import final_state, simulate
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import (
     Attribution,
@@ -57,10 +57,28 @@ class Claim:
     source_location: str
     metric: str = "cmax"
     parameter_overrides: tuple[tuple[str, float], ...] = ()
+    #: Prior administrations, as ``(duration, overrides)`` segments run in order before the arm
+    #: this claim reports. Each segment runs the author's own model with its own parameter values,
+    #: starting from the state the previous one ended in, so the model's own dosing machinery
+    #: administers every dose — nothing is added to the model. The claim is read over the **last**
+    #: segment; the ones before it condition the state it starts from. Empty for the ordinary
+    #: single-administration claim, and mutually exclusive with ``parameter_overrides``, which is
+    #: the one-segment spelling of the same thing.
+    schedule: tuple[tuple[float, tuple[tuple[str, float], ...]], ...] = ()
     tolerance: Tolerance | None = None
     reference_kind: ReferenceKind = ReferenceKind.NUMERIC
     assumption_qualified: bool = False
     shortfall: Attribution | None = field(default=None)
+
+    def __post_init__(self) -> None:
+        if self.schedule and self.parameter_overrides:
+            raise ValueError(
+                "a claim states either a schedule or parameter overrides, not both: the "
+                "overrides are the one-segment spelling, and carrying both leaves it unsaid "
+                "which segment they belong to"
+            )
+        if self.schedule and any(duration <= 0.0 for duration, _ in self.schedule):
+            raise ValueError("every segment of a dosing schedule must run for a positive time")
 
     @classmethod
     def from_record(cls, record: dict[str, Any]) -> Claim:
@@ -79,6 +97,12 @@ class Claim:
             source_location=record["source_location"],
             metric=record.get("metric", "cmax"),
             parameter_overrides=tuple((k, float(v)) for k, v in overrides.items()),
+            schedule=tuple(
+                (float(segment["duration"]), tuple(
+                    (k, float(v)) for k, v in (segment.get("parameter_overrides") or {}).items()
+                ))
+                for segment in record.get("schedule", ())
+            ),
             reference_kind=ReferenceKind(record.get("reference_kind", "numeric")),
             assumption_qualified=bool(record.get("assumption_qualified", False)),
         )
@@ -104,6 +128,7 @@ def _run_protocol(
     read: str,
     overrides: tuple[tuple[str, float], ...] = (),
     overwritten: tuple[str, ...] = (),
+    prior: tuple[tuple[float, tuple[tuple[str, float], ...]], ...] = (),
 ) -> str:
     """Describe the run a time-course judgment rests on, for the certificate's protocol field.
 
@@ -128,6 +153,15 @@ def _run_protocol(
     stated = f"duration={duration!r}, steps={int(steps)}, read={read}"
     if overrides:
         stated += ", overrides: " + ", ".join(f"{name}={value!r}" for name, value in overrides)
+    if prior:
+        # A prior administration changes the state the reported window starts from, so a reader
+        # who re-runs the window alone gets a different number. It is part of the protocol for
+        # exactly the reason the window and the sample count are.
+        stated += "; preceded by " + "; ".join(
+            f"{segment_duration!r} at "
+            + (", ".join(f"{name}={value!r}" for name, value in segment_overrides) or "no override")
+            for segment_duration, segment_overrides in prior
+        )
     if overwritten:
         stated += "; " + "; ".join(overwritten)
     return stated
@@ -306,8 +340,126 @@ def _apply_overrides(sbml: str, overrides: tuple[tuple[str, float], ...]) -> str
     return str(libsbml.writeSBMLToString(document))
 
 
+def _carry_state_forward(sbml: str, state: Mapping[str, float]) -> str:
+    """Set each species' initial amount to the value it held at the end of the previous segment.
+
+    This is how a prior administration is expressed without touching the model's own dosing
+    machinery: the next segment is the *same model*, started from where the last one stopped, so
+    its dose event fires exactly as the author wrote it. Adding an event instead would be
+    reconstruction — a run the artifact does not describe — and would have to be declared as one.
+
+    A species whose initial amount an initial assignment or a rule determines is left alone and
+    reported, for the reason `_apply_overrides` refuses the same thing one element type over: SBML
+    recomputes it at the start of the run, so writing a value here publishes a starting state the
+    segment never held.
+    """
+    from .sbml import _libsbml
+
+    libsbml = _libsbml()
+    document = libsbml.readSBMLFromString(sbml)
+    model = document.getModel()
+    determined = {
+        model.getRule(i).getVariable() for i in range(model.getNumRules())
+    } | {
+        model.getInitialAssignment(i).getSymbol()
+        for i in range(model.getNumInitialAssignments())
+    }
+    recomputed = sorted(name for name in state if name in determined)
+    if recomputed:
+        raise ValueError(
+            "cannot carry the run forward: the model recomputes "
+            f"{', '.join(recomputed)} at the start of a run, so the state at the end of the "
+            "previous segment would not survive into this one"
+        )
+    for name, concentration in state.items():
+        species = model.getSpecies(name)
+        if species is None:
+            raise ValueError(f"species {name!r} is not in the model")
+        # `simulate` returns COPASI's *concentration* series, and the state variable here is an
+        # amount. Writing the concentration straight into `setInitialAmount` divides the carried
+        # state by the compartment volume — 2247 mL for this model's venous plasma — which does
+        # not fail, does not warn, and makes a prior dose vanish. Measured: it reproduced the
+        # no-pre-dose answer exactly, which is what a silently discarded segment looks like.
+        compartment = model.getCompartment(species.getCompartment())
+        size = compartment.getSize() if compartment is not None and compartment.isSetSize() else None
+        if size is None:
+            raise ValueError(
+                f"species {name!r} lives in compartment {species.getCompartment()!r}, which "
+                "states no size, so the amount its concentration stands for is unknown"
+            )
+        species.setInitialAmount(float(concentration) * float(size))
+        species.unsetInitialConcentration()
+    return str(libsbml.writeSBMLToString(document))
+
+
+def _run_schedule(
+    sbml: str,
+    species: str,
+    *,
+    # One administration per segment: how long it runs, and the parameter values in force for it.
+    # The last is the arm the claim reports; the ones before it condition the state it starts from.
+    schedule: Sequence[tuple[float, tuple[tuple[str, float], ...]]],
+    steps: int,
+    run: Callable[..., tuple[tuple[float, ...], tuple[float, ...]]] = simulate,
+    read_final_state: Callable[..., Mapping[str, float]] = final_state,
+) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    """Run a claim's segments in order and return the *last* segment's time course.
+
+    Each segment runs the author's own model with its own parameter values, starting from the
+    state the previous segment ended in. Only the last one is returned, because that is the arm
+    the claim reports: the metformin paper's 250 mg validation arm gives the peak after the main
+    dose, and the 375 mg pre-dose twelve hours earlier is there to condition it, not to be judged.
+
+    Every species the model declares is carried forward — carrying only the observed one would
+    start the next segment with an empty body and every other compartment reset.
+
+    ``run`` is the simulator, so the same segmented run can be driven under a second registered
+    engine: corroborating a scheduled claim against the *unscheduled* model would report engine
+    agreement about a run the claim never made.
+
+    **Each segment restarts the model's clock**, which is how the dose is administered — the
+    author's own event fires again — and is also the limit of the approach. A model carrying a
+    second event would fire that one again too, at the same offset into every segment, which is
+    not what the author wrote. A time-triggered event is indistinguishable from a dose here, so a
+    schedule is refused on a model with more than one rather than guessed at; the metformin models
+    carry exactly one, which is the dose.
+    """
+    from .sbml import _libsbml
+
+    libsbml = _libsbml()
+    declared = libsbml.readSBMLFromString(sbml).getModel()
+    names = [declared.getSpecies(i).getId() for i in range(declared.getNumSpecies())]
+    if len(schedule) > 1 and declared.getNumEvents() > 1:
+        raise ValueError(
+            f"the model carries {declared.getNumEvents()} events, and each segment of a schedule "
+            "restarts its clock — so every one of them fires again in every segment, at the same "
+            "offset. That is what administers the dose, and there is no way here to tell a dose "
+            "event from an event the author meant to happen once"
+        )
+    model = sbml
+    times: tuple[float, ...] = ()
+    values: tuple[float, ...] = ()
+    for index, (duration, overrides) in enumerate(schedule):
+        segment = _apply_overrides(model, tuple(overrides)) if overrides else model
+        times, values = run(segment, species, duration=duration, steps=steps)
+        if index + 1 == len(schedule):
+            break
+        # Read every species' end state and start the next segment from it, from one run rather
+        # than one per species: through `simulate` alone that cost twenty-one full simulations for
+        # this model and twenty times the wall clock of the run being carried.
+        ending = read_final_state(segment, names, duration=duration, steps=steps)
+        model = _carry_state_forward(segment, ending)
+    return times, values
+
+
 def _auc_is_established(
-    model: str, species: str, *, duration: float, steps: int, within: float
+    model: str,
+    species: str,
+    *,
+    duration: float,
+    steps: int,
+    within: float,
+    schedule: Sequence[tuple[float, tuple[tuple[str, float], ...]]] = (),
 ) -> tuple[bool, float]:
     """``(established, relative change)`` for an AUC read off a uniform grid at ``steps``.
 
@@ -324,8 +476,19 @@ def _auc_is_established(
     :func:`certify_model` abstains rather than publishing whichever side of the line it landed on.
     This can only turn a judgment into an abstention, never the reverse.
     """
-    coarse_times, coarse_values = simulate(model, species, duration=duration, steps=steps)
-    fine_times, fine_values = simulate(model, species, duration=duration, steps=steps * 2)
+    if schedule:
+        # The claim's own run, not the model's default one. Checking the unscheduled model would
+        # measure the convergence of a different integral and report it under this claim — the
+        # same "checked the wrong run" shape the corroboration path had, one function over.
+        coarse_times, coarse_values = _run_schedule(
+            model, species, schedule=schedule, steps=steps
+        )
+        fine_times, fine_values = _run_schedule(
+            model, species, schedule=schedule, steps=steps * 2
+        )
+    else:
+        coarse_times, coarse_values = simulate(model, species, duration=duration, steps=steps)
+        fine_times, fine_values = simulate(model, species, duration=duration, steps=steps * 2)
     coarse = _metric(coarse_times, coarse_values, "auc")
     fine = _metric(fine_times, fine_values, "auc")
     scale = max(abs(coarse), abs(fine))
@@ -364,8 +527,21 @@ def certify_model(
     """
     assessments = []
     for claim in claims:
-        model = _apply_overrides(sbml, claim.parameter_overrides) if claim.parameter_overrides else sbml
-        times, values = simulate(model, claim.species, duration=duration, steps=steps)
+        if claim.schedule:
+            # Prior administrations condition the state; the claim is read over the last segment.
+            model = sbml
+            times, values = _run_schedule(
+                sbml, claim.species, schedule=claim.schedule, steps=steps
+            )
+            claim_duration = claim.schedule[-1][0]
+            claim_overrides = claim.schedule[-1][1]
+        else:
+            model = (
+                _apply_overrides(sbml, claim.parameter_overrides)
+                if claim.parameter_overrides else sbml
+            )
+            times, values = simulate(model, claim.species, duration=duration, steps=steps)
+            claim_duration, claim_overrides = duration, claim.parameter_overrides
         predicted = _metric(times, values, claim.metric)
         if claim.metric == "auc":
             # The width the claim will actually be judged against: its own tolerance when it
@@ -377,7 +553,8 @@ def certify_model(
                 )
             ).reproduced_within
             established, change = _auc_is_established(
-                model, claim.species, duration=duration, steps=steps, within=pass_width
+                model, claim.species, duration=claim_duration, steps=steps,
+                within=pass_width, schedule=claim.schedule,
             )
             if not established:
                 assessments.append(replace(
@@ -394,11 +571,12 @@ def certify_model(
                         reference_kind=claim.reference_kind,
                     ),
                     protocol=_run_protocol(
-                        duration=duration,
+                        duration=claim_duration,
                         steps=steps,
                         read=f"[{claim.species}] {claim.metric}",
-                        overrides=claim.parameter_overrides,
-                        overwritten=_events_overwriting(sbml, claim.parameter_overrides),
+                        overrides=claim_overrides,
+                        overwritten=_events_overwriting(sbml, claim_overrides),
+                        prior=claim.schedule[:-1] if claim.schedule else (),
                     ),
                 ))
                 continue
@@ -423,11 +601,12 @@ def certify_model(
             replace(
                 assessment,
                 protocol=_run_protocol(
-                    duration=duration,
+                    duration=claim_duration,
                     steps=steps,
                     read=f"[{claim.species}] {claim.metric}",
-                    overrides=claim.parameter_overrides,
-                    overwritten=_events_overwriting(sbml, claim.parameter_overrides),
+                    overrides=claim_overrides,
+                    overwritten=_events_overwriting(sbml, claim_overrides),
+                    prior=claim.schedule[:-1] if claim.schedule else (),
                 ),
             )
         )

@@ -57,12 +57,28 @@ def test_the_recorded_arm_is_the_one_the_claim_was_certified_at() -> None:
 
     Corroborating both of metformin's claims on the model's default dose would compare the same
     run to itself twice and report engine independence for an arm neither claim uses.
+
+    A claim with a dosing schedule states its own dose in the **last** segment, not in
+    `parameter_overrides` — the two are mutually exclusive — so reading the top-level field alone
+    said `{}` for a claim that runs at 194.96 mg, and this check would have accepted a
+    corroboration of the default arm under that claim's id.
     """
     corroboration = _corroboration()
     for accession, bundle in _bundles().items():
         for step in bundle["recipe"]:
             recorded = corroboration[f"{accession}:{step['claim_id']}"]["overrides"]
-            assert recorded == step.get("parameter_overrides", {})
+            schedule = step.get("schedule") or []
+            expected = (
+                schedule[-1].get("parameter_overrides", {})
+                if schedule
+                else step.get("parameter_overrides", {})
+            )
+            assert recorded == expected, step["claim_id"]
+            # And the prior administrations are recorded beside it, so a reader can tell a
+            # scheduled run from a single one without going back to the claims dataset.
+            assert len(
+                corroboration[f"{accession}:{step['claim_id']}"].get("prior_administrations", [])
+            ) == max(0, len(schedule) - 1)
     assert any(
         entry["overrides"] for entry in corroboration.values()
     ), "no claim runs at an overridden value, so the override path is untested here"

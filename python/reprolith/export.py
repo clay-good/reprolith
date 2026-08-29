@@ -544,6 +544,17 @@ def _plan(
     validated, and a re-derivation that disagrees with its own check is how a step gets dropped
     with no reason recorded.
     """
+    if step.schedule[:-1]:
+        # A prior administration is a second run of the model started from where the first ended,
+        # and a uniform time course cannot say that. Written as one anyway, the document would run
+        # the reported window alone — a neighbouring arm that produces a plausible number and
+        # flags nothing, which is the failure `archive_mismatches` and `manuscript_mismatches`
+        # both exist to catch. Listed rather than dropped, and rather than guessed at.
+        return None, (
+            f"the claim runs after {len(step.schedule) - 1} prior administration(s) — the model "
+            "restarted from the state each one ended in — and a uniform time course cannot state "
+            "a run that begins from another run's end"
+        )
     if step.steps is None or step.steps <= 0:
         return None, (
             f"the recipe states no sample count, so how finely to sample "

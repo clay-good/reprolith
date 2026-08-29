@@ -2556,10 +2556,82 @@ It is also the first measured case of a claim whose protocol the *paper* states 
 describes needs two. `archive_mismatches` and `manuscript_mismatches` both look for disagreements
 between files; neither can see a run that no file expresses.
 
-The finding is recorded rather than the claims, because a verdict of `not-reproduced` on those two
-arms would have been wrong, and a verdict of `reproduced` cannot be produced by anything committed
-here. What it names for the roadmap is concrete: a claim needs a dosing schedule, not only a
-parameter override — with two verified reference values already waiting for it.
+What it named for the roadmap was concrete — a claim needs a dosing schedule, not only a parameter
+override — and it is built now.
+
+### The schedule, and the four things that had to carry it
+
+A claim's `schedule` is a sequence of segments. Each runs **the author's own model** with its own
+parameter values, starting from the state the previous segment ended in, so the model's own dose
+event administers every dose and nothing is added to the model. Adding an event would be
+reconstruction — a run the artifact does not describe — and would have to be declared as one. The
+claim is judged over the last segment; the ones before it condition the state it starts from.
+
+Both arms now certify from the committed corpus: **3.9 → 3.8595** (1.0%) and **9.4 → 9.4034**
+(0.04%), the second agreeing to four decimals with the independent by-hand run that added an event
+instead. Metformin's single-dose entry carries four claims where it carried two.
+
+The interesting part is what else had to change, because three of the four were surfaces that
+would otherwise have reported a run nobody made:
+
+**The state carried forward is an amount, and `simulate` returns a concentration.** Written
+straight across, the carried state is divided by the compartment volume — 2247 mL for this model's
+venous plasma. Nothing fails and nothing warns: the prior dose simply vanishes, and the answer
+comes back *exactly equal* to the no-pre-dose one. That is what a silently discarded segment looks
+like, and it is the same units confusion that once put a certificate's 6.07 nmol/mL and 13,630.8
+nmol two thousand-fold apart. It is a test now.
+
+**Cross-engine corroboration ran the default arm.** The recipe step is built from
+`Claim.parameter_overrides`, which is empty for a scheduled claim — so both new claims were
+corroborated against the model's *unmodified 500 mg* run and published `engine_independent: True`
+under their own claim ids. The comment directly above that code says corroboration is "driven off
+the bundle's own recipe, overrides included, so what is corroborated is the run each claim actually
+made and not just the model's default arm". True when written, and a new route walked straight
+past it. Both engines walk the segments now, and agree to 1e-06.
+
+**The published record said the default arm too.** `corroboration.json` reported `"overrides": {}`
+for a claim that runs at 194.96 mg, because the dose lives in the schedule's last segment. The
+milestone's own test compared that field against `step.parameter_overrides` and would have accepted
+it.
+
+**And the exporter would have written the defect this project exists to catch.** A uniform time
+course cannot say "start from where another run ended", and `_plan` did not look at the schedule —
+so the archive would have shipped a document running the reported window *alone*: a neighbouring
+arm, producing a plausible number and flagging nothing. Exactly the metformin archive's own defect,
+reproduced by Reprolith's writer. It is listed as unexpressed with the reason instead, which is the
+mechanism that already existed for a step a document cannot state.
+
+One capability, four surfaces, three of which reported something false until they were checked.
+
+One more thing had to be true for any of it to be affordable. Carrying a model's state through
+`simulate` costs one full simulation **per species** — twenty-one for this model, and five seconds
+against the run's own quarter-second. The engine's time series already holds every column, so
+`final_state` reads them in one run: 5.23 s to 1.09 s, same answer to four decimals.
+
+And that optimisation immediately produced its own version of the same defect. Its first version
+defaulted both engines to COPASI's reader, so the corroborating libRoadRunner run would have
+carried state computed by COPASI — half the arithmetic shared with the thing it was corroborating,
+still reported as two independent engines agreeing. `final_state_with_roadrunner` is the
+counterpart, and a test holds the two to each other.
+
+A **fifth** turned up when the suite ran: `manuscript_mismatches` — the check whose entire job is
+saying *the archive never runs the dose your paper reports* — also read `parameter_overrides`, so
+it saw nothing for the two claims whose dose is hardest for a reader to find, and said nothing
+about them. It reports all three now: the paper's own shipped archive runs none of 779.9, 194.96
+or 584.89.
+
+A fourth surface turned up on re-reading the diff, and it is the same sentence again: the AUC
+convergence guard added an hour earlier took `model`, which for a scheduled claim is the
+*unmodified* SBML — the doses live in the segments. It would have measured a different integral's
+convergence and reported it under the claim's id. It follows the schedule now. Three surfaces
+reporting a run nobody made, then a fourth found by looking rather than by failing: the same
+capability, the same mistake, four times.
+
+The limit is in the mechanism and is refused rather than hidden. Each segment restarts the model's
+clock — which is *how* the dose is administered, the author's own event firing again — so a model
+carrying a second event would fire that one again too, at the same offset into every segment. A
+time-triggered event is indistinguishable from a dose here, so a schedule on a model with more than
+one event is refused by name. Both metformin models carry exactly one, which is the dose.
 
 ## An AUC is a property of the sample grid, and nothing said so
 
