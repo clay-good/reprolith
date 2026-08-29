@@ -420,3 +420,30 @@ def test_the_level_is_used_only_where_the_range_really_is_noise() -> None:
     plateau = [100.0 + (0.5 if i % 2 else -0.5) for i in range(30)]
     assert _reference_scale(plateau, 30) == pytest.approx(100.0)
     assert _reference_scale([1.0] * 20, 20) == pytest.approx(1.0)
+
+
+def test_a_reported_zero_abstains_unless_the_claim_states_its_scale() -> None:
+    """`zero_scale` has no caller in the package, so this is what every front-end actually does.
+
+    A reported zero has no magnitude for a relative tolerance to divide by. Without a scale the
+    honest answer is an abstention naming what is missing; an exactly-zero prediction is exact
+    agreement and passes. This is pinned because "nothing passes `zero_scale`" reads like a dead
+    parameter, and the behaviour it produces is the one that matters.
+
+    It is not a hole in lethality checking: `reaction_essentiality` returns a set of indices and
+    is judged by set agreement, so a lethal knockout never reaches a scalar comparison with zero.
+    """
+    from reprolith import Verdict, judge_scalar
+
+    missed = judge_scalar(
+        claim_id="lethal", quantity="growth after knockout", source_location="Table 2",
+        reported=0.0, predicted=0.05,
+    )
+    assert missed.verdict is Verdict.NOT_EVALUABLE
+    assert "scale it is zero relative to" in (missed.root_cause or missed.discrepancy or "")
+
+    exact = judge_scalar(
+        claim_id="lethal", quantity="growth after knockout", source_location="Table 2",
+        reported=0.0, predicted=0.0,
+    )
+    assert exact.verdict is Verdict.REPRODUCED

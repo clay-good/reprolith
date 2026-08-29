@@ -2754,6 +2754,32 @@ trip's margins improve rather than loosen: 2.7e-15 on MAPK, 1.4e-9 and 1.1e-6 on
 against bounds of 1e-4 and 1e-3. A denominator that does not move buys more room than any amount
 of loosening does.
 
+## A parameter with no caller, checked and left alone
+
+`judge_scalar` takes a `zero_scale` — "the size the claim is zero relative to" — because a reported
+zero has no magnitude for a relative tolerance to divide by. It is the fix a past round made after
+*a lethal knockout judged in whatever units it happened to use*. Sweeping the vanishing-denominator
+shape through the package turned up that **nothing passes it**: not `certify_model`, not the FBA
+front-ends, not the stochastic one.
+
+That reads like a dead parameter, and it is not. Measured, three cases:
+
+| reported | predicted | scale | outcome |
+| --- | --- | --- | --- |
+| 0 | 0.05 | none | `not-evaluable`, naming what it needs |
+| 0 | 0 | none | `reproduced` — exact agreement |
+| 0 | 0.05 | 0.87 | raises: a failed verdict needs an attribution |
+
+So every shipped surface **abstains** on a claim whose reported value is exactly zero, which is the
+honest answer and the one the docstring promises. And it is not a hole in lethality checking, which
+was the worry: `reaction_essentiality` returns a *set* of indices and is judged by set agreement,
+so a lethal knockout never arrives at a scalar comparison against zero in the first place.
+
+The third row raises rather than abstaining, which is the same shape `certify_model` fixed for
+itself by supplying `undetermined_shortfall` — but it is unreachable, because reaching it needs a
+caller that passes a scale and there is none. Written down so the next round does not chase either
+of them.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
