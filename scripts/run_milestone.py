@@ -66,7 +66,9 @@ def main() -> None:
     certificates, report = run_test_set(entries, engine_pin=pin, certified=certified, advance=True)
 
     out = DATASETS / "milestone" / "agreement_report.json"
-    out.write_text(json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n")
+    out.write_text(
+        json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
     # Store each certified certificate's content as JSON so it can be re-opened and served
     # (design goal 3) without recomputing it — e.g. loaded into the MCP server's ledger.
@@ -75,7 +77,8 @@ def main() -> None:
     prune_certificate_directory(cert_dir, certified)
     for accession, cert in certified.items():
         (cert_dir / f"{accession}.json").write_text(
-            json.dumps(cert.content(), indent=2, sort_keys=True) + "\n"
+            json.dumps(cert.content(), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
         )
 
     # Ingest and store each certified entry's dossier (its extracted model structure) and its
@@ -101,7 +104,8 @@ def main() -> None:
         sbml = (DATASETS / entry["model_file"]).read_text(encoding="utf-8")
         dossier = ingest_sbml(sbml, entry=accession, source_label=f"BioModels {accession}")
         (dossier_dir / f"{accession}.json").write_text(
-            json.dumps(dossier.to_dict(), indent=2, sort_keys=True) + "\n"
+            json.dumps(dossier.to_dict(), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
         )
         # Record the advisory difficulty from the ingested dossier's observable signals.
         catalog_entry = catalog.find(Identifiers(title="", accession=accession))
@@ -145,7 +149,8 @@ def main() -> None:
             mismatches=None,
         )
         (bundle_dir / f"{accession}.json").write_text(
-            json.dumps(bundle.to_dict(), indent=2, sort_keys=True) + "\n"
+            json.dumps(bundle.to_dict(), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
         )
 
         # Engine independence, per claim: the same curve under both COPASI and libRoadRunner
@@ -190,7 +195,8 @@ def main() -> None:
             }
 
     (DATASETS / "milestone" / "corroboration.json").write_text(
-        json.dumps(corroboration, indent=2, sort_keys=True) + "\n"
+        json.dumps(corroboration, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
     )
 
     # Persist the advanced catalog (lifecycle state, history, and difficulty) so the durable

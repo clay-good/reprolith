@@ -159,7 +159,7 @@ def survey(accessions: list[str]) -> dict[str, Any]:
 
 def main() -> int:
     survey_path = REPO / "datasets" / "manuscripts" / "table_survey.json"
-    table_survey = json.loads(survey_path.read_text())
+    table_survey = json.loads(survey_path.read_text(encoding="utf-8"))
     accessions = [
         entry["accession"]
         for entry in table_survey["entries"]
@@ -167,7 +167,7 @@ def main() -> int:
     ]
     result = survey(accessions)
     out = REPO / "datasets" / "non_curated_survey.json"
-    out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(
         f"{result['models_that_complete_a_course']} of {len(accessions)} non-curated SBML models "
         f"complete a probe course -> {out.relative_to(REPO)}"

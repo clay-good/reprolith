@@ -42,7 +42,7 @@ def main() -> None:
         spec["curve"] = [round(float(row[1]), 6) for row in result]
         spec["reference_tool"] = f"libRoadRunner {roadrunner.__version__} (CVODE)"
         print(f"  {spec['id']} {spec['species']}: {len(spec['curve'])} points, peak {max(spec['curve']):.4g}")
-    MANIFEST.write_text(json.dumps(doc, indent=2) + "\n")
+    MANIFEST.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {MANIFEST.relative_to(REPO)}")
 
 

@@ -149,14 +149,16 @@ def main() -> None:
     milestone = CB / "milestone"
     milestone.mkdir(exist_ok=True)
     (milestone / "agreement_report.json").write_text(
-        json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n"
+        json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
     )
     certs = milestone / "certificates"
     certs.mkdir(exist_ok=True)
     prune_certificate_directory(certs, certified)
     for accession, cert in certified.items():
         (certs / f"{accession}.json").write_text(
-            json.dumps(cert.content(), indent=2, sort_keys=True) + "\n"
+            json.dumps(cert.content(), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
         )
     # Atomic: this file is what both surfaces read at start-up and what a live MCP server
     # re-reads under its lock, and a plain write_text truncates it to zero before writing

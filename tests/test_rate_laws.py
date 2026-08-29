@@ -121,7 +121,7 @@ def test_every_time_course_model_this_repository_ships_states_all_its_rates() ->
     assert len(models) >= 15, "the sweep must actually reach this repository's models"
     checked = 0
     for path in models:
-        text = path.read_text(errors="replace")
+        text = path.read_text(encoding="utf-8", errors="replace")
         if "<sbml" not in text:
             continue
         if packages_no_time_course_describes(text):
@@ -134,7 +134,7 @@ def test_every_time_course_model_this_repository_ships_states_all_its_rates() ->
 def test_the_constraint_based_model_is_excluded_by_its_package_not_by_a_special_case() -> None:
     """Without the gate this check would report all 95 of e_coli_core's reactions and send an
     author to add rate laws to a model that is solved at steady state."""
-    text = (_DATASETS / "constraint_based" / "e_coli_core.xml").read_text()
+    text = (_DATASETS / "constraint_based" / "e_coli_core.xml").read_text(encoding="utf-8")
     assert packages_no_time_course_describes(text) == ("fbc",)
     assert len(reactions_without_rate_laws(text)) > 50
 

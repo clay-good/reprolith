@@ -27,12 +27,12 @@ from reprolith import (
 )
 
 _DATASETS = Path(__file__).parent.parent / "datasets"
-_PARAMETERS = json.loads((_DATASETS / "pkpd_parameters.json").read_text())
+_PARAMETERS = json.loads((_DATASETS / "pkpd_parameters.json").read_text(encoding="utf-8"))
 _ENTRIES = _PARAMETERS["entries"]
 
 
 def _model(accession: str) -> str:
-    return (_DATASETS / "worked_examples" / _ENTRIES[accession]["model"]).read_text()
+    return (_DATASETS / "worked_examples" / _ENTRIES[accession]["model"]).read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("accession", sorted(_ENTRIES))
@@ -55,7 +55,7 @@ def test_every_reported_value_is_printed_in_the_table_it_cites(accession: str) -
     """The other direction, and the one that caught a transcription error in the claims corpus: a
     value nobody checked against the paper is a value nobody checked."""
     tables = json.loads(
-        (_DATASETS / "manuscripts" / "BIOMD0000001027_tables.json").read_text()
+        (_DATASETS / "manuscripts" / "BIOMD0000001027_tables.json").read_text(encoding="utf-8")
     )["tables"]
     claims = [
         {"claim_id": row["parameter"], "reported": row["reported"],

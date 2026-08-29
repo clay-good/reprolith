@@ -18,8 +18,8 @@ import json
 from pathlib import Path
 
 _DATASETS = Path(__file__).parent.parent / "datasets"
-_SURVEY = json.loads((_DATASETS / "non_curated_survey.json").read_text())
-_TABLES = json.loads((_DATASETS / "manuscripts" / "table_survey.json").read_text())
+_SURVEY = json.loads((_DATASETS / "non_curated_survey.json").read_text(encoding="utf-8"))
+_TABLES = json.loads((_DATASETS / "manuscripts" / "table_survey.json").read_text(encoding="utf-8"))
 
 
 def _has_a_results_table(pmcid: str) -> bool:

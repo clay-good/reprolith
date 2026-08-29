@@ -128,7 +128,10 @@ def _round(value: float) -> float:
 
 
 def _write(path: Path, doc: dict) -> None:
-    path.write_text(json.dumps(doc, indent=2, sort_keys=path.name == "reference_growth.json") + "\n")
+    path.write_text(
+        json.dumps(doc, indent=2, sort_keys=path.name == "reference_growth.json") + "\n",
+        encoding="utf-8",
+    )
     print(f"wrote {path.relative_to(REPO)}")
 
 
