@@ -2396,9 +2396,36 @@ numeric and is still a condition. Both, or the tool is wrong in one direction or
 A metric is now read from a row label too, on the same rule as a heading: only where the wording
 states one, only when the heading states none, and only when the row names exactly one.
 
-**The survey is not published, and that is the point.** It was built on a filter that could not see
-a third of what it was counting, and its answer looked entirely plausible. The measurement will be
-worth making again once the tool it rests on has been pointed at more than one paper.
+**The first survey was not published, and that is the point.** It rested on a filter that could not
+see a third of what it was counting, and its answer looked entirely plausible.
+
+### And then it was made again, and the answer was worth having
+
+Re-run through `propose_claims` itself rather than a second implementation of it, the measurement
+stands and is now committed as `datasets/manuscripts/table_survey.json`:
+
+| | |
+| --- | --- |
+| seeded PK/PD entries | 31 |
+| carrying a PubMed id in the repository's metadata | 24 |
+| resolving to open-access full text | 12 (8 distinct papers) |
+| whose tables include a **reported model output** | **1** |
+
+The other seven papers are not short of numbers — their tables hold over a hundred candidates
+between them — but every one is a parameter set, a study overview, or a diagnostic. Inputs and
+metadata, not results. Their results are in figures.
+
+So the figure boundary is now a number rather than an assertion: on this set, reading tables
+reaches **one paper in eight** of the open-access subset. A table reader is worth having and does
+not close the claim gap, and the next thing that would is not a better table reader.
+
+Two limits travel inside the file rather than being left for a reader to find. A paper is reached
+only through the PubMed id the model repository records, and **seven entries carry none** —
+including the metformin entry, whose paper is open access and is the one entry with committed
+claims. And "has a results table" is read off whether a table's candidates state a metric, which
+is a signal rather than a proof, so the per-table counts are kept. A reachability figure without
+those two sentences reads as a census of the literature instead of a census of one repository's
+cross-references.
 
 ## Status and what remains
 

@@ -1,0 +1,337 @@
+{
+  "description": "How far a table reader gets on the seeded PK/PD set: which entries resolve to an open-access paper, and which of those papers print a reported model output in a table rather than a figure. Regenerate with scripts/survey_manuscript_tables.py.",
+  "entries": [
+    {
+      "accession": "BIOMD0000000765",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "16180117"
+    },
+    {
+      "accession": "BIOMD0000000241",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "8422743"
+    },
+    {
+      "accession": "BIOMD0000000619",
+      "open_access": true,
+      "pmcid": "PMC5026379",
+      "pubmed_id": "27636091"
+    },
+    {
+      "accession": "BIOMD0000000948",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "19056600"
+    },
+    {
+      "accession": "BIOMD0000000624",
+      "open_access": true,
+      "pmcid": "PMC5026379",
+      "pubmed_id": "27636091"
+    },
+    {
+      "accession": "BIOMD0000000512",
+      "open_access": true,
+      "pmcid": "PMC3910012",
+      "pubmed_id": "24429592"
+    },
+    {
+      "accession": "BIOMD0000000490",
+      "open_access": true,
+      "pmcid": "PMC4026633",
+      "pubmed_id": "24026253"
+    },
+    {
+      "accession": "BIOMD0000000238",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "17009101"
+    },
+    {
+      "accession": "BIOMD0000000494",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "23206386"
+    },
+    {
+      "accession": "BIOMD0000000534",
+      "open_access": true,
+      "pmcid": "PMC3910013",
+      "pubmed_id": "24402116"
+    },
+    {
+      "accession": "BIOMD0000000535",
+      "open_access": true,
+      "pmcid": "PMC3910013",
+      "pubmed_id": "24402116"
+    },
+    {
+      "accession": "BIOMD0000000537",
+      "open_access": true,
+      "pmcid": "PMC3910013",
+      "pubmed_id": "24402116"
+    },
+    {
+      "accession": "BIOMD0000000536",
+      "open_access": true,
+      "pmcid": "PMC3910013",
+      "pubmed_id": "24402116"
+    },
+    {
+      "accession": "BIOMD0000000321",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "11587490"
+    },
+    {
+      "accession": "BIOMD0000000320",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "11587490"
+    },
+    {
+      "accession": "BIOMD0000000673",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "16906456"
+    },
+    {
+      "accession": "BIOMD0000001039",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": ""
+    },
+    {
+      "accession": "BIOMD0000001028",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": ""
+    },
+    {
+      "accession": "BIOMD0000001029",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": ""
+    },
+    {
+      "accession": "BIOMD0000001027",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": ""
+    },
+    {
+      "accession": "BIOMD0000000608",
+      "open_access": true,
+      "pmcid": "PMC3853972",
+      "pubmed_id": "24074340"
+    },
+    {
+      "accession": "MODEL2003190002",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "21168463"
+    },
+    {
+      "accession": "MODEL2301090001",
+      "open_access": true,
+      "pmcid": "PMC8646028",
+      "pubmed_id": "34880771"
+    },
+    {
+      "accession": "MODEL2003190006",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "24120727"
+    },
+    {
+      "accession": "MODEL2412180001",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": ""
+    },
+    {
+      "accession": "MODEL2301090002",
+      "open_access": true,
+      "pmcid": "PMC9637881",
+      "pubmed_id": "36353484"
+    },
+    {
+      "accession": "MODEL1006230040",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "16758333"
+    },
+    {
+      "accession": "MODEL2211040001",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": ""
+    },
+    {
+      "accession": "MODEL1711210003",
+      "open_access": true,
+      "pmcid": "PMC5732473",
+      "pubmed_id": "29246152"
+    },
+    {
+      "accession": "MODEL2412270001",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": ""
+    },
+    {
+      "accession": "MODEL6963432821",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "17024552"
+    }
+  ],
+  "limits": [
+    "A paper is reached only through the PubMed id in the model repository's metadata; seven entries carry none, including the one entry that has committed claims, so 'reachable' is a floor and not a census.",
+    "'A results table' is read off propose_claims: a table whose candidates state a metric is naming quantities a reproduction targets. That is a signal, not a proof, so the per-table counts are kept."
+  ],
+  "papers": {
+    "PMC3853972": {
+      "tables": [
+        {
+          "candidates": 0,
+          "candidates_stating_a_metric": 0,
+          "caption": "Overall summary of integration issues",
+          "label": "Table 1"
+        }
+      ]
+    },
+    "PMC3910012": {
+      "tables": [
+        {
+          "candidates": 0,
+          "candidates_stating_a_metric": 0,
+          "caption": "List of possible candidates for \u201cthe unknown enzyme\u201d",
+          "label": "Table 1"
+        }
+      ]
+    },
+    "PMC3910013": {
+      "tables": [
+        {
+          "candidates": 0,
+          "candidates_stating_a_metric": 0,
+          "caption": "Concentrations of biomarkers used to optimize model parameters",
+          "label": "Table 1"
+        }
+      ]
+    },
+    "PMC4026633": {
+      "tables": [
+        {
+          "candidates": 0,
+          "candidates_stating_a_metric": 0,
+          "caption": "Description of available experimental data and facts",
+          "label": "Table 1"
+        },
+        {
+          "candidates": 0,
+          "candidates_stating_a_metric": 0,
+          "caption": "Description of stages of model construction",
+          "label": "Table 2"
+        }
+      ]
+    },
+    "PMC5026379": {
+      "tables": [
+        {
+          "candidates": 0,
+          "candidates_stating_a_metric": 0,
+          "caption": "Whole-body PBPK Model Rate Equations.",
+          "label": "Table 1"
+        },
+        {
+          "candidates": 15,
+          "candidates_stating_a_metric": 0,
+          "caption": "PBPK Parameter Set REFSIM.",
+          "label": "Table 2"
+        },
+        {
+          "candidates": 0,
+          "candidates_stating_a_metric": 0,
+          "caption": "Intercellular Molecule Transfer Rate Equations.",
+          "label": "Table 3"
+        },
+        {
+          "candidates": 10,
+          "candidates_stating_a_metric": 0,
+          "caption": "CC3D Parameters.",
+          "label": "Table 4"
+        },
+        {
+          "candidates": 0,
+          "candidates_stating_a_metric": 0,
+          "caption": "Subcellular Reaction Kinetics Rate Equations.",
+          "label": "Table 5"
+        },
+        {
+          "candidates": 0,
+          "candidates_stating_a_metric": 0,
+          "caption": "Subcellular Reaction Kinetic Parameters.",
+          "label": "Table 6"
+        },
+        {
+          "candidates": 48,
+          "candidates_stating_a_metric": 0,
+          "caption": "Correlation Coefficients and R2 values between sensitivities for the four parameter sets.",
+          "label": "Table 7"
+        }
+      ]
+    },
+    "PMC5732473": {
+      "tables": [
+        {
+          "candidates": 28,
+          "candidates_stating_a_metric": 20,
+          "caption": "Pharmacokinetic parameters for three models",
+          "label": "Table 1"
+        }
+      ]
+    },
+    "PMC8646028": {
+      "tables": [
+        {
+          "candidates": 29,
+          "candidates_stating_a_metric": 0,
+          "caption": "Overview of curated clinical studies.",
+          "label": "Table 1"
+        },
+        {
+          "candidates": 30,
+          "candidates_stating_a_metric": 0,
+          "caption": "Overview of fixed model parameters.",
+          "label": "Table 2"
+        },
+        {
+          "candidates": 0,
+          "candidates_stating_a_metric": 0,
+          "caption": "Evaluation metrics for classification models of survival after hepatectomy.",
+          "label": "Table 3"
+        }
+      ]
+    },
+    "PMC9637881": {
+      "tables": [
+        {
+          "candidates": 34,
+          "candidates_stating_a_metric": 0,
+          "caption": "Clinical studies with pharmacokinetics used for model evaluation.",
+          "label": "TABLE 1"
+        },
+        {
+          "candidates": 48,
+          "candidates_stating_a_metric": 0,
+          "caption": "Model parameters in PBPK model of DXM. The complete information is available from the model repository. The prefixes GU_",
+          "label": "TABLE 2"
+        }
+      ]
+    }
+  }
+}
