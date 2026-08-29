@@ -2983,6 +2983,14 @@ were silent for the same reason: until this morning no claim in the corpus had a
 stating, so every field carrying one was a placeholder and nothing that dropped or mis-slotted it
 could be seen.
 
+**So the third was swept for rather than waited on**, and it is not there. Every surface that reads
+a claim's cause was checked against the first real one: the certificate's `certificate` view and the
+`gaps` view both carry all four fields (the second because it reads the render's own `gap_items`,
+so the fix reached it), and the registry page publishes the joined sentence. Two wrong, three right.
+The `gaps` view is now pinned by a test, because it inherits whatever the render publishes and a
+later change there could strip the evidence from the surface an *agent* reads with no person in the
+loop to notice.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

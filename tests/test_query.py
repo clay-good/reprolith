@@ -278,3 +278,31 @@ def test_backlog_health_judges_leases_against_now_not_the_epoch() -> None:
     assert claimed is not None
     query = ReprolithQuery(catalog=catalog, ledger=CertificateLedger())
     assert query.backlog_health()["claimable"] == len(catalog.claimable(time.time()))
+
+
+def test_the_gaps_view_carries_a_failures_whole_cause() -> None:
+    """The agent-facing surface reads `gap_items`, so it inherits whatever the render publishes.
+
+    Two human-facing surfaces were found today stating a failure's cause with most of it missing.
+    This one was already right — it is pinned so a change to `gap_items` cannot quietly strip the
+    evidence from the surface an agent reads without a person seeing it.
+    """
+    import json
+    from pathlib import Path
+
+    from reprolith.mcp_server import load_repository
+
+    root = Path(__file__).parent.parent
+    query, _ = load_repository(root / "datasets" / "milestone")
+    certificate = json.loads(
+        (root / "datasets/milestone/certificates/BIOMD0000001029.json").read_text(encoding="utf-8")
+    )
+    failed = next(a for a in certificate["assessments"] if a["verdict"] == "failed")
+    (digest,) = query.certificates_for(accession="BIOMD0000001029")
+
+    item = next(
+        g for g in query.gaps(digest)["gaps"] if g["claim_id"] == failed["claim_id"]
+    )
+    for part in (failed["discrepancy"], failed["root_cause"], failed["implicated"]):
+        assert part in item["needs"], part
+    assert f"fault hypothesis: {failed['fault_hypothesis']}" in item["needs"]
