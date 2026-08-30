@@ -58,7 +58,9 @@ calibration error, and produces values that are ordered, smooth, plausible and o
 factor), and put the series on the run's own sample grid, interpolated in the axis's own scale,
 never extrapolated past what was read. A value read off a picture can only ever be recorded as
 `digitized-figure`, so the wider band it is judged in is not escapable. That turns a figure claim
-from a permanent abstention into a judged one. No published figure is in this corpus, so it is
+from a permanent abstention into a judged one: a SED-ML document says which curve the paper plots,
+the curator's file says what that curve read, and the certificate carries a verdict marked
+`[figure-reading]` so a reader can see the number was read off a picture rather than printed. No published figure is in this corpus, so it is
 validated against series generated from known functions — mathematics, not a paper's picture. See
 [`docs/figure-values.md`](docs/figure-values.md).
 [`docs/findings-note.md`](docs/findings-note.md) and [`openspec/`](openspec/) say so in detail. Where a paper ships a **SED-ML** document, the half of that

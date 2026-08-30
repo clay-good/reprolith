@@ -288,8 +288,15 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
         # visibly distinct from a simulation one, never conflated (spec: simulation-oracle —
         # "Estimation reproduction is a distinct verdict").
         level = f" [{a['level']}]" if a.get("level") and a["level"] != "simulation" else ""
+        # A value read off a figure is a measurement of a picture, and the certificate is judged
+        # against it in a band twice as wide as a printed number's. The machine form has carried
+        # `reference_kind` since the beginning; the human form showed only the widened tolerance,
+        # which a reader can see is 0.20 and cannot see is 0.20 *because* the reference is a
+        # reading. Marked like the other qualifications, and only when it applies, so no
+        # certificate already published renders differently.
+        reading = " [figure-reading]" if a.get("reference_kind") == "digitized-figure" else ""
         lines.append(
-            f"  [{a['claim_id']}] {a['quantity']}: {a['verdict']}{level}{qualified}"
+            f"  [{a['claim_id']}] {a['quantity']}: {a['verdict']}{level}{qualified}{reading}"
             f" (source {a['source_location']}{method}{tol})"
         )
         if a.get("protocol"):

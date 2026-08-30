@@ -474,3 +474,19 @@ def test_an_unevaluable_claim_still_falls_back_to_a_sentence() -> None:
     )
     text = render_human(certificate, RUN)
     assert "evaluable output or reference data for this claim" in text
+
+
+def test_a_value_read_off_a_figure_says_so_on_its_own_claim_line() -> None:
+    """The widened band is visible in the human form; the reason for it was not.
+
+    A figure reading is judged in a band twice a printed number's. The machine form has always
+    carried `reference_kind`, and the human form showed only the number — a reader saw `<=0.2` and
+    could not see that it is `<=0.2` *because* the reference is a measurement of a picture.
+    """
+    read = _claim(Verdict.REPRODUCED, cid="fig3a", reference_kind="digitized-figure")
+    printed = _claim(Verdict.REPRODUCED, cid="table2", reference_kind="numeric")
+    rendered = render_human(_cert([read, printed]), RUN)
+
+    assert "[fig3a] AUC: reproduced [figure-reading]" in rendered
+    # And only where it applies, so no certificate already published renders differently.
+    assert "[table2] AUC: reproduced (" in rendered

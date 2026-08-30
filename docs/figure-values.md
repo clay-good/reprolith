@@ -78,6 +78,32 @@ invented.
 The reference kind is always `digitized-figure`. A value read off a picture cannot be recorded as a
 printed number, so the wider band it must be judged in is not escapable by attaching it.
 
+## What the certificate then says
+
+The join runs end to end: a SED-ML document says which curve the paper plots, the curator's file
+says what that curve read, and the certificate carries a verdict where it used to carry an
+abstention. The claim line names both halves and marks itself, so a reader can see the number was
+read off a picture rather than printed:
+
+```
+  [c0] A: reproduced [figure-reading] (source SED-ML plot2D 'plot_0' (Figure 1), curve 'c0';
+      values from Figure 1, A (digitized from the figure with WebPlotDigitizer 4.7)
+      via curve-normalized-distance, tol=reproduced<=0.2, partial<=0.4 (class-default))
+```
+
+The marker earns its place because the widened band was previously invisible as a *reason*: the
+human form printed `<=0.2` and nothing said it is `<=0.2` because the reference is a measurement of
+a picture. Only figure-read claims carry it, so no certificate already published renders
+differently.
+
+`tests/test_digitized_figure_end_to_end.py` walks that path with nothing hand-written between the
+document and the certificate — and shows the other side of it, which is worth stating plainly: the
+figure band is **wide**. A model decaying half as fast as the curve it is judged against still
+passes it (normalized distance 0.18 against a 0.20 budget), because the distance is measured
+against the reference's own range and a decay's disagreement lives in a tail that range dwarfs. The
+[loop record](discipline-loop.md) already calls that tolerance declared rather than measured. This
+is the first thing to exercise it, and it is a test rather than a certificate.
+
 ## The limit that remains
 
 **No published figure is in this corpus.** This reader is validated against series generated from
