@@ -48,7 +48,12 @@ arrived — but a curator still chooses which candidate is a claim and which mod
 and measured on this test set, only **three papers in ten** of the open-access subset print a
 reported model output in a table at all
 ([`datasets/manuscripts/table_survey.json`](datasets/manuscripts/table_survey.json)). The rest put
-their results in figures. Reading claims out of prose is not built at all.
+their results in figures — and that is about the pictures, not about unread text. Reading a
+paper's prose is built (`propose_claims_from_prose`) and measured to reach no paper the tables
+miss, and the figure *captions* were inside that same sweep all along: 87 of 87 caption paragraphs
+across the ten papers, carrying ten candidates and not one that names a quantity a model reports.
+It is not a shipped command for exactly that reason — it buys nothing a curator does not already
+have.
 
 For those figures, the **intake** half is now built and the reading half is not, and the split is
 deliberate. Reprolith digitizes nothing: a curator reads the curve off the picture with a plot

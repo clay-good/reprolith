@@ -97,11 +97,20 @@ def test_the_front_pages_reproduction_split_is_the_certificates_split() -> None:
 
 
 def test_the_front_page_does_not_claim_the_extraction_it_has_not_built() -> None:
-    """It reads a paper's tables and says so; it does not read prose and must keep saying so.
+    """It reads a paper's tables and says so; extraction at scale is unbuilt and must stay said.
 
     The paragraph describing sixty-three claims read from a paper sits four lines above the one
     admitting extraction is unbuilt, and an edit to either can quietly turn that into a
     contradiction.
+
+    This used to pin the sentence "Reading claims out of prose is not built at all", which stopped
+    being true when `propose_claims_from_prose` was written to measure the prose route and left
+    unshipped because it reached nothing. The front page said unbuilt where the honest word is
+    *measured*, and a test pinning the stale sentence is how a page stays stale. What is pinned now
+    is the claim that survives: prose is read and buys nothing, and extraction at scale is the
+    piece that is missing.
     """
-    assert "Reading claims out of prose is not built at all." in _README
+    # Collapsed, because the sentence wraps and a line break is not a change of claim.
+    flowing = " ".join(_README.split())
+    assert "measured to reach no paper the tables miss" in flowing
     assert "at scale* is the piece that is not built" in _README

@@ -16,6 +16,11 @@ Two limits travel in the output rather than being left for a reader to discover:
 * It reaches a paper only through the identifier the model repository records, by PubMed id or by
   DOI. An entry naming no paper at all cannot be reached, and several entries name the *same*
   paper, so the entry count is not a paper count.
+* Figure captions are counted on their own as well, because the conclusion the whole survey
+  supports — that the remaining results are in the *pictures* — is much weaker if the text beside
+  those pictures was never read. It was: a JATS caption is a paragraph inside a `<fig>` and the
+  prose walk covers the whole document, so the output records how many caption paragraphs the
+  prose sweep contained rather than leaving a reader to work it out.
 * "Has a results table" is read off `propose_claims`: a table whose candidates state a metric
   (Cmax, AUC) is naming quantities a reproduction targets, and a parameter table does not. That
   is a signal, not a proof, and the counts are reported per table so the judgment stays visible.
@@ -125,14 +130,38 @@ def main() -> None:
         # if seven papers in ten put their results in figures, does their *prose* carry them
         # instead? Counted the same way — a candidate attributed to a model and naming a quantity
         # is the prose equivalent of a table whose candidates state a metric.
-        paragraphs = [
-            _text(paragraph)
+        paragraphs_elements = [
+            paragraph
             for paragraph in root.iter()
             if _localname(paragraph.tag) == "p"
             and not any(_localname(child.tag) == "table-wrap" for child in paragraph.iter())
         ]
+        paragraphs = [_text(paragraph) for paragraph in paragraphs_elements]
         prose = propose_claims_from_prose(" ".join(paragraphs))["candidates"]
+        # And the figure captions on their own. They are already inside the prose sweep — a JATS
+        # caption is `<fig><caption><p>`, and the paragraph walk above is over the whole tree — so
+        # the prose result already answered this question and nothing said so out loud. A reader
+        # weighing "figures are the only lift left" needs to know the captions beside those
+        # figures were read too, which is a different fact from a caption reader not existing.
+        caption_paragraphs = [
+            paragraph
+            for fig in root.iter() if _localname(fig.tag) == "fig"
+            for paragraph in fig.iter() if _localname(paragraph.tag) == "p"
+        ]
+        inside = sum(1 for c in caption_paragraphs if any(c is p for p in paragraphs_elements))
+        captions = propose_claims_from_prose(
+            " ".join(_text(c) for c in caption_paragraphs)
+        )["candidates"]
         papers[pmcid] = {
+            "captions": {
+                "paragraphs": len(caption_paragraphs),
+                "inside_the_prose_sweep": inside,
+                "candidates": len(captions),
+                "naming_a_quantity": sum(
+                    1 for c in captions
+                    if c["metric"] and c["attribution"] in ("simulated", "both")
+                ),
+            },
             "prose": {
                 "candidates": len(prose),
                 "attributed_to_a_model": sum(
@@ -174,6 +203,11 @@ def main() -> None:
             "measured, it does not. The papers that state results in a table state them in prose "
             "as well, and the ones that do not state them in neither — their results are in the "
             "figures.",
+            "Figure captions are counted separately and are also inside the prose sweep, which "
+            "is what the per-paper 'inside_the_prose_sweep' count establishes rather than "
+            "assumes: a JATS caption is a paragraph inside a <fig>, and the prose walk is over "
+            "the whole document. So 'the results are in the figures' is a statement about the "
+            "pictures, not about unread text beside them.",
             "'A results table' is read off propose_claims: a table whose candidates state a "
             "metric is naming quantities a reproduction targets. That is a signal, not a proof, "
             "so the per-table counts are kept.",
@@ -201,8 +235,10 @@ def main() -> None:
         1 for r in records if r["model_format"] == "SBML" and r["curation"] == "CURATED"
     )
     prose_reaching = sum(1 for p in papers.values() if p["prose"]["naming_a_quantity"])
+    caption_reaching = sum(1 for p in papers.values() if p["captions"]["naming_a_quantity"])
     print(f"  {len(papers)} distinct papers; {with_results} print a results table")
     print(f"  {prose_reaching} state a model's result in prose naming the quantity")
+    print(f"  {caption_reaching} state one in a figure caption (all captions are inside the prose)")
     print(f"  {curated_sbml} of {len(records)} entries ship a curated SBML model")
 
 

@@ -131,8 +131,12 @@ a change under `openspec/changes/`.
   figure digitization or entries whose models run. **Prose extraction is measured out**: a prose
   candidate reader (`propose_claims_from_prose`) reaches two of the ten open-access papers and
   both already state their results in a table — the seven figure-only papers state none in their
-  text either. It broadens what can be read from a paper already reachable and moves the corpus's
-  reach by nothing. **The one non-curated entry whose paper prints a table was opened**
+  text either. It broadens what can be read from a paper already reachable and moves the
+  corpus's reach by nothing. **And the figure captions were inside that sweep all along**
+  (2026-08-30): 87 of 87 caption paragraphs across the ten papers, now counted rather than
+  assumed, and none of the ten candidates they carry is attributed to a model while naming a
+  metric — so "the results are in the figures" is a statement about the pictures, not about
+  unread text beside them. **The one non-curated entry whose paper prints a table was opened**
   (MODEL1711210003, an estradiol PBPK/genome-scale model): it deposits 118 reactions and a rate law
   for none of them — 114 with an empty `<kineticLaw><math/>` and 4 with no `kineticLaw` at all — so
   it is reaction topology, not a runnable model, and no extraction capability would reach it. That

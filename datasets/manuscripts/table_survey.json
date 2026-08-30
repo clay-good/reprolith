@@ -284,11 +284,18 @@
   "limits": [
     "A paper is reached through the identifier the model repository records, by PubMed id or by DOI. An entry naming no paper cannot be reached, and several entries name the same paper, so the entry count is a floor and not a paper count.",
     "The prose counts answer whether text reaches the papers whose tables do not: measured, it does not. The papers that state results in a table state them in prose as well, and the ones that do not state them in neither \u2014 their results are in the figures.",
+    "Figure captions are counted separately and are also inside the prose sweep, which is what the per-paper 'inside_the_prose_sweep' count establishes rather than assumes: a JATS caption is a paragraph inside a <fig>, and the prose walk is over the whole document. So 'the results are in the figures' is a statement about the pictures, not about unread text beside them.",
     "'A results table' is read off propose_claims: a table whose candidates state a metric is naming quantities a reproduction targets. That is a signal, not a proof, so the per-table counts are kept.",
     "Each entry's model format and curation status travel beside its paper, because a paper stating reproducible results is only half of what a certificate needs: an entry shipping an R script or a non-curated hybrid cannot be run whatever its paper says."
   ],
   "papers": {
     "PMC3853972": {
+      "captions": {
+        "candidates": 0,
+        "inside_the_prose_sweep": 10,
+        "naming_a_quantity": 0,
+        "paragraphs": 10
+      },
       "prose": {
         "attributed_to_a_model": 0,
         "candidates": 0,
@@ -304,6 +311,12 @@
       ]
     },
     "PMC3910012": {
+      "captions": {
+        "candidates": 0,
+        "inside_the_prose_sweep": 6,
+        "naming_a_quantity": 0,
+        "paragraphs": 6
+      },
       "prose": {
         "attributed_to_a_model": 0,
         "candidates": 1,
@@ -319,6 +332,12 @@
       ]
     },
     "PMC3910013": {
+      "captions": {
+        "candidates": 0,
+        "inside_the_prose_sweep": 6,
+        "naming_a_quantity": 0,
+        "paragraphs": 6
+      },
       "prose": {
         "attributed_to_a_model": 0,
         "candidates": 0,
@@ -334,6 +353,12 @@
       ]
     },
     "PMC4026633": {
+      "captions": {
+        "candidates": 0,
+        "inside_the_prose_sweep": 3,
+        "naming_a_quantity": 0,
+        "paragraphs": 3
+      },
       "prose": {
         "attributed_to_a_model": 0,
         "candidates": 0,
@@ -355,6 +380,12 @@
       ]
     },
     "PMC5026379": {
+      "captions": {
+        "candidates": 0,
+        "inside_the_prose_sweep": 17,
+        "naming_a_quantity": 0,
+        "paragraphs": 17
+      },
       "prose": {
         "attributed_to_a_model": 2,
         "candidates": 4,
@@ -406,6 +437,12 @@
       ]
     },
     "PMC5732473": {
+      "captions": {
+        "candidates": 4,
+        "inside_the_prose_sweep": 7,
+        "naming_a_quantity": 0,
+        "paragraphs": 7
+      },
       "prose": {
         "attributed_to_a_model": 21,
         "candidates": 40,
@@ -421,6 +458,12 @@
       ]
     },
     "PMC8026019": {
+      "captions": {
+        "candidates": 1,
+        "inside_the_prose_sweep": 10,
+        "naming_a_quantity": 0,
+        "paragraphs": 10
+      },
       "prose": {
         "attributed_to_a_model": 9,
         "candidates": 42,
@@ -472,6 +515,12 @@
       ]
     },
     "PMC8397660": {
+      "captions": {
+        "candidates": 0,
+        "inside_the_prose_sweep": 8,
+        "naming_a_quantity": 0,
+        "paragraphs": 8
+      },
       "prose": {
         "attributed_to_a_model": 0,
         "candidates": 6,
@@ -493,6 +542,12 @@
       ]
     },
     "PMC8646028": {
+      "captions": {
+        "candidates": 1,
+        "inside_the_prose_sweep": 8,
+        "naming_a_quantity": 0,
+        "paragraphs": 8
+      },
       "prose": {
         "attributed_to_a_model": 0,
         "candidates": 6,
@@ -520,6 +575,12 @@
       ]
     },
     "PMC9637881": {
+      "captions": {
+        "candidates": 4,
+        "inside_the_prose_sweep": 12,
+        "naming_a_quantity": 0,
+        "paragraphs": 12
+      },
       "prose": {
         "attributed_to_a_model": 3,
         "candidates": 8,

@@ -3321,7 +3321,12 @@ What would lift it, in the order the measurements support:
   population simulator and the re-fitting engine carry. The corpus's reach is unchanged today, and
   what would change it is one curator's digitization of one figure in a paper already here.
 * **Figures, and only figures.** That list used to have three items on it. Prose came off it —
-  built, and measured to reach no paper the tables miss. Runnable models came off it too: five of
+  built, and measured to reach no paper the tables miss. And "the results are in the figures" now
+  rests on a measured fact rather than an unstated one: **87 of 87** figure-caption paragraphs
+  across the ten papers were already inside that prose sweep — a JATS caption is a paragraph
+  inside a `<fig>` and the walk covers the whole document — so the text *beside* every picture was
+  read, and the boundary is about the pictures. Captions do carry numbers, ten candidates across
+  the set; none is attributed to a model and names a metric. Runnable models came off it too: five of
   the nine non-curated entries already run, and not one of them has a paper stating a result this
   can read. Both measurements are committed, and both point the same way.
 

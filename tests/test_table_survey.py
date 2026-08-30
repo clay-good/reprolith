@@ -137,3 +137,31 @@ def test_the_survey_states_the_limits_of_its_own_denominator() -> None:
     assert len(reachable) > len(_PAPERS)  # 17 entries, 10 papers
     limits = " ".join(_SURVEY["limits"]).casefold()
     assert "floor" in limits and "not a paper count" in limits
+
+
+def test_the_captions_beside_those_figures_were_read_too() -> None:
+    """"The results are in the figures" is much weaker if the text beside them was never read.
+
+    A JATS caption is a paragraph inside a `<fig>`, and the prose walk covers the whole document,
+    so the caption text was always in the prose measurement — and nothing said so, which left the
+    survey's central conclusion resting on an unstated fact. It is now counted: **87 of 87**
+    caption paragraphs across the ten papers are inside the prose sweep, so the figure boundary is
+    a statement about the pictures and not about unread text.
+    """
+    paragraphs = sum(p["captions"]["paragraphs"] for p in _PAPERS.values())
+    inside = sum(p["captions"]["inside_the_prose_sweep"] for p in _PAPERS.values())
+    assert paragraphs == 87 and inside == paragraphs
+    assert all(p["captions"]["paragraphs"] for p in _PAPERS.values())  # every paper has figures
+
+
+def test_no_caption_states_a_model_result_worth_targeting() -> None:
+    """Ten candidates across ten papers, and not one of them names a quantity a model reports.
+
+    Captions do carry numbers — panel labels, doses, sample sizes — which is why the count is not
+    zero. None is attributed to a model *and* names a metric, so reading captions as a separate
+    surface would add a reader and reach no paper the tables miss. Measured, like prose before it.
+    """
+    assert sum(p["captions"]["candidates"] for p in _PAPERS.values()) == 10
+    assert sum(p["captions"]["naming_a_quantity"] for p in _PAPERS.values()) == 0
+    limits = " ".join(_SURVEY["limits"]).casefold()
+    assert "inside_the_prose_sweep" in limits
