@@ -280,3 +280,38 @@ def test_claims_arriving_as_a_generator_are_not_consumed_by_the_check() -> None:
         times=[0.0, 24.0],
     )
     assert len(attached) == 2 and attached[0].reference_data
+
+
+def test_a_point_that_is_not_two_numbers_is_refused_rather_than_read_past() -> None:
+    """A three-number point is the digitizer saying something this reader does not understand.
+
+    Error bars, a second series, a label: taking the first two values and moving on is how a
+    reference gets built out of the wrong column with nothing anywhere to show it happened.
+    """
+    with pytest.raises(ValueError, match="not an .x, y. pair"):
+        _series([[0, 1.0, 0.2], [6, 2.0, 0.3]])
+    with pytest.raises(ValueError, match="not an .x, y. pair"):
+        _series([[0], [6, 2.0]])
+
+
+def test_resampling_onto_an_empty_grid_is_refused() -> None:
+    """Otherwise the claim comes back carrying no values — the state it was already in."""
+    with pytest.raises(ValueError, match="no samples"):
+        resample_series(_series([[0, 1.0], [24, 2.0]]), [])
+    with pytest.raises(ValueError, match="no samples"):
+        attach_digitized_values(_CLAIMS[:1], [_series([[0, 1.0], [24, 2.0]])], times=[])
+
+
+def test_a_window_with_no_curve_in_it_is_refused() -> None:
+    """Every sample is the initial condition, so the comparison passes whatever the model does."""
+    series = _series([[0, 1.0], [24, 2.0]])
+    with pytest.raises(ValueError, match="no curve in it"):
+        curve_reference(series, duration=0.0, steps=10)
+    with pytest.raises(ValueError, match="samples no interval"):
+        curve_reference(series, duration=24.0, steps=0)
+
+
+def test_a_grid_arriving_as_an_iterator_is_not_consumed_by_the_check() -> None:
+    """The grid is walked twice — to check it, then to sample it — like the claims before it."""
+    series = _series([[0, 1.0], [24, 2.0]])
+    assert resample_series(series, iter([0.0, 12.0, 24.0])) == pytest.approx((1.0, 1.5, 2.0))

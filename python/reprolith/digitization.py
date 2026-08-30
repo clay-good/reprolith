@@ -209,6 +209,13 @@ def _axis(record: Mapping[str, Any], which: str) -> Axis:
     )
 
 
+def _pair(point: Any) -> tuple[float, float]:
+    """One [x, y] point, refusing anything longer rather than reading past it."""
+    if isinstance(point, (str, bytes)) or len(point) != 2:
+        raise ValueError("a point is exactly two numbers")
+    return float(point[0]), float(point[1])
+
+
 def read_digitized_figure(text: str) -> tuple[DigitizedSeries, ...]:
     """Read a curator's digitization of one figure panel; raise on anything it cannot trust.
 
@@ -241,7 +248,11 @@ def read_digitized_figure(text: str) -> tuple[DigitizedSeries, ...]:
         if not isinstance(points, Sequence) or isinstance(points, str):
             raise ValueError(f"{figure}'s series '{entry.get('curve', '?')}' carries no points")
         try:
-            pairs = tuple((float(p[0]), float(p[1])) for p in points)
+            # Length-checked rather than indexed past: a three-number point is a digitizer writing
+            # something this reader does not understand — an error bar, a second series, a label —
+            # and taking its first two silently is how a reference gets built out of the wrong
+            # column with nothing to show for it.
+            pairs = tuple(_pair(p) for p in points)
         except (TypeError, ValueError, IndexError, KeyError):
             raise ValueError(
                 f"{figure}'s series '{entry.get('curve', '?')}' has a point that is not an "
@@ -292,6 +303,14 @@ def resample_series(series: DigitizedSeries, times: Sequence[float]) -> tuple[fl
     Raises rather than extrapolate: a time outside the digitized span has no reference behind it,
     and returning the last read value there would compare the model against the edge of a picture.
     """
+    # Materialized for the same reason the claims are: the grid is walked twice, to check it and
+    # to sample it, and a caller passing an iterator would have it consumed by the check.
+    times = tuple(times)
+    if not times:
+        raise ValueError(
+            f"'{series.curve}' was asked for no samples: a claim resampled onto an empty grid "
+            "gets no reference, which is indistinguishable from never having been digitized"
+        )
     low, high = series.span
     for t in times:
         if not math.isfinite(t) or t < low or t > high:
@@ -325,6 +344,14 @@ def curve_reference(series: DigitizedSeries, *, duration: float, steps: int) -> 
     """
     if steps < 1:
         raise ValueError(f"a run of {steps} steps samples no interval to compare over")
+    if duration <= 0.0:
+        # A window of zero returns the initial condition at every sample, and a curve judged over
+        # it reproduces perfectly by construction — the shape `certify_curves` records its protocol
+        # to make visible, refused here rather than published.
+        raise ValueError(
+            f"a window of {duration} has no curve in it: every sample is the initial condition, "
+            "and a comparison over it passes whatever the model does"
+        )
     return resample_series(series, [duration * i / steps for i in range(steps + 1)])
 
 
