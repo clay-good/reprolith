@@ -49,6 +49,18 @@ and measured on this test set, only **three papers in ten** of the open-access s
 reported model output in a table at all
 ([`datasets/manuscripts/table_survey.json`](datasets/manuscripts/table_survey.json)). The rest put
 their results in figures. Reading claims out of prose is not built at all.
+
+For those figures, the **intake** half is now built and the reading half is not, and the split is
+deliberate. Reprolith digitizes nothing: a curator reads the curve off the picture with a plot
+digitizer, and what arrives is that tool's output. What Reprolith does is the part the digitizer
+cannot — refuse a reading that is *wrong* rather than imprecise (a point outside its own axes is a
+calibration error, and produces values that are ordered, smooth, plausible and off by a constant
+factor), and put the series on the run's own sample grid, interpolated in the axis's own scale,
+never extrapolated past what was read. A value read off a picture can only ever be recorded as
+`digitized-figure`, so the wider band it is judged in is not escapable. That turns a figure claim
+from a permanent abstention into a judged one. No published figure is in this corpus, so it is
+validated against series generated from known functions — mathematics, not a paper's picture. See
+[`docs/figure-values.md`](docs/figure-values.md).
 [`docs/findings-note.md`](docs/findings-note.md) and [`openspec/`](openspec/) say so in detail. Where a paper ships a **SED-ML** document, the half of that
 job the document already did is read from it: its plots say which curves the paper shows, and those
 become the dossier's claims. Their *values* are still not there, so such a claim is figure-referenced
@@ -152,6 +164,8 @@ reprolith claims-check \              # is each value printed in the table it ci
   --claims <claims.json> --tables <tables.json>
 reprolith params-check \              # does your model carry the values your paper reports?
   --model <model.xml> --parameters <parameters.json>
+reprolith figure-check \              # is this digitization of your figure usable as a reference?
+  --series <figure3a.json>
 ```
 
 `archive-check` is the author-facing counterpart: point it at a COMBINE archive and it says what a
@@ -175,6 +189,12 @@ the pairing is yours, and never guessed — and it compares them at the precisio
 refusing to compare any value an `initialAssignment` or a rule makes inert. On the four deposited
 metformin models it comes back clean: all ten tissue-plasma partition coefficients in each are the
 ones the paper's Table 3 prints.
+
+`figure-check` is the same shape for the other half of claim extraction: point it at a plot
+digitizer's output for one figure panel and it says what each series carries, how coarsely it was
+read, and refuses the readings that cannot be trusted. It reports the widest gap between readings
+rather than judging it — between two read points the reference is the curator's straight line, and
+how much of a comparison rests on that is theirs to weigh.
 
 `claims-template` writes that file, so an author is not starting from a blank one: it emits one
 stub per curve the document plots — the document's own statement of which curves are shown results

@@ -29,6 +29,7 @@ from typing import Any
 from .certify import Claim
 from .claim_candidates import propose_claims
 from .claims_template import claims_template, unfilled_claims
+from .digitization import read_digitized_figure, series_resolution
 from .export import build_bundle_sedml, build_omex_archive
 from .manuscript_values import (
     check_claim_values,
@@ -538,6 +539,37 @@ def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Read a curator's figure digitization and say whether it is usable as a reference."""
+    try:
+        series = read_digitized_figure(Path(args.series).read_text(encoding="utf-8"))
+    except OSError as unreadable:
+        print(f"cannot read the digitization: {unreadable}", file=sys.stderr)
+        return 1
+    except (UnicodeDecodeError, ValueError) as unusable:
+        print(f"cannot read the digitization: {unusable}", file=sys.stderr)
+        return 1
+
+    resolutions = [series_resolution(s) for s in series]
+    if args.json:
+        _print_json({"series": [
+            {**s.to_dict(), "resolution": r} for s, r in zip(series, resolutions)
+        ]})
+        return 0
+    print(f"{len(series)} SERIES READ FROM {series[0].figure}, DIGITIZED WITH {series[0].digitizer}")
+    for reading, resolution in zip(series, resolutions):
+        low, high = resolution["span"]
+        print(f"  [{reading.claim_id}] {reading.curve}: {resolution['points']} point(s) over "
+              f"{low}-{high} {reading.x_axis.unit}, in {reading.y_axis.unit}")
+        # Reported, never judged: between two read points the reference is the curator's straight
+        # line, and how much of the comparison rests on it is a fact they should see rather than a
+        # threshold this command invented.
+        print(f"      widest gap between readings: {resolution['widest_gap_fraction']:.0%} of the "
+              "span, over which the reference is interpolated")
+    print("  no model was run and no claim was judged: this reads the file, nothing else")
+    return 0
+
+
 def _cmd_claims_template(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Write the claims file the author-facing check needs, from the files the author has."""
     if (args.archive is None) == (args.model is None):
@@ -816,6 +848,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--out", default=None, help="write here instead of to standard output")
     p.set_defaults(func=_cmd_claims_template)
+
+    p = sub.add_parser(
+        "figure-check",
+        help="check a digitization of your figure before it is used as a reference",
+    )
+    p.add_argument(
+        "--series", required=True,
+        help="a plot digitizer's output for one figure panel as JSON: the figure, the digitizer, "
+             "both axes, and one series of [x, y] points per curve",
+    )
+    add_json(p)
+    p.set_defaults(func=_cmd_figure_check)
 
     p = sub.add_parser(
         "export",

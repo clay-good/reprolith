@@ -144,7 +144,15 @@ a change under `openspec/changes/`.
   SBML models run**, and joining the two surveys they are disjoint — the one entry whose paper
   prints a results table is the estradiol model that does not run, and of the five that do, four
   name no reachable paper and the fifth's prints no table. Nothing is waiting on a better engine.
-  Figure digitization is the only lift left.
+  Figure digitization is the only lift left. **Its intake half landed 2026-08-30**
+  (`reprolith.digitization`, `reprolith figure-check`, [`docs/figure-values.md`](../../../docs/figure-values.md)):
+  a curator's plot-digitizer output becomes a claim's reference data on the run's own sample grid,
+  interpolated in the axis's own scale and never extrapolated, with a mis-calibrated reading — a
+  point outside its own axes — refused by name, and the reference kind pinned to `digitized-figure`
+  so the wider band is not escapable. Reprolith reads no pixels and this does not pretend to: the
+  reading is a human act. What it needs next is a curator's digitization of a figure from a paper
+  already in this corpus; none exists, so it is validated against series generated from known
+  functions, the same fence items 7 and 8 carry.
 
 ---
 

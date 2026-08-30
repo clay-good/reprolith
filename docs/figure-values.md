@@ -1,0 +1,87 @@
+# Reading a figure's values in
+
+Seven of the ten open-access papers in this repository's PK/PD test set state their results in
+**figures** and nowhere else. Reading a paper's tables closes the rest, and reading its prose was
+built and measured to close nothing further ([`findings-note.md`](findings-note.md)). Figures are
+the whole of the remaining reach, and until now a claim whose values live in one abstained: the
+oracle had the wider tolerance a figure deserves, ingestion had the claims — a shipped SED-ML
+document says exactly which curves a paper shows — and nothing could supply a value.
+
+This page is the intake half of that. **Reprolith does not digitize anything.** No pixels are read
+here. A curator reads the curve off the picture with a plot digitizer, and what this handles is the
+part the digitizer cannot: saying whether the reading is usable as a reference, and putting it on
+the grid the run is sampled at.
+
+## The file
+
+One file is one figure panel: the axes are stated once, and every series in it was read off them.
+
+```json
+{
+  "figure": "Figure 3A",
+  "digitizer": "WebPlotDigitizer 4.7",
+  "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+  "y_axis": {"minimum": 0.01, "maximum": 10, "unit": "nmol/mL", "scale": "log10"},
+  "series": [
+    {"claim": "fig3a-plasma", "curve": "plasma", "points": [[0.5, 0.2], [2, 4.0], [24, 0.05]]}
+  ]
+}
+```
+
+`claim` is the dossier claim these values are the reference for. That pairing is the curator's:
+no rule here decides that the upper curve of Figure 3A is the plasma claim rather than the liver
+one, exactly as no rule decides which table cell a reported Cmax came from.
+
+```bash
+reprolith figure-check --series figure3a.json
+```
+
+It reads the file, says what each series carries, and exits non-zero when it cannot trust one. It
+runs no model and judges no claim, and it says so.
+
+## What it refuses, and why each one earns its place
+
+| Refused | Why |
+| --- | --- |
+| A series naming no figure or no digitizer | A digitized point is a *measurement of a picture*. A reference value with no statement of where it came from is the defect this repository was already caught by once, in the other direction: a claim's Cmax recorded as a number its paper does not print. |
+| A point outside the axes the curator states | Every digitizer works by calibrating two axis points and mapping pixels through them. Get that wrong and the values come out ordered, smooth, plausible and wrong by a constant factor — the most confident wrong answer available, and invisible to every check downstream. A reading off the top of its own axis is the cheapest evidence it happened. |
+| Two readings at one x, or a single point | Two values for one place is not a curve, and one point is not one either. |
+| Two curves paired with one claim | Which curve a claim reads is the curator's statement, and two of them is not one. |
+| Resampling outside the digitized span | Past the last point that was read there is no reference. Returning the last read value there compares the model against the edge of a picture. |
+| Giving values to a claim that has them | A curve plotted from a data file the archive ships carries the paper's own recorded series. Replacing that with a reading off a picture of it is a downgrade performed silently. |
+| Giving values to a non-targetable claim | A `report`'s data set is retained non-targetable on purpose; handing it values promotes it into a result the paper never staked. That is a [tracked revision](../openspec/specs/paper-ingestion/spec.md), not a side effect of attaching a figure. |
+
+## Onto the run's grid
+
+A curve claim is judged point against point, so the reference has to sit on the run's own
+`steps + 1` uniform samples over `[0, duration]`.
+
+```python
+from reprolith import read_digitized_figure, attach_digitized_values, curve_reference
+
+series = read_digitized_figure(Path("figure3a.json").read_text())
+claims = attach_digitized_values(dossier.claims, series, times=[24.0 * i / 100 for i in range(101)])
+```
+
+Between two read points the reference is a straight line **in the axis's own scale**. That matters
+and is not cosmetic: an exponential decay is a straight line on a log axis and is recovered
+exactly, while reading the same two points linearly puts the midpoint of a decade-wide gap 81%
+high — and half of pharmacokinetic figures are drawn on log axes.
+
+What is left uncovered is stated rather than fixed. A claim judged on a grid far finer than the
+reading is being judged partly against the curator's interpolation, and the digitized-figure
+tolerance — 0.20 pass against a printed number's 0.10 — is what covers it. So `figure-check`
+reports the widest gap between readings as a fraction of the span, and does not judge it: how much
+of a comparison rests on a straight line is the curator's to weigh, not a threshold this command
+invented.
+
+The reference kind is always `digitized-figure`. A value read off a picture cannot be recorded as a
+printed number, so the wider band it must be judged in is not escapable by attaching it.
+
+## The limit that remains
+
+**No published figure is in this corpus.** This reader is validated against series generated from
+functions whose value at every point is known — the same fence the population simulator and the
+re-fitting engine carry: mathematics, not a paper's picture. What it needs next is a curator's
+digitization of a real figure from a paper this repository already carries, and the digitization
+itself is a human act this repository does not perform.

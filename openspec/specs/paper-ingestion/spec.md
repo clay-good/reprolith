@@ -139,6 +139,45 @@ never an extraction presented as decided.
 - **THEN** nothing is proposed from it and the reason is stated, because putting a value under a
   column by position across a span reports a number under the wrong heading
 
+### Requirement: A curator's figure digitization can supply a claim's reference values
+
+Most papers state their results in figures, and a claim whose values live in one has nothing to
+compare against. Reprolith SHALL accept a reading of that figure made outside it, and SHALL treat
+that reading as a measurement of a picture rather than as a number the paper printed. Reprolith
+performs no digitization itself: which curve a claim reads, and what its values are, remain the
+curator's statements.
+
+#### Scenario: A reading is accepted as a reference
+
+- **WHEN** a digitization of one figure panel is supplied, naming the figure, the tool that read
+  it, both axes with their units and scales, and one series of points per curve
+- **THEN** each series is paired to a claim only by the pairing the curator states, and a series
+  paired with a claim the dossier does not carry is refused rather than dropped
+- **AND** the claim's reference kind is recorded as a figure reading whatever the claim held
+  before, so the wider tolerance a figure is judged in cannot be escaped by attaching one
+- **AND** the claim's source location keeps its own citation and names the figure, the curve, and
+  the tool that read them
+- **AND** a claim with no series is left as it was, since a partial digitization is not a reason
+  to supply the rest
+
+#### Scenario: A reading that is wrong rather than imprecise
+
+- **WHEN** a series states a point outside the axis range it was read off, two readings at one
+  position, fewer than two points, or no figure and no tool
+- **THEN** it is refused with the reason named, because a mis-calibrated reading is ordered,
+  smooth, plausible and wrong by a constant factor, which no later check can see
+
+#### Scenario: Putting a reading on the run's grid
+
+- **WHEN** a claim is judged against a digitized series
+- **THEN** the series is resampled onto the same points the run is sampled at, interpolated in
+  the scale each axis is drawn in
+- **AND** a point outside the span that was read is refused rather than extrapolated, since the
+  last value read is not a reading of what lies past it
+- **AND** how coarsely the curve was read is reported — the widest gap between readings as a
+  fraction of the span — and is not judged, since between two readings the reference is the
+  curator's straight line
+
 ### Requirement: Artifact intake and typing
 
 Ingestion SHALL accept whatever the paper ships and classify it, so reconstruction knows

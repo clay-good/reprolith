@@ -3303,7 +3303,23 @@ reachable**, by this route, from anything already built.
 What would lift it, in the order the measurements support:
 
 * **Figures.** Reading tables reaches three papers in ten of the open-access subset. The other
-  seven put their results in pictures, and nothing here digitizes one.
+  seven put their results in pictures, and nothing here digitizes one — nor will it. The reading
+  is a human act with a plot digitizer, and what was missing was everything on the other side of
+  it: a figure claim could not be given a value at all, so it abstained permanently. That half is
+  now built (`reprolith.digitization`, `reprolith figure-check`,
+  [`figure-values.md`](figure-values.md)). A curator's series becomes a claim's reference on the
+  run's own sample grid, interpolated in the scale each axis is drawn in — an exponential decay
+  read off a log axis is recovered exactly, where reading the same two points linearly puts the
+  midpoint of a decade-wide gap 81% high — and never extrapolated past what was read. The refusal
+  that earns its place is the mis-calibration: a digitizer maps pixels through two calibration
+  points, and a wrong one yields values that are ordered, smooth, plausible and off by a constant
+  factor, which no check downstream can see. A point outside its own axes is the cheapest evidence
+  it happened, and it is refused by name. The reference kind is pinned to `digitized-figure`, so
+  the band a picture is judged in — 0.20 against a printed number's 0.10 — is not escapable by
+  attaching one. **No published figure is in this corpus**, so it is validated against series
+  generated from known functions: mathematics, not a paper's picture, the same fence the
+  population simulator and the re-fitting engine carry. The corpus's reach is unchanged today, and
+  what would change it is one curator's digitization of one figure in a paper already here.
 * **Figures, and only figures.** That list used to have three items on it. Prose came off it —
   built, and measured to reach no paper the tables miss. Runnable models came off it too: five of
   the nine non-curated entries already run, and not one of them has a paper stating a result this

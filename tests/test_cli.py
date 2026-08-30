@@ -526,7 +526,7 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     ).choices
     named = {
         "export", "archive-check", "claims-template", "claims-check", "claims-propose",
-        "params-check",
+        "params-check", "figure-check",
     }
     file_based = {name for name in subcommands if name in named}
     assert file_based == named
@@ -793,3 +793,43 @@ def test_params_check_on_something_that_is_not_sbml_is_a_message(tmp_path, capsy
     parameters.write_text(json.dumps({"parameters": []}), encoding="utf-8")
     assert run(["params-check", "--model", str(model), "--parameters", str(parameters)]) == 1
     assert "cannot read the model" in capsys.readouterr().err
+
+
+def test_figure_check_reads_a_digitization_and_reports_what_it_rests_on(tmp_path, capsys):
+    """The curator's file, before it is used as anybody's reference: what it says and how coarse
+    it is. The widest gap is reported and not judged — between two readings the reference is the
+    curator's straight line, and how much of a comparison rests on that is theirs to weigh."""
+    series = tmp_path / "figure3a.json"
+    series.write_text(json.dumps({
+        "figure": "Figure 3A", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 10, "unit": "nmol/mL"},
+        "series": [{"claim": "fig3a-plasma", "curve": "plasma",
+                    "points": [[0, 0.5], [2, 6.0], [24, 1.0]]}],
+    }), encoding="utf-8")
+
+    assert run(["figure-check", "--series", str(series)]) == 0
+    printed = capsys.readouterr().out
+    assert "fig3a-plasma" in printed and "3 point(s) over 0.0-24.0 h" in printed
+    assert "92% of the span" in printed
+    assert "no model was run" in printed
+
+
+def test_figure_check_refuses_a_reading_off_its_own_axes(tmp_path, capsys):
+    """A mis-calibrated digitization is smooth, ordered, and wrong; this is where it stops."""
+    series = tmp_path / "figure3a.json"
+    series.write_text(json.dumps({
+        "figure": "Figure 3A", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 10, "unit": "nmol/mL"},
+        "series": [{"claim": "fig3a-plasma", "curve": "plasma",
+                    "points": [[0, 0.5], [2, 60.0], [24, 10.0]]}],
+    }), encoding="utf-8")
+
+    assert run(["figure-check", "--series", str(series)]) == 1
+    assert "outside its own axis" in capsys.readouterr().err
+
+
+def test_figure_check_of_a_missing_file_is_a_message(tmp_path, capsys):
+    assert run(["figure-check", "--series", str(tmp_path / "nope.json")]) == 1
+    assert "cannot read the digitization" in capsys.readouterr().err

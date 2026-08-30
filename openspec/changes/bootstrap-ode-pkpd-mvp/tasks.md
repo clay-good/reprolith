@@ -34,7 +34,12 @@ a phase done until its verification holds.
     them from the paper's own **tables** is: `propose_claims` / `reprolith claims-propose` turns
     every number a table prints into a candidate with the row and column that name it, and
     rediscovers the two metformin claims a human extracted by hand. Which candidate is a claim,
-    and which model output it reads, is left to the curator by design.
+    and which model output it reads, is left to the curator by design. Reference data for a
+    *figure* claim now has a route too (`reprolith.digitization`): a curator's plot-digitizer
+    output is checked as a reading — mis-calibration refused, no extrapolation — and resampled
+    onto the run's own grid, so such a claim reaches a verdict instead of abstaining. Reprolith
+    reads no pixels, and no published figure is in this corpus, so it is validated against series
+    generated from known functions.
 - [ ] 2.3 Record gaps and extraction-confidence; never fill gaps at this stage → verify: a paper with a missing parameter yields a gap, not a value
   - Partly done for the same reason. On the artifact path a symbol no declaration covers, an
     unstated unit, an unstated initial value, and a construct the dossier cannot represent are

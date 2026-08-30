@@ -40,6 +40,16 @@ from .constraint_based import (
 )
 from .corroboration import EngineCorroboration, corroborate_curve
 from .determinism import certificate_digest, same_modulo_run_metadata
+from .digitization import (
+    Axis,
+    AxisScale,
+    DigitizedSeries,
+    attach_digitized_values,
+    curve_reference,
+    read_digitized_figure,
+    resample_series,
+    series_resolution,
+)
 from .dossier import (
     Dossier,
     DossierClaim,
@@ -313,8 +323,11 @@ __all__ = [
     "archive_report",
     "assess_match",
     "Assumption",
+    "attach_digitized_values",
     "Attribution",
     "audit_loop_notes",
+    "Axis",
+    "AxisScale",
     "band_envelope_distance",
     "band_worst_point",
     "BlindEntry",
@@ -363,6 +376,7 @@ __all__ = [
     "content_hash",
     "corroborate_curve",
     "CurveClaim",
+    "curve_reference",
     "default_tolerance",
     "default_tolerance_table",
     "derive_overall",
@@ -370,6 +384,7 @@ __all__ = [
     "diffuse_1d",
     "diffuse_2d",
     "Dossier",
+    "DigitizedSeries",
     "disagreeing_parameters",
     "dossier_digest",
     "dossier_from_dict",
@@ -489,6 +504,7 @@ __all__ = [
     "react_diffuse_1d",
     "react_diffuse_2species",
     "Reaction",
+    "read_digitized_figure",
     "read_sedml_data",
     "reaction_essentiality",
     "RecipeStep",
@@ -508,6 +524,7 @@ __all__ = [
     "require_documented_default",
     "required_subjects",
     "Resolution",
+    "resample_series",
     "reverify_dependents",
     "revise",
     "roadrunner_pin",
@@ -525,6 +542,7 @@ __all__ = [
     "seed_candidates",
     "seed_catalog",
     "SeedingReport",
+    "series_resolution",
     "serve_stdio",
     "shadow_prices",
     "ShadowPrices",
