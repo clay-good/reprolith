@@ -479,6 +479,18 @@ def archive_report(
                        "curve you publish, so a reproducer runs what you ran",
             })
 
+    # Reported, and deliberately *not* a fix that gates readiness. Publishing results as figures
+    # is what papers do, and a document that plots its curves is a document doing its job — an
+    # archive marked NOT READY for it would tell almost every honest author their work is broken.
+    # What is true, and worth their knowing, is the consequence: nobody can check those curves
+    # without first reading them off the picture, and such a reading is judged in a band twice as
+    # wide as a number they print. They are the one person who can remove that step cheaply,
+    # because they have the numbers.
+    found["curves_without_values"] = [
+        {"claim_id": c.id, "quantity": c.quantity, "source_location": c.source_location}
+        for c in targetable if not c.reference_data
+    ]
+
     if not targetable and not not_a_time_course:
         actions.append({
             "priority": _ARCHIVE_NO_CLAIM_PRIORITY, "kind": "claims", "claim_id": None,
@@ -669,6 +681,27 @@ def _render_report(report: dict[str, Any]) -> str:
         where = f"{item['quantity']}: " if item["quantity"] else ""
         lines.append(f"  - {where}{item['issue']}")
         lines.append(f"      fix: {item['fix']}")
+    unvalued = found.get("curves_without_values") or []
+    if unvalued:
+        lines.append("")
+        lines.append("WHAT A REPRODUCER WOULD HAVE TO READ OFF YOUR FIGURES")
+        lines.append(
+            "  Not a fix list, and it does not hold up your submission: publishing results as "
+            "figures is what papers do."
+        )
+        shown = ", ".join(item["claim_id"] for item in unvalued[:5])
+        rest = f" and {len(unvalued) - 5} more" if len(unvalued) > 5 else ""
+        lines.append(
+            f"  - {len(unvalued)} curve(s) are plotted with no values behind them ({shown}{rest}), "
+            "so nobody can check them without first digitizing your figure — a reading with its "
+            "own uncertainty, judged in a band twice as wide as a number you print"
+        )
+        lines.append(
+            "  - shipping those series as a data file your document names (a SED-ML "
+            "dataDescription selecting one column per curve) removes that step, and what a "
+            "reproducer checks is then your recorded values rather than a measurement of a "
+            "picture of them"
+        )
     packages = found.get("not_a_time_course") or []
     if packages:
         lines.append("")

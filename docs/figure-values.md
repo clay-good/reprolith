@@ -104,6 +104,15 @@ against the reference's own range and a decay's disagreement lives in a tail tha
 [loop record](discipline-loop.md) already calls that tolerance declared rather than measured. This
 is the first thing to exercise it, and it is a test rather than a certificate.
 
+## The other side of it, told to the author
+
+The same fact is worth saying before a paper is published rather than after. `archive-check` lists
+every curve a document plots with no values behind it, says what that costs a reproducer, and names
+the cheap way out — ship the series as a data file the document points at. It is reported and never
+gated on: a document that plots its curves is doing what SED-ML is for, and an archive marked "not
+ready" for it would tell almost every honest author their work is broken. See
+[`author-check.md`](author-check.md).
+
 ## The limit that remains
 
 **No published figure is in this corpus.** This reader is validated against series generated from

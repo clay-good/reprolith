@@ -413,3 +413,61 @@ def test_a_time_course_model_is_judged_as_before() -> None:
     report = archive_report(_ARCHIVE.read_bytes())
     assert report["found"]["not_a_time_course"] == []
     assert [item["kind"] for item in report["fix_list"]] == ["claims"]
+
+
+_KINETIC = Path(__file__).parent.parent / "datasets" / "kinetic"
+
+
+def _plotting_archive() -> bytes:
+    """The real SED-ML BioModels ships for Kholodenko: four plotted curves, no values."""
+    sbml = (_KINETIC / "BIOMD0000000010.xml").read_text(encoding="utf-8")
+    sedml = (_KINETIC / "BIOMD0000000010.sedml").read_text(encoding="utf-8")
+    manifest = f"""<?xml version="1.0" encoding="UTF-8"?>
+<omexManifest xmlns="{_SPEC}omex-manifest">
+  <content location="." format="{_SPEC}omex"/>
+  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>
+  <content location="./BIOMD0000000010_url.xml" format="{_SPEC}sbml.level-2.version-4"/>
+  <content location="./BIOMD0000000010.sedml" format="{_SPEC}sed-ml.level-1.version-4" master="true"/>
+</omexManifest>
+"""
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zf:
+        zf.writestr("manifest.xml", manifest)
+        zf.writestr("BIOMD0000000010_url.xml", sbml)
+        zf.writestr("BIOMD0000000010.sedml", sedml)
+    return buffer.getvalue()
+
+
+def test_curves_with_no_values_are_reported_and_do_not_hold_up_the_submission() -> None:
+    """The step between this archive and a checked claim, told to the one person who can remove it.
+
+    Publishing results as figures is what papers do, and a document that plots its curves is doing
+    its job — so this is reported and never gated on. An archive marked NOT YET READY for it would
+    tell almost every honest author their work is broken, which is the strict direction and the
+    expensive mistake.
+    """
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    report = archive_report(_plotting_archive())
+
+    assert report["ready_to_submit"] is True  # the report is advice here, not a gate
+    assert [item["kind"] for item in report["fix_list"]] == []
+    unvalued = report["found"]["curves_without_values"]
+    assert len(unvalued) == 4
+    assert all(item["claim_id"] and item["source_location"] for item in unvalued)
+
+    text = render_archive_human(_plotting_archive())
+    assert "WHAT A REPRODUCER WOULD HAVE TO READ OFF YOUR FIGURES" in text
+    assert "does not hold up your submission" in text
+    # The consequence, and the cheap way out of it — the author has the numbers.
+    assert "band twice as wide as a number you print" in text
+    assert "dataDescription selecting one column per curve" in text
+
+
+def test_an_archive_whose_curves_carry_values_is_not_told_to_ship_them() -> None:
+    """The section is absent, not empty: there is nothing for a reproducer to read off a picture."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    report = archive_report(_ARCHIVE.read_bytes())
+    assert report["found"]["curves_without_values"] == []
+    assert "WHAT A REPRODUCER WOULD HAVE TO READ OFF YOUR FIGURES" not in render_archive_human(
+        _ARCHIVE.read_bytes()
+    )

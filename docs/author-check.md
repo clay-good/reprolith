@@ -218,6 +218,15 @@ mechanically is one it does not make:
   values your paper reports) is still checked. Such a model is never reported ready, because
   "ready" would claim a reproducer knows what to check, which nothing here established.
 
+The section headed "what a reproducer would have to read off your figures" is advice, not a
+finding. If your document plots curves and ships no values behind them — which is what almost every
+archive does, because publishing results as figures is what papers do — it lists them, says what it
+costs (nobody can check those curves without first digitizing your figure, and a digitized
+reference is judged in a band twice as wide as a number you print), and names the cheap way out:
+ship the series as a data file your document points at, with a `dataDescription` selecting one
+column per curve. You have those numbers; the reproducer does not. It never holds up your
+submission, because a document doing exactly what SED-ML is for is not a defect.
+
 And the separate list headed "what Reprolith's own extraction would not carry" is **not** a fix
 list. Some of it your archive genuinely omits; some of it your archive states perfectly well and
 Reprolith cannot represent. Nothing distinguishes the two, so nothing there is asked of you and
