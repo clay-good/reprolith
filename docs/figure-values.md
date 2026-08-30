@@ -35,6 +35,7 @@ dossier does not carry is refused:
 
 ```bash
 reprolith figure-template --sedml experiment.sedml --out figure3a.json
+reprolith figure-template model.omex --out figure3a.json      # or straight from the archive
 ```
 
 It writes the ids and the curve each one plots, and leaves blank everything that is a *reading*:

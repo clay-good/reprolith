@@ -32,10 +32,12 @@ from reprolith import (
     attach_digitized_values,
     certify_curves,
     engine_pin,
+    figure_template,
     ingest_sbml,
     parse_sedml_recipes,
     read_digitized_figure,
     render_human,
+    unfilled_figure,
 )
 
 pytest.importorskip("COPASI", reason="the optional 'engine' extra (python-copasi) is not installed")
@@ -95,17 +97,37 @@ _SEDML = """<?xml version="1.0" encoding="UTF-8"?>
 
 
 def _digitization(read_at: tuple[float, ...]) -> str:
-    """A curator's file for Figure 1, read at the points a human would actually mark."""
-    return json.dumps({
-        "figure": "Figure 1",
-        "digitizer": "WebPlotDigitizer 4.7",
-        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
-        "y_axis": {"minimum": 0.01, "maximum": 10, "unit": "nmol/mL", "scale": "log10"},
-        "series": [{
-            "claim": "c0", "curve": "A",
-            "points": [[t, _A0 * math.exp(-_K * t)] for t in read_at],
-        }],
-    })
+    """A curator's file for Figure 1: the template, filled in the way a curator would fill it.
+
+    Built from `figure_template` rather than hand-written, so the pairing under test is the one the
+    tool writes. Everything the template leaves blank is a reading, and every one of them is
+    supplied here — that is exactly the division of labour the feature claims.
+    """
+    filled = figure_template(_SEDML)
+    filled["figure"] = "Figure 1"
+    filled["digitizer"] = "WebPlotDigitizer 4.7"
+    filled["x_axis"] = {"minimum": 0, "maximum": 24, "unit": "h"}
+    filled["y_axis"] = {"minimum": 0.01, "maximum": 10, "unit": "nmol/mL", "scale": "log10"}
+    for series in filled["series"]:
+        series["points"] = [[t, _A0 * math.exp(-_K * t)] for t in read_at]
+    assert not unfilled_figure(filled), unfilled_figure(filled)
+    return json.dumps(filled)
+
+
+def test_the_template_pairs_to_the_ids_the_dossier_actually_carries() -> None:
+    """The whole feature rests on this and nothing was checking it end to end.
+
+    The curator pairs a reading to a claim by id. The template writes those ids from the document;
+    the dossier writes them from the same document through a different call. If the two ever drift
+    — a prefix, an accession, a renumbering — every digitization is refused as naming a claim that
+    does not exist, and the template is what taught the curator the wrong name.
+    """
+    template = figure_template(_SEDML)
+    dossier = ingest_sbml(_SBML, entry="E1", sedml=_SEDML)
+    assert [s["claim"] for s in template["series"]] == [c.id for c in dossier.targetable_claims()]
+    assert [s["curve"] for s in template["series"]] == [
+        c.quantity for c in dossier.targetable_claims()
+    ]
 
 
 def _walk(sbml: str, read_at: tuple[float, ...] = (0.0, 4.0, 8.0, 12.0, 16.0, 20.0, 24.0)):
@@ -174,7 +196,7 @@ def test_the_axis_the_figure_was_drawn_on_reaches_the_verdict() -> None:
     printed number is judged in.
     """
     linear = json.loads(_digitization((0.0, 4.0, 8.0, 12.0, 16.0, 20.0, 24.0)))
-    linear["y_axis"] = {"minimum": 0, "maximum": 10, "unit": "nmol/mL"}
+    linear["y_axis"] = {"minimum": 0, "maximum": 10, "unit": "nmol/mL"}  # the same points, read flat
 
     dossier = ingest_sbml(_SBML, entry="E1", sedml=_SEDML)
     recipe = parse_sedml_recipes(_SEDML)[0]

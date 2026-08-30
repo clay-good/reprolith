@@ -546,8 +546,30 @@ def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
 
 def _cmd_figure_template(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Write the digitization file, with the one part of it nobody can guess filled in."""
+    if (args.archive is None) == (args.sedml is None):
+        print(
+            "give either an archive or --sedml: the curves to read come from your simulation "
+            "document, whether or not it is packaged",
+            file=sys.stderr,
+        )
+        return 1
     try:
-        template = figure_template(Path(args.sedml).read_text(encoding="utf-8"))
+        if args.archive is not None:
+            from .omex import archive_documents
+
+            document, _ = archive_documents(Path(args.archive).read_bytes())
+            if document is None:
+                # Not a defect in the archive, and not something to write a file about: which
+                # curves a paper shows is the document's statement, and there is no document.
+                print(
+                    "this archive ships no simulation document, so nothing in it says which "
+                    "curves your paper shows; there is no reading to pair to a claim",
+                    file=sys.stderr,
+                )
+                return 1
+        else:
+            document = Path(args.sedml).read_text(encoding="utf-8")
+        template = figure_template(document)
     except OSError as unreadable:
         print(f"cannot read the document: {unreadable}", file=sys.stderr)
         return 1
@@ -897,8 +919,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="write the digitization file for the curves your document plots (you read them)",
     )
     p.add_argument(
-        "--sedml", required=True,
-        help="your simulation document; its plots say which curves your paper shows",
+        "archive", nargs="?", default=None,
+        help="the .omex archive to read the document out of (or use --sedml)",
+    )
+    p.add_argument(
+        "--sedml", default=None,
+        help="your simulation document, when it is not packaged; its plots say which curves your "
+             "paper shows",
     )
     p.add_argument("--out", default=None, help="write here instead of to standard output")
     p.set_defaults(func=_cmd_figure_template)

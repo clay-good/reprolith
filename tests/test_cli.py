@@ -8,6 +8,7 @@ the same way the milestone run writes one, so the loading path is exercised too.
 from __future__ import annotations
 
 import json
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -875,3 +876,66 @@ def test_figure_template_from_a_document_that_is_not_one_is_a_message(tmp_path, 
     bad.write_text("<not-sedml", encoding="utf-8")
     assert run(["figure-template", "--sedml", str(bad)]) == 1
     assert "cannot read the document" in capsys.readouterr().err
+
+
+_SPEC = "http://identifiers.org/combine.specifications/"
+
+
+def test_figure_template_reads_the_document_out_of_an_archive_too(tmp_path, capsys):
+    """A curator with a .omex should not have to unzip it to learn the ids they must pair to —
+    the same affordance `claims-template` has, on the file beside it."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    kinetic = Path(__file__).parent.parent / "datasets" / "kinetic"
+    manifest = f"""<?xml version="1.0" encoding="UTF-8"?>
+<omexManifest xmlns="{_SPEC}omex-manifest">
+  <content location="." format="{_SPEC}omex"/>
+  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>
+  <content location="./BIOMD0000000010_url.xml" format="{_SPEC}sbml.level-2.version-4"/>
+  <content location="./BIOMD0000000010.sedml" format="{_SPEC}sed-ml.level-1.version-4" master="true"/>
+</omexManifest>
+"""
+    archive = tmp_path / "model.omex"
+    with zipfile.ZipFile(archive, "w") as zf:
+        zf.writestr("manifest.xml", manifest)
+        zf.writestr(
+            "BIOMD0000000010_url.xml",
+            (kinetic / "BIOMD0000000010.xml").read_text(encoding="utf-8"),
+        )
+        zf.writestr(
+            "BIOMD0000000010.sedml",
+            (kinetic / "BIOMD0000000010.sedml").read_text(encoding="utf-8"),
+        )
+
+    out = tmp_path / "figure.json"
+    assert run(["figure-template", str(archive), "--out", str(out)]) == 0
+    packaged = json.loads(out.read_text(encoding="utf-8"))
+
+    loose = tmp_path / "loose.json"
+    run(["figure-template", "--sedml", str(kinetic / "BIOMD0000000010.sedml"), "--out", str(loose)])
+    # The two forms cannot reach different pairings: it is the same document either way.
+    assert packaged == json.loads(loose.read_text(encoding="utf-8"))
+
+
+def test_figure_template_needs_exactly_one_of_the_two_forms(capsys):
+    assert run(["figure-template"]) == 1
+    assert "either an archive or --sedml" in capsys.readouterr().err
+
+
+def test_figure_template_from_an_archive_with_no_document_says_so(tmp_path, capsys):
+    """Which curves a paper shows is the document's statement, and there is no document."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    kinetic = Path(__file__).parent.parent / "datasets" / "kinetic"
+    manifest = f"""<?xml version="1.0" encoding="UTF-8"?>
+<omexManifest xmlns="{_SPEC}omex-manifest">
+  <content location="." format="{_SPEC}omex"/>
+  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>
+  <content location="./model.xml" format="{_SPEC}sbml.level-2.version-4" master="true"/>
+</omexManifest>
+"""
+    archive = tmp_path / "model-only.omex"
+    with zipfile.ZipFile(archive, "w") as zf:
+        zf.writestr("manifest.xml", manifest)
+        zf.writestr("model.xml", (kinetic / "BIOMD0000000010.xml").read_text(encoding="utf-8"))
+
+    assert run(["figure-template", str(archive)]) == 1
+    assert "ships no simulation document" in capsys.readouterr().err

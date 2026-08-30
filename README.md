@@ -172,7 +172,7 @@ reprolith claims-check \              # is each value printed in the table it ci
 reprolith params-check \              # does your model carry the values your paper reports?
   --model <model.xml> --parameters <parameters.json>
 reprolith figure-template \           # the digitization file, with the claim pairing filled in
-  --sedml <exp.sedml> [--out <figure3a.json>]
+  <file.omex> | --sedml <exp.sedml> [--out <figure3a.json>]
 reprolith figure-check \              # is this digitization of your figure usable as a reference?
   --series <figure3a.json>
 ```
