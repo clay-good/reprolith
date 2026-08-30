@@ -194,6 +194,15 @@ def _axis(record: Mapping[str, Any], which: str) -> Axis:
     missing = [key for key in ("minimum", "maximum", "unit") if key not in axis]
     if missing:
         raise ValueError(f"the {which} states no {', '.join(missing)}")
+    blank = [
+        key for key in ("minimum", "maximum")
+        if axis[key] is None or isinstance(axis[key], str) and not axis[key].strip()
+    ]
+    if blank:
+        # A template arrives with these blank, and `float(None)` from inside the reader is the
+        # shape this repository already fixed once in the claims loader: the ordinary mistake
+        # surfacing as a TypeError with no statement of which line to go and write.
+        raise ValueError(f"the {which} states no {', '.join(blank)}: it has not been filled in yet")
     try:
         scale = AxisScale(str(axis.get("scale", "linear")))
     except ValueError:
@@ -408,13 +417,95 @@ def attach_digitized_values(
     return tuple(attached)
 
 
+#: The fields a template leaves for the curator, in the order the file lists them.
+_FILL_IN = (
+    ("figure", "which figure and panel you read"),
+    ("digitizer", "the tool that read it, with its version"),
+)
+
+
+def figure_template(sedml: str) -> dict[str, Any]:
+    """A digitization file for the curves a document plots, with the claim pairing filled in.
+
+    The pairing is the one mechanical part of this file and the one nobody can guess: a claim id
+    read off a SED-ML document is ``plot_0__plot_0_0_0__plot_0_0_1``, it has to match exactly, and
+    a digitization paired with an id the dossier does not carry is refused. So the template writes
+    the ids and the curve each one plots, and leaves everything that is a *reading* blank — the
+    figure, the tool, both axis ranges, and every point. None of those can be derived from a
+    document, and a template that filled in an axis range would be stating what a picture shows.
+
+    A curve the document already ships values for gets no stub, with the reason: those are the
+    paper's own recorded points, and a reading of a picture of them is a downgrade.
+    """
+    from .sedml import enumerate_sedml_claims
+
+    claims = enumerate_sedml_claims(sedml)
+    series, notes = [], []
+    for claim in claims:
+        if not claim.targetable:
+            continue
+        if claim.reference_data:
+            notes.append(
+                f"'{claim.id}' ({claim.quantity}) already carries the values your document ships, "
+                "so it needs no reading: a digitization of a picture of them would replace your "
+                "own recorded points"
+            )
+            continue
+        series.append({"claim": claim.id, "curve": claim.quantity, "points": []})
+    if not series:
+        notes.append(
+            "this document plots no curve that needs a reading, so there is nothing to digitize"
+        )
+    return {
+        "figure": "",
+        "digitizer": "",
+        "x_axis": {"minimum": None, "maximum": None, "unit": ""},
+        "y_axis": {"minimum": None, "maximum": None, "unit": "", "scale": "linear"},
+        "series": series,
+        "notes": notes,
+    }
+
+
+def unfilled_figure(record: Mapping[str, Any]) -> tuple[str, ...]:
+    """Which of a template's blanks are still blank, named one per line.
+
+    A template handed straight back is the ordinary mistake. Reading it would refuse on whichever
+    blank it happened to reach first, which says nothing about the other four; this says what is
+    left to write.
+    """
+    unfilled = [
+        f"'{field}' is blank — {what}"
+        for field, what in _FILL_IN
+        if not str(record.get(field) or "").strip()
+    ]
+    for which in ("x_axis", "y_axis"):
+        axis = record.get(which)
+        if not isinstance(axis, Mapping):
+            unfilled.append(f"'{which}' is missing — the range and unit the curve was read against")
+            continue
+        for key in ("minimum", "maximum"):
+            value = axis.get(key)
+            if value is None or isinstance(value, str) and not value.strip():
+                unfilled.append(f"'{which}.{key}' is blank — where that end of the axis sits")
+        if not str(axis.get("unit") or "").strip():
+            unfilled.append(f"'{which}.unit' is blank — what the axis measures")
+    for entry in record.get("series") or ():
+        if isinstance(entry, Mapping) and not (entry.get("points") or ()):
+            unfilled.append(
+                f"'{entry.get('claim', '?')}' has no points — the curve has not been read yet"
+            )
+    return tuple(unfilled)
+
+
 __all__ = [
     "Axis",
     "AxisScale",
     "DigitizedSeries",
     "attach_digitized_values",
     "curve_reference",
+    "figure_template",
     "read_digitized_figure",
     "resample_series",
     "series_resolution",
+    "unfilled_figure",
 ]

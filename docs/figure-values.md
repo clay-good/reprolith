@@ -28,6 +28,21 @@ One file is one figure panel: the axes are stated once, and every series in it w
 }
 ```
 
+Start from a template rather than a blank file, because the one mechanical part of this is also
+the one nobody can guess — a claim id read off a SED-ML document is
+`plot_0__plot_0_0_0__plot_0_0_1`, it has to match exactly, and a digitization paired with an id the
+dossier does not carry is refused:
+
+```bash
+reprolith figure-template --sedml experiment.sedml --out figure3a.json
+```
+
+It writes the ids and the curve each one plots, and leaves blank everything that is a *reading*:
+the figure, the tool, both axis ranges, and every point. None of those can be derived from a
+document, and a template that filled in an axis range would be stating what a picture shows.
+Handed straight back, `figure-check` names every blank still left rather than refusing on whichever
+one it reaches first.
+
 `claim` is the dossier claim these values are the reference for. That pairing is the curator's:
 no rule here decides that the upper curve of Figure 3A is the plasma claim rather than the liver
 one, exactly as no rule decides which table cell a reported Cmax came from.

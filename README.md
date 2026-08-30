@@ -171,6 +171,8 @@ reprolith claims-check \              # is each value printed in the table it ci
   --claims <claims.json> --tables <tables.json>
 reprolith params-check \              # does your model carry the values your paper reports?
   --model <model.xml> --parameters <parameters.json>
+reprolith figure-template \           # the digitization file, with the claim pairing filled in
+  --sedml <exp.sedml> [--out <figure3a.json>]
 reprolith figure-check \              # is this digitization of your figure usable as a reference?
   --series <figure3a.json>
 ```
@@ -197,9 +199,12 @@ refusing to compare any value an `initialAssignment` or a rule makes inert. On t
 metformin models it comes back clean: all ten tissue-plasma partition coefficients in each are the
 ones the paper's Table 3 prints.
 
-`figure-check` is the same shape for the other half of claim extraction: point it at a plot
-digitizer's output for one figure panel and it says what each series carries, how coarsely it was
-read, and refuses the readings that cannot be trusted. It reports the widest gap between readings
+`figure-template` and `figure-check` are the same shape for the other half of claim extraction.
+The template writes the one mechanical part of a digitization — which curve of your document each
+series is the reading for, an id nobody could guess and that has to match exactly — and leaves
+blank everything that is a reading: the figure, the tool, both axis ranges, every point. Then
+`figure-check` takes a plot digitizer's output for one figure panel and says what each series
+carries, how coarsely it was read, and refuses the readings that cannot be trusted. It reports the widest gap between readings
 rather than judging it — between two read points the reference is the curator's straight line, and
 how much of a comparison rests on that is theirs to weigh.
 

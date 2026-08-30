@@ -29,7 +29,12 @@ from typing import Any
 from .certify import Claim
 from .claim_candidates import propose_claims
 from .claims_template import claims_template, unfilled_claims
-from .digitization import read_digitized_figure, series_resolution
+from .digitization import (
+    figure_template,
+    read_digitized_figure,
+    series_resolution,
+    unfilled_figure,
+)
 from .export import build_bundle_sedml, build_omex_archive
 from .manuscript_values import (
     check_claim_values,
@@ -539,10 +544,48 @@ def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_figure_template(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Write the digitization file, with the one part of it nobody can guess filled in."""
+    try:
+        template = figure_template(Path(args.sedml).read_text(encoding="utf-8"))
+    except OSError as unreadable:
+        print(f"cannot read the document: {unreadable}", file=sys.stderr)
+        return 1
+    except (UnicodeDecodeError, ValueError) as unusable:
+        print(f"cannot read the document: {unusable}", file=sys.stderr)
+        return 1
+
+    rendered = json.dumps(template, indent=2, sort_keys=True) + "\n"
+    if args.out is None:
+        print(rendered, end="")
+        return 0
+    try:
+        Path(args.out).write_text(rendered, encoding="utf-8")
+    except OSError as unwritable:
+        print(f"cannot write the template: {unwritable}", file=sys.stderr)
+        return 1
+    print(f"wrote {args.out}")
+    print(f"  {len(template['series'])} curve(s) to read off your figure")
+    for note in template["notes"]:
+        print(f"  note: {note}")
+    print("  the pairing is filled in; the figure, the tool, both axes and every point are yours")
+    return 0
+
+
 def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Read a curator's figure digitization and say whether it is usable as a reference."""
     try:
-        series = read_digitized_figure(Path(args.series).read_text(encoding="utf-8"))
+        text = Path(args.series).read_text(encoding="utf-8")
+        # A template handed straight back is the ordinary mistake, and reading it would refuse on
+        # whichever blank it reached first — which says nothing about the other four.
+        loaded = json.loads(text)
+        blanks = unfilled_figure(loaded) if isinstance(loaded, dict) else ()
+        if blanks:
+            print("this digitization has not been filled in yet:", file=sys.stderr)
+            for blank in blanks:
+                print(f"  {blank}", file=sys.stderr)
+            return 1
+        series = read_digitized_figure(text)
     except OSError as unreadable:
         print(f"cannot read the digitization: {unreadable}", file=sys.stderr)
         return 1
@@ -848,6 +891,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--out", default=None, help="write here instead of to standard output")
     p.set_defaults(func=_cmd_claims_template)
+
+    p = sub.add_parser(
+        "figure-template",
+        help="write the digitization file for the curves your document plots (you read them)",
+    )
+    p.add_argument(
+        "--sedml", required=True,
+        help="your simulation document; its plots say which curves your paper shows",
+    )
+    p.add_argument("--out", default=None, help="write here instead of to standard output")
+    p.set_defaults(func=_cmd_figure_template)
 
     p = sub.add_parser(
         "figure-check",

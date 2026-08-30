@@ -46,9 +46,11 @@ from .digitization import (
     DigitizedSeries,
     attach_digitized_values,
     curve_reference,
+    figure_template,
     read_digitized_figure,
     resample_series,
     series_resolution,
+    unfilled_figure,
 )
 from .dossier import (
     Dossier,
@@ -416,6 +418,7 @@ __all__ = [
     "fba_solver_pin",
     "FbaModel",
     "FbaUnavailable",
+    "figure_template",
     "flux_variability",
     "frog_fingerprint",
     "FrogComparison",
@@ -571,6 +574,7 @@ __all__ = [
     "undetermined_shortfall",
     "unsupported_claims",
     "unfilled_claims",
+    "unfilled_figure",
     "UpdateScheme",
     "ValueCheck",
     "validate_constraint_based",

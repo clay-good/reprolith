@@ -526,7 +526,7 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     ).choices
     named = {
         "export", "archive-check", "claims-template", "claims-check", "claims-propose",
-        "params-check", "figure-check",
+        "params-check", "figure-check", "figure-template",
     }
     file_based = {name for name in subcommands if name in named}
     assert file_based == named
@@ -833,3 +833,45 @@ def test_figure_check_refuses_a_reading_off_its_own_axes(tmp_path, capsys):
 def test_figure_check_of_a_missing_file_is_a_message(tmp_path, capsys):
     assert run(["figure-check", "--series", str(tmp_path / "nope.json")]) == 1
     assert "cannot read the digitization" in capsys.readouterr().err
+
+
+def test_figure_template_writes_the_pairing_nobody_could_guess(tmp_path, capsys):
+    """A claim id off a SED-ML document is `plot_0__plot_0_0_0__plot_0_0_1` and has to match
+    exactly, so the template writes the ids and the curve each plots — and nothing that is a
+    reading: the figure, the tool, both axis ranges and every point stay blank."""
+    sedml = Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.sedml"
+    out = tmp_path / "figure.json"
+    assert run(["figure-template", "--sedml", str(sedml), "--out", str(out)]) == 0
+    assert "4 curve(s) to read off your figure" in capsys.readouterr().out
+
+    written = json.loads(out.read_text(encoding="utf-8"))
+    assert [s["claim"] for s in written["series"]] == [
+        "plot_0__plot_0_0_0__plot_0_0_1", "plot_0__plot_0_0_0__plot_0_1_1",
+        "plot_1__plot_1_0_0__plot_1_0_1", "plot_1__plot_1_0_0__plot_1_1_1",
+    ]
+    assert all(s["points"] == [] for s in written["series"])
+    assert written["figure"] == "" and written["digitizer"] == ""
+    assert written["x_axis"]["minimum"] is None and written["y_axis"]["unit"] == ""
+
+
+def test_a_template_handed_straight_back_is_told_what_is_left_to_write(tmp_path, capsys):
+    """Reading it would refuse on whichever blank it reached first, which says nothing about the
+    other four. Every blank is named, and the command is the one that names them."""
+    sedml = Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.sedml"
+    out = tmp_path / "figure.json"
+    run(["figure-template", "--sedml", str(sedml), "--out", str(out)])
+    capsys.readouterr()
+
+    assert run(["figure-check", "--series", str(out)]) == 1
+    error = capsys.readouterr().err
+    assert "has not been filled in yet" in error
+    for blank in ("'figure' is blank", "'digitizer' is blank", "'x_axis.minimum' is blank",
+                  "'y_axis.unit' is blank", "has no points"):
+        assert blank in error
+
+
+def test_figure_template_from_a_document_that_is_not_one_is_a_message(tmp_path, capsys):
+    bad = tmp_path / "not.sedml"
+    bad.write_text("<not-sedml", encoding="utf-8")
+    assert run(["figure-template", "--sedml", str(bad)]) == 1
+    assert "cannot read the document" in capsys.readouterr().err
