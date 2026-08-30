@@ -28,11 +28,28 @@ from typing import IO, Any
 from .catalog import AmbiguousMerge, Catalog, CatalogEntry, Identifiers, IllegalTransition
 from .enums import LifecycleState, ModelClass
 from .model import Certificate
+from .oracle import ReferenceKind
 from .query import ReprolithQuery
 from .run import advance_to_outcome, require_same_paper
 from .supersession import CertificateLedger
 
 PROTOCOL_VERSION = "2024-11-05"
+
+#: The reference kinds an inline linter accepts, as the tool's own schema publishes them. A value
+#: read off a figure is judged in a band roughly twice a printed number's, and until this was
+#: offered an agent had no way to say which it had: every inline verdict was computed at the
+#: numeric tolerance, so a curve digitized off a plot came back `partial` where the repository's
+#: own judge — given the same numbers and the kind the claim carries — says `reproduced`. That is
+#: the surfaces disagreeing about one claim, which is the thing this server exists not to do.
+_REFERENCE_KIND_PROPERTY = {
+    "type": "string",
+    "enum": [kind.value for kind in ReferenceKind],
+    "description": (
+        "what the reference is: 'numeric' (a value the paper prints) or 'digitized-figure' "
+        "(a value read off a plot, judged in a wider band). Defaults to numeric."
+    ),
+}
+
 
 _ONE_DIGEST = {
     "type": "object",
@@ -138,6 +155,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                 },
                 "duration": {"type": "number"},
                 "steps": {"type": "integer"},
+                "reference_kind": _REFERENCE_KIND_PROPERTY,
             },
             "required": ["sbml", "species", "reference", "duration", "steps"],
         },
@@ -202,6 +220,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                     "items": {"type": "object"},
                     "description": "simulated percentile bands at the same percentiles",
                 },
+                "reference_kind": _REFERENCE_KIND_PROPERTY,
             },
             "required": ["reported", "predicted"],
         },
@@ -264,6 +283,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                     "additionalProperties": {"type": "number"},
                     "description": "optional exchange-reaction id -> maximum uptake",
                 },
+                "reference_kind": _REFERENCE_KIND_PROPERTY,
             },
             "required": ["sbml", "reported"],
         },
@@ -761,6 +781,7 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
             reference=reference,
             duration=_bounded_duration(arguments["duration"]),
             steps=steps,
+            reference_kind=_reference_kind(arguments),
         )
         return result.to_dict()
     if name == "lint_steady_state":
@@ -784,7 +805,10 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         for side in ("reported", "predicted"):
             for band in _bounded_length(arguments[side], name=side):
                 _bounded_length(band.get("curve", ()), name=f"{side} band curve")
-        return lint_distribution(arguments["reported"], arguments["predicted"]).to_dict()
+        return lint_distribution(
+            arguments["reported"], arguments["predicted"],
+            reference_kind=_reference_kind(arguments),
+        ).to_dict()
     if name == "lint_diffusion":
         from .linter import lint_diffusion
 
@@ -821,6 +845,7 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
             arguments["sbml"],
             reported=arguments["reported"],
             medium=arguments.get("medium"),
+            reference_kind=_reference_kind(arguments),
         ).to_dict()
     raise KeyError(f"unknown tool: {name}")
 
@@ -864,6 +889,25 @@ def _declared_schema(name: str) -> dict[str, Any] | None:
             schema: dict[str, Any] = tool.get("inputSchema") or {}
             return schema
     return None
+
+
+def _reference_kind(arguments: dict[str, Any]) -> ReferenceKind:
+    """The reference kind the caller named, defaulting to a printed number.
+
+    Refused by name rather than falling back: a kind this server does not know is a caller
+    believing their claim is judged one way while it is judged another, and the wrong direction
+    to guess in is silently.
+    """
+    stated = arguments.get("reference_kind")
+    if stated is None:
+        return ReferenceKind.NUMERIC
+    try:
+        return ReferenceKind(stated)
+    except ValueError:
+        raise ValueError(
+            f"'{stated}' is not a reference kind; this server knows "
+            + ", ".join(kind.value for kind in ReferenceKind)
+        ) from None
 
 
 def _validate_arguments(name: str, arguments: dict[str, Any]) -> None:

@@ -1260,3 +1260,47 @@ def test_a_well_formed_lookup_is_untouched() -> None:
     query, digest = _fixture()
     payload, is_error = _call(query, "certificates_for", {"doi": "10.1/x"})
     assert not is_error and payload == [digest]
+
+
+def test_an_agent_can_say_its_reference_was_read_off_a_figure() -> None:
+    """Parity, on the one input that changes a verdict without changing a number.
+
+    A value read off a plot is judged in a band roughly twice a printed number's, and the inline
+    linter had no way to be told which it had — so every agent verdict was computed at the numeric
+    tolerance, and a digitized curve came back `partial` where this repository's own judge, given
+    the same numbers and the kind the claim carries, says `reproduced`. The tool now publishes the
+    field it accepts, and the schema is enforced.
+    """
+    from reprolith import ComparisonMethod, ReferenceKind, Verdict, default_tolerance
+    from reprolith.linter import _checked, _curve_lint
+
+    reference = tuple(float(v) for v in (10.0, 8.0, 6.0, 4.0, 2.0))
+    predicted = tuple(v * 0.85 for v in reference)  # 15% low: partial numerically, a pass off a plot
+
+    def lint(kind: ReferenceKind):
+        tol = _checked(
+            default_tolerance(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, kind),
+            ComparisonMethod.CURVE_NORMALIZED_DISTANCE, kind,
+        )
+        return _curve_lint(reference, predicted, tol)
+
+    assert lint(ReferenceKind.NUMERIC).verdict is Verdict.PARTIAL
+    assert lint(ReferenceKind.DIGITIZED_FIGURE).verdict is Verdict.REPRODUCED
+
+    published = next(t for t in TOOL_DEFINITIONS if t["name"] == "lint")
+    kinds = published["inputSchema"]["properties"]["reference_kind"]["enum"]
+    assert set(kinds) == {kind.value for kind in ReferenceKind}
+    # Not required: a caller that says nothing gets a printed number's band, as before.
+    assert "reference_kind" not in published["inputSchema"]["required"]
+
+
+def test_a_reference_kind_this_server_does_not_know_is_refused_by_name() -> None:
+    """Falling back to numeric would leave a caller believing their claim is judged one way while
+    it is judged another, which is the wrong direction to guess in silently."""
+    from reprolith import ReferenceKind
+    from reprolith.mcp_server import _reference_kind
+
+    assert _reference_kind({}) is ReferenceKind.NUMERIC
+    assert _reference_kind({"reference_kind": "digitized-figure"}) is ReferenceKind.DIGITIZED_FIGURE
+    with pytest.raises(ValueError, match="is not a reference kind"):
+        _reference_kind({"reference_kind": "eyeballed"})

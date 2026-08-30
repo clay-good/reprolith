@@ -60,11 +60,11 @@ call, `[]` or `null` reads as a fact about the paper rather than about the call.
 | `self_validation` | — | The blind track record per class: matched / abstained / other, aggregate only |
 | `dossier` | `accession` | The ingested dossier — extracted model structure |
 | `bundle` | `accession` | The reconstruction bundle — model, recipe, assumptions |
-| `lint` | `sbml`, `species`, `reference`, `duration`, `steps` | A deterministic per-claim verdict for an ODE model curve (needs the engine extra) |
-| `lint_objective` | `sbml`, `reported`, `medium` (optional) | A deterministic verdict for an SBML-fbc model's optimal objective under an optional medium (needs the engine and fba extras) |
+| `lint` | `sbml`, `species`, `reference`, `duration`, `steps`, `reference_kind` (optional) | A deterministic per-claim verdict for an ODE model curve (needs the engine extra) |
+| `lint_objective` | `sbml`, `reported`, `medium` (optional), `reference_kind` (optional) | A deterministic verdict for an SBML-fbc model's optimal objective under an optional medium (needs the engine and fba extras) |
 | `lint_steady_state` | `rules`, `reported` | A deterministic verdict on whether a reported steady state is a fixed point of a supplied Boolean network (pure, no extra) |
 | `lint_estimation` | `reported`, `recovered` | A deterministic verdict on a re-derived parameter estimate vs a reported one, at the estimation tolerance (pure, no extra) |
-| `lint_distribution` | `reported`, `predicted` | A deterministic verdict on a simulated percentile envelope vs a reported one, worst-band governed (pure, no extra) |
+| `lint_distribution` | `reported`, `predicted`, `reference_kind` (optional) | A deterministic verdict on a simulated percentile envelope vs a reported one, worst-band governed (pure, no extra) |
 | `lint_stochastic` | `sbml`, `species`, `reported_mean`, `duration`, `trajectories`, `seed` | A deterministic verdict on an SBML reaction network's mean species count via a pinned Gillespie SSA (needs the engine extra) |
 | `lint_diffusion` | `initial`, `reference`, `diffusivity`, `dx`, `dt`, `steps`, `decay` (optional) | A deterministic verdict on a 1-D diffusion profile vs a reported one, by curve distance (pure, no extra) |
 
@@ -133,6 +133,17 @@ Find the metformin certificate and read its verdict (JSON-RPC over stdio):
 The verdict comes back `partially-reproduced` — the model reproduces its paper's reported Cmax,
 but only under a load-bearing salt-form assumption, which the certificate flags. See
 [`../datasets/worked_examples/`](../datasets/worked_examples/) for that certificate in full.
+
+### Saying what the reference is
+
+Three linters take an optional `reference_kind`: `numeric` (a value the paper prints, the default)
+or `digitized-figure` (a value read off a plot). It is not cosmetic — a figure reading is judged in
+a band roughly twice a printed number's, because reading a curve off a picture has an uncertainty a
+printed number does not. Until it was offered an agent had no way to say which it held, so every
+inline verdict was computed at the numeric tolerance and a digitized curve came back `partial`
+where this repository's own judge, given the same numbers and the kind the claim carries, says
+`reproduced`. A kind the server does not know is refused by name rather than falling back, since
+the wrong direction to guess in is silently.
 
 ## Parity
 
