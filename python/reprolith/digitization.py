@@ -411,6 +411,43 @@ def pairing_faults(
     return tuple(faults)
 
 
+def window_faults(
+    series: Iterable[DigitizedSeries],
+    windows: Sequence[tuple[float, float]],
+    *,
+    carrier: str = "this dossier",
+) -> tuple[str, ...]:
+    """Every reading that does not cover a window the document actually runs.
+
+    Nothing is extrapolated: a claim is judged on the run's own samples, and a sample past either
+    end of what the curator read raises rather than being padded with the nearest value. That
+    refusal is right and it arrives late — at the join, in Python, after the curator has finished.
+    A reading that starts at 0.5 h against a run that starts at 0 is a file that is internally
+    perfect and cannot be used, and the two numbers that say so are both on disk while the curator
+    is still at the terminal.
+
+    A series covering *any* of the windows is not reported: a document running several time courses
+    is one figure per window, and the curator read one of them.
+
+    Windows are compared as numbers, because that is all either file states. A figure read in hours
+    against a model whose time is in minutes fails here — and it fails at the join too, for the same
+    reason, so naming it is the earliest this repository can say it.
+    """
+    faults = []
+    stated = ", ".join(f"{start:g}-{end:g}" for start, end in windows)
+    for reading in series:
+        xs = [x for x, _ in reading.points]
+        low, high = min(xs), max(xs)
+        if any(low <= start and high >= end for start, end in windows):
+            continue
+        faults.append(
+            f"series '{reading.claim_id}' was read over {low:g}-{high:g} "
+            f"{reading.x_axis.unit}, and {carrier} runs {stated}: a claim judged over that window "
+            "needs values outside what was read, and nothing here is extrapolated"
+        )
+    return tuple(faults)
+
+
 def attach_digitized_values(
     claims: Iterable[DossierClaim],
     series: Iterable[DigitizedSeries],
@@ -542,4 +579,5 @@ __all__ = [
     "resample_series",
     "series_resolution",
     "unfilled_figure",
+    "window_faults",
 ]

@@ -156,8 +156,10 @@ a change under `openspec/changes/`.
   so the wider band is not escapable. The pairing a curator cannot verify by eye — the claim ids the
   template filled in — is checked against the document those ids came from when `figure-check` is
   given it (2026-08-31), which is where a typo, a renamed output, or a file filled in against an
-  older document stops; without a document the report says the ids were not checked rather than
-  reading clean over a check nobody made. Reprolith reads no pixels and this does not pretend to:
+  older document stops — as is a reading that does not cover the window the document runs, which
+  nothing extrapolates over and which the join therefore refuses long after the curator has gone.
+  Without a document the report says the ids were not checked rather than reading clean over a
+  check nobody made. Reprolith reads no pixels and this does not pretend to:
   the reading is a human act. What it needs next is a curator's digitization of a figure from a paper
   already in this corpus; none exists, so it is validated against series generated from known
   functions, the same fence items 7 and 8 carry.

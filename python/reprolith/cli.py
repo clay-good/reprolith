@@ -35,6 +35,7 @@ from .digitization import (
     read_digitized_figure,
     series_resolution,
     unfilled_figure,
+    window_faults,
 )
 from .export import build_bundle_sedml, build_omex_archive
 from .manuscript_values import (
@@ -595,11 +596,13 @@ def _cmd_figure_template(query: ReprolithQuery, args: argparse.Namespace) -> int
     return 0
 
 
-def _document_claims(args: argparse.Namespace) -> tuple[Any, ...] | None:
-    """The curves the given document plots, or ``None`` when no document was given."""
+def _document_claims(
+    args: argparse.Namespace,
+) -> tuple[tuple[Any, ...], tuple[tuple[float, float], ...]] | None:
+    """The curves the given document plots and the windows it runs, or ``None`` without one."""
     if args.archive is None and args.sedml is None:
         return None
-    from .sedml import enumerate_sedml_claims
+    from .sedml import enumerate_sedml_claims, parse_sedml_recipes
 
     if args.archive is not None:
         from .omex import archive_documents
@@ -612,7 +615,12 @@ def _document_claims(args: argparse.Namespace) -> tuple[Any, ...] | None:
             )
     else:
         document = Path(args.sedml).read_text(encoding="utf-8")
-    return tuple(enumerate_sedml_claims(document))
+    # `parse_sedml_recipes` drops any time course it cannot run verbatim, so an empty set of
+    # windows is "this document states no run to judge a curve over" and not "the run is 0-0".
+    windows = tuple(dict.fromkeys(
+        (recipe.output_start, recipe.duration) for recipe in parse_sedml_recipes(document)
+    ))
+    return tuple(enumerate_sedml_claims(document)), windows
 
 
 def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
@@ -647,7 +655,7 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     # are the right ones is a question about the document they were read off, which this command
     # was never given. That is reported below rather than passed over silently.
     try:
-        claims = _document_claims(args)
+        read = _document_claims(args)
     except OSError as unreadable:
         print(f"cannot read the document: {unreadable}", file=sys.stderr)
         return 1
@@ -655,7 +663,11 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"cannot read the document: {unusable}", file=sys.stderr)
         return 1
 
+    claims, windows = read if read is not None else (None, ())
     faults = pairing_faults(claims, series, carrier="your document") if claims is not None else ()
+    # A reading that does not span the run is refused at the join, in Python, long after the
+    # curator has finished — and both numbers that say so are on disk while they are still here.
+    short = window_faults(series, windows, carrier="your document") if windows else ()
     # A curator reads one panel at a time, so a document whose other curves are unread is the
     # ordinary case and not a fault. It is said, because "checked clean" over one of nine curves
     # reads as nine.
@@ -673,9 +685,11 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
                 "checked_against": "archive" if args.archive is not None else "sedml",
                 "faults": list(faults),
                 "curves_not_read": list(unread),
+                "windows": [list(w) for w in windows],
+                "window_faults": list(short),
             },
         })
-        return 1 if faults else 0
+        return 1 if faults or short else 0
     print(f"{len(series)} SERIES READ FROM {series[0].figure}, DIGITIZED WITH {series[0].digitizer}")
     for reading, resolution in zip(series, resolutions):
         low, high = resolution["span"]
@@ -692,13 +706,17 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     else:
         for fault in faults:
             print(f"  PAIRED WITH THE WRONG CLAIM: {fault}")
+        for fault in short:
+            print(f"  READ OVER TOO SHORT A WINDOW: {fault}")
         if unread:
             print(f"  {len(unread)} curve(s) your document plots are not read here, and stay "
                   f"unjudged: {', '.join(unread)}")
-        if not faults:
+        if not faults and not short:
             print("  every series is paired with a curve your document plots and can carry values")
+            if windows:
+                print("  and every one of them covers a window your document runs")
     print("  no model was run and no claim was judged: this reads the file, nothing else")
-    return 1 if faults else 0
+    return 1 if faults or short else 0
 
 
 def _cmd_claims_template(query: ReprolithQuery, args: argparse.Namespace) -> int:

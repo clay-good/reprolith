@@ -30,6 +30,7 @@ from reprolith import (
     resample_series,
     series_resolution,
     undetermined_shortfall,
+    window_faults,
 )
 from reprolith.digitization import Axis, AxisScale, DigitizedSeries
 
@@ -269,6 +270,28 @@ def test_every_way_the_pairing_is_wrong_is_named_at_once() -> None:
     # The claim that is paired correctly is not among them.
     assert not any("fig-3a" in fault for fault in faults)
     assert pairing_faults(_CLAIMS, [_series([[0, 1.0], [24, 2.0]])]) == ()
+
+
+def test_a_reading_is_measured_against_every_window_the_document_runs() -> None:
+    """The same refusal `resample_series` makes at the join, said while the curator is still here.
+
+    A document running several time courses is one figure per window, so covering any of them is
+    covering the one this panel was read off — and a reading that covers none of them is a file
+    that cannot be used, whichever it was meant for.
+    """
+    read_late = _series([[6, 1.0], [18, 2.0]])
+    assert window_faults([read_late], [(0.0, 24.0)], carrier="your document") == (
+        "series 'fig-3a' was read over 6-18 h, and your document runs 0-24: a claim judged over "
+        "that window needs values outside what was read, and nothing here is extrapolated",
+    )
+    # It really is the join's own rule, arriving earlier: the reading it names is the one
+    # `curve_reference` refuses.
+    with pytest.raises(ValueError, match="only extrapolation"):
+        curve_reference(read_late, duration=24.0, steps=4)
+
+    covers_the_shorter_run = _series([[0, 1.0], [12, 2.0]])
+    assert window_faults([covers_the_shorter_run], [(0.0, 24.0), (0.0, 12.0)]) == ()
+    assert len(window_faults([covers_the_shorter_run], [(0.0, 24.0), (0.0, 48.0)])) == 1
 
 
 def test_a_figure_claim_reaches_a_verdict_it_could_not_reach_before() -> None:

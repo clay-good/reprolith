@@ -214,8 +214,11 @@ curve can carry a reading at all, and that it is not one the document already sh
 claim id is `plot_0__plot_0_0_0__plot_0_0_1` and has to match exactly, so a typo, a renamed output,
 or a digitization read against last month's document is a reading of nothing — and those three
 refusals used to be reachable only from Python, which is to say only after somebody else ran the
-join. Without a document the report says the ids were not checked, rather than reading clean over a
-check nobody made. The curves this panel does not read are named and not counted against it: a
+join. It also compares each reading against the window the document runs: nothing
+here is extrapolated, so a curve read from 0.5 h against a run that starts at 0 is a file that is
+internally perfect and cannot be used, and both numbers that say so are on disk while the curator
+is still at the terminal. Without a document the report says the ids were not checked, rather than
+reading clean over a check nobody made. The curves this panel does not read are named and not counted against it: a
 curator reads one panel at a time, and "clean" over one of four curves would otherwise read as
 four.
 

@@ -834,14 +834,15 @@ def test_figure_check_refuses_a_reading_off_its_own_axes(tmp_path, capsys):
 _KINETIC_SEDML = Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.sedml"
 
 
-def _digitization(path: Path, claim: str) -> Path:
-    """A filled digitization of one panel, paired with ``claim``."""
+def _digitization(path: Path, claim: str, *, span: tuple[float, float] = (0, 9000)) -> Path:
+    """A filled digitization of one panel, paired with ``claim`` and read over ``span``."""
+    low, high = span
     path.write_text(json.dumps({
         "figure": "Figure 2A", "digitizer": "WebPlotDigitizer 4.7",
-        "x_axis": {"minimum": 0, "maximum": 100, "unit": "s"},
+        "x_axis": {"minimum": 0, "maximum": 9000, "unit": "s"},
         "y_axis": {"minimum": 0, "maximum": 300, "unit": "nM"},
         "series": [{"claim": claim, "curve": "MAPK_PP",
-                    "points": [[0, 10.0], [50, 280.0], [100, 40.0]]}],
+                    "points": [[low, 10.0], [(low + high) / 2, 280.0], [high, 40.0]]}],
     }), encoding="utf-8")
     return path
 
@@ -855,6 +856,7 @@ def test_figure_check_checks_the_pairing_against_the_document_it_was_read_off(tm
     assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML)]) == 0
     printed = capsys.readouterr().out
     assert "every series is paired with a curve your document plots" in printed
+    assert "covers a window your document runs" in printed
     assert "3 curve(s) your document plots are not read here" in printed
     assert "plot_1__plot_1_0_0__plot_1_1_1" in printed
 
@@ -877,6 +879,21 @@ def test_figure_check_refuses_a_reading_paired_with_a_claim_that_is_not_a_target
     series = _digitization(tmp_path / "fig2a.json", "autogen_task_fig2a_MKKK")
     assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML)]) == 1
     assert "never staked" in capsys.readouterr().out
+
+
+def test_figure_check_refuses_a_reading_that_does_not_cover_the_window_the_document_runs(
+    tmp_path, capsys,
+):
+    """Nothing is extrapolated, so a reading that starts after the run does is a file that is
+    internally perfect and cannot be used. That refusal exists — at the join, in Python, after the
+    curator has gone home — and both numbers that say so are on disk while they are still here."""
+    series = _digitization(tmp_path / "fig2a.json", "plot_0__plot_0_0_0__plot_0_0_1",
+                           span=(300, 9000))
+    assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML)]) == 1
+    printed = capsys.readouterr().out
+    assert "READ OVER TOO SHORT A WINDOW" in printed
+    assert "was read over 300-9000 s, and your document runs 0-9000" in printed
+    assert "nothing here is extrapolated" in printed
 
 
 def test_figure_check_without_a_document_says_the_pairing_was_not_checked(tmp_path, capsys):

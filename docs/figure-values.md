@@ -68,6 +68,14 @@ join. `figure-check` and the join now ask the same function, so the way in and t
 disagree about what a bad pairing is, and every fault is named at once rather than the first one
 reached.
 
+The document also states the *window* each curve is plotted over, and that is the second thing a
+curator cannot see in their own file. Nothing here is extrapolated, so a reading that starts after
+the run does — 0.5 h against a run from 0 — is internally perfect and cannot be used: the join
+refuses it rather than padding the gap with the nearest value. Both numbers are on disk while the
+curator is still at the terminal, so the refusal is made there instead of in Python afterwards. A
+document running several time courses is one figure per window, so covering any one of them is
+covering the one this panel was read off.
+
 Two things it reports rather than refuses. The curves the document plots that this file does not
 read: a curator reads one panel at a time, and a partial digitization is the ordinary case — but a
 report that said "clean" over one of four curves would read as four. And, when no document is
@@ -82,7 +90,7 @@ the shape this repository has been caught by before.
 | A point outside the axes the curator states | Every digitizer works by calibrating two axis points and mapping pixels through them. Get that wrong and the values come out ordered, smooth, plausible and wrong by a constant factor — the most confident wrong answer available, and invisible to every check downstream. A reading off the top of its own axis is the cheapest evidence it happened. |
 | Two readings at one x, or a single point | Two values for one place is not a curve, and one point is not one either. |
 | Two curves paired with one claim | Which curve a claim reads is the curator's statement, and two of them is not one. |
-| Resampling outside the digitized span | Past the last point that was read there is no reference. Returning the last read value there compares the model against the edge of a picture. |
+| Resampling outside the digitized span | Past the last point that was read there is no reference. Returning the last read value there compares the model against the edge of a picture. Given the document, `figure-check` says this while the curator can still act on it: a reading that does not cover a window the document runs is named there rather than at the join. |
 | Giving values to a claim that has them | A curve plotted from a data file the archive ships carries the paper's own recorded series. Replacing that with a reading off a picture of it is a downgrade performed silently. |
 | Giving values to a non-targetable claim | A `report`'s data set is retained non-targetable on purpose; handing it values promotes it into a result the paper never staked. That is a [tracked revision](../openspec/specs/paper-ingestion/spec.md), not a side effect of attaching a figure. |
 

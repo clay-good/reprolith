@@ -52,6 +52,7 @@ from .digitization import (
     resample_series,
     series_resolution,
     unfilled_figure,
+    window_faults,
 )
 from .dossier import (
     Dossier,
@@ -577,6 +578,7 @@ __all__ = [
     "unsupported_claims",
     "unfilled_claims",
     "unfilled_figure",
+    "window_faults",
     "UpdateScheme",
     "ValueCheck",
     "validate_constraint_based",
