@@ -30,6 +30,7 @@ from .certify import Claim
 from .claim_candidates import propose_claims
 from .claims_template import claims_template, unfilled_claims
 from .digitization import (
+    AmbiguousPanel,
     DigitizedSeries,
     figure_template,
     pairing_faults,
@@ -572,7 +573,12 @@ def _cmd_figure_template(query: ReprolithQuery, args: argparse.Namespace) -> int
                 return 1
         else:
             document = Path(args.sedml).read_text(encoding="utf-8")
-        template = figure_template(document)
+        template = figure_template(document, panel=args.plot)
+    except AmbiguousPanel as ambiguous:
+        # Not a defect in the document: a paper with two panels is a paper with two panels, and
+        # what is missing is the curator's statement of which one they read.
+        print(str(ambiguous), file=sys.stderr)
+        return 1
     except OSError as unreadable:
         print(f"cannot read the document: {unreadable}", file=sys.stderr)
         return 1
@@ -1019,6 +1025,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--sedml", default=None,
         help="your simulation document, when it is not packaged; its plots say which curves your "
              "paper shows",
+    )
+    p.add_argument(
+        "--plot", default=None,
+        help="which of your document's plots this file is the reading of, when it has more than "
+             "one; one file is one panel, because its axes are stated once",
     )
     p.add_argument("--out", default=None, help="write here instead of to standard output")
     p.set_defaults(func=_cmd_figure_template)

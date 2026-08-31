@@ -41,6 +41,7 @@ from .constraint_based import (
 from .corroboration import EngineCorroboration, corroborate_curve
 from .determinism import certificate_digest, same_modulo_run_metadata
 from .digitization import (
+    AmbiguousPanel,
     Axis,
     AxisScale,
     DigitizedSeries,
@@ -327,6 +328,7 @@ __all__ = [
     "archive_report",
     "assess_match",
     "Assumption",
+    "AmbiguousPanel",
     "attach_digitized_values",
     "Attribution",
     "audit_loop_notes",

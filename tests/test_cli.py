@@ -991,13 +991,14 @@ def test_figure_template_writes_the_pairing_nobody_could_guess(tmp_path, capsys)
     reading: the figure, the tool, both axis ranges and every point stay blank."""
     sedml = Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.sedml"
     out = tmp_path / "figure.json"
-    assert run(["figure-template", "--sedml", str(sedml), "--out", str(out)]) == 0
-    assert "4 curve(s) to read off your figure" in capsys.readouterr().out
+    assert run(["figure-template", "--sedml", str(sedml), "--plot", "plot_0",
+                "--out", str(out)]) == 0
+    assert "2 curve(s) to read off your figure" in capsys.readouterr().out
 
     written = json.loads(out.read_text(encoding="utf-8"))
+    # This document plots two panels, and one file is one of them.
     assert [s["claim"] for s in written["series"]] == [
         "plot_0__plot_0_0_0__plot_0_0_1", "plot_0__plot_0_0_0__plot_0_1_1",
-        "plot_1__plot_1_0_0__plot_1_0_1", "plot_1__plot_1_0_0__plot_1_1_1",
     ]
     assert all(s["points"] == [] for s in written["series"])
     assert written["figure"] == "" and written["digitizer"] == ""
@@ -1009,7 +1010,7 @@ def test_a_template_handed_straight_back_is_told_what_is_left_to_write(tmp_path,
     other four. Every blank is named, and the command is the one that names them."""
     sedml = Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.sedml"
     out = tmp_path / "figure.json"
-    run(["figure-template", "--sedml", str(sedml), "--out", str(out)])
+    run(["figure-template", "--sedml", str(sedml), "--plot", "plot_0", "--out", str(out)])
     capsys.readouterr()
 
     assert run(["figure-check", "--series", str(out)]) == 1
@@ -1018,6 +1019,25 @@ def test_a_template_handed_straight_back_is_told_what_is_left_to_write(tmp_path,
     for blank in ("'figure' is blank", "'digitizer' is blank", "'x_axis.minimum' is blank",
                   "'y_axis.unit' is blank", "has no points"):
         assert blank in error
+
+
+def test_figure_template_will_not_write_two_panels_into_one_file(tmp_path, capsys):
+    """A file states its axes once, because one file is one panel. Two plots' curves under one
+    pair of axis ranges is the second panel read against the first panel's calibration — ordered,
+    smooth, plausible and wrong by a constant factor, which is exactly what the axis-range refusal
+    catches and cannot see once it is baked into the file."""
+    sedml = Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.sedml"
+    assert run(["figure-template", "--sedml", str(sedml)]) == 1
+    error = capsys.readouterr().err
+    assert "this document plots 2: 'plot_0' (Figure 2A), 'plot_1' (Figure 2B)" in error
+    # Not a defect in the author's document, and it does not say it is.
+    assert "cannot read the document" not in error
+
+
+def test_figure_template_names_the_plots_it_has_when_asked_for_one_it_does_not(tmp_path, capsys):
+    sedml = Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.sedml"
+    assert run(["figure-template", "--sedml", str(sedml), "--plot", "plot_9"]) == 1
+    assert "no plot 'plot_9'" in capsys.readouterr().err
 
 
 def test_figure_template_from_a_document_that_is_not_one_is_a_message(tmp_path, capsys):
@@ -1056,11 +1076,12 @@ def test_figure_template_reads_the_document_out_of_an_archive_too(tmp_path, caps
         )
 
     out = tmp_path / "figure.json"
-    assert run(["figure-template", str(archive), "--out", str(out)]) == 0
+    assert run(["figure-template", str(archive), "--plot", "plot_1", "--out", str(out)]) == 0
     packaged = json.loads(out.read_text(encoding="utf-8"))
 
     loose = tmp_path / "loose.json"
-    run(["figure-template", "--sedml", str(kinetic / "BIOMD0000000010.sedml"), "--out", str(loose)])
+    run(["figure-template", "--sedml", str(kinetic / "BIOMD0000000010.sedml"), "--plot", "plot_1",
+         "--out", str(loose)])
     # The two forms cannot reach different pairings: it is the same document either way.
     assert packaged == json.loads(loose.read_text(encoding="utf-8"))
 

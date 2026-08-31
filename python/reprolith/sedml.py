@@ -19,8 +19,9 @@ import csv
 import io
 import re
 import xml.etree.ElementTree as ET
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, replace
+from typing import Any
 
 from .dossier import DossierClaim
 from .oracle import ReferenceKind
@@ -473,6 +474,80 @@ def sedml_model_sources(sedml: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys(s for s in sources if s and not s.startswith("#")))
 
 
+@dataclass(frozen=True)
+class SedmlPanel:
+    """One plot of a SED-ML document: the panel a digitization file is a reading of.
+
+    A digitization file states its axes once, because one file is one panel — so which curves
+    belong to which plot is not presentation, it is the boundary of a file. A template that put
+    two plots' curves in one file would hand a curator one pair of axis ranges for two pictures,
+    and the second panel's readings would be calibrated against the first panel's axes: values
+    that are ordered, smooth, plausible and wrong by a constant factor, which is the exact failure
+    the axis-range refusal exists to catch and cannot see once it is written into the file.
+    """
+
+    plot_id: str
+    name: str | None
+    curve_ids: tuple[str, ...]
+
+    @property
+    def label(self) -> str:
+        """How to name this panel to a curator: its id, and the document's own name for it."""
+        return f"'{self.plot_id}'" + (f" ({self.name})" if self.name else "")
+
+
+def _plot_marks(
+    root: ET.Element, generators: Mapping[str, Any]
+) -> Iterator[tuple[str, str | None, str, ET.Element, str, str, Any]]:
+    """Every plotted curve or surface of a document, with the plot it belongs to.
+
+    One walk, so the claim reader and the panel reader cannot disagree about which curves exist or
+    what a curve with no ``id`` of its own is called.
+    """
+    for output in root.iter():
+        kind = _localname(output.tag)
+        if kind not in ("plot2D", "plot3D"):
+            continue
+        plot_id = output.get("id") or kind
+        marks = (c for c in output.iter() if _localname(c.tag) in ("curve", "surface"))
+        for index, curve in enumerate(marks):
+            # The dependent quantity is z on a surface and y on a curve; x is the axis.
+            ref = curve.get("zDataReference") or curve.get("yDataReference") or ""
+            generator = generators.get(ref)
+            if generator is None or generator.is_time:
+                continue
+            curve_id = curve.get("id") or f"{plot_id}_{_localname(curve.tag)}{index}"
+            yield plot_id, output.get("name"), kind, curve, curve_id, ref, generator
+
+
+def enumerate_sedml_panels(sedml: str) -> tuple[SedmlPanel, ...]:
+    """The document's plots, in document order, each with the curves it draws.
+
+    Raises ``ValueError`` if the text is not parseable SED-ML.
+    """
+    try:
+        root = ET.fromstring(sedml)
+    except ET.ParseError as exc:
+        raise ValueError(f"not parseable SED-ML: {exc}") from exc
+
+    generators = _read_generators(root)
+    order: list[str] = []
+    names: dict[str, str | None] = {}
+    curves: dict[str, list[str]] = {}
+    for plot_id, plot_name, _kind, _curve, curve_id, _ref, _generator in _plot_marks(
+        root, generators
+    ):
+        if plot_id not in curves:
+            order.append(plot_id)
+            names[plot_id] = plot_name
+            curves[plot_id] = []
+        curves[plot_id].append(curve_id)
+    return tuple(
+        SedmlPanel(plot_id=plot_id, name=names[plot_id], curve_ids=tuple(curves[plot_id]))
+        for plot_id in order
+    )
+
+
 def enumerate_sedml_claims(
     sedml: str, *, data: Mapping[str, Sequence[float]] | None = None
 ) -> tuple[DossierClaim, ...]:
@@ -529,22 +604,9 @@ def enumerate_sedml_claims(
     claims: list[DossierClaim] = []
     plotted: set[str] = set()
 
-    for output in root.iter():
-        kind = _localname(output.tag)
-        if kind not in ("plot2D", "plot3D"):
-            continue
-        plot_id = output.get("id") or kind
-        plot_name = output.get("name")
-        where = f"SED-ML {kind} '{plot_id}'" + (f" ({plot_name})" if plot_name else "")
-        marks = (c for c in output.iter() if _localname(c.tag) in ("curve", "surface"))
-        for index, curve in enumerate(marks):
-            # The dependent quantity is z on a surface and y on a curve; x is the axis.
-            ref = curve.get("zDataReference") or curve.get("yDataReference")
-            generator = generators.get(ref or "")
-            if generator is None or generator.is_time:
-                continue
-            plotted.add(ref or "")
-            curve_id = curve.get("id") or f"{plot_id}_{_localname(curve.tag)}{index}"
+    for plot_id, plot_name, kind, curve, curve_id, ref, generator in _plot_marks(root, generators):
+            where = f"SED-ML {kind} '{plot_id}'" + (f" ({plot_name})" if plot_name else "")
+            plotted.add(ref)
             location = f"{where}, {_localname(curve.tag)} '{curve_id}'"
             if generator.data_sources:
                 shipped = tuple(
@@ -598,8 +660,10 @@ def enumerate_sedml_claims(
 
 
 __all__ = [
+    "SedmlPanel",
     "SimulationRecipe",
     "enumerate_sedml_claims",
+    "enumerate_sedml_panels",
     "parse_sedml_recipes",
     "read_sedml_data",
     "sedml_data_sources",

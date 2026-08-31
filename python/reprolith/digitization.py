@@ -72,6 +72,15 @@ class AxisScale(str, Enum):
     LOG10 = "log10"
 
 
+class AmbiguousPanel(ValueError):
+    """A document plots more than one figure and the template was not told which one this is.
+
+    Its own error, because it is not a defect in anybody's document: a paper with two panels is a
+    paper with two panels, and the caller has a question to answer rather than a file to repair.
+    Reporting it as "cannot read the document" would tell an author their SED-ML is broken.
+    """
+
+
 @dataclass(frozen=True)
 class Axis:
     """One axis of the panel a series was read off: its range, its unit, and its scale."""
@@ -511,7 +520,7 @@ _FILL_IN = (
 )
 
 
-def figure_template(sedml: str) -> dict[str, Any]:
+def figure_template(sedml: str, *, panel: str | None = None) -> dict[str, Any]:
     """A digitization file for the curves a document plots, with the claim pairing filled in.
 
     The pairing is the one mechanical part of this file and the one nobody can guess: a claim id
@@ -523,12 +532,42 @@ def figure_template(sedml: str) -> dict[str, Any]:
 
     A curve the document already ships values for gets no stub, with the reason: those are the
     paper's own recorded points, and a reading of a picture of them is a downgrade.
+
+    One file is one panel, so a document plotting more than one figure has to be told which. The
+    axes are stated once per file and every series in it was read off them; writing two plots'
+    curves into one file would hand the curator a single pair of axis ranges for two pictures, and
+    the second panel's readings would be calibrated against the first panel's axes — ordered,
+    smooth, plausible and wrong by a constant factor, which is precisely what the axis-range
+    refusal exists to catch and cannot see once it is baked into the file. Which of a paper's
+    figures a plot is remains the curator's statement, so this refuses and lists them rather than
+    picking one or splitting on a guess.
     """
-    from .sedml import enumerate_sedml_claims
+    from .sedml import enumerate_sedml_claims, enumerate_sedml_panels
+
+    panels = enumerate_sedml_panels(sedml)
+    readable = {p.plot_id: p for p in panels}
+    if panel is not None and panel not in readable:
+        known = ", ".join(p.label for p in panels) or "none"
+        raise ValueError(
+            f"this document has no plot '{panel}'; it plots {known}"
+        )
+    if panel is None and len(panels) > 1:
+        raise AmbiguousPanel(
+            "one digitization file is one figure panel, and this document plots "
+            f"{len(panels)}: {', '.join(p.label for p in panels)}. Name the one you read — its "
+            "axes are stated once per file, and two panels' curves under one pair of axis ranges "
+            "is a reading calibrated against the wrong picture"
+        )
+    chosen = readable.get(panel) if panel is not None else (panels[0] if panels else None)
+    within = set(chosen.curve_ids) if chosen is not None else set()
 
     claims = enumerate_sedml_claims(sedml)
     series, notes = [], []
+    if chosen is not None:
+        notes.append(f"these curves are your document's plot {chosen.label}")
     for claim in claims:
+        if claim.id not in within:
+            continue
         if not claim.targetable:
             continue
         if claim.reference_data:
@@ -585,6 +624,7 @@ def unfilled_figure(record: Mapping[str, Any]) -> tuple[str, ...]:
 
 
 __all__ = [
+    "AmbiguousPanel",
     "Axis",
     "AxisScale",
     "DigitizedSeries",

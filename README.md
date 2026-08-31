@@ -172,7 +172,7 @@ reprolith claims-check \              # is each value printed in the table it ci
 reprolith params-check \              # does your model carry the values your paper reports?
   --model <model.xml> --parameters <parameters.json>
 reprolith figure-template \           # the digitization file, with the claim pairing filled in
-  <file.omex> | --sedml <exp.sedml> [--out <figure3a.json>]
+  <file.omex> | --sedml <exp.sedml> [--plot <plot_0>] [--out <figure3a.json>]
 reprolith figure-check \              # is this digitization of your figure usable as a reference?
   --series <figure3a.json> [--series ...] [<file.omex> | --sedml <exp.sedml>]
 ```
@@ -202,7 +202,10 @@ ones the paper's Table 3 prints.
 `figure-template` and `figure-check` are the same shape for the other half of claim extraction.
 The template writes the one mechanical part of a digitization — which curve of your document each
 series is the reading for, an id nobody could guess and that has to match exactly — and leaves
-blank everything that is a reading: the figure, the tool, both axis ranges, every point. Then
+blank everything that is a reading: the figure, the tool, both axis ranges, every point. One file
+is one panel, so a document plotting two figures is asked which one this is and lists them rather
+than choosing: the axes are stated once per file, and two panels under one pair of axis ranges is
+the second one read against the first one's calibration. Then
 `figure-check` takes a plot digitizer's output for one figure panel and says what each series
 carries, how coarsely it was read, and refuses the readings that cannot be trusted. It reports the widest gap between readings
 rather than judging it — between two read points the reference is the curator's straight line, and
