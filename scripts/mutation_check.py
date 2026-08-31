@@ -92,6 +92,34 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_ingest.py"],
     ),
     (
+        "the figure check stops asking whether the reading is paired with a real curve",
+        "cli.py",
+        (
+            '    faults = pairing_faults(claims, series, carrier="your document") '
+            "if claims is not None else ()",
+            "    faults = ()",
+        ),
+        ["tests/test_cli.py"],
+    ),
+    (
+        "the figure check stops asking whether the reading covers the run",
+        "cli.py",
+        (
+            '    short = window_faults(series, windows, carrier="your document") if windows else ()',
+            "    short = ()",
+        ),
+        ["tests/test_cli.py"],
+    ),
+    (
+        "a reading is taken to cover a window it stops short of",
+        "digitization.py",
+        (
+            "        if any(low <= start and high >= end for start, end in windows):",
+            "        if True:",
+        ),
+        ["tests/test_digitization.py"],
+    ),
+    (
         "a curve plotted from shipped data becomes a result the model must reproduce",
         "sedml.py",
         ("            if generator.data_sources:", "            if False:"),
