@@ -174,7 +174,7 @@ reprolith params-check \              # does your model carry the values your pa
 reprolith figure-template \           # the digitization file, with the claim pairing filled in
   <file.omex> | --sedml <exp.sedml> [--out <figure3a.json>]
 reprolith figure-check \              # is this digitization of your figure usable as a reference?
-  --series <figure3a.json>
+  --series <figure3a.json> [<file.omex> | --sedml <exp.sedml>]
 ```
 
 `archive-check` is the author-facing counterpart: point it at a COMBINE archive and it says what a
@@ -207,6 +207,17 @@ blank everything that is a reading: the figure, the tool, both axis ranges, ever
 carries, how coarsely it was read, and refuses the readings that cannot be trusted. It reports the widest gap between readings
 rather than judging it — between two read points the reference is the curator's straight line, and
 how much of a comparison rests on that is theirs to weigh.
+
+Give it the document too — the archive, or `--sedml` — and it also checks the half of the file the
+template filled in: that each series is paired with a curve the document actually plots, that the
+curve can carry a reading at all, and that it is not one the document already ships values for. A
+claim id is `plot_0__plot_0_0_0__plot_0_0_1` and has to match exactly, so a typo, a renamed output,
+or a digitization read against last month's document is a reading of nothing — and those three
+refusals used to be reachable only from Python, which is to say only after somebody else ran the
+join. Without a document the report says the ids were not checked, rather than reading clean over a
+check nobody made. The curves this panel does not read are named and not counted against it: a
+curator reads one panel at a time, and "clean" over one of four curves would otherwise read as
+four.
 
 `claims-template` writes that file, so an author is not starting from a blank one: it emits one
 stub per curve the document plots — the document's own statement of which curves are shown results

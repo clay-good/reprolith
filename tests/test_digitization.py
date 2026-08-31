@@ -25,6 +25,7 @@ from reprolith import (
     attach_digitized_values,
     curve_reference,
     judge_curve,
+    pairing_faults,
     read_digitized_figure,
     resample_series,
     series_resolution,
@@ -232,6 +233,42 @@ def test_values_are_never_given_to_a_claim_that_has_them_or_to_one_that_is_not_a
     )
     with pytest.raises(ValueError, match="never staked"):
         attach_digitized_values([report], [_series([[0, 1.0], [24, 2.0]])], times=[0.0, 24.0])
+
+
+def test_every_way_the_pairing_is_wrong_is_named_at_once() -> None:
+    """One source of truth for the pairing refusals, and it reports all of them.
+
+    These three checks used to be reachable only from `attach_digitized_values`, which is to say
+    only from Python: a curator at the terminal wrote the pairing, filled in the reading, and was
+    told nothing until somebody else ran the join. `figure-check` asks the same function, so the
+    way in and the way out cannot disagree about what a bad pairing is — and a curator fixing one
+    id at a time learns nothing about the other two, so none of them stops at the first.
+    """
+    shipped = DossierClaim(
+        id="fig-3b", quantity="[liver] curve", conditions="",
+        source_location="the archive's own data file", reference_kind=ReferenceKind.NUMERIC,
+        reference_data=(1.0, 2.0),
+    )
+    report = DossierClaim(
+        id="fig-3c", quantity="[kidney] curve", conditions="",
+        source_location="report 'kidney'", targetable=False,
+    )
+    faults = pairing_faults(
+        [_CLAIMS[0], shipped, report],
+        [
+            _series([[0, 1.0], [24, 2.0]], claim="fig-7c"),
+            _series([[0, 1.0], [24, 2.0]], claim="fig-3b"),
+            _series([[0, 1.0], [24, 2.0]], claim="fig-3c"),
+        ],
+        carrier="your document",
+    )
+    assert len(faults) == 3
+    assert "fig-7c" in faults[0] and "your document does not carry" in faults[0]
+    assert "does not replace numbers the paper shipped" in faults[1]
+    assert "never staked" in faults[2]
+    # The claim that is paired correctly is not among them.
+    assert not any("fig-3a" in fault for fault in faults)
+    assert pairing_faults(_CLAIMS, [_series([[0, 1.0], [24, 2.0]])]) == ()
 
 
 def test_a_figure_claim_reaches_a_verdict_it_could_not_reach_before() -> None:

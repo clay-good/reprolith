@@ -831,6 +831,99 @@ def test_figure_check_refuses_a_reading_off_its_own_axes(tmp_path, capsys):
     assert "outside its own axis" in capsys.readouterr().err
 
 
+_KINETIC_SEDML = Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.sedml"
+
+
+def _digitization(path: Path, claim: str) -> Path:
+    """A filled digitization of one panel, paired with ``claim``."""
+    path.write_text(json.dumps({
+        "figure": "Figure 2A", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 100, "unit": "s"},
+        "y_axis": {"minimum": 0, "maximum": 300, "unit": "nM"},
+        "series": [{"claim": claim, "curve": "MAPK_PP",
+                    "points": [[0, 10.0], [50, 280.0], [100, 40.0]]}],
+    }), encoding="utf-8")
+    return path
+
+
+def test_figure_check_checks_the_pairing_against_the_document_it_was_read_off(tmp_path, capsys):
+    """The pairing is the one part of the file nobody can guess, and the part a typo breaks
+    silently. Given the document, the ids are checked against the curves it actually plots — and
+    the curves this panel does not read are named, because "clean" over one of four reads as four.
+    """
+    series = _digitization(tmp_path / "fig2a.json", "plot_0__plot_0_0_0__plot_0_0_1")
+    assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML)]) == 0
+    printed = capsys.readouterr().out
+    assert "every series is paired with a curve your document plots" in printed
+    assert "3 curve(s) your document plots are not read here" in printed
+    assert "plot_1__plot_1_0_0__plot_1_1_1" in printed
+
+
+def test_figure_check_refuses_a_reading_paired_with_a_curve_the_document_does_not_plot(
+    tmp_path, capsys,
+):
+    """A claim id is `plot_0__plot_0_0_0__plot_0_0_1`; one character wrong is a reading of nothing,
+    and until now nothing told the curator so at the terminal."""
+    series = _digitization(tmp_path / "fig2a.json", "plot_0__plot_0_0_0__plot_0_0_2")
+    assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML)]) == 1
+    printed = capsys.readouterr().out
+    assert "PAIRED WITH THE WRONG CLAIM" in printed
+    assert "which your document does not carry" in printed
+
+
+def test_figure_check_refuses_a_reading_paired_with_a_claim_that_is_not_a_target(tmp_path, capsys):
+    """A report's data set is retained non-targetable on purpose: giving it values promotes it
+    into a result the paper never staked, which is a tracked revision and not a side effect."""
+    series = _digitization(tmp_path / "fig2a.json", "autogen_task_fig2a_MKKK")
+    assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML)]) == 1
+    assert "never staked" in capsys.readouterr().out
+
+
+def test_figure_check_without_a_document_says_the_pairing_was_not_checked(tmp_path, capsys):
+    """A clean report over a check nobody made is the shape this repository keeps being caught by."""
+    series = _digitization(tmp_path / "fig2a.json", "not-a-claim-in-any-document")
+    assert run(["figure-check", "--series", str(series)]) == 0
+    assert "were not checked: no document was given" in capsys.readouterr().out
+
+
+def test_figure_check_reads_the_pairing_out_of_an_archive_too(tmp_path, capsys):
+    """The two input forms cannot reach different conclusions: it is the same document either way."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    kinetic = _KINETIC_SEDML.parent
+    manifest = f"""<?xml version="1.0" encoding="UTF-8"?>
+<omexManifest xmlns="{_SPEC}omex-manifest">
+  <content location="." format="{_SPEC}omex"/>
+  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>
+  <content location="./BIOMD0000000010_url.xml" format="{_SPEC}sbml.level-2.version-4"/>
+  <content location="./BIOMD0000000010.sedml" format="{_SPEC}sed-ml.level-1.version-4" master="true"/>
+</omexManifest>
+"""
+    archive = tmp_path / "model.omex"
+    with zipfile.ZipFile(archive, "w") as zf:
+        zf.writestr("manifest.xml", manifest)
+        zf.writestr(
+            "BIOMD0000000010_url.xml",
+            (kinetic / "BIOMD0000000010.xml").read_text(encoding="utf-8"),
+        )
+        zf.writestr("BIOMD0000000010.sedml", _KINETIC_SEDML.read_text(encoding="utf-8"))
+
+    series = _digitization(tmp_path / "fig2a.json", "plot_0__plot_0_0_0__plot_0_0_1")
+    assert run(["figure-check", "--series", str(series), str(archive), "--json"]) == 0
+    packaged = json.loads(capsys.readouterr().out)
+    assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML),
+                "--json"]) == 0
+    loose = json.loads(capsys.readouterr().out)
+    assert packaged["pairing"]["curves_not_read"] == loose["pairing"]["curves_not_read"]
+    assert packaged["pairing"]["faults"] == [] == loose["pairing"]["faults"]
+
+
+def test_figure_check_takes_one_document_or_the_other_and_not_both(tmp_path, capsys):
+    series = _digitization(tmp_path / "fig2a.json", "plot_0__plot_0_0_0__plot_0_0_1")
+    assert run(["figure-check", "--series", str(series), "some.omex",
+                "--sedml", str(_KINETIC_SEDML)]) == 1
+    assert "either an archive or --sedml, not both" in capsys.readouterr().err
+
+
 def test_figure_check_of_a_missing_file_is_a_message(tmp_path, capsys):
     assert run(["figure-check", "--series", str(tmp_path / "nope.json")]) == 1
     assert "cannot read the digitization" in capsys.readouterr().err

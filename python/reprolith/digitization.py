@@ -364,6 +364,53 @@ def curve_reference(series: DigitizedSeries, *, duration: float, steps: int) -> 
     return resample_series(series, [duration * i / steps for i in range(steps + 1)])
 
 
+def pairing_faults(
+    claims: Iterable[DossierClaim],
+    series: Iterable[DigitizedSeries],
+    *,
+    carrier: str = "this dossier",
+) -> tuple[str, ...]:
+    """Every way this digitization is paired with the wrong claims, named one per fault.
+
+    The pairing is the curator's statement and the one part of the file nobody can guess, so it is
+    also the part a typo, a renamed output, or a digitization read against an older document
+    breaks silently. These three faults were reachable only from :func:`attach_digitized_values`,
+    which is to say only from Python: a curator working at the terminal wrote the pairing, filled
+    in the reading, and was told nothing until somebody else ran the join. They live here so the
+    way in and the way out cannot disagree about what a bad pairing is.
+
+    ``carrier`` names what the claims came from, because the same fault reads differently to the
+    two callers: a dossier this repository ingested, or the author's own document.
+
+    All of them are reported, never the first one only. A curator fixing one id at a time learns
+    nothing about the other four.
+    """
+    claims, series = tuple(claims), tuple(series)
+    by_claim = {s.claim_id: s for s in series}
+    known = {claim.id for claim in claims}
+    faults: list[str] = []
+    unpaired = sorted(set(by_claim) - known)
+    if unpaired:
+        faults.append(
+            f"the digitization names claim(s) {', '.join(unpaired)}, which {carrier} does not "
+            "carry: a reading paired with nothing is a reading of the wrong figure"
+        )
+    for claim in claims:
+        if claim.id not in by_claim:
+            continue
+        if not claim.targetable:
+            faults.append(
+                f"claim '{claim.id}' is retained non-targetable, and giving it values would "
+                "promote it into a result the paper never staked; that is a tracked revision"
+            )
+        elif claim.reference_data:
+            faults.append(
+                f"claim '{claim.id}' already carries {len(claim.reference_data)} reference "
+                "value(s); a reading off the picture does not replace numbers the paper shipped"
+            )
+    return tuple(faults)
+
+
 def attach_digitized_values(
     claims: Iterable[DossierClaim],
     series: Iterable[DigitizedSeries],
@@ -380,14 +427,10 @@ def attach_digitized_values(
     # Both are read twice — once to check the pairing, once to apply it — so a caller passing a
     # generator would otherwise have its claims consumed by the check and get an empty result.
     claims, series = tuple(claims), tuple(series)
+    faults = pairing_faults(claims, series)
+    if faults:
+        raise ValueError("; ".join(faults))
     by_claim = {s.claim_id: s for s in series}
-    known = {claim.id for claim in claims}
-    unpaired = sorted(set(by_claim) - known)
-    if unpaired:
-        raise ValueError(
-            f"the digitization names claim(s) {', '.join(unpaired)}, which this dossier does not "
-            "carry: a reading paired with nothing is a reading of the wrong figure"
-        )
 
     attached: list[DossierClaim] = []
     for claim in claims:
@@ -395,16 +438,6 @@ def attach_digitized_values(
         if reading is None:
             attached.append(claim)
             continue
-        if not claim.targetable:
-            raise ValueError(
-                f"claim '{claim.id}' is retained non-targetable, and giving it values would "
-                "promote it into a result the paper never staked; that is a tracked revision"
-            )
-        if claim.reference_data:
-            raise ValueError(
-                f"claim '{claim.id}' already carries {len(claim.reference_data)} reference "
-                "value(s); a reading off the picture does not replace numbers the paper shipped"
-            )
         attached.append(DossierClaim(
             id=claim.id,
             quantity=claim.quantity,
@@ -504,6 +537,7 @@ __all__ = [
     "attach_digitized_values",
     "curve_reference",
     "figure_template",
+    "pairing_faults",
     "read_digitized_figure",
     "resample_series",
     "series_resolution",

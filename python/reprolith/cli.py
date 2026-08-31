@@ -31,6 +31,7 @@ from .claim_candidates import propose_claims
 from .claims_template import claims_template, unfilled_claims
 from .digitization import (
     figure_template,
+    pairing_faults,
     read_digitized_figure,
     series_resolution,
     unfilled_figure,
@@ -594,8 +595,35 @@ def _cmd_figure_template(query: ReprolithQuery, args: argparse.Namespace) -> int
     return 0
 
 
+def _document_claims(args: argparse.Namespace) -> tuple[Any, ...] | None:
+    """The curves the given document plots, or ``None`` when no document was given."""
+    if args.archive is None and args.sedml is None:
+        return None
+    from .sedml import enumerate_sedml_claims
+
+    if args.archive is not None:
+        from .omex import archive_documents
+
+        document, _ = archive_documents(Path(args.archive).read_bytes())
+        if document is None:
+            raise ValueError(
+                "this archive ships no simulation document, so nothing in it says which curves "
+                "your paper shows; there is no pairing to check"
+            )
+    else:
+        document = Path(args.sedml).read_text(encoding="utf-8")
+    return tuple(enumerate_sedml_claims(document))
+
+
 def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Read a curator's figure digitization and say whether it is usable as a reference."""
+    if args.archive is not None and args.sedml is not None:
+        print(
+            "give either an archive or --sedml, not both: the pairing is checked against one "
+            "document",
+            file=sys.stderr,
+        )
+        return 1
     try:
         text = Path(args.series).read_text(encoding="utf-8")
         # A template handed straight back is the ordinary mistake, and reading it would refuse on
@@ -615,12 +643,39 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"cannot read the digitization: {unusable}", file=sys.stderr)
         return 1
 
+    # Without a document there is no pairing to check: the file names claim ids, and whether they
+    # are the right ones is a question about the document they were read off, which this command
+    # was never given. That is reported below rather than passed over silently.
+    try:
+        claims = _document_claims(args)
+    except OSError as unreadable:
+        print(f"cannot read the document: {unreadable}", file=sys.stderr)
+        return 1
+    except (UnicodeDecodeError, ValueError) as unusable:
+        print(f"cannot read the document: {unusable}", file=sys.stderr)
+        return 1
+
+    faults = pairing_faults(claims, series, carrier="your document") if claims is not None else ()
+    # A curator reads one panel at a time, so a document whose other curves are unread is the
+    # ordinary case and not a fault. It is said, because "checked clean" over one of nine curves
+    # reads as nine.
+    unread = tuple(
+        claim.id for claim in (claims or ())
+        if claim.targetable and not claim.reference_data
+        and claim.id not in {s.claim_id for s in series}
+    )
+
     resolutions = [series_resolution(s) for s in series]
     if args.json:
-        _print_json({"series": [
-            {**s.to_dict(), "resolution": r} for s, r in zip(series, resolutions)
-        ]})
-        return 0
+        _print_json({
+            "series": [{**s.to_dict(), "resolution": r} for s, r in zip(series, resolutions)],
+            "pairing": None if claims is None else {
+                "checked_against": "archive" if args.archive is not None else "sedml",
+                "faults": list(faults),
+                "curves_not_read": list(unread),
+            },
+        })
+        return 1 if faults else 0
     print(f"{len(series)} SERIES READ FROM {series[0].figure}, DIGITIZED WITH {series[0].digitizer}")
     for reading, resolution in zip(series, resolutions):
         low, high = resolution["span"]
@@ -631,8 +686,19 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         # threshold this command invented.
         print(f"      widest gap between readings: {resolution['widest_gap_fraction']:.0%} of the "
               "span, over which the reference is interpolated")
+    if claims is None:
+        print("  the claim ids in this file were not checked: no document was given to check "
+              "them against (pass the archive, or --sedml)")
+    else:
+        for fault in faults:
+            print(f"  PAIRED WITH THE WRONG CLAIM: {fault}")
+        if unread:
+            print(f"  {len(unread)} curve(s) your document plots are not read here, and stay "
+                  f"unjudged: {', '.join(unread)}")
+        if not faults:
+            print("  every series is paired with a curve your document plots and can carry values")
     print("  no model was run and no claim was judged: this reads the file, nothing else")
-    return 0
+    return 1 if faults else 0
 
 
 def _cmd_claims_template(query: ReprolithQuery, args: argparse.Namespace) -> int:
@@ -938,6 +1004,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--series", required=True,
         help="a plot digitizer's output for one figure panel as JSON: the figure, the digitizer, "
              "both axes, and one series of [x, y] points per curve",
+    )
+    p.add_argument(
+        "archive", nargs="?", default=None,
+        help="the .omex archive the digitization was paired against (or use --sedml); without "
+             "either, the claim ids in the file are not checked",
+    )
+    p.add_argument(
+        "--sedml", default=None,
+        help="your simulation document, when it is not packaged; the pairing is checked against "
+             "the curves it plots",
     )
     add_json(p)
     p.set_defaults(func=_cmd_figure_check)

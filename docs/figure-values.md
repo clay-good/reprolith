@@ -49,11 +49,30 @@ no rule here decides that the upper curve of Figure 3A is the plasma claim rathe
 one, exactly as no rule decides which table cell a reported Cmax came from.
 
 ```bash
-reprolith figure-check --series figure3a.json
+reprolith figure-check --series figure3a.json                          # the reading, on its own
+reprolith figure-check --series figure3a.json --sedml experiment.sedml # ...and its pairing
+reprolith figure-check --series figure3a.json model.omex               # or straight from the archive
 ```
 
 It reads the file, says what each series carries, and exits non-zero when it cannot trust one. It
 runs no model and judges no claim, and it says so.
+
+Handed the document as well, it checks the pairing itself against the curves that document plots.
+That matters because the pairing is the half of the file a curator did not write freehand and
+cannot verify by looking at it: the ids came out of a template, and a typo, a renamed model output,
+or a digitization filled in against an older document produces a file that is internally perfect
+and paired with nothing. The three refusals below that are *about the pairing* — an unknown claim,
+a claim that already has values, a claim that is not a target — were reachable only from
+`attach_digitized_values`, which is to say only from Python, and only once somebody else ran the
+join. `figure-check` and the join now ask the same function, so the way in and the way out cannot
+disagree about what a bad pairing is, and every fault is named at once rather than the first one
+reached.
+
+Two things it reports rather than refuses. The curves the document plots that this file does not
+read: a curator reads one panel at a time, and a partial digitization is the ordinary case — but a
+report that said "clean" over one of four curves would read as four. And, when no document is
+given, that the ids were **not checked** — a clean report standing in for a check nobody made is
+the shape this repository has been caught by before.
 
 ## What it refuses, and why each one earns its place
 

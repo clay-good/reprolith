@@ -153,8 +153,12 @@ a change under `openspec/changes/`.
   a curator's plot-digitizer output becomes a claim's reference data on the run's own sample grid,
   interpolated in the axis's own scale and never extrapolated, with a mis-calibrated reading — a
   point outside its own axes — refused by name, and the reference kind pinned to `digitized-figure`
-  so the wider band is not escapable. Reprolith reads no pixels and this does not pretend to: the
-  reading is a human act. What it needs next is a curator's digitization of a figure from a paper
+  so the wider band is not escapable. The pairing a curator cannot verify by eye — the claim ids the
+  template filled in — is checked against the document those ids came from when `figure-check` is
+  given it (2026-08-31), which is where a typo, a renamed output, or a file filled in against an
+  older document stops; without a document the report says the ids were not checked rather than
+  reading clean over a check nobody made. Reprolith reads no pixels and this does not pretend to:
+  the reading is a human act. What it needs next is a curator's digitization of a figure from a paper
   already in this corpus; none exists, so it is validated against series generated from known
   functions, the same fence items 7 and 8 carry.
 
