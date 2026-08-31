@@ -6,11 +6,12 @@ The CLI is Reprolith's human-facing surface at a terminal, the counterpart to th
 MCP server. It exposes the same read-only query model — browse the catalog, read a certificate,
 list its gaps, see the blind self-validation track record — so a person can obtain a verdict
 without speaking JSON-RPC or writing Python. It re-presents what the engine already produced; it
-computes no verdict of its own. Two commands write, and both write a file the caller names, never
-repository state: `export` turns a published reconstruction into a runnable COMBINE archive,
-because a reconstruction nobody can re-run without Reprolith is not a published artifact, and
+computes no verdict of its own. Three commands write, and all three write files the caller names,
+never repository state: `export` turns a published reconstruction into a runnable COMBINE archive,
+because a reconstruction nobody can re-run without Reprolith is not a published artifact;
 `claims-template` writes the claims file the archive check reads, because the one input that check
-cannot derive was also the one nothing helped an author produce.
+cannot derive was also the one nothing helped an author produce; and `figure-template` writes the
+digitization file whose claim pairing nobody could guess.
 
 ## Requirements
 
@@ -70,6 +71,43 @@ cannot become a divergent second implementation of Reprolith's contracts.
 - **AND** it reports a model whose filename is not the one the document's source names, because a
   reproducer follows the document
 - **AND** it is an error to give both an archive and loose files, or neither
+
+### Requirement: The digitization a curator reads off a figure is checked before it is trusted
+
+A value read off a picture SHALL be checkable at the terminal, on its own and against the document
+whose curves it claims to be readings of. Every refusal the join makes on a pairing SHALL be
+reachable here, since the join runs long after the curator has finished.
+
+#### Scenario: Writing the digitization file, one panel at a time
+
+- **WHEN** a curator asks for a digitization template, giving an archive or a simulation document
+- **THEN** the template names the claim each series is the reading for and the curve the document
+  plots there, and leaves blank everything that is a reading — the figure, the tool, both axis
+  ranges, and every point
+- **AND** a document plotting more than one figure is refused with its plots listed, since one
+  file states its axes once and two panels under one pair of ranges is the second panel read
+  against the first panel's calibration
+- **AND** that refusal is reported as a question about which panel was read, not as a defect in
+  the document
+- **AND** a curve the document already ships values for gets no stub, with the reason
+
+#### Scenario: Checking a reading against the document it was paired to
+
+- **WHEN** a digitization is checked and the document its claim ids came from is given
+- **THEN** a reading paired with a curve the document does not plot, with a claim that already
+  carries values, or with one retained non-targetable is refused with a non-zero exit status
+- **AND** so is one claim paired with readings from more than one panel, and one file holding
+  readings from more than one of the document's plots
+- **AND** so is a reading that does not cover a window the document runs, since nothing is
+  extrapolated past what was read
+- **AND** the curves the document plots that this reading does not cover are reported, not
+  refused, since a curator reads one panel at a time
+
+#### Scenario: A check nobody made never reads as a clean one
+
+- **WHEN** a digitization is checked with no document given
+- **THEN** the report says the claim ids were not checked, rather than reporting the file clean
+- **AND** no model is run and no claim is judged, and the report says so
 
 ### Requirement: Scope statement inescapable in terminal output
 
