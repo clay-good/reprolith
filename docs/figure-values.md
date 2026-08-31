@@ -23,7 +23,7 @@ One file is one figure panel: the axes are stated once, and every series in it w
   "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
   "y_axis": {"minimum": 0.01, "maximum": 10, "unit": "nmol/mL", "scale": "log10"},
   "series": [
-    {"claim": "fig3a-plasma", "curve": "plasma", "points": [[0.5, 0.2], [2, 4.0], [24, 0.05]]}
+    {"claim": "fig3a-plasma", "curve": "plasma", "points": [[0, 0.05], [2, 4.0], [24, 0.05]]}
   ]
 }
 ```
