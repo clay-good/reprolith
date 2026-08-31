@@ -84,6 +84,11 @@ curator is still at the terminal, so the refusal is made there instead of in Pyt
 document running several time courses is one figure per window, so covering any one of them is
 covering the one this panel was read off.
 
+`figure-template` will not write two plots into one file, and a file written by hand or by an
+older template still can — so the check reads it from the other side too: a file whose readings
+come from two of the document's plots is refused there, because by then the axis ranges are filled
+in and there is nothing left to notice.
+
 One file is one panel and a paper is several, so `--series` repeats. Checked one at a time each
 file reads as "the other three curves are unread", which is true of the file and false of the
 paper — and one thing is invisible entirely: a file cannot pair two curves with one claim, but two

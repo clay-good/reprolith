@@ -111,6 +111,21 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_cli.py"],
     ),
     (
+        "the template writes two of a document's plots into one file",
+        "digitization.py",
+        ("    if panel is None and len(panels) > 1:", "    if False:"),
+        ["tests/test_cli.py"],
+    ),
+    (
+        "a file holding two panels is read against one panel's axes",
+        "cli.py",
+        (
+            '    faults += panel_faults(series, panels, carrier="your document")',
+            "    faults += ()",
+        ),
+        ["tests/test_cli.py"],
+    ),
+    (
         "one claim read off two panels keeps whichever file was passed last",
         "digitization.py",
         (

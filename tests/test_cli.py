@@ -926,6 +926,31 @@ def test_figure_check_refuses_one_claim_read_off_two_panels(tmp_path, capsys):
     assert "paired with more than one panel (Figure 2A, Figure 2B)" in printed
 
 
+def test_figure_check_refuses_one_file_holding_two_of_the_documents_panels(tmp_path, capsys):
+    """`figure-template` will not write this file any more, and a hand-written one still can.
+
+    Once the axis ranges are filled in there is nothing left to notice: the second plot's curves
+    are calibrated against the first plot's axes, and what comes out is ordered, smooth, plausible
+    and wrong by a constant factor.
+    """
+    mixed = tmp_path / "both.json"
+    mixed.write_text(json.dumps({
+        "figure": "Figure 2", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 9000, "unit": "s"},
+        "y_axis": {"minimum": 0, "maximum": 300, "unit": "nM"},
+        "series": [
+            {"claim": "plot_0__plot_0_0_0__plot_0_0_1", "curve": "MAPK_PP",
+             "points": [[0, 10.0], [4500, 280.0], [9000, 40.0]]},
+            {"claim": "plot_1__plot_1_0_0__plot_1_0_1", "curve": "MAPK_PP",
+             "points": [[0, 12.0], [4500, 260.0], [9000, 44.0]]},
+        ],
+    }), encoding="utf-8")
+    assert run(["figure-check", "--series", str(mixed), "--sedml", str(_KINETIC_SEDML)]) == 1
+    printed = capsys.readouterr().out
+    assert "the readings in Figure 2 come from 2 of your document's plots" in printed
+    assert "'plot_0' (Figure 2A), 'plot_1' (Figure 2B)" in printed
+
+
 def test_figure_check_names_the_same_panel_passed_twice_as_what_it_is(tmp_path, capsys):
     """One file under two names is the ordinary slip, and "more than one panel" would send a
     curator looking for a second picture that does not exist."""

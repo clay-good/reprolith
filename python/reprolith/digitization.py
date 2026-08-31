@@ -437,6 +437,47 @@ def pairing_faults(
     return tuple(faults)
 
 
+def panel_faults(
+    series: Iterable[DigitizedSeries],
+    panels: Sequence[Any],
+    *,
+    carrier: str = "this dossier",
+) -> tuple[str, ...]:
+    """Every digitization file whose readings come from more than one of the document's plots.
+
+    One file is one panel because its axes are stated once. :func:`figure_template` will not write
+    two plots into one file for that reason — but a file can be written by hand, or by an older
+    template, and once the axis ranges are filled in there is nothing left to notice: the second
+    panel's curves are calibrated against the first panel's axes, and what comes out is ordered,
+    smooth, plausible and wrong by a constant factor.
+
+    ``panels`` are :class:`reprolith.sedml.SedmlPanel` records. A reading paired with no plot at
+    all is not reported here — that is the pairing check's finding, and saying it twice in
+    different words helps nobody.
+    """
+    of_plot = {
+        curve_id: panel for panel in panels for curve_id in panel.curve_ids
+    }
+    faults = []
+    by_file: dict[str, list[DigitizedSeries]] = {}
+    for reading in series:
+        by_file.setdefault(reading.figure, []).append(reading)
+    for figure, readings in by_file.items():
+        found = {
+            of_plot[r.claim_id].plot_id: of_plot[r.claim_id]
+            for r in readings if r.claim_id in of_plot
+        }
+        if len(found) < 2:
+            continue
+        where = ", ".join(panel.label for panel in found.values())
+        faults.append(
+            f"the readings in {figure} come from {len(found)} of {carrier}'s plots ({where}): one "
+            "file states its axes once, so the second plot's curves are calibrated against the "
+            "first one's axes"
+        )
+    return tuple(faults)
+
+
 def window_faults(
     series: Iterable[DigitizedSeries],
     windows: Sequence[tuple[float, float]],
@@ -632,6 +673,7 @@ __all__ = [
     "curve_reference",
     "figure_template",
     "pairing_faults",
+    "panel_faults",
     "read_digitized_figure",
     "resample_series",
     "series_resolution",

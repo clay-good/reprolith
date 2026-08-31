@@ -34,6 +34,7 @@ from .digitization import (
     DigitizedSeries,
     figure_template,
     pairing_faults,
+    panel_faults,
     read_digitized_figure,
     series_resolution,
     unfilled_figure,
@@ -605,11 +606,11 @@ def _cmd_figure_template(query: ReprolithQuery, args: argparse.Namespace) -> int
 
 def _document_claims(
     args: argparse.Namespace,
-) -> tuple[tuple[Any, ...], tuple[tuple[float, float], ...]] | None:
-    """The curves the given document plots and the windows it runs, or ``None`` without one."""
+) -> tuple[tuple[Any, ...], tuple[tuple[float, float], ...], tuple[Any, ...]] | None:
+    """What the given document says: its curves, the windows it runs, and its panels."""
     if args.archive is None and args.sedml is None:
         return None
-    from .sedml import enumerate_sedml_claims, parse_sedml_recipes
+    from .sedml import enumerate_sedml_claims, enumerate_sedml_panels, parse_sedml_recipes
 
     if args.archive is not None:
         from .omex import archive_documents
@@ -627,7 +628,7 @@ def _document_claims(
     windows = tuple(dict.fromkeys(
         (recipe.output_start, recipe.duration) for recipe in parse_sedml_recipes(document)
     ))
-    return tuple(enumerate_sedml_claims(document)), windows
+    return tuple(enumerate_sedml_claims(document)), windows, enumerate_sedml_panels(document)
 
 
 def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
@@ -672,8 +673,12 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"cannot read the document: {unusable}", file=sys.stderr)
         return 1
 
-    claims, windows = read if read is not None else (None, ())
+    claims, windows, panels = read if read is not None else (None, (), ())
     faults = pairing_faults(claims, series, carrier="your document") if claims is not None else ()
+    # One file is one panel: `figure-template` will not write two plots into one file, and a file
+    # written by hand or by an older template can still do it. Once the axis ranges are filled in
+    # there is nothing left to notice.
+    faults += panel_faults(series, panels, carrier="your document")
     # A reading that does not span the run is refused at the join, in Python, long after the
     # curator has finished — and both numbers that say so are on disk while they are still here.
     short = window_faults(series, windows, carrier="your document") if windows else ()
@@ -699,8 +704,8 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             },
         })
         return 1 if faults or short else 0
-    panels = ", ".join(dict.fromkeys(reading.figure for reading in series))
-    print(f"{len(series)} SERIES READ FROM {panels}, "
+    read_from = ", ".join(dict.fromkeys(reading.figure for reading in series))
+    print(f"{len(series)} SERIES READ FROM {read_from}, "
           f"DIGITIZED WITH {series[0].digitizer}")
     for reading, resolution in zip(series, resolutions):
         low, high = resolution["span"]
