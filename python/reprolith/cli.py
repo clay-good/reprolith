@@ -691,6 +691,7 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         and claim.id not in {s.claim_id for s in series}
     )
 
+    plotted = {claim.id: claim.quantity for claim in (claims or ())}
     resolutions = [series_resolution(s) for s in series]
     if args.json:
         _print_json({
@@ -715,6 +716,13 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         panel = f"{reading.figure} " if len(set(r.figure for r in series)) > 1 else ""
         print(f"  {panel}[{reading.claim_id}] {reading.curve}: {resolution['points']} point(s) "
               f"over {low}-{high} {reading.x_axis.unit}, in {reading.y_axis.unit}")
+        # The curve label is the curator's own words for the curve; the quantity is the
+        # document's. Printed side by side and never compared: renaming 'MAPK_PP' to 'the upper
+        # curve' is ordinary, and a reading of the wrong curve of the right figure passes every
+        # check on this page — this is the one place a curator can see it.
+        plots = plotted.get(reading.claim_id)
+        if plots is not None:
+            print(f"      your document plots {plots} there")
         # Reported, never judged: between two read points the reference is the curator's straight
         # line, and how much of the comparison rests on it is a fact they should see rather than a
         # threshold this command invented.

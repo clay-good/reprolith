@@ -910,6 +910,9 @@ def test_figure_check_reads_every_panel_a_paper_has(tmp_path, capsys):
     assert "2 SERIES READ FROM Figure 2A, Figure 2B" in printed
     # Which picture a claim was read off is the fact a curator checking two panels needs.
     assert "Figure 2A [plot_0__plot_0_0_0__plot_0_0_1]" in printed
+    # The curator's label for the curve and the document's quantity, side by side and never
+    # compared: a reading of the wrong curve of the right figure passes every other check here.
+    assert "your document plots MAPK_PP there" in printed
     assert "2 curve(s) your document plots are not read here" in printed
 
 

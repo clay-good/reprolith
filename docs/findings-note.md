@@ -3316,7 +3316,14 @@ What would lift it, in the order the measurements support:
   factor, which no check downstream can see. A point outside its own axes is the cheapest evidence
   it happened, and it is refused by name. The reference kind is pinned to `digitized-figure`, so
   the band a picture is judged in — 0.20 against a printed number's 0.10 — is not escapable by
-  attaching one. **No published figure is in this corpus**, so it is validated against series
+  attaching one. **The pairing is checked too** (2026-08-31): given the document those claim ids
+  came from, `figure-check` refuses a reading paired with a curve it does not plot, one paired
+  with a claim that already has values or is not a target, one claim read off two panels, a file
+  holding two of the document's plots, and a reading that does not cover the window the run
+  covers. Every one of those was reachable only from Python before, which is to say only after
+  somebody else ran the join; and `figure-template` now writes one panel and asks which, since a
+  file states its axes once and two panels under one pair of ranges is the second one read against
+  the first one's calibration. **No published figure is in this corpus**, so it is validated against series
   generated from known functions: mathematics, not a paper's picture, the same fence the
   population simulator and the re-fitting engine carry. The corpus's reach is unchanged today, and
   what would change it is one curator's digitization of one figure in a paper already here.

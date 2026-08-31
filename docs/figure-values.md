@@ -96,6 +96,11 @@ files can, and the join keys readings by claim id, so the second panel's curve r
 and one of the two readings was never used. Across panels that is a refusal now, on both sides of
 the join.
 
+Beside each series it prints what the document plots on that curve, next to the curator's own
+label for it. Nothing compares the two — renaming `MAPK_PP` to "the upper curve" is ordinary — but
+a reading of the *wrong curve of the right figure* is valid in every mechanical sense and passes
+everything on this page, and those two words side by side are the only place a curator can see it.
+
 Two things it reports rather than refuses. The curves the document plots that this file does not
 read: a curator reads one panel at a time, and a partial digitization is the ordinary case — but a
 report that said "clean" over one of four curves would read as four. And, when no document is
