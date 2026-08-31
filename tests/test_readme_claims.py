@@ -38,15 +38,18 @@ def test_every_command_the_readme_shows_is_a_command() -> None:
     assert not unknown, f"the README shows commands the CLI does not have: {sorted(unknown)}"
 
 
-def test_the_readme_sends_a_reader_to_help_for_the_commands_it_omits() -> None:
-    """It shows a useful subset on purpose, so the omission has to be signposted rather than read
-    as the whole surface."""
-    omitted = _subcommands() - {
+def test_the_readme_shows_every_command_the_cli_has() -> None:
+    """It used to show a useful subset with the omission signposted, and the check that pinned
+    that said to drop it rather than weaken it if the block ever grew to the whole surface. It
+    has: `presubmission`, `dossier` and `bundle` were installed all along and named nowhere, so
+    the front page described a smaller tool than the one a reader has. A command added without a
+    line here is a command nobody finds."""
+    shown = {
         match.group(1)
         for match in re.finditer(r"^reprolith ([a-z][a-z-]*)", _README, re.MULTILINE)
     }
-    assert omitted, "the README now shows every command; drop this check rather than weakening it"
-    assert "reprolith --help" in _README
+    assert _subcommands() - shown == set()
+    assert "reprolith --help" in _README  # still the right place for the flags no block shows
 
 
 #: How the README words each certificate count it states. A count that changes makes the sentence
