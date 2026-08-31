@@ -37,6 +37,7 @@ dossier does not carry is refused:
 reprolith figure-template --sedml experiment.sedml --out figure3a.json
 reprolith figure-template model.omex --out figure3a.json      # or straight from the archive
 reprolith figure-template model.omex --plot plot_1 --out figure3b.json   # one panel of several
+reprolith figure-template model.omex --out-dir figures/                  # ...or all of them at once
 ```
 
 A document plotting more than one figure has to be told which panel this file is, and it lists
@@ -44,6 +45,10 @@ them rather than choosing. That is not fussiness: the axes are stated once per f
 curves in one file means the second panel was read against the first panel's calibration —
 ordered, smooth, plausible, and wrong by a constant factor. It is the failure the axis-range
 refusal exists to catch, and it cannot see it once it is written into the file.
+
+`--out-dir` writes one file per panel in a single command, each named for the plot it reads. The
+boundary is the point, not the number of invocations — a four-figure paper is still four files, and
+one that was already filled in is reported as replaced rather than quietly overwritten.
 
 It writes the ids and the curve each one plots, and leaves blank everything that is a *reading*:
 the figure, the tool, both axis ranges, and every point. None of those can be derived from a

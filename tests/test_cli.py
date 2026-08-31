@@ -1068,6 +1068,38 @@ def test_figure_template_names_the_plots_it_has_when_asked_for_one_it_does_not(t
     assert "no plot 'plot_9'" in capsys.readouterr().err
 
 
+def test_figure_template_writes_one_file_per_panel_in_one_command(tmp_path, capsys):
+    """A four-figure paper should not be four invocations and four plot ids looked up by hand.
+
+    Still one file per panel: the boundary is the point, not the number of commands.
+    """
+    sedml = Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.sedml"
+    out = tmp_path / "panels"
+    assert run(["figure-template", "--sedml", str(sedml), "--out-dir", str(out)]) == 0
+    printed = capsys.readouterr().out
+    assert "'plot_0' (Figure 2A): 2 curve(s)" in printed
+    assert "'plot_1' (Figure 2B): 2 curve(s)" in printed
+
+    written = json.loads((out / "plot_1.json").read_text(encoding="utf-8"))
+    assert [s["claim"] for s in written["series"]] == [
+        "plot_1__plot_1_0_0__plot_1_0_1", "plot_1__plot_1_0_0__plot_1_1_1",
+    ]
+    # It is the same file the single-panel form writes, so the two cannot drift apart.
+    one = tmp_path / "one.json"
+    run(["figure-template", "--sedml", str(sedml), "--plot", "plot_1", "--out", str(one)])
+    assert json.loads(one.read_text(encoding="utf-8")) == written
+
+
+def test_figure_template_says_when_it_replaced_a_filled_in_file(tmp_path, capsys):
+    """A curator who has already read a curve into one of these should not lose it silently."""
+    sedml = Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.sedml"
+    out = tmp_path / "panels"
+    run(["figure-template", "--sedml", str(sedml), "--out-dir", str(out)])
+    capsys.readouterr()
+    assert run(["figure-template", "--sedml", str(sedml), "--out-dir", str(out)]) == 0
+    assert "(replaced)" in capsys.readouterr().out
+
+
 def test_figure_template_from_a_document_that_is_not_one_is_a_message(tmp_path, capsys):
     bad = tmp_path / "not.sedml"
     bad.write_text("<not-sedml", encoding="utf-8")

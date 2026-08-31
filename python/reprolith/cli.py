@@ -549,6 +549,44 @@ def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
+def _write_every_panel(document: str, out_dir: Path) -> int:
+    """One template per panel the document plots, so a four-panel paper is one command.
+
+    Still one file per panel — the boundary is the point, not the number of invocations. Each is
+    named for the plot it reads, since that is the only name both files agree on.
+    """
+    from .sedml import enumerate_sedml_panels
+
+    panels = enumerate_sedml_panels(document)
+    if not panels:
+        print(
+            "this document plots nothing, so it states no curve to read off a figure",
+            file=sys.stderr,
+        )
+        return 1
+    try:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as unwritable:
+        print(f"cannot write the templates: {unwritable}", file=sys.stderr)
+        return 1
+    for panel in panels:
+        template = figure_template(document, panel=panel.plot_id)
+        path = out_dir / f"{panel.plot_id}.json"
+        # A replaced file is said, not silently overwritten: a curator who has already filled one
+        # in would otherwise lose the reading and see a success line.
+        replaced = " (replaced)" if path.exists() else ""
+        try:
+            path.write_text(json.dumps(template, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        except OSError as unwritable:
+            print(f"cannot write the templates: {unwritable}", file=sys.stderr)
+            return 1
+        print(f"wrote {path}{replaced}")
+        print(f"  {panel.label}: {len(template['series'])} curve(s) to read off your figure")
+    print("  one file per panel: each states its own axes, and every reading in it was read "
+          "off them")
+    return 0
+
+
 def _cmd_figure_template(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Write the digitization file, with the one part of it nobody can guess filled in."""
     if (args.archive is None) == (args.sedml is None):
@@ -574,6 +612,8 @@ def _cmd_figure_template(query: ReprolithQuery, args: argparse.Namespace) -> int
                 return 1
         else:
             document = Path(args.sedml).read_text(encoding="utf-8")
+        if args.out_dir is not None:
+            return _write_every_panel(document, Path(args.out_dir))
         template = figure_template(document, panel=args.plot)
     except AmbiguousPanel as ambiguous:
         # Not a defect in the document: a paper with two panels is a paper with two panels, and
@@ -1045,6 +1085,11 @@ def build_parser() -> argparse.ArgumentParser:
              "one; one file is one panel, because its axes are stated once",
     )
     p.add_argument("--out", default=None, help="write here instead of to standard output")
+    p.add_argument(
+        "--out-dir", default=None,
+        help="write one template per panel into this directory, named for the plot it reads; "
+             "a paper with four figures is then one command and still four files",
+    )
     p.set_defaults(func=_cmd_figure_template)
 
     p = sub.add_parser(
