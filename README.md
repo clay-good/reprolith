@@ -174,7 +174,7 @@ reprolith params-check \              # does your model carry the values your pa
 reprolith figure-template \           # the digitization file, with the claim pairing filled in
   <file.omex> | --sedml <exp.sedml> [--out <figure3a.json>]
 reprolith figure-check \              # is this digitization of your figure usable as a reference?
-  --series <figure3a.json> [<file.omex> | --sedml <exp.sedml>]
+  --series <figure3a.json> [--series ...] [<file.omex> | --sedml <exp.sedml>]
 ```
 
 `archive-check` is the author-facing counterpart: point it at a COMBINE archive and it says what a
@@ -214,7 +214,10 @@ curve can carry a reading at all, and that it is not one the document already sh
 claim id is `plot_0__plot_0_0_0__plot_0_0_1` and has to match exactly, so a typo, a renamed output,
 or a digitization read against last month's document is a reading of nothing — and those three
 refusals used to be reachable only from Python, which is to say only after somebody else ran the
-join. It also compares each reading against the window the document runs: nothing
+join. `--series` repeats, because one file is one panel and a paper is several: checked one at a time,
+each file reads as "the other curves are unread" — true of the file, false of the paper — and one
+claim read off two panels is invisible entirely, since the join keeps whichever file it saw last.
+It also compares each reading against the window the document runs: nothing
 here is extrapolated, so a curve read from 0.5 h against a run that starts at 0 is a file that is
 internally perfect and cannot be used, and both numbers that say so are on disk while the curator
 is still at the terminal. Without a document the report says the ids were not checked, rather than

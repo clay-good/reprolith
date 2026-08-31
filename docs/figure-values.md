@@ -52,6 +52,7 @@ one, exactly as no rule decides which table cell a reported Cmax came from.
 reprolith figure-check --series figure3a.json                          # the reading, on its own
 reprolith figure-check --series figure3a.json --sedml experiment.sedml # ...and its pairing
 reprolith figure-check --series figure3a.json model.omex               # or straight from the archive
+reprolith figure-check --series figure3a.json --series figure3b.json model.omex   # every panel
 ```
 
 It reads the file, says what each series carries, and exits non-zero when it cannot trust one. It
@@ -76,6 +77,13 @@ curator is still at the terminal, so the refusal is made there instead of in Pyt
 document running several time courses is one figure per window, so covering any one of them is
 covering the one this panel was read off.
 
+One file is one panel and a paper is several, so `--series` repeats. Checked one at a time each
+file reads as "the other three curves are unread", which is true of the file and false of the
+paper — and one thing is invisible entirely: a file cannot pair two curves with one claim, but two
+files can, and the join keys readings by claim id, so the second panel's curve replaced the first's
+and one of the two readings was never used. Across panels that is a refusal now, on both sides of
+the join.
+
 Two things it reports rather than refuses. The curves the document plots that this file does not
 read: a curator reads one panel at a time, and a partial digitization is the ordinary case — but a
 report that said "clean" over one of four curves would read as four. And, when no document is
@@ -89,7 +97,7 @@ the shape this repository has been caught by before.
 | A series naming no figure or no digitizer | A digitized point is a *measurement of a picture*. A reference value with no statement of where it came from is the defect this repository was already caught by once, in the other direction: a claim's Cmax recorded as a number its paper does not print. |
 | A point outside the axes the curator states | Every digitizer works by calibrating two axis points and mapping pixels through them. Get that wrong and the values come out ordered, smooth, plausible and wrong by a constant factor — the most confident wrong answer available, and invisible to every check downstream. A reading off the top of its own axis is the cheapest evidence it happened. |
 | Two readings at one x, or a single point | Two values for one place is not a curve, and one point is not one either. |
-| Two curves paired with one claim | Which curve a claim reads is the curator's statement, and two of them is not one. |
+| Two curves paired with one claim | Which curve a claim reads is the curator's statement, and two of them is not one. Within a panel the reader refuses it; across two panels the pairing check does, since the join would otherwise keep whichever file it saw last. |
 | Resampling outside the digitized span | Past the last point that was read there is no reference. Returning the last read value there compares the model against the edge of a picture. Given the document, `figure-check` says this while the curator can still act on it: a reading that does not cover a window the document runs is named there rather than at the join. |
 | Giving values to a claim that has them | A curve plotted from a data file the archive ships carries the paper's own recorded series. Replacing that with a reading off a picture of it is a downgrade performed silently. |
 | Giving values to a non-targetable claim | A `report`'s data set is retained non-targetable on purpose; handing it values promotes it into a result the paper never staked. That is a [tracked revision](../openspec/specs/paper-ingestion/spec.md), not a side effect of attaching a figure. |

@@ -30,6 +30,7 @@ from .certify import Claim
 from .claim_candidates import propose_claims
 from .claims_template import claims_template, unfilled_claims
 from .digitization import (
+    DigitizedSeries,
     figure_template,
     pairing_faults,
     read_digitized_figure,
@@ -632,24 +633,26 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
-    try:
-        text = Path(args.series).read_text(encoding="utf-8")
-        # A template handed straight back is the ordinary mistake, and reading it would refuse on
-        # whichever blank it reached first — which says nothing about the other four.
-        loaded = json.loads(text)
-        blanks = unfilled_figure(loaded) if isinstance(loaded, dict) else ()
-        if blanks:
-            print("this digitization has not been filled in yet:", file=sys.stderr)
-            for blank in blanks:
-                print(f"  {blank}", file=sys.stderr)
+    series: tuple[DigitizedSeries, ...] = ()
+    for path in args.series:
+        try:
+            text = Path(path).read_text(encoding="utf-8")
+            # A template handed straight back is the ordinary mistake, and reading it would refuse
+            # on whichever blank it reached first — which says nothing about the other four.
+            loaded = json.loads(text)
+            blanks = unfilled_figure(loaded) if isinstance(loaded, dict) else ()
+            if blanks:
+                print(f"{path} has not been filled in yet:", file=sys.stderr)
+                for blank in blanks:
+                    print(f"  {blank}", file=sys.stderr)
+                return 1
+            series += read_digitized_figure(text)
+        except OSError as unreadable:
+            print(f"cannot read the digitization: {unreadable}", file=sys.stderr)
             return 1
-        series = read_digitized_figure(text)
-    except OSError as unreadable:
-        print(f"cannot read the digitization: {unreadable}", file=sys.stderr)
-        return 1
-    except (UnicodeDecodeError, ValueError) as unusable:
-        print(f"cannot read the digitization: {unusable}", file=sys.stderr)
-        return 1
+        except (UnicodeDecodeError, ValueError) as unusable:
+            print(f"cannot read the digitization: {unusable}", file=sys.stderr)
+            return 1
 
     # Without a document there is no pairing to check: the file names claim ids, and whether they
     # are the right ones is a question about the document they were read off, which this command
@@ -690,11 +693,17 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             },
         })
         return 1 if faults or short else 0
-    print(f"{len(series)} SERIES READ FROM {series[0].figure}, DIGITIZED WITH {series[0].digitizer}")
+    panels = ", ".join(dict.fromkeys(reading.figure for reading in series))
+    print(f"{len(series)} SERIES READ FROM {panels}, "
+          f"DIGITIZED WITH {series[0].digitizer}")
     for reading, resolution in zip(series, resolutions):
         low, high = resolution["span"]
-        print(f"  [{reading.claim_id}] {reading.curve}: {resolution['points']} point(s) over "
-              f"{low}-{high} {reading.x_axis.unit}, in {reading.y_axis.unit}")
+        # The panel is named per series once more than one file is in play: a claim id says
+        # nothing about which picture it was read off, and that is the fact a curator checking
+        # two panels needs.
+        panel = f"{reading.figure} " if len(set(r.figure for r in series)) > 1 else ""
+        print(f"  {panel}[{reading.claim_id}] {reading.curve}: {resolution['points']} point(s) "
+              f"over {low}-{high} {reading.x_axis.unit}, in {reading.y_axis.unit}")
         # Reported, never judged: between two read points the reference is the curator's straight
         # line, and how much of the comparison rests on it is a fact they should see rather than a
         # threshold this command invented.
@@ -1019,9 +1028,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="check a digitization of your figure before it is used as a reference",
     )
     p.add_argument(
-        "--series", required=True,
+        "--series", required=True, action="append", metavar="FILE",
         help="a plot digitizer's output for one figure panel as JSON: the figure, the digitizer, "
-             "both axes, and one series of [x, y] points per curve",
+             "both axes, and one series of [x, y] points per curve. Repeat it for a paper with "
+             "more than one panel — the pairing is then checked across all of them",
     )
     p.add_argument(
         "archive", nargs="?", default=None,

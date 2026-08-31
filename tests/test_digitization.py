@@ -272,6 +272,23 @@ def test_every_way_the_pairing_is_wrong_is_named_at_once() -> None:
     assert pairing_faults(_CLAIMS, [_series([[0, 1.0], [24, 2.0]])]) == ()
 
 
+def test_one_claim_read_off_two_panels_is_refused_rather_than_one_reading_dropped() -> None:
+    """A file cannot pair two curves with one claim; two files could, and this is where that ends.
+
+    The join keys readings by claim id, so the second panel's curve replaced the first's and one
+    of the two readings was silently never used — a reference built from whichever file was passed
+    last, with nothing to show it happened.
+    """
+    both = [
+        _series([[0, 1.0], [24, 2.0]], claim="fig-3a"),
+        _series([[0, 9.0], [24, 8.0]], claim="fig-3a"),
+    ]
+    (fault,) = pairing_faults(_CLAIMS, both)
+    assert "paired with a reading in more than one panel" in fault
+    with pytest.raises(ValueError, match="more than one panel"):
+        attach_digitized_values(_CLAIMS, both, times=[0.0, 24.0])
+
+
 def test_a_reading_is_measured_against_every_window_the_document_runs() -> None:
     """The same refusal `resample_series` makes at the join, said while the curator is still here.
 

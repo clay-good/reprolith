@@ -834,11 +834,13 @@ def test_figure_check_refuses_a_reading_off_its_own_axes(tmp_path, capsys):
 _KINETIC_SEDML = Path(__file__).parent.parent / "datasets" / "kinetic" / "BIOMD0000000010.sedml"
 
 
-def _digitization(path: Path, claim: str, *, span: tuple[float, float] = (0, 9000)) -> Path:
+def _digitization(
+    path: Path, claim: str, *, span: tuple[float, float] = (0, 9000), figure: str = "Figure 2A",
+) -> Path:
     """A filled digitization of one panel, paired with ``claim`` and read over ``span``."""
     low, high = span
     path.write_text(json.dumps({
-        "figure": "Figure 2A", "digitizer": "WebPlotDigitizer 4.7",
+        "figure": figure, "digitizer": "WebPlotDigitizer 4.7",
         "x_axis": {"minimum": 0, "maximum": 9000, "unit": "s"},
         "y_axis": {"minimum": 0, "maximum": 300, "unit": "nM"},
         "series": [{"claim": claim, "curve": "MAPK_PP",
@@ -894,6 +896,34 @@ def test_figure_check_refuses_a_reading_that_does_not_cover_the_window_the_docum
     assert "READ OVER TOO SHORT A WINDOW" in printed
     assert "was read over 300-9000 s, and your document runs 0-9000" in printed
     assert "nothing here is extrapolated" in printed
+
+
+def test_figure_check_reads_every_panel_a_paper_has(tmp_path, capsys):
+    """One file is one panel, and a paper is several. Checked one at a time, each of them reads
+    as "the other three curves are unread" — which is true of the file and false of the paper."""
+    first = _digitization(tmp_path / "fig2a.json", "plot_0__plot_0_0_0__plot_0_0_1")
+    second = _digitization(tmp_path / "fig2b.json", "plot_1__plot_1_0_0__plot_1_0_1",
+                           figure="Figure 2B")
+    assert run(["figure-check", "--series", str(first), "--series", str(second),
+                "--sedml", str(_KINETIC_SEDML)]) == 0
+    printed = capsys.readouterr().out
+    assert "2 SERIES READ FROM Figure 2A, Figure 2B" in printed
+    # Which picture a claim was read off is the fact a curator checking two panels needs.
+    assert "Figure 2A [plot_0__plot_0_0_0__plot_0_0_1]" in printed
+    assert "2 curve(s) your document plots are not read here" in printed
+
+
+def test_figure_check_refuses_one_claim_read_off_two_panels(tmp_path, capsys):
+    """A file cannot pair two curves with one claim — the reader refuses that. Two files could,
+    and nothing saw it: the join keys readings by claim id, so the second panel's curve silently
+    replaced the first's and one of the two readings was never used."""
+    first = _digitization(tmp_path / "fig2a.json", "plot_0__plot_0_0_0__plot_0_0_1")
+    second = _digitization(tmp_path / "fig2b.json", "plot_0__plot_0_0_0__plot_0_0_1",
+                           figure="Figure 2B")
+    assert run(["figure-check", "--series", str(first), "--series", str(second),
+                "--sedml", str(_KINETIC_SEDML)]) == 1
+    printed = capsys.readouterr().out
+    assert "paired with a reading in more than one panel (Figure 2A, Figure 2B)" in printed
 
 
 def test_figure_check_without_a_document_says_the_pairing_was_not_checked(tmp_path, capsys):

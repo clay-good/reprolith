@@ -389,6 +389,16 @@ def pairing_faults(
     by_claim = {s.claim_id: s for s in series}
     known = {claim.id for claim in claims}
     faults: list[str] = []
+    # One file is one panel and cannot pair two curves with one claim — the reader refuses that.
+    # Two files can, and nothing saw it: the join keys the readings by claim id, so the second
+    # panel's curve silently replaced the first's and one of the two readings was never used.
+    paired = [reading.claim_id for reading in series]
+    for claim_id in sorted({c for c in paired if paired.count(c) > 1}):
+        panels = ", ".join(sorted({r.figure for r in series if r.claim_id == claim_id}))
+        faults.append(
+            f"claim '{claim_id}' is paired with a reading in more than one panel ({panels}): "
+            "which curve a claim reads is the curator's statement, and two of them is not one"
+        )
     unpaired = sorted(set(by_claim) - known)
     if unpaired:
         faults.append(
