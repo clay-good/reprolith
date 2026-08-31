@@ -154,7 +154,10 @@ reprolith backlog                    # backlog depth by state, class, difficulty
 reprolith certificate <digest>       # the full certificate, human-readable
 reprolith verdict <digest>           # the scope-qualified verdict, never a bare boolean
 reprolith gaps <digest>              # the "what was missing" report
+reprolith presubmission <digest>     # the same certificate, as a fix list for its author
 reprolith status <accession>         # a paper's lifecycle status and history
+reprolith dossier <accession>        # what was extracted from the paper, and from where
+reprolith bundle <accession>         # the reconstruction the certificate was issued against
 reprolith certificates-for <id>      # every certificate digest for one paper, newest first
 reprolith self-validation            # the blind track record, per class and overall
 reprolith export <accession> \       # the reconstruction as a runnable COMBINE archive
