@@ -585,13 +585,22 @@ def figure_template(sedml: str, *, panel: str | None = None) -> dict[str, Any]:
     """
     from .sedml import enumerate_sedml_claims, enumerate_sedml_panels
 
-    panels = enumerate_sedml_panels(sedml)
-    readable = {p.plot_id: p for p in panels}
+    all_panels = enumerate_sedml_panels(sedml)
+    readable = {p.plot_id: p for p in all_panels}
     if panel is not None and panel not in readable:
-        known = ", ".join(p.label for p in panels) or "none"
+        known = ", ".join(p.label for p in all_panels) or "none"
         raise ValueError(
             f"this document has no plot '{panel}'; it plots {known}"
         )
+    # Only a panel with a curve that needs reading is a panel there is a choice between: one whose
+    # curves the document already ships values for has nothing to digitize, and asking a curator
+    # to choose between the one figure they can read and one they must not is a question with a
+    # single answer.
+    needs_reading = {
+        claim.id for claim in enumerate_sedml_claims(sedml)
+        if claim.targetable and not claim.reference_data
+    }
+    panels = [p for p in all_panels if needs_reading.intersection(p.curve_ids)]
     if panel is None and len(panels) > 1:
         raise AmbiguousPanel(
             "one digitization file is one figure panel, and this document plots "
@@ -609,13 +618,15 @@ def figure_template(sedml: str, *, panel: str | None = None) -> dict[str, Any]:
     for claim in claims:
         if claim.id not in within:
             continue
-        if not claim.targetable:
-            continue
-        if claim.reference_data:
+        # A curve inside a plot is non-targetable for exactly one reason: the document plots it
+        # from a data file it ships. Skipping it silently said nothing about the panel's other
+        # curve — and whether the values were loaded decided whether the curator was told, which
+        # is a fact about this call and not about their document.
+        if not claim.targetable or claim.reference_data:
             notes.append(
-                f"'{claim.id}' ({claim.quantity}) already carries the values your document ships, "
-                "so it needs no reading: a digitization of a picture of them would replace your "
-                "own recorded points"
+                f"'{claim.id}' ({claim.quantity}) is plotted from values your document ships "
+                f"({claim.source_location}), so it needs no reading: a digitization of a picture "
+                "of them would replace your own recorded points"
             )
             continue
         series.append({"claim": claim.id, "curve": claim.quantity, "points": []})

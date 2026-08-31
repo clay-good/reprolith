@@ -777,8 +777,12 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         for fault in short:
             print(f"  READ OVER TOO SHORT A WINDOW: {fault}")
         if unread:
+            # A document plotting forty curves produces one unreadable line, and a truncation that
+            # does not say it truncated reads as "that was all of them".
+            shown = ", ".join(unread[:5])
+            rest = f", and {len(unread) - 5} more" if len(unread) > 5 else ""
             print(f"  {len(unread)} curve(s) your document plots are not read here, and stay "
-                  f"unjudged: {', '.join(unread)}")
+                  f"unjudged: {shown}{rest}")
         if not faults and not short:
             print("  every series is paired with a curve your document plots and can carry values")
             if windows:

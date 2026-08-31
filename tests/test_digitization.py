@@ -24,6 +24,7 @@ from reprolith import (
     Verdict,
     attach_digitized_values,
     curve_reference,
+    figure_template,
     judge_curve,
     pairing_faults,
     read_digitized_figure,
@@ -270,6 +271,71 @@ def test_every_way_the_pairing_is_wrong_is_named_at_once() -> None:
     # The claim that is paired correctly is not among them.
     assert not any("fig-3a" in fault for fault in faults)
     assert pairing_faults(_CLAIMS, [_series([[0, 1.0], [24, 2.0]])]) == ()
+
+
+_TWO_PLOTS = """<?xml version="1.0" encoding="UTF-8"?>
+<sedML xmlns="http://sed-ml.org/sed-ml/level1/version4" level="1" version="4">
+  <listOfDataDescriptions>
+    <dataDescription id="obs" name="observed" source="observed.csv"
+                     format="urn:sedml:format:csv">
+      <listOfDataSources>
+        <dataSource id="observedC">
+          <listOfSlices><slice reference="ColumnIds" value="C_observed"/></listOfSlices>
+        </dataSource>
+      </listOfDataSources>
+    </dataDescription>
+  </listOfDataDescriptions>
+  <listOfModels><model id="model" language="urn:sedml:language:sbml" source="m.xml"/></listOfModels>
+  <listOfSimulations>
+    <uniformTimeCourse id="sim" initialTime="0" outputStartTime="0" outputEndTime="24"
+                       numberOfSteps="240"/>
+  </listOfSimulations>
+  <listOfTasks><task id="task" modelReference="model" simulationReference="sim"/></listOfTasks>
+  <listOfDataGenerators>
+    <dataGenerator id="g_time" name="time">
+      <listOfVariables>
+        <variable id="v_time" symbol="urn:sedml:symbol:time" taskReference="task"/>
+      </listOfVariables>
+      <math xmlns="http://www.w3.org/1998/Math/MathML"><ci>v_time</ci></math>
+    </dataGenerator>
+    <dataGenerator id="g_C" name="C">
+      <listOfVariables>
+        <variable id="v_C" target="/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species[@id='C']"
+                  taskReference="task"/>
+      </listOfVariables>
+      <math xmlns="http://www.w3.org/1998/Math/MathML"><ci>v_C</ci></math>
+    </dataGenerator>
+    <dataGenerator id="g_obs" name="observed C">
+      <math xmlns="http://www.w3.org/1998/Math/MathML"><ci>observedC</ci></math>
+    </dataGenerator>
+  </listOfDataGenerators>
+  <listOfOutputs>
+    <plot2D id="fig1" name="Figure 1">
+      <listOfCurves>
+        <curve id="c_sim" logX="false" logY="false" xDataReference="g_time" yDataReference="g_C"/>
+      </listOfCurves>
+    </plot2D>
+    <plot2D id="fig2" name="Figure 2">
+      <listOfCurves>
+        <curve id="c_obs" logX="false" logY="false" xDataReference="g_time" yDataReference="g_obs"/>
+      </listOfCurves>
+    </plot2D>
+  </listOfOutputs>
+</sedML>
+"""
+
+
+def test_a_panel_the_document_already_ships_values_for_is_not_a_choice() -> None:
+    """Asking which panel was read is right when both can be read, and it is a question with one
+    answer when the second panel's curve is plotted from a data file the archive ships: those are
+    the paper's own recorded points, and a reading of a picture of them is a downgrade."""
+    template = figure_template(_TWO_PLOTS)
+    assert [s["claim"] for s in template["series"]] == ["c_sim"]
+    assert any("plot 'fig1' (Figure 1)" in note for note in template["notes"])
+    # Named explicitly, it still writes that panel — and it has nothing to read.
+    shipped = figure_template(_TWO_PLOTS, panel="fig2")
+    assert shipped["series"] == []
+    assert any("is plotted from values your document ships" in n for n in shipped["notes"])
 
 
 def test_one_claim_read_off_two_panels_is_refused_rather_than_one_reading_dropped() -> None:
