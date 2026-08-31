@@ -394,10 +394,17 @@ def pairing_faults(
     # panel's curve silently replaced the first's and one of the two readings was never used.
     paired = [reading.claim_id for reading in series]
     for claim_id in sorted({c for c in paired if paired.count(c) > 1}):
-        panels = ", ".join(sorted({r.figure for r in series if r.claim_id == claim_id}))
+        panels = sorted({r.figure for r in series if r.claim_id == claim_id})
+        # The same panel twice is the ordinary slip — one file passed under two names — and it is
+        # not "more than one panel". Saying it was would send a curator looking for a second
+        # picture that does not exist.
+        where = (
+            f"more than one panel ({', '.join(panels)})" if len(panels) > 1
+            else f"{paired.count(claim_id)} readings, all of them in {panels[0]}"
+        )
         faults.append(
-            f"claim '{claim_id}' is paired with a reading in more than one panel ({panels}): "
-            "which curve a claim reads is the curator's statement, and two of them is not one"
+            f"claim '{claim_id}' is paired with {where}: which curve a claim reads is the "
+            "curator's statement, and two of them is not one"
         )
     unpaired = sorted(set(by_claim) - known)
     if unpaired:

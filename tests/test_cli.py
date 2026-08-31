@@ -923,7 +923,16 @@ def test_figure_check_refuses_one_claim_read_off_two_panels(tmp_path, capsys):
     assert run(["figure-check", "--series", str(first), "--series", str(second),
                 "--sedml", str(_KINETIC_SEDML)]) == 1
     printed = capsys.readouterr().out
-    assert "paired with a reading in more than one panel (Figure 2A, Figure 2B)" in printed
+    assert "paired with more than one panel (Figure 2A, Figure 2B)" in printed
+
+
+def test_figure_check_names_the_same_panel_passed_twice_as_what_it_is(tmp_path, capsys):
+    """One file under two names is the ordinary slip, and "more than one panel" would send a
+    curator looking for a second picture that does not exist."""
+    only = _digitization(tmp_path / "fig2a.json", "plot_0__plot_0_0_0__plot_0_0_1")
+    assert run(["figure-check", "--series", str(only), "--series", str(only),
+                "--sedml", str(_KINETIC_SEDML)]) == 1
+    assert "2 readings, all of them in Figure 2A" in capsys.readouterr().out
 
 
 def test_figure_check_without_a_document_says_the_pairing_was_not_checked(tmp_path, capsys):

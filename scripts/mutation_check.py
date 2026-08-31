@@ -111,6 +111,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_cli.py"],
     ),
     (
+        "one claim read off two panels keeps whichever file was passed last",
+        "digitization.py",
+        (
+            "    for claim_id in sorted({c for c in paired if paired.count(c) > 1}):",
+            "    for claim_id in []:",
+        ),
+        ["tests/test_digitization.py", "tests/test_cli.py"],
+    ),
+    (
         "a reading is taken to cover a window it stops short of",
         "digitization.py",
         (

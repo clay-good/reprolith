@@ -280,11 +280,11 @@ def test_one_claim_read_off_two_panels_is_refused_rather_than_one_reading_droppe
     last, with nothing to show it happened.
     """
     both = [
-        _series([[0, 1.0], [24, 2.0]], claim="fig-3a"),
-        _series([[0, 9.0], [24, 8.0]], claim="fig-3a"),
+        _series([[0, 1.0], [24, 2.0]], claim="fig-3a", figure="Figure 3A"),
+        _series([[0, 9.0], [24, 8.0]], claim="fig-3a", figure="Figure 3B"),
     ]
     (fault,) = pairing_faults(_CLAIMS, both)
-    assert "paired with a reading in more than one panel" in fault
+    assert "paired with more than one panel (Figure 3A, Figure 3B)" in fault
     with pytest.raises(ValueError, match="more than one panel"):
         attach_digitized_values(_CLAIMS, both, times=[0.0, 24.0])
 
