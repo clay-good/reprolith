@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any
 from .enums import OverallVerdict, Verdict
 from .model import Certificate
 from .oracle import Fault
-from .render import estimation_claims
+from .render import estimation_claims, figure_read_claims
 
 if TYPE_CHECKING:  # a type-only import: the archive check takes claims, it does not build them
     from .certify import Claim
@@ -244,6 +244,28 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
         else _REPRODUCED_BUT_NOT_READY,
         "per_claim": [a.to_dict() for a in cert.assessments],
         "fix_list": actions,
+        # Reported, and deliberately *not* a fix that gates readiness — the same call the archive
+        # check makes about `curves_without_values`, one surface over, and for the same reason.
+        # Publishing results as figures is what papers do, and an author told NOT READY for it is
+        # being told their honest work is broken. An estimation-level pass does gate, because
+        # re-fitting answers a *different* question; a figure reading answers the same one in a
+        # band twice as wide. What is worth their knowing is the consequence and how cheaply they
+        # can remove it, and that is what this says.
+        "judged_from_figure_readings": [
+            {
+                "claim_id": a.claim_id,
+                "quantity": a.quantity,
+                "source_location": a.source_location,
+                "consequence": "judged against values read off your figure, in a band twice as "
+                               "wide as a printed number's — not against a number you published",
+                "you_can_remove_it": "publish this curve's values — a table, a supplementary data "
+                                     "file, or the SED-ML data set an archive can carry — so it is "
+                                     "judged against your numbers rather than a reading of your "
+                                     "picture",
+            }
+            for a in cert.assessments
+            if a.claim_id in set(figure_read_claims(cert))
+        ],
         "scope": cert.scope.to_dict(),
     }
 
@@ -272,6 +294,18 @@ def render_presubmission_human(cert: Certificate) -> str:
         lines.append(f"  - {where}{item['issue']}{source}")
         lines.append(f"      fix: {item['fix']}")
     lines.append("")
+
+    # Not under "fix before you submit", because it is not a fix — see the field's own note. It is
+    # printed even above a READY TO SUBMIT, because "every claim reproduces cleanly" and "one of
+    # them was checked against a reading of your picture" are both true, and the second is the one
+    # the author can do something cheap about.
+    readings = report["judged_from_figure_readings"]
+    if readings:
+        lines.append("JUDGED FROM A READING OF YOUR FIGURE (not a fix — a consequence)")
+        for item in readings:
+            lines.append(f"  - [{item['claim_id']}] {item['quantity']}: {item['consequence']}")
+            lines.append(f"      you can remove it: {item['you_can_remove_it']}")
+        lines.append("")
 
     lines.append("SCOPE")
     lines.append(f"  {cert.scope.human}")

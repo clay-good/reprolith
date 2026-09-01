@@ -238,6 +238,12 @@ list. Some of it your archive genuinely omits; some of it your archive states pe
 Reprolith cannot represent. Nothing distinguishes the two, so nothing there is asked of you and
 none of it decides readiness.
 
+The same fact follows you past the check. If a claim of yours is eventually certified against a
+curator's reading of your figure, the pre-submission report on that certificate names it, states
+what it cost — the wider band, and against a reading rather than a number — and repeats the cheap
+way out. It is printed even above a READY TO SUBMIT, and for the same reason it is not a fix here:
+both things are true at once, and only one of them is yours to change.
+
 ## After it is green
 
 A green check means a reproducer can read your files and knows what to check — not that your model

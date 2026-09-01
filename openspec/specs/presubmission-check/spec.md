@@ -54,6 +54,18 @@ an author knows what to fix first rather than reading an unordered list.
 - **AND** the ready-to-submit signal can never be green while any claim is partial, failed,
   not-evaluable, or assumption-qualified
 
+#### Scenario: A claim judged from a reading of the author's figure
+
+- **WHEN** a certificate carries a claim whose reference was read off a figure
+- **THEN** the report names that claim, states the consequence — judged in a band twice as wide as
+  a printed number's, against a reading rather than a published value — and says how the author can
+  remove the step, since they hold the numbers and the reproducer does not
+- **AND** it does not gate readiness on it, for the reason the archive check does not: publishing
+  results as figures is what papers do, and a report marked not-ready for it tells an honest author
+  their work is broken
+- **AND** an estimation-level claim still gates, because re-fitting answers a different question
+  while a figure reading answers the same one in a wider band
+
 ### Requirement: An archive can be checked before any certificate exists
 
 An author with a COMBINE archive and no certificate SHALL be able to learn what a reproducer would

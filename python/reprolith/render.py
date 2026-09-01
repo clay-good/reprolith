@@ -20,6 +20,7 @@ from typing import Any
 
 from .enums import ReproductionLevel, Verdict
 from .model import Certificate, RunMetadata
+from .oracle import ReferenceKind
 
 
 def claim_counts(cert: Certificate) -> dict[str, int]:
@@ -39,6 +40,22 @@ def estimation_claims(cert: Certificate) -> list[str]:
     summarizes a certificate reads this one list rather than deciding for itself.
     """
     return [a.claim_id for a in cert.assessments if a.level is ReproductionLevel.ESTIMATION]
+
+
+def figure_read_claims(cert: Certificate) -> list[str]:
+    """The claims judged against values read off a picture rather than against published numbers.
+
+    The reference counterpart of :func:`estimation_claims`, and it exists for the same reason: a
+    figure reading is a weaker result about the same question, and every surface that summarizes a
+    certificate should read one list rather than each deciding for itself what
+    ``digitized-figure`` implies. The human render already marks these ``[figure-reading]``; the
+    author-facing report had no notion of them at all, and called a pass judged in a band twice as
+    wide a clean pass with nothing to fix.
+    """
+    return [
+        a.claim_id for a in cert.assessments
+        if a.reference_kind == ReferenceKind.DIGITIZED_FIGURE.value
+    ]
 
 
 def gap_items(cert: Certificate) -> list[dict[str, Any]]:

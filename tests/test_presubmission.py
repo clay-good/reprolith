@@ -352,3 +352,65 @@ def test_a_shortfall_with_no_stated_fault_still_says_something_usable() -> None:
 
     _, fix = _claim_issue_and_fix(_failed_claim(fault="", implicated="the peak concentration"))
     assert fix == "the peak concentration"
+
+
+def test_a_claim_judged_from_a_figure_reading_is_reported_and_does_not_gate() -> None:
+    """The author-facing consequence of a figure reading, and the reason it is not a fix.
+
+    A claim whose reference was read off the author's own picture reproduced in a band twice as
+    wide as a printed number's — against a curator's measurement rather than against anything the
+    paper printed. The report had no notion of that at all, while the human certificate marked the
+    same claim `[figure-reading]`.
+
+    It is *reported* and does not gate readiness, which is the call the archive check already
+    makes about `curves_without_values` one surface over: publishing results as figures is what
+    papers do, and NOT READY for it tells almost every honest author their work is broken. An
+    estimation-level pass gates because re-fitting answers a different question; a figure reading
+    answers the same one in a wider band.
+    """
+    from reprolith import ReferenceKind, judge_curve
+
+    read = judge_curve(
+        claim_id="fig2-plasma", quantity="plasma concentration",
+        source_location="Figure 2, plasma (digitized from the figure with WebPlotDigitizer 4.7)",
+        reference=(1.0, 2.0, 3.0, 2.0, 1.0), predicted=(1.0, 2.01, 3.0, 2.0, 1.0),
+        reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+    )
+    report = presubmission_report(_cert([read, _reproduced("printed")]))
+
+    assert report["ready_to_submit"] is True and report["fix_list"] == []
+    item, = report["judged_from_figure_readings"]
+    assert item["claim_id"] == "fig2-plasma"
+    assert "twice as wide" in item["consequence"]
+    # The step they can remove, and the reason it is worth telling them: measured on this test set
+    # seven of ten open-access papers state their results only in figures, and a figure is the one
+    # form a reproducer cannot read without re-measuring the picture.
+    assert "publish this curve's values" in item["you_can_remove_it"]
+
+    # A claim printed as a number is not in it, and neither list has grown for anybody else.
+    assert all(i["claim_id"] != "printed" for i in report["judged_from_figure_readings"])
+
+
+def test_nothing_read_off_a_figure_reports_nothing() -> None:
+    """The list is empty rather than absent, so a reader can tell "none" from "not checked" — and
+    so no certificate published before this renders differently."""
+    assert presubmission_report(_cert([_reproduced()]))["judged_from_figure_readings"] == []
+
+
+def test_the_human_report_prints_a_figure_reading_above_a_ready_verdict() -> None:
+    """Both are true at once, and the second is the one the author can act on cheaply. A fact that
+    lives only in the JSON is a fact the author reading the plain-text report does not have."""
+    from reprolith import ReferenceKind, judge_curve
+
+    read = judge_curve(
+        claim_id="fig2-plasma", quantity="plasma concentration", source_location="Figure 2",
+        reference=(1.0, 2.0, 3.0, 2.0, 1.0), predicted=(1.0, 2.01, 3.0, 2.0, 1.0),
+        reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+    )
+    rendered = render_presubmission_human(_cert([read]))
+    assert "READY TO SUBMIT" in rendered
+    assert "JUDGED FROM A READING OF YOUR FIGURE (not a fix — a consequence)" in rendered
+    assert "publish this curve's values" in rendered
+
+    # And a certificate with no reading prints no such section, rather than an empty heading.
+    assert "JUDGED FROM A READING" not in render_presubmission_human(_cert([_reproduced()]))
