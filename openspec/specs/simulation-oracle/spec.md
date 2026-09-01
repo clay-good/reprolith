@@ -243,3 +243,9 @@ separate a model's behavior from a single engine's quirks.
 - **THEN** the oracle can report whether the verdict is stable across them
 - **AND** a verdict that flips between engines is surfaced as engine-sensitive rather than
   reported as a clean pass or fail
+- **AND** where the check reaches a reader, a class for which no second engine is registered SHALL
+  be named as unchecked rather than omitted, since a surface listing only the corroborated classes
+  leaves a reader to infer the rest were checked and passed
+- **AND** what was corroborated SHALL be stated in the unit the check actually ran in — per claim
+  where each claim is re-run at the conditions it was certified at, per model where the model's
+  curve is re-run once

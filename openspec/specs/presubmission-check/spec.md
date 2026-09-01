@@ -44,6 +44,11 @@ an author knows what to fix first rather than reading an unordered list.
   fix, and the items are ordered by impact: claims a reproducer cannot even evaluate first, then
   failed claims, then partial claims, then load-bearing values the author left for the engine to
   assume, then certificate-level gaps
+- **AND** each item's fix is an instruction the author can act on, never the issue restated: a
+  finding handed back under a heading that says to fix it gives them nothing to do
+- **AND** one fix that blocks many claims is one item naming all of them, not one item per claim:
+  an assumption is a value, and repeating it per claim buries the fixes that differ among the rows
+  that do not
 - **AND** a fully reproduced certificate produces an empty fix list
 
 #### Scenario: Ready-to-submit is honest
