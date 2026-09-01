@@ -44,8 +44,8 @@ Only the PK/PD run disagrees with its labels at all; the other five classes agre
 
 ## What the measurements say
 
-Two defaults have real numbers behind them, both from perturbing a shipped reproduction until its
-published verdict changed (see [`findings-note.md`](findings-note.md) for the full table):
+Two defaults are fully measured, both from perturbing a shipped reproduction until its published
+verdict changed (see [`findings-note.md`](findings-note.md) for the full table):
 
 - **Scalar, numeric — 5% / 15%.** Metformin's dose still reproduces at +8% and −3% and first drops
   to partial at +10%, against an unperturbed agreement of 2.2%.
@@ -54,6 +54,30 @@ published verdict changed (see [`findings-note.md`](findings-note.md) for the fu
   concentrates in under about a sixth of the samples. Tightening it to the pass threshold was
   measured and rejected: about half of correct work fails at coarse per-point noise, where the
   present budget produced 0 false failures in 15,000 trials.
+
+Three more are **partly** measured, and the distinction matters: what was measured is the part of
+each budget the *method itself* spends before any model, optimizer or paper is at fault. The
+tolerances stay declared, because no certified claim has exercised one — but each of these turns an
+unqualified "wider, to absorb the extra uncertainty" into a number, and each produced guidance a
+practitioner can act on.
+
+- **Digitized figure — 0.20 / 0.40.** Between two read points the reference is a straight line, so
+  a *flawless* five-point reading of an oral PK curve misses the curve it was read off by 0.25:
+  more than the whole pass budget, with no model involved. At ten points, 0.09; at twenty, 0.025.
+  An exponential read off a log axis is recovered exactly at any spacing. Guidance: read about
+  twenty points per curve, and more where it bends — which `figure-template` now says up front and
+  `figure-check` says when a reading is coarser than that
+  (`tests/test_digitization_interpolation_cost.py`).
+- **Distributional band — 15% / 35%.** An envelope is percentiles of a finite sample, so drawing the
+  *right* population twice moves the 5th percentile. The worst of three bands misses the 15% budget
+  47% of the time at twenty subjects and a 30% CV, 12% at fifty, 2% at a hundred, and never in 400
+  replicates at 250. Guidance: the subject count is a term in the verdict, and the run now states
+  its own band's sampling error in the protocol (`tests/test_population_sampling_cost.py`).
+- **Estimation level — 10% / 25%.** A re-fit recovers parameters from noisy data: at a 20% assay
+  CV, the median error is 2.4% on a rate and 8.8% on a scale, and the worse of the two misses the
+  pass budget 45% of the time — with an exact optimizer and the true model. Quadrupling the data
+  cuts that by a third, not a half. Guidance: an estimation verdict says much more about a paper's
+  rate constants than about its volumes (`tests/test_estimation_noise_floor.py`).
 
 Read the record with any JSON reader; it is data, not a rendering of this page.
 
