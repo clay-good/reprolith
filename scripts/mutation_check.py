@@ -195,8 +195,8 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         "a claim's value is compared against a model output in another unit",
         "manuscript_values.py",
         (
-            "        elif _units_differ(stated, declared):",
-            "        elif False:",
+            "        elif _units_differ(stated, declared):\n            results.append(UnitCheck(\n                claim_id, stated, declared, False,",
+            "        elif False:\n            results.append(UnitCheck(\n                claim_id, stated, declared, False,",
         ),
         ["tests/test_claim_units.py"],
     ),

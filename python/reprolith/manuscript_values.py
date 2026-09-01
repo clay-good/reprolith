@@ -924,6 +924,16 @@ def check_claim_units(
                 claim_id, stated, declared, None,
                 "the model states no unit for that output, so there is nothing to compare against",
             ))
+        elif not _units_known_to_differ(stated, declared) and _units_differ(stated, declared):
+            # Readable on neither side, or on only one. A verdict of "another unit" is an
+            # accusation, and one this cannot establish: an axis in "arbitrary units" or a percent
+            # is not evidence that the claim and the model disagree. Not checked, like a claim
+            # that stated nothing.
+            results.append(UnitCheck(
+                claim_id, stated, declared, None,
+                f"this claim is in {stated}, which is not a unit this can read against "
+                f"{declared}, so the two were not compared",
+            ))
         elif _units_differ(stated, declared):
             results.append(UnitCheck(
                 claim_id, stated, declared, False,

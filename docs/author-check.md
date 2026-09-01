@@ -206,7 +206,10 @@ species is read as a concentration, so it is the substance unit over its compart
 `auc` carries the run's time as well — which is what your own table headers say when they print
 `Cmax, nmol/mL` beside `AUC24, nmol*h/mL`. The answer names the factor between the two, because
 `10^-9 mole * 3600*10^2 second / 10^-3 litre` is notation and "100 times as large" is the finding.
-A claim that states no unit is **not checked**, never agreement.
+A claim that states no unit is **not checked**, never agreement — and so is one in a unit this
+cannot read, like "arbitrary units": naming another unit is an accusation, and it has to be
+established. Molar is read as the whole quantity it is written as, so `µM` and `nmol/mL` are the
+same thing here and only the real thousandfold pairs are findings.
 
 It does tell you **how much the match is worth**, because that depends on the number. A value
 printed once in the table you cite is good evidence you read that cell; a value printed seven times

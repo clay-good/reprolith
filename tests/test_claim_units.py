@@ -200,3 +200,26 @@ def test_a_report_only_asserts_a_disagreement_it_can_establish() -> None:
     # Unreadable on either side: the refusal says "do not compare", the report says nothing.
     assert _units_differ("arbitrary units", "10^-9 mole")
     assert not _units_known_to_differ("arbitrary units", "10^-9 mole")
+
+
+def test_a_unit_this_cannot_read_is_not_checked_rather_than_accused() -> None:
+    """The same rule as the figure reports, in the check that has a verdict and an exit code.
+
+    "ANOTHER UNIT" is an accusation, and an axis labelled "arbitrary units" or a percent is not
+    evidence that the claim and the model disagree. It joins the claims that stated nothing —
+    reported, not failed — while the real thousandfold pairs stay findings.
+    """
+    def check(unit: str):
+        (one,) = check_claim_units(
+            _model("BIOMD0000001027"),
+            [{"claim_id": "c", "species": "mPlasmaVenous", "reported_units": unit}],
+        )
+        return one
+
+    assert check("nmol/mL").agrees is True
+    # Molar, spelled as a whole quantity, is the same thing this model reads.
+    assert check("µM").agrees is True
+    assert check("mg/mL").agrees is False
+    unreadable = check("arbitrary units")
+    assert unreadable.agrees is None and "not a unit this can read" in unreadable.detail
+    assert claims_in_another_unit((unreadable,)) == ()
