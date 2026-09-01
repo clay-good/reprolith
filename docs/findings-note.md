@@ -3325,6 +3325,61 @@ stdlib, on the dependency-free gate — rather than six checks each pinning its 
 generalized past the class that drifted: every class README's `n/total` ratio is held to its own
 report, since the five that are right today are right by luck and not by check.
 
+## The input check could not see a volume, and could not see a unit
+
+The check that had never existed, one day old, was answering about a third of the values it was
+asked about — and doing it confidently.
+
+**A PBPK paper's parameter table prints tissue volumes, and those are not parameters.** The reader
+read `listOfParameters` and nothing else, so a curator pairing a published liver volume with the
+compartment that carries it was told `MISMATCH: the model declares no parameter 'Liver'` — against
+a deposit holding 1.50975, the very number the paper prints. Confident, wrong, and about a correct
+deposition, which is the worst answer an author-facing check can give. Initial conditions are the
+same shape one list over. Both are read now, and the model's own inert-attribute discipline
+travels with them unchanged.
+
+The omission report had the same floor, and lifting it ran the opposite way from the guess. Across
+the four deposited models the parameter count was not looking at **96** further settable values —
+16 compartment sizes and 80 initial conditions. But of the twenty compartments each model declares,
+**sixteen are scaled from the body weight by an `initialAssignment`**: their `size` attribute is not
+what runs, so the paper omits nothing by not printing them, and they are not counted. Four are left
+per model, the lumen and excreta compartments. The parameter number stays a count of parameters —
+folding the new kinds into `parameters_the_paper_does_not_state` would have silently redefined a
+published measurement rather than adding one, so the by-kind report is a second function.
+
+**And two numbers agreeing says nothing until they are the same quantity.** The check compared bare
+numbers. A paper reporting a volume in litres against a deposit carrying it in millilitres came
+back `ok` — agreement at a factor of a thousand, and the one error no output check downstream can
+catch, because the reconstruction runs the model's own number and reproduces the paper's curve
+exactly. Every answer now carries the unit the model declares, resolved through its
+`unitDefinition`, because the reference is not the unit: `units="volume"` says nothing, and
+`10^-3 litre` is the thing an author can act on. A stated `reported_units` that differs is refused
+rather than compared — never a mismatch, since two numbers in different quantities mean nothing to
+each other in either direction.
+
+Two things that refusal taught, both in the first version of it.
+
+The rendering is a **second implementation** of one this repository has already been wrong about
+once: putting a unit's multiplier and scale outside its exponent states the reciprocal of what the
+file says, and got the metformin blood flows wrong by 1.3e11. This module cannot call the libSBML
+one — it runs on the dependency-free gate — so the two are now held to each other on every
+committed model rather than trusted to stay in step.
+
+And the first version of the refusal compared the two units **as strings**. No author writes
+`10^-3 litre`; they write `mL`. So the opt-in would have refused every pairing a real author would
+make, which is a check nobody leaves switched on. Both sides are read down to a power of ten and a
+base kind first, and only when both parse as one factor with a known prefix — anything else falls
+back to the strings, which errs toward refusing. `metre` is left out of that table on purpose: a
+bare `m` is both the unit and the milli prefix, and no reading of it is safe enough to compare a
+published number against a deposited one.
+
+Alongside, two things that were only ever friction. `params-template` writes the pairing file out
+of the model — one row per settable value, the blanks left for the author, and never the model's
+own number in the `reported` field, for the reason `claims-template` gives about claims: a template
+that filled it in would hand the check the model's value as the paper's, and the comparison would
+agree by construction. And both parameter commands now take the COMBINE archive most papers ship,
+rather than requiring an author to unzip it to ask a question about their own model.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

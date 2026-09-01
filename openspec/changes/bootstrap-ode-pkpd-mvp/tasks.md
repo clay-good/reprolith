@@ -44,7 +44,12 @@ a phase done until its verification holds.
   - Partly done for the same reason. On the artifact path a symbol no declaration covers, an
     unstated unit, an unstated initial value, and a construct the dossier cannot represent are
     all recorded as gaps and never filled (`tests/test_ingest.py`), and every extraction carries
-    its confidence. The manuscript path that would find a parameter a *paper* omits is not built.
+    its confidence. The manuscript path that would find a parameter a *paper* omits is not built —
+    but the model-side counterpart of it is: given the values a curator paired with a paper's rows,
+    `params-check` names every settable parameter, compartment size and species initial condition
+    that pairs with nothing, which is what a reproducer rebuilding from the paper would have to
+    take from the deposit or guess. It also carries the unit the model declares for each, since a
+    published litre agreeing with a deposited millilitre is a pass nothing downstream can catch.
 - [x] 2.4 Support reviewer correction as a tracked revision → verify: a correction is applied and the original remains retrievable
 
 ## 3. Reconstruction (PK/PD)
