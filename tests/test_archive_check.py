@@ -484,6 +484,7 @@ def test_an_archive_of_reports_is_told_the_route_its_results_actually_have() -> 
     has nothing SED-ML can say. The route for that is the one this command already takes, and it
     went unmentioned exactly where it was the only answer.
     """
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     sedml = (
         '<sedML xmlns="http://sed-ml.org/sed-ml/level1/version3" level="1" version="3">'
         '<listOfModels><model id="m" language="urn:sedml:language:sbml" source="model.xml"/>'
