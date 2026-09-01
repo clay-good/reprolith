@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "synchronous-update, exhaustive-state-enumeration (rev ba6efa0e7170)",
+    "algorithm": "synchronous-update, exhaustive-state-enumeration (rev 0efaa8ee4d36)",
     "engine": "reprolith-logical",
     "version": "0.0.1"
   },

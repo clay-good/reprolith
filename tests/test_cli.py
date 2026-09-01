@@ -1263,3 +1263,30 @@ def test_figure_template_from_an_archive_with_no_document_says_so(tmp_path, caps
 
     assert run(["figure-template", str(archive)]) == 1
     assert "ships no simulation document" in capsys.readouterr().err
+
+
+def test_figure_check_says_a_two_point_reading_cannot_be_measured_at_all(tmp_path, capsys):
+    """The only unmeasurable case a series can reach, and the branch that used to guard it wrong.
+
+    Two points is one straight line over the whole span with no interior reading to check it
+    against. It was guarded by the widest-gap threshold, which cannot discriminate here — a
+    two-point reading's one gap *is* the span, so the condition was true whenever it was reached
+    and read as a test that could fail.
+    """
+    two = tmp_path / "two.json"
+    two.write_text(json.dumps({
+        "figure": "Figure 3A", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 10, "unit": "nmol/mL"},
+        "series": [{"claim": "c", "curve": "plasma", "points": [[0, 0.5], [24, 6.0]]}],
+    }), encoding="utf-8")
+    assert run(["figure-check", "--series", str(two)]) == 0
+    printed = capsys.readouterr().out
+    assert "2 readings is one straight line over the whole span" in printed
+    assert "no interior reading to check it against" in printed
+    # And no measured number is printed for it, rather than a zero that would read as "free".
+    assert "of the pass budget" not in printed
+
+    assert run(["figure-check", "--series", str(two), "--json"]) == 0
+    cost = json.loads(capsys.readouterr().out)["series"][0]["interpolation"]
+    assert cost["measurable"] is False and cost["budget_share"] is None

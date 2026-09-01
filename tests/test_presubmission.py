@@ -381,7 +381,7 @@ def test_a_claim_judged_from_a_figure_reading_is_reported_and_does_not_gate() ->
     assert report["ready_to_submit"] is True and report["fix_list"] == []
     item, = report["judged_from_figure_readings"]
     assert item["claim_id"] == "fig2-plasma"
-    assert "twice as wide" in item["consequence"]
+    assert "in a band 2x as wide as a printed number's" in item["consequence"]
     # The step they can remove, and the reason it is worth telling them: measured on this test set
     # seven of ten open-access papers state their results only in figures, and a figure is the one
     # form a reproducer cannot read without re-measuring the picture.
@@ -414,3 +414,50 @@ def test_the_human_report_prints_a_figure_reading_above_a_ready_verdict() -> Non
 
     # And a certificate with no reading prints no such section, rather than an empty heading.
     assert "JUDGED FROM A READING" not in render_presubmission_human(_cert([_reproduced()]))
+
+
+def test_the_widening_told_to_an_author_is_their_claim_s_own_and_not_a_curve_s() -> None:
+    """"A band twice as wide" is true of a curve and wrong about the other two.
+
+    A figure-read *scalar* is judged at 0.15 against a printed number's 0.05 — three times, not
+    twice — and a distribution band at 0.25 against 0.15, which is 1.67. This is an author-facing
+    sentence about the number their own claim was held to, so it says that number.
+    """
+    from dataclasses import replace
+
+    from reprolith import (
+        PercentileBand,
+        ReferenceKind,
+        judge_distribution,
+        judge_scalar,
+    )
+
+    scalar = judge_scalar(
+        claim_id="cmax", quantity="Cmax", source_location="Figure 1",
+        reported=100.0, predicted=101.0, reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+    )
+    band = (PercentileBand(5.0, (1.0, 2.0)), PercentileBand(95.0, (3.0, 4.0)))
+    # An envelope must record the sampling behind it before a certificate will carry it — a
+    # verdict nobody can re-derive is not evidence — so this one does.
+    envelope = replace(
+        judge_distribution(
+            claim_id="env", quantity="envelope", source_location="Figure 3",
+            reference=band, predicted=band, reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+        ),
+        protocol="virtual population: 500 subjects, seed 1",
+    )
+    told = {
+        i["claim_id"]: i["consequence"]
+        for i in presubmission_report(_cert([scalar, envelope]))["judged_from_figure_readings"]
+    }
+    assert "band 3x as wide" in told["cmax"]
+    assert "band 1.67x as wide" in told["env"]
+
+
+def test_a_comparison_with_no_widened_default_is_described_without_a_ratio() -> None:
+    """An exact comparison — an attractor signature, a FROG fingerprint — has no band to widen, so
+    there is nothing to divide and no number to state. Said in words rather than as 1x or nan."""
+    from reprolith.presubmission import _figure_reading_consequence
+
+    assert "wider band a reading is judged in" in _figure_reading_consequence("exact-match")
+    assert "wider band a reading is judged in" in _figure_reading_consequence(None)

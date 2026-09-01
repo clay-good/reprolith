@@ -243,6 +243,24 @@ def default_tolerance(method: ComparisonMethod, reference_kind: ReferenceKind) -
     )
 
 
+def figure_band_widening(method: ComparisonMethod) -> float | None:
+    """How many times wider a figure-read reference's default band is than a printed number's.
+
+    Not a constant, which is the reason this exists rather than a number written into a sentence:
+    the widening is 3x for a scalar (0.05 -> 0.15), 2x for a curve (0.10 -> 0.20) and 1.67x for a
+    distribution band (0.15 -> 0.25). "Judged in a band twice as wide" is true of a curve and wrong
+    about the other two, and it is the kind of sentence an author-facing surface prints.
+
+    ``None`` when either default is absent or zero — an exact comparison has no band to widen, and
+    a caller should say so in words rather than divide by it.
+    """
+    printed = default_tolerance(method, ReferenceKind.NUMERIC).reproduced_within
+    read = default_tolerance(method, ReferenceKind.DIGITIZED_FIGURE).reproduced_within
+    if printed <= 0.0 or read <= 0.0:
+        return None
+    return read / printed
+
+
 def default_tolerance_table() -> Mapping[tuple[ComparisonMethod, ReferenceKind], Tolerance]:
     """The whole default table, read-only — so the discipline-loop record can audit its coverage.
 
@@ -961,6 +979,7 @@ __all__ = [
     "default_tolerance",
     "default_tolerance_table",
     "estimation_default_tolerance",
+    "figure_band_widening",
     "judge_curve",
     "judge_distribution",
     "judge_estimation",

@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Drosophila melanogaster segment polarity, single cell (Albert & Othmer 2003) — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev ba6efa0e7170)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 0efaa8ee4d36)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

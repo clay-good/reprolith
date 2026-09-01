@@ -550,13 +550,6 @@ def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
-#: The widest gap, as a fraction of the span, at which a reading is coarse enough to be worth
-#: saying so. Not invented here: five evenly spaced points span 25% each and a flawless five-point
-#: reading of an oral PK curve already exceeds the whole pass budget, while ten points span 11% and
-#: cost 0.09 of it. Between the two measurements, so it fires on the reading that was measured to
-#: be too coarse for a curved shape and not on the one that was not.
-_COARSE_READING = 0.20
-
 
 def _write_every_panel(document: str, out_dir: Path) -> int:
     """One template per panel the document plots, so a four-panel paper is one command.
@@ -802,12 +795,16 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
                 print("      this reading's own straight lines are estimated to spend the whole "
                       f"figure tolerance before the model is consulted: add points near "
                       f"{cost['worst_at']:g} {reading.x_axis.unit}, where it bends most")
-        elif resolution["widest_gap_fraction"] > _COARSE_READING:
-            # Two points is one straight line with no interior reading to check it against, so
-            # there is no curvature to measure and the gap is all there is to say.
-            print("      at that spacing a flawless reading of a curved shape can spend the whole "
-                  "tolerance on its own straight lines: measured at 0.25 against a 0.20 budget "
-                  "for an oral PK curve read at five points, and 0.09 at ten")
+        else:
+            # Two points, which is the only unmeasurable case a series can reach: one straight line
+            # over the whole span, with no interior reading to check it against. This used to be
+            # guarded by the widest-gap threshold, which cannot discriminate here — a two-point
+            # reading's one gap *is* the span, so the condition was true whenever it was reached
+            # and read as a test that could fail.
+            print("      2 readings is one straight line over the whole span, and nothing here can "
+                  "say what it costs: there is no interior reading to check it against. A flawless "
+                  "five-point reading of an oral PK curve already misses it by 0.25 against a 0.20 "
+                  "budget, and this is coarser than that")
         # The thing a curator cannot see in their own file: a curve is judged on the run's own
         # samples, so a reading of three points against a run of a thousand is judged almost
         # entirely against the straight lines between them. Stated, never judged — the wider

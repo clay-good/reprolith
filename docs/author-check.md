@@ -240,8 +240,9 @@ none of it decides readiness.
 
 The same fact follows you past the check. If a claim of yours is eventually certified against a
 curator's reading of your figure, the pre-submission report on that certificate names it, states
-what it cost — the wider band, and against a reading rather than a number — and repeats the cheap
-way out. It is printed even above a READY TO SUBMIT, and for the same reason it is not a fix here:
+what it cost — against a reading rather than a number, in the wider band that carries, stated as
+the multiplier that claim's own comparison uses rather than one number for all three — and repeats
+the cheap way out. It is printed even above a READY TO SUBMIT, and for the same reason it is not a fix here:
 both things are true at once, and only one of them is yours to change.
 
 ## After it is green

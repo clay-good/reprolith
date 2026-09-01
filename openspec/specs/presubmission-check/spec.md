@@ -57,9 +57,12 @@ an author knows what to fix first rather than reading an unordered list.
 #### Scenario: A claim judged from a reading of the author's figure
 
 - **WHEN** a certificate carries a claim whose reference was read off a figure
-- **THEN** the report names that claim, states the consequence — judged in a band twice as wide as
-  a printed number's, against a reading rather than a published value — and says how the author can
-  remove the step, since they hold the numbers and the reproducer does not
+- **THEN** the report names that claim, states the consequence — judged against a reading rather
+  than a published value, in the wider band that carries — and says how the author can remove the
+  step, since they hold the numbers and the reproducer does not
+- **AND** the widening it states is the one that claim's own comparison carries (3x for a scalar,
+  2x for a curve, 1.67x for a distribution band), not a single number that is right about one of
+  them
 - **AND** it does not gate readiness on it, for the reason the archive check does not: publishing
   results as figures is what papers do, and a report marked not-ready for it tells an honest author
   their work is broken

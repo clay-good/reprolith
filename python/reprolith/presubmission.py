@@ -21,8 +21,8 @@ from typing import TYPE_CHECKING, Any
 
 from .enums import OverallVerdict, Verdict
 from .model import Certificate
-from .oracle import Fault
-from .render import estimation_claims, figure_read_claims
+from .oracle import ComparisonMethod, Fault, figure_band_widening
+from .render import estimation_claims, is_figure_read
 
 if TYPE_CHECKING:  # a type-only import: the archive check takes claims, it does not build them
     from .certify import Claim
@@ -102,6 +102,32 @@ def _claim_issue_and_fix(assessment: Any) -> tuple[str, str]:
             or "reconcile the reconstructed output with the reported value within tolerance"
         )
     return issue, fix
+
+
+def _figure_reading_consequence(method: str | None) -> str:
+    """What a figure-read claim cost this author, with the real multiplier for their comparison.
+
+    "A band twice as wide" is true of a curve and wrong about the other two — a scalar's figure
+    band is three times a printed number's, a distribution band's is 1.67 times — and this is an
+    author-facing sentence, so it says the number their claim was actually judged under. A method
+    with no widened default says so in words rather than inventing a ratio.
+    """
+    widening: float | None = None
+    if method is not None:
+        try:
+            widening = figure_band_widening(ComparisonMethod(method))
+        except ValueError:
+            widening = None  # a method this build does not know: describe it without a number
+    band = (
+        # Three significant figures: `:g` renders the distribution band's 5/3 as 1.66667,
+        # which is not a sentence to put in front of an author.
+        f"in a band {widening:.3g}x as wide as a printed number's"
+        if widening is not None
+        else "in the wider band a reading is judged in"
+    )
+    return (
+        f"judged against values read off your figure, {band} — not against a number you published"
+    )
 
 
 def presubmission_report(cert: Certificate) -> dict[str, Any]:
@@ -256,15 +282,14 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
                 "claim_id": a.claim_id,
                 "quantity": a.quantity,
                 "source_location": a.source_location,
-                "consequence": "judged against values read off your figure, in a band twice as "
-                               "wide as a printed number's — not against a number you published",
+                "consequence": _figure_reading_consequence(a.method),
                 "you_can_remove_it": "publish this curve's values — a table, a supplementary data "
                                      "file, or the SED-ML data set an archive can carry — so it is "
                                      "judged against your numbers rather than a reading of your "
                                      "picture",
             }
             for a in cert.assessments
-            if a.claim_id in set(figure_read_claims(cert))
+            if is_figure_read(a.reference_kind)
         ],
         "scope": cert.scope.to_dict(),
     }

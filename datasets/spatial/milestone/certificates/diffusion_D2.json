@@ -37,7 +37,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "explicit-forward-euler-finite-difference (rev cbef19cd6928)",
+    "algorithm": "explicit-forward-euler-finite-difference (rev 77dcad062295)",
     "engine": "reprolith-fd",
     "version": "0.0.1"
   },
