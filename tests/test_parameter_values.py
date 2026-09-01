@@ -128,3 +128,68 @@ def test_agreement_is_at_the_precision_the_paper_printed_and_says_so() -> None:
     assert check.agrees is True
     assert check.carried == 0.73
     assert "1 decimal place(s) the paper prints" in check.detail
+
+
+def test_the_check_says_which_parameters_the_paper_never_reported() -> None:
+    """A floor that counts only what it was handed cannot see what it was not.
+
+    `check_parameter_values` answers "does the model carry what the paper says?" for every
+    parameter the paper reports, and says nothing about the rest. The rest is the number this
+    project exists to surface: a parameter the paper omits is a value a reproducer rebuilding from
+    the paper has to take from the author's file, or guess.
+
+    Only *settable* parameters count. One an `initialAssignment` or a rule determines does not run
+    at the number in its `value` attribute, so a paper omits nothing by leaving it out — asking for
+    it would be asking an author to publish an inert attribute.
+    """
+    from reprolith import parameters_the_paper_does_not_state
+
+    model = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m">
+    <listOfParameters>
+      <parameter id="Ktp_Liver" value="5.5" constant="true"/>
+      <parameter id="Body_Weight" value="70" constant="true"/>
+      <parameter id="Cardiac_Output" value="6.5" constant="true"/>
+      <parameter id="QLiver" value="1799" constant="true"/>
+    </listOfParameters>
+    <listOfInitialAssignments>
+      <initialAssignment symbol="QLiver">
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><ci>Cardiac_Output</ci></math>
+      </initialAssignment>
+    </listOfInitialAssignments>
+  </model>
+</sbml>
+"""
+    reported = [{"parameter": "Ktp_Liver", "reported": 5.5, "source_location": "Table 3"}]
+    # QLiver is left out: an initialAssignment makes its value attribute inert, so the paper is
+    # not omitting a value by not printing one that never reaches the integrator.
+    assert parameters_the_paper_does_not_state(model, reported) == (
+        "Body_Weight", "Cardiac_Output",
+    )
+
+    # A paper reporting all of them leaves nothing to name.
+    every = [{"parameter": name, "reported": 1.0, "source_location": "Table 3"}
+             for name in ("Ktp_Liver", "Body_Weight", "Cardiac_Output")]
+    assert parameters_the_paper_does_not_state(model, every) == ()
+
+
+def test_the_shipped_metformin_model_has_six_values_its_paper_does_not_print() -> None:
+    """Measured on the corpus rather than asserted in prose, and they are not trivia: the body
+    weight, the cardiac output and the dose the whole salt-form assumption is about."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import parameters_the_paper_does_not_state
+
+    repo = Path(__file__).resolve().parents[1]
+    model = (repo / "datasets" / "worked_examples"
+             / "Zake2021_metformin_human_single_PO.xml").read_text(encoding="utf-8")
+    reported = json.loads(
+        (repo / "datasets" / "pkpd_parameters.json").read_text(encoding="utf-8")
+    )["entries"]["BIOMD0000001028"]["parameters"]
+
+    unstated = parameters_the_paper_does_not_state(model, reported)
+    assert unstated == (
+        "Body_Weight", "Cardiac_Output", "Intestine_Coefficient", "Kidney_Coefficient",
+        "Metformin_Dose_in_Lumen_in_mg", "Qgfr",
+    )
+    assert len(reported) == 10  # ten of the sixteen settable parameters are reported

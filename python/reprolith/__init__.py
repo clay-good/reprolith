@@ -176,6 +176,7 @@ from .manuscript_values import (
     check_claim_values,
     check_parameter_values,
     disagreeing_parameters,
+    parameters_the_paper_does_not_state,
     unsupported_claims,
 )
 from .mcp_server import handle_request, serve_stdio
@@ -376,6 +377,7 @@ __all__ = [
     "Claim",
     "check_claim_values",
     "check_parameter_values",
+    "parameters_the_paper_does_not_state",
     "claim_counts",
     "claims_template",
     "ClaimAssessment",

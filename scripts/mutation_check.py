@@ -156,6 +156,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_digitization.py"],
     ),
     (
+        "the parameter check counts only what it was handed and never what it was not",
+        "manuscript_values.py",
+        (
+            "        sorted(name for name in declared if name not in determined and name not in paired)",
+            "        sorted(name for name in [] if name not in determined and name not in paired)",
+        ),
+        ["tests/test_parameter_values.py"],
+    ),
+    (
         "a claim value matched in seven cells reads exactly like one matched in one",
         "manuscript_values.py",
         (

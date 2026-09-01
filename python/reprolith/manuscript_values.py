@@ -330,6 +330,37 @@ def check_parameter_values(
     return tuple(results)
 
 
+def parameters_the_paper_does_not_state(
+    model_sbml: str, records: Sequence[Mapping[str, Any]]
+) -> tuple[str, ...]:
+    """The model's own settable parameters that no supplied record pairs with a reported value.
+
+    :func:`check_parameter_values` answers "does the model carry what the paper says?" for every
+    parameter the paper *does* report, and says nothing at all about the ones it does not. That is
+    a floor that cannot see what it never counted, and the number it hides is the one this project
+    exists to surface: a parameter the paper omits is a value a reproducer rebuilding from the
+    paper has to take from the author's file, or guess. On the shipped metformin model, ten of the
+    sixteen settable parameters are reported and six are not.
+
+    Only *settable* parameters are counted. A parameter an ``initialAssignment`` or a rule
+    determines does not run at the number in its ``value`` attribute, so a paper is not omitting
+    anything by leaving it out — asking an author to publish it would be asking them to publish an
+    inert attribute. That is the same distinction :func:`_declared_parameters` draws for the
+    comparison itself, drawn once and used by both.
+
+    Reported, never judged. A model has parameters no paper would print, and which of these belong
+    in a paper is the author's call — the same call :func:`check_claim_values` leaves to a curator
+    about which table cell a claim reads.
+
+    Raises ``ValueError`` if the model is not parseable SBML.
+    """
+    declared, determined = _declared_parameters(model_sbml)
+    paired = {str(record.get("parameter") or "") for record in records}
+    return tuple(
+        sorted(name for name in declared if name not in determined and name not in paired)
+    )
+
+
 def disagreeing_parameters(checks: Sequence[ParameterCheck]) -> tuple[ParameterCheck, ...]:
     """The checks that came back false — a value the model does not carry.
 
@@ -356,5 +387,6 @@ __all__ = [
     "check_claim_values",
     "check_parameter_values",
     "disagreeing_parameters",
+    "parameters_the_paper_does_not_state",
     "unsupported_claims",
 ]
