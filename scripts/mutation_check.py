@@ -156,6 +156,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_digitization.py"],
     ),
     (
+        "the fix list emits one assumption row per claim it withheld a pass from",
+        "presubmission.py",
+        (
+            "    if qualified:",
+            "    if False:",
+        ),
+        ["tests/test_presubmission.py"],
+    ),
+    (
         "a claim takes the figure band's widening without naming what read the figure",
         "certify.py",
         (

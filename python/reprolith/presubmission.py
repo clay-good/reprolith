@@ -158,26 +158,20 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
     )
 
     actions: list[dict[str, Any]] = []
+    # A claim that reproduced *only* under a value Reprolith supplied is a reason the clean pass
+    # was withheld, so the fix list has to say so. One row, not one per claim: an assumption is a
+    # value, not a claim, and on the metformin certificate the per-claim form emitted twenty-three
+    # rows carrying the identical sentence — "state the value this claim rests on", naming no value
+    # — at the same priority as the one row that names it. The single fix an author can act on was
+    # the twenty-fourth of twenty-four items. Which claim rests on which assumption is not recorded
+    # per claim, so the rows could not have said it even one at a time; the claims they covered are
+    # carried here instead, where they can be read at once.
+    qualified = [
+        a for a in cert.assessments
+        if a.verdict is Verdict.REPRODUCED and a.assumption_qualified
+    ]
     for a in cert.assessments:
         if a.verdict is Verdict.REPRODUCED:
-            if not a.assumption_qualified:
-                continue
-            # A claim that reproduced *only* under a value Reprolith supplied is the reason the
-            # clean pass was withheld, so the list of what to fix has to name it. It fell through
-            # every branch when no Assumption object carried it — which the claims-dataset path
-            # produces — and the report said "not yet ready" over an empty fix list.
-            actions.append(
-                {
-                    "priority": _ASSUMPTION_PRIORITY,
-                    "kind": "assumption",
-                    "claim_id": a.claim_id,
-                    "quantity": a.quantity,
-                    "source_location": a.source_location,
-                    "issue": "this claim reproduced only under an assumption Reprolith supplied, "
-                             "not as a clean pass",
-                    "fix": "state the value this claim rests on so it need not be assumed",
-                }
-            )
             continue
         issue, fix = _claim_issue_and_fix(a)
         actions.append(
@@ -259,6 +253,36 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
                 "fix": note,
             }
         )
+    # Appended after the named assumptions so that, at the same priority and under a stable sort,
+    # an author reads the values they can state before the roll-up of what those values withheld.
+    if qualified:
+        named = [
+            asm for asm in cert.assumptions if asm.load_bearing or asm.verification_item
+        ]
+        actions.append(
+            {
+                "priority": _ASSUMPTION_PRIORITY,
+                "kind": "assumption",
+                "claim_id": None,
+                # The claims this covers, so the roll-up loses nothing the rows carried.
+                "claims": [a.claim_id for a in qualified],
+                "quantity": (
+                    f"{len(qualified)} claim(s) that reproduced only under an assumption"
+                ),
+                "source_location": None,
+                "issue": "these reproduced only under an assumption Reprolith supplied, not as a "
+                         "clean pass",
+                "fix": (
+                    "state the assumed values listed above explicitly, so these need not rest on "
+                    "them"
+                    if named
+                    # Nothing above names one: this certificate carries no Assumption object, which
+                    # is what the claims-dataset path produces, and then this row is the whole
+                    # signal rather than a roll-up of one.
+                    else "state the values these claims rest on so they need not be assumed"
+                ),
+            }
+        )
     # Stable, deterministic order: impact bucket first, insertion order (the certificate's claim
     # order) preserved within a bucket by the stable sort.
     actions.sort(key=lambda item: item["priority"])
@@ -317,6 +341,8 @@ def render_presubmission_human(cert: Certificate) -> str:
             where = f"{item['quantity']}: "
         source = f" (source {item['source_location']})" if item["source_location"] else ""
         lines.append(f"  - {where}{item['issue']}{source}")
+        if item.get("claims"):
+            lines.append(f"      claims: {', '.join(item['claims'])}")
         lines.append(f"      fix: {item['fix']}")
     lines.append("")
 

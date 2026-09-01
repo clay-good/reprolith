@@ -461,3 +461,66 @@ def test_a_comparison_with_no_widened_default_is_described_without_a_ratio() -> 
 
     assert "wider band a reading is judged in" in _figure_reading_consequence("exact-match")
     assert "wider band a reading is judged in" in _figure_reading_consequence(None)
+
+
+def test_one_assumption_across_many_claims_is_one_fix_and_not_one_per_claim() -> None:
+    """Read as the author being judged: the fix list is a list of *fixes*, not of claims.
+
+    An assumption is a value, and one value can withhold the clean pass from every claim on a
+    certificate. Emitted per claim it produced — on the shipped metformin certificate — twenty-three
+    rows carrying the identical sentence "state the value this claim rests on", naming no value, at
+    the same priority as the single row that names it. The one fix the author can act on was the
+    twenty-fourth of twenty-four items.
+
+    Which claim rests on which assumption is not recorded per claim, so the rows could not have
+    named it even one at a time. The claims are carried on the one row instead, where they read at
+    once.
+    """
+    from reprolith import (
+        Assumption,
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+        presubmission_report,
+    )
+
+    cert = build_certificate(
+        paper=PaperIdentity(title="p", doi="10.0/p"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[
+            ClaimAssessment(claim_id=f"c{i}", quantity=f"q{i}", source_location="Table 1",
+                            verdict=Verdict.REPRODUCED, assumption_qualified=True)
+            for i in range(23)
+        ],
+        assumptions=[
+            Assumption(id="salt", description="the dose is the hydrochloride salt",
+                       chosen="each dose x 129.16/165.62", basis="the paper's own methods",
+                       attributed_to="reprolith", load_bearing=True),
+        ],
+    )
+    fixes = presubmission_report(cert)["fix_list"]
+    assumption_rows = [item for item in fixes if item["kind"] == "assumption"]
+    assert len(assumption_rows) == 2, [item["issue"] for item in assumption_rows]
+
+    names_the_value, rolls_up = assumption_rows
+    # The row an author can act on is read first, at the same priority, by insertion order.
+    assert "each dose x 129.16/165.62" in names_the_value["issue"]
+    assert rolls_up["claims"] == [f"c{i}" for i in range(23)]
+    assert "23 claim(s)" in rolls_up["quantity"]
+    assert "listed above" in rolls_up["fix"]
+
+    # The claims-dataset path carries no Assumption object at all, and then this row is the whole
+    # signal rather than a roll-up of one — so it says what to do rather than pointing upwards.
+    alone = build_certificate(
+        paper=PaperIdentity(title="p", doi="10.0/p"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[
+            ClaimAssessment(claim_id="c0", quantity="q0", source_location="Table 1",
+                            verdict=Verdict.REPRODUCED, assumption_qualified=True),
+        ],
+    )
+    (only,) = presubmission_report(alone)["fix_list"]
+    assert only["kind"] == "assumption" and only["claims"] == ["c0"]
+    assert "listed above" not in only["fix"]
