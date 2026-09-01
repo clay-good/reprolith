@@ -150,10 +150,11 @@ reading is being judged partly against the curator's interpolation, and the digi
 tolerance — 0.20 pass against a printed number's 0.10 — is what covers it. So `figure-check`
 reports the widest gap between readings as a fraction of the span, and does not judge it: how much
 of a comparison rests on a straight line is the curator's to weigh, not a threshold this command
-invented — though above a 20% gap it now says what that spacing was measured to cost, which is a
-fact rather than a threshold: five evenly spaced points span 25% each and already exceed the whole
-budget on a PK-shaped curve, while a flat curve read at five points costs nothing, so how curved
-this one is stays the curator's to weigh. Given the document it says the same thing in the units
+invented. The gap alone was shape-blind, though: it says how *much* of the comparison is
+interpolated and nothing about how *wrong* the interpolation is, so a straight line read at three
+points drew the same warning as a peak read at three. That term is now measured from the reading
+itself — see [what the reading says about its own cost](#what-the-reading-says-about-its-own-cost)
+below. Given the document `figure-check` says the same thing in the units
 that decide it — a curve read at
 three points and judged on a run sampled a thousand times has 998 samples resting on the straight
 line between readings, and that sentence is the whole of the uncovered part made visible.
@@ -189,8 +190,44 @@ and the plot's pixel resolution rather than by anything measured here. That one 
 So the guidance is a number: read the bends, not the ends. By twenty points the cost is a seventh
 of the budget and by forty it is a thirtieth. This measures the *interpolation* component only —
 the tolerance itself stays declared rather than measured, because no certified claim has used a
-digitized reference yet — and it is why `figure-check` reports the widest gap between readings, and
-how many of the run's samples fall in it, rather than judging either.
+digitized reference yet.
+
+## What the reading says about its own cost
+
+Every number above needs a function whose value is known everywhere, which is exactly what a
+curator does not have. The same quantity can be estimated from the reading alone: drop each interior
+point, rejoin its two neighbours the way the reference is joined, and measure how far that line
+falls from the point the curator actually read. That residual is the curve's own curvature,
+expressed in the units the verdict is expressed in, with no model, no paper and no assumed shape.
+`interpolation_cost` computes it and `figure-check` prints it, as a share of the pass budget after
+the same rescaling `judge_curve` applies to a worst point.
+
+| Curve, as read | K=5 | K=10 | K=20 | K=40 |
+| --- | --- | --- | --- | --- |
+| oral PK — estimated share of the pass budget | 1.89 | 1.48 | 0.87 | 0.35 |
+| the same curve's true share, measured against the function | 1.82 | 0.95 | 0.36 | 0.11 |
+| exponential decay on a log axis, estimated | 0.00 | 0.00 | 0.00 | 0.00 |
+
+It **over-states, in the safe direction**, and by a factor that is not constant: a leave-one-out
+join spans two gaps where the reference spans one, so a smooth curve predicts 4x, and a coarse
+reading does not get it — the doubled gap covers a different shape. Measured, the over-statement
+runs from 1.0x at five points to 3.9x at forty. That is why nothing divides it down: a fixed
+correction would under-state the cost four-fold exactly where the reading is worst.
+
+What it cannot see is curvature the reading never resolved. A spike falling entirely between two
+read points leaves no residual at any read point, and no statistic computed from the reading can
+find it. This measures how much a reading disagrees with itself, which is a lower bound on how much
+it disagrees with the figure.
+
+Three things it buys that the gap could not. A straight line and a log-axis exponential score
+exactly zero however coarsely they are read, so the false alarm goes away. The false *reassurance*
+goes with it, and that is the larger half: ten evenly spaced points span 11% each, below the 20%
+gap the old warning fired at, and a ten-point reading of an oral PK curve spends about one and a
+half times the whole pass budget — geometry could not see it, because the cost is in the bend. And
+when a reading does cost too much, the report names the **x where it bends most** — the place to
+add points — rather than only saying that more are needed. The published guidance falls out of the curator's own data: an oral PK
+curve clears the budget at twenty points and not at ten, which is what the known-function table
+above already said.
 
 ## What the certificate then says
 

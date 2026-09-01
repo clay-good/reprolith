@@ -159,7 +159,13 @@ a change under `openspec/changes/`.
   older document stops — as is a reading that does not cover the window the document runs, which
   nothing extrapolates over and which the join therefore refuses long after the curator has gone.
   Without a document the report says the ids were not checked rather than reading clean over a
-  check nobody made. Reprolith reads no pixels and this does not pretend to:
+  check nobody made. What a reading *costs* is now measured from the reading itself rather than
+  proxied by its widest gap (2026-08-31): each interior point is rejoined from its neighbours and
+  the residual is the curve's own curvature, reported as a share of the pass budget and as the x
+  where it bends most. The gap was shape-blind in both directions — it warned about a straight line
+  read at three points and said nothing about a PK curve read at ten, whose 11% gaps hide straight
+  lines spending one and a half times the whole budget.
+  Reprolith reads no pixels and this does not pretend to:
   the reading is a human act. What it needs next is a curator's digitization of a figure from a paper
   already in this corpus; none exists, so it is validated against series generated from known
   functions, the same fence items 7 and 8 carry.

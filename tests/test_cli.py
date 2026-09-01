@@ -816,12 +816,12 @@ def test_figure_check_reads_a_digitization_and_reports_what_it_rests_on(tmp_path
     assert "no model was run" in printed
 
 
-def test_figure_check_says_when_a_reading_is_coarse_enough_to_spend_the_budget(tmp_path, capsys):
-    """Still not a verdict, and no longer a number nobody has a scale for.
+def test_figure_check_measures_what_a_reading_costs_from_the_reading_itself(tmp_path, capsys):
+    """The gap said how *much* of the comparison is interpolated; this says how *wrong* it is.
 
-    A flawless five-point reading of an oral PK curve — a 25% gap — misses the curve it was read
-    off by 0.25 against a 0.20 pass budget, so above that spacing the fact is worth stating. A flat
-    curve read at five points costs nothing, which is why it stays a statement and not a refusal.
+    Rejoin each interior reading from its two neighbours and the residual is the curve's own
+    curvature, in the units the verdict is in. A three-point reading straddling a peak spends more
+    than the whole figure budget on its straight lines and is told so, with the place to add points.
     """
     coarse = tmp_path / "coarse.json"
     coarse.write_text(json.dumps({
@@ -831,19 +831,49 @@ def test_figure_check_says_when_a_reading_is_coarse_enough_to_spend_the_budget(t
         "series": [{"claim": "c", "curve": "plasma", "points": [[0, 0.5], [2, 6.0], [24, 1.0]]}],
     }), encoding="utf-8")
     assert run(["figure-check", "--series", str(coarse)]) == 0
-    assert "can spend the whole tolerance on its own straight lines" in capsys.readouterr().out
+    printed = capsys.readouterr().out
+    assert "rejoining each reading from its neighbours misses it by at most" in printed
+    assert "spend the whole figure tolerance before the model is consulted" in printed
+    # The place to read more, not just the fact that more is needed.
+    assert "add points near 2 h" in printed
 
-    # Read finely, it is not said: 24 points span 4% each.
-    fine = tmp_path / "fine.json"
-    fine.write_text(json.dumps({
+
+def test_figure_check_does_not_warn_about_a_straight_line_read_coarsely(tmp_path, capsys):
+    """The false alarm the gap heuristic could not avoid, and the reason the measurement is worth
+    having: a line joined by a line is joined perfectly, at three points or at three hundred.
+
+    The gap is still reported — 92% of this span is interpolated, which is a fact about the
+    comparison — but nothing here claims it costs anything, because measured against the curator's
+    own readings it costs exactly zero.
+    """
+    straight = tmp_path / "straight.json"
+    straight.write_text(json.dumps({
         "figure": "Figure 3A", "digitizer": "WebPlotDigitizer 4.7",
         "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
         "y_axis": {"minimum": 0, "maximum": 10, "unit": "nmol/mL"},
-        "series": [{"claim": "c", "curve": "plasma",
-                    "points": [[i, 6.0 - i / 8] for i in range(25)]}],
+        "series": [{"claim": "c", "curve": "plasma", "points": [[0, 1.0], [2, 1.5], [24, 7.0]]}],
     }), encoding="utf-8")
-    assert run(["figure-check", "--series", str(fine)]) == 0
-    assert "can spend the whole tolerance" not in capsys.readouterr().out
+    assert run(["figure-check", "--series", str(straight)]) == 0
+    printed = capsys.readouterr().out
+    assert "92% of the span" in printed
+    assert "spend the whole figure tolerance" not in printed
+    assert "(0% of the pass budget)" in printed
+
+
+def test_figure_check_publishes_the_measured_cost_as_json(tmp_path, capsys):
+    """A script reads the number, not the sentence."""
+    series = tmp_path / "figure3a.json"
+    series.write_text(json.dumps({
+        "figure": "Figure 3A", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 10, "unit": "nmol/mL"},
+        "series": [{"claim": "c", "curve": "plasma", "points": [[0, 0.5], [2, 6.0], [24, 1.0]]}],
+    }), encoding="utf-8")
+    assert run(["figure-check", "--series", str(series), "--json"]) == 0
+    cost = json.loads(capsys.readouterr().out)["series"][0]["interpolation"]
+    assert cost["measurable"] is True and cost["points"] == 3
+    assert cost["worst_at"] == 2.0 and cost["worst_read"] == 6.0
+    assert cost["budget_share"] > 1.0
 
 
 def test_figure_check_refuses_a_reading_off_its_own_axes(tmp_path, capsys):
@@ -1048,8 +1078,11 @@ def test_figure_check_json_shape_is_pinned(tmp_path, capsys):
     assert set(payload) == {"series", "pairing"}
     (reading,) = payload["series"]
     assert set(reading) == {"claim", "curve", "figure", "digitizer", "points", "x_axis", "y_axis",
-                            "resolution"}
+                            "resolution", "interpolation"}
     assert set(reading["resolution"]) == {"points", "span", "widest_gap", "widest_gap_fraction"}
+    assert set(reading["interpolation"]) == {"points", "measurable", "worst_at", "worst_read",
+                                             "worst_interpolated", "worst_residual", "normalized",
+                                             "budget_share"}
     assert set(payload["pairing"]) == {"checked_against", "faults", "curves_not_read", "runs",
                                        "window_faults"}
     assert payload["pairing"]["runs"] == [[0.0, 9000.0, 1000]]

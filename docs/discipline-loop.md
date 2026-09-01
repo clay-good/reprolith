@@ -67,7 +67,15 @@ practitioner can act on.
   An exponential read off a log axis is recovered exactly at any spacing. Guidance: read about
   twenty points per curve, and more where it bends — which `figure-template` now says up front and
   `figure-check` says when a reading is coarser than that
-  (`tests/test_digitization_interpolation_cost.py`). The *scalar* digitized band is untouched by
+  (`tests/test_digitization_interpolation_cost.py`). That measurement needed a function whose value
+  is known everywhere, which a curator does not have; the same quantity is now estimated **from the
+  reading itself** — drop each interior point, rejoin its neighbours, and the residual is the
+  curve's own curvature in the units the verdict is in (`interpolation_cost`). It over-states in the
+  safe direction, by a factor measured at 1.0x to 3.9x and therefore not corrected for, and it sees
+  what the widest gap could not: a straight line or a log-axis exponential costs exactly zero
+  however coarsely it is read, a reading that does cost too much is told *where* it bends, and a
+  ten-point PK reading — 11% gaps, comfortably under the 20% the old warning fired at — is caught
+  spending one and a half times the whole budget. The *scalar* digitized band is untouched by
   this: one value read off a picture is limited by the digitizer's calibration and the plot's pixel
   resolution, not by anything computed here, so it stays declared rather than borrowing a number
   measured for something else.

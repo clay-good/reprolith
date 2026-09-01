@@ -33,6 +33,7 @@ from .digitization import (
     AmbiguousPanel,
     DigitizedSeries,
     figure_template,
+    interpolation_cost,
     pairing_faults,
     panel_faults,
     read_digitized_figure,
@@ -743,9 +744,13 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
 
     plotted = {claim.id: claim.quantity for claim in (claims or ())}
     resolutions = [series_resolution(s) for s in series]
+    costs = [interpolation_cost(s) for s in series]
     if args.json:
         _print_json({
-            "series": [{**s.to_dict(), "resolution": r} for s, r in zip(series, resolutions)],
+            "series": [
+                {**s.to_dict(), "resolution": r, "interpolation": c}
+                for s, r, c in zip(series, resolutions, costs)
+            ],
             "pairing": None if claims is None else {
                 "checked_against": "archive" if args.archive is not None else "sedml",
                 "faults": list(faults),
@@ -760,7 +765,7 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     read_from = ", ".join(dict.fromkeys(reading.figure for reading in series))
     print(f"{len(series)} SERIES READ FROM {read_from}, "
           f"DIGITIZED WITH {series[0].digitizer}")
-    for reading, resolution in zip(series, resolutions):
+    for reading, resolution, cost in zip(series, resolutions, costs):
         low, high = resolution["span"]
         # The panel is named per series once more than one file is in play: a claim id says
         # nothing about which picture it was read off, and that is the fact a curator checking
@@ -780,12 +785,26 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         # threshold this command invented.
         print(f"      widest gap between readings: {resolution['widest_gap_fraction']:.0%} of the "
               "span, over which the reference is interpolated")
-        # Still not a verdict, and no longer a number nobody has a scale for. A flawless five-point
-        # reading of an oral PK curve — a 25% gap — misses the curve it was read off by 0.25
-        # against a 0.20 pass budget, and a ten-point one by 0.09
-        # (tests/test_digitization_interpolation_cost.py). A flat curve read at five points costs
-        # nothing, so how curved this one is remains the curator's to weigh.
-        if resolution["widest_gap_fraction"] > _COARSE_READING:
+        # The gap alone was the whole story until this line: it said how much of the comparison is
+        # interpolated and nothing about how wrong the interpolation is, so a straight line read at
+        # five points was warned about exactly as loudly as an oral PK curve read at ten. The
+        # curvature is in the reading — drop each interior point and rejoin its neighbours — and
+        # `interpolation_cost` measures it in the units the verdict is in.
+        if cost["measurable"]:
+            print(f"      rejoining each reading from its neighbours misses it by at most "
+                  f"{cost['worst_residual']:.3g} {reading.y_axis.unit} at "
+                  f"{cost['worst_at']:g} {reading.x_axis.unit} "
+                  f"({cost['budget_share']:.0%} of the pass budget)")
+            # Over-states, and by a factor that is not constant (1.0x the true worst-point error at
+            # five points, 3.9x at forty), so it is not divided down — see `interpolation_cost`.
+            # Above the budget it is worth acting on even after that discount.
+            if cost["budget_share"] > 1.0:
+                print("      this reading's own straight lines are estimated to spend the whole "
+                      f"figure tolerance before the model is consulted: add points near "
+                      f"{cost['worst_at']:g} {reading.x_axis.unit}, where it bends most")
+        elif resolution["widest_gap_fraction"] > _COARSE_READING:
+            # Two points is one straight line with no interior reading to check it against, so
+            # there is no curvature to measure and the gap is all there is to say.
             print("      at that spacing a flawless reading of a curved shape can spend the whole "
                   "tolerance on its own straight lines: measured at 0.25 against a 0.20 budget "
                   "for an oral PK curve read at five points, and 0.09 at ten")

@@ -57,7 +57,12 @@ from enum import Enum
 from typing import Any
 
 from .dossier import DossierClaim
-from .oracle import ReferenceKind
+from .oracle import (
+    ComparisonMethod,
+    ReferenceKind,
+    default_tolerance,
+    worst_point_deviation,
+)
 
 #: Slack on the axis-range check, as a fraction of the axis span in its own scale. A digitizer
 #: writes a point that sits on the frame as the frame value plus float noise; this absorbs that
@@ -312,6 +317,95 @@ def series_resolution(series: DigitizedSeries) -> dict[str, Any]:
         "span": [low, high],
         "widest_gap": gap,
         "widest_gap_fraction": gap / width if width > 0 else float("nan"),
+    }
+
+
+def interpolation_cost(series: DigitizedSeries) -> dict[str, Any]:
+    """What this reading's own straight lines cost, measured against the curator's own points.
+
+    :func:`series_resolution` reports the widest gap, which is geometry: it says how much of the
+    comparison is interpolated and nothing about how wrong the interpolation is. A straight line
+    read at five points is joined perfectly and warned about anyway; an oral PK curve read at ten
+    is joined badly and warned about the same. The missing term is curvature, and the reading
+    already contains it.
+
+    So drop each interior point in turn, rejoin its two neighbours the way the reference is joined
+    — a straight line in each axis's own scale — and see how far that line falls from the point the
+    curator actually read. That residual is the reading's curvature expressed in the units the
+    verdict is expressed in, computed from the curator's data alone, with no model, no paper and no
+    assumed shape.
+
+    It is an **over-statement, in the safe direction**, and the size of the over-statement is not a
+    constant. A leave-one-out join spans two gaps where the reference spans one, so it costs more
+    than the joins actually used. Measured against functions whose value is known everywhere
+    (``tests/test_digitization_interpolation_cost.py``) it runs from 1.0x the true worst-point
+    error at five points to 3.9x at forty — approaching the 4x a smooth curve predicts, and nowhere
+    near it when the reading is coarse enough that the doubled gap covers a different shape. That
+    is why nothing here divides it down: a fixed correction would under-state the cost by four-fold
+    exactly where the reading is worst.
+
+    What it cannot see is curvature the reading never resolved. A spike falling entirely between
+    two read points leaves no residual at any read point, and no statistic computed from the
+    reading can find it. This measures how much the reading disagrees with itself, which is a lower
+    bound on how much it disagrees with the figure.
+
+    ``budget_share`` is the number to act on: the residual carried through the same normalization
+    and rescaling :func:`~reprolith.oracle.judge_curve` applies to a worst point, as a fraction of
+    the digitized-figure pass threshold. Above 1.0 the reading's own straight lines are estimated
+    to spend the whole budget before the model is consulted.
+    """
+    read = [y for _, y in series.points]
+    blank: dict[str, Any] = {
+        "points": len(read),
+        "measurable": False,
+        "worst_at": None,
+        "worst_read": None,
+        "worst_interpolated": None,
+        "worst_residual": None,
+        "normalized": None,
+        "budget_share": None,
+    }
+    if len(read) < 3:
+        # Two points are one straight line with no interior reading to check it against. Reported
+        # as not measurable rather than as zero: a reading with nothing to disagree with is not a
+        # reading that agrees.
+        return blank
+
+    xs = [series.x_axis.transform(x) for x, _ in series.points]
+    ys = [series.y_axis.transform(y) for _, y in series.points]
+    rejoined = list(read)
+    for index in range(1, len(xs) - 1):
+        weight = (xs[index] - xs[index - 1]) / (xs[index + 1] - xs[index - 1])
+        rejoined[index] = series.y_axis.untransform(
+            ys[index - 1] + weight * (ys[index + 1] - ys[index - 1])
+        )
+    normalized = worst_point_deviation(read, rejoined)
+    # Interior only: an endpoint has no rejoin and a residual of exactly zero, so including
+    # them reports the first reading as "the worst place" whenever the curve is joined
+    # perfectly — which is precisely the reading that needs no attention.
+    worst = max(range(1, len(read) - 1), key=lambda i: abs(rejoined[i] - read[i]))
+
+    # The same tolerance the claim will be judged under, read from the table rather than restated:
+    # a default that moves there has to move this number with it.
+    tol = default_tolerance(
+        ComparisonMethod.CURVE_NORMALIZED_DISTANCE, ReferenceKind.DIGITIZED_FIGURE
+    )
+    scaled = (
+        normalized * (tol.reproduced_within / tol.partial_within)
+        if tol.partial_within > 0.0
+        else normalized
+    )
+    return {
+        "points": len(read),
+        "measurable": True,
+        "worst_at": series.points[worst][0],
+        "worst_read": read[worst],
+        "worst_interpolated": rejoined[worst],
+        "worst_residual": abs(rejoined[worst] - read[worst]),
+        "normalized": normalized,
+        "budget_share": (
+            scaled / tol.reproduced_within if tol.reproduced_within > 0.0 else float("inf")
+        ),
     }
 
 
@@ -693,6 +787,7 @@ __all__ = [
     "attach_digitized_values",
     "curve_reference",
     "figure_template",
+    "interpolation_cost",
     "pairing_faults",
     "panel_faults",
     "read_digitized_figure",

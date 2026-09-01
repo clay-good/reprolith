@@ -75,7 +75,14 @@ And the cost of reading a picture is now a measured number rather than a caution
 points the reference is a straight line, so a **flawless** five-point reading of an oral PK curve
 misses the curve it was read off by 0.25 against a 0.20 pass budget, with no model involved. Twenty
 points brings it to 0.025, and an exponential read off a log axis is recovered exactly. That is the
-argument for shipping a figure's series as data, stated in the units an author can weigh. No published figure is in this corpus, so it is
+argument for shipping a figure's series as data, stated in the units an author can weigh. And it is
+now a number about *your* reading rather than about a curve nobody has: dropping each read point and
+rejoining its neighbours measures the curve's own curvature, so `figure-check` says what share of
+the pass budget a reading spends on its own straight lines — and where it bends most, which is
+where to read more. It over-states, in the safe direction, and the widest-gap warning it replaces
+could not tell a peak read at three points from a straight line read at three — nor say anything at
+all about a ten-point reading of a PK curve, whose gaps are a comfortable 11% of the span while its
+straight lines spend one and a half times the whole budget. No published figure is in this corpus, so it is
 validated against series generated from known functions — mathematics, not a paper's picture. See
 [`docs/figure-values.md`](docs/figure-values.md).
 [`docs/findings-note.md`](docs/findings-note.md) and [`openspec/`](openspec/) say so in detail. Where a paper ships a **SED-ML** document, the half of that

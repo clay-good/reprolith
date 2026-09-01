@@ -177,6 +177,12 @@ curator's statements.
 - **AND** how coarsely the curve was read is reported — the widest gap between readings as a
   fraction of the span — and is not judged, since between two readings the reference is the
   curator's straight line
+- **AND** what that interpolation costs is reported too, measured from the reading itself: each
+  interior point rejoined from its neighbours, the largest residual expressed as a share of the
+  pass budget the claim will be judged under
+- **AND** that estimate is reported raw, since a leave-one-out join spans two gaps where the
+  reference spans one and over-states by a factor that varies with how coarsely the curve was
+  read — over-stating is the safe direction, and correcting it by a constant is not safe
 
 ### Requirement: Artifact intake and typing
 

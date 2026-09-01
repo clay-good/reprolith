@@ -19,7 +19,12 @@ from __future__ import annotations
 import json
 import math
 
-from reprolith.digitization import read_digitized_figure, resample_series
+from reprolith.digitization import (
+    interpolation_cost,
+    read_digitized_figure,
+    resample_series,
+    series_resolution,
+)
 from reprolith.oracle import normalized_curve_distance, worst_point_deviation
 
 #: The class default for a curve read off a figure: pass at 0.20, partial at 0.40.
@@ -106,3 +111,126 @@ def test_the_cost_falls_with_the_reading_and_is_small_by_twenty_points() -> None
     assert costs == sorted(costs, reverse=True)
     assert costs[2] < 0.15 * _PASS   # 0.025 at twenty points
     assert costs[3] < 0.05 * _PASS   # 0.006 at forty
+
+
+# --- What the *reading* can say about its own cost, with no function behind it -----------------
+#
+# Everything above needs a function whose value is known everywhere, which is exactly what a
+# curator does not have. `interpolation_cost` estimates the same quantity from the reading alone:
+# drop each interior point, rejoin its neighbours the way the reference is joined, and measure the
+# residual. These tests establish what that estimate is worth.
+
+
+def _measured(fn, points_read: int, *, scale: str = "linear", window: float = 24.0):
+    """The reading's self-estimate beside the truth it is estimating."""
+    read_at = [window * i / (points_read - 1) for i in range(points_read)]
+    exact = [fn(window * i / _SAMPLES) for i in range(_SAMPLES + 1)]
+    low, high = min(exact), max(exact)
+    document = json.dumps({
+        "figure": "a function whose value is known everywhere",
+        "digitizer": "none: these points are exact",
+        "x_axis": {"minimum": 0, "maximum": window, "unit": "h"},
+        "y_axis": {
+            "minimum": low * 0.5 if scale == "log10" else 0.0,
+            "maximum": high * 1.5, "unit": "u", "scale": scale,
+        },
+        "series": [{"claim": "c", "curve": "q", "points": [[x, fn(x)] for x in read_at]}],
+    })
+    (series,) = read_digitized_figure(document)
+    _distance, worst = _reading_cost(fn, points_read, scale=scale, window=window)
+    # The truth, expressed the way `judge_curve` expresses a worst point: rescaled onto the pass
+    # threshold and taken as a fraction of it, which is what `budget_share` reports.
+    truth = worst * (_PASS / _PARTIAL) / _PASS
+    return interpolation_cost(series), truth
+
+
+def test_the_reading_never_under_states_what_its_own_straight_lines_cost() -> None:
+    """The property the estimate has to have to be worth printing, and the direction that matters.
+
+    A leave-one-out join spans two gaps where the reference spans one, so it costs more than the
+    joins actually used. Over three shapes and four point counts it is never below the truth — which
+    is why nothing divides it down.
+    """
+    for fn, scale in ((_oral_pk, "linear"), (_decay, "linear"), (_decay, "log10")):
+        for points in (5, 10, 20, 40):
+            cost, truth = _measured(fn, points, scale=scale)
+            assert cost["budget_share"] >= truth - 1e-12, (fn, scale, points)
+
+
+def test_the_over_statement_is_not_a_constant_and_so_is_not_corrected_for() -> None:
+    """Why the number is published raw. A smooth curve predicts a factor of four, and a coarse
+    reading does not get one: the doubled gap covers a different shape, so the estimate runs from
+    1.0x the true worst-point error at five points to 3.9x at forty. A fixed divisor would
+    under-state the cost four-fold exactly where the reading is worst.
+    """
+    ratios = []
+    for points in (5, 10, 20, 40):
+        cost, truth = _measured(_oral_pk, points)
+        ratios.append(cost["budget_share"] / truth)
+    assert 1.0 <= ratios[0] < 1.1
+    assert 3.0 < ratios[-1] < 4.0
+    assert ratios == sorted(ratios)
+
+
+def test_it_sees_the_curvature_the_widest_gap_cannot() -> None:
+    """The false alarm the gap heuristic could not avoid.
+
+    A straight line and an exponential on a log axis are joined *exactly* by the reference's own
+    interpolation, however coarsely they are read. The widest gap says 33% of the comparison is
+    interpolated in both cases; the cost says that interpolation is free, and it is right.
+    """
+    for fn, scale in (((lambda t: 2.0 + 0.3 * t), "linear"), (_decay, "log10")):
+        cost = _measured(fn, 4, scale=scale)[0]
+        assert cost["budget_share"] < 1e-12
+        assert cost["worst_residual"] < 1e-12
+
+    # And the shape that is not free is not called free.
+    assert _measured(_oral_pk, 4)[0]["budget_share"] > 1.0
+
+
+def test_the_estimate_falls_with_the_reading_and_clears_the_budget_by_twenty_points() -> None:
+    """The guidance, re-derived from the curator's own data rather than from an assumed shape.
+
+    `figure-check` already told curators to read about twenty points, on the strength of a cost
+    measured against a function nobody has. The same advice now falls out of the reading itself.
+    """
+    shares = [_measured(_oral_pk, points)[0]["budget_share"] for points in (5, 10, 20, 40)]
+    assert shares == sorted(shares, reverse=True)
+    assert shares[0] > 1.0 and shares[1] > 1.0   # five and ten points: over the whole budget
+    assert shares[2] < 1.0                        # twenty: inside it, with the over-statement kept
+
+
+def test_a_two_point_reading_has_nothing_to_check_itself_against() -> None:
+    """Reported as not measurable, never as zero: a reading with no interior point does not agree
+    with itself, it has nothing to agree with. `figure-check` falls back to the gap there."""
+    document = json.dumps({
+        "figure": "f", "digitizer": "none",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 10, "unit": "u"},
+        "series": [{"claim": "c", "curve": "q", "points": [[0, 1.0], [24, 9.0]]}],
+    })
+    (series,) = read_digitized_figure(document)
+    cost = interpolation_cost(series)
+    assert cost["measurable"] is False and cost["points"] == 2
+    assert cost["budget_share"] is None and cost["worst_residual"] is None
+
+
+def test_it_catches_a_reading_the_gap_heuristic_calls_fine() -> None:
+    """The half worth more than removing the false alarm: the false *reassurance*.
+
+    `figure-check` warns above a 20% widest gap. Ten evenly spaced points span 11% each, so a
+    ten-point reading of an oral PK curve drew no warning at all — and it spends about one and a
+    half times the whole pass budget on its own straight lines. Geometry could not see that,
+    because the cost is in the bend and the gap is not.
+    """
+    cost, truth = _measured(_oral_pk, 10)
+    assert cost["budget_share"] > 1.0 and truth > 0.9
+    # The gap that said nothing about it.
+    (series,) = read_digitized_figure(json.dumps({
+        "figure": "f", "digitizer": "none",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 10, "unit": "u"},
+        "series": [{"claim": "c", "curve": "q",
+                    "points": [[24 * i / 9, _oral_pk(24 * i / 9)] for i in range(10)]}],
+    }))
+    assert series_resolution(series)["widest_gap_fraction"] < 0.20
