@@ -156,6 +156,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_digitization.py"],
     ),
     (
+        "the track record page keeps a clean sheet the committed report contradicts",
+        "agreement.py",
+        (
+            '        if actual == "blocked" and expected != actual:  # a disagreement that abstained',
+            "        if expected != actual:",
+        ),
+        ["tests/test_self_validation_doc.py"],
+    ),
+    (
         "the parameter check counts only what it was handed and never what it was not",
         "manuscript_values.py",
         (
