@@ -20,6 +20,8 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
 from .enums import OverallVerdict, Verdict
+from .ingest import UNSTATED_UNIT
+from .manuscript_values import model_time_unit
 from .model import Certificate
 from .oracle import ComparisonMethod, Fault, figure_band_widening
 from .render import estimation_claims, is_figure_read
@@ -448,6 +450,11 @@ def archive_report(
         # said otherwise would be this module's own kind of defect: a number standing in for a
         # check that never ran.
         "manuscript_claims_checked": 0,
+        # What the numbers in the experiment's window *mean*. A document that runs 0 to 30 says
+        # nothing about 30 of what; only the model does, and a reproducer reading the deposit
+        # rather than the paper has nothing else to go on. Reported, never judged — see the
+        # metformin deposit, whose declared time unit is a hundred hours.
+        "run_time_unit": UNSTATED_UNIT,
     }
     actions: list[dict[str, Any]] = []
     try:
@@ -546,6 +553,10 @@ def archive_report(
         # document *claimed*, and this asks whether the run behind those claims is adoptable.
         recipes = parse_sedml_recipes(sedml)
         found["adoptable_recipes"] = len(recipes)
+        try:
+            found["run_time_unit"] = model_time_unit(sbml)
+        except ValueError:
+            pass  # a model that does not parse is reported by the reader, not twice here
         for message in archive_mismatches(sedml, sbml):
             actions.append({
                 "priority": _ARCHIVE_MISMATCH_PRIORITY, "kind": "mismatch", "claim_id": None,
@@ -765,6 +776,10 @@ def _render_report(report: dict[str, Any]) -> str:
             f"{counts['not_targetable']} not targetable"
         )
         lines.append(f"  runs a reproducer can adopt verbatim: {found['adoptable_recipes']}")
+        clock = found.get("run_time_unit", UNSTATED_UNIT)
+        if clock != UNSTATED_UNIT:
+            # "0 to 30" is 30 of something, and the document does not say. Stated, never judged.
+            lines.append(f"  the times in that run are in the unit your model states: {clock}")
         checked = found.get("manuscript_claims_checked", 0)
         # An empty fix list must not be read as "it runs what the paper reports" when nothing was
         # compared against the paper. The count is what separates a passed check from an absent one.

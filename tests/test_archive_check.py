@@ -102,6 +102,11 @@ def test_the_report_says_what_the_archive_ships_and_what_can_be_adopted() -> Non
     assert found["claims"]["targetable"] == 0
     expressed = [c for c in _metformin_claims() if not c.schedule]
     assert found["claims"]["not_targetable"] == len(expressed)
+    # "runs 0 to 30" is thirty of something, and the document does not say — only the model does,
+    # and a reproducer reading the deposit rather than the paper has nothing else to go on. This
+    # deposit says a hundred hours: `multiplier="3600" scale="2"` is 360000 seconds, while its
+    # paper's figures and this very run are in hours. Stated, never judged.
+    assert found["run_time_unit"] == "3600*10^2 second"
 
 
 def _archive_with(members: dict[str, str], manifest: str) -> bytes:
