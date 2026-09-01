@@ -238,7 +238,8 @@ read off a picture rather than printed:
 
 ```
   [c0] A: reproduced [figure-reading] (source SED-ML plot2D 'plot_0' (Figure 1), curve 'c0';
-      values from Figure 1, A (digitized from the figure with WebPlotDigitizer 4.7)
+      values from Figure 1, A (digitized from the figure with WebPlotDigitizer 4.7;
+      7 points, its own interpolation spending 0% of the pass budget)
       via curve-normalized-distance, tol=reproduced<=0.2, partial<=0.4 (class-default))
 ```
 
@@ -246,6 +247,17 @@ The marker earns its place because the widened band was previously invisible as 
 human form printed `<=0.2` and nothing said it is `<=0.2` because the reference is a measurement of
 a picture. Only figure-read claims carry it, so no certificate already published renders
 differently.
+
+The cost travels with it, and for the same reason. `figure-check` measures it for the **curator**,
+and the curator is not who the certificate is for: a reader saw `[figure-reading]` and a band twice
+as wide, and could not see whether the reading itself had already spent that band or none of it. A
+`reproduced` at 0.20 against a reading whose own straight lines cost 0.15 is a different fact from
+one against a reading that costs 0.001, and the certificate said the same thing for both. It says
+both now, because the source line is the only part of a reading that reaches a certificate.
+
+The 0% above is real and not a placeholder: that curve is an exponential decay read off a **log**
+axis, where the reference's own interpolation is exact at any spacing. Seven points would have cost
+38% of the budget read flat, and the certificate now distinguishes the two.
 
 `tests/test_digitized_figure_end_to_end.py` walks that path with nothing hand-written between the
 document and the certificate — and shows the other side of it, which is worth stating plainly: the

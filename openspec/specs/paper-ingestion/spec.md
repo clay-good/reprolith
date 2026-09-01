@@ -183,6 +183,9 @@ curator's statements.
 - **AND** that estimate is reported raw, since a leave-one-out join spans two gaps where the
   reference spans one and over-states by a factor that varies with how coarsely the curve was
   read — over-stating is the safe direction, and correcting it by a constant is not safe
+- **AND** it travels with the reading into the claim's source location, so a reader of the
+  certificate can see how much of the widened band the reading had already spent before the model
+  was consulted, which the figure-reading marker alone does not say
 
 ### Requirement: Artifact intake and typing
 

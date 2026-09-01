@@ -82,7 +82,10 @@ the pass budget a reading spends on its own straight lines — and where it bend
 where to read more. It over-states, in the safe direction, and the widest-gap warning it replaces
 could not tell a peak read at three points from a straight line read at three — nor say anything at
 all about a ten-point reading of a PK curve, whose gaps are a comfortable 11% of the span while its
-straight lines spend one and a half times the whole budget. No published figure is in this corpus, so it is
+straight lines spend one and a half times the whole budget. That number now travels into the
+certificate too, because the curator is not who a certificate is for: a reader saw
+`[figure-reading]` and a band twice as wide, and could not see whether the reading itself had
+already spent that band or none of it. No published figure is in this corpus, so it is
 validated against series generated from known functions — mathematics, not a paper's picture. See
 [`docs/figure-values.md`](docs/figure-values.md).
 [`docs/findings-note.md`](docs/findings-note.md) and [`openspec/`](openspec/) say so in detail. Where a paper ships a **SED-ML** document, the half of that

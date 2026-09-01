@@ -186,8 +186,27 @@ class DigitizedSeries:
 
     @property
     def source_location(self) -> str:
-        """Where these numbers came from, in the form a claim cites its source."""
-        return f"{self.figure}, {self.curve} (digitized from the figure with {self.digitizer})"
+        """Where these numbers came from, in the form a claim cites its source.
+
+        It carries what the reading cost as well as where it came from, because this string is the
+        only part of a reading that reaches the certificate. `figure-check` measures that cost for
+        the curator and the curator is not the person the certificate is for: a reader sees
+        ``[figure-reading]`` and a band twice as wide, and could not see whether the reading itself
+        already spent that band or none of it. A `reproduced` at 0.20 where the curator's own
+        straight lines spend 0.15 is a different fact from one where they spend 0.001, and until
+        now the certificate said the same thing for both.
+        """
+        cost = interpolation_cost(self)
+        spent = (
+            f"{cost['points']} points, its own interpolation spending "
+            f"{cost['budget_share']:.0%} of the pass budget"
+            if cost["measurable"]
+            else f"{cost['points']} points, too few to measure what its interpolation costs"
+        )
+        return (
+            f"{self.figure}, {self.curve} "
+            f"(digitized from the figure with {self.digitizer}; {spent})"
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {

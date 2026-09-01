@@ -162,6 +162,14 @@ def test_a_figure_claim_walks_from_a_document_to_a_verdict() -> None:
     # both, so a reader of the certificate can see the number was read off a picture.
     assert "SED-ML plot2D 'plot_0' (Figure 1)" in assessment.source_location
     assert "digitized from the figure with WebPlotDigitizer 4.7" in assessment.source_location
+    # And what the reading itself cost, which is the part a reader of the certificate could not
+    # see: a verdict judged in a band twice as wide is only as good as the reading it is judged
+    # against. Zero here, and that is the substance rather than a rounding: this decay was read off
+    # a log axis, where the reference's own interpolation is exact. Read flat, the same seven
+    # points cost 38% of the budget — and the certificate distinguishes the two.
+    assert "7 points, its own interpolation spending 0% of the pass budget" in (
+        assessment.source_location
+    )
     assert assessment.protocol == "duration=24.0, steps=24, read=[A] curve"
 
     rendered = render_human(
@@ -214,3 +222,9 @@ def test_the_axis_the_figure_was_drawn_on_reaches_the_verdict() -> None:
     assert faithful.reference_data == pytest.approx(exact, rel=1e-9)
     assert misread.reference_data != pytest.approx(exact, rel=1e-3)
     assert max(abs(a - b) / b for a, b in zip(misread.reference_data, exact)) > 0.08
+
+    # And the certificate can now tell the two apart without knowing the answer. The reading's own
+    # cost is measured from the reading, so the flat one reports the curvature the log one does not
+    # have — 38% of the pass budget against nothing, from the same seven points.
+    assert "spending 38% of the pass budget" in misread.source_location
+    assert "spending 0% of the pass budget" in faithful.source_location

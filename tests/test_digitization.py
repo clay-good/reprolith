@@ -54,8 +54,12 @@ def test_a_reading_carries_where_it_was_read_and_what_read_it() -> None:
     """A digitized point is a measurement of a picture, and travels as one."""
     series = _series([[0, 0.0], [6, 8.0], [24, 2.0]])
     assert series.claim_id == "fig-3a"
+    # It carries what the reading cost as well as where it came from: this string is the only part
+    # of a reading that reaches the certificate, and a reader who cannot see that the curator's own
+    # straight lines already spent the band cannot weigh the verdict judged in it.
     assert series.source_location == (
-        "Figure 3A, plasma (digitized from the figure with WebPlotDigitizer 4.7)"
+        "Figure 3A, plasma (digitized from the figure with WebPlotDigitizer 4.7; "
+        "3 points, its own interpolation spending 234% of the pass budget)"
     )
     assert series.span == (0.0, 24.0)
 
