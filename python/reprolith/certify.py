@@ -95,10 +95,16 @@ def _cited_source(source_location: str, reference_kind: ReferenceKind, digitizer
     A reading that came through the join already says this — `attach_digitized_values` writes the
     figure, the tool and what the reading cost into the source location — so the tool is appended
     only where the citation does not already carry it, rather than printed twice.
+
+    "Already carries it" is :data:`~reprolith.digitization.DIGITIZED_BY`, the same predicate
+    :func:`_reading_required` accepts the citation on. Asking whether the digitizer's *name* appears
+    is a different question with a different answer — a tool called "4.7", or a citation that
+    happens to contain it, would silently suppress the statement — and the two would then disagree
+    about what stating a reading is.
     """
     if reference_kind is not ReferenceKind.DIGITIZED_FIGURE or not digitizer.strip():
         return source_location
-    if digitizer.strip() in source_location:
+    if DIGITIZED_BY in source_location:
         return source_location
     return f"{source_location} (read off the figure with {digitizer.strip()})"
 

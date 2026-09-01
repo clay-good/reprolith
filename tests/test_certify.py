@@ -550,6 +550,17 @@ def test_a_reading_that_came_through_the_join_states_itself_and_is_not_asked_twi
     assert claim.cited_source == joined.source_location
     assert claim.cited_source.count("WebPlotDigitizer 4.7") == 1
 
+    # What counts as "already stated" is the join's own phrase, not the tool's name appearing
+    # somewhere in the citation. A citation that merely mentions the tool has not stated a reading,
+    # and suppressing the statement on it would let the fence and the citation disagree.
+    mentions = CurveClaim(
+        claim_id="c", quantity="[C]", species="C", reference=(1.0, 2.0, 3.0),
+        source_location="Figure 1, the curve WebPlotDigitizer 4.7 could not resolve",
+        duration=10.0, steps=2, reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+        digitizer="WebPlotDigitizer 4.7",
+    )
+    assert mentions.cited_source.endswith("(read off the figure with WebPlotDigitizer 4.7)")
+
 
 def test_a_figure_claim_with_nothing_behind_it_still_abstains_rather_than_being_refused() -> None:
     """The band is never consulted where there is no reference to consult it against.

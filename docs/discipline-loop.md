@@ -78,11 +78,22 @@ practitioner can act on.
   spending one and a half times the whole budget. It is charged over the run the claim is judged on
   rather than over the whole file — a reading is required to *cover* the run and so permitted to
   exceed it, and a bend past its end, with the range that bend adds to the scale, is cost nothing is
-  judged on; measured, that ran 2.1x to 2.3x in the direction that under-states. The *scalar*
-  digitized band is untouched by
-  this: one value read off a picture is limited by the digitizer's calibration and the plot's pixel
-  resolution, not by anything computed here, so it stays declared rather than borrowing a number
-  measured for something else.
+  judged on; measured, that ran 2.1x to 2.3x in the direction that under-states.
+- **Digitized figure, scalar — 0.15 / 0.30.** A scalar has no interpolation, so neither measurement
+  above touches it. Its pixel-resolution half is measurable all the same, and it is the half a
+  curator can act on: every digitizer maps a click through two calibration points, so a click off by
+  a pixel is off by one pixel's worth of the axis. On a **linear** axis that is a constant
+  *absolute* error, so what it costs depends on where in the axis the value sits — on a 0-10 axis
+  drawn 600 px tall, half a pixel is 0.08% at the peak, 11% of the pass budget at a twentieth of it,
+  56% at a hundredth, and the whole budget below 0.56% of the span (1.1% at one pixel, which is what
+  a drawn line width costs in practice). On a **log** axis one pixel is a constant *ratio*: three
+  decades over the same 600 px cost 0.58% of the value wherever it is read, a twenty-fifth of the
+  budget. Guidance: a single value read low on a linear axis is not readable inside this band, and
+  the same value on a log axis is (`tests/test_digitization_scalar_cost.py`). The tolerance itself
+  stays declared — the digitizer's *calibration* error is the other half and is not computed here;
+  it is what the axis-range refusal exists to catch instead. And this is not the curve band: a curve
+  is judged against its own range, so one pixel is under half a percent of that budget wherever the
+  curve sits.
 - **Distributional band — 15% / 35%.** An envelope is percentiles of a finite sample, so drawing the
   *right* population twice moves the 5th percentile. The worst of three bands misses the 15% budget
   47% of the time at twenty subjects and a 30% CV, 12% at fifty, 2% at a hundred, and never in 400

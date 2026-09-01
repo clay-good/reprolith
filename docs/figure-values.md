@@ -195,8 +195,23 @@ model involved. At ten points the average is inside the budget and the worst poi
 way `judge_curve` rescales it, is at 94% of it.
 
 This is about the **curve** band. A single value read off a picture — a peak height, a reported
-Cmax — is judged in the scalar digitized band, and its error is set by the digitizer's calibration
-and the plot's pixel resolution rather than by anything measured here. That one stays declared.
+Cmax — is judged in the scalar digitized band, and it has no interpolation for any of this to
+measure. Its pixel-resolution half is measured separately, and it says something a curator can act
+on before reading anything:
+
+| One value read off a 600 px tall axis, half a pixel out | at the peak | at 1/20 of it | at 1/100 of it |
+| --- | --- | --- | --- |
+| linear axis, share of the 0.15 pass budget | 0.6% | 11% | 56% |
+| log axis over three decades, same share | 3.9% | 3.9% | 3.9% |
+
+On a linear axis a pixel is a constant *absolute* error, so what it costs depends on where in the
+axis the value sits: below 0.56% of the span, half a pixel has spent the whole budget with no model
+involved, and one pixel — a drawn line's width — does it below 1.1%. On a log axis a pixel is a
+constant *ratio* and costs the same everywhere. So a single value read low on a linear axis is not
+readable inside this band, and the same value on a log axis is
+(`tests/test_digitization_scalar_cost.py`). The tolerance itself still stays declared: the
+digitizer's *calibration* error is the other half of it, is not computed anywhere, and is what the
+axis-range refusal exists to catch instead.
 
 So the guidance is a number: read the bends, not the ends. By twenty points the cost is a seventh
 of the budget and by forty it is a thirtieth. This measures the *interpolation* component only —
