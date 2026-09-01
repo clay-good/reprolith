@@ -92,6 +92,18 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_ingest.py"],
     ),
     (
+        "a population publishes an envelope its ensemble cannot resolve",
+        "population.py",
+        ("    if subjects < _SPREAD_IS_EVIDENCE:", "    if False:"),
+        ["tests/test_population_simulation.py"],
+    ),
+    (
+        "a percentile no ensemble that size can express is reported as one",
+        "population.py",
+        ("        if subjects * tail <= 100.0:", "        if False:"),
+        ["tests/test_population_simulation.py"],
+    ),
+    (
         "the figure check stops asking whether the reading is paired with a real curve",
         "cli.py",
         (
