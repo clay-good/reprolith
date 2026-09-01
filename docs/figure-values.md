@@ -153,6 +153,33 @@ line between readings, and that sentence is the whole of the uncovered part made
 The reference kind is always `digitized-figure`. A value read off a picture cannot be recorded as a
 printed number, so the wider band it must be judged in is not escapable by attaching it.
 
+## What a flawless reading costs
+
+The reference between two read points is a straight line, so a reading is not free even when it is
+perfect. That part is measurable with no paper and no picture: read a function whose value is known
+everywhere at K points, resample it onto the run's grid, and compare it against the function itself
+(`tests/test_digitization_interpolation_cost.py`). Nothing is wrong with the model in that
+comparison, because there is no model.
+
+| Curve, as read | K=5 | K=10 | K=20 | K=40 |
+| --- | --- | --- | --- | --- |
+| exponential decay, log axis | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| the same decay, read linearly | 0.0526 | 0.0114 | 0.0026 | 0.0006 |
+| oral PK (absorption up, elimination down) | 0.2518 | 0.0916 | 0.0253 | 0.0063 |
+
+Two things follow, and both are about the curator rather than the engine. An exponential read off a
+log axis is recovered **exactly**, at five points or forty — the interpolation scale is not a
+refinement. And a *flawless* five-point reading of the shape most of this literature plots misses
+the curve it was read off by **0.25 against a 0.20 pass budget**: it would fail on its own, with no
+model involved. At ten points the average is inside the budget and the worst point, rescaled the
+way `judge_curve` rescales it, is at 94% of it.
+
+So the guidance is a number: read the bends, not the ends. By twenty points the cost is a seventh
+of the budget and by forty it is a thirtieth. This measures the *interpolation* component only —
+the tolerance itself stays declared rather than measured, because no certified claim has used a
+digitized reference yet — and it is why `figure-check` reports the widest gap between readings, and
+how many of the run's samples fall in it, rather than judging either.
+
 ## What the certificate then says
 
 The join runs end to end: a SED-ML document says which curve the paper plots, the curator's file
