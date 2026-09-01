@@ -1248,7 +1248,7 @@ def test_figure_check_compares_the_reading_s_clock_against_the_model_s(tmp_path,
     assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML),
                 "--model", str(model)]) == 0
     printed = capsys.readouterr().out
-    assert "TIME UNITS DISAGREE" in printed
+    assert "UNITS DISAGREE" in printed
     assert "read against an x axis in s" in printed and "3600 times as large" in printed
     # Reported, never a fault: which of the two files is wrong is not this command's to decide, and
     # a deposit that declares its own time wrongly must not make a correct reading unusable.
@@ -1256,7 +1256,32 @@ def test_figure_check_compares_the_reading_s_clock_against_the_model_s(tmp_path,
 
     # Without a model there is nothing to compare against, and nothing is said.
     assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML)]) == 0
-    assert "TIME UNITS" not in capsys.readouterr().out
+    assert "UNITS DISAGREE" not in capsys.readouterr().out
+
+
+def test_figure_check_compares_the_reading_s_y_axis_against_the_output_it_reads(tmp_path, capsys):
+    """The document says which output a curve reads, and the model says what that is measured in.
+
+    This paper plots each tissue twice, in mg on one panel and nmol on another, so the wrong panel
+    paired with the right claim is a file nothing else here can fault.
+    """
+    worked = Path(__file__).parent.parent / "datasets" / "worked_examples"
+    path = tmp_path / "fig.json"
+    path.write_text(json.dumps({
+        "figure": "Figure 3A", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 30, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 30, "unit": "mg/mL"},
+        "series": [{"claim": "p2_curve_17_task2", "curve": "venous plasma",
+                    "points": [[0, 0.0], [1, 20.0], [30, 2.0]]}],
+    }), encoding="utf-8")
+
+    assert run([
+        "figure-check", "--series", str(path),
+        "--sedml", str(worked / "Zake2021_metformin_human_single_PO.sedml"),
+        "--model", str(worked / "Zake2021_metformin_human_single_PO.xml"),
+    ]) == 0
+    printed = capsys.readouterr().out
+    assert "y axis in mg/mL" in printed and "mPlasmaVenous" in printed
 
 
 def test_figure_check_json_shape_is_pinned(tmp_path, capsys):
@@ -1269,7 +1294,7 @@ def test_figure_check_json_shape_is_pinned(tmp_path, capsys):
     assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML),
                 "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert set(payload) == {"series", "pairing", "time_unit_notes"}
+    assert set(payload) == {"series", "pairing", "unit_notes"}
     (reading,) = payload["series"]
     assert set(reading) == {"claim", "curve", "figure", "digitizer", "points", "x_axis", "y_axis",
                             "resolution", "interpolation"}

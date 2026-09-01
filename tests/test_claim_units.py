@@ -134,3 +134,42 @@ def test_a_readings_clock_is_compared_against_the_models_own() -> None:
     silent = '<?xml version="1.0"?><sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" ' \
              'level="3" version="2"><model id="m"/></sbml>'
     assert time_unit_notes(series, silent) == ()
+
+
+def test_a_readings_y_axis_is_compared_against_the_output_the_curve_reads() -> None:
+    """The axis a curator is likelier to get wrong, and the one no other check can see.
+
+    This paper's own document plots every tissue twice — once in mg on one panel and once in nmol
+    on another — so a reading of one panel paired with the other's curve is a file that is
+    internally perfect, correctly paired with a curve the document really plots, covering the run,
+    and off by six orders of magnitude. The unit is the model's for *that element*, and which
+    element a curve reads is what the document says.
+    """
+    from reprolith import read_digitized_figure, value_unit_notes
+
+    worked = Path(__file__).parent.parent / "datasets" / "worked_examples"
+    sedml = (worked / "Zake2021_metformin_human_single_PO.sedml").read_text(encoding="utf-8")
+    model = (worked / "Zake2021_metformin_human_single_PO.xml").read_text(encoding="utf-8")
+
+    def reading(claim: str, unit: str) -> tuple:
+        return read_digitized_figure(json.dumps({
+            "figure": "Figure 3A", "digitizer": "WebPlotDigitizer 4.7",
+            "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+            "y_axis": {"minimum": 0, "maximum": 30, "unit": unit},
+            "series": [{"claim": claim, "curve": "venous plasma",
+                        "points": [[0, 0.0], [1, 20.0], [24, 2.0]]}],
+        }))
+
+    # p2's venous plasma curve reads the nmol species; p1's reads the mg one.
+    assert value_unit_notes(reading("p2_curve_17_task2", "nmol/mL"), sedml, model) == ()
+    assert value_unit_notes(reading("p1_curve_23_task2", "mg/mL"), sedml, model) == ()
+
+    (note,) = value_unit_notes(
+        reading("p2_curve_17_task2", "mg/mL"), sedml, model, carrier="your model"
+    )
+    assert "y axis in mg/mL" in note and "'mPlasmaVenous'" in note
+    assert "10^-9 mole / 10^-3 litre" in note
+
+    # A claim id the document does not plot says nothing here: that is the pairing check's finding,
+    # and answering it twice in two vocabularies helps nobody.
+    assert value_unit_notes(reading("not_a_curve", "mg/mL"), sedml, model) == ()

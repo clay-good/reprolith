@@ -520,6 +520,44 @@ def _plot_marks(
             yield plot_id, output.get("name"), kind, curve, curve_id, ref, generator
 
 
+def sedml_curve_targets(sedml: str) -> dict[str, tuple[str, ...]]:
+    """Which model elements each plotted curve reads, keyed by the claim id it is enumerated under.
+
+    :func:`enumerate_sedml_claims` records what a curve *is* — its quantity, its conditions, where
+    it came from — and not the element it reads, because a dossier claim does not need one. A
+    caller holding a digitization of that curve does: the unit a reading's y axis states is only
+    checkable against the unit the model reads *that element* in.
+
+    A curve plotting an expression over several elements yields all of them, and one plotting none
+    yields an empty tuple; both are for the caller to refuse to answer about rather than to guess
+    at. The ids are the same walk :func:`enumerate_sedml_claims` uses, so the two cannot disagree
+    about which curves exist.
+
+    Raises ``ValueError`` if the document is not parseable XML.
+    """
+    try:
+        root = ET.fromstring(sedml)
+    except ET.ParseError as exc:
+        raise ValueError(f"not parseable SED-ML: {exc}") from exc
+    generators = _read_generators(root)
+    by_id = {
+        element.get("id", ""): element
+        for element in root.iter()
+        if _localname(element.tag) == "dataGenerator"
+    }
+    targets: dict[str, tuple[str, ...]] = {}
+    for _plot, _name, _kind, _curve, curve_id, ref, _generator in _plot_marks(root, generators):
+        leaves = []
+        for variable in by_id.get(ref, ET.Element("dataGenerator")).iter():
+            if _localname(variable.tag) != "variable" or variable.get("symbol"):
+                continue
+            leaf = _LEAF_ID.search(variable.get("target") or "")
+            if leaf:
+                leaves.append(leaf.group(1))
+        targets[curve_id] = tuple(leaves)
+    return targets
+
+
 def enumerate_sedml_panels(sedml: str) -> tuple[SedmlPanel, ...]:
     """The document's plots, in document order, each with the curves it draws.
 

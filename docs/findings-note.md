@@ -3412,7 +3412,16 @@ It reaches an author through `claims-check --model`, beside the check that each 
 the table it cites. A claim that states no unit is reported as not checked and never as agreement:
 the absence of a statement is not a statement.
 
-**A figure claim has a second clock, and it had the same hole.** A digitization is required to
+**A figure claim states two units, and neither was compared.** The y axis is the one a curator is
+likelier to get wrong and the one nothing else here can see: this paper's own document plots every
+tissue twice, in mg on one panel and in nmol on another, so a reading of one panel paired with the
+other's curve is internally perfect, paired with a curve the document really plots, covering the
+run, and off by six orders of magnitude. It is checked against the unit the model reads *that
+curve's own output* in — which element a curve reads is what the document says, and
+`sedml_curve_targets` is the accessor that answers it, since a dossier claim records what a curve
+*is* and never the element it reads.
+
+**And the x axis had the same hole.** A digitization is required to
 state both axes' units and nothing compared either against the model. The window check cannot: a
 figure read in minutes over 0-120 *covers* a run of 0-24 hours as numbers, so nothing is refused
 and every value is placed somewhere it was not read. `figure-check --model` now compares the two,

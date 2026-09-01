@@ -724,6 +724,55 @@ def time_unit_notes(
     return tuple(notes)
 
 
+def value_unit_notes(
+    series: Iterable[DigitizedSeries],
+    sedml: str,
+    model_sbml: str,
+    *,
+    carrier: str = "this model",
+) -> tuple[str, ...]:
+    """What each reading's y axis says, against the unit the model reads that curve's output in.
+
+    The other axis, and the one a curator is likelier to get wrong: the same paper plots the same
+    tissue twice, once in mg and once in nmol, and a reading of one panel paired with the other's
+    curve is a file that is internally perfect. The unit is composed from the model's own
+    declarations — a species is read as a concentration, so its substance unit over its
+    compartment's — and the document is what says which species a given curve reads.
+
+    Nothing is said unless the curve reads exactly one model element the model declares a value
+    for: a normalized or summed trace is an expression, and no single declared unit is the unit of
+    one. **Reported, never a refusal**, for the reason :func:`time_unit_notes` gives.
+
+    Raises ``ValueError`` if either document is not parseable.
+    """
+    from .ingest import UNSTATED_UNIT
+    from .manuscript_values import _unit_ratio, _units_differ, claim_units
+    from .sedml import sedml_curve_targets
+
+    targets = sedml_curve_targets(sedml)
+    notes = []
+    for reading in series:
+        reads = targets.get(reading.claim_id, ())
+        if len(reads) != 1:
+            continue  # not one output, so not one unit — and the pairing check speaks to the rest
+        try:
+            declared = claim_units(model_sbml, reads[0])
+        except ValueError:
+            continue  # a curve reading something this model does not declare is a pairing fault
+        stated = reading.y_axis.unit
+        if declared == UNSTATED_UNIT or not _units_differ(stated, declared):
+            continue
+        ratio = _unit_ratio(stated, declared)
+        notes.append(
+            f"series '{reading.claim_id}' was read against a y axis in {stated}, and {carrier} "
+            f"reads '{reads[0]}' in {declared}"
+            + (f", which is {ratio:g} times as large" if ratio is not None else "")
+            + ": the reading becomes that claim's reference values as they stand, so one of the "
+            "two files is naming the wrong unit"
+        )
+    return tuple(notes)
+
+
 def attach_digitized_values(
     claims: Iterable[DossierClaim],
     series: Iterable[DigitizedSeries],

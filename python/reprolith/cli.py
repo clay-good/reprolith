@@ -41,6 +41,7 @@ from .digitization import (
     series_resolution,
     time_unit_notes,
     unfilled_figure,
+    value_unit_notes,
     window_faults,
 )
 from .export import build_bundle_sedml, build_omex_archive
@@ -774,25 +775,32 @@ def _cmd_figure_template(query: ReprolithQuery, args: argparse.Namespace) -> int
     return 0
 
 
+def _figure_document(args: argparse.Namespace) -> str | None:
+    """The simulation document to check a digitization against, or ``None`` for neither given."""
+    if args.sedml is not None:
+        return Path(args.sedml).read_text(encoding="utf-8")
+    if args.archive is None:
+        return None
+    from .omex import archive_documents
+
+    document, _model = archive_documents(Path(args.archive).read_bytes())
+    if document is None:
+        raise ValueError(
+            "this archive ships no simulation document, so nothing in it says which curves "
+            "your paper shows; there is no pairing to check"
+        )
+    return document
+
+
 def _document_claims(
     args: argparse.Namespace,
 ) -> tuple[tuple[Any, ...], tuple[tuple[float, float, int], ...], tuple[Any, ...]] | None:
     """What the given document says: its curves, the runs it states, and its panels."""
-    if args.archive is None and args.sedml is None:
+    document = _figure_document(args)
+    if document is None:
         return None
     from .sedml import enumerate_sedml_claims, enumerate_sedml_panels, parse_sedml_recipes
 
-    if args.archive is not None:
-        from .omex import archive_documents
-
-        document, _ = archive_documents(Path(args.archive).read_bytes())
-        if document is None:
-            raise ValueError(
-                "this archive ships no simulation document, so nothing in it says which curves "
-                "your paper shows; there is no pairing to check"
-            )
-    else:
-        document = Path(args.sedml).read_text(encoding="utf-8")
     # `parse_sedml_recipes` drops any time course it cannot run verbatim, so an empty set of
     # runs is "this document states no run to judge a curve over" and not "the run is 0-0".
     runs = tuple(dict.fromkeys(
@@ -926,6 +934,12 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"cannot read the model: {unusable}", file=sys.stderr)
         return 1
     notes = time_unit_notes(series, clock, carrier="your model") if clock is not None else ()
+    # The y axis needs the document too: only it says which output a given curve reads, and the
+    # unit is the model's for *that* element. This paper plots the same tissue twice, in mg on one
+    # panel and in nmol on another, so a reading paired with the other panel's curve is a file that
+    # is internally perfect.
+    if clock is not None and (document := _figure_document(args)) is not None:
+        notes += value_unit_notes(series, document, clock, carrier="your model")
 
     plotted = {claim.id: claim.quantity for claim in (claims or ())}
     resolutions = [series_resolution(s) for s in series]
@@ -953,7 +967,7 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             # Reported, never a fault: which of the two files names the wrong unit is not this
             # command's to decide, and refusing would reject a correct reading on the strength of
             # a wrong declaration.
-            "time_unit_notes": list(notes),
+            "unit_notes": list(notes),
         })
         return 1 if faults or short else 0
     read_from = ", ".join(dict.fromkeys(reading.figure for reading in series))
@@ -1048,7 +1062,7 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
                 print("  and every one of them covers a window your document runs")
     # Reported, never a fault: which file names the wrong unit is not this command's to decide.
     for note in notes:
-        print(f"  TIME UNITS DISAGREE: {note}")
+        print(f"  UNITS DISAGREE: {note}")
     print("  no model was run and no claim was judged: this reads the file, nothing else")
     return 1 if faults or short else 0
 

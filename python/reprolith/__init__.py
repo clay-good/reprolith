@@ -56,6 +56,7 @@ from .digitization import (
     series_resolution,
     time_unit_notes,
     unfilled_figure,
+    value_unit_notes,
     window_faults,
 )
 from .dossier import (
@@ -281,6 +282,7 @@ from .sedml import (
     enumerate_sedml_claims,
     parse_sedml_recipes,
     read_sedml_data,
+    sedml_curve_targets,
     sedml_data_sources,
     sedml_model_sources,
 )
@@ -429,6 +431,7 @@ __all__ = [
     "ensemble_percentile_bands",
     "EntryAgreement",
     "enumerate_sedml_claims",
+    "sedml_curve_targets",
     "Equation",
     "EquationKind",
     "essentiality_agreement",
@@ -606,6 +609,7 @@ __all__ = [
     "unfilled_claims",
     "unfilled_figure",
     "time_unit_notes",
+    "value_unit_notes",
     "window_faults",
     "UpdateScheme",
     "ValueCheck",

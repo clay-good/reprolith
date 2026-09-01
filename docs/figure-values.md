@@ -94,14 +94,26 @@ curator is still at the terminal, so the refusal is made there instead of in Pyt
 document running several time courses is one figure per window, so covering any one of them is
 covering the one this panel was read off.
 
-**And the two files each state a clock, which nothing compared.** A reading is put on the run's
+**And a reading states two units, neither of which anything compared.**
+
+The y axis is the one a curator is likelier to get wrong, and no other check here can see it. This
+paper's own document plots every tissue *twice* — once in mg on one panel and once in nmol on
+another — so a reading of one panel paired with the other's curve is internally perfect, paired
+with a curve the document really plots, covering the run, and off by six orders of magnitude. Given
+the document and a model, each reading's y axis is compared against the unit the model reads *that
+curve's own output* in: which element a curve reads is what the document says, and a species is
+read as a concentration, so the unit is its substance unit over its compartment's. Nothing is said
+about a curve plotting an expression over several elements — no one declared unit is the unit of
+that.
+
+**The x axis is the same question about the clock.** A reading is put on the run's
 sample grid by its x values, so a figure read in minutes against a model running in hours produces
 a reference that is ordered, smooth, plausible, and aligned to the wrong places. The window check
 cannot see it: 0-120 covers 0-24 as numbers. Given a model — packaged in the archive, or `--model`
 — each reading's x axis is compared against the unit the model states its time in, and the answer
 names the factor between them.
 
-It is **reported, never a refusal**. Which of the two files names the wrong unit is not this
+Both are **reported, never a refusal**. Which of the two files names the wrong unit is not this
 command's to decide, and there is a live example of the other one being wrong: every deposited
 metformin model declares its time as `multiplier="3600" scale="2"`, which SBML reads as 360000
 seconds, while the paper's figures and the shipped recipe are in hours. Refusing there would reject
