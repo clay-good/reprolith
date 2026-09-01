@@ -94,6 +94,23 @@ def test_the_cost_falls_with_the_ensemble_and_is_small_by_two_hundred_and_fifty(
     assert _failure_rate(0.5, 250) < 0.10
 
 
+def test_the_wider_digitized_band_absorbs_it_at_a_smaller_ensemble_and_not_at_twenty() -> None:
+    """The same note covers both distributional bands, so the wider one is measured rather than
+    inferred: an envelope read off a paper's picture is judged at 25% instead of 15%.
+
+    It buys about a factor of five in ensemble size at a 30% CV — and it does not make twenty
+    subjects safe at a 50% one, where a flawless reproduction still misses almost half the time.
+    """
+    def missed(cv: float, subjects: int, budget: float) -> float:
+        errors = _worst_band_error(cv, subjects)
+        return sum(1 for error in errors if error > budget) / len(errors)
+
+    assert missed(0.3, 20, 0.25) < 0.15   # 10%, against 47% at the numeric band's 15%
+    assert missed(0.3, 50, 0.25) < 0.02
+    assert missed(0.5, 20, 0.25) > 0.4    # 46%: the wider band does not rescue a wide population
+    assert missed(0.5, 250, 0.25) == 0.0
+
+
 def test_the_closed_form_the_run_publishes_matches_the_measurement() -> None:
     """`percentile_sampling_error` states this in the protocol, so it has to be the same number.
 

@@ -68,7 +68,10 @@ population. How often the worst of the three bands still misses the 15% pass bud
 | 50% | 80% | 51% | 24% | 3% |
 
 At twenty subjects and a 30% CV, a reproduction that is right about everything fails about half the
-time. The subject count is a term in the verdict, so the run now states its own band's sampling
+time. An envelope read off a paper's *picture* is judged at 25% instead of 15%, and that widening
+buys about a factor of five in ensemble size — 10% rather than 47% at twenty subjects — while
+leaving a wide population exactly where it was: at a 50% CV, twenty subjects still miss almost half
+the time. The subject count is a term in the verdict, so the run now states its own band's sampling
 error in the protocol the certificate carries — `sampling error of the 5th band ~14% of the band at
 20 subjects` — from the closed form `percentile_sampling_error`, which agrees with the replicates
 within a factor of two and understates the tails at small N. It is published as a scale, never as a
