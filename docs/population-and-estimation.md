@@ -133,6 +133,34 @@ A parameter region the engine cannot integrate propagates its error rather than 
 infinitely bad. Scoring it is the usual practice and would quietly steer the search away, leaving
 no trace that the fit went somewhere the model does not exist.
 
+### What the data costs, before the optimizer is at fault
+
+A re-fit recovers parameters from *noisy* observations. Fit the same experiment twice with the same
+correct model and a perfect optimizer and the estimates move, because the data moved. That floor is
+measurable with no paper and no engine — generate observations from known parameters, add assay
+noise, recover them by exact least squares, and compare (`tests/test_estimation_noise_floor.py`,
+600 replicates, eight points over a day).
+
+| Assay noise (CV) | median error, rate | median error, scale | worse of the two misses the 10% budget |
+| --- | --- | --- | --- |
+| 5% | 0.6% | 2.2% | 0% |
+| 10% | 1.2% | 4.4% | 14% |
+| 20% | 2.4% | 8.8% | 45% |
+
+Two things follow. **The asymmetry is large**: the same data that pins the elimination rate to
+within 3% leaves the scale — a volume, a dose, a clearance — at nearly four times that. An
+estimation verdict says much more about a paper's rate constants than about its volumes, and the
+10% tolerance is set by the looser of the two.
+
+And **more data does not rescue a noisy assay**: quadrupling the observations cuts the scale's
+error by about a third, not by half, so at a 20% assay CV a flawless re-fit still misses the pass
+budget one time in four at twenty points. It is the noise level that governs, which is why the
+estimation level carries its own wider default rather than borrowing the scalar's.
+
+This measures the statistical floor any correct optimizer shares — the fit is the closed-form
+optimum for the model it generates from — not `refit_parameters`' own optimizer, which
+[`tests/test_estimation_refit.py`](../tests/test_estimation_refit.py) checks.
+
 ## What is still missing
 
 Neither capability has yet been pointed at a **paper**. There is no published population figure and

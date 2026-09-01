@@ -393,7 +393,7 @@
         "estimation-level"
       ],
       "basis": "spec",
-      "note": "10%/25%, keyed by reproduction level rather than comparison method: re-fitting parameters from raw data is sensitive to the optimizer, its starting values, the objective, and the dataset, so a recovered estimate cannot be held to the tolerance of a scalar read out of a fixed model. Declared, not measured \u2014 no estimation-level claim has been certified.",
+      "note": "10%/25%, keyed by reproduction level rather than comparison method: re-fitting parameters from raw data is sensitive to the optimizer, its starting values, the objective, and the dataset, so a recovered estimate cannot be held to the tolerance of a scalar read out of a fixed model. Declared, not measured \u2014 no estimation-level claim has been certified. One component is now measured, with no paper and no engine: a re-fit recovers parameters from noisy data, so fitting the same experiment twice with the same correct model and the closed-form optimum moves the estimates. Against known parameters at a 20% assay CV and eight points, the median error is 2.4% on the rate and 8.8% on the scale, and the worse of the two misses the 10% pass budget 45% of the time; at a 5% CV, never in 600 replicates. Quadrupling the observations cuts the scale's error by about a third, not by half, so the noise level governs rather than the sample size \u2014 which is the argument for this level carrying its own wider default. That measures what the data spends, not the tolerance, which stays declared: no estimation-level claim has been certified.",
       "evidence": [
         {
           "path": "python/reprolith/oracle.py",
@@ -402,7 +402,14 @@
           ]
         },
         "python/reprolith/certify.py",
-        "openspec/specs/simulation-oracle/spec.md"
+        "openspec/specs/simulation-oracle/spec.md",
+        {
+          "path": "tests/test_estimation_noise_floor.py",
+          "quotes": [
+            "disagreement is the data",
+            "rates are recovered tightly and scales are not"
+          ]
+        }
       ]
     },
     {
