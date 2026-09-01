@@ -471,3 +471,40 @@ def test_an_archive_whose_curves_carry_values_is_not_told_to_ship_them() -> None
     assert "WHAT A REPRODUCER WOULD HAVE TO READ OFF YOUR FIGURES" not in render_archive_human(
         _ARCHIVE.read_bytes()
     )
+
+
+def test_an_archive_of_reports_is_told_the_route_its_results_actually_have() -> None:
+    """Two archives reach "no published result", and one instruction covered one of them.
+
+    A document with no outputs states nothing, and "plot your curves" is the whole answer. A
+    document carrying only **reports** has stated something: a report is an export format — "write
+    these columns" — and Reprolith retains its data sets non-targetable on purpose rather than
+    reading them as results the paper staked. Its author was told to plot curves over columns they
+    had already named, with no acknowledgement that a paper whose results are numbers in a table
+    has nothing SED-ML can say. The route for that is the one this command already takes, and it
+    went unmentioned exactly where it was the only answer.
+    """
+    sedml = (
+        '<sedML xmlns="http://sed-ml.org/sed-ml/level1/version3" level="1" version="3">'
+        '<listOfModels><model id="m" language="urn:sedml:language:sbml" source="model.xml"/>'
+        "</listOfModels>"
+        '<listOfSimulations><uniformTimeCourse id="s" initialTime="0" outputStartTime="0" '
+        'outputEndTime="10" numberOfSteps="10">'
+        '<algorithm kisaoID="KISAO:0000019"/></uniformTimeCourse></listOfSimulations>'
+        '<listOfTasks><task id="t" modelReference="m" simulationReference="s"/></listOfTasks>'
+        "<listOfDataGenerators>"
+        '<dataGenerator id="g" name="X"><listOfVariables>'
+        '<variable id="v" taskReference="t" target="/sbml:sbml/sbml:model/sbml:listOfSpecies/'
+        'sbml:species[@id=&apos;X&apos;]"/></listOfVariables>'
+        "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><ci>v</ci></math></dataGenerator>"
+        "</listOfDataGenerators>"
+        '<listOfOutputs><report id="r"><listOfDataSets>'
+        '<dataSet id="d" label="Cmax" dataReference="g"/>'
+        "</listOfDataSets></report></listOfOutputs></sedML>"
+    )
+    from reprolith import pair_report
+
+    report = pair_report(sedml, _MINIMAL_SBML)
+    (item,) = [i for i in report["fix_list"] if i["kind"] == "claims"]
+    assert "1 report data set(s) are an export format" in item["issue"]
+    assert "archive-check --claims" in item["fix"]

@@ -585,12 +585,30 @@ def archive_report(
     ]
 
     if not targetable and not not_a_time_course:
+        # Two archives reach this, and one instruction was written for only one of them. A document
+        # with no outputs at all states nothing, and "plot your curves" is the whole answer. A
+        # document carrying only **reports** has stated something — a report is an export format,
+        # "write these columns", and Reprolith retains its data sets non-targetable on purpose
+        # rather than reading them as results the paper staked. Its author was told to plot curves,
+        # over columns they had already named, with no acknowledgement that a paper whose results
+        # are numbers in a table has nothing SED-ML can say: there is no way to state "the peak of
+        # this curve is the published value". The route for that is the one this command already
+        # takes, and it went unmentioned exactly where it was the only answer.
+        retained = len(dossier.claims) - len(targetable)
         actions.append({
             "priority": _ARCHIVE_NO_CLAIM_PRIORITY, "kind": "claims", "claim_id": None,
             "quantity": None, "source_location": experiment,
-            "issue": "the archive states no published result, so a reproducer can run it but has "
-                     "nothing to check it against",
-            "fix": "ship a SED-ML document whose plots are the curves your paper shows",
+            "issue": (
+                f"the archive states no published result — its {retained} report data set(s) are "
+                "an export format, not a statement that your paper published those values — so a "
+                "reproducer can run it but has nothing to check it against"
+                if retained
+                else "the archive states no published result, so a reproducer can run it but has "
+                     "nothing to check it against"
+            ),
+            "fix": "ship a SED-ML document whose plots are the curves your paper shows; for a "
+                   "result your paper prints as a number rather than plots, no document can say "
+                   "it — pass your claims file to `reprolith archive-check --claims` instead",
         })
 
     # Gaps are reported, and deliberately *not* as things for the author to fix. A dossier's
