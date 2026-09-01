@@ -750,7 +750,8 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
                 "checked_against": "archive" if args.archive is not None else "sedml",
                 "faults": list(faults),
                 "curves_not_read": list(unread),
-                "windows": [list(w) for w in windows],
+                # The runs the document states, each as [start, end, steps]. The windows the
+                # faults are computed against are the first two of each, so they are not repeated.
                 "runs": [list(r) for r in runs],
                 "window_faults": list(short),
             },

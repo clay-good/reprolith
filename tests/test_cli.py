@@ -1050,8 +1050,8 @@ def test_figure_check_json_shape_is_pinned(tmp_path, capsys):
     assert set(reading) == {"claim", "curve", "figure", "digitizer", "points", "x_axis", "y_axis",
                             "resolution"}
     assert set(reading["resolution"]) == {"points", "span", "widest_gap", "widest_gap_fraction"}
-    assert set(payload["pairing"]) == {"checked_against", "faults", "curves_not_read", "windows",
-                                       "runs", "window_faults"}
+    assert set(payload["pairing"]) == {"checked_against", "faults", "curves_not_read", "runs",
+                                       "window_faults"}
     assert payload["pairing"]["runs"] == [[0.0, 9000.0, 1000]]
 
     # Without a document the pairing is absent rather than empty: nothing was checked.
