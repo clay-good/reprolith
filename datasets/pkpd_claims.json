@@ -1,5 +1,5 @@
 {
-  "description": "Verified targetable claims extracted from the manuscripts of test-set entries, keyed by BioModels accession. Each entry drives certify_model to produce a certificate in the blind run. A claim's reference value is a number the paper itself prints (cited in source_location), not one from re-running the model here. It may be a value the paper measured or one the paper's own model produced \u2014 the source_location says which, and the two differ: for BIOMD0000001028 the measured plasma Cmax values are 5.7 and 12.9 nmol/mL and the simulated ones 6.1 and 11.2, and it is the simulated ones a reproduction targets. datasets/manuscripts/ quotes the cited rows so the values can be checked against the paper offline. Entries are added only after a claim has been extracted and its reproduction verified by hand; the rest of the test set is honestly blocked until then.",
+  "description": "Verified targetable claims extracted from the manuscripts of test-set entries, keyed by BioModels accession. Each entry drives certify_model to produce a certificate in the blind run. A claim's reference value is a number the paper itself prints (cited in source_location), not one from re-running the model here. It may be a value the paper measured or one the paper's own model produced \u2014 the source_location says which, and the two differ: for BIOMD0000001028 the measured plasma Cmax values are 5.7 and 12.9 nmol/mL and the simulated ones 6.1 and 11.2, and it is the simulated ones a reproduction targets. datasets/manuscripts/ quotes the cited rows so the values can be checked against the paper offline. Entries are added only after a claim has been extracted and its reproduction verified by hand; the rest of the test set is honestly blocked until then. Each claim also states the unit the paper prints it in (reported_units), which is checked against the unit the model reads that output in: a number compared against a model output in another unit is a verdict about arithmetic, and nothing downstream can see it.",
   "entries": {
     "BIOMD0000001028": {
       "model_file": "worked_examples/Zake2021_metformin_human_single_PO.xml",
@@ -15,6 +15,7 @@
           "quantity": "plasma Cmax after 500 mg single oral dose",
           "species": "mPlasmaVenous",
           "reported": 6.1,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, plasma row, 500 mg single PO dose (the paper simulates 6.1 nmol/mL)",
           "metric": "cmax"
         },
@@ -23,6 +24,7 @@
           "quantity": "plasma Cmax after 1000 mg single oral dose",
           "species": "mPlasmaVenous",
           "reported": 11.2,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, plasma row, 1000 mg single PO dose (the paper simulates 11.2 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -35,6 +37,7 @@
           "quantity": "plasma Cmax after a 250 mg oral dose, 375 mg administered 12 h earlier",
           "species": "mPlasmaVenous",
           "reported": 3.9,
+          "reported_units": "nmol/mL",
           "source_location": "Table 5, Chung 250mg row, Fitted (the paper simulates 3.9 nmol/mL)",
           "metric": "cmax",
           "schedule": [
@@ -58,6 +61,7 @@
           "quantity": "plasma Cmax after a 750 mg oral dose, 500 mg administered 12 h earlier",
           "species": "mPlasmaVenous",
           "reported": 9.4,
+          "reported_units": "nmol/mL",
           "source_location": "Table 5, Wen 750m row, Fitted (the paper simulates 9.4 nmol/mL)",
           "metric": "cmax",
           "schedule": [
@@ -81,6 +85,7 @@
           "quantity": "plasma Cmax after a 500 mg oral dose, the seventh of a twice-daily course",
           "species": "mPlasmaVenous",
           "reported": 6.8,
+          "reported_units": "nmol/mL",
           "source_location": "Table 5, El Messaoudi 500mg row, Fitted (the paper simulates 6.8 nmol/mL)",
           "metric": "cmax",
           "schedule": [
@@ -134,6 +139,7 @@
           "quantity": "Red blood cells Cmax after a 500 mg single oral dose",
           "species": "mRBC",
           "reported": 1.0,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Red blood cells row, 500 mg single PO dose (the paper simulates 1.0 nmol/mL)",
           "metric": "cmax"
         },
@@ -142,6 +148,7 @@
           "quantity": "Adipose Cmax after a 500 mg single oral dose",
           "species": "mAdipose",
           "reported": 4.1,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Adipose row, 500 mg single PO dose (the paper simulates 4.1 nmol/mL)",
           "metric": "cmax"
         },
@@ -150,6 +157,7 @@
           "quantity": "Brain Cmax after a 500 mg single oral dose",
           "species": "mBrain",
           "reported": 4.9,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Brain row, 500 mg single PO dose (the paper simulates 4.9 nmol/mL)",
           "metric": "cmax"
         },
@@ -158,6 +166,7 @@
           "quantity": "Remainder Cmax after a 500 mg single oral dose",
           "species": "mRemainder",
           "reported": 4.8,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Remainder row, 500 mg single PO dose (the paper simulates 4.8 nmol/mL)",
           "metric": "cmax"
         },
@@ -166,6 +175,7 @@
           "quantity": "Muscle Cmax after a 500 mg single oral dose",
           "species": "mMuscle",
           "reported": 18.1,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Muscle row, 500 mg single PO dose (the paper simulates 18.1 nmol/mL)",
           "metric": "cmax"
         },
@@ -174,6 +184,7 @@
           "quantity": "Lungs Cmax after a 500 mg single oral dose",
           "species": "mLung",
           "reported": 18.2,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Lungs row, 500 mg single PO dose (the paper simulates 18.2 nmol/mL)",
           "metric": "cmax"
         },
@@ -182,6 +193,7 @@
           "quantity": "Stomach Cmax after a 500 mg single oral dose",
           "species": "mStomach",
           "reported": 19.3,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Stomach row, 500 mg single PO dose (the paper simulates 19.3 nmol/mL)",
           "metric": "cmax"
         },
@@ -190,6 +202,7 @@
           "quantity": "Heart Cmax after a 500 mg single oral dose",
           "species": "mHeart",
           "reported": 15.2,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Heart row, 500 mg single PO dose (the paper simulates 15.2 nmol/mL)",
           "metric": "cmax"
         },
@@ -198,6 +211,7 @@
           "quantity": "Liver Cmax after a 500 mg single oral dose",
           "species": "mLiver",
           "reported": 71.8,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Liver row, 500 mg single PO dose (the paper simulates 71.8 nmol/mL)",
           "metric": "cmax"
         },
@@ -206,6 +220,7 @@
           "quantity": "Red blood cells Cmax after a 1000 mg single oral dose",
           "species": "mRBC",
           "reported": 1.9,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Red blood cells row, 1000 mg single PO dose (the paper simulates 1.9 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -218,6 +233,7 @@
           "quantity": "Adipose Cmax after a 1000 mg single oral dose",
           "species": "mAdipose",
           "reported": 7.5,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Adipose row, 1000 mg single PO dose (the paper simulates 7.5 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -230,6 +246,7 @@
           "quantity": "Brain Cmax after a 1000 mg single oral dose",
           "species": "mBrain",
           "reported": 9.0,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Brain row, 1000 mg single PO dose (the paper simulates 9.0 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -242,6 +259,7 @@
           "quantity": "Remainder Cmax after a 1000 mg single oral dose",
           "species": "mRemainder",
           "reported": 8.9,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Remainder row, 1000 mg single PO dose (the paper simulates 8.9 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -254,6 +272,7 @@
           "quantity": "Muscle Cmax after a 1000 mg single oral dose",
           "species": "mMuscle",
           "reported": 33.0,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Muscle row, 1000 mg single PO dose (the paper simulates 33.0 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -266,6 +285,7 @@
           "quantity": "Lungs Cmax after a 1000 mg single oral dose",
           "species": "mLung",
           "reported": 33.7,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Lungs row, 1000 mg single PO dose (the paper simulates 33.7 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -278,6 +298,7 @@
           "quantity": "Stomach Cmax after a 1000 mg single oral dose",
           "species": "mStomach",
           "reported": 35.9,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Stomach row, 1000 mg single PO dose (the paper simulates 35.9 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -290,6 +311,7 @@
           "quantity": "Heart Cmax after a 1000 mg single oral dose",
           "species": "mHeart",
           "reported": 28.1,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Heart row, 1000 mg single PO dose (the paper simulates 28.1 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -302,6 +324,7 @@
           "quantity": "Liver Cmax after a 1000 mg single oral dose",
           "species": "mLiver",
           "reported": 134.7,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Liver row, 1000 mg single PO dose (the paper simulates 134.7 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -314,6 +337,7 @@
           "quantity": "Plasma Cmax after a 1500 mg single oral dose",
           "species": "mPlasmaVenous",
           "reported": 16.3,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Plasma row, 1500 mg single PO dose (the paper simulates 16.3 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -326,6 +350,7 @@
           "quantity": "Red blood cells Cmax after a 1500 mg single oral dose",
           "species": "mRBC",
           "reported": 2.7,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Red blood cells row, 1500 mg single PO dose (the paper simulates 2.7 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -338,6 +363,7 @@
           "quantity": "Adipose Cmax after a 1500 mg single oral dose",
           "species": "mAdipose",
           "reported": 10.8,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Adipose row, 1500 mg single PO dose (the paper simulates 10.8 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -350,6 +376,7 @@
           "quantity": "Brain Cmax after a 1500 mg single oral dose",
           "species": "mBrain",
           "reported": 13.1,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Brain row, 1500 mg single PO dose (the paper simulates 13.1 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -362,6 +389,7 @@
           "quantity": "Remainder Cmax after a 1500 mg single oral dose",
           "species": "mRemainder",
           "reported": 12.9,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Remainder row, 1500 mg single PO dose (the paper simulates 12.9 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -374,6 +402,7 @@
           "quantity": "Muscle Cmax after a 1500 mg single oral dose",
           "species": "mMuscle",
           "reported": 47.2,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Muscle row, 1500 mg single PO dose (the paper simulates 47.2 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -386,6 +415,7 @@
           "quantity": "Lungs Cmax after a 1500 mg single oral dose",
           "species": "mLung",
           "reported": 49.0,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Lungs row, 1500 mg single PO dose (the paper simulates 49.0 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -398,6 +428,7 @@
           "quantity": "Stomach Cmax after a 1500 mg single oral dose",
           "species": "mStomach",
           "reported": 52.1,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Stomach row, 1500 mg single PO dose (the paper simulates 52.1 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -410,6 +441,7 @@
           "quantity": "Heart Cmax after a 1500 mg single oral dose",
           "species": "mHeart",
           "reported": 40.8,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Heart row, 1500 mg single PO dose (the paper simulates 40.8 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -422,6 +454,7 @@
           "quantity": "Liver Cmax after a 1500 mg single oral dose",
           "species": "mLiver",
           "reported": 196.9,
+          "reported_units": "nmol/mL",
           "source_location": "Table 6, Liver row, 1500 mg single PO dose (the paper simulates 196.9 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -463,6 +496,7 @@
           "quantity": "plasma Cmax under twice-daily 500 mg oral dosing",
           "species": "mPlasmaVenous",
           "reported": 6.9,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, plasma row, 500 mg twice-daily regimen (the paper simulates 6.9 nmol/mL)",
           "metric": "cmax"
         },
@@ -471,6 +505,7 @@
           "quantity": "plasma Cmax under twice-daily 1000 mg oral dosing",
           "species": "mPlasmaVenous",
           "reported": 12.8,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, plasma row, 1000 mg twice-daily regimen (the paper simulates 12.8 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -483,6 +518,7 @@
           "quantity": "plasma Cmax under twice-daily 1500 mg oral dosing",
           "species": "mPlasmaVenous",
           "reported": 18.5,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, plasma row, 1500 mg twice-daily regimen (the paper simulates 18.5 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -495,6 +531,7 @@
           "quantity": "Red blood cells Cmax under twice-daily 500 mg oral dosing",
           "species": "mRBC",
           "reported": 3.2,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Red blood cells row, 500 mg twice-daily regimen (the paper simulates 3.2 nmol/mL)",
           "metric": "cmax",
           "shortfall": {
@@ -508,6 +545,7 @@
           "quantity": "Adipose Cmax under twice-daily 500 mg oral dosing",
           "species": "mAdipose",
           "reported": 4.6,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Adipose row, 500 mg twice-daily regimen (the paper simulates 4.6 nmol/mL)",
           "metric": "cmax"
         },
@@ -516,6 +554,7 @@
           "quantity": "Brain Cmax under twice-daily 500 mg oral dosing",
           "species": "mBrain",
           "reported": 6.9,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Brain row, 500 mg twice-daily regimen (the paper simulates 6.9 nmol/mL)",
           "metric": "cmax",
           "shortfall": {
@@ -529,6 +568,7 @@
           "quantity": "Remainder Cmax under twice-daily 500 mg oral dosing",
           "species": "mRemainder",
           "reported": 5.5,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Remainder row, 500 mg twice-daily regimen (the paper simulates 5.5 nmol/mL)",
           "metric": "cmax"
         },
@@ -537,6 +577,7 @@
           "quantity": "Muscle Cmax under twice-daily 500 mg oral dosing",
           "species": "mMuscle",
           "reported": 21.6,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Muscle row, 500 mg twice-daily regimen (the paper simulates 21.6 nmol/mL)",
           "metric": "cmax"
         },
@@ -545,6 +586,7 @@
           "quantity": "Lungs Cmax under twice-daily 500 mg oral dosing",
           "species": "mLung",
           "reported": 20.6,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Lungs row, 500 mg twice-daily regimen (the paper simulates 20.6 nmol/mL)",
           "metric": "cmax"
         },
@@ -553,6 +595,7 @@
           "quantity": "Stomach Cmax under twice-daily 500 mg oral dosing",
           "species": "mStomach",
           "reported": 21.9,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Stomach row, 500 mg twice-daily regimen (the paper simulates 21.9 nmol/mL)",
           "metric": "cmax"
         },
@@ -561,6 +604,7 @@
           "quantity": "Heart Cmax under twice-daily 500 mg oral dosing",
           "species": "mHeart",
           "reported": 17.2,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Heart row, 500 mg twice-daily regimen (the paper simulates 17.2 nmol/mL)",
           "metric": "cmax"
         },
@@ -569,6 +613,7 @@
           "quantity": "Liver Cmax under twice-daily 500 mg oral dosing",
           "species": "mLiver",
           "reported": 76.7,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Liver row, 500 mg twice-daily regimen (the paper simulates 76.7 nmol/mL)",
           "metric": "cmax"
         },
@@ -577,6 +622,7 @@
           "quantity": "Red blood cells Cmax under twice-daily 1000 mg oral dosing",
           "species": "mRBC",
           "reported": 5.9,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Red blood cells row, 1000 mg twice-daily regimen (the paper simulates 5.9 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -594,6 +640,7 @@
           "quantity": "Adipose Cmax under twice-daily 1000 mg oral dosing",
           "species": "mAdipose",
           "reported": 8.6,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Adipose row, 1000 mg twice-daily regimen (the paper simulates 8.6 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -606,6 +653,7 @@
           "quantity": "Brain Cmax under twice-daily 1000 mg oral dosing",
           "species": "mBrain",
           "reported": 12.8,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Brain row, 1000 mg twice-daily regimen (the paper simulates 12.8 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -623,6 +671,7 @@
           "quantity": "Remainder Cmax under twice-daily 1000 mg oral dosing",
           "species": "mRemainder",
           "reported": 10.1,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Remainder row, 1000 mg twice-daily regimen (the paper simulates 10.1 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -635,6 +684,7 @@
           "quantity": "Muscle Cmax under twice-daily 1000 mg oral dosing",
           "species": "mMuscle",
           "reported": 39.5,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Muscle row, 1000 mg twice-daily regimen (the paper simulates 39.5 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -647,6 +697,7 @@
           "quantity": "Lungs Cmax under twice-daily 1000 mg oral dosing",
           "species": "mLung",
           "reported": 38.3,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Lungs row, 1000 mg twice-daily regimen (the paper simulates 38.3 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -659,6 +710,7 @@
           "quantity": "Stomach Cmax under twice-daily 1000 mg oral dosing",
           "species": "mStomach",
           "reported": 40.7,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Stomach row, 1000 mg twice-daily regimen (the paper simulates 40.7 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -671,6 +723,7 @@
           "quantity": "Heart Cmax under twice-daily 1000 mg oral dosing",
           "species": "mHeart",
           "reported": 31.9,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Heart row, 1000 mg twice-daily regimen (the paper simulates 31.9 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -683,6 +736,7 @@
           "quantity": "Liver Cmax under twice-daily 1000 mg oral dosing",
           "species": "mLiver",
           "reported": 143.8,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Liver row, 1000 mg twice-daily regimen (the paper simulates 143.8 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -695,6 +749,7 @@
           "quantity": "Red blood cells Cmax under twice-daily 1500 mg oral dosing",
           "species": "mRBC",
           "reported": 8.4,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Red blood cells row, 1500 mg twice-daily regimen (the paper simulates 8.4 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -712,6 +767,7 @@
           "quantity": "Adipose Cmax under twice-daily 1500 mg oral dosing",
           "species": "mAdipose",
           "reported": 12.3,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Adipose row, 1500 mg twice-daily regimen (the paper simulates 12.3 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -724,6 +780,7 @@
           "quantity": "Brain Cmax under twice-daily 1500 mg oral dosing",
           "species": "mBrain",
           "reported": 18.7,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Brain row, 1500 mg twice-daily regimen (the paper simulates 18.7 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -741,6 +798,7 @@
           "quantity": "Remainder Cmax under twice-daily 1500 mg oral dosing",
           "species": "mRemainder",
           "reported": 14.7,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Remainder row, 1500 mg twice-daily regimen (the paper simulates 14.7 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -753,6 +811,7 @@
           "quantity": "Muscle Cmax under twice-daily 1500 mg oral dosing",
           "species": "mMuscle",
           "reported": 56.6,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Muscle row, 1500 mg twice-daily regimen (the paper simulates 56.6 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -765,6 +824,7 @@
           "quantity": "Lungs Cmax under twice-daily 1500 mg oral dosing",
           "species": "mLung",
           "reported": 55.6,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Lungs row, 1500 mg twice-daily regimen (the paper simulates 55.6 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -777,6 +837,7 @@
           "quantity": "Stomach Cmax under twice-daily 1500 mg oral dosing",
           "species": "mStomach",
           "reported": 59.0,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Stomach row, 1500 mg twice-daily regimen (the paper simulates 59.0 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -789,6 +850,7 @@
           "quantity": "Heart Cmax under twice-daily 1500 mg oral dosing",
           "species": "mHeart",
           "reported": 46.3,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Heart row, 1500 mg twice-daily regimen (the paper simulates 46.3 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -801,6 +863,7 @@
           "quantity": "Liver Cmax under twice-daily 1500 mg oral dosing",
           "species": "mLiver",
           "reported": 210.1,
+          "reported_units": "nmol/mL",
           "source_location": "Table 7, Liver row, 1500 mg twice-daily regimen (the paper simulates 210.1 nmol/mL)",
           "metric": "cmax",
           "parameter_overrides": {
@@ -824,6 +887,7 @@
           "quantity": "Plasma Cmax after a single 50 mg/kg oral dose in mice",
           "species": "mPlasmaVenous",
           "reported": 27.2,
+          "reported_units": "nmol/mL",
           "source_location": "Table 1, Plasma row, Fitted (the paper simulates 27.2 nmol/mL after a single 50 mg/kg PO dose)",
           "metric": "cmax"
         },
@@ -832,6 +896,7 @@
           "quantity": "Portal vein Cmax after a single 50 mg/kg oral dose in mice",
           "species": "mPortalVein",
           "reported": 40.7,
+          "reported_units": "nmol/mL",
           "source_location": "Table 1, Portal vein row, Fitted (the paper simulates 40.7 nmol/mL after a single 50 mg/kg PO dose)",
           "metric": "cmax"
         },
@@ -840,6 +905,7 @@
           "quantity": "Liver Cmax after a single 50 mg/kg oral dose in mice",
           "species": "mLiver",
           "reported": 216.6,
+          "reported_units": "nmol/mL",
           "source_location": "Table 1, Liver row, Fitted (the paper simulates 216.6 nmol/mL after a single 50 mg/kg PO dose)",
           "metric": "cmax"
         },
@@ -848,6 +914,7 @@
           "quantity": "Heart Cmax after a single 50 mg/kg oral dose in mice",
           "species": "mHeart",
           "reported": 68.1,
+          "reported_units": "nmol/mL",
           "source_location": "Table 1, Heart row, Fitted (the paper simulates 68.1 nmol/mL after a single 50 mg/kg PO dose)",
           "metric": "cmax"
         },
@@ -856,6 +923,7 @@
           "quantity": "Muscle Cmax after a single 50 mg/kg oral dose in mice",
           "species": "mMuscle",
           "reported": 107.3,
+          "reported_units": "nmol/mL",
           "source_location": "Table 1, Muscle row, Fitted (the paper simulates 107.3 nmol/mL after a single 50 mg/kg PO dose)",
           "metric": "cmax"
         },
@@ -864,6 +932,7 @@
           "quantity": "Adipose Cmax after a single 50 mg/kg oral dose in mice",
           "species": "mAdipose",
           "reported": 19.1,
+          "reported_units": "nmol/mL",
           "source_location": "Table 1, Adipose row, Fitted (the paper simulates 19.1 nmol/mL after a single 50 mg/kg PO dose)",
           "metric": "cmax"
         },
@@ -872,6 +941,7 @@
           "quantity": "Brain Cmax after a single 50 mg/kg oral dose in mice",
           "species": "mBrain",
           "reported": 21.8,
+          "reported_units": "nmol/mL",
           "source_location": "Table 1, Brain row, Fitted (the paper simulates 21.8 nmol/mL after a single 50 mg/kg PO dose)",
           "metric": "cmax"
         },
@@ -880,6 +950,7 @@
           "quantity": "Plasma AUC over 24 h after a single 50 mg/kg oral dose in mice",
           "species": "mPlasmaVenous",
           "reported": 105.3,
+          "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Plasma row, Fitted (the paper simulates 105.3 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc"
         },
@@ -888,6 +959,7 @@
           "quantity": "Portal vein AUC over 24 h after a single 50 mg/kg oral dose in mice",
           "species": "mPortalVein",
           "reported": 142.9,
+          "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Portal vein row, Fitted (the paper simulates 142.9 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc"
         },
@@ -896,6 +968,7 @@
           "quantity": "Liver AUC over 24 h after a single 50 mg/kg oral dose in mice",
           "species": "mLiver",
           "reported": 768.7,
+          "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Liver row, Fitted (the paper simulates 768.7 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc"
         },
@@ -904,6 +977,7 @@
           "quantity": "Heart AUC over 24 h after a single 50 mg/kg oral dose in mice",
           "species": "mHeart",
           "reported": 263.2,
+          "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Heart row, Fitted (the paper simulates 263.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc"
         },
@@ -912,6 +986,7 @@
           "quantity": "Muscle AUC over 24 h after a single 50 mg/kg oral dose in mice",
           "species": "mMuscle",
           "reported": 431.2,
+          "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Muscle row, Fitted (the paper simulates 431.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc"
         },
@@ -920,6 +995,7 @@
           "quantity": "Adipose AUC over 24 h after a single 50 mg/kg oral dose in mice",
           "species": "mAdipose",
           "reported": 76.8,
+          "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Adipose row, Fitted (the paper simulates 76.8 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc"
         },
@@ -928,6 +1004,7 @@
           "quantity": "Brain AUC over 24 h after a single 50 mg/kg oral dose in mice",
           "species": "mBrain",
           "reported": 84.2,
+          "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Brain row, Fitted (the paper simulates 84.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc"
         }
@@ -947,6 +1024,7 @@
           "quantity": "Plasma AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
           "species": "mPlasmaVenous",
           "reported": 91.4,
+          "reported_units": "nmol*h/mL",
           "source_location": "Table 2, Plasma row, Fitted (the paper simulates 91.4 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
           "metric": "auc"
         },
@@ -955,6 +1033,7 @@
           "quantity": "Stomach AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
           "species": "mStomach",
           "reported": 529.5,
+          "reported_units": "nmol*h/mL",
           "source_location": "Table 2, Stomach row, Fitted (the paper simulates 529.5 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
           "metric": "auc"
         },
@@ -963,6 +1042,7 @@
           "quantity": "Liver AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
           "species": "mLiver",
           "reported": 523.5,
+          "reported_units": "nmol*h/mL",
           "source_location": "Table 2, Liver row, Fitted (the paper simulates 523.5 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
           "metric": "auc"
         }

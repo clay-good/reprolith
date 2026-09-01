@@ -234,60 +234,127 @@ _BASE_UNIT_KINDS = frozenset({
 #: two characters are in use for it — the micro sign and Greek mu — and a file saved from either
 #: keyboard is the same unit.
 _PREFIXES = {
-    "n": -9, "nano": -9, "µ": -6, "μ": -6, "u": -6, "micro": -6, "m": -3, "milli": -3, "c": -2, "centi": -2,
-    "d": -1, "deci": -1, "": 0, "k": 3, "kilo": 3, "M": 6, "mega": 6,
+    "n": -9, "nano": -9, "µ": -6, "μ": -6, "u": -6, "micro": -6, "m": -3, "milli": -3,
+    "c": -2, "centi": -2, "d": -1, "deci": -1, "": 0, "k": 3, "kilo": 3, "M": 6, "mega": 6,
 }
 
-#: The base kinds a prefix may be written against, by every spelling this accepts. `metre` is
-#: absent on purpose: a bare "m" is both a metre and the milli prefix, and no reading of it is safe
-#: enough to compare a published number against a deposited one.
-_UNIT_SPELLINGS = {
-    "l": "litre", "L": "litre", "litre": "litre", "liter": "litre", "litres": "litre",
-    "liters": "litre",
-    "mol": "mole", "mole": "mole", "moles": "mole",
-    "g": "gram", "gram": "gram", "grams": "gram", "gramme": "gram",
-    "s": "second", "sec": "second", "second": "second", "seconds": "second",
+#: The base kinds a prefix may be written against, by every spelling this accepts, with the factor
+#: that spelling carries over the kind: an hour is 3600 seconds, and a litre is one litre.
+#:
+#: `metre` is absent on purpose: a bare "m" is both a metre and the milli prefix, and no reading of
+#: it is safe enough to compare a published number against a deposited one. So is a bare "d": it is
+#: both deci and a day.
+_UNIT_SPELLINGS: dict[str, tuple[str, float]] = {
+    "l": ("litre", 1.0), "L": ("litre", 1.0), "litre": ("litre", 1.0), "liter": ("litre", 1.0),
+    "litres": ("litre", 1.0), "liters": ("litre", 1.0),
+    "mol": ("mole", 1.0), "mole": ("mole", 1.0), "moles": ("mole", 1.0),
+    "g": ("gram", 1.0), "gram": ("gram", 1.0), "grams": ("gram", 1.0), "gramme": ("gram", 1.0),
+    "s": ("second", 1.0), "sec": ("second", 1.0), "second": ("second", 1.0),
+    "seconds": ("second", 1.0),
+    "min": ("second", 60.0), "minute": ("second", 60.0), "minutes": ("second", 60.0),
+    "h": ("second", 3600.0), "hr": ("second", 3600.0), "hour": ("second", 3600.0),
+    "hours": ("second", 3600.0),
+    "day": ("second", 86400.0), "days": ("second", 86400.0),
 }
 
-#: A rendered single-factor unit as this module writes one: an optional power of ten, then a kind.
-_RENDERED_UNIT = re.compile(r"^(?:10\^(-?\d+) )?([A-Za-zµμ]+)$")
+#: One factor as this module renders one or an author writes one: an optional multiplier, an
+#: optional power of ten, and a name. ``3600*10^2 second`` and ``nmol`` are both one factor.
+_ONE_FACTOR = re.compile(r"^(?:([0-9.eE+-]+)\*)?(?:10\^(-?\d+) )?([A-Za-zµμ]+)$")
+
+#: A factor that is only a number, which ``*`` splitting separates from the kind it multiplies.
+_NUMBER_ONLY = re.compile(r"^[0-9.eE+-]+$")
 
 
-def _canonical_unit(text: str) -> tuple[int, str] | None:
-    """A unit as ``(power of ten, base kind)``, or ``None`` when it cannot be read that way.
+def _canonical_unit(text: str) -> tuple[float, str] | None:
+    """One unit factor as ``(how many of the base kind, the base kind)``, or ``None``.
 
     The model's side is rendered from its own ``unitDefinition`` — ``10^-3 litre`` — and no author
     writes that. They write ``mL``. Comparing the two as strings refuses every pairing an author
     would actually make, which turns an opt-in check into a trap, so both sides are read down to
     the same pair before they are compared.
 
-    ``None`` for anything with a multiplier, an exponent, or more than one factor: those fall back
-    to comparing the strings, which errs toward refusing to compare. That is the safe direction —
-    a unit read wrongly as another would compare two numbers that mean different things, which is
-    the whole failure this check exists to prevent.
+    ``None`` for anything this cannot read exactly — an exponent, an unknown name. Those fall back
+    to comparing the strings, which errs toward refusing to compare. That is the safe direction: a
+    unit read wrongly as another compares two numbers that mean different things, which is the
+    whole failure this exists to prevent.
     """
-    stripped = text.strip()
-    rendered = _RENDERED_UNIT.match(stripped)
-    if rendered is None:
+    factor = _ONE_FACTOR.match(text.strip())
+    if factor is None:
         return None
-    scale, word = int(rendered.group(1) or 0), rendered.group(2)
-    if word in _UNIT_SPELLINGS and scale != 0:
-        return (scale, _UNIT_SPELLINGS[word])  # the rendered form: `10^-3 litre`
+    try:
+        multiplier = float(factor.group(1) or 1.0)
+    except ValueError:
+        return None
+    scale, word = int(factor.group(2) or 0), factor.group(3)
+    prefixed = 10.0 ** scale * multiplier
     if word in _UNIT_SPELLINGS:
-        return (0, _UNIT_SPELLINGS[word])
+        kind, carried = _UNIT_SPELLINGS[word]
+        return (prefixed * carried, kind)
     # A prefixed spelling: the longest prefix that leaves a unit this knows.
     for prefix, power in sorted(_PREFIXES.items(), key=lambda item: -len(item[0])):
         if prefix and word.startswith(prefix) and word[len(prefix):] in _UNIT_SPELLINGS:
-            return (scale + power, _UNIT_SPELLINGS[word[len(prefix):]])
+            kind, carried = _UNIT_SPELLINGS[word[len(prefix):]]
+            return (prefixed * 10.0 ** power * carried, kind)
     return None
+
+
+def _canonical_composite(text: str) -> tuple[float, tuple[str, ...], tuple[str, ...]] | None:
+    """A whole unit — ``nmol*h/mL`` — as ``(factor, kinds over, kinds under)``, or ``None``.
+
+    A claim's unit is composed: a concentration is substance over volume, and an area under the
+    curve carries the run's time as well. One factor at a time is not enough to compare those, and
+    comparing the composed strings is what refuses ``nmol/mL`` against ``10^-9 mole / 10^-3 litre``.
+
+    Products are split on ``*`` and a factor that is only a number is re-joined to what follows it,
+    because ``3600*10^2 second`` is one factor and ``nmol*h`` is two.
+    """
+    groups = text.split("/")
+    if len(groups) > 2:
+        return None  # two solidi is an ambiguity, not a unit this should guess at
+    factor = 1.0
+    sides: list[tuple[str, ...]] = []
+    for index, group in enumerate(groups):
+        merged: list[str] = []
+        for token in (t.strip() for t in group.split("*")):
+            if merged and _NUMBER_ONLY.match(merged[-1]):
+                merged[-1] = f"{merged[-1]}*{token}"
+            else:
+                merged.append(token)
+        kinds: list[str] = []
+        for one in merged:
+            canonical = _canonical_unit(one)
+            if canonical is None:
+                return None
+            size, kind = canonical
+            factor = factor * size if index == 0 else factor / size
+            kinds.append(kind)
+        sides.append(tuple(sorted(kinds)))
+    return (factor, sides[0], sides[1] if len(sides) > 1 else ())
+
+
+def _unit_ratio(stated: str, declared: str) -> float | None:
+    """How many of the stated unit make one declared unit, when the two are the same dimensions.
+
+    ``None`` when they are not, or when either cannot be read. A ratio is what makes a difference
+    actionable: `10^-9 mole * 3600*10^2 second / 10^-3 litre` against `nmol*h/mL` is a wall of
+    notation, and "100 times" is the finding.
+    """
+    one, other = _canonical_composite(stated), _canonical_composite(declared)
+    if one is None or other is None or one[1] != other[1] or one[2] != other[2]:
+        return None
+    return other[0] / one[0] if one[0] else None
 
 
 def _units_differ(stated: str, declared: str) -> bool:
     """Whether an author's unit and the model's declared one are different quantities."""
     if stated == declared:
         return False
-    one, other = _canonical_unit(stated), _canonical_unit(declared)
-    return one != other if one is not None and other is not None else True
+    one, other = _canonical_composite(stated), _canonical_composite(declared)
+    if one is None or other is None:
+        return True  # unreadable on either side: refuse rather than guess
+    return not (
+        one[1] == other[1] and one[2] == other[2] and math.isclose(one[0], other[0], rel_tol=1e-12)
+    )
 
 
 #: Which attribute names each kind's unit. A species' is its *substance* unit; when the value read
@@ -689,6 +756,156 @@ def parameters_template(model_sbml: str, *, accession: str | None = None) -> dic
     return {"entries": {accession: body}} if accession is not None else body
 
 
+@dataclass(frozen=True)
+class UnitCheck:
+    """What a claim says its value is in, against what the model reads that output in."""
+
+    claim_id: str
+    stated: str
+    #: The unit the model's own declarations compose for this output, or ``"unstated"``.
+    declared: str
+    #: ``True`` the same quantity, ``False`` a different one, ``None`` not comparable.
+    agrees: bool | None
+    detail: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "claim_id": self.claim_id,
+            "stated": self.stated,
+            "declared": self.declared,
+            "agrees": self.agrees,
+            "detail": self.detail,
+        }
+
+
+def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
+    """The unit a claim's value is read in, composed from the model's own declarations.
+
+    A species' time course is read as a **concentration** — the engine asks for concentration data
+    for every species, whatever the species declares its initial value as — so the unit is the
+    substance unit over the compartment's own. An ``auc`` carries the run's time as well, which is
+    why the metric is a term: the same output read two ways is two different quantities, and the
+    paper's table says so in its own column headers.
+
+    Returns ``"unstated"`` when any part of the composition is not resolvable, rather than a
+    partial unit that reads as if it were established. Raises ``ValueError`` if the model is not
+    parseable SBML or declares no such species.
+    """
+    try:
+        root = ET.fromstring(model_sbml)
+    except ET.ParseError as exc:
+        raise ValueError(f"not parseable SBML: {exc}") from exc
+    model = next((c for c in root.iter() if _localname(c.tag) == "model"), None)
+    if model is None:
+        raise ValueError("the SBML document contains no model element")
+    level = int(root.get("level") or 3)
+    definitions = {
+        definition.get("id") or "": _render_unit_definition(definition)
+        for container in model
+        if _localname(container.tag) == "listOfUnitDefinitions"
+        for definition in container
+        if _localname(definition.tag) == "unitDefinition"
+    }
+    element = next(
+        (
+            child
+            for container in model
+            if _localname(container.tag) == "listOfSpecies"
+            for child in container
+            if child.get("id") == species
+        ),
+        None,
+    )
+    if element is None:
+        raise ValueError(f"the model declares no species {species!r}")
+    compartment = next(
+        (
+            child
+            for container in model
+            if _localname(container.tag) == "listOfCompartments"
+            for child in container
+            if child.get("id") == element.get("compartment")
+        ),
+        None,
+    )
+    # A model may state each unit once for the whole model and leave the elements silent; the
+    # element's own attribute wins where it has one.
+    substance = _resolve_unit(
+        element.get("substanceUnits") or model.get("substanceUnits") or "", definitions, level
+    )
+    volume = _resolve_unit(
+        (compartment.get("units") if compartment is not None else "")
+        or model.get("volumeUnits")
+        or "",
+        definitions,
+        level,
+    )
+    time = _resolve_unit(model.get("timeUnits") or "", definitions, level)
+    parts = (substance, volume) + ((time,) if metric == "auc" else ())
+    if UNSTATED_UNIT in parts:
+        return UNSTATED_UNIT
+    over = f"{substance} * {time}" if metric == "auc" else substance
+    return f"{over} / {volume}"
+
+
+def check_claim_units(
+    model_sbml: str, claims: Sequence[Mapping[str, Any]]
+) -> tuple[UnitCheck, ...]:
+    """Check each claim's stated unit against the one the model reads that output in.
+
+    Every certificate in this repository compares a claim's number against a number the model
+    produces, and nothing established that the two are the same *quantity*. A paper's µg/mL against
+    a model's nmol/mL is a verdict about arithmetic that has nothing to do with the model — and it
+    is not caught downstream, because the reconstruction runs the model's own numbers and
+    reproduces the model's own curve.
+
+    A claim that states no unit is reported as unchecked, never as agreement: this is opt-in, and
+    the absence of a statement is not a statement.
+    """
+    results: list[UnitCheck] = []
+    for record in claims:
+        claim_id = str(record.get("claim_id") or "")
+        stated = str(record.get("reported_units") or "")
+        try:
+            declared = claim_units(
+                model_sbml, str(record.get("species") or ""), str(record.get("metric") or "cmax")
+            )
+        except ValueError as unreadable:
+            results.append(UnitCheck(claim_id, stated, UNSTATED_UNIT, None, str(unreadable)))
+            continue
+        if not stated:
+            results.append(UnitCheck(
+                claim_id, "", declared, None,
+                f"this claim states no unit; the model reads that output in {declared}",
+            ))
+        elif declared == UNSTATED_UNIT:
+            results.append(UnitCheck(
+                claim_id, stated, declared, None,
+                "the model states no unit for that output, so there is nothing to compare against",
+            ))
+        elif _units_differ(stated, declared):
+            results.append(UnitCheck(
+                claim_id, stated, declared, False,
+                f"this claim is in {stated} and the model reads that output in {declared}"
+                + (
+                    f", which is {ratio:g} times as large"
+                    if (ratio := _unit_ratio(stated, declared)) is not None
+                    else ""
+                ),
+            ))
+        else:
+            results.append(UnitCheck(
+                claim_id, stated, declared, True,
+                f"{stated} is the unit the model reads that output in ({declared})",
+            ))
+    return tuple(results)
+
+
+def claims_in_another_unit(checks: Sequence[UnitCheck]) -> tuple[UnitCheck, ...]:
+    """The checks that came back false, and never the ones that could not be made."""
+    return tuple(check for check in checks if check.agrees is False)
+
+
 def disagreeing_parameters(checks: Sequence[ParameterCheck]) -> tuple[ParameterCheck, ...]:
     """The checks that came back false — a value the model does not carry.
 
@@ -712,8 +929,12 @@ def unsupported_claims(checks: Sequence[ValueCheck]) -> tuple[ValueCheck, ...]:
 __all__ = [
     "ParameterCheck",
     "ValueCheck",
+    "UnitCheck",
+    "check_claim_units",
     "check_claim_values",
     "check_parameter_values",
+    "claim_units",
+    "claims_in_another_unit",
     "disagreeing_parameters",
     "parameters_template",
     "parameters_the_paper_does_not_state",

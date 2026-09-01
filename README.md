@@ -212,7 +212,7 @@ reprolith claims-template \           # write the claims file archive-check read
 reprolith claims-propose \            # candidate claims from the tables your paper prints
   --tables <tables.json> [--out <candidates.json>]
 reprolith claims-check \              # is each value printed in the table it cites?
-  --claims <claims.json> --tables <tables.json>
+  --claims <claims.json> --tables <tables.json> [--model <model.xml>]
 reprolith params-template \           # write the parameters file params-check reads
   <file.omex> | --model <model.xml> [--out <parameters.json>]
 reprolith params-check \              # does your model carry the values your paper reports?

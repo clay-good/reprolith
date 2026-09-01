@@ -822,6 +822,48 @@ def test_params_check_pairs_a_published_volume_with_its_compartment(tmp_path, ca
     assert "parameter: Ktp_Liver" in printed
 
 
+def test_claims_check_also_checks_the_unit_when_it_is_given_a_model(tmp_path, capsys):
+    """A number is a number of something. Comparing a claim in one unit against a model output in
+    another is a verdict about arithmetic, and no check downstream of it can see that."""
+    model = tmp_path / "model.xml"
+    model.write_text(
+        '<?xml version="1.0"?><sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" '
+        'level="3" version="2"><model id="m" substanceUnits="substance" volumeUnits="volume">'
+        '<listOfUnitDefinitions>'
+        '<unitDefinition id="volume"><listOfUnits>'
+        '<unit kind="litre" exponent="1" scale="-3" multiplier="1"/></listOfUnits></unitDefinition>'
+        '<unitDefinition id="substance"><listOfUnits>'
+        '<unit kind="mole" exponent="1" scale="-9" multiplier="1"/></listOfUnits></unitDefinition>'
+        '</listOfUnitDefinitions>'
+        '<listOfCompartments><compartment id="Plasma" size="2247" units="volume"/>'
+        '</listOfCompartments>'
+        '<listOfSpecies><species id="mPlasma" compartment="Plasma" initialAmount="0" '
+        'substanceUnits="substance"/></listOfSpecies></model></sbml>',
+        encoding="utf-8",
+    )
+    claims = tmp_path / "claims.json"
+    claims.write_text(json.dumps({"claims": [
+        {"claim_id": "ok", "species": "mPlasma", "reported": 6.1, "reported_units": "nmol/mL",
+         "source_location": "Table 6"},
+        {"claim_id": "off", "species": "mPlasma", "reported": 6.1, "reported_units": "µmol/mL",
+         "source_location": "Table 6"},
+    ]}), encoding="utf-8")
+    tables = tmp_path / "tables.json"
+    tables.write_text(json.dumps({"tables": {"Table 6": {"rows": [["6.1"]]}}}), encoding="utf-8")
+
+    # Without a model the unit is not checked at all, and the command says nothing about it.
+    assert run(["claims-check", "--claims", str(claims), "--tables", str(tables)]) == 0
+    assert "UNITS CHECKED" not in capsys.readouterr().out
+
+    assert run([
+        "claims-check", "--claims", str(claims), "--tables", str(tables), "--model", str(model),
+    ]) == 1
+    printed = capsys.readouterr().out
+    assert "[ok] ok: nmol/mL is the unit the model reads that output in" in printed
+    # A micromole is a thousand nanomoles, so the model's unit is a thousandth of the claim's.
+    assert "[off] ANOTHER UNIT" in printed and "0.001 times as large" in printed
+
+
 def test_params_template_writes_the_file_params_check_reads(tmp_path, capsys):
     """The two commands compose: what the template writes is what the check reads, unfilled."""
     model = tmp_path / "model.xml"

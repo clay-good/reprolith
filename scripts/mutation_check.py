@@ -174,11 +174,29 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_parameter_values.py"],
     ),
     (
+        "a claim's value is compared against a model output in another unit",
+        "manuscript_values.py",
+        (
+            "        elif _units_differ(stated, declared):",
+            "        elif False:",
+        ),
+        ["tests/test_claim_units.py"],
+    ),
+    (
+        "an area under the curve is read in the unit of the peak, with no time in it",
+        "manuscript_values.py",
+        (
+            '    over = f"{substance} * {time}" if metric == "auc" else substance',
+            "    over = substance",
+        ),
+        ["tests/test_claim_units.py"],
+    ),
+    (
         "the prefix is dropped, so a paper's millilitres read as the model's litres",
         "manuscript_values.py",
         (
-            "            return (scale + power, _UNIT_SPELLINGS[word[len(prefix):]])",
-            "            return (scale, _UNIT_SPELLINGS[word[len(prefix):]])",
+            "            return (prefixed * 10.0 ** power * carried, kind)",
+            "            return (prefixed * carried, kind)",
         ),
         ["tests/test_parameter_values.py"],
     ),

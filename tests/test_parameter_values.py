@@ -570,22 +570,32 @@ def test_the_unit_an_author_writes_and_the_one_sbml_states_are_read_to_the_same_
     from reprolith.manuscript_values import _canonical_unit, _units_differ
 
     assert _canonical_unit("mL") == _canonical_unit("ml") == _canonical_unit("millilitre")
-    assert _canonical_unit("mL") == _canonical_unit("10^-3 litre") == (-3, "litre")
-    assert _canonical_unit("nmol") == _canonical_unit("10^-9 mole") == (-9, "mole")
+    assert _canonical_unit("mL") == _canonical_unit("10^-3 litre") == (1e-3, "litre")
+    assert _canonical_unit("nmol") == _canonical_unit("10^-9 mole") == (1e-9, "mole")
     # Both characters in use for micro, since a file saved from either keyboard is the same unit.
-    assert _canonical_unit("µmol") == _canonical_unit("μmol") == (-6, "mole")
-    # A metre is not read at all: a bare "m" is both the unit and the milli prefix.
+    assert _canonical_unit("µmol") == _canonical_unit("μmol") == (1e-6, "mole")
+    # An hour is a multiplier over a base kind on both sides: the author writes `h`, and SBML
+    # states 3600 seconds.
+    assert _canonical_unit("h") == _canonical_unit("3600*second") == (3600.0, "second")
+    # A metre is not read at all: a bare "m" is both the unit and the milli prefix. Nor is a bare
+    # "d", which is both deci and a day.
     assert _canonical_unit("m") is None and _canonical_unit("metre") is None
-    # Nor is anything this module does not render as one factor.
+    assert _canonical_unit("d") is None
+    # Nor is anything this does not read as one factor.
     assert _canonical_unit("10^-9 mole / 10^-3 litre") is None
-    assert _canonical_unit("3600*second") is None
+    assert _canonical_unit("mole^2") is None
 
     assert not _units_differ("mL", "10^-3 litre")
     assert _units_differ("L", "10^-3 litre")  # the thousandfold pair, still caught
     assert _units_differ("mg", "10^-3 litre")
-    # Unreadable on either side: compared as strings, so equal passes and anything else refuses.
-    assert not _units_differ("mole / litre", "mole / litre")
+    # Composed units, which is what a claim's value is in: substance over volume, and an area
+    # under the curve carrying the run's time as well.
+    assert not _units_differ("nmol/mL", "10^-9 mole / 10^-3 litre")
     assert _units_differ("mmol/L", "10^-9 mole / 10^-3 litre")
+    assert not _units_differ("nmol*h/mL", "10^-9 mole * 3600*second / 10^-3 litre")
+    # Unreadable on either side: compared as strings, so equal passes and anything else refuses.
+    assert not _units_differ("mole^2 / litre", "mole^2 / litre")
+    assert _units_differ("nmol/mL", "mole^2 / litre")
 
 
 def test_an_author_writing_the_ordinary_spelling_is_not_refused() -> None:

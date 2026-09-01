@@ -182,6 +182,7 @@ tolerance.
 
 ```bash
 reprolith claims-check --claims my_claims.json --tables my_tables.json
+reprolith claims-check --claims my_claims.json --tables my_tables.json --model paper.xml
 ```
 
 `--tables` is the rows of the tables your paper prints, as JSON — `{"Table 6": {"rows": [[...]]}}`,
@@ -193,6 +194,19 @@ It will not tell you *which* cell is the right one — that is your judgment, an
 guessed would accuse correct claims. A claim citing a figure panel or a sentence, or a table you
 did not supply, is reported as **not checked**, never as wrong, and never fails the command: an
 absence of evidence is not evidence of absence.
+
+Give it `--model` and it asks a second mechanical question: **is your claim in the unit your model
+reads that output in?** A number is a number *of* something, and a claim in µg/mL against a model
+output in nmol/mL is a verdict about arithmetic — one nothing downstream can catch, because the
+reproduction runs your model's own numbers and reproduces your model's own curve. Say what your
+table prints it in as `reported_units` on the claim.
+
+The unit is composed from your model's own declarations rather than read off any one of them: a
+species is read as a concentration, so it is the substance unit over its compartment's, and an
+`auc` carries the run's time as well — which is what your own table headers say when they print
+`Cmax, nmol/mL` beside `AUC24, nmol*h/mL`. The answer names the factor between the two, because
+`10^-9 mole * 3600*10^2 second / 10^-3 litre` is notation and "100 times as large" is the finding.
+A claim that states no unit is **not checked**, never agreement.
 
 It does tell you **how much the match is worth**, because that depends on the number. A value
 printed once in the table you cite is good evidence you read that cell; a value printed seven times

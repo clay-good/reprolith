@@ -3380,6 +3380,38 @@ that filled it in would hand the check the model's value as the paper's, and the
 agree by construction. And both parameter commands now take the COMBINE archive most papers ship,
 rather than requiring an author to unzip it to ask a question about their own model.
 
+## A number is a number of something, and nothing said what of
+
+Every certificate here compares a claim's reported value against a value the model produces, and
+until now nothing established that the two were the same **quantity**. The unit lived in the free
+text of each claim's `source_location` — "the paper simulates 6.1 nmol/mL" — where nothing read it.
+A claim in µg/mL against a model reading nmol/mL is a verdict about arithmetic, and it is invisible
+downstream: the reconstruction runs the model's own numbers and reproduces the model's own curve to
+a fraction of a percent, whatever the paper's column header said.
+
+So the unit is a field now (`reported_units`, on all eighty committed claims), and it is composed
+from the model's own declarations rather than read off any one of them. A species' time course is
+read as a **concentration**, so the unit is its substance unit over its compartment's own; an
+`auc` carries the run's time as well. The paper's own headers draw the same distinction —
+`Cmax, nmol/mL` beside `AUC24, nmol*h/mL` — which is why the metric is a term in the answer.
+
+**Seventy of the eighty agree.** The ten that do not are every AUC claim in the corpus, and the
+finding is about the deposit.
+
+Each deposited model's `time` unitDefinition is `multiplier="3600" scale="2"`. SBML reads a unit as
+`(multiplier × 10^scale × kind)^exponent`, so that is **360000 seconds** — a hundred hours.
+libSBML's own `convertToSI` says the same. The paper's tables are per hour, the shipped recipe runs
+0 to 24, and every AUC in this corpus is `nmol*h/mL`: the model's declaration is a hundredfold away
+from the quantity it is actually run and reported in. Nothing in this pipeline reads `timeUnits`,
+so no certificate is wrong because of it — but a reproducer rebuilding the model from its own
+declarations would be, by a factor of 100, and that reproducer is exactly who this check is for.
+The answer says how far off rather than only that something differs: `10^-9 mole * 3600*10^2 second
+/ 10^-3 litre` is notation, and "100 times as large" is the finding.
+
+It reaches an author through `claims-check --model`, beside the check that each value is printed in
+the table it cites. A claim that states no unit is reported as not checked and never as agreement:
+the absence of a statement is not a statement.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

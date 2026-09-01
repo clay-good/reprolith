@@ -44,8 +44,10 @@ from .digitization import (
 )
 from .export import build_bundle_sedml, build_omex_archive
 from .manuscript_values import (
+    check_claim_units,
     check_claim_values,
     check_parameter_values,
+    claims_in_another_unit,
     disagreeing_parameters,
     parameters_template,
     quantities_the_paper_does_not_state,
@@ -478,8 +480,22 @@ def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         return 1
 
     checks = check_claim_values(records, rows)
+    # The other half of "is this claim right": a number is a number *of* something, and comparing
+    # it against a model output in another unit is a verdict about arithmetic. Nothing downstream
+    # can see it — the reproduction runs the model's own numbers and reproduces its own curve — so
+    # it is checked here, where the claim is, and only when a model is given to check against.
+    units: tuple[Any, ...] = ()
+    if args.model is not None:
+        try:
+            units = check_claim_units(Path(args.model).read_text(encoding="utf-8"), records)
+        except (OSError, UnicodeDecodeError, ValueError) as unusable:
+            print(f"cannot read the model: {unusable}", file=sys.stderr)
+            return 1
     if args.json:
-        _print_json({"checks": [c.to_dict() for c in checks]})
+        _print_json({
+            "checks": [c.to_dict() for c in checks],
+            "units": [c.to_dict() for c in units],
+        })
     else:
         print(f"CLAIMS CHECKED AGAINST {len(rows)} TABLE(S): {', '.join(sorted(rows))}")
         for check in checks:
@@ -490,9 +506,15 @@ def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             # Never folded in with the failures: a value read from a figure panel or a sentence is
             # not a defect, and an absence of evidence is not evidence of absence.
             print(f"  ({len(unchecked)} claim(s) were not checked — see the reason on each)")
-    # Non-zero only for a value the cited table does not print. An unchecked claim is not a
-    # finding, so it must not fail a pre-submission hook.
-    return 1 if unsupported_claims(checks) else 0
+        if units:
+            print(f"UNITS CHECKED AGAINST {Path(args.model).name}")
+            for unit in units:
+                mark = {True: "ok", False: "ANOTHER UNIT", None: "not checked"}[unit.agrees]
+                print(f"  [{unit.claim_id}] {mark}: {unit.detail}")
+    # Non-zero for a value the cited table does not print, and for a claim in a unit the model does
+    # not read that output in. An unchecked claim is not a finding either way, so it must not fail
+    # a pre-submission hook.
+    return 1 if unsupported_claims(checks) or claims_in_another_unit(units) else 0
 
 
 def _model_from_archive_or_file(args: argparse.Namespace) -> tuple[str, str]:
@@ -1216,6 +1238,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--accession", default=None,
         help="which paper's claims to read, when --claims holds more than one",
+    )
+    p.add_argument(
+        "--model", default=None,
+        help="your model file: with it, each claim's stated unit is also checked against the unit "
+             "the model reads that output in",
     )
     add_json(p)
     p.set_defaults(func=_cmd_claims_check)
