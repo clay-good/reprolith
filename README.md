@@ -65,7 +65,17 @@ never extrapolated past what was read. A value read off a picture can only ever 
 `digitized-figure`, so the wider band it is judged in is not escapable. That turns a figure claim
 from a permanent abstention into a judged one: a SED-ML document says which curve the paper plots,
 the curator's file says what that curve read, and the certificate carries a verdict marked
-`[figure-reading]` so a reader can see the number was read off a picture rather than printed. No published figure is in this corpus, so it is
+`[figure-reading]` so a reader can see the number was read off a picture rather than printed. It
+also checks what the curator cannot see in their own file — that each reading is paired with a curve
+their document actually plots, that one file is one panel, and that the reading covers the window
+the run covers — because every one of those refusals used to live where only the join could reach
+it, long after the curator had finished.
+
+And the cost of reading a picture is now a measured number rather than a caution: between two read
+points the reference is a straight line, so a **flawless** five-point reading of an oral PK curve
+misses the curve it was read off by 0.25 against a 0.20 pass budget, with no model involved. Twenty
+points brings it to 0.025, and an exponential read off a log axis is recovered exactly. That is the
+argument for shipping a figure's series as data, stated in the units an author can weigh. No published figure is in this corpus, so it is
 validated against series generated from known functions — mathematics, not a paper's picture. See
 [`docs/figure-values.md`](docs/figure-values.md).
 [`docs/findings-note.md`](docs/findings-note.md) and [`openspec/`](openspec/) say so in detail. Where a paper ships a **SED-ML** document, the half of that
