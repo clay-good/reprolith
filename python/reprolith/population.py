@@ -90,6 +90,16 @@ def _percentile(sorted_values: list[float], percentile: float) -> float:
     return sorted_values[lower] * (1.0 - weight) + sorted_values[upper] * weight
 
 
+#: Below this many subjects a percentile envelope is the sampling rather than the population.
+#: Measured (`tests/test_population_sampling_cost.py`): at twenty subjects and a 30% between-subject
+#: CV, the worst of a 5/50/95 envelope's bands misses the 15% pass budget 47% of the time against
+#: the population it was *drawn from* — a reproduction right about everything, published as a
+#: failure. At fifty it is 12%, at a hundred 2%. The stochastic class refuses the same way for the
+#: same reason (`stochastic._SPREAD_IS_EVIDENCE`, measured on its own model); the two numbers agree
+#: at 30 by coincidence of two measurements, not by one importing the other.
+_SPREAD_IS_EVIDENCE = 30
+
+
 def _outermost(percentiles: tuple[float, ...]) -> float:
     """The band furthest from the median — the one whose sampling error is largest."""
     return max(percentiles, key=lambda p: abs(p - 50.0))
@@ -204,6 +214,30 @@ def simulate_population(
     # out never is the silent failure this guards: every subject identical, the bands one line,
     # and nothing saying the variability was discarded.
     _apply_overrides(sbml, tuple((name, value) for name, value in typical.items()))
+    # Checked after everything that describes the *request* and every parameter it varies, so a
+    # malformed run is still refused for the reason it is malformed. An envelope this small cannot
+    # be caught downstream: `judge_distribution` receives bare bands and never learns how many
+    # subjects made them.
+    if subjects < _SPREAD_IS_EVIDENCE:
+        raise ValueError(
+            f"{subjects} subjects cannot resolve a percentile envelope: below "
+            f"{_SPREAD_IS_EVIDENCE} the spread is the sampling rather than the population, and a "
+            "reproduction that is right about everything is published as a failure about half the "
+            "time. If the paper's own population is that small, its envelope carries the same "
+            "noise and cannot be reproduced to this tolerance by any ensemble — which is a thing "
+            "to say about the paper, not a verdict to compute"
+        )
+    for percentile in percentiles:
+        tail = min(percentile, 100.0 - percentile)
+        # A band needs about 100/tail subjects before it is a percentile at all rather than the
+        # sample's own extreme wearing a label: these percentiles are interpolated between order
+        # statistics, so P5 of twenty subjects sits between the first and second of them.
+        if subjects * tail <= 100.0:
+            raise ValueError(
+                f"the {percentile:g}th percentile of {subjects} subjects is the sample's own "
+                f"extreme with a label on it; about {math.ceil(100.0 / tail)} are needed before "
+                "that band is a percentile"
+            )
     # One row per subject, one column per grid point. Drawn subject-by-subject and parameter-by-
     # parameter in declared order, so the sequence a seed produces is fixed by the inputs alone.
     trajectories: list[tuple[float, ...]] = []

@@ -176,6 +176,38 @@ def test_an_ensemble_that_is_not_a_population_is_refused(kwargs: dict, message: 
         simulate_population(_MODEL, "C", **call)  # type: ignore[arg-type]
 
 
+def test_an_ensemble_too_small_to_resolve_its_own_bands_is_refused() -> None:
+    """The sibling class already refused this; the population path published it.
+
+    At twenty subjects and a 30% CV the worst of a 5/50/95 envelope's bands misses the 15% pass
+    budget 47% of the time *against the population it was drawn from*
+    (`tests/test_population_sampling_cost.py`) — a reproduction right about everything, published
+    as a failure. Nothing downstream can catch it: `judge_distribution` receives bare bands and
+    never learns how many subjects made them.
+    """
+    with pytest.raises(ValueError, match="spread is the sampling rather than the population"):
+        simulate_population(
+            _MODEL, "C", duration=6.0, steps=6,
+            variability=(SubjectVariability(parameter="V", cv=0.3),), subjects=20, seed=1,
+        )
+
+    # And a band no ensemble of that size can express: P1 of a hundred subjects is the sample's
+    # own minimum wearing a label, whatever the spread is.
+    with pytest.raises(ValueError, match="extreme with a label on it"):
+        simulate_population(
+            _MODEL, "C", duration=6.0, steps=6,
+            variability=(SubjectVariability(parameter="V", cv=0.3),), subjects=100, seed=1,
+            percentiles=(1.0, 50.0, 99.0),
+        )
+    # Two hundred resolves it, and the message says so.
+    run = simulate_population(
+        _MODEL, "C", duration=6.0, steps=6,
+        variability=(SubjectVariability(parameter="V", cv=0.3),), subjects=200, seed=1,
+        percentiles=(1.0, 50.0, 99.0),
+    )
+    assert len(run.bands) == 3
+
+
 def test_a_simulated_population_certifies_end_to_end() -> None:
     """Roadmap #7's "done when", with the deferred half no longer supplied by hand: a population
     envelope simulated here, judged against a reference, and certified — qualified, because the

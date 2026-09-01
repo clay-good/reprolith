@@ -78,7 +78,16 @@ within a factor of two and understates the tails at small N. It is published as 
 bound, and it is not a refusal: a paper that ran twenty subjects ran twenty subjects, and Reprolith
 reports what that costs rather than declining to judge it.
 
-**Refused rather than run:** a parameter whose variability could not reach the run (undeclared, or
+**Refused rather than run:** an ensemble too small to resolve the bands it is asked for — below
+thirty subjects the spread is the sampling rather than the population, and a percentile needs about
+`100/min(p, 100-p)` subjects before it is a percentile at all rather than the sample's own extreme
+wearing a label. The stochastic class already refused on both counts for the same reason, measured
+on its own model; the population path published them. Neither can be caught downstream, because
+`judge_distribution` receives bare bands and never learns how many subjects made them. If a paper's
+*own* population is that small its envelope carries the same noise, and that is a thing to say about
+the paper rather than a verdict to compute.
+
+Also refused: a parameter whose variability could not reach the run (undeclared, or
 determined by a rule, or shadowed by a kinetic law), a parameter with no stated value to vary
 around, two variability specs for one parameter, a percentile of 0 or 100, and an ensemble of one.
 The first is the important one — its failure is silent by nature: the ensemble runs, every subject
