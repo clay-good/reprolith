@@ -106,6 +106,32 @@ def test_the_milestone_readme_states_the_same_split_as_the_report_beside_it() ->
     assert len(certificates) == matched + other == 4
 
 
+def test_the_committed_data_states_the_split_its_own_report_holds() -> None:
+    """Two data files carry the same summary in prose, and prose in a JSON file drifts like any.
+
+    The labelled set's own `caveat` is what every page cites as authoritative about how to read
+    these numbers, and it said "30 of 31 entries are blocked, with zero wrong verdicts". The loop
+    record's abstention note had the count corrected and left "raw agreement 0/31" behind it. Both
+    are read by tests for their schema and by nothing for their arithmetic.
+    """
+    matched, abstained, other = _split()
+    total = matched + abstained + other
+
+    caveat = json.loads(
+        (_ROOT / "datasets" / "pkpd_test_set.json").read_text(encoding="utf-8")
+    )["caveat"]
+    assert f"{abstained} of {total} entries are blocked" in caveat
+    assert "zero wrong verdicts" not in caveat
+
+    notes = json.loads(
+        (_ROOT / "datasets" / "loop_notes.json").read_text(encoding="utf-8")
+    )["notes"]
+    abstention = next(n for n in notes if n["id"] == "pkpd-abstained-no-extracted-claims")
+    assert f"{abstained} of the thirty-one" in abstention["note"]
+    assert f"raw agreement to {matched} of {total}" in abstention["note"]
+    assert "0/31" not in abstention["note"]
+
+
 def test_every_class_row_names_a_milestone_directory_that_exists() -> None:
     """A row pointing at a directory nobody generated is a track record with no evidence under it."""
     import re
