@@ -3278,6 +3278,47 @@ The pairing of a table row to a parameter id is the curator's, written down in
 `datasets/pkpd_parameters.json` and never inferred: "Lungs" is `Ktp_Lung` and "Intestine" is
 `Ktp_IntestineVascular`, and no rule would produce either.
 
+## Six accounts of one run, and the report two files away
+
+The blind PK/PD run is summarized in prose in six places. Every one of them had drifted from the
+report it summarizes, and every one in the direction that flatters.
+
+`docs/self-validation.md` — the page a reader goes to for how often Reprolith's blind verdicts
+matched independent ground truth — said "1 partially-reproduced + 30 honest abstentions, **0 wrong
+verdicts**". The committed report holds **one `reproduced` matching its label, 27 abstentions, and
+three verdicts differing from theirs**: three errors in one table cell. The README repeated the
+claim in its own wording. The loop record headed a section "What the 31 disagreements say" over
+thirty of them, counted 30 abstentions, and named one more-careful verdict where there are three.
+The walkable milestone's own README headlined "Why 0/31 is the honest result" with
+`agreement_report.json` two files away saying 1/31, and its outcome table had no row for the clean
+`reproduced` at all.
+
+The last two are the ones worth naming: `pkpd_test_set.json`'s `caveat` — the sentence every page
+cites as the authority on how to read these numbers — and `loop_notes.json`'s abstention note, whose
+count had been corrected to 27 at some point while "the raw agreement is 0/31" stayed in the same
+sentence. **Prose inside a JSON file drifts exactly like prose in Markdown.** Both files have tests
+for their schema and had none for their arithmetic.
+
+The claim that was wrong is worth separating from the claim that is right, because they had been
+run together. **"Zero wrong verdicts" collapsed two facts** — no false pass, and no disagreement at
+all — and only the second was ever at issue. All three disagreements are a `reproduced` label
+against a blind `partially-reproduced`: a *withheld* pass, in the stricter direction, on the three
+orally-dosed models whose claims rest on the salt-form assumption. The fourth model, the mouse
+intravenous one, needed no conversion, carries no assumption, and is the single entry that matches
+its label. So the true sentence is **no false pass**, which is sharper than what the pages claimed
+and is the thing this project exists not to get wrong.
+
+It became sayable only because `reprolith self-validation` had begun naming each disagreement's
+direction hours earlier, for an unrelated reason: the `other` column was the one number on that
+page with no account of itself, sitting beside abstentions that carry a parenthetical explaining
+they are not wrong verdicts.
+
+The count of surfaces is the finding. A run summarized six times drifts six times, and the fix is
+one check reading the report and asserting all six — `tests/test_self_validation_doc.py`, pure
+stdlib, on the dependency-free gate — rather than six checks each pinning its own copy. It is
+generalized past the class that drifted: every class README's `n/total` ratio is held to its own
+report, since the five that are right today are right by luck and not by check.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
