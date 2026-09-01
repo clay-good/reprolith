@@ -19,7 +19,9 @@ from __future__ import annotations
 import json
 import math
 
+import pytest
 from reprolith.digitization import (
+    DigitizedSeries,
     interpolation_cost,
     read_digitized_figure,
     resample_series,
@@ -236,13 +238,17 @@ def test_it_catches_a_reading_the_gap_heuristic_calls_fine() -> None:
     assert series_resolution(series)["widest_gap_fraction"] < 0.20
 
 
-def test_a_reading_wider_than_the_run_is_normalized_by_a_range_the_verdict_never_uses() -> None:
-    """The one direction this number can under-state, measured rather than only warned about.
+def test_a_reading_wider_than_the_run_is_measured_over_the_window_the_verdict_uses() -> None:
+    """The one direction this number could under-state, closed by being told the run.
 
-    The residual is divided by the range of everything the curator read. The claim is judged over
-    the run's window, which `window_faults` requires the reading to *cover* — and therefore permits
-    it to exceed. Read a curve that barely moves over the judged half and swings over the unjudged
-    one, and the same bend is divided by a much larger number than the verdict will use.
+    The residual is normalized by the range of everything the curator read. The claim is judged
+    over the run's window, which `window_faults` requires the reading to *cover* — and therefore
+    permits it to exceed. Read a curve that barely moves over the judged half and swings over the
+    unjudged one, and without the window the same bend is divided by a much larger number than the
+    verdict will ever use.
+
+    Given the window, the whole reading costs exactly what the same readings over the judged half
+    cost: only the bends inside it are measured, and only the reference inside it sets the scale.
     """
     def two_halves(t: float) -> float:
         # Flat-ish with one bend before 12 h; a large excursion after it that no run will judge.
@@ -251,8 +257,7 @@ def test_a_reading_wider_than_the_run_is_normalized_by_a_range_the_verdict_never
     read_at = [24.0 * i / 8 for i in range(9)]
     judged_at = [t for t in read_at if t <= 12.0]
 
-    def cost_over(points: list[float]) -> float:
-        low = min(two_halves(t) for t in points)
+    def series_over(points: list[float]) -> DigitizedSeries:
         high = max(two_halves(t) for t in points)
         (series,) = read_digitized_figure(json.dumps({
             "figure": "f", "digitizer": "none",
@@ -260,13 +265,40 @@ def test_a_reading_wider_than_the_run_is_normalized_by_a_range_the_verdict_never
             "y_axis": {"minimum": 0.0, "maximum": high * 1.5, "unit": "u"},
             "series": [{"claim": "c", "curve": "q", "points": [[t, two_halves(t)] for t in points]}],
         }))
-        assert high > low  # the frame is real, not a degenerate band
-        return interpolation_cost(series)["budget_share"]
+        return series
 
-    whole = cost_over(read_at)
-    judged = cost_over(judged_at)
-    # The same readings over the judged half cost 2.3x what the full reading reports (0.73 against
-    # 0.32), because the full reading's range is set by an excursion the verdict never sees. The
-    # docstring states this fence; this is its size, so a later reader can weigh it rather than
-    # take the word "under-states" on trust.
-    assert judged > 2 * whole
+    whole = interpolation_cost(series_over(read_at))
+    judged = interpolation_cost(series_over(judged_at))
+    # The same readings over the judged half cost 2.3x what the full reading reported (0.73 against
+    # 0.32), because the full reading's range is set by an excursion the verdict never sees.
+    assert judged["budget_share"] > 2 * whole["budget_share"]
+
+    # Told the run, the full reading reports the judged number — the same bends against the same
+    # scale — rather than the one diluted by the half nothing is judged over.
+    windowed = interpolation_cost(series_over(read_at), window=(0.0, 12.0))
+    assert windowed["window"] == [0.0, 12.0]
+    assert windowed["budget_share"] == pytest.approx(judged["budget_share"])
+    assert windowed["worst_at"] == judged["worst_at"]
+    # And the whole-reading number is what it always was when no window is given: the reading's own
+    # span, so nothing already published moves.
+    assert whole["window"] == [0.0, 24.0]
+
+
+def test_a_window_narrower_than_one_gap_is_reported_as_not_measurable() -> None:
+    """A window with no reading strictly inside it has no curvature to measure, and says so.
+
+    The blank is the same shape a two-point reading returns, because it is the same fact: the
+    straight lines over this window have nothing inside it to be checked against. Reporting zero
+    would say the reading agrees with itself there, which nothing measured.
+    """
+    (series,) = read_digitized_figure(json.dumps({
+        "figure": "f", "digitizer": "none",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0.0, "maximum": 10.0, "unit": "u"},
+        "series": [{"claim": "c", "curve": "q", "points": [[t, _oral_pk(t)] for t in (0.0, 8.0, 24.0)]}],
+    }))
+    assert interpolation_cost(series)["measurable"] is True
+    narrow = interpolation_cost(series, window=(0.0, 4.0))
+    assert narrow["measurable"] is False
+    assert narrow["window"] == [0.0, 4.0]
+    assert narrow["budget_share"] is None

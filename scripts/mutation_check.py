@@ -156,6 +156,24 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_digitization.py"],
     ),
     (
+        "the certificate quotes a reading's cost over the whole file, not the run it judged",
+        "digitization.py",
+        (
+            '                f"{reading.source_line(window=(min(times), max(times)))}"',
+            '                f"{reading.source_line()}"',
+        ),
+        ["tests/test_digitization.py"],
+    ),
+    (
+        "the figure check costs a reading over the whole file, not the run it will be judged on",
+        "cli.py",
+        (
+            "    costs = [_windowed_cost(s, windows) for s in series]",
+            "    costs = [interpolation_cost(s) for s in series]",
+        ),
+        ["tests/test_cli.py"],
+    ),
+    (
         "a curve plotted from shipped data becomes a result the model must reproduce",
         "sedml.py",
         ("            if generator.data_sources:", "            if False:"),

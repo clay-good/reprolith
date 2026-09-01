@@ -186,6 +186,10 @@ class DigitizedSeries:
 
     @property
     def source_location(self) -> str:
+        """Where these numbers came from, over the whole reading. See :meth:`source_line`."""
+        return self.source_line()
+
+    def source_line(self, *, window: tuple[float, float] | None = None) -> str:
         """Where these numbers came from, in the form a claim cites its source.
 
         It carries what the reading cost as well as where it came from, because this string is the
@@ -195,8 +199,14 @@ class DigitizedSeries:
         already spent that band or none of it. A `reproduced` at 0.20 where the curator's own
         straight lines spend 0.15 is a different fact from one where they spend 0.001, and until
         now the certificate said the same thing for both.
+
+        ``window`` is the run the claim is judged over, and the cost is measured over it rather
+        than over the whole reading — a bend outside the judged window, and the range it adds to
+        the scale, are both things the verdict never sees. :func:`attach_digitized_values` knows
+        that window from the grid it resamples onto and passes it, so a certificate quotes the cost
+        of the comparison it published rather than of the file it was read from.
         """
-        cost = interpolation_cost(self)
+        cost = interpolation_cost(self, window=window)
         spent = (
             f"{cost['points']} points, its own interpolation spending "
             f"{cost['budget_share']:.0%} of the pass budget"
@@ -339,7 +349,9 @@ def series_resolution(series: DigitizedSeries) -> dict[str, Any]:
     }
 
 
-def interpolation_cost(series: DigitizedSeries) -> dict[str, Any]:
+def interpolation_cost(
+    series: DigitizedSeries, *, window: tuple[float, float] | None = None
+) -> dict[str, Any]:
     """What this reading's own straight lines cost, measured against the curator's own points.
 
     :func:`series_resolution` reports the widest gap, which is geometry: it says how much of the
@@ -369,14 +381,16 @@ def interpolation_cost(series: DigitizedSeries) -> dict[str, Any]:
     is not a bound on the true cost in general — it is a measurement of how much a reading
     disagrees with itself, generous about what it can see and blind to what it cannot.
 
-    One more fence, and it is the reading's own window. The residual is normalized by the range of
-    everything the curator read, while the claim is judged over the run's window — which
-    :func:`window_faults` requires the reading to *cover* and therefore permits it to exceed. A
-    reading spanning 0-24 h judged on a run over 0-12 h is normalized here by a range the verdict
-    never uses, and if the unjudged half is where the curve does most of its moving, this number is
-    divided by too much — measured at 2.3x on a curve that barely moves over the judged half and
-    swings over the unjudged one. The 1.0x-3.9x over-statement above was taken with the two windows
-    equal, which is the ordinary case `figure-template` produces.
+    ``window`` is the run's own ``(start, end)``, and it closes the one direction this number could
+    under-state. Without it the residual is normalized by the range of everything the curator read,
+    while the claim is judged over the run's window — which :func:`window_faults` requires the
+    reading to *cover* and therefore permits it to exceed. A reading spanning 0-24 h judged on a run
+    over 0-12 h was normalized by a range the verdict never uses, and where the unjudged half is
+    where the curve does most of its moving that divided the number by 2.3x too much. Given the
+    window, only the bends inside it are measured and only the reference inside it sets the scale,
+    so the number is in the units the verdict is actually in. It is still optional, and omitting it
+    still reports the whole reading — a reading with no document beside it has no window to be
+    judged over, and inventing one would be stating what a run does from a picture of it.
 
     ``budget_share`` is the number to act on: the residual carried through the same normalization
     and rescaling :func:`~reprolith.oracle.judge_curve` applies to a worst point, as a fraction of
@@ -384,10 +398,12 @@ def interpolation_cost(series: DigitizedSeries) -> dict[str, Any]:
     to spend the whole budget before the model is consulted.
     """
     read = [y for _, y in series.points]
+    low, high = window if window is not None else series.span
     # Same keys in the same order as the measured result below, so a consumer serializing either
     # gets one shape rather than two that happen to carry the same names.
     blank: dict[str, Any] = {
         "points": len(read),
+        "window": [low, high],
         "measurable": False,
         "worst_at": None,
         "worst_read": None,
@@ -410,11 +426,23 @@ def interpolation_cost(series: DigitizedSeries) -> dict[str, Any]:
         rejoined[index] = series.y_axis.untransform(
             ys[index - 1] + weight * (ys[index + 1] - ys[index - 1])
         )
-    normalized = worst_point_deviation(read, rejoined)
-    # Interior only: an endpoint has no rejoin and a residual of exactly zero, so including
-    # them reports the first reading as "the worst place" whenever the curve is joined
-    # perfectly — which is precisely the reading that needs no attention.
-    worst = max(range(1, len(read) - 1), key=lambda i: abs(rejoined[i] - read[i]))
+    # Interior only, and inside the window only: an endpoint has no rejoin and a residual of
+    # exactly zero, so including them reports the first reading as "the worst place" whenever the
+    # curve is joined perfectly — which is precisely the reading that needs no attention. A bend
+    # outside the window is a bend the verdict never looks at.
+    measured = [
+        i for i in range(1, len(read) - 1) if low < series.points[i][0] < high
+    ]
+    if not measured:
+        return blank
+    # The scale is the reference over the judged window and nothing else: the two ends, sampled the
+    # way the join samples them, and every reading between. With no window given these are exactly
+    # the curator's own points, so the whole-reading number is unchanged.
+    edges = resample_series(series, [low, high])
+    frame = [edges[0]] + [read[i] for i in measured] + [edges[1]]
+    rejoined_frame = [edges[0]] + [rejoined[i] for i in measured] + [edges[1]]
+    normalized = worst_point_deviation(frame, rejoined_frame)
+    worst = max(measured, key=lambda i: abs(rejoined[i] - read[i]))
 
     # The same tolerance the claim will be judged under, read from the table rather than restated:
     # a default that moves there has to move this number with it.
@@ -428,6 +456,7 @@ def interpolation_cost(series: DigitizedSeries) -> dict[str, Any]:
     )
     return {
         "points": len(read),
+        "window": [low, high],
         "measurable": True,
         "worst_at": series.points[worst][0],
         "worst_read": read[worst],
@@ -667,14 +696,20 @@ def attach_digitized_values(
         if reading is None:
             attached.append(claim)
             continue
+        # Resampled first: an unusable grid is the grid's fault, and deriving the judged window
+        # from it before it has been checked reports that as a missing minimum.
+        values = resample_series(reading, times)
         attached.append(DossierClaim(
             id=claim.id,
             quantity=claim.quantity,
             conditions=claim.conditions,
-            source_location=f"{claim.source_location}; values from {reading.source_location}",
+            source_location=(
+                f"{claim.source_location}; values from "
+                f"{reading.source_line(window=(min(times), max(times)))}"
+            ),
             targetable=True,
             reference_kind=ReferenceKind.DIGITIZED_FIGURE,
-            reference_data=resample_series(reading, times),
+            reference_data=values,
         ))
     return tuple(attached)
 

@@ -183,7 +183,14 @@ curator's statements.
 - **AND** that estimate is reported raw, since a leave-one-out join spans two gaps where the
   reference spans one and over-states by a factor that varies with how coarsely the curve was
   read — over-stating is the safe direction, and correcting it by a constant is not safe
-- **AND** it travels with the reading into the claim's source location, so a reader of the
+- **AND** that cost is measured over the window the claim is judged over rather than over the whole
+  reading, since a reading is required to cover the run and is therefore permitted to exceed it,
+  and a bend outside the run — with the range it adds to the scale — is cost nothing is judged on
+- **AND** where the window is not known from a document the whole reading is measured and the
+  report says so, and where a reading covers more than one of a document's runs the worst of them
+  is reported, since which run a figure was read off is not something the reading states
+- **AND** it travels with the reading into the claim's source location, measured over the grid that
+  claim was resampled onto, so a reader of the
   certificate can see how much of the widened band the reading had already spent before the model
   was consulted, which the figure-reading marker alone does not say
 

@@ -75,7 +75,11 @@ practitioner can act on.
   what the widest gap could not: a straight line or a log-axis exponential costs exactly zero
   however coarsely it is read, a reading that does cost too much is told *where* it bends, and a
   ten-point PK reading — 11% gaps, comfortably under the 20% the old warning fired at — is caught
-  spending one and a half times the whole budget. The *scalar* digitized band is untouched by
+  spending one and a half times the whole budget. It is charged over the run the claim is judged on
+  rather than over the whole file — a reading is required to *cover* the run and so permitted to
+  exceed it, and a bend past its end, with the range that bend adds to the scale, is cost nothing is
+  judged on; measured, that ran 2.1x to 2.3x in the direction that under-states. The *scalar*
+  digitized band is untouched by
   this: one value read off a picture is limited by the digitizer's calibration and the plot's pixel
   resolution, not by anything computed here, so it stays declared rather than borrowing a number
   measured for something else.

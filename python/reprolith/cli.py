@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -674,6 +675,41 @@ def _document_claims(
     return tuple(enumerate_sedml_claims(document)), runs, enumerate_sedml_panels(document)
 
 
+def _windowed_cost(
+    series: DigitizedSeries, windows: Sequence[tuple[float, float]]
+) -> dict[str, Any]:
+    """What this reading's straight lines cost over the run it will be judged on.
+
+    Which run that is, a digitization file does not say, and neither does the pairing: a document
+    running several time courses is one figure per window, and
+    :func:`~reprolith.digitization.window_faults` passes a reading that covers *any* of them. So
+    nothing here guesses. The cost is measured over every window this reading covers and the
+    largest is reported — the worst it can cost over any run the document states it could be judged
+    on. Picking one and being wrong could under-state; taking the worst cannot, which is the
+    direction that matters for a number a curator acts on.
+
+    With no document, or a reading covering none of its runs, the whole reading is measured and the
+    report says so: a reading with no run beside it has no window to be judged over, and inventing
+    one would state what a run does from a picture of it.
+    """
+    xs = [x for x, _ in series.points]
+    low, high = min(xs), max(xs)
+    costs = [
+        interpolation_cost(series, window=(a, b))
+        for a, b in windows
+        if low <= a and high >= b
+    ]
+    measurable = [c for c in costs if c["measurable"]]
+    if measurable:
+        return max(measurable, key=lambda c: c["budget_share"])
+    # Every covered window is narrower than one gap of this reading — there is nothing inside any
+    # of them to check the straight lines against. Reported over the narrowest, since that is the
+    # window that says the least, rather than as a cost of zero nobody measured.
+    return min(costs, key=lambda c: c["window"][1] - c["window"][0]) if costs else (
+        interpolation_cost(series)
+    )
+
+
 def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Read a curator's figure digitization and say whether it is usable as a reference."""
     if args.archive is not None and args.sedml is not None:
@@ -737,7 +773,12 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
 
     plotted = {claim.id: claim.quantity for claim in (claims or ())}
     resolutions = [series_resolution(s) for s in series]
-    costs = [interpolation_cost(s) for s in series]
+    # Measured over the window the claim will be judged over, where the document says what that is.
+    # A reading is required to *cover* the run and so permitted to exceed it, and a bend outside the
+    # run — along with the range it adds to the scale — is a bend the verdict never looks at. With
+    # no document there is no window to use, and inventing one would be stating what a run does
+    # from a picture of it, so the whole reading is measured and the report says so.
+    costs = [_windowed_cost(s, windows) for s in series]
     if args.json:
         _print_json({
             "series": [
@@ -784,10 +825,16 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         # curvature is in the reading — drop each interior point and rejoin its neighbours — and
         # `interpolation_cost` measures it in the units the verdict is in.
         if cost["measurable"]:
+            over = (
+                f", measured over the {cost['window'][0]:g}-{cost['window'][1]:g} "
+                f"{reading.x_axis.unit} your document runs"
+                if list(cost["window"]) != list(resolution["span"])
+                else ""
+            )
             print(f"      rejoining each reading from its neighbours misses it by at most "
                   f"{cost['worst_residual']:.3g} {reading.y_axis.unit} at "
                   f"{cost['worst_at']:g} {reading.x_axis.unit} "
-                  f"({cost['budget_share']:.0%} of the pass budget)")
+                  f"({cost['budget_share']:.0%} of the pass budget{over})")
             # Over-states, and by a factor that is not constant (1.0x the true worst-point error at
             # five points, 3.9x at forty), so it is not divided down — see `interpolation_cost`.
             # Above the budget it is worth acting on even after that discount.
@@ -801,10 +848,11 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             # guarded by the widest-gap threshold, which cannot discriminate here — a two-point
             # reading's one gap *is* the span, so the condition was true whenever it was reached
             # and read as a test that could fail.
-            print("      2 readings is one straight line over the whole span, and nothing here can "
-                  "say what it costs: there is no interior reading to check it against. A flawless "
-                  "five-point reading of an oral PK curve already misses it by 0.25 against a 0.20 "
-                  "budget, and this is coarser than that")
+            print(f"      {cost['points']} readings leave no interior point between "
+                  f"{cost['window'][0]:g} and {cost['window'][1]:g} {reading.x_axis.unit} to check "
+                  "the straight lines over it against, and nothing here can say what they cost. A "
+                  "flawless five-point reading of an oral PK curve already misses it by 0.25 "
+                  "against a 0.20 budget, and this is coarser than that")
         # The thing a curator cannot see in their own file: a curve is judged on the run's own
         # samples, so a reading of three points against a run of a thousand is judged almost
         # entirely against the straight lines between them. Stated, never judged — the wider

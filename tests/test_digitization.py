@@ -204,6 +204,26 @@ def test_attaching_gives_values_to_the_paired_claim_and_leaves_the_rest_abstaini
     assert liver == _CLAIMS[1] and not liver.reference_data
 
 
+def test_the_attached_claim_quotes_what_the_reading_cost_over_the_grid_it_is_judged_on() -> None:
+    """The certificate's one line about the reading is about the comparison it published.
+
+    A reading is required to cover the run and so permitted to exceed it. Read a curve that bends
+    inside the judged window and climbs steeply past it, and the whole-reading cost divides that
+    bend by a range the verdict never uses — so the certificate quoted a cheaper reading than the
+    one it judged. The grid is the window, and :func:`attach_digitized_values` has it.
+    """
+    wide = _series([[0, 1.0], [6, 9.0], [12, 5.0], [24, 60.0]], y_axis={
+        "minimum": 0, "maximum": 100, "unit": "nmol/mL",
+    })
+    judged = attach_digitized_values(
+        _CLAIMS[:1], [wide], times=[12.0 * i / 4 for i in range(5)],
+    )[0]
+    # The same reading, quoted over everything the curator read: the climb past 12 h is a range no
+    # sample in this claim is compared against.
+    assert "spending 89% of the pass budget" in wide.source_location
+    assert "spending 188% of the pass budget" in judged.source_location
+
+
 def test_a_reading_cannot_be_recorded_as_a_printed_number() -> None:
     """The band a figure is judged in is three times a printed number's, and is not escapable."""
     numeric = DossierClaim(

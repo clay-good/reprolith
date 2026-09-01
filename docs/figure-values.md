@@ -220,11 +220,22 @@ residual at any read point, and no statistic computed from the reading can find 
 a bound on the true cost in general — it is a measurement of how much a reading disagrees with
 itself, generous about what it can see and blind to what it cannot.
 
-There is one more fence and it runs the other way. The residual is divided by the range of
-everything the curator read, while the claim is judged over the run's window — which a reading is
-required to *cover* and so permitted to exceed. A reading spanning 0-24 h judged on a run over
-0-12 h is normalized by a range the verdict never uses, and measured on a curve that barely moves
-over the judged half and swings over the unjudged one, that divides the number by 2.3x too much.
+There was one more fence and it ran the other way; it is now closed by being told the run. The
+residual is divided by the range of everything the curator read, while the claim is judged over the
+run's window — which a reading is required to *cover* and so permitted to exceed. A reading
+spanning 0-24 h judged on a run over 0-12 h was normalized by a range the verdict never uses, and
+measured on a curve that barely moves over the judged half and swings over the unjudged one, that
+divided the number by 2.3x too much. So the window is now a parameter: only the bends inside it are
+measured, and only the reference inside it sets the scale.
+
+Both places that report the cost have the window and neither guesses it. `figure-check` reads the
+runs off the document it is given, and where a reading covers more than one it reports the **worst**
+of them rather than picking one — which run a figure was read off is not something the file says,
+and taking the worst cannot under-state. The join has no such ambiguity: the grid it resamples onto
+*is* the window, so a certificate quotes the cost of the comparison it published. Without a
+document there is no window at all, and the whole reading is measured with the report saying so —
+inventing a window would state what a run does from a picture of it.
+
 The table above was measured with the two windows equal, which is what `figure-template` produces.
 
 Three things it buys that the gap could not. A straight line and a log-axis exponential score
@@ -268,6 +279,12 @@ both now, because the source line is the only part of a reading that reaches a c
 The 0% above is real and not a placeholder: that curve is an exponential decay read off a **log**
 axis, where the reference's own interpolation is exact at any spacing. Seven points would have cost
 38% of the budget read flat, and the certificate now distinguishes the two.
+
+It is the cost over the grid this claim was judged on, not over the file the reading came from. A
+reading may extend past the run, and a bend out there — with the range it adds to the scale — is
+not part of what the certificate is reporting on. Measured on a reading that bends inside the run
+and climbs after it, the two differ by 2.1x, in the direction that quotes a cheaper reading than the
+one judged.
 
 `tests/test_digitized_figure_end_to_end.py` walks that path with nothing hand-written between the
 document and the certificate — and shows the other side of it, which is worth stating plainly: the

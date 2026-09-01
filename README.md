@@ -85,8 +85,15 @@ straight line read at three, and said nothing at all about a ten-point reading o
 gaps are a comfortable 11% of the span while its straight lines spend one and a half times the
 whole budget.
 
+And it is measured over the window the verdict is measured over. A reading is required to *cover*
+the run, so it is permitted to exceed it — and a bend past the end of the run, along with the range
+that bend adds to the scale, is cost nothing is judged on. Charged against the whole file, one
+reading of a curve that bends inside the run and climbs steeply after it reported 0.93 where the
+run's own window carries 2.0.
+
 It reaches all three people who need it. The **curator** sees it in `figure-check`, before the
-reading is used. The **certificate** carries it, because a reader who sees `[figure-reading]` and a
+reading is used, over the run their document states. The **certificate** carries it, over the grid
+the claim was judged on, because a reader who sees `[figure-reading]` and a
 band twice as wide could not otherwise tell whether the reading had already spent that band or none
 of it. And the **author** gets it back in the pre-submission report — named, with the one cheap fix
 only they can make, and deliberately not as something that blocks their submission: publishing

@@ -923,6 +923,38 @@ def test_figure_check_checks_the_pairing_against_the_document_it_was_read_off(tm
     assert "plot_1__plot_1_0_0__plot_1_1_1" in printed
 
 
+def test_figure_check_costs_the_reading_over_the_run_it_will_be_judged_on(tmp_path, capsys):
+    """A reading is required to *cover* the run, so it is permitted to exceed it — and the range a
+    bend outside the run adds to the scale is range the verdict never uses. The Kholodenko document
+    runs 0-9000 s; a reading that bends before 9000 s and then climbs steeply past it had that bend
+    divided by the climb, and the number a curator acts on came out 2.2x too small (0.93 against
+    the 2.0 the judged window carries).
+    """
+    series = tmp_path / "fig2a.json"
+    series.write_text(json.dumps({
+        "figure": "Figure 2A", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 12000, "unit": "s"},
+        "y_axis": {"minimum": 0, "maximum": 300, "unit": "nM"},
+        # One bend inside the run; a straight climb after it, which adds range and no curvature.
+        "series": [{"claim": "plot_0__plot_0_0_0__plot_0_0_1", "curve": "MAPK_PP",
+                    "points": [[0, 10.0], [2250, 60.0], [4500, 30.0], [6750, 35.0],
+                               [9000, 40.0], [12000, 280.0]]}],
+    }), encoding="utf-8")
+    assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML)]) == 0
+    assert "measured over the 0-9000 s your document runs" in capsys.readouterr().out
+
+    assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML),
+                "--json"]) == 0
+    (judged,) = json.loads(capsys.readouterr().out)["series"]
+    assert judged["interpolation"]["window"] == [0.0, 9000.0]
+    # The same file read with no document beside it is measured over the whole reading — the number
+    # that was always reported, and the one the climb past the run divides down.
+    assert run(["figure-check", "--series", str(series), "--json"]) == 0
+    (whole,) = json.loads(capsys.readouterr().out)["series"]
+    assert whole["interpolation"]["window"] == [0.0, 12000.0]
+    assert judged["interpolation"]["budget_share"] > 2 * whole["interpolation"]["budget_share"]
+
+
 def test_figure_check_refuses_a_reading_paired_with_a_curve_the_document_does_not_plot(
     tmp_path, capsys,
 ):
@@ -1080,9 +1112,9 @@ def test_figure_check_json_shape_is_pinned(tmp_path, capsys):
     assert set(reading) == {"claim", "curve", "figure", "digitizer", "points", "x_axis", "y_axis",
                             "resolution", "interpolation"}
     assert set(reading["resolution"]) == {"points", "span", "widest_gap", "widest_gap_fraction"}
-    assert set(reading["interpolation"]) == {"points", "measurable", "worst_at", "worst_read",
-                                             "worst_interpolated", "worst_residual", "normalized",
-                                             "budget_share"}
+    assert set(reading["interpolation"]) == {"points", "window", "measurable", "worst_at",
+                                             "worst_read", "worst_interpolated", "worst_residual",
+                                             "normalized", "budget_share"}
     assert set(payload["pairing"]) == {"checked_against", "faults", "curves_not_read", "runs",
                                        "window_faults"}
     assert payload["pairing"]["runs"] == [[0.0, 9000.0, 1000]]
@@ -1282,8 +1314,8 @@ def test_figure_check_says_a_two_point_reading_cannot_be_measured_at_all(tmp_pat
     }), encoding="utf-8")
     assert run(["figure-check", "--series", str(two)]) == 0
     printed = capsys.readouterr().out
-    assert "2 readings is one straight line over the whole span" in printed
-    assert "no interior reading to check it against" in printed
+    assert "2 readings leave no interior point between 0 and 24 h" in printed
+    assert "check the straight lines over it against" in printed
     # And no measured number is printed for it, rather than a zero that would read as "free".
     assert "of the pass budget" not in printed
 
