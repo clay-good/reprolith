@@ -227,6 +227,12 @@ ship the series as a data file your document points at, with a `dataDescription`
 column per curve. You have those numbers; the reproducer does not. It never holds up your
 submission, because a document doing exactly what SED-ML is for is not a defect.
 
+If you would rather see what that reading costs before deciding, [`figure-values.md`](figure-values.md)
+is the other side of it: what a curator's digitization of your figure carries, and the measurement
+of what a *flawless* one still spends — a five-point reading of a PK-shaped curve misses the curve
+it was read off by more than the whole tolerance, with no model involved. That is the number behind
+"a band twice as wide", and it is the argument for shipping the series.
+
 And the separate list headed "what Reprolith's own extraction would not carry" is **not** a fix
 list. Some of it your archive genuinely omits; some of it your archive states perfectly well and
 Reprolith cannot represent. Nothing distinguishes the two, so nothing there is asked of you and
