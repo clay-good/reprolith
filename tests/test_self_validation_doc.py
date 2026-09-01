@@ -24,6 +24,9 @@ _PAGE = (_ROOT / "docs" / "self-validation.md").read_text(encoding="utf-8")
 #: The README repeats the same summary in one line, and repeated numbers drift apart. It is
 #: checked against the same record here rather than in a second place with its own idea of it.
 _README = (_ROOT / "README.md").read_text(encoding="utf-8")
+#: And the loop record's prose account of the same run, which drifted the same way and by the same
+#: mechanism: a number written down once, beside data that kept moving.
+_LOOP = (_ROOT / "docs" / "discipline-loop.md").read_text(encoding="utf-8")
 _REPORT = json.loads(
     (_ROOT / "datasets" / "milestone" / "agreement_report.json").read_text(encoding="utf-8")
 )
@@ -63,6 +66,21 @@ def test_the_page_does_not_claim_a_clean_sheet_it_no_longer_has() -> None:
     # drifted in the first place.
     assert f"({abstained} abstentions" in _README
     assert "three verdicts stricter than their label" in _README and other == 3
+
+
+def test_the_loop_record_states_the_same_split_as_the_report() -> None:
+    """A third page summarizing one run in prose, drifted the same way and for the same reason.
+
+    It said "What the 31 disagreements say", "30 abstentions", and "1 more-careful verdict". There
+    are thirty disagreements, twenty-seven abstentions, and three careful verdicts — the three
+    human-dosed metformin models, each qualified by the same salt-form assumption. The fourth,
+    the mouse model, needed no conversion and is the one entry that matches its label.
+    """
+    matched, abstained, other = _split()
+    assert f"## What the {abstained + other} disagreements say" in _LOOP
+    assert f"**{abstained} abstentions**" in _LOOP
+    assert f"**{other} more-careful verdicts**" in _LOOP
+    assert matched == 1
 
 
 def test_every_class_row_names_a_milestone_directory_that_exists() -> None:

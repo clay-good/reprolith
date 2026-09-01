@@ -27,20 +27,24 @@ Nineteen of the twenty catalogued failure modes are `spec`; the twentieth (engin
 `measured`, and what the measurement showed was its absence. That is the point of keeping the field:
 a category that exists because a spec demands it must not read as loop experience it does not have.
 
-## What the 31 disagreements say
+## What the 30 disagreements say
 
-Only the PK/PD run disagrees with its labels at all; the other five classes agree everywhere.
+Only the PK/PD run disagrees with its labels at all; the other five classes agree everywhere. One
+of its thirty-one entries matches — the mouse model, which needed no salt conversion and so carries
+no assumption to qualify it.
 
-- **30 abstentions**, all one note, traced to **ingestion**: Reprolith holds no extracted claims
+- **27 abstentions**, all one note, traced to **ingestion**: Reprolith holds no extracted claims
   for these papers, so there was nothing to reproduce and no model was run — the run abstains, and a
   `blocked` verdict can never equal a `reproduced` label. (This said "the shipped artifact carries
   no machine-checkable claim" until a regression audit noticed the code had been corrected and its
   two explanatory documents had not: nothing is fetched or opened on that path.) Recorded as *explained*, not fixed — closing them needs each paper's claims
   read from the manuscript (tasks 2.1–2.3), not a tolerance or oracle change.
-- **1 more-careful verdict** (metformin), traced to the **oracle**: both claims matched well inside
-  tolerance, but one rests on a load-bearing salt-form assumption, so the overall verdict is
-  `partially-reproduced` against a binary `reproduced` label. Recorded as *explained* — the
-  down-grade is the honesty invariant working.
+- **3 more-careful verdicts** — the three human-dosed metformin models — traced to the **oracle**:
+  every claim matched well inside tolerance, but each model's claims rest on a load-bearing
+  salt-form assumption, so the overall verdict is `partially-reproduced` against a binary
+  `reproduced` label. Recorded as *explained* — the down-grade is the honesty invariant working.
+  Every one runs in the **stricter** direction: a withheld pass, never a false one, which is the
+  distinction `reprolith self-validation` prints beside the count.
 
 ## What the measurements say
 
