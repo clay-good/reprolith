@@ -68,6 +68,22 @@ def collect() -> list[tuple[str, object]]:
     return entries
 
 
+def collect_corroboration() -> dict[str, dict[str, object]]:
+    """Each class's committed cross-engine record, keyed by class; absent where none was run.
+
+    ``corroboration.json`` sits beside the certificates it corroborates, written by that class's
+    milestone script when the ``corroborate`` extra is installed. A class with no file is left out
+    of this mapping and named as unchecked on the page — the absence is the finding, not a gap in
+    the page.
+    """
+    records: dict[str, dict[str, object]] = {}
+    for model_class, directory in _SOURCES.items():
+        path = directory.parent / "corroboration.json"
+        if path.is_file():
+            records[model_class] = json.loads(path.read_text(encoding="utf-8"))
+    return records
+
+
 def main() -> None:
     # The certificates come from the imported package's datasets directory. In a worktree with the
     # package resolved from another checkout, that is not this script's repository — and the page
@@ -84,7 +100,9 @@ def main() -> None:
     # CLI/MCP surfaces summarize (no certificate ledger to load), so the browsable registry's
     # credibility summary can't diverge from the queried one.
     self_validation = self_validation_summary(milestone_agreement_reports())
-    html = render_registry(entries, self_validation=self_validation)
+    html = render_registry(
+        entries, self_validation=self_validation, corroboration=collect_corroboration()
+    )
     out = _DATASETS / "registry.html"
     out.write_text(html, encoding="utf-8")
     by_class: dict[str, int] = {}

@@ -61,7 +61,11 @@ files libSBML's own spatial API wrote — the spec's reference implementation, n
   `docs/kinetic-class.md`), so no verdict rests on one solver's quirk. PK/PD is corroborated **per
   claim, at the dose the claim was certified at**: metformin's two claims differ by a 779.9 mg
   free-base override, and checking both on the model's default arm would have compared one run to
-  itself and reported stability for an arm neither claim uses.
+  itself and reported stability for an arm neither claim uses. Both halves of this now reach the
+  public registry, which said nothing about corroboration either way: the two classes that have a
+  second registered engine, with what it agreed to, **and the four that do not** — for which
+  nothing was checked, an absence rather than a pass, since a page listing only the corroborated
+  classes leaves a reader to infer the rest were checked and passed.
 - **The same contracts throughout.** All six classes flow through one catalog lifecycle, one
   agreement report, one certificate format, and one inescapable scope flag — the generalization is
   demonstrated, not asserted. The logical class proves the point hardest: a third, discrete oracle

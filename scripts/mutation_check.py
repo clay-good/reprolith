@@ -156,6 +156,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_digitization.py"],
     ),
     (
+        "the registry omits the classes no second engine ever checked",
+        "render.py",
+        (
+            "            unchecked.append(model_class)",
+            "            pass",
+        ),
+        ["tests/test_render.py"],
+    ),
+    (
         "the verdict summary names the qualified claims and not what qualified them",
         "query.py",
         (

@@ -20,12 +20,13 @@ _REGISTRY = _REPO / "datasets" / "registry.html"
 _SOURCES = milestone_certificate_dirs()
 
 
-def _collect() -> list:
-    """The builder's own collection step, imported rather than re-implemented.
+def _builder():
+    """The builder module itself, imported rather than re-implemented.
 
-    This guard had its own copy, without the digest de-duplication or the cross-class check the
-    builder does — so a duplicated certificate file made the builder correctly publish one card
-    while this test demanded two, turning CI red with no rebuild that could fix it.
+    This guard had its own copy of the collection step, without the digest de-duplication or the
+    cross-class check the builder does — so a duplicated certificate file made the builder
+    correctly publish one card while this test demanded two, turning CI red with no rebuild that
+    could fix it. Every input the page is built from comes from here for that reason.
     """
     import importlib.util
 
@@ -35,12 +36,21 @@ def _collect() -> list:
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.collect()
+    return module
+
+
+def _collect() -> list:
+    return _builder().collect()
 
 
 def _rebuild() -> str:
+    builder = _builder()
     self_validation = self_validation_summary(milestone_agreement_reports())
-    return render_registry(_collect(), self_validation=self_validation)
+    return render_registry(
+        builder.collect(),
+        self_validation=self_validation,
+        corroboration=builder.collect_corroboration(),
+    )
 
 
 def test_committed_registry_matches_the_milestone_certificates() -> None:

@@ -445,11 +445,73 @@ def _track_record_banner(self_validation: dict[str, Any]) -> str:
     )
 
 
+def _corroboration_banner(
+    corroboration: dict[str, dict[str, Any]], classes: Iterable[str]
+) -> str:
+    """What a second independent engine said, per class — including where none was asked.
+
+    Cross-engine corroboration is the check that separates a model's behaviour from one solver's
+    quirks, and until now it reached no reader: it was computed, committed to each milestone
+    directory as ``corroboration.json``, and described in that directory's README. The public page
+    that publishes the verdicts said nothing about it either way.
+
+    Both halves are rendered, and the second is the one that earns this. Two classes have a second
+    registered engine; four do not, and for those nothing was checked. A page that listed only the
+    corroborated classes would leave a reader to infer that the others had been checked and passed,
+    which is the shape this repository keeps being caught by — a clean report standing in for a
+    check nobody made.
+
+    ``corroboration`` maps a model class to the committed record for it, keyed by what that class
+    actually corroborated: PK/PD re-runs each *claim* at the dose it was certified at (a key of
+    ``accession:claim_id``), while the kinetic class re-runs each *model*'s curve once (a bare
+    accession). The unit is read off the key rather than assumed, because calling six models "six
+    claims" is a number that reads as four times what was checked.
+    """
+    checked, unchecked = [], []
+    for model_class in sorted(classes):
+        record = corroboration.get(model_class)
+        if not record:
+            unchecked.append(model_class)
+            continue
+        engines = sorted({e for row in record.values() for e in row.get("engines", ())})
+        agreed = sum(1 for row in record.values() if row.get("engine_independent"))
+        bound = max(
+            (float(row["distance_at_most"]) for row in record.values()
+             if row.get("distance_at_most") is not None),
+            default=None,
+        )
+        held = (
+            f" all engine-independent to {bound:.0e}" if agreed == len(record) and bound is not None
+            else f" {agreed} of {len(record)} engine-independent"
+        )
+        unit = "claim" if all(":" in key for key in record) else "model"
+        checked.append(
+            f"<li>{html.escape(model_class)}: {len(record)} {unit}(s) re-run on "
+            f"{html.escape(', '.join(engines))} —{held}</li>"
+        )
+    if not checked and not unchecked:
+        return ""
+    absent = (
+        f"<li>{html.escape(', '.join(unchecked))}: no second engine is registered for "
+        "this class, so nothing was checked — an absence, not a pass</li>"
+        if unchecked
+        else ""
+    )
+    return (
+        '<section class="track-record"><h2>Cross-engine corroboration</h2>'
+        '<p class="tr-note">Whether the same numbers come out of a second, independent '
+        "simulator — run at the conditions each claim was certified at, and reported beside these "
+        "verdicts rather than gating them.</p>"
+        f"<ul class=\"tr-note\">{''.join(checked)}{absent}</ul></section>"
+    )
+
+
 def render_registry(
     entries: Iterable[tuple[str, Certificate]],
     *,
     title: str = "Reprolith reproduction registry",
     self_validation: dict[str, Any] | None = None,
+    corroboration: dict[str, dict[str, Any]] | None = None,
 ) -> str:
     """A self-contained, browsable HTML registry of certificates (spec: certificate-publication).
 
@@ -581,6 +643,7 @@ def render_registry(
         f"<h1>{html.escape(title)}</h1>"
         f'<p class="disclaimer">{html.escape(scope_human)}</p>'
         f"{_track_record_banner(self_validation) if self_validation else ''}"
+        f"{_corroboration_banner(corroboration, classes) if corroboration is not None else ''}"
         f"{_AUTHOR_BANNER}"
         '<div class="filters">'
         f"{buttons('class', classes)}{buttons('verdict', verdicts)}</div>"

@@ -549,3 +549,66 @@ def test_the_machine_summary_says_none_rather_than_omitting_the_field() -> None:
         RunMetadata(created_at="t", actor="a", tool_version="0.0.1"),
     )["summary"]
     assert summary["figure_read_claims"] == []
+
+
+def test_the_registry_names_the_classes_no_second_engine_ever_checked() -> None:
+    """Cross-engine corroboration reached no reader, and the half that matters is the absence.
+
+    It was computed, committed to each milestone directory, and described in that directory's
+    README. The public page publishing the verdicts said nothing either way. Listing only the
+    corroborated classes would be worse than saying nothing: a reader would infer the others had
+    been checked and passed, which is a clean report standing in for a check nobody made.
+    """
+    from reprolith.render import _corroboration_banner
+
+    banner = _corroboration_banner(
+        {
+            "ode-pkpd": {
+                "BIOMD1:Cmax": {"engines": ["copasi", "roadrunner"],
+                                "engine_independent": True, "distance_at_most": 1e-06},
+                "BIOMD1:AUC": {"engines": ["copasi", "roadrunner"],
+                               "engine_independent": True, "distance_at_most": 1e-07},
+            },
+        },
+        ["logical", "ode-pkpd", "spatial"],
+    )
+    assert "ode-pkpd: 2 claim(s) re-run on copasi, roadrunner" in banner
+    assert "all engine-independent to 1e-06" in banner  # the weakest bound, not the best
+    assert "logical, spatial: no second engine is registered" in banner
+    assert "an absence, not a pass" in banner
+
+
+def test_the_registry_counts_models_as_models_and_claims_as_claims() -> None:
+    """The two classes with a second engine corroborate different things, and the record says so.
+
+    PK/PD re-runs each claim at the dose it was certified at, keyed `accession:claim_id`; the
+    kinetic class re-runs each model's curve once, keyed by bare accession. Calling six models
+    "six claims" publishes a number four times what was checked, so the unit is read off the key.
+    """
+    from reprolith.render import _corroboration_banner
+
+    banner = _corroboration_banner(
+        {"kinetic": {
+            "BIOMD5": {"engines": ["copasi", "roadrunner"], "engine_independent": True,
+                       "distance_at_most": 1e-04},
+        }},
+        ["kinetic"],
+    )
+    assert "kinetic: 1 model(s) re-run" in banner
+
+
+def test_a_corroboration_that_did_not_hold_is_not_reported_as_holding() -> None:
+    """An engine-sensitive claim is the finding this check exists to produce."""
+    from reprolith.render import _corroboration_banner
+
+    banner = _corroboration_banner(
+        {"ode-pkpd": {
+            "BIOMD1:Cmax": {"engines": ["copasi", "roadrunner"], "engine_independent": True,
+                            "distance_at_most": 1e-06},
+            "BIOMD1:AUC": {"engines": ["copasi", "roadrunner"], "engine_independent": False,
+                           "distance_at_most": 0.4},
+        }},
+        ["ode-pkpd"],
+    )
+    assert "1 of 2 engine-independent" in banner
+    assert "all engine-independent" not in banner
