@@ -174,6 +174,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_parameter_values.py"],
     ),
     (
+        "the parameters template fills in the model's own value as the paper's",
+        "manuscript_values.py",
+        (
+            '{"parameter": name, "kind": kind, "reported": None, "source_location": ""}',
+            '{"parameter": name, "kind": kind, "reported": _value, "source_location": ""}',
+        ),
+        ["tests/test_parameter_values.py"],
+    ),
+    (
         "the input check reads the parameter list again and not the volumes or initial conditions",
         "manuscript_values.py",
         (

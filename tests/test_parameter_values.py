@@ -361,3 +361,72 @@ def test_how_much_the_parameter_floor_was_not_counting_on_the_corpus() -> None:
             totals[kind] = totals.get(kind, 0) + len(names)
 
     assert totals == {"compartment": 16, "parameter": 22, "species": 80}
+
+
+def test_the_template_writes_a_row_per_settable_value_and_never_a_number() -> None:
+    """Typing out a deposit's ids is not judgment; pairing them with a paper's rows is.
+
+    `params-check` refuses to guess which table row names which id, and that refusal left an author
+    hand-writing a file with one entry per value in a model that has scores. The template writes
+    the mechanical half.
+
+    What it must never do is fill in `reported`. A template carrying the model's own value would
+    hand the check the model's number as the paper's, and the comparison would agree by
+    construction — the exact failure the check exists to catch, moved one file upstream.
+    """
+    from reprolith import parameters_template
+
+    template = parameters_template(_VOLUMES_AND_INITIAL_CONDITIONS)
+    assert [(row["parameter"], row["kind"]) for row in template["parameters"]] == [
+        ("Kidney", "compartment"),
+        ("Liver", "compartment"),
+        ("Ktp_Liver", "parameter"),
+        ("cPlasma", "species"),
+        ("mLiver", "species"),
+    ]
+    assert all(row["reported"] is None and row["source_location"] == ""
+               for row in template["parameters"])
+    # No row carries the model's value under any key, however it is spelled.
+    assert not any(
+        isinstance(value, (int, float)) for row in template["parameters"] for value in row.values()
+    )
+
+    # Muscle is set by an initialAssignment: listed, never offered as a row, because pairing one is
+    # refused downstream as `not compared` and a template should not invite that.
+    assert template["determined_by_the_model"] == {"compartment": ["Muscle"]}
+    assert "Muscle" not in {row["parameter"] for row in template["parameters"]}
+
+
+def test_an_unfilled_template_is_reported_as_unfilled_and_never_as_agreement() -> None:
+    """The round trip, on the shape the check actually receives."""
+    from reprolith import parameters_template
+
+    checks = check_parameter_values(
+        _VOLUMES_AND_INITIAL_CONDITIONS,
+        parameters_template(_VOLUMES_AND_INITIAL_CONDITIONS)["parameters"],
+    )
+    assert len(checks) == 5
+    assert all(c.agrees is None and "unfilled" in c.detail for c in checks)
+    assert disagreeing_parameters(checks) == ()
+
+
+def test_the_template_covers_exactly_what_the_omission_report_would_name() -> None:
+    """Two answers to one question, on the corpus: the rows an author is asked to fill in are the
+    values the check would otherwise report as unstated, and neither list is the other's superset.
+    """
+    from reprolith import parameters_template, quantities_the_paper_does_not_state
+
+    repo = Path(__file__).resolve().parents[1]
+    entries = json.loads(
+        (repo / "datasets" / "pkpd_parameters.json").read_text(encoding="utf-8")
+    )["entries"]
+    for entry in entries.values():
+        sbml = (repo / "datasets" / "worked_examples" / entry["model"]).read_text(encoding="utf-8")
+        rows = {row["parameter"] for row in parameters_template(sbml)["parameters"]}
+        unstated = {
+            name
+            for names in quantities_the_paper_does_not_state(sbml, entry["parameters"]).values()
+            for name in names
+        }
+        paired = {record["parameter"] for record in entry["parameters"]}
+        assert rows == unstated | paired

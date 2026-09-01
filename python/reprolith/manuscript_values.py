@@ -439,6 +439,54 @@ def quantities_the_paper_does_not_state(
     return {kind: tuple(sorted(names)) for kind, names in sorted(unstated.items())}
 
 
+_PARAMETERS_FILL_IN = (
+    "Delete the rows your paper does not report, then fill in 'reported' (the number your paper "
+    "prints) and 'source_location' (where in the paper it is) on the ones that are left, and pass "
+    "this file to: reprolith params-check --parameters. A row left blank is reported as unfilled "
+    "rather than checked — there is nothing to compare it against."
+)
+
+
+def parameters_template(model_sbml: str, *, accession: str | None = None) -> dict[str, Any]:
+    """Write the file :func:`check_parameter_values` reads, with the blanks left for the author.
+
+    Pairing a paper's row with a model id is the author's judgment and is never inferred — but
+    *typing out* their model's ids is not judgment, and a PBPK deposit has scores of them. This
+    emits one row per settable quantity, kind and all, with the two things only the author knows
+    left empty.
+
+    **It never carries the model's own value.** ``reported`` comes out ``null`` on every row,
+    always, for the reason :mod:`reprolith.claims_template` gives about claims: a template that
+    filled in the number the model holds would hand the check the model's own value as the paper's,
+    and the comparison would agree by construction — which is the exact failure the check exists to
+    catch, moved one file upstream.
+
+    Quantities the model's own math determines are listed apart, never as rows. Their declaring
+    attribute is inert, so pairing one is refused downstream as *not compared*, and a template that
+    invited the pairing would be inviting an answer about the wrong quantity.
+
+    Raises ``ValueError`` if the model is not parseable SBML.
+    """
+    declared, determined = _declared_quantities(model_sbml)
+    rows = [
+        {"parameter": name, "kind": kind, "reported": None, "source_location": ""}
+        for name, (kind, _value) in sorted(
+            declared.items(), key=lambda item: (item[1][0], item[0])
+        )
+        if name not in determined
+    ]
+    inert: dict[str, list[str]] = {}
+    for name, (kind, _value) in declared.items():
+        if name in determined:
+            inert.setdefault(kind, []).append(name)
+    body: dict[str, Any] = {
+        "parameters": rows,
+        "determined_by_the_model": {kind: sorted(names) for kind, names in sorted(inert.items())},
+        "fill_in": _PARAMETERS_FILL_IN,
+    }
+    return {"entries": {accession: body}} if accession is not None else body
+
+
 def disagreeing_parameters(checks: Sequence[ParameterCheck]) -> tuple[ParameterCheck, ...]:
     """The checks that came back false — a value the model does not carry.
 
@@ -465,6 +513,7 @@ __all__ = [
     "check_claim_values",
     "check_parameter_values",
     "disagreeing_parameters",
+    "parameters_template",
     "parameters_the_paper_does_not_state",
     "quantities_the_paper_does_not_state",
     "unsupported_claims",

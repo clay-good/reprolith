@@ -213,6 +213,8 @@ reprolith claims-propose \            # candidate claims from the tables your pa
   --tables <tables.json> [--out <candidates.json>]
 reprolith claims-check \              # is each value printed in the table it cites?
   --claims <claims.json> --tables <tables.json>
+reprolith params-template \           # write the parameters file params-check reads
+  --model <model.xml> [--out <parameters.json>]
 reprolith params-check \              # does your model carry the values your paper reports?
   --model <model.xml> --parameters <parameters.json>
 reprolith figure-template \           # the digitization file, with the claim pairing filled in
@@ -271,6 +273,11 @@ and the volumes are the finding: each model declares twenty compartments and sca
 them from the body weight with an `initialAssignment`, so the paper omits nothing by not printing
 them and they are not counted. Four are left, the lumen and excreta compartments. Which is why
 this is reported and never gated.
+
+`params-template` writes that pairing file out of the model, one row per settable value with the
+blanks left for the author — and never with a number in them, because a template carrying the
+model's own value would hand the check that value as the paper's and the comparison would agree by
+construction. It is the same rule `claims-template` follows, one file over.
 
 `figure-template` and `figure-check` are the same shape for the other half of claim extraction.
 The template writes the one mechanical part of a digitization — which curve of your document each

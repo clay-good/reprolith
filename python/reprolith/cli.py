@@ -47,6 +47,7 @@ from .manuscript_values import (
     check_claim_values,
     check_parameter_values,
     disagreeing_parameters,
+    parameters_template,
     quantities_the_paper_does_not_state,
     unsupported_claims,
 )
@@ -541,6 +542,46 @@ def _cmd_params_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             for kind, names in unstated.items():
                 print(f"      {kind}: {', '.join(names)}")
     return 1 if disagreeing_parameters(checks) else 0
+
+
+#: "19 species(s)" is what a uniform suffix produces, and a template's summary is read by authors.
+_PLURAL = {"parameter": "parameters", "compartment": "compartments", "species": "species"}
+
+
+def _cmd_params_template(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Write the parameters file params-check reads, with the blanks left for the author."""
+    try:
+        model = Path(args.model).read_text(encoding="utf-8")
+        template = parameters_template(model, accession=args.accession)
+    except OSError as unreadable:
+        print(f"cannot read the model: {unreadable}", file=sys.stderr)
+        return 1
+    except (UnicodeDecodeError, ValueError) as unusable:
+        print(f"cannot read the model: {unusable}", file=sys.stderr)
+        return 1
+
+    rendered = json.dumps(template, indent=2, sort_keys=True) + "\n"
+    if args.out is None:
+        print(rendered, end="")
+        return 0
+    try:
+        Path(args.out).write_text(rendered, encoding="utf-8")
+    except OSError as unwritable:
+        print(f"cannot write the template: {unwritable}", file=sys.stderr)
+        return 1
+    body = template["entries"][args.accession] if args.accession is not None else template
+    kinds: dict[str, int] = {}
+    for row in body["parameters"]:
+        kinds[row["kind"]] = kinds.get(row["kind"], 0) + 1
+    print(f"wrote {args.out}")
+    print(f"  {len(body['parameters'])} row(s) to fill in: "
+          + ", ".join(f"{count} {_PLURAL[kind]}" for kind, count in sorted(kinds.items())))
+    inert = sum(len(names) for names in body["determined_by_the_model"].values())
+    if inert:
+        # Listed, not offered: pairing one is refused downstream, and a template that invited the
+        # pairing would be inviting an answer about a number that never reaches the integrator.
+        print(f"  {inert} value(s) your model's own math determines are listed apart, not as rows")
+    return 0
 
 
 def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
@@ -1197,6 +1238,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--out", default=None, help="write here instead of to standard output")
     p.set_defaults(func=_cmd_claims_template)
+
+    p = sub.add_parser(
+        "params-template",
+        help="write the parameters file params-check needs, with the blanks left for you",
+    )
+    p.add_argument("--model", required=True, help="your model file")
+    p.add_argument(
+        "--accession", default=None,
+        help="wrap the result under this accession, the shape a multi-paper file uses",
+    )
+    p.add_argument("--out", default=None, help="write here instead of to standard output")
+    p.set_defaults(func=_cmd_params_template)
 
     p = sub.add_parser(
         "figure-template",

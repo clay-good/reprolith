@@ -9,6 +9,7 @@ pip install reprolith
 reprolith claims-template --model paper.xml --sedml paper.sedml --out my_claims.json
 reprolith archive-check paper.omex --claims my_claims.json
 reprolith archive-check --sedml paper.sedml --model paper.xml --claims my_claims.json
+reprolith params-template --model paper.xml --out my_parameters.json
 reprolith params-check --model paper.xml --parameters my_parameters.json
 ```
 
@@ -115,7 +116,11 @@ Every file validates. The run completes. The number is close. That is the failur
 
 `params-check` reads a JSON file pairing each model value id with the number your paper reports
 for it. An id may name a parameter, a compartment whose `size` is a tissue volume, or a species
-whose initial amount or concentration is an initial condition:
+whose initial amount or concentration is an initial condition. `params-template` writes it with one
+row per settable value and the blanks left for you — it never fills in `reported`, because a
+template carrying your model's own number would hand the check that number as your paper's, and the
+comparison would agree by construction. Values your model's own math determines are listed apart
+rather than as rows, since pairing one is refused anyway:
 
 ```json
 {"parameters": [

@@ -527,7 +527,7 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     ).choices
     named = {
         "export", "archive-check", "claims-template", "claims-check", "claims-propose",
-        "params-check", "figure-check", "figure-template",
+        "params-check", "params-template", "figure-check", "figure-template",
     }
     file_based = {name for name in subcommands if name in named}
     assert file_based == named
@@ -820,6 +820,38 @@ def test_params_check_pairs_a_published_volume_with_its_compartment(tmp_path, ca
     assert "compartment: Lumen" in printed
     assert "species: mLiver" in printed
     assert "parameter: Ktp_Liver" in printed
+
+
+def test_params_template_writes_the_file_params_check_reads(tmp_path, capsys):
+    """The two commands compose: what the template writes is what the check reads, unfilled."""
+    model = tmp_path / "model.xml"
+    model.write_text(
+        '<?xml version="1.0"?><sbml xmlns="http://www.sbml.org/sbml/level2/version4" '
+        'level="2" version="4"><model id="m">'
+        '<listOfCompartments><compartment id="Liver" size="1.51"/></listOfCompartments>'
+        '<listOfSpecies><species id="mLiver" compartment="Liver" initialAmount="0"/>'
+        '</listOfSpecies>'
+        '<listOfParameters><parameter id="Ktp_Liver" value="5.5"/>'
+        '<parameter id="QLiver" value="1799"/></listOfParameters>'
+        '<listOfInitialAssignments><initialAssignment symbol="QLiver"><math '
+        'xmlns="http://www.w3.org/1998/Math/MathML"><cn>1</cn></math></initialAssignment>'
+        '</listOfInitialAssignments></model></sbml>',
+        encoding="utf-8",
+    )
+    out = tmp_path / "parameters.json"
+    assert run(["params-template", "--model", str(model), "--out", str(out)]) == 0
+    printed = capsys.readouterr().out
+    assert "3 row(s) to fill in: 1 compartments, 1 parameters, 1 species" in printed
+    assert "1 value(s) your model's own math determines are listed apart" in printed
+
+    written = json.loads(out.read_text(encoding="utf-8"))
+    assert all(row["reported"] is None for row in written["parameters"])
+    assert written["determined_by_the_model"] == {"parameter": ["QLiver"]}
+
+    # Straight into the check, unedited: three unfilled rows, and not one of them a pass.
+    assert run(["params-check", "--model", str(model), "--parameters", str(out)]) == 0
+    checked = capsys.readouterr().out
+    assert "3 parameter(s) were not compared" in checked and "ok:" not in checked
 
 
 def test_params_check_on_something_that_is_not_sbml_is_a_message(tmp_path, capsys):

@@ -31,10 +31,12 @@ def test_every_command_line_the_guide_shows_parses() -> None:
         parsed = parser.parse_args(line.split()[1:])  # raises SystemExit if the guide is wrong
         assert parsed.command in {
             "archive-check", "claims-template", "claims-check", "claims-propose", "params-check",
+            "params-template",
         }
     # Both halves of the loop the guide describes are shown: the file is written, then read.
     assert {parser.parse_args(line.split()[1:]).command for line in lines} == {
-        "archive-check", "claims-template", "claims-check", "claims-propose", "params-check"
+        "archive-check", "claims-template", "claims-check", "claims-propose", "params-check",
+        "params-template",
     }
 
 
