@@ -27,6 +27,9 @@ _README = (_ROOT / "README.md").read_text(encoding="utf-8")
 #: And the loop record's prose account of the same run, which drifted the same way and by the same
 #: mechanism: a number written down once, beside data that kept moving.
 _LOOP = (_ROOT / "docs" / "discipline-loop.md").read_text(encoding="utf-8")
+#: And the walkable milestone's own README, which a stranger is invited to follow end to end. It
+#: held the same run's numbers in a table, a headline, a section title and three sentences.
+_MILESTONE = (_ROOT / "datasets" / "milestone" / "README.md").read_text(encoding="utf-8")
 _REPORT = json.loads(
     (_ROOT / "datasets" / "milestone" / "agreement_report.json").read_text(encoding="utf-8")
 )
@@ -81,6 +84,26 @@ def test_the_loop_record_states_the_same_split_as_the_report() -> None:
     assert f"**{abstained} abstentions**" in _LOOP
     assert f"**{other} more-careful verdicts**" in _LOOP
     assert matched == 1
+
+
+def test_the_milestone_readme_states_the_same_split_as_the_report_beside_it() -> None:
+    """The fourth page summarizing one run, and the one that sits in the directory it describes.
+
+    It said one certified reproduction and thirty abstentions, headlined "Why 0/31 is the honest
+    result", and named a single more-careful verdict. There are four certificates — one clean
+    `reproduced` and three `partially-reproduced` — twenty-seven abstentions, and raw agreement of
+    1/31. Its own `agreement_report.json` is in the same directory.
+    """
+    matched, abstained, other = _split()
+    total = matched + abstained + other
+    assert f"Why {matched}/{total} is the honest result" in _MILESTONE
+    assert f"**{abstained} abstentions.**" in _MILESTONE
+    assert f"| `blocked` | {abstained} |" in _MILESTONE
+    assert f"| `partially-reproduced` | {other} |" in _MILESTONE
+    assert f"| `reproduced` | {matched} |" in _MILESTONE
+    # And the count of published certificates the page promises a reader they will find.
+    certificates = list((_ROOT / "datasets" / "milestone" / "certificates").glob("*.json"))
+    assert len(certificates) == matched + other == 4
 
 
 def test_every_class_row_names_a_milestone_directory_that_exists() -> None:
