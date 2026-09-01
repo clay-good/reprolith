@@ -219,7 +219,12 @@ from .persistence import (
     certificate_from_content,
     dossier_from_dict,
 )
-from .population import PopulationRun, SubjectVariability, simulate_population
+from .population import (
+    PopulationRun,
+    SubjectVariability,
+    percentile_sampling_error,
+    simulate_population,
+)
 from .presubmission import (
     archive_report,
     pair_report,
@@ -557,6 +562,7 @@ __all__ = [
     "shadow_prices",
     "ShadowPrices",
     "simulate",
+    "percentile_sampling_error",
     "simulate_population",
     "simulate_with_roadrunner",
     "SimulationRecipe",

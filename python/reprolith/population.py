@@ -90,6 +90,47 @@ def _percentile(sorted_values: list[float], percentile: float) -> float:
     return sorted_values[lower] * (1.0 - weight) + sorted_values[upper] * weight
 
 
+def _outermost(percentiles: tuple[float, ...]) -> float:
+    """The band furthest from the median — the one whose sampling error is largest."""
+    return max(percentiles, key=lambda p: abs(p - 50.0))
+
+
+def percentile_sampling_error(*, cv: float, percentile: float, subjects: int) -> float:
+    """The scale of a percentile band's own sampling error, as a fraction of the band.
+
+    A population envelope is percentiles of a *finite* sample: draw the same population twice and
+    the 5th percentile moves. That movement is not a disagreement with the paper, and nothing said
+    how big it is — so an envelope of twenty subjects and one of a thousand were published in the
+    same words, judged in the same band.
+
+    This is the asymptotic standard error of a sample quantile, `sqrt(p(1-p)/n) / f(q_p)`, written
+    out for the median-preserving log-normal these draws come from, which makes it a pure function
+    of the CV, the percentile and the subject count. Measured against Monte-Carlo replicates in
+    `tests/test_population_sampling_cost.py`: it agrees within a factor of two, and understates the
+    tails at small N, so it is published as a scale and never as a bound.
+
+    What it is for is the decision it informs. At a 30% CV and twenty subjects a *flawless*
+    reproduction of the very population it is judged against misses the 15% pass budget about half
+    the time; at fifty subjects, one time in eight; at two hundred and fifty, never in four hundred
+    replicates. The subject count is not a free parameter.
+    """
+    if not 0.0 < percentile < 100.0:
+        raise ValueError(
+            f"a percentile band sits strictly inside (0, 100); got {percentile}"
+        )
+    if subjects < 2:
+        raise ValueError(f"a population needs at least two subjects; got {subjects}")
+    if cv <= 0.0:
+        raise ValueError(f"a between-subject CV is positive; got {cv}")
+    spread = math.sqrt(math.log(1.0 + cv * cv))
+    fraction = percentile / 100.0
+    z = NormalDist().inv_cdf(fraction)
+    density = NormalDist().pdf(z)
+    # d/dp of exp(spread * z_p) is exp(spread * z_p) * spread / phi(z_p), so the *relative* error
+    # of the band drops the band's own value and leaves the spread over the normal density.
+    return spread * math.sqrt(fraction * (1.0 - fraction) / subjects) / density
+
+
 def simulate_population(
     sbml: str,
     species: str,
@@ -196,7 +237,13 @@ def simulate_population(
         protocol=(
             f"{subjects} subjects, seed {seed}, log-normal between-subject variability on "
             f"{varied}, median-preserving; percentiles linearly interpolated between order "
-            f"statistics; duration={duration!r}, steps={int(steps)}, read=[{species}]"
+            f"statistics; duration={duration!r}, steps={int(steps)}, read=[{species}]; "
+            # The band's own sampling error, from the widest-CV spec and the outermost band it
+            # reports: an envelope of twenty subjects and one of a thousand read identically
+            # without it, and are judged in the same tolerance.
+            f"sampling error of the {_outermost(percentiles):g}th band ~"
+            f"{percentile_sampling_error(cv=max(s.cv for s in variability), percentile=_outermost(percentiles), subjects=subjects):.0%} "
+            f"of the band at {subjects} subjects"
         ),
     )
 
@@ -230,4 +277,9 @@ def _typical(sbml: str, parameter: str) -> float:
     return float(element.getValue())
 
 
-__all__ = ["PopulationRun", "SubjectVariability", "simulate_population"]
+__all__ = [
+    "PopulationRun",
+    "SubjectVariability",
+    "percentile_sampling_error",
+    "simulate_population",
+]

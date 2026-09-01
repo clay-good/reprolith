@@ -49,6 +49,32 @@ every percentile band of a one-compartment model has a closed form. 500 subjects
 inside 10% of it at every grid point, where the empirical P5's own sampling error is about 3%
 (`tests/test_population_simulation.py`).
 
+### How many subjects, and why it is not a free parameter
+
+An envelope is percentiles of a *finite* sample: draw the same population twice and the 5th
+percentile moves. That movement is not a disagreement with the paper, and until now an envelope of
+twenty subjects and one of a thousand were published in the same words and judged in the same 15%
+band.
+
+It is measurable with no paper and no engine — draw N subjects from a population whose true
+percentiles are known in closed form and compare the sample envelope against the population it came
+from. Nothing is wrong with the reconstruction in that comparison, because it is the right
+population. How often the worst of the three bands still misses the 15% pass budget
+(`tests/test_population_sampling_cost.py`, 400 replicates):
+
+| Between-subject CV | N=20 | N=50 | N=100 | N=250 |
+| --- | --- | --- | --- | --- |
+| 30% | 47% | 12% | 2% | 0% |
+| 50% | 80% | 51% | 24% | 3% |
+
+At twenty subjects and a 30% CV, a reproduction that is right about everything fails about half the
+time. The subject count is a term in the verdict, so the run now states its own band's sampling
+error in the protocol the certificate carries — `sampling error of the 5th band ~14% of the band at
+20 subjects` — from the closed form `percentile_sampling_error`, which agrees with the replicates
+within a factor of two and understates the tails at small N. It is published as a scale, never as a
+bound, and it is not a refusal: a paper that ran twenty subjects ran twenty subjects, and Reprolith
+reports what that costs rather than declining to judge it.
+
 **Refused rather than run:** a parameter whose variability could not reach the run (undeclared, or
 determined by a rule, or shadowed by a kinetic law), a parameter with no stated value to vary
 around, two variability specs for one parameter, a percentile of 0 or 100, and an ensemble of one.

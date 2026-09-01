@@ -361,7 +361,7 @@
         "distribution-band-distance/digitized-figure"
       ],
       "basis": "spec",
-      "note": "15%/35% numeric and 25%/50% digitized, wider than a single deterministic trajectory's because a population envelope is judged by its worst-matched percentile band and carries the Monte-Carlo sampling error of a simulated population. Required by the simulation-oracle spec ('Distributional tolerance provenance') and not yet measured: no population claim has been certified.",
+      "note": "15%/35% numeric and 25%/50% digitized, wider than a single deterministic trajectory's because a population envelope is judged by its worst-matched percentile band and carries the Monte-Carlo sampling error of a simulated population. Required by the simulation-oracle spec ('Distributional tolerance provenance') and not yet measured: no population claim has been certified. One component is now measured, with no paper and no engine: an envelope is percentiles of a finite sample, so drawing the right population twice moves the 5th percentile. Against a population whose true percentiles are known in closed form, the worst of the three bands misses the 15% pass budget 47% of the time at twenty subjects and a 30% CV, 12% at fifty, 2% at a hundred, and never in 400 replicates at 250; at a 50% CV it takes 250 subjects to reach 3%. The run now states its own band's sampling error in the protocol the certificate carries. That measures what the ensemble size spends, not the tolerance, which stays declared: no population claim has been certified.",
       "evidence": [
         {
           "path": "openspec/specs/simulation-oracle/spec.md",
@@ -376,7 +376,14 @@
             "(ComparisonMethod.DISTRIBUTION_BAND_DISTANCE, ReferenceKind.DIGITIZED_FIGURE): Tolerance(\n        0.25, 0.50, ToleranceSource.CLASS_DEFAULT\n    )"
           ]
         },
-        "tests/test_population.py"
+        "tests/test_population.py",
+        {
+          "path": "tests/test_population_sampling_cost.py",
+          "quotes": [
+            "There is no model error in this comparison. The disagreement is the ensemble.",
+            "The worst band governs the verdict"
+          ]
+        }
       ]
     },
     {

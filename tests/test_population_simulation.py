@@ -130,6 +130,17 @@ def test_the_protocol_names_everything_the_bands_depend_on() -> None:
     for expected in ("40 subjects", "seed 11", "V (CV 0.3)", "median-preserving",
                      "linearly interpolated", "duration=6.0", "steps=6", "read=[C]"):
         assert expected in run.protocol
+    # An envelope of forty subjects and one of a thousand used to read identically and were
+    # judged in the same band, though the first carries several times the sampling error of the
+    # second. A flawless reproduction of the right population misses the 15% budget about half
+    # the time at twenty subjects (tests/test_population_sampling_cost.py), so the size of that
+    # error belongs beside the size of the ensemble.
+    assert "sampling error of the 5th band ~10% of the band at 40 subjects" in run.protocol
+    bigger = simulate_population(
+        _MODEL, "C", duration=6.0, steps=6,
+        variability=(SubjectVariability(parameter="V", cv=0.3),), subjects=1000, seed=11,
+    )
+    assert "~2% of the band at 1000 subjects" in bigger.protocol
 
 
 def test_a_parameter_whose_variability_could_not_reach_the_run_is_refused() -> None:
