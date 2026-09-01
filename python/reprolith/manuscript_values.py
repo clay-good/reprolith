@@ -778,6 +778,36 @@ class UnitCheck:
         }
 
 
+def _model_and_definitions(model_sbml: str) -> tuple[ET.Element, dict[str, str], int]:
+    """The model element, its unit definitions by id, and its SBML level."""
+    try:
+        root = ET.fromstring(model_sbml)
+    except ET.ParseError as exc:
+        raise ValueError(f"not parseable SBML: {exc}") from exc
+    model = next((c for c in root.iter() if _localname(c.tag) == "model"), None)
+    if model is None:
+        raise ValueError("the SBML document contains no model element")
+    definitions = {
+        definition.get("id") or "": _render_unit_definition(definition)
+        for container in model
+        if _localname(container.tag) == "listOfUnitDefinitions"
+        for definition in container
+        if _localname(definition.tag) == "unitDefinition"
+    }
+    return model, definitions, int(root.get("level") or 3)
+
+
+def model_time_unit(model_sbml: str) -> str:
+    """The unit the model's own time is in, resolved — or ``"unstated"``.
+
+    Every time-course reference is on the model's clock: a figure read in minutes against a model
+    running in hours produces values that are ordered, smooth, plausible and aligned to the wrong
+    places. Raises ``ValueError`` if the model is not parseable SBML.
+    """
+    model, definitions, level = _model_and_definitions(model_sbml)
+    return _resolve_unit(model.get("timeUnits") or "", definitions, level)
+
+
 def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
     """The unit a claim's value is read in, composed from the model's own declarations.
 
@@ -791,21 +821,7 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
     partial unit that reads as if it were established. Raises ``ValueError`` if the model is not
     parseable SBML or declares no such species.
     """
-    try:
-        root = ET.fromstring(model_sbml)
-    except ET.ParseError as exc:
-        raise ValueError(f"not parseable SBML: {exc}") from exc
-    model = next((c for c in root.iter() if _localname(c.tag) == "model"), None)
-    if model is None:
-        raise ValueError("the SBML document contains no model element")
-    level = int(root.get("level") or 3)
-    definitions = {
-        definition.get("id") or "": _render_unit_definition(definition)
-        for container in model
-        if _localname(container.tag) == "listOfUnitDefinitions"
-        for definition in container
-        if _localname(definition.tag) == "unitDefinition"
-    }
+    model, definitions, level = _model_and_definitions(model_sbml)
     element = next(
         (
             child
@@ -840,7 +856,7 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
         definitions,
         level,
     )
-    time = _resolve_unit(model.get("timeUnits") or "", definitions, level)
+    time = _resolve_unit(model.get("timeUnits") or "", definitions, level)  # the run's own clock
     parts = (substance, volume) + ((time,) if metric == "auc" else ())
     if UNSTATED_UNIT in parts:
         return UNSTATED_UNIT
@@ -935,6 +951,7 @@ __all__ = [
     "check_parameter_values",
     "claim_units",
     "claims_in_another_unit",
+    "model_time_unit",
     "disagreeing_parameters",
     "parameters_template",
     "parameters_the_paper_does_not_state",

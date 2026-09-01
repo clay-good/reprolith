@@ -69,6 +69,7 @@ reprolith figure-check --series figure3a.json                          # the rea
 reprolith figure-check --series figure3a.json --sedml experiment.sedml # ...and its pairing
 reprolith figure-check --series figure3a.json model.omex               # or straight from the archive
 reprolith figure-check --series figure3a.json --series figure3b.json model.omex   # every panel
+reprolith figure-check --series figure3a.json --sedml experiment.sedml --model model.xml  # + clock
 ```
 
 It reads the file, says what each series carries, and exits non-zero when it cannot trust one. It
@@ -92,6 +93,19 @@ refuses it rather than padding the gap with the nearest value. Both numbers are 
 curator is still at the terminal, so the refusal is made there instead of in Python afterwards. A
 document running several time courses is one figure per window, so covering any one of them is
 covering the one this panel was read off.
+
+**And the two files each state a clock, which nothing compared.** A reading is put on the run's
+sample grid by its x values, so a figure read in minutes against a model running in hours produces
+a reference that is ordered, smooth, plausible, and aligned to the wrong places. The window check
+cannot see it: 0-120 covers 0-24 as numbers. Given a model — packaged in the archive, or `--model`
+— each reading's x axis is compared against the unit the model states its time in, and the answer
+names the factor between them.
+
+It is **reported, never a refusal**. Which of the two files names the wrong unit is not this
+command's to decide, and there is a live example of the other one being wrong: every deposited
+metformin model declares its time as `multiplier="3600" scale="2"`, which SBML reads as 360000
+seconds, while the paper's figures and the shipped recipe are in hours. Refusing there would reject
+a correct reading on the strength of a wrong declaration.
 
 `figure-template` will not write two plots into one file, and a file written by hand or by an
 older template still can — so the check reads it from the other side too: a file whose readings

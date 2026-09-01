@@ -39,6 +39,7 @@ from .digitization import (
     panel_faults,
     read_digitized_figure,
     series_resolution,
+    time_unit_notes,
     unfilled_figure,
     window_faults,
 )
@@ -836,6 +837,22 @@ def _windowed_cost(
     )
 
 
+def _figure_model(args: argparse.Namespace) -> str | None:
+    """The model to read a clock off, from the archive or ``--model``, or ``None`` for neither.
+
+    An archive carries one; loose files do not, and a curator checking a digitization before any
+    archive exists is the ordinary case this command was written for.
+    """
+    if args.model is not None:
+        return Path(args.model).read_text(encoding="utf-8")
+    if args.archive is None:
+        return None
+    from .omex import archive_documents
+
+    _document, model = archive_documents(Path(args.archive).read_bytes())
+    return model
+
+
 def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Read a curator's figure digitization and say whether it is usable as a reference."""
     if args.archive is not None and args.sedml is not None:
@@ -897,6 +914,19 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         and claim.id not in {s.claim_id for s in series}
     )
 
+    # Both files state a time unit and nothing compared them. The window check cannot: a figure
+    # read in minutes over 0-120 covers a run of 0-24 hours as numbers, and lands every value in
+    # the wrong place. Only a model can answer it, so it is asked only where there is one.
+    try:
+        clock = _figure_model(args)
+    except OSError as unreadable:
+        print(f"cannot read the model: {unreadable}", file=sys.stderr)
+        return 1
+    except (UnicodeDecodeError, ValueError) as unusable:
+        print(f"cannot read the model: {unusable}", file=sys.stderr)
+        return 1
+    notes = time_unit_notes(series, clock, carrier="your model") if clock is not None else ()
+
     plotted = {claim.id: claim.quantity for claim in (claims or ())}
     resolutions = [series_resolution(s) for s in series]
     # Measured over the window the claim will be judged over, where the document says what that is.
@@ -920,6 +950,10 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
                 "runs": [list(r) for r in runs],
                 "window_faults": list(short),
             },
+            # Reported, never a fault: which of the two files names the wrong unit is not this
+            # command's to decide, and refusing would reject a correct reading on the strength of
+            # a wrong declaration.
+            "time_unit_notes": list(notes),
         })
         return 1 if faults or short else 0
     read_from = ", ".join(dict.fromkeys(reading.figure for reading in series))
@@ -1012,6 +1046,9 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             print("  every series is paired with a curve your document plots and can carry values")
             if windows:
                 print("  and every one of them covers a window your document runs")
+    # Reported, never a fault: which file names the wrong unit is not this command's to decide.
+    for note in notes:
+        print(f"  TIME UNITS DISAGREE: {note}")
     print("  no model was run and no claim was judged: this reads the file, nothing else")
     return 1 if faults or short else 0
 
@@ -1365,6 +1402,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--sedml", default=None,
         help="your simulation document, when it is not packaged; the pairing is checked against "
              "the curves it plots",
+    )
+    p.add_argument(
+        "--model", default=None,
+        help="your model file, when it is not packaged; with it, each reading's x axis is compared "
+             "against the unit your model states its time in",
     )
     add_json(p)
     p.set_defaults(func=_cmd_figure_check)

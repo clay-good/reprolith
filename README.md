@@ -220,7 +220,7 @@ reprolith params-check \              # does your model carry the values your pa
 reprolith figure-template \           # the digitization file, with the claim pairing filled in
   <file.omex> | --sedml <exp.sedml> [--plot <plot_0>] [--out <f.json> | --out-dir <dir>]
 reprolith figure-check \              # is this digitization of your figure usable as a reference?
-  --series <figure3a.json> [--series ...] [<file.omex> | --sedml <exp.sedml>]
+  --series <figure3a.json> [--series ...] [<file.omex> | --sedml <exp.sedml>] [--model <model.xml>]
 ```
 
 `archive-check` is the author-facing counterpart: point it at a COMBINE archive and it says what a

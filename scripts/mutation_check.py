@@ -174,6 +174,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_parameter_values.py"],
     ),
     (
+        "a figure read on one clock is placed on a run that keeps another",
+        "digitization.py",
+        (
+            "        if not _units_differ(stated, declared):\n            continue",
+            "        if True:\n            continue",
+        ),
+        ["tests/test_claim_units.py"],
+    ),
+    (
         "a claim's value is compared against a model output in another unit",
         "manuscript_values.py",
         (

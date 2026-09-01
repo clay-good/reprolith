@@ -3412,6 +3412,15 @@ It reaches an author through `claims-check --model`, beside the check that each 
 the table it cites. A claim that states no unit is reported as not checked and never as agreement:
 the absence of a statement is not a statement.
 
+**A figure claim has a second clock, and it had the same hole.** A digitization is required to
+state both axes' units and nothing compared either against the model. The window check cannot: a
+figure read in minutes over 0-120 *covers* a run of 0-24 hours as numbers, so nothing is refused
+and every value is placed somewhere it was not read. `figure-check --model` now compares the two,
+and the wording of that check is decided by the finding above — it is **reported, never a
+refusal**, because the deposit here is the file with the wrong declaration, and refusing would
+reject a correct reading on the strength of it. `window_faults`'s own docstring claimed this case
+"fails here"; it fails only in the direction where the reading is too narrow, and it now says so.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

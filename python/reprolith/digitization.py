@@ -662,9 +662,11 @@ def window_faults(
     A series covering *any* of the windows is not reported: a document running several time courses
     is one figure per window, and the curator read one of them.
 
-    Windows are compared as numbers, because that is all either file states. A figure read in hours
-    against a model whose time is in minutes fails here — and it fails at the join too, for the same
-    reason, so naming it is the earliest this repository can say it.
+    Windows are compared as numbers, because that is all either file states. That catches a
+    reading too *narrow* for the run and nothing else: a figure read in minutes over 0-120 covers a
+    run of 0-24 hours numerically, and lands every value in the wrong place. What the two files say
+    about their units is compared by :func:`time_unit_notes`, which is the only thing that can see
+    it.
     """
     faults = []
     stated = ", ".join(f"{start:g}-{end:g}" for start, end in windows)
@@ -679,6 +681,47 @@ def window_faults(
             "needs values outside what was read, and nothing here is extrapolated"
         )
     return tuple(faults)
+
+
+def time_unit_notes(
+    series: Iterable[DigitizedSeries], model_sbml: str, *, carrier: str = "this model"
+) -> tuple[str, ...]:
+    """What each reading's x axis says, against the unit the model's own clock is in.
+
+    Every time-course reference is put on the run's sample grid by its x values, and both files
+    state a unit that nothing compared. A figure read in minutes against a model running in hours
+    is not caught by the window check — 0-120 covers 0-24 as numbers — and produces a reference
+    that is ordered, smooth, plausible, and aligned to the wrong places.
+
+    **Reported, never a refusal.** Which of the two is wrong is not this function's to decide: the
+    deposited metformin models declare their time unit as ``multiplier="3600" scale="2"``, which
+    SBML reads as 360000 seconds, while the paper's figures and the shipped recipe are in hours. A
+    refusal there would reject a correct reading on the strength of a wrong declaration, and this
+    repository's rule is that a fix which can only be one-directional should be.
+
+    Nothing is said when either unit cannot be read, or when the model states none: an absence is
+    not a disagreement. Raises ``ValueError`` if the model is not parseable SBML.
+    """
+    from .ingest import UNSTATED_UNIT
+    from .manuscript_values import _unit_ratio, _units_differ, model_time_unit
+
+    declared = model_time_unit(model_sbml)
+    if declared == UNSTATED_UNIT:
+        return ()
+    notes = []
+    for reading in series:
+        stated = reading.x_axis.unit
+        if not _units_differ(stated, declared):
+            continue
+        ratio = _unit_ratio(stated, declared)
+        notes.append(
+            f"series '{reading.claim_id}' was read against an x axis in {stated}, and {carrier} "
+            f"states its time in {declared}"
+            + (f", which is {ratio:g} times as large" if ratio is not None else "")
+            + ": the reading is placed on the run's grid by those numbers, so one of the two "
+            "files is naming the wrong unit"
+        )
+    return tuple(notes)
 
 
 def attach_digitized_values(

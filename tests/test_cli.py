@@ -1227,6 +1227,38 @@ def test_figure_check_reads_the_pairing_out_of_an_archive_too(tmp_path, capsys):
     assert packaged["pairing"]["faults"] == [] == loose["pairing"]["faults"]
 
 
+def test_figure_check_compares_the_reading_s_clock_against_the_model_s(tmp_path, capsys):
+    """The window check cannot see this, and it is the error that ruins a reading silently.
+
+    A figure read in minutes over 0-120 covers a run of 0-24 hours *as numbers*, so nothing was
+    refused and every value landed in the wrong place. Both files state a unit; only a model can be
+    asked which one the run is on.
+    """
+    model = tmp_path / "model.xml"
+    model.write_text(
+        '<?xml version="1.0"?><sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" '
+        'level="3" version="2"><model id="m" timeUnits="time"><listOfUnitDefinitions>'
+        '<unitDefinition id="time"><listOfUnits>'
+        '<unit kind="second" exponent="1" scale="0" multiplier="3600"/></listOfUnits>'
+        '</unitDefinition></listOfUnitDefinitions></model></sbml>',
+        encoding="utf-8",
+    )
+    # The fixture reads its x axis in seconds; this model's clock is in hours.
+    series = _digitization(tmp_path / "fig2a.json", "plot_0__plot_0_0_0__plot_0_0_1")
+    assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML),
+                "--model", str(model)]) == 0
+    printed = capsys.readouterr().out
+    assert "TIME UNITS DISAGREE" in printed
+    assert "read against an x axis in s" in printed and "3600 times as large" in printed
+    # Reported, never a fault: which of the two files is wrong is not this command's to decide, and
+    # a deposit that declares its own time wrongly must not make a correct reading unusable.
+    assert "every series is paired with a curve your document plots" in printed
+
+    # Without a model there is nothing to compare against, and nothing is said.
+    assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML)]) == 0
+    assert "TIME UNITS" not in capsys.readouterr().out
+
+
 def test_figure_check_json_shape_is_pinned(tmp_path, capsys):
     """This command has no MCP tool, so nothing else pins what a script reading it receives.
 
@@ -1237,7 +1269,7 @@ def test_figure_check_json_shape_is_pinned(tmp_path, capsys):
     assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML),
                 "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert set(payload) == {"series", "pairing"}
+    assert set(payload) == {"series", "pairing", "time_unit_notes"}
     (reading,) = payload["series"]
     assert set(reading) == {"claim", "curve", "figure", "digitizer", "points", "x_axis", "y_axis",
                             "resolution", "interpolation"}

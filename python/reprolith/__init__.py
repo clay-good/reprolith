@@ -54,6 +54,7 @@ from .digitization import (
     read_digitized_figure,
     resample_series,
     series_resolution,
+    time_unit_notes,
     unfilled_figure,
     window_faults,
 )
@@ -604,6 +605,7 @@ __all__ = [
     "unsupported_claims",
     "unfilled_claims",
     "unfilled_figure",
+    "time_unit_notes",
     "window_faults",
     "UpdateScheme",
     "ValueCheck",

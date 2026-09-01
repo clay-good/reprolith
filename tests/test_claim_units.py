@@ -95,3 +95,42 @@ def test_an_output_the_model_does_not_have_is_reported_not_raised() -> None:
         [{"claim_id": "c", "species": "nope", "reported_units": "nmol/mL"}],
     )
     assert check.agrees is None and "declares no species" in check.detail
+
+
+def test_a_readings_clock_is_compared_against_the_models_own() -> None:
+    """The same defect on the other input a figure claim has: its x axis.
+
+    A reading is put on the run's sample grid by its x values. Read in minutes against a model
+    running in hours, it covers the window numerically and lands every value in the wrong place —
+    which the window check cannot see, because 0-120 does cover 0-24.
+    """
+    from reprolith import read_digitized_figure, time_unit_notes
+
+    series = read_digitized_figure(json.dumps({
+        "figure": "Figure 2A", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 30, "unit": "nmol/mL"},
+        "series": [{"claim": "Cmax-plasma", "curve": "plasma",
+                    "points": [[0, 0.0], [1, 27.2], [24, 2.0]]}],
+    }))
+
+    # Against the deposit, whose declared time unit is a hundred hours.
+    (note,) = time_unit_notes(series, _model("BIOMD0000001027"), carrier="your model")
+    assert "x axis in h" in note and "3600*10^2 second" in note and "100 times" in note
+
+    # Against a model whose clock is the hour the figure is read in, nothing is said.
+    hourly = """<?xml version="1.0"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m" timeUnits="time"><listOfUnitDefinitions>
+    <unitDefinition id="time"><listOfUnits>
+      <unit kind="second" exponent="1" scale="0" multiplier="3600"/>
+    </listOfUnits></unitDefinition>
+  </listOfUnitDefinitions></model>
+</sbml>
+"""
+    assert time_unit_notes(series, hourly) == ()
+
+    # And a model that states no time unit is an absence, not a disagreement.
+    silent = '<?xml version="1.0"?><sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" ' \
+             'level="3" version="2"><model id="m"/></sbml>'
+    assert time_unit_notes(series, silent) == ()
