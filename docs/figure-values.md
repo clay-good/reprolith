@@ -182,6 +182,10 @@ the curve it was read off by **0.25 against a 0.20 pass budget**: it would fail 
 model involved. At ten points the average is inside the budget and the worst point, rescaled the
 way `judge_curve` rescales it, is at 94% of it.
 
+This is about the **curve** band. A single value read off a picture — a peak height, a reported
+Cmax — is judged in the scalar digitized band, and its error is set by the digitizer's calibration
+and the plot's pixel resolution rather than by anything measured here. That one stays declared.
+
 So the guidance is a number: read the bends, not the ends. By twenty points the cost is a seventh
 of the budget and by forty it is a thirtieth. This measures the *interpolation* component only —
 the tolerance itself stays declared rather than measured, because no certified claim has used a

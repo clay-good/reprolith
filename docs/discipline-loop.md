@@ -61,13 +61,16 @@ tolerances stay declared, because no certified claim has exercised one — but e
 unqualified "wider, to absorb the extra uncertainty" into a number, and each produced guidance a
 practitioner can act on.
 
-- **Digitized figure — 0.20 / 0.40.** Between two read points the reference is a straight line, so
+- **Digitized figure, curve — 0.20 / 0.40.** Between two read points the reference is a straight line, so
   a *flawless* five-point reading of an oral PK curve misses the curve it was read off by 0.25:
   more than the whole pass budget, with no model involved. At ten points, 0.09; at twenty, 0.025.
   An exponential read off a log axis is recovered exactly at any spacing. Guidance: read about
   twenty points per curve, and more where it bends — which `figure-template` now says up front and
   `figure-check` says when a reading is coarser than that
-  (`tests/test_digitization_interpolation_cost.py`).
+  (`tests/test_digitization_interpolation_cost.py`). The *scalar* digitized band is untouched by
+  this: one value read off a picture is limited by the digitizer's calibration and the plot's pixel
+  resolution, not by anything computed here, so it stays declared rather than borrowing a number
+  measured for something else.
 - **Distributional band — 15% / 35%.** An envelope is percentiles of a finite sample, so drawing the
   *right* population twice moves the 5th percentile. The worst of three bands misses the 15% budget
   47% of the time at twenty subjects and a 30% CV, 12% at fifty, 2% at a hundred, and never in 400
