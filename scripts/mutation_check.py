@@ -174,10 +174,19 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_parameter_values.py"],
     ),
     (
+        "the prefix is dropped, so a paper's millilitres read as the model's litres",
+        "manuscript_values.py",
+        (
+            "            return (scale + power, _UNIT_SPELLINGS[word[len(prefix):]])",
+            "            return (scale, _UNIT_SPELLINGS[word[len(prefix):]])",
+        ),
+        ["tests/test_parameter_values.py"],
+    ),
+    (
         "a paper's litres are compared against a model's millilitres as if they were the same",
         "manuscript_values.py",
         (
-            "        if stated and units != UNSTATED_UNIT and stated != units:",
+            "        if stated and units != UNSTATED_UNIT and _units_differ(stated, units):",
             "        if False:",
         ),
         ["tests/test_parameter_values.py"],

@@ -553,3 +553,49 @@ def test_the_dependency_free_unit_reader_agrees_with_the_one_that_uses_libsbml()
             assert without(by_id[defined.getId()]) == with_libsbml(defined), defined.getId()
             compared += 1
     assert compared >= 8, "this would pass vacuously on a model that defines no units"
+
+
+def test_the_unit_an_author_writes_and_the_one_sbml_states_are_read_to_the_same_thing() -> None:
+    """No author writes `10^-3 litre`. They write `mL`.
+
+    Comparing the model's rendered unit against the author's as strings would refuse every pairing
+    anyone would actually make, which turns an opt-in check into a trap — and a check that cries
+    wolf on correct files is a check nobody leaves switched on.
+
+    It normalizes only what it can read exactly: a single factor, a known prefix, a known spelling.
+    Anything else falls back to comparing strings, which errs toward refusing to compare — the safe
+    direction, since a unit read wrongly as another compares two numbers that mean different
+    things, and that is the failure this exists to prevent.
+    """
+    from reprolith.manuscript_values import _canonical_unit, _units_differ
+
+    assert _canonical_unit("mL") == _canonical_unit("ml") == _canonical_unit("millilitre")
+    assert _canonical_unit("mL") == _canonical_unit("10^-3 litre") == (-3, "litre")
+    assert _canonical_unit("nmol") == _canonical_unit("10^-9 mole") == (-9, "mole")
+    # Both characters in use for micro, since a file saved from either keyboard is the same unit.
+    assert _canonical_unit("µmol") == _canonical_unit("μmol") == (-6, "mole")
+    # A metre is not read at all: a bare "m" is both the unit and the milli prefix.
+    assert _canonical_unit("m") is None and _canonical_unit("metre") is None
+    # Nor is anything this module does not render as one factor.
+    assert _canonical_unit("10^-9 mole / 10^-3 litre") is None
+    assert _canonical_unit("3600*second") is None
+
+    assert not _units_differ("mL", "10^-3 litre")
+    assert _units_differ("L", "10^-3 litre")  # the thousandfold pair, still caught
+    assert _units_differ("mg", "10^-3 litre")
+    # Unreadable on either side: compared as strings, so equal passes and anything else refuses.
+    assert not _units_differ("mole / litre", "mole / litre")
+    assert _units_differ("mmol/L", "10^-9 mole / 10^-3 litre")
+
+
+def test_an_author_writing_the_ordinary_spelling_is_not_refused() -> None:
+    """The end of that, on the check itself."""
+    (agreeing,) = check_parameter_values(
+        _UNITS, [{"parameter": "Liver", "reported": 1510, "reported_units": "mL"}]
+    )
+    assert agreeing.agrees is True, agreeing.detail
+
+    (refused,) = check_parameter_values(
+        _UNITS, [{"parameter": "Liver", "reported": 1.51, "reported_units": "L"}]
+    )
+    assert refused.agrees is None and "not comparable" in refused.detail

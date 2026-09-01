@@ -228,6 +228,68 @@ _BASE_UNIT_KINDS = frozenset({
     "second", "siemens", "sievert", "steradian", "tesla", "volt", "watt", "weber",
 })
 
+#: The SI prefixes a paper writes a unit with, as the power of ten SBML states instead. Deca and
+#: hecto are left out: nothing in this domain is written in them, and every entry here is a way for
+#: two spellings of the same quantity to be read as different ones. Micro appears twice because
+#: two characters are in use for it — the micro sign and Greek mu — and a file saved from either
+#: keyboard is the same unit.
+_PREFIXES = {
+    "n": -9, "nano": -9, "µ": -6, "μ": -6, "u": -6, "micro": -6, "m": -3, "milli": -3, "c": -2, "centi": -2,
+    "d": -1, "deci": -1, "": 0, "k": 3, "kilo": 3, "M": 6, "mega": 6,
+}
+
+#: The base kinds a prefix may be written against, by every spelling this accepts. `metre` is
+#: absent on purpose: a bare "m" is both a metre and the milli prefix, and no reading of it is safe
+#: enough to compare a published number against a deposited one.
+_UNIT_SPELLINGS = {
+    "l": "litre", "L": "litre", "litre": "litre", "liter": "litre", "litres": "litre",
+    "liters": "litre",
+    "mol": "mole", "mole": "mole", "moles": "mole",
+    "g": "gram", "gram": "gram", "grams": "gram", "gramme": "gram",
+    "s": "second", "sec": "second", "second": "second", "seconds": "second",
+}
+
+#: A rendered single-factor unit as this module writes one: an optional power of ten, then a kind.
+_RENDERED_UNIT = re.compile(r"^(?:10\^(-?\d+) )?([A-Za-zµμ]+)$")
+
+
+def _canonical_unit(text: str) -> tuple[int, str] | None:
+    """A unit as ``(power of ten, base kind)``, or ``None`` when it cannot be read that way.
+
+    The model's side is rendered from its own ``unitDefinition`` — ``10^-3 litre`` — and no author
+    writes that. They write ``mL``. Comparing the two as strings refuses every pairing an author
+    would actually make, which turns an opt-in check into a trap, so both sides are read down to
+    the same pair before they are compared.
+
+    ``None`` for anything with a multiplier, an exponent, or more than one factor: those fall back
+    to comparing the strings, which errs toward refusing to compare. That is the safe direction —
+    a unit read wrongly as another would compare two numbers that mean different things, which is
+    the whole failure this check exists to prevent.
+    """
+    stripped = text.strip()
+    rendered = _RENDERED_UNIT.match(stripped)
+    if rendered is None:
+        return None
+    scale, word = int(rendered.group(1) or 0), rendered.group(2)
+    if word in _UNIT_SPELLINGS and scale != 0:
+        return (scale, _UNIT_SPELLINGS[word])  # the rendered form: `10^-3 litre`
+    if word in _UNIT_SPELLINGS:
+        return (0, _UNIT_SPELLINGS[word])
+    # A prefixed spelling: the longest prefix that leaves a unit this knows.
+    for prefix, power in sorted(_PREFIXES.items(), key=lambda item: -len(item[0])):
+        if prefix and word.startswith(prefix) and word[len(prefix):] in _UNIT_SPELLINGS:
+            return (scale + power, _UNIT_SPELLINGS[word[len(prefix):]])
+    return None
+
+
+def _units_differ(stated: str, declared: str) -> bool:
+    """Whether an author's unit and the model's declared one are different quantities."""
+    if stated == declared:
+        return False
+    one, other = _canonical_unit(stated), _canonical_unit(declared)
+    return one != other if one is not None and other is not None else True
+
+
 #: Which attribute names each kind's unit. A species' is its *substance* unit; when the value read
 #: is an ``initialConcentration`` the unit is that per the compartment's own, which is composed
 #: below rather than reported as if the species were an amount.
@@ -485,7 +547,7 @@ def check_parameter_values(
             ))
             continue
         stated = str(record.get("reported_units") or "")
-        if stated and units != UNSTATED_UNIT and stated != units:
+        if stated and units != UNSTATED_UNIT and _units_differ(stated, units):
             # Refused rather than compared, and never called a mismatch: the numbers are not in the
             # same quantity, so neither agreement nor disagreement between them means anything. A
             # paper's millilitres against a model's litres agree numerically at a factor of a
