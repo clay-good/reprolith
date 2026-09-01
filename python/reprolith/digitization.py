@@ -363,10 +363,20 @@ def interpolation_cost(series: DigitizedSeries) -> dict[str, Any]:
     is why nothing here divides it down: a fixed correction would under-state the cost by four-fold
     exactly where the reading is worst.
 
-    What it cannot see is curvature the reading never resolved. A spike falling entirely between
-    two read points leaves no residual at any read point, and no statistic computed from the
-    reading can find it. This measures how much the reading disagrees with itself, which is a lower
-    bound on how much it disagrees with the figure.
+    That over-statement is about the curvature the reading *resolved*. What it cannot see at all is
+    curvature the reading never resolved: a spike falling entirely between two read points leaves
+    no residual at any read point, and no statistic computed from the reading can find it. So this
+    is not a bound on the true cost in general — it is a measurement of how much a reading
+    disagrees with itself, generous about what it can see and blind to what it cannot.
+
+    One more fence, and it is the reading's own window. The residual is normalized by the range of
+    everything the curator read, while the claim is judged over the run's window — which
+    :func:`window_faults` requires the reading to *cover* and therefore permits it to exceed. A
+    reading spanning 0-24 h judged on a run over 0-12 h is normalized here by a range the verdict
+    never uses, and if the unjudged half is where the curve does most of its moving, this number is
+    divided by too much — measured at 2.3x on a curve that barely moves over the judged half and
+    swings over the unjudged one. The 1.0x-3.9x over-statement above was taken with the two windows
+    equal, which is the ordinary case `figure-template` produces.
 
     ``budget_share`` is the number to act on: the residual carried through the same normalization
     and rescaling :func:`~reprolith.oracle.judge_curve` applies to a worst point, as a fraction of
@@ -374,6 +384,8 @@ def interpolation_cost(series: DigitizedSeries) -> dict[str, Any]:
     to spend the whole budget before the model is consulted.
     """
     read = [y for _, y in series.points]
+    # Same keys in the same order as the measured result below, so a consumer serializing either
+    # gets one shape rather than two that happen to carry the same names.
     blank: dict[str, Any] = {
         "points": len(read),
         "measurable": False,

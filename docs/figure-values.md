@@ -220,6 +220,13 @@ residual at any read point, and no statistic computed from the reading can find 
 a bound on the true cost in general — it is a measurement of how much a reading disagrees with
 itself, generous about what it can see and blind to what it cannot.
 
+There is one more fence and it runs the other way. The residual is divided by the range of
+everything the curator read, while the claim is judged over the run's window — which a reading is
+required to *cover* and so permitted to exceed. A reading spanning 0-24 h judged on a run over
+0-12 h is normalized by a range the verdict never uses, and measured on a curve that barely moves
+over the judged half and swings over the unjudged one, that divides the number by 2.3x too much.
+The table above was measured with the two windows equal, which is what `figure-template` produces.
+
 Three things it buys that the gap could not. A straight line and a log-axis exponential score
 exactly zero however coarsely they are read, so the false alarm goes away. The false *reassurance*
 goes with it, and that is the larger half: ten evenly spaced points span 11% each, below the 20%

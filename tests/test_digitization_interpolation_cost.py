@@ -234,3 +234,39 @@ def test_it_catches_a_reading_the_gap_heuristic_calls_fine() -> None:
                     "points": [[24 * i / 9, _oral_pk(24 * i / 9)] for i in range(10)]}],
     }))
     assert series_resolution(series)["widest_gap_fraction"] < 0.20
+
+
+def test_a_reading_wider_than_the_run_is_normalized_by_a_range_the_verdict_never_uses() -> None:
+    """The one direction this number can under-state, measured rather than only warned about.
+
+    The residual is divided by the range of everything the curator read. The claim is judged over
+    the run's window, which `window_faults` requires the reading to *cover* — and therefore permits
+    it to exceed. Read a curve that barely moves over the judged half and swings over the unjudged
+    one, and the same bend is divided by a much larger number than the verdict will use.
+    """
+    def two_halves(t: float) -> float:
+        # Flat-ish with one bend before 12 h; a large excursion after it that no run will judge.
+        return 1.0 + 0.4 * math.sin(math.pi * t / 12.0) if t <= 12.0 else 1.0 + 3.0 * (t - 12.0)
+
+    read_at = [24.0 * i / 8 for i in range(9)]
+    judged_at = [t for t in read_at if t <= 12.0]
+
+    def cost_over(points: list[float]) -> float:
+        low = min(two_halves(t) for t in points)
+        high = max(two_halves(t) for t in points)
+        (series,) = read_digitized_figure(json.dumps({
+            "figure": "f", "digitizer": "none",
+            "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+            "y_axis": {"minimum": 0.0, "maximum": high * 1.5, "unit": "u"},
+            "series": [{"claim": "c", "curve": "q", "points": [[t, two_halves(t)] for t in points]}],
+        }))
+        assert high > low  # the frame is real, not a degenerate band
+        return interpolation_cost(series)["budget_share"]
+
+    whole = cost_over(read_at)
+    judged = cost_over(judged_at)
+    # The same readings over the judged half cost 2.3x what the full reading reports (0.73 against
+    # 0.32), because the full reading's range is set by an excursion the verdict never sees. The
+    # docstring states this fence; this is its size, so a later reader can weigh it rather than
+    # take the word "under-states" on trust.
+    assert judged > 2 * whole
