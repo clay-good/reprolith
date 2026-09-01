@@ -92,6 +92,14 @@ that bend adds to the scale, is cost nothing is judged on. Charged against the w
 reading of a curve that bends inside the run and climbs steeply after it reported 0.93 where the
 run's own window carries 2.0.
 
+A *single* value read off a picture — a peak height, a reported Cmax — has no interpolation for any
+of that to measure, and its own cost turns on something a curator can act on before reading
+anything. A click off by a pixel is off by one pixel's worth of the axis, so on a **linear** axis
+what it costs depends on where in the axis the value sits: on a 0-10 axis drawn 600 px tall, half a
+pixel is 0.6% of the pass budget at the peak, 56% at a hundredth of it, and the whole budget below
+0.56% of the span. On a **log** axis a pixel is a constant ratio and costs 3.9% wherever it is read.
+A value read low on a linear axis is not readable in this band; the same value on a log axis is.
+
 It reaches all three people who need it. The **curator** sees it in `figure-check`, before the
 reading is used, over the run their document states. The **certificate** carries it, over the grid
 the claim was judged on, because a reader who sees `[figure-reading]` and a
