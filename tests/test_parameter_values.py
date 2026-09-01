@@ -193,3 +193,40 @@ def test_the_shipped_metformin_model_has_six_values_its_paper_does_not_print() -
         "Metformin_Dose_in_Lumen_in_mg", "Qgfr",
     )
     assert len(reported) == 10  # ten of the sixteen settable parameters are reported
+
+
+def test_how_much_of_this_paper_s_own_inputs_it_publishes() -> None:
+    """The first measurement here about a paper's *inputs* rather than its outputs.
+
+    Every certificate in this repository checks outputs. This counts, across all four models the
+    metformin paper deposited, how many of their settable parameters the paper pairs with a printed
+    value: **40 of 62**, so 22 are values a reproducer rebuilding from the paper alone would have
+    to take from the deposit or guess. The same handful recurs in every model — the body weight,
+    the cardiac output, the glomerular filtration flow, the dose.
+
+    Stated as a fact about *this paper*, which is what four models by one group can support. It is
+    not a survey, and nothing here should be read as a rate for the literature.
+
+    The pairing is the curator's, as it is everywhere else: "reported" means a curator paired the
+    parameter with a value they found printed, not that a rule decided the paper reports it.
+    """
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import parameters_the_paper_does_not_state
+    from reprolith.manuscript_values import _declared_parameters
+
+    repo = Path(__file__).resolve().parents[1]
+    entries = json.loads(
+        (repo / "datasets" / "pkpd_parameters.json").read_text(encoding="utf-8")
+    )["entries"]
+    assert len(entries) == 4, "the four models the metformin paper deposited"
+
+    paired = settable = 0
+    for entry in entries.values():
+        sbml = (repo / "datasets" / "worked_examples" / entry["model"]).read_text(encoding="utf-8")
+        declared, determined = _declared_parameters(sbml)
+        settable += sum(1 for name in declared if name not in determined)
+        paired += len(entry["parameters"])
+        # Every model leaves some unstated, so the finding is not one deposit's oddity.
+        assert parameters_the_paper_does_not_state(sbml, entry["parameters"])
+
+    assert (paired, settable) == (40, 62)

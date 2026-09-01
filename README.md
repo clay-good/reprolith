@@ -252,6 +252,12 @@ own math determines is not counted: it does not run at the number in its `value`
 paper omits nothing by leaving it out. Reported, never gated — which of the six belong in a paper
 is the author's call.
 
+Across all four models that paper deposited the count is **40 of 62** settable parameters paired
+with a printed value, and the same handful is missing from each. That is the first measurement here
+about a paper's *inputs* rather than its outputs — every certificate above checks outputs — and it
+is a fact about this paper, which is what four models by one group can support. It is not a survey,
+and nothing here is a rate for the literature.
+
 `figure-template` and `figure-check` are the same shape for the other half of claim extraction.
 The template writes the one mechanical part of a digitization — which curve of your document each
 series is the reading for, an id nobody could guess and that has to match exactly — and leaves
