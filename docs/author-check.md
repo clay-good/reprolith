@@ -29,8 +29,8 @@ otherwise — so it drops into a pre-submission hook or a CI job.
 | **Do your two files agree?** | An override aimed at a parameter the model does not have overrides nothing, so the run silently reproduces the *unmodified* model and looks fine. Every target is resolved by its nesting in the model, so an override aimed at the right name inside the wrong parent is caught. |
 | **Does it say what you published?** | A document whose outputs are all `report`s states no published result: it can be run, but there is nothing to check it against. A `plot` is your own statement that a curve is a shown result. If your paper prints its results as *numbers* rather than plotting them, no document can say so — SED-ML has no way to state "the peak of this curve is the published value" — so the route is `--claims`, below, and the fix list says so rather than asking you to plot a curve you never showed. |
 | **Can they adopt your run verbatim?** | A parameter scan, a model the document modifies, or a window that does not start at zero all mean a reproducer must reconstruct the run rather than read it. |
-| **Does your model carry the values you published?** | Only `params-check`, and only for the parameters you pair up. Your paper's parameter table says `Kt:p` for liver is 5.5; your deposit says whatever it says. Every reproduction in this repository would pass a model whose inputs differ from its paper, because reproductions check outputs. |
-| **Which values did you not publish at all?** | `params-check` names them: the model's own *settable* parameters that your file pairs with nothing, which a reproducer rebuilding from your paper has to take from your deposit or guess. Reported, never gated — which of them belong in a paper is your call. A parameter an `initialAssignment` or a rule determines is not counted: it does not run at the number in its `value` attribute, so you omit nothing by leaving it out. On the shipped metformin model, ten of the sixteen settable parameters are reported and six are not — the body weight, the cardiac output, and the dose. |
+| **Does your model carry the values you published?** | Only `params-check`, and only for the values you pair up — a parameter, a compartment's size, or a species' initial amount or concentration, since a PBPK table's tissue volumes are compartments and its initial conditions are species. Your paper's parameter table says `Kt:p` for liver is 5.5; your deposit says whatever it says. Every reproduction in this repository would pass a model whose inputs differ from its paper, because reproductions check outputs. |
+| **Which values did you not publish at all?** | `params-check` names them by kind — parameters, compartment sizes, species initial conditions — every settable value your file pairs with nothing, which a reproducer rebuilding from your paper has to take from your deposit or guess. Reported, never gated — which of them belong in a paper is your call. A value an `initialAssignment` or a rule determines is not counted: it does not run at the number in its declaring attribute, so you omit nothing by leaving it out. On the shipped metformin model, ten of the sixteen settable parameters are reported and six are not — the body weight, the cardiac output, and the dose. Sixteen of its twenty compartments are scaled from the body weight that way, so four volumes are counted and not twenty. |
 | **Does it run what your paper reports?** | Only with `--claims`. See below — this is the one nothing in your archive can answer, and the one that fails most quietly. |
 
 ## The claims file
@@ -113,8 +113,9 @@ Every file validates. The run completes. The number is close. That is the failur
 
 ## The parameters file
 
-`params-check` reads a JSON file pairing each model parameter id with the value your paper reports
-for it:
+`params-check` reads a JSON file pairing each model value id with the number your paper reports
+for it. An id may name a parameter, a compartment whose `size` is a tissue volume, or a species
+whose initial amount or concentration is an initial condition:
 
 ```json
 {"parameters": [
@@ -129,7 +130,7 @@ mismatch against a parameter you never meant.
 Two things it will not do. It compares **at the precision your paper printed**: a table printing
 `0.7` against a model carrying `0.73` agrees, because the table cannot tell `0.73` from `0.749`,
 and demanding equality would accuse a correct deposit. And it never compares a value an
-`initialAssignment` or a rule overrides — the number in that `value` attribute is not what runs, so
+`initialAssignment` or a rule overrides — the number in that attribute is not what runs, so
 agreement with it would be the most confident wrong answer available. Those are reported as *not
 compared*, separately from a mismatch, and they do not fail the command.
 

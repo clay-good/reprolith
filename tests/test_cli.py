@@ -787,6 +787,41 @@ def test_params_check_does_not_fail_on_a_value_it_could_not_compare(tmp_path, ca
     assert "not compared" in printed and "MISMATCH" not in printed
 
 
+def test_params_check_pairs_a_published_volume_with_its_compartment(tmp_path, capsys):
+    """A PBPK table's tissue volumes are compartments and its initial conditions are species.
+
+    Reading only the parameter list, the command answered a correct pairing with a mismatch against
+    a model carrying the published number — and its "what you did not report" list could not see
+    either kind at all.
+    """
+    model = tmp_path / "model.xml"
+    model.write_text(
+        '<?xml version="1.0"?><sbml xmlns="http://www.sbml.org/sbml/level2/version4" '
+        'level="2" version="4"><model id="m">'
+        '<listOfCompartments><compartment id="Liver" size="1.51"/>'
+        '<compartment id="Lumen" size="0.6"/></listOfCompartments>'
+        '<listOfSpecies><species id="mLiver" compartment="Liver" initialAmount="0"/>'
+        '</listOfSpecies>'
+        '<listOfParameters><parameter id="Ktp_Liver" value="5.5"/></listOfParameters>'
+        '</model></sbml>',
+        encoding="utf-8",
+    )
+    parameters = tmp_path / "parameters.json"
+    parameters.write_text(json.dumps({"parameters": [
+        {"parameter": "Liver", "reported": 1.5, "source_location": "Table 2, Liver volume"},
+    ]}), encoding="utf-8")
+
+    assert run(["params-check", "--model", str(model), "--parameters", str(parameters)]) == 0
+    printed = capsys.readouterr().out
+    assert "MISMATCH" not in printed
+    assert "the compartment carries 1.51" in printed
+    # And what it could not check is named by kind, not folded into one list of "parameters".
+    assert "3 settable value(s) your paper does not report" in printed
+    assert "compartment: Lumen" in printed
+    assert "species: mLiver" in printed
+    assert "parameter: Ktp_Liver" in printed
+
+
 def test_params_check_on_something_that_is_not_sbml_is_a_message(tmp_path, capsys):
     model = tmp_path / "model.xml"
     model.write_text("not xml at all", encoding="utf-8")

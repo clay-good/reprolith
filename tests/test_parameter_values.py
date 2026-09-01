@@ -230,3 +230,134 @@ def test_how_much_of_this_paper_s_own_inputs_it_publishes() -> None:
         assert parameters_the_paper_does_not_state(sbml, entry["parameters"])
 
     assert (paired, settable) == (40, 62)
+
+
+_VOLUMES_AND_INITIAL_CONDITIONS = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m">
+    <listOfCompartments>
+      <compartment id="Liver" size="1.51" constant="true"/>
+      <compartment id="Kidney" size="0.154" constant="true"/>
+      <compartment id="Muscle" size="27.0" constant="false"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="mLiver" compartment="Liver" initialAmount="0" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>
+      <species id="cPlasma" compartment="Kidney" initialConcentration="6.1"
+               boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="Ktp_Liver" value="5.5" constant="true"/>
+    </listOfParameters>
+    <listOfInitialAssignments>
+      <initialAssignment symbol="Muscle">
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><ci>Ktp_Liver</ci></math>
+      </initialAssignment>
+    </listOfInitialAssignments>
+  </model>
+</sbml>
+"""
+
+
+def test_a_published_tissue_volume_is_checked_against_the_compartment_that_carries_it() -> None:
+    """A PBPK paper's parameter table prints tissue volumes, and those are not parameters.
+
+    The check read only `listOfParameters`, so a curator pairing their published liver volume with
+    the compartment that holds it was answered `MISMATCH: the model declares no parameter 'Liver'`
+    — against a model carrying the very number the paper prints. That is the worst answer an
+    author-facing check can give: confident, wrong, and about a correct deposition. Initial
+    conditions are the same shape, and a species declares its own in either of two attributes.
+    """
+    checks = {
+        c.parameter: c
+        for c in check_parameter_values(
+            _VOLUMES_AND_INITIAL_CONDITIONS,
+            [
+                {"parameter": "Liver", "reported": 1.5, "source_location": "Table 2"},
+                {"parameter": "Kidney", "reported": 0.3, "source_location": "Table 2"},
+                {"parameter": "mLiver", "reported": 0.0, "source_location": "Methods"},
+                {"parameter": "cPlasma", "reported": 6.1, "source_location": "Methods"},
+            ],
+        )
+    }
+    assert checks["Liver"].agrees is True
+    assert checks["Liver"].carried == 1.51
+    assert "the compartment carries 1.51" in checks["Liver"].detail
+    # And it still disagrees when it should: 0.154 is 0.2 at one printed place, not 0.3.
+    assert checks["Kidney"].agrees is False
+    assert checks["mLiver"].agrees is True
+    # initialConcentration, not initialAmount — whichever the species declares is its value.
+    assert checks["cPlasma"].agrees is True
+    assert checks["cPlasma"].carried == 6.1
+
+
+def test_a_volume_the_models_own_math_sets_is_not_compared_against_the_paper() -> None:
+    """The inert-attribute discipline, one level up from parameters.
+
+    Sixteen of the twenty compartments in each deposited metformin model are scaled from the body
+    weight by an `initialAssignment`, so the number in their `size` attribute is not what runs.
+    Comparing one against a paper is the most confident wrong answer available — agreement with a
+    number that never reaches the integrator — and it is refused by name, as `not compared` rather
+    than as a mismatch.
+    """
+    (check,) = check_parameter_values(
+        _VOLUMES_AND_INITIAL_CONDITIONS,
+        [{"parameter": "Muscle", "reported": 27.0, "source_location": "Table 2"}],
+    )
+    assert check.agrees is None
+    assert disagreeing_parameters((check,)) == ()
+    assert "initialAssignment" in check.detail and "size attribute" in check.detail
+
+
+def test_the_omission_report_names_volumes_and_initial_conditions_by_their_own_kind() -> None:
+    """The parameter floor could not see the two lists it never read.
+
+    A tissue volume is a compartment and an initial condition is a species, and a paper that prints
+    neither leaves a reproducer taking both from the deposit or guessing. Grouped by kind, because
+    naming a compartment in a list called "parameters" would answer about the wrong thing — and
+    because the parameter count this repository publishes has to stay a count of parameters.
+    """
+    from reprolith import parameters_the_paper_does_not_state, quantities_the_paper_does_not_state
+
+    reported = [{"parameter": "Ktp_Liver", "reported": 5.5, "source_location": "Table 3"}]
+    assert quantities_the_paper_does_not_state(_VOLUMES_AND_INITIAL_CONDITIONS, reported) == {
+        "compartment": ("Kidney", "Liver"),  # Muscle is set by an initialAssignment
+        "species": ("cPlasma", "mLiver"),
+    }
+    # The parameter slice is unchanged, and is still the number the docs quote.
+    assert parameters_the_paper_does_not_state(_VOLUMES_AND_INITIAL_CONDITIONS, reported) == ()
+
+    # A kind with nothing unstated is left out rather than reported empty.
+    everything = reported + [
+        {"parameter": name, "reported": 1.0, "source_location": "Table 2"}
+        for name in ("Liver", "Kidney", "mLiver", "cPlasma")
+    ]
+    assert quantities_the_paper_does_not_state(_VOLUMES_AND_INITIAL_CONDITIONS, everything) == {}
+
+
+def test_how_much_the_parameter_floor_was_not_counting_on_the_corpus() -> None:
+    """Measured on the four deposited metformin models, not asserted in prose.
+
+    The parameter count is 40 of 62 settable parameters paired with a printed value. Those models
+    carry 96 further settable values the count never looked at: 16 compartment sizes and 80 species
+    initial conditions, none of them paired with anything the paper prints.
+
+    The compartments are the finding, and it runs the other way from the guess: each model declares
+    twenty, and sixteen of them are scaled from the body weight by an `initialAssignment`, so the
+    paper omits nothing by not printing them. What is left settable in every model is four — the
+    lumen and excreta compartments — which is why this is reported and never gated.
+    """
+    repo = Path(__file__).resolve().parents[1]
+    entries = json.loads(
+        (repo / "datasets" / "pkpd_parameters.json").read_text(encoding="utf-8")
+    )["entries"]
+
+    from reprolith import quantities_the_paper_does_not_state
+
+    totals: dict[str, int] = {}
+    for entry in entries.values():
+        sbml = (repo / "datasets" / "worked_examples" / entry["model"]).read_text(encoding="utf-8")
+        for kind, names in quantities_the_paper_does_not_state(sbml, entry["parameters"]).items():
+            totals[kind] = totals.get(kind, 0) + len(names)
+
+    assert totals == {"compartment": 16, "parameter": 22, "species": 80}

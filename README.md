@@ -258,6 +258,20 @@ about a paper's *inputs* rather than its outputs — every certificate above che
 is a fact about this paper, which is what four models by one group can support. It is not a survey,
 and nothing here is a rate for the literature.
 
+That floor had a floor of its own: it read the model's parameter list and nothing else. A PBPK
+paper's parameter table prints **tissue volumes**, and those are compartments; its initial
+conditions are species. So an author pairing their published liver volume with the compartment
+carrying it was told `MISMATCH: the model declares no parameter 'Liver'` — against a deposit
+holding the very number their paper prints. Both are checked now, and named separately when
+unstated, because a volume reported in a list called "parameters" answers about the wrong thing.
+
+The measurement runs the opposite way from the guess. Across those four models the parameter count
+was not seeing **96** further settable values — 16 compartment sizes and 80 initial conditions —
+and the volumes are the finding: each model declares twenty compartments and scales **sixteen** of
+them from the body weight with an `initialAssignment`, so the paper omits nothing by not printing
+them and they are not counted. Four are left, the lumen and excreta compartments. Which is why
+this is reported and never gated.
+
 `figure-template` and `figure-check` are the same shape for the other half of claim extraction.
 The template writes the one mechanical part of a digitization — which curve of your document each
 series is the reading for, an id nobody could guess and that has to match exactly — and leaves

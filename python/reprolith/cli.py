@@ -47,7 +47,7 @@ from .manuscript_values import (
     check_claim_values,
     check_parameter_values,
     disagreeing_parameters,
-    parameters_the_paper_does_not_state,
+    quantities_the_paper_does_not_state,
     unsupported_claims,
 )
 from .mcp_server import default_data_dir, load_repository
@@ -511,15 +511,16 @@ def _cmd_params_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"cannot read the model: {unreadable}", file=sys.stderr)
         return 1
 
-    # What the check could not see: the model's own settable parameters no record pairs. Checking
-    # only what the paper reports is a floor that cannot count what it never looked at, and the
-    # number it hid is the one this project is about — a parameter the paper omits is a value a
-    # reproducer has to take from the author's file, or guess.
-    unstated = parameters_the_paper_does_not_state(model, records)
+    # What the check could not see: every settable quantity no record pairs. Checking only what the
+    # paper reports is a floor that cannot count what it never looked at, and the number it hid is
+    # the one this project is about — a value the paper omits is one a reproducer has to take from
+    # the author's file, or guess. Grouped by kind, because a tissue volume is a compartment and an
+    # initial condition is a species, and neither is a parameter.
+    unstated = quantities_the_paper_does_not_state(model, records)
     if args.json:
         _print_json({
             "checks": [c.to_dict() for c in checks],
-            "not_reported_by_the_paper": list(unstated),
+            "not_reported_by_the_paper": {k: list(v) for k, v in unstated.items()},
         })
     else:
         print(f"{len(checks)} PARAMETER(S) CHECKED AGAINST {Path(args.model).name}")
@@ -532,11 +533,13 @@ def _cmd_params_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             # could not be compared is not a value that is wrong.
             print(f"  ({len(uncompared)} parameter(s) were not compared — see the reason on each)")
         if unstated:
-            # Reported, never gated: a model has parameters no paper would print, and which of
-            # these belong in one is the author's call.
-            print(f"  {len(unstated)} settable parameter(s) your paper does not report, which a "
-                  "reproducer would have to take from your file or guess:")
-            print(f"      {', '.join(unstated)}")
+            # Reported, never gated: a model has values no paper would print, and which of these
+            # belong in one is the author's call.
+            total = sum(len(names) for names in unstated.values())
+            print(f"  {total} settable value(s) your paper does not report, which a reproducer "
+                  "would have to take from your file or guess:")
+            for kind, names in unstated.items():
+                print(f"      {kind}: {', '.join(names)}")
     return 1 if disagreeing_parameters(checks) else 0
 
 

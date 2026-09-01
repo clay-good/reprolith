@@ -174,6 +174,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_parameter_values.py"],
     ),
     (
+        "the input check reads the parameter list again and not the volumes or initial conditions",
+        "manuscript_values.py",
+        (
+            '    "compartment": ("size",),\n    "species": ("initialAmount", "initialConcentration"),\n',
+            "",
+        ),
+        ["tests/test_parameter_values.py"],
+    ),
+    (
         "a claim value matched in seven cells reads exactly like one matched in one",
         "manuscript_values.py",
         (

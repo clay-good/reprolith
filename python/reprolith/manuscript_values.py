@@ -209,19 +209,42 @@ def _localname(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
 
 
-def _declared_parameters(model_sbml: str) -> tuple[dict[str, float | None], set[str]]:
-    """The model's own parameters by id, and the ids whose declared value is inert.
+#: Which SBML element carries a settable number, and the attribute that holds it.
+#:
+#: A model's runnable state is not only its parameter table. A compartment's ``size`` is a PBPK
+#: model's tissue volume and a species' initial amount is its initial condition, and a paper that
+#: omits either leaves a reproducer guessing exactly as a missing parameter does. A curator pairing
+#: a published liver volume with the compartment that carries it used to be told the model declares
+#: no such parameter — a mismatch reported against a model holding the very number the paper prints.
+#:
+#: A species declares at most one of the two attributes; whichever is present is the value.
+_VALUE_ATTRIBUTES: dict[str, tuple[str, ...]] = {
+    "parameter": ("value",),
+    "compartment": ("size",),
+    "species": ("initialAmount", "initialConcentration"),
+}
+
+#: The element list each kind lives in. Only the model's own lists are read: a parameter local to a
+#: reaction is scoped to that reaction and is not what a paper's parameter table names.
+_QUANTITY_CONTAINERS: dict[str, str] = {
+    "listOfParameters": "parameter",
+    "listOfCompartments": "compartment",
+    "listOfSpecies": "species",
+}
+
+
+def _declared_quantities(
+    model_sbml: str,
+) -> tuple[dict[str, tuple[str, float | None]], set[str]]:
+    """The model's own settable quantities by id — kind and value — and the ids that are inert.
 
     Dependency-free on purpose: this module runs on the core gate, where libSBML is not installed.
 
-    The second half is the point. A parameter an ``initialAssignment`` or an ``assignment``/``rate``
-    rule sets does not run at the number in its ``value`` attribute, and this repository has been
+    The second half is the point. A quantity an ``initialAssignment`` or an ``assignment``/``rate``
+    rule sets does not run at the number in its declaring attribute, and this repository has been
     caught three times over reading such an attribute as if it were live. Comparing one against a
     paper would produce the most confident wrong answer available: agreement with a number that
     never reaches the integrator.
-
-    Only the model's own ``listOfParameters`` is read. A parameter local to a reaction is scoped to
-    that reaction and is not what a paper's parameter table names.
     """
     try:
         root = ET.fromstring(model_sbml)
@@ -233,22 +256,30 @@ def _declared_parameters(model_sbml: str) -> tuple[dict[str, float | None], set[
     )
     if model is None:
         raise ValueError("the SBML document contains no model element")
-    values: dict[str, float | None] = {}
+    values: dict[str, tuple[str, float | None]] = {}
     overridden: set[str] = set()
     for container in model:
         name = _localname(container.tag)
-        if name == "listOfParameters":
-            for parameter in container:
-                if _localname(parameter.tag) != "parameter":
+        if name in _QUANTITY_CONTAINERS:
+            kind = _QUANTITY_CONTAINERS[name]
+            for element in container:
+                if _localname(element.tag) != kind:
                     continue
-                identifier = parameter.get("id")
+                identifier = element.get("id")
                 if not identifier:
                     continue
-                raw = parameter.get("value")
+                raw = next(
+                    (
+                        element.get(attribute)
+                        for attribute in _VALUE_ATTRIBUTES[kind]
+                        if element.get(attribute) is not None
+                    ),
+                    None,
+                )
                 try:
-                    values[identifier] = None if raw is None else float(raw)
+                    values[identifier] = (kind, None if raw is None else float(raw))
                 except ValueError:
-                    values[identifier] = None
+                    values[identifier] = (kind, None)
         elif name == "listOfInitialAssignments":
             overridden.update(
                 assignment.get("symbol") or "" for assignment in container
@@ -257,6 +288,19 @@ def _declared_parameters(model_sbml: str) -> tuple[dict[str, float | None], set[
             overridden.update(rule.get("variable") or "" for rule in container)
     overridden.discard("")
     return values, overridden
+
+
+def _declared_parameters(model_sbml: str) -> tuple[dict[str, float | None], set[str]]:
+    """The parameter slice of :func:`_declared_quantities`, kept as its own name.
+
+    The parameter count this repository publishes is a count of *parameters*, and folding
+    compartments and species into it would silently redefine a measured number rather than add one.
+    """
+    quantities, overridden = _declared_quantities(model_sbml)
+    return (
+        {name: value for name, (kind, value) in quantities.items() if kind == "parameter"},
+        overridden,
+    )
 
 
 def _printed_decimals(value: float) -> int:
@@ -280,8 +324,13 @@ def check_parameter_values(
     equality would accuse a correct deposition of a mismatch its own source cannot support. The
     consequence travels with the answer: this establishes that the model is consistent with the
     printed value, not that it holds the value the authors fitted.
+
+    A record may name any settable quantity the model declares — a parameter, a compartment's size,
+    or a species' initial amount or concentration. A PBPK paper's parameter table prints tissue
+    volumes, and those are compartments; pairing one used to be answered with a mismatch against a
+    model carrying the published number.
     """
-    values, overridden = _declared_parameters(model_sbml)
+    values, overridden = _declared_quantities(model_sbml)
     results: list[ParameterCheck] = []
     for record in parameters:
         identifier = str(record.get("parameter") or "")
@@ -296,22 +345,23 @@ def check_parameter_values(
         if identifier not in values:
             results.append(ParameterCheck(
                 identifier, reported, None, False,
-                f"the model declares no parameter {identifier!r}",
+                f"the model declares no parameter, compartment or species {identifier!r}",
             ))
             continue
+        kind, carried = values[identifier]
+        attribute = " or ".join(_VALUE_ATTRIBUTES[kind])
         if identifier in overridden:
             results.append(ParameterCheck(
-                identifier, reported, values[identifier], None,
-                f"{identifier} is set by an initialAssignment or a rule, so the number in its "
-                "value attribute is not what runs and comparing it would answer about the wrong "
-                "quantity",
+                identifier, reported, carried, None,
+                f"the {kind} {identifier} is set by an initialAssignment or a rule, so the number "
+                f"in its {attribute} attribute is not what runs and comparing it would answer "
+                "about the wrong quantity",
             ))
             continue
-        carried = values[identifier]
         if carried is None:
             results.append(ParameterCheck(
                 identifier, reported, None, None,
-                f"{identifier} declares no value, so there is nothing to compare",
+                f"the {kind} {identifier} declares no {attribute}, so there is nothing to compare",
             ))
             continue
         places = _printed_decimals(reported)
@@ -320,10 +370,10 @@ def check_parameter_values(
         results.append(ParameterCheck(
             identifier, reported, carried, agrees,
             (
-                f"the model carries {carried:g}, which is {reported:g} at the "
+                f"the {kind} carries {carried:g}, which is {reported:g} at the "
                 f"{places} decimal place(s) the paper prints"
                 if agrees
-                else f"the model carries {carried:g}, which is {rounded:g} at the "
+                else f"the {kind} carries {carried:g}, which is {rounded:g} at the "
                 f"{places} decimal place(s) the paper prints, not {reported:g}"
             ),
         ))
@@ -361,6 +411,34 @@ def parameters_the_paper_does_not_state(
     )
 
 
+def quantities_the_paper_does_not_state(
+    model_sbml: str, records: Sequence[Mapping[str, Any]]
+) -> dict[str, tuple[str, ...]]:
+    """Every settable quantity no supplied record pairs, grouped by kind.
+
+    :func:`parameters_the_paper_does_not_state` answers this for the model's parameter table, which
+    is the half a paper's parameter *table* is about. It is the same floor one level up: a PBPK
+    model's tissue volumes are compartments and its initial conditions are species, and a paper
+    that prints neither leaves a reproducer taking both from the deposit or guessing — which the
+    parameter count could not see, because it never looked at those lists.
+
+    Kinds with nothing unstated are omitted, so an author who paired everything gets an empty
+    mapping rather than three empty lists. Inert quantities are excluded for the reason
+    :func:`_declared_quantities` gives, and nothing here is judged: which of these belong in a
+    paper is the author's call, as it is for a parameter.
+
+    Raises ``ValueError`` if the model is not parseable SBML.
+    """
+    declared, determined = _declared_quantities(model_sbml)
+    paired = {str(record.get("parameter") or "") for record in records}
+    unstated: dict[str, list[str]] = {}
+    for name, (kind, _value) in declared.items():
+        if name in determined or name in paired:
+            continue
+        unstated.setdefault(kind, []).append(name)
+    return {kind: tuple(sorted(names)) for kind, names in sorted(unstated.items())}
+
+
 def disagreeing_parameters(checks: Sequence[ParameterCheck]) -> tuple[ParameterCheck, ...]:
     """The checks that came back false — a value the model does not carry.
 
@@ -388,5 +466,6 @@ __all__ = [
     "check_parameter_values",
     "disagreeing_parameters",
     "parameters_the_paper_does_not_state",
+    "quantities_the_paper_does_not_state",
     "unsupported_claims",
 ]
