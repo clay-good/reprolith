@@ -399,6 +399,11 @@ def interpolation_cost(
     still reports the whole reading — a reading with no document beside it has no window to be
     judged over, and inventing one would be stating what a run does from a picture of it.
 
+    The window must lie inside what was read, which is the condition :func:`window_faults` already
+    holds a reading to. One reaching past either end raises, and deliberately is not clipped to the
+    span: clipping would return a number measured over a different window than the one asked for,
+    with nothing saying so.
+
     ``budget_share`` is the number to act on: the residual carried through the same normalization
     and rescaling :func:`~reprolith.oracle.judge_curve` applies to a worst point, as a fraction of
     the digitized-figure pass threshold. Above 1.0 the reading's own straight lines are estimated

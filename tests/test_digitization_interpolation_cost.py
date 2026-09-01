@@ -302,3 +302,72 @@ def test_a_window_narrower_than_one_gap_is_reported_as_not_measurable() -> None:
     assert narrow["measurable"] is False
     assert narrow["window"] == [0.0, 4.0]
     assert narrow["budget_share"] is None
+
+
+def test_the_windowed_cost_is_the_old_number_when_no_window_is_given() -> None:
+    """The windowing rewrote how this is computed, and the no-window path must not have moved.
+
+    Every certificate and every `figure-check` report published before the window existed used the
+    old arithmetic. A rewrite that quietly shifted them by a fraction of a percent would be
+    invisible in every hand-written example and wrong in all of them, so the old algorithm is
+    re-implemented here and the two are compared over four hundred random readings on both axis
+    scales — the shapes a curator actually produces, and the degenerate ones they do not.
+    """
+    import random
+
+    def old(series: DigitizedSeries) -> tuple[float, float, float] | None:
+        read = [y for _, y in series.points]
+        if len(read) < 3:
+            return None
+        xs = [series.x_axis.transform(x) for x, _ in series.points]
+        ys = [series.y_axis.transform(y) for _, y in series.points]
+        rejoined = list(read)
+        for i in range(1, len(xs) - 1):
+            weight = (xs[i] - xs[i - 1]) / (xs[i + 1] - xs[i - 1])
+            rejoined[i] = series.y_axis.untransform(
+                ys[i - 1] + weight * (ys[i + 1] - ys[i - 1])
+            )
+        normalized = worst_point_deviation(read, rejoined)
+        worst = max(range(1, len(read) - 1), key=lambda i: abs(rejoined[i] - read[i]))
+        scaled = normalized * (_PASS / _PARTIAL)
+        return series.points[worst][0], normalized, scaled / _PASS
+
+    random.seed(7)
+    compared = 0
+    for _ in range(400):
+        count = random.randint(3, 12)
+        positions = sorted(random.sample(range(0, 240), count))
+        scale = random.choice(["linear", "log10"])
+        (series,) = read_digitized_figure(json.dumps({
+            "figure": "f", "digitizer": "t",
+            "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+            "y_axis": {"minimum": 0.01 if scale == "log10" else 0.0, "maximum": 10,
+                       "unit": "u", "scale": scale},
+            "series": [{"claim": "c", "curve": "q",
+                        "points": [[x / 10.0, round(random.uniform(0.02, 9.9), 3)]
+                                   for x in positions]}],
+        }))
+        new, before = interpolation_cost(series), old(series)
+        assert before is not None and new["measurable"]
+        assert new["worst_at"] == before[0]
+        assert new["normalized"] == pytest.approx(before[1], abs=1e-12)
+        assert new["budget_share"] == pytest.approx(before[2], abs=1e-12)
+        compared += 1
+    assert compared == 400
+
+
+def test_a_window_reaching_past_the_reading_raises_rather_than_being_clipped() -> None:
+    """Clipping would answer about a different window than the one asked for, and say nothing.
+
+    A reading is required to *cover* the run, so a window past either end is a caller error rather
+    than a case to be accommodated — the same condition `window_faults` holds a reading to, at the
+    other end of the same contract.
+    """
+    (series,) = read_digitized_figure(json.dumps({
+        "figure": "f", "digitizer": "t",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 10, "unit": "u"},
+        "series": [{"claim": "c", "curve": "q", "points": [[0, 1.0], [6, 9.0], [12, 5.0]]}],
+    }))
+    with pytest.raises(ValueError, match="only extrapolation"):
+        interpolation_cost(series, window=(0.0, 30.0))
