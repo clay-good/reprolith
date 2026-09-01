@@ -125,9 +125,18 @@ rather than as rows, since pairing one is refused anyway:
 
 ```json
 {"parameters": [
-  {"parameter": "Ktp_Liver", "reported": 5.5, "source_location": "Table 3, Liver row"}
+  {"parameter": "Ktp_Liver", "reported": 5.5, "source_location": "Table 3, Liver row"},
+  {"parameter": "IntestineLumen", "reported": 0.0006, "reported_units": "litre",
+   "source_location": "Table 2, intestinal lumen volume"}
 ]}
 ```
+
+Every answer carries the unit your model declares for that value, resolved through its
+`unitDefinition` — `units="volume"` is a reference, not a unit, and it is the resolved
+`10^-3 litre` that tells you whether your published litres and your deposit's millilitres are the
+same number. State `reported_units` and a difference is **refused** rather than compared: two
+numbers in different quantities mean nothing to each other in either direction, and the pair that
+agrees at a factor of a thousand is the one nothing downstream can catch.
 
 The pairing is yours to make and is never inferred. "Lungs" is `Ktp_Lung` and "Intestine" is
 `Ktp_IntestineVascular`, and no rule would produce either — a check that guessed would report a

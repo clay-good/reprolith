@@ -94,6 +94,10 @@ def test_the_parameters_file_the_guide_shows_is_a_parameters_file(tmp_path: Path
     path.write_text(_json_block_containing('"parameters"'), encoding="utf-8")
     records = _claim_records(path, None)
     sbml = (_WORKED / "Zake2021_Metformin_Mice_PO.xml").read_text(encoding="utf-8")
-    (check,) = check_parameter_values(sbml, records)
-    assert check.parameter == "Ktp_Liver"
-    assert check.agrees is True, check.detail
+    checks = {c.parameter: c for c in check_parameter_values(sbml, records)}
+    assert checks["Ktp_Liver"].agrees is True, checks["Ktp_Liver"].detail
+    # The guide's second row is the unit case it describes, run against the shipped model: the
+    # paper's litres against a deposit's millilitres, refused rather than compared.
+    volume = checks["IntestineLumen"]
+    assert volume.units == "10^-3 litre"
+    assert volume.agrees is None and "not comparable" in volume.detail

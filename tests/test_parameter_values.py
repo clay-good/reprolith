@@ -16,6 +16,7 @@ Dependency-free — the check reads SBML text, not libSBML.
 from __future__ import annotations
 
 import json
+import xml.etree.ElementTree as _ET
 from pathlib import Path
 
 import pytest
@@ -430,3 +431,125 @@ def test_the_template_covers_exactly_what_the_omission_report_would_name() -> No
         }
         paired = {record["parameter"] for record in entry["parameters"]}
         assert rows == unstated | paired
+
+
+_UNITS = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m">
+    <listOfUnitDefinitions>
+      <unitDefinition id="volume">
+        <listOfUnits><unit kind="litre" exponent="1" scale="-3" multiplier="1"/></listOfUnits>
+      </unitDefinition>
+      <unitDefinition id="substance">
+        <listOfUnits><unit kind="mole" exponent="1" scale="-9" multiplier="1"/></listOfUnits>
+      </unitDefinition>
+    </listOfUnitDefinitions>
+    <listOfCompartments>
+      <compartment id="Liver" size="1510" units="volume" constant="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="mLiver" compartment="Liver" initialAmount="0" substanceUnits="substance"
+               boundaryCondition="false" constant="false"/>
+      <species id="cLiver" compartment="Liver" initialConcentration="6.1"
+               substanceUnits="substance" boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="Ktp_Liver" value="5.5" constant="true"/>
+      <parameter id="Qgfr" value="0.28" units="litre" constant="true"/>
+    </listOfParameters>
+  </model>
+</sbml>
+"""
+
+
+def test_the_check_reports_the_unit_the_model_declares_not_the_name_it_declares_it_by() -> None:
+    """A unit is stated by reference, and the reference is not the unit.
+
+    `units="volume"` says nothing to an author comparing their published litres against a model in
+    millilitres — which is the comparison that matters, because the two agree numerically at a
+    factor of a thousand and every check downstream of this one is about outputs. A concentration
+    is substance per its compartment's own unit, and is composed rather than reported as if the
+    species were an amount.
+    """
+    checks = {
+        c.parameter: c
+        for c in check_parameter_values(
+            _UNITS,
+            [
+                {"parameter": "Liver", "reported": 1510},
+                {"parameter": "mLiver", "reported": 0},
+                {"parameter": "cLiver", "reported": 6.1},
+                {"parameter": "Ktp_Liver", "reported": 5.5},
+                {"parameter": "Qgfr", "reported": 0.28},
+            ],
+        )
+    }
+    assert checks["Liver"].units == "10^-3 litre"
+    assert checks["mLiver"].units == "10^-9 mole"
+    assert checks["cLiver"].units == "10^-9 mole / 10^-3 litre"
+    assert checks["Qgfr"].units == "litre"  # already a base kind, needing no definition
+    # A model that names no unit says so, rather than being described by silence.
+    assert checks["Ktp_Liver"].units == "unstated"
+    assert all(c.agrees for c in checks.values())
+
+
+def test_a_value_the_paper_reports_in_another_unit_is_refused_not_compared() -> None:
+    """The one-directional half: it can only turn an answer into "not compared", never into a
+    mismatch. Two numbers in different quantities mean nothing to each other in either direction,
+    and the check that would otherwise pass them is the one this project exists to be trusted on.
+    """
+    (agreeing,) = check_parameter_values(
+        _UNITS, [{"parameter": "Liver", "reported": 1510, "reported_units": "10^-3 litre"}]
+    )
+    assert agreeing.agrees is True
+
+    (refused,) = check_parameter_values(
+        _UNITS, [{"parameter": "Liver", "reported": 1.51, "reported_units": "litre"}]
+    )
+    assert refused.agrees is None
+    assert disagreeing_parameters((refused,)) == ()
+    assert "not comparable as they stand" in refused.detail
+
+    # Saying nothing about units leaves the comparison exactly as it was: this is opt-in, and a
+    # model that declares none has nothing to refuse against.
+    (silent,) = check_parameter_values(_UNITS, [{"parameter": "Liver", "reported": 1510}])
+    assert silent.agrees is True
+    (undeclared,) = check_parameter_values(
+        _UNITS, [{"parameter": "Ktp_Liver", "reported": 5.5, "reported_units": "litre"}]
+    )
+    assert undeclared.agrees is True
+
+
+def test_the_dependency_free_unit_reader_agrees_with_the_one_that_uses_libsbml() -> None:
+    """A second implementation of a rendering this repository has already been wrong about once.
+
+    `ingest._render_unit_definition` puts the multiplier and the scale inside the exponent because
+    doing otherwise states the reciprocal of what the file says — the metformin blood flows came
+    out wrong by 1.3e11. This module cannot call it: it runs on the dependency-free gate, where
+    libSBML is not installed. So the two are held to each other on every committed model rather
+    than trusted to stay in step.
+    """
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    import libsbml
+    from reprolith.ingest import _render_unit_definition as with_libsbml
+    from reprolith.manuscript_values import _render_unit_definition as without
+
+    repo = Path(__file__).resolve().parents[1]
+    entries = json.loads(
+        (repo / "datasets" / "pkpd_parameters.json").read_text(encoding="utf-8")
+    )["entries"]
+    compared = 0
+    for entry in entries.values():
+        path = repo / "datasets" / "worked_examples" / entry["model"]
+        document = libsbml.readSBMLFromString(path.read_text(encoding="utf-8"))
+        model = document.getModel()
+        by_id = {
+            definition.get("id"): definition
+            for definition in _ET.fromstring(path.read_text(encoding="utf-8")).iter()
+            if definition.tag.rsplit("}", 1)[-1] == "unitDefinition"
+        }
+        for index in range(model.getNumUnitDefinitions()):
+            defined = model.getUnitDefinition(index)
+            assert without(by_id[defined.getId()]) == with_libsbml(defined), defined.getId()
+            compared += 1
+    assert compared >= 8, "this would pass vacuously on a model that defines no units"

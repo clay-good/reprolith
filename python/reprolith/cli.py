@@ -561,7 +561,10 @@ def _cmd_params_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"{len(checks)} PARAMETER(S) CHECKED AGAINST {shown}")
         for check in checks:
             mark = {True: "ok", False: "MISMATCH", None: "not compared"}[check.agrees]
-            print(f"  [{check.parameter}] {mark}: {check.detail}")
+            # The unit rides on every answer: two numbers agreeing says nothing until they are in
+            # the same one, and a model in millilitres agrees with a paper in litres at a factor of
+            # a thousand. A model naming no unit is worth saying too — that is the author's to fix.
+            print(f"  [{check.parameter}] {mark} [unit: {check.units}]: {check.detail}")
         uncompared = [c for c in checks if c.agrees is None]
         if uncompared:
             # Never folded in with the mismatches, for the reason claims-check gives: a value that

@@ -274,6 +274,13 @@ them from the body weight with an `initialAssignment`, so the paper omits nothin
 them and they are not counted. Four are left, the lumen and excreta compartments. Which is why
 this is reported and never gated.
 
+Every answer carries the unit the model declares for that value, resolved through its
+`unitDefinition`: `units="volume"` is a reference and not a unit, and it is the resolved
+`10^-3 litre` that tells an author whether their published litres and their deposit's millilitres
+are the same number. State the unit you published in and a difference is **refused** rather than
+compared — two numbers in different quantities mean nothing to each other in either direction, and
+the pair that agrees at a factor of a thousand is the one no output check downstream can catch.
+
 `params-template` writes that pairing file out of the model, one row per settable value with the
 blanks left for the author — and never with a number in them, because a template carrying the
 model's own value would hand the check that value as the paper's and the comparison would agree by

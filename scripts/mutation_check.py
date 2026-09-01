@@ -174,11 +174,20 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_parameter_values.py"],
     ),
     (
+        "a paper's litres are compared against a model's millilitres as if they were the same",
+        "manuscript_values.py",
+        (
+            "        if stated and units != UNSTATED_UNIT and stated != units:",
+            "        if False:",
+        ),
+        ["tests/test_parameter_values.py"],
+    ),
+    (
         "the parameters template fills in the model's own value as the paper's",
         "manuscript_values.py",
         (
-            '{"parameter": name, "kind": kind, "reported": None, "source_location": ""}',
-            '{"parameter": name, "kind": kind, "reported": _value, "source_location": ""}',
+            '            "reported": None,\n            "reported_units": "",',
+            '            "reported": _value,\n            "reported_units": "",',
         ),
         ["tests/test_parameter_values.py"],
     ),

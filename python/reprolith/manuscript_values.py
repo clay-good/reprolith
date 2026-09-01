@@ -44,6 +44,10 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+# The unit vocabulary, from the module that resolves units on the artifact path: one spelling of
+# "unstated", and one Level 2 default table, so the two readers cannot drift apart on either.
+from .ingest import _L2_PREDEFINED_UNITS, UNSTATED_UNIT
+
 #: A table's label as a claim would cite it: "Table 6", "Table S2", "table 4".
 _LABEL = re.compile(r"\btables?\s+([A-Za-z]?\d+[a-z]?)\b", re.IGNORECASE)
 
@@ -194,6 +198,11 @@ class ParameterCheck:
     #: comparable — which is a different fact from disagreeing, and is never folded into it.
     agrees: bool | None
     detail: str
+    #: The unit the model declares for this quantity, resolved through its ``unitDefinition`` —
+    #: ``"unstated"`` when the model names none. Two numbers agreeing says nothing until this is
+    #: the unit the paper printed, and a model in millilitres agreeing with a paper in litres is
+    #: the most confident wrong answer this check can give.
+    units: str = UNSTATED_UNIT
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -202,11 +211,85 @@ class ParameterCheck:
             "carried": self.carried,
             "agrees": self.agrees,
             "detail": self.detail,
+            "units": self.units,
         }
 
 
 def _localname(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
+
+
+#: The base unit kinds SBML names without a definition. `litre` means litre; `unit_0` does not.
+#: Level 2 also accepts the US spellings, and its `Celsius`.
+_BASE_UNIT_KINDS = frozenset({
+    "ampere", "avogadro", "becquerel", "candela", "celsius", "coulomb", "dimensionless", "farad",
+    "gram", "gray", "henry", "hertz", "item", "joule", "katal", "kelvin", "kilogram", "liter",
+    "litre", "lumen", "lux", "meter", "metre", "mole", "newton", "ohm", "pascal", "radian",
+    "second", "siemens", "sievert", "steradian", "tesla", "volt", "watt", "weber",
+})
+
+#: Which attribute names each kind's unit. A species' is its *substance* unit; when the value read
+#: is an ``initialConcentration`` the unit is that per the compartment's own, which is composed
+#: below rather than reported as if the species were an amount.
+_UNIT_ATTRIBUTES = {"parameter": "units", "compartment": "units", "species": "substanceUnits"}
+
+
+def _render_unit_definition(definition: ET.Element) -> str:
+    """A ``unitDefinition`` as a readable product of base kinds, scales and exponents.
+
+    SBML defines each factor as ``(multiplier * 10^scale * kind)^exponent`` — the exponent applies
+    to the whole prefixed quantity, not to the kind alone, and putting the multiplier and scale
+    outside it states the *reciprocal* of what the file says. That is the defect
+    :func:`reprolith.ingest._render_unit_definition` carries the story of, and this is the same
+    rendering without libSBML, so `tests/test_parameter_values.py` holds the two to each other on
+    every committed model rather than trusting that a second implementation stayed in step.
+    """
+    factors = []
+    for unit in definition.iter():
+        # The factors sit inside a `listOfUnits`, not directly under the definition.
+        if _localname(unit.tag) != "unit":
+            continue
+        kind = unit.get("kind") or ""
+        try:
+            exponent = float(unit.get("exponent") or 1.0)
+            scale = int(unit.get("scale") or 0)
+            multiplier = float(unit.get("multiplier") or 1.0)
+        except ValueError:
+            return ""  # a unit whose own numbers do not parse is not a resolution
+        head = ""
+        if multiplier != 1.0:
+            head += f"{multiplier:g}*"
+        if scale != 0:
+            head += f"10^{scale} "
+        if exponent == 1.0:
+            factors.append(f"{head}{kind}")
+        elif head:
+            factors.append(f"({head}{kind})^{exponent:g}")
+        else:
+            factors.append(f"{kind}^{exponent:g}")
+    return " * ".join(factors)
+
+
+def _resolve_unit(unit_id: str, definitions: Mapping[str, str], level: int) -> str:
+    """What a unit reference means, or that the model states none.
+
+    A model names a unit by reference — ``units="volume"`` — and the meaning lives in a
+    ``unitDefinition`` elsewhere in the file. Reporting the reference is not reporting a unit:
+    `volume`, `unit_0` and `substance` say nothing to an author comparing their published
+    millilitres against a model's litres, which is the comparison this exists for.
+    """
+    if not unit_id:
+        return UNSTATED_UNIT
+    resolved = definitions.get(unit_id)
+    if resolved:
+        return resolved
+    if unit_id in _BASE_UNIT_KINDS:
+        return unit_id  # already a base kind: `litre` means litre
+    # Level 2 predefines five names a model may use without defining them, and a model that
+    # defines one overrides the default — which is why this is consulted after the definitions.
+    if level == 2 and unit_id in _L2_PREDEFINED_UNITS:
+        return _L2_PREDEFINED_UNITS[unit_id]
+    return UNSTATED_UNIT
 
 
 #: Which SBML element carries a settable number, and the attribute that holds it.
@@ -235,8 +318,8 @@ _QUANTITY_CONTAINERS: dict[str, str] = {
 
 def _declared_quantities(
     model_sbml: str,
-) -> tuple[dict[str, tuple[str, float | None]], set[str]]:
-    """The model's own settable quantities by id — kind and value — and the ids that are inert.
+) -> tuple[dict[str, tuple[str, float | None, str]], set[str]]:
+    """The model's settable quantities by id — kind, value and unit — and the ids that are inert.
 
     Dependency-free on purpose: this module runs on the core gate, where libSBML is not installed.
 
@@ -256,7 +339,19 @@ def _declared_quantities(
     )
     if model is None:
         raise ValueError("the SBML document contains no model element")
-    values: dict[str, tuple[str, float | None]] = {}
+    level = int(root.get("level") or 3)
+    definitions = {
+        definition.get("id") or "": _render_unit_definition(definition)
+        for container in model
+        if _localname(container.tag) == "listOfUnitDefinitions"
+        for definition in container
+        if _localname(definition.tag) == "unitDefinition"
+    }
+    values: dict[str, tuple[str, float | None, str]] = {}
+    #: A species declaring a concentration is in substance per its compartment's own unit, so the
+    #: compartment it names has to be resolved before the species can be described.
+    compartment_units: dict[str, str] = {}
+    concentrations: dict[str, str] = {}
     overridden: set[str] = set()
     for container in model:
         name = _localname(container.tag)
@@ -268,18 +363,26 @@ def _declared_quantities(
                 identifier = element.get("id")
                 if not identifier:
                     continue
-                raw = next(
+                attribute = next(
                     (
-                        element.get(attribute)
-                        for attribute in _VALUE_ATTRIBUTES[kind]
-                        if element.get(attribute) is not None
+                        name
+                        for name in _VALUE_ATTRIBUTES[kind]
+                        if element.get(name) is not None
                     ),
                     None,
                 )
+                raw = None if attribute is None else element.get(attribute)
+                unit = _resolve_unit(
+                    element.get(_UNIT_ATTRIBUTES[kind]) or "", definitions, level
+                )
+                if kind == "compartment":
+                    compartment_units[identifier] = unit
+                if attribute == "initialConcentration":
+                    concentrations[identifier] = element.get("compartment") or ""
                 try:
-                    values[identifier] = (kind, None if raw is None else float(raw))
+                    values[identifier] = (kind, None if raw is None else float(raw), unit)
                 except ValueError:
-                    values[identifier] = (kind, None)
+                    values[identifier] = (kind, None, unit)
         elif name == "listOfInitialAssignments":
             overridden.update(
                 assignment.get("symbol") or "" for assignment in container
@@ -287,6 +390,16 @@ def _declared_quantities(
         elif name == "listOfRules":
             overridden.update(rule.get("variable") or "" for rule in container)
     overridden.discard("")
+    for identifier, compartment in concentrations.items():
+        kind, value, substance = values[identifier]
+        per = compartment_units.get(compartment, UNSTATED_UNIT)
+        values[identifier] = (
+            kind,
+            value,
+            UNSTATED_UNIT
+            if UNSTATED_UNIT in (substance, per)
+            else f"{substance} / {per}",
+        )
     return values, overridden
 
 
@@ -298,7 +411,11 @@ def _declared_parameters(model_sbml: str) -> tuple[dict[str, float | None], set[
     """
     quantities, overridden = _declared_quantities(model_sbml)
     return (
-        {name: value for name, (kind, value) in quantities.items() if kind == "parameter"},
+        {
+            name: value
+            for name, (kind, value, _unit) in quantities.items()
+            if kind == "parameter"
+        },
         overridden,
     )
 
@@ -339,6 +456,7 @@ def check_parameter_values(
             results.append(ParameterCheck(
                 identifier, math.nan, None, None,
                 "no reported value to check (an unfilled row)",
+                values.get(identifier, ("", None, UNSTATED_UNIT))[2],
             ))
             continue
         reported = float(raw)
@@ -348,7 +466,7 @@ def check_parameter_values(
                 f"the model declares no parameter, compartment or species {identifier!r}",
             ))
             continue
-        kind, carried = values[identifier]
+        kind, carried, units = values[identifier]
         attribute = " or ".join(_VALUE_ATTRIBUTES[kind])
         if identifier in overridden:
             results.append(ParameterCheck(
@@ -356,12 +474,27 @@ def check_parameter_values(
                 f"the {kind} {identifier} is set by an initialAssignment or a rule, so the number "
                 f"in its {attribute} attribute is not what runs and comparing it would answer "
                 "about the wrong quantity",
+                units,
             ))
             continue
         if carried is None:
             results.append(ParameterCheck(
                 identifier, reported, None, None,
                 f"the {kind} {identifier} declares no {attribute}, so there is nothing to compare",
+                units,
+            ))
+            continue
+        stated = str(record.get("reported_units") or "")
+        if stated and units != UNSTATED_UNIT and stated != units:
+            # Refused rather than compared, and never called a mismatch: the numbers are not in the
+            # same quantity, so neither agreement nor disagreement between them means anything. A
+            # paper's millilitres against a model's litres agree numerically at a factor of a
+            # thousand, which is the failure that survives every check downstream of this one.
+            results.append(ParameterCheck(
+                identifier, reported, carried, None,
+                f"your paper reports {identifier} in {stated} and the model declares it in "
+                f"{units}, so the two numbers are not comparable as they stand",
+                units,
             ))
             continue
         places = _printed_decimals(reported)
@@ -376,6 +509,7 @@ def check_parameter_values(
                 else f"the {kind} carries {carried:g}, which is {rounded:g} at the "
                 f"{places} decimal place(s) the paper prints, not {reported:g}"
             ),
+            units,
         ))
     return tuple(results)
 
@@ -432,7 +566,7 @@ def quantities_the_paper_does_not_state(
     declared, determined = _declared_quantities(model_sbml)
     paired = {str(record.get("parameter") or "") for record in records}
     unstated: dict[str, list[str]] = {}
-    for name, (kind, _value) in declared.items():
+    for name, (kind, _value, _unit) in declared.items():
         if name in determined or name in paired:
             continue
         unstated.setdefault(kind, []).append(name)
@@ -452,8 +586,8 @@ def parameters_template(model_sbml: str, *, accession: str | None = None) -> dic
 
     Pairing a paper's row with a model id is the author's judgment and is never inferred — but
     *typing out* their model's ids is not judgment, and a PBPK deposit has scores of them. This
-    emits one row per settable quantity, kind and all, with the two things only the author knows
-    left empty.
+    emits one row per settable quantity, kind and all, with the three things only the author knows
+    left empty — the value, the unit they published it in, and where in the paper it is.
 
     **It never carries the model's own value.** ``reported`` comes out ``null`` on every row,
     always, for the reason :mod:`reprolith.claims_template` gives about claims: a template that
@@ -469,14 +603,20 @@ def parameters_template(model_sbml: str, *, accession: str | None = None) -> dic
     """
     declared, determined = _declared_quantities(model_sbml)
     rows = [
-        {"parameter": name, "kind": kind, "reported": None, "source_location": ""}
-        for name, (kind, _value) in sorted(
+        {
+            "parameter": name,
+            "kind": kind,
+            "reported": None,
+            "reported_units": "",
+            "source_location": "",
+        }
+        for name, (kind, _value, _unit) in sorted(
             declared.items(), key=lambda item: (item[1][0], item[0])
         )
         if name not in determined
     ]
     inert: dict[str, list[str]] = {}
-    for name, (kind, _value) in declared.items():
+    for name, (kind, _value, _unit) in declared.items():
         if name in determined:
             inert.setdefault(kind, []).append(name)
     body: dict[str, Any] = {
