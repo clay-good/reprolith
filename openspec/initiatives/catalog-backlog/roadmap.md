@@ -179,8 +179,13 @@ a change under `openspec/changes/`.
 - **Type:** capability *(landed: the distributional band judge in `simulation-oracle`, and now the
   half that was deferred — `simulate_population` draws a log-normal between-subject variability
   model under a stated seed and runs the ensemble, validated against the closed-form percentiles of
-  a one-compartment model whose volume varies. What is still missing is a *paper's* population
-  figure to point it at; the demonstration is against mathematics, not a published envelope.)*
+  a one-compartment model whose volume varies. The two halves are now joined end to end
+  (`tests/test_population_end_to_end.py`, 2026-09-01) — model, ensemble, envelope, certificate,
+  nothing hand-written between them — and the grid mismatch a paper's printed times can produce
+  against a run's own samples is now refused where the envelopes are aligned, naming the percentile
+  and both counts, rather than as a bare length assertion two frames down. What is still missing is a *paper's*
+  population figure to point it at; the demonstration is against mathematics, not a published
+  envelope.)*
 - **Why (value):** Many PK/PD and QSP figures are distributions, percentiles, or virtual
   populations, not single trajectories. Reproducing them unlocks a large, high-value slice of the
   literature the MVP explicitly deferred.

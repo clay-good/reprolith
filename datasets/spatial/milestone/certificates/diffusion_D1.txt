@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — 1-D diffusion of a Gaussian (D=1)
-Engine pin: reprolith-fd 0.0.1 / explicit-forward-euler-finite-difference (rev 906fd2d06551)
+Engine pin: reprolith-fd 0.0.1 / explicit-forward-euler-finite-difference (rev cbef19cd6928)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

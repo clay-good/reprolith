@@ -394,6 +394,21 @@ def _paired_bands(
         raise ValueError("percentiles within an envelope must be distinct")
     if ref_by_pct.keys() != pred_by_pct.keys():
         raise ValueError("reference and predicted envelopes must cover the same percentiles")
+    # The alignment this function's own docstring promises and did not check. Two envelopes read
+    # on different grids are not comparable point for point, and both statistics below walk them
+    # in lockstep — so the refusal came from `worst_point_deviation` two frames down, as "reference
+    # and predicted must be sampled at the same points" with no percentile, no counts, and no
+    # claim. That is a bare length assertion escaping from a helper, not a refusal a caller can
+    # act on, and the population path meets it first: a paper's envelope is read at the times the
+    # paper shows and a simulated one comes off the run's own sample points.
+    for pct in sorted(ref_by_pct):
+        expected, got = len(ref_by_pct[pct].curve), len(pred_by_pct[pct].curve)
+        if expected != got:
+            raise ValueError(
+                f"the {pct:g}th percentile band is reported over {expected} sample(s) and "
+                f"predicted over {got}: two envelopes on different grids are not compared point "
+                "for point, and resampling one onto the other is the caller's statement to make"
+            )
     return ref_by_pct, pred_by_pct
 
 

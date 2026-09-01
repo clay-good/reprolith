@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Budding yeast cell-cycle network, CANA's 12-node variant (after Li et al. 2004) — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 201029beba37)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev ba6efa0e7170)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

@@ -152,7 +152,12 @@ def test_mismatched_band_length_is_rejected() -> None:
         _REF[1],
         _REF[2],
     )
-    with pytest.raises(ValueError, match="same points"):
+    # The refusal itself is not new; where it comes from is. It used to escape from
+    # `worst_point_deviation` two frames down as "reference and predicted must be sampled at the
+    # same points" — true, and naming neither the band it came from nor either count. It is now
+    # made where the envelopes are aligned, beside the percentile and distinctness checks.
+    with pytest.raises(ValueError, match=r"5th percentile band is reported over 5 sample\(s\) and "
+                                         r"predicted over 2"):
         band_envelope_distance(_REF, predicted)
 
 

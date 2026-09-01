@@ -49,6 +49,24 @@ every percentile band of a one-compartment model has a closed form. 500 subjects
 inside 10% of it at every grid point, where the empirical P5's own sampling error is about 3%
 (`tests/test_population_simulation.py`).
 
+**And walked to a certificate.** The simulator and the certifier were both built and both tested,
+and nothing joined them: every test of the simulator stopped at its bands, and every test of the
+certifier started from bands somebody typed. `tests/test_population_end_to_end.py` runs the whole
+path — model, ensemble, envelope, verdict — with nothing hand-written between them, against that
+same closed form standing in for a paper's published figure. The certificate comes back
+`partially-reproduced` on a clean per-claim `reproduced`, which is the class's honesty invariant
+working: a population verdict rests on a reconstructed variability model and a sampling choice, and
+the qualification is written into the certificate as an assumption naming that sampling.
+
+The join is also where the two envelopes' **grids** have to line up. A paper's bands are read at
+the times the paper prints; a simulated envelope comes off the run's own sample points. The
+mismatch was always refused — but from two frames down inside `worst_point_deviation`, as
+*"reference and predicted must be sampled at the same points"*: true, and naming no percentile, no
+counts and no envelope. It is now refused where the envelopes are aligned, by percentile and with
+both counts, alongside the percentile and distinctness checks that were already there. Nothing
+about which comparisons are allowed changed; what changed is what a caller is told when one is
+not.
+
 ### How many subjects, and why it is not a free parameter
 
 An envelope is percentiles of a *finite* sample: draw the same population twice and the 5th

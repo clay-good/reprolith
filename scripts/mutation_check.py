@@ -209,6 +209,12 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ),
         ["tests/test_spatial_ingest.py"],
     ),
+    (
+        "the band comparison names the envelope whose grid does not match",
+        "oracle.py",
+        ("        if expected != got:", "        if False:"),
+        ["tests/test_population_end_to_end.py"],
+    ),
 ]
 
 
