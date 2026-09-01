@@ -86,13 +86,24 @@ $ reprolith self-validation
   class               matched  abstained  other  of total
   constraint-based          8          0      0  / 8
   ...
-  ode-pkpd                  0         30      1  / 31
-  overall: 29 matched, 30 honest abstentions, 1 other, over 60 labelled entries across 6 classes
+  ode-pkpd                  1         27      3  / 31
+  overall: 30 matched, 27 honest abstentions, 3 other, over 60 labelled entries across 6 classes
+  (an abstention is a 'blocked' verdict — insufficient information — not a wrong verdict)
+  ode-pkpd: 3 labelled 'reproduced' came back 'partially-reproduced' — stricter than the label
 ```
 
 It deliberately reports no single blended agreement rate: an *abstention* (a `blocked` verdict —
-insufficient information) is counted apart from a wrong verdict, so the PK/PD run's 30 honest
+insufficient information) is counted apart from a wrong verdict, so the PK/PD run's honest
 abstentions are never dressed up as agreement or misread as error.
+
+And **`other` says which direction it ran in**. It is the one number here that records where
+Reprolith was wrong, and for a long time it was the only one with no account of itself, sitting
+beside abstentions that carry a sentence explaining they are not wrong verdicts. Two different
+facts landed in it under one word: a label of `reproduced` against a blind `partially-reproduced`
+is Reprolith withholding a pass somebody else gave, and a label of `not-reproduced` against a blind
+`reproduced` is a **false pass** — the failure this project exists not to commit. The CLI, the
+queried JSON (through each class's own `confusion` rows) and the public registry banner all name
+them now. Today's three are all the first kind.
 
 The per-entry rows behind these numbers stay in the committed report files and are not published
 through the read surface. They pair an accession with its ground-truth label, and those same

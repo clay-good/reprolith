@@ -156,6 +156,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_digitization.py"],
     ),
     (
+        "a false pass and an over-strict verdict are reported under the same word",
+        "agreement.py",
+        (
+            '                if _STRENGTH.index(actual) > _STRENGTH.index(expected)',
+            "                if True",
+        ),
+        ["tests/test_agreement.py"],
+    ),
+    (
         "the fix list emits one assumption row per claim it withheld a pass from",
         "presubmission.py",
         (

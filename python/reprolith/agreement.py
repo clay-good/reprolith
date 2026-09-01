@@ -71,6 +71,54 @@ def summarize_report(report: dict[str, Any]) -> dict[str, int]:
     return {"total": total, "matched": matched, "abstained": abstained, "other": total - matched - abstained}
 
 
+#: The verdicts a certificate can carry, strongest first. ``blocked`` is not on this scale: it is
+#: the refusal to place an entry on it at all, which is why an abstention is counted apart from a
+#: wrong verdict everywhere in this module.
+_STRENGTH = (
+    OverallVerdict.REPRODUCED.value,
+    OverallVerdict.PARTIALLY_REPRODUCED.value,
+    OverallVerdict.NOT_REPRODUCED.value,
+)
+
+
+def confident_differences(report: dict[str, Any]) -> tuple[dict[str, Any], ...]:
+    """The disagreements that were not abstentions, each with the direction it ran in.
+
+    ``summarize_report`` counts these as ``other``, and ``other`` was the whole of what any read
+    surface said about them. It is the most consequential number on the page — it is where
+    Reprolith was wrong — and it was the only one with no account of itself, while the abstentions
+    beside it carried a parenthetical explaining that they are not wrong verdicts.
+
+    Two disagreements can sit in that count and they are not the same fact. A label of
+    ``reproduced`` against a blind ``partially-reproduced`` is Reprolith being **stricter** than the
+    ground truth: it withheld a pass somebody else gave. A label of ``not-reproduced`` against a
+    blind ``reproduced`` is a **false pass**, which is the failure this project exists not to
+    commit. Collapsing the two under one word said neither.
+
+    ``direction`` is read off the certificate verdicts' own ordering, which ``blocked`` is not part
+    of — a row involving it is an abstention and is not returned here at all.
+    """
+    rows: list[dict[str, Any]] = []
+    for key, count in report.get("confusion", {}).items():
+        expected, _, actual = key.partition("->")
+        if expected == actual or actual == OverallVerdict.BLOCKED.value:
+            continue
+        if expected in _STRENGTH and actual in _STRENGTH:
+            direction = (
+                "stricter than the label"
+                if _STRENGTH.index(actual) > _STRENGTH.index(expected)
+                else "a stronger verdict than the label — a false pass"
+            )
+        else:
+            # A label of `blocked` against a verdict that asserted: the entry is off the scale on
+            # the other side, so neither word above is true of it.
+            direction = "asserted where the label declined to"
+        rows.append(
+            {"expected": expected, "actual": actual, "count": int(count), "direction": direction}
+        )
+    return tuple(sorted(rows, key=lambda r: (r["expected"], r["actual"])))
+
+
 @dataclass(frozen=True)
 class EntryAgreement:
     """Whether one labelled entry's blind verdict matched its ground-truth label."""
@@ -168,4 +216,10 @@ def build_agreement_report(
     return AgreementReport(per_entry=tuple(per_entry))
 
 
-__all__ = ["AgreementReport", "EntryAgreement", "build_agreement_report", "summarize_report"]
+__all__ = [
+    "AgreementReport",
+    "EntryAgreement",
+    "build_agreement_report",
+    "confident_differences",
+    "summarize_report",
+]

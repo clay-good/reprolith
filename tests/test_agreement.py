@@ -141,3 +141,50 @@ def test_a_report_that_contradicts_its_own_confusion_rows_is_refused() -> None:
         summarize_report({"total": 100, "agreements": 100, "confusion": {}})  # rows emptied
     # An empty report is still an empty report, not a corrupted one.
     assert summarize_report({"total": 0, "agreements": 0, "confusion": {}})["total"] == 0
+
+
+def test_the_other_column_says_which_direction_it_ran_in() -> None:
+    """"other" is where Reprolith was wrong, and it was the only number with no account of itself.
+
+    The abstentions beside it carry a sentence saying they are not wrong verdicts. The column that
+    holds the actual wrong verdicts held two different facts under one word: withholding a pass
+    somebody else gave, and giving one they withheld. The second is the failure this project exists
+    not to commit, and a reader could not tell which they were looking at.
+    """
+    from reprolith.agreement import confident_differences
+
+    report = {
+        "total": 6,
+        "agreements": 1,
+        "confusion": {
+            "reproduced->reproduced": 1,
+            "reproduced->partially-reproduced": 3,
+            "not-reproduced->reproduced": 1,
+            "reproduced->blocked": 1,
+        },
+    }
+    rows = confident_differences(report)
+    # The abstention is not here: it is counted apart everywhere else, and this is where the
+    # verdicts that actually asserted something wrong are named.
+    assert [(r["expected"], r["actual"], r["count"]) for r in rows] == [
+        ("not-reproduced", "reproduced", 1),
+        ("reproduced", "partially-reproduced", 3),
+    ]
+    assert rows[0]["direction"] == "a stronger verdict than the label — a false pass"
+    assert rows[1]["direction"] == "stricter than the label"
+
+    # And they are exactly the rows `summarize_report` counts as "other", so the two cannot drift.
+    from reprolith.agreement import summarize_report
+
+    assert sum(r["count"] for r in rows) == summarize_report(report)["other"]
+
+
+def test_a_label_that_declined_where_the_verdict_asserted_is_neither_word() -> None:
+    """`blocked` is not on the verdict scale — it is the refusal to be placed on it — so an entry
+    labelled blocked against a verdict that asserted is not "stricter" or "a false pass"."""
+    from reprolith.agreement import confident_differences
+
+    (row,) = confident_differences(
+        {"total": 1, "agreements": 0, "confusion": {"blocked->reproduced": 1}}
+    )
+    assert row["direction"] == "asserted where the label declined to"

@@ -113,7 +113,7 @@ def _cmd_backlog(query: ReprolithQuery, args: argparse.Namespace) -> int:
 
 
 def _cmd_self_validation(query: ReprolithQuery, args: argparse.Namespace) -> int:
-    from .agreement import summarize_report
+    from .agreement import confident_differences, summarize_report
 
     report = query.self_validation()
     if args.json:
@@ -133,6 +133,13 @@ def _cmd_self_validation(query: ReprolithQuery, args: argparse.Namespace) -> int
           f"{o['other_disagreements']} other, over {o['labelled_entries']} labelled entries "
           f"across {o['classes']} classes")
     print("  (an abstention is a 'blocked' verdict — insufficient information — not a wrong verdict)")
+    # And the other column, which said nothing about itself. It is where Reprolith was wrong, and
+    # the two disagreements it can hold are not the same fact: withholding a pass somebody else
+    # gave is not the failure this project exists to avoid, and giving one they withheld is.
+    for label in sorted(by_class):
+        for row in confident_differences(by_class[label]):
+            print(f"  {label}: {row['count']} labelled '{row['expected']}' came back "
+                  f"'{row['actual']}' — {row['direction']}")
     # The number does not travel without what it can establish. The JSON view and the registry
     # banner both carry `label_basis`; a reader at a terminal was seeing six near-perfect class
     # scores with the one line that says what they are not attached to nothing.

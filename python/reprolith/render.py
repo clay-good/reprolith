@@ -387,7 +387,7 @@ def _track_record_banner(self_validation: dict[str, Any]) -> str:
     surfaces use, so the browsable credibility number can never disagree with the queried one. An
     abstention (a ``blocked`` verdict) is shown apart from a wrong verdict; no blended rate.
     """
-    from .agreement import summarize_report
+    from .agreement import confident_differences, summarize_report
 
     by_class = self_validation.get("by_class", {})
     if not by_class:
@@ -403,6 +403,22 @@ def _track_record_banner(self_validation: dict[str, Any]) -> str:
     # Coerced to int like the per-class row above, not interpolated raw: these are the only four
     # values on the page that reach the HTML without passing through escaping, and a count is a
     # number or it is nothing.
+    # What the "other" column is. It is the one number on this page that says where Reprolith was
+    # wrong, and it was the only one with no account of itself, beside abstentions that carry a
+    # sentence saying they are not wrong verdicts. Withholding a pass somebody else gave and giving
+    # one they withheld both landed in it, under the same word.
+    differences = [
+        f"<li>{html.escape(label)}: {row['count']} labelled “{html.escape(row['expected'])}” "
+        f"came back “{html.escape(row['actual'])}” — {html.escape(row['direction'])}</li>"
+        for label in sorted(by_class)
+        for row in confident_differences(by_class[label])
+    ]
+    breakdown = (
+        '<p class="tr-note"><strong>What the “other” column is.</strong></p>'
+        f"<ul class=\"tr-note\">{''.join(differences)}</ul>"
+        if differences
+        else ""
+    )
     totals = [int(o.get(key, 0)) for key in
               ("agreements", "abstentions", "other_disagreements", "labelled_entries")]
     foot = (
@@ -424,7 +440,8 @@ def _track_record_banner(self_validation: dict[str, Any]) -> str:
         "Each dataset states its own caveat in full.</p>"
         "<table><thead><tr><th>class</th><th>matched</th><th>abstained</th><th>other</th>"
         f"<th>of total</th></tr></thead><tbody>{''.join(rows)}</tbody><tfoot>{foot}</tfoot></table>"
-        "</section>"
+        + breakdown
+        + "</section>"
     )
 
 
