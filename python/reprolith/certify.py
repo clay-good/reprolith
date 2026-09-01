@@ -21,6 +21,7 @@ from dataclasses import dataclass, field, replace
 from typing import Any
 
 from .certificate import build_certificate
+from .digitization import DIGITIZED_BY
 from .engine import final_state, simulate
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import (
@@ -39,6 +40,67 @@ from .oracle import (
     not_evaluable,
     undetermined_shortfall,
 )
+
+
+def _reading_required(
+    reference_kind: ReferenceKind,
+    digitizer: str,
+    what: str,
+    *,
+    judged: bool = True,
+    source_location: str = "",
+) -> None:
+    """Refuse a claim that takes the figure band without naming what read the figure.
+
+    The figure band is wide on purpose — three times a printed number's for a scalar, twice for a
+    curve — because a value read off a picture carries the digitizer's calibration and the plot's
+    pixel resolution on top of whatever the model does. The widening is not escapable in the
+    direction that matters: :func:`~reprolith.attach_digitized_values` records a reading as
+    ``digitized-figure`` and nothing can record it as a printed number.
+
+    It was escapable in the other direction, which is the one that flatters a reconstruction. A
+    claim is a record with a ``reference_kind`` field: writing ``digitized-figure`` beside a value
+    cited to a paragraph took a scalar's pass threshold from 5% to 15% with no picture, no tool and
+    no reading anywhere behind it, and the certificate then marked it ``[figure-reading]`` and said
+    nothing a reader could weigh. So the band now costs what it claims: name the tool that read the
+    figure. This is the same fence :class:`EstimationClaim` and :class:`PopulationClaim` already put
+    on their ``protocol`` — a verdict that rests on work this glue did not do has to state that
+    work.
+
+    A claim whose source location already states the reading satisfies this without repeating it:
+    :func:`~reprolith.attach_digitized_values` writes the figure, the tool and what the reading cost
+    into the citation, and :data:`~reprolith.digitization.DIGITIZED_BY` is the phrase both sides
+    agree that statement is made in. So the join needs no extra field, and a record typed by hand
+    has to say what read the figure.
+
+    ``judged`` is false for a claim carrying no reference, and then nothing is required. Such a
+    claim abstains: ``digitized-figure`` there is the dossier's own marking that the document plots
+    a curve and never says what it showed, and the wider band is never consulted because there is
+    nothing to consult it against. Demanding a digitizer for a reading nobody took would refuse the
+    honest abstention this repository exists to publish.
+    """
+    stated = bool(digitizer.strip()) or DIGITIZED_BY in source_location
+    if judged and reference_kind is ReferenceKind.DIGITIZED_FIGURE and not stated:
+        raise ValueError(
+            f"{what} is judged in the digitized-figure band, which is wider than a printed "
+            "number's, and states no digitizer: name the tool that read the figure (the same "
+            "'WebPlotDigitizer 4.7' a digitization file carries), or record the value as the "
+            "printed number it is"
+        )
+
+
+def _cited_source(source_location: str, reference_kind: ReferenceKind, digitizer: str) -> str:
+    """The source a certificate cites, carrying the reading where the claim states one.
+
+    A reading that came through the join already says this — `attach_digitized_values` writes the
+    figure, the tool and what the reading cost into the source location — so the tool is appended
+    only where the citation does not already carry it, rather than printed twice.
+    """
+    if reference_kind is not ReferenceKind.DIGITIZED_FIGURE or not digitizer.strip():
+        return source_location
+    if digitizer.strip() in source_location:
+        return source_location
+    return f"{source_location} (read off the figure with {digitizer.strip()})"
 
 
 @dataclass(frozen=True)
@@ -69,10 +131,22 @@ class Claim:
     schedule: tuple[tuple[float, tuple[tuple[str, float], ...]], ...] = ()
     tolerance: Tolerance | None = None
     reference_kind: ReferenceKind = ReferenceKind.NUMERIC
+    #: The tool that read the figure, required when ``reference_kind`` is ``digitized-figure``.
+    #: See :func:`_reading_required` for why the wider band is not free.
+    digitizer: str = ""
     assumption_qualified: bool = False
     shortfall: Attribution | None = field(default=None)
 
+    @property
+    def cited_source(self) -> str:
+        """The source a certificate cites for this claim, carrying the reading behind it."""
+        return _cited_source(self.source_location, self.reference_kind, self.digitizer)
+
     def __post_init__(self) -> None:
+        _reading_required(
+            self.reference_kind, self.digitizer, f"claim '{self.claim_id}'",
+            source_location=self.source_location,
+        )
         if self.schedule and self.parameter_overrides:
             raise ValueError(
                 "a claim states either a schedule or parameter overrides, not both: the "
@@ -113,6 +187,7 @@ class Claim:
                 for segment in record.get("schedule", ())
             ),
             reference_kind=ReferenceKind(record.get("reference_kind", "numeric")),
+            digitizer=str(record.get("digitizer", "")),
             assumption_qualified=bool(record.get("assumption_qualified", False)),
             shortfall=_shortfall_from(record.get("shortfall")),
         )
@@ -607,7 +682,7 @@ def certify_model(
                     not_evaluable(
                         claim_id=claim.claim_id,
                         quantity=claim.quantity,
-                        source_location=claim.source_location,
+                        source_location=claim.cited_source,
                         reason=(
                             f"the AUC moves {change:.1%} between {steps} and {steps * 2} samples, "
                             f"wider than the {pass_width:.1%} that separates a pass from a "
@@ -630,7 +705,7 @@ def certify_model(
             judge_scalar(
                 claim_id=claim.claim_id,
                 quantity=claim.quantity,
-                source_location=claim.source_location,
+                source_location=claim.cited_source,
                 reported=claim.reported,
                 predicted=predicted,
                 reference_kind=claim.reference_kind,
@@ -685,9 +760,22 @@ class CurveClaim:
     steps: int
     tolerance: Tolerance | None = None
     reference_kind: ReferenceKind = ReferenceKind.NUMERIC
+    #: The tool that read the figure, required when ``reference_kind`` is ``digitized-figure``.
+    digitizer: str = ""
     parameter_overrides: tuple[tuple[str, float], ...] = ()
     assumption_qualified: bool = False
     shortfall: Attribution | None = field(default=None)
+
+    @property
+    def cited_source(self) -> str:
+        """The source a certificate cites for this claim, carrying the reading behind it."""
+        return _cited_source(self.source_location, self.reference_kind, self.digitizer)
+
+    def __post_init__(self) -> None:
+        _reading_required(
+            self.reference_kind, self.digitizer, f"claim '{self.claim_id}'",
+            judged=bool(self.reference), source_location=self.source_location,
+        )
 
 
 def certify_curves(
@@ -724,7 +812,7 @@ def certify_curves(
             assessments.append(not_evaluable(
                 claim_id=claim.claim_id,
                 quantity=claim.quantity,
-                source_location=claim.source_location,
+                source_location=claim.cited_source,
                 reason=(
                     "no reference values for this curve: the source states which curve is "
                     "plotted but not the values it showed, so there is nothing to compare "
@@ -739,7 +827,7 @@ def certify_curves(
             judge_curve(
                 claim_id=claim.claim_id,
                 quantity=claim.quantity,
-                source_location=claim.source_location,
+                source_location=claim.cited_source,
                 reference=claim.reference,
                 predicted=values,
                 reference_kind=claim.reference_kind,
@@ -879,10 +967,21 @@ class PopulationClaim:
     protocol: str
     tolerance: Tolerance | None = None
     reference_kind: ReferenceKind = ReferenceKind.NUMERIC
+    #: The tool that read the figure, required when ``reference_kind`` is ``digitized-figure``.
+    digitizer: str = ""
     assumption_qualified: bool = True
     shortfall: Attribution | None = field(default=None)
 
+    @property
+    def cited_source(self) -> str:
+        """The source a certificate cites for this claim, carrying the reading behind it."""
+        return _cited_source(self.source_location, self.reference_kind, self.digitizer)
+
     def __post_init__(self) -> None:
+        _reading_required(
+            self.reference_kind, self.digitizer, f"claim '{self.claim_id}'",
+            judged=bool(self.reported), source_location=self.source_location,
+        )
         # Refused rather than defaulted, for the reason an estimation claim's is: this glue does not
         # simulate the population, so the sampling is the only evidence the bands came from a run.
         # An envelope's verdict moves with its ensemble size, so without it a reader cannot tell a
@@ -941,7 +1040,7 @@ def certify_population(
             judge_distribution(
                 claim_id=claim.claim_id,
                 quantity=claim.quantity,
-                source_location=claim.source_location,
+                source_location=claim.cited_source,
                 reference=claim.reported,
                 predicted=claim.predicted,
                 reference_kind=claim.reference_kind,

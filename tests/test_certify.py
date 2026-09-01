@@ -492,3 +492,77 @@ def test_the_caution_reaches_the_protocol_a_reader_sees() -> None:
     )
     assert "overrides: dose=50.0" in protocol
     assert "caution: event 'reset_at_12h'" in protocol
+
+
+def test_a_claim_taking_the_figure_band_has_to_name_what_read_the_figure() -> None:
+    """The widening was escapable in the direction that flatters a reconstruction.
+
+    A reading can only ever be recorded as `digitized-figure`, so a picture-read value cannot be
+    judged as a printed number. The reverse was free: a claims record is a dict, and writing
+    `"reference_kind": "digitized-figure"` beside a value cited to a paragraph took a scalar's pass
+    threshold from 5% to 15% with no picture, no tool and no reading behind it — and the
+    certificate then marked it `[figure-reading]` and gave a reader nothing to weigh.
+    """
+    record = {
+        "claim_id": "peak", "quantity": "plasma Cmax", "species": "C", "reported": 4.2,
+        "source_location": "Section 3, paragraph 2", "reference_kind": "digitized-figure",
+    }
+    with pytest.raises(ValueError, match="states no digitizer"):
+        Claim.from_record(record)
+
+    # Named, it is accepted — and the tool travels into what the certificate cites, because the
+    # source location of a hand-written claim says nothing about how the value was read.
+    named = Claim.from_record({**record, "digitizer": "WebPlotDigitizer 4.7"})
+    assert named.cited_source == (
+        "Section 3, paragraph 2 (read off the figure with WebPlotDigitizer 4.7)"
+    )
+    # And the printed number it always was needs nothing: the fence is only on the wider band.
+    assert Claim.from_record({**record, "reference_kind": "numeric"}).cited_source == (
+        "Section 3, paragraph 2"
+    )
+
+
+def test_a_reading_that_came_through_the_join_states_itself_and_is_not_asked_twice() -> None:
+    """`attach_digitized_values` writes the figure, the tool and the reading's cost into the
+    citation, so the claim built from it already says what read the figure. Requiring a separate
+    field there would make the join lossy and print the tool twice.
+    """
+    from reprolith import attach_digitized_values, read_digitized_figure
+    from reprolith.certify import CurveClaim
+    from reprolith.dossier import DossierClaim
+
+    joined = attach_digitized_values(
+        [DossierClaim(id="c", quantity="[C]", conditions="", source_location="Figure 1, curve c",
+                      reference_kind=ReferenceKind.DIGITIZED_FIGURE)],
+        read_digitized_figure(json.dumps({
+            "figure": "Figure 1", "digitizer": "WebPlotDigitizer 4.7",
+            "x_axis": {"minimum": 0, "maximum": 10, "unit": "h"},
+            "y_axis": {"minimum": 0, "maximum": 10, "unit": "nM"},
+            "series": [{"claim": "c", "curve": "C", "points": [[0, 8.0], [5, 4.0], [10, 2.0]]}],
+        })),
+        times=[0.0, 5.0, 10.0],
+    )[0]
+    claim = CurveClaim(
+        claim_id="c", quantity="[C]", species="C", reference=joined.reference_data,
+        source_location=joined.source_location, duration=10.0, steps=2,
+        reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+    )
+    assert claim.cited_source == joined.source_location
+    assert claim.cited_source.count("WebPlotDigitizer 4.7") == 1
+
+
+def test_a_figure_claim_with_nothing_behind_it_still_abstains_rather_than_being_refused() -> None:
+    """The band is never consulted where there is no reference to consult it against.
+
+    A document's plots are claims the paper stakes and never says the value of, so the dossier
+    marks them `digitized-figure` with no data — the abstention this repository exists to publish.
+    Demanding a digitizer for a reading nobody took would refuse it.
+    """
+    from reprolith.certify import CurveClaim
+
+    unread = CurveClaim(
+        claim_id="c", quantity="[C]", species="C", reference=(),
+        source_location="SED-ML plot2D 'plot_0', curve 'c'", duration=10.0, steps=2,
+        reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+    )
+    assert unread.cited_source == "SED-ML plot2D 'plot_0', curve 'c'"

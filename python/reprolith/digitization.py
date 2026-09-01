@@ -136,6 +136,13 @@ class Axis:
         }
 
 
+#: How a source location states that its values were read off a picture. A claim judged in the
+#: figure band has to say this — :func:`reprolith.certify._reading_required` refuses one that does
+#: not — and this is the phrase the join writes, so the two cannot drift into disagreeing about
+#: what stating a reading looks like.
+DIGITIZED_BY = "digitized from the figure with "
+
+
 @dataclass(frozen=True)
 class DigitizedSeries:
     """One curve read off one figure panel, with everything needed to judge it as a reading."""
@@ -215,7 +222,7 @@ class DigitizedSeries:
         )
         return (
             f"{self.figure}, {self.curve} "
-            f"(digitized from the figure with {self.digitizer}; {spent})"
+            f"({DIGITIZED_BY}{self.digitizer}; {spent})"
         )
 
     def to_dict(self) -> dict[str, Any]:

@@ -189,6 +189,11 @@ curator's statements.
 - **AND** where the window is not known from a document the whole reading is measured and the
   report says so, and where a reading covers more than one of a document's runs the worst of them
   is reported, since which run a figure was read off is not something the reading states
+- **AND** a claim judged in the digitized-figure band SHALL name what read the figure — either in
+  a source location the join already wrote or as a stated digitizer — since the band is wider than
+  a printed number's and a claim taking that widening with no reading behind it is judged more
+  leniently on its own say-so; a claim carrying no reference is exempt, its band never being
+  consulted
 - **AND** it travels with the reading into the claim's source location, measured over the grid that
   claim was resampled onto, so a reader of the
   certificate can see how much of the widened band the reading had already spent before the model

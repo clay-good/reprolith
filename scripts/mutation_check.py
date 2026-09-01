@@ -156,6 +156,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_digitization.py"],
     ),
     (
+        "a claim takes the figure band's widening without naming what read the figure",
+        "certify.py",
+        (
+            "    if judged and reference_kind is ReferenceKind.DIGITIZED_FIGURE and not stated:",
+            "    if False:",
+        ),
+        ["tests/test_certify.py"],
+    ),
+    (
         "the certificate quotes a reading's cost over the whole file, not the run it judged",
         "digitization.py",
         (

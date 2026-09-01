@@ -62,7 +62,8 @@ cannot — refuse a reading that is *wrong* rather than imprecise (a point outsi
 calibration error, and produces values that are ordered, smooth, plausible and off by a constant
 factor), and put the series on the run's own sample grid, interpolated in the axis's own scale,
 never extrapolated past what was read. A value read off a picture can only ever be recorded as
-`digitized-figure`, so the wider band it is judged in is not escapable. That turns a figure claim
+`digitized-figure`, so the wider band it is judged in is not escapable — and a claim that takes
+that band has to name what read the figure, so it is not free in the other direction either. That turns a figure claim
 from a permanent abstention into a judged one: a SED-ML document says which curve the paper plots,
 the curator's file says what that curve read, and the certificate carries a verdict marked
 `[figure-reading]` so a reader can see the number was read off a picture rather than printed. It

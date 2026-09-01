@@ -162,6 +162,17 @@ line between readings, and that sentence is the whole of the uncovered part made
 The reference kind is always `digitized-figure`. A value read off a picture cannot be recorded as a
 printed number, so the wider band it must be judged in is not escapable by attaching it.
 
+It does not run free in the other direction either, which is the direction that flatters a
+reconstruction. A claim is a record with a `reference_kind` field, and writing `digitized-figure`
+beside a value cited to a paragraph used to take a scalar's pass threshold from 5% to 15% with no
+picture, no tool and no reading anywhere behind it — and the certificate then marked it
+`[figure-reading]` and gave its reader nothing to weigh. A claim judged in the figure band now has
+to name what read the figure. A reading that came through the join needs no extra field, because
+the citation it carries already says it; a record typed by hand states a `digitizer`, and the
+certificate cites it. A claim with **no** reference is untouched: the band is never consulted where
+there is nothing to consult it against, and a document's plotted curve with no values is the
+abstention this repository publishes rather than a reading nobody took.
+
 ## What a flawless reading costs
 
 The reference between two read points is a straight line, so a reading is not free even when it is
