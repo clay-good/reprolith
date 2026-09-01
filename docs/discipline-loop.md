@@ -102,6 +102,18 @@ practitioner can act on.
   band's 25%, twenty subjects miss 10% of the time at a 30% CV and 46% at a 50% one, so the
   widening buys ensemble size and not safety for a wide population
   (`tests/test_population_sampling_cost.py`).
+- **The engine itself — measured on the committed corpus, not on a synthetic input.** Every other
+  entry here measures a step between the paper and the verdict. This one measures the last step,
+  and it was already computed and published — just never expressed in the units the verdict is in.
+  Cross-engine corroboration re-runs a certified result under a second independent simulator and
+  publishes the normalized distance between the two curves, which is the *same statistic*
+  `judge_curve` compares against the pass budget. PK/PD's eighty claims, each re-run at the dose it
+  was certified at, agree to 1e-06 — a hundredth of a percent of the 0.10 curve budget. The kinetic
+  class's six models agree to 1e-03, one percent of it. So a numeric verdict is a statement about
+  the model and not about COPASI, and none of the tolerance is absorbing solver disagreement
+  (`tests/test_engine_floor.py`, read off the committed records so an engine upgrade that widened
+  the gap fails rather than passing quietly). The other four classes have no second registered
+  engine and this is not measured for them — an absence, which the public registry now names.
 - **Estimation level — 10% / 25%.** A re-fit recovers parameters from noisy data: at a 20% assay
   CV, the median error is 2.4% on a rate and 8.8% on a scale, and the worse of the two misses the
   pass budget 45% of the time — with an exact optimizer and the true model. Quadrupling the data
