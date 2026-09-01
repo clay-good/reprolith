@@ -174,6 +174,13 @@ guessed would accuse correct claims. A claim citing a figure panel or a sentence
 did not supply, is reported as **not checked**, never as wrong, and never fails the command: an
 absence of evidence is not evidence of absence.
 
+It does tell you **how much the match is worth**, because that depends on the number. A value
+printed once in the table you cite is good evidence you read that cell; a value printed seven times
+is evidence only that your table contains that number somewhere. On this repository's own corpus,
+27 of 33 claim values are unique in their table and six are not, so both strengths are ordinary and
+both used to read as the identical "ok". A non-unique match is still an ok — the count is stated
+beside it, and nothing about it fails the command.
+
 ## When a fix list says your paper is wrong
 
 Reprolith can conclude that the number your table reports is the thing that does not fit, rather

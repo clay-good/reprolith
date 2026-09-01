@@ -156,6 +156,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_digitization.py"],
     ),
     (
+        "a claim value matched in seven cells reads exactly like one matched in one",
+        "manuscript_values.py",
+        (
+            "        others = occurrences - 1",
+            "        others = 0",
+        ),
+        ["tests/test_manuscript_reference_values.py"],
+    ),
+    (
         "the registry omits the classes no second engine ever checked",
         "render.py",
         (

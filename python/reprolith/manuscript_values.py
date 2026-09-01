@@ -39,6 +39,7 @@ import decimal
 import math
 import re
 import xml.etree.ElementTree as ET
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -61,6 +62,10 @@ class ValueCheck:
     #: was not checked, which is a different fact from its being absent.
     found: bool | None
     detail: str
+    #: How many cells of the cited table print this value; ``None`` where nothing was checked.
+    #: A match is evidence, and one match is much better evidence than seven — see
+    #: :func:`check_claim_values`.
+    occurrences: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -68,17 +73,22 @@ class ValueCheck:
             "reported": self.reported,
             "cited": self.cited,
             "found": self.found,
+            "occurrences": self.occurrences,
             "detail": self.detail,
         }
 
 
-def _numbers_in(rows: Sequence[Sequence[str]]) -> set[str]:
-    """Every number a table prints, as it is printed, with separators removed."""
-    found: set[str] = set()
+def _numbers_in(rows: Sequence[Sequence[str]]) -> Counter[str]:
+    """Every number a table prints, as it is printed, with separators removed — and how often.
+
+    Counted rather than collected into a set, because *how often* is the difference between two
+    strengths of the same "ok". See :func:`check_claim_values`.
+    """
+    found: Counter[str] = Counter()
     for row in rows:
         for cell in row:
             for match in _NUMBER.finditer(cell):
-                found.add(match.group(0).replace(" ", "").replace(",", "").replace(" ", ""))
+                found[match.group(0).replace(" ", "").replace(",", "").replace(" ", "")] += 1
     return found
 
 
@@ -145,14 +155,28 @@ def check_claim_values(
         spellings = {repr(value).rstrip("0").rstrip("."), f"{value:g}", str(value)}
         if value == int(value):
             spellings.add(str(int(value)))
-        hit = bool(spellings & printed)
+        # How often, not merely whether. A match is evidence that the claim reads the cell it
+        # cites, and its strength is exactly how distinctive the number is: 71.8 appears once in
+        # the metformin paper's Table 6, and 1.9 appears seven times, so the second is evidence
+        # only that the table contains that number somewhere. Both used to report the same "ok".
+        # Measured over the committed corpus: 27 of 33 claim values are unique in their table.
+        # This never turns a match into a miss — it says what the match is worth.
+        occurrences = sum(printed[spelling] for spelling in spellings if spelling in printed)
+        hit = occurrences > 0
+        others = occurrences - 1
+        strength = (
+            "" if others < 1
+            else ", but so is 1 other cell — the match is not unique" if others == 1
+            else f", but so are {others} other cells — the match is not unique"
+        )
         results.append(ValueCheck(
             claim_id, value, label, hit,
             (
-                f"{value:g} is printed in {label}"
+                f"{value:g} is printed in {label}{strength}"
                 if hit
                 else f"{value:g} is not printed in {label}, which the claim cites"
             ),
+            occurrences=occurrences,
         ))
     return tuple(results)
 

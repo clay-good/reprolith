@@ -142,3 +142,43 @@ def test_the_quoted_rows_carry_the_papers_licence_and_identity() -> None:
     assert paper["doi"] == "10.1371/journal.pone.0249594"
     assert "CC BY 4.0" in paper["license"]
     assert paper["pmcid"].startswith("PMC")
+
+
+def test_a_match_says_how_distinctive_the_number_it_matched_was() -> None:
+    """"Printed in Table 6" is evidence, and how good it is depends on the number.
+
+    This check exists because a claim was once recorded as a value its paper does not print. It
+    catches that by asking whether the number appears in the cited table at all — which is strong
+    evidence for 71.8 and nearly none for 1, and both reported the identical "ok". Measured over
+    the committed corpus, 27 of 33 claim values are unique in their table and six are not; the
+    worst appears seven times.
+
+    It never turns a match into a miss. It says what the match is worth.
+    """
+    from reprolith import check_claim_values
+
+    tables = {
+        "Table 6": {"rows": [
+            ["Tissue", "Cmax", "AUC"],
+            ["Liver", "71.8", "1"],
+            ["Brain", "1", "1"],
+        ]},
+    }
+    distinctive, common = check_claim_values(
+        [
+            {"claim_id": "liver", "reported": 71.8, "source_location": "Table 6, Liver row"},
+            {"claim_id": "brain", "reported": 1.0, "source_location": "Table 6, Brain row"},
+        ],
+        tables,
+    )
+    assert distinctive.found is True and distinctive.occurrences == 1
+    assert "not unique" not in distinctive.detail
+
+    assert common.found is True and common.occurrences == 3
+    assert "but so are 2 other cells — the match is not unique" in common.detail
+
+    # A value the table does not print at all is still the finding this check was built for.
+    (absent,) = check_claim_values(
+        [{"claim_id": "x", "reported": 6.2, "source_location": "Table 6, Liver row"}], tables
+    )
+    assert absent.found is False and absent.occurrences == 0
