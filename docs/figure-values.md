@@ -146,7 +146,11 @@ reading is being judged partly against the curator's interpolation, and the digi
 tolerance — 0.20 pass against a printed number's 0.10 — is what covers it. So `figure-check`
 reports the widest gap between readings as a fraction of the span, and does not judge it: how much
 of a comparison rests on a straight line is the curator's to weigh, not a threshold this command
-invented. Given the document it says the same thing in the units that decide it — a curve read at
+invented — though above a 20% gap it now says what that spacing was measured to cost, which is a
+fact rather than a threshold: five evenly spaced points span 25% each and already exceed the whole
+budget on a PK-shaped curve, while a flat curve read at five points costs nothing, so how curved
+this one is stays the curator's to weigh. Given the document it says the same thing in the units
+that decide it — a curve read at
 three points and judged on a run sampled a thousand times has 998 samples resting on the straight
 line between readings, and that sentence is the whole of the uncovered part made visible.
 

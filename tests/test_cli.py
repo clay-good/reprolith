@@ -816,6 +816,36 @@ def test_figure_check_reads_a_digitization_and_reports_what_it_rests_on(tmp_path
     assert "no model was run" in printed
 
 
+def test_figure_check_says_when_a_reading_is_coarse_enough_to_spend_the_budget(tmp_path, capsys):
+    """Still not a verdict, and no longer a number nobody has a scale for.
+
+    A flawless five-point reading of an oral PK curve — a 25% gap — misses the curve it was read
+    off by 0.25 against a 0.20 pass budget, so above that spacing the fact is worth stating. A flat
+    curve read at five points costs nothing, which is why it stays a statement and not a refusal.
+    """
+    coarse = tmp_path / "coarse.json"
+    coarse.write_text(json.dumps({
+        "figure": "Figure 3A", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 10, "unit": "nmol/mL"},
+        "series": [{"claim": "c", "curve": "plasma", "points": [[0, 0.5], [2, 6.0], [24, 1.0]]}],
+    }), encoding="utf-8")
+    assert run(["figure-check", "--series", str(coarse)]) == 0
+    assert "can spend the whole tolerance on its own straight lines" in capsys.readouterr().out
+
+    # Read finely, it is not said: 24 points span 4% each.
+    fine = tmp_path / "fine.json"
+    fine.write_text(json.dumps({
+        "figure": "Figure 3A", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 10, "unit": "nmol/mL"},
+        "series": [{"claim": "c", "curve": "plasma",
+                    "points": [[i, 6.0 - i / 8] for i in range(25)]}],
+    }), encoding="utf-8")
+    assert run(["figure-check", "--series", str(fine)]) == 0
+    assert "can spend the whole tolerance" not in capsys.readouterr().out
+
+
 def test_figure_check_refuses_a_reading_off_its_own_axes(tmp_path, capsys):
     """A mis-calibrated digitization is smooth, ordered, and wrong; this is where it stops."""
     series = tmp_path / "figure3a.json"
