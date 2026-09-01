@@ -52,7 +52,7 @@ call, `[]` or `null` reads as a fact about the paper rather than about the call.
 | `list_catalog` | — | Catalog entries as blind views (no ground-truth label) |
 | `status` | `title`/`doi`/`pubmed_id`/`accession` | A paper's lifecycle state and recorded history |
 | `certificate` | `digest` | The full certificate: content, verdicts, scope, gaps |
-| `verdict` | `digest` | The scope-qualified verdict (overall + per-claim + counts) |
+| `verdict` | `digest` | The scope-qualified verdict (overall + per-claim + counts, with the assumptions that withheld a clean pass) |
 | `gaps` | `digest` | The structured "what was missing" report |
 | `presubmission` | `digest` | Author-facing pre-submission check: readiness + prioritized fix list |
 | `certificates_for` | `title`/`doi`/… | Digests of every certificate for a paper, newest first |

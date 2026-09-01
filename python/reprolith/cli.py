@@ -215,6 +215,10 @@ def _cmd_verdict(query: ReprolithQuery, args: argparse.Namespace) -> int:
     print("  claims by verdict: " + ", ".join(f"{k}={counts[k]}" for k in counts))
     if view["assumption_qualified_claims"]:
         print("  assumption-qualified: " + ", ".join(view["assumption_qualified_claims"]))
+    for asm in view["qualifying_assumptions"]:
+        # The claims were named and the value they rest on was not, which is the sentence that
+        # explains why this verdict is not a clean pass.
+        print(f"  assumed: {asm['description']} — {asm['chosen']}")
     if view["estimation_claims"]:
         # Every other rendering flags it — the badge never goes green, the human render prints
         # [estimation], pre-submission refuses ready-to-submit. This summary read as a clean pass.

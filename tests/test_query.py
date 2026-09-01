@@ -306,3 +306,48 @@ def test_the_gaps_view_carries_a_failures_whole_cause() -> None:
     for part in (failed["discrepancy"], failed["root_cause"], failed["implicated"]):
         assert part in item["needs"], part
     assert f"fault hypothesis: {failed['fault_hypothesis']}" in item["needs"]
+
+
+def test_the_verdict_summary_names_the_assumption_and_not_only_the_claims_it_qualified() -> None:
+    """Third instance of one hole: the summary named the claims and never the value.
+
+    `assumption_qualified_claims` lists twenty-three ids on the shipped metformin certificate and
+    leaves out the one sentence that explains the verdict — that Reprolith assumed the stated doses
+    are the hydrochloride salt. The human certificate carries it, so does the gap report, so does
+    the pre-submission fix list; this is the surface an agent reads to decide whether to cite the
+    certificate at all, and it carried the qualification without what qualified it. The same shape
+    was already closed twice here, for estimation-level passes and for gap notes.
+
+    Only the assumptions that withhold a clean pass are carried, which is the pair `derive_overall`
+    itself consults: a non-load-bearing assumption with nothing to verify does not move the verdict
+    and does not belong beside it.
+    """
+    from reprolith import (
+        Assumption,
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+    )
+    from reprolith.query import ReprolithQuery
+
+    cert = build_certificate(
+        paper=PaperIdentity(title="salt form", doi="10.0/s"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[
+            ClaimAssessment(claim_id="Cmax", quantity="peak", source_location="Table 6",
+                            verdict=Verdict.REPRODUCED, assumption_qualified=True),
+        ],
+        assumptions=[
+            Assumption(id="salt", description="the stated doses are metformin HCl",
+                       chosen="each dose x 129.16/165.62", basis="the paper's own methods",
+                       attributed_to="reprolith", load_bearing=True),
+            Assumption(id="route", description="the elimination route", chosen="renal",
+                       basis="convention", attributed_to="reprolith", load_bearing=False),
+        ],
+    )
+    view = ReprolithQuery._verdict_view(cert)
+    assert view["assumption_qualified_claims"] == ["Cmax"]
+    assert [a["id"] for a in view["qualifying_assumptions"]] == ["salt"]
+    assert view["qualifying_assumptions"][0]["chosen"] == "each dose x 129.16/165.62"

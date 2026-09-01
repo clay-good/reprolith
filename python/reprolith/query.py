@@ -383,6 +383,18 @@ class ReprolithQuery:
                 for a in cert.assessments
                 if a.level is ReproductionLevel.ESTIMATION and a.verdict is not Verdict.FAILED
             ],
+            # And what those claims were qualified *by*. `assumption_qualified_claims` names the
+            # claims and never the value, so this summary listed twenty-three ids and left out the
+            # one sentence that explains the verdict: Reprolith assumed the doses are the
+            # hydrochloride salt. Every other rendering carries it — the human certificate, the gap
+            # report, the pre-submission fix list — and this is the surface an agent reads to
+            # decide whether to cite the certificate at all. Only the assumptions that withhold a
+            # clean pass are here, which is the pair `derive_overall` itself consults.
+            "qualifying_assumptions": [
+                asm.to_dict()
+                for asm in cert.assumptions
+                if asm.load_bearing or asm.verification_item
+            ],
             # A gap note that never became a claim is a published result nobody evaluated, and
             # derive_overall reads only the claims — so a certificate can total up to an
             # unqualified "reproduced" while its own "what was missing" report is non-empty. The

@@ -156,6 +156,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_digitization.py"],
     ),
     (
+        "the verdict summary names the qualified claims and not what qualified them",
+        "query.py",
+        (
+            "                if asm.load_bearing or asm.verification_item",
+            "                if False",
+        ),
+        ["tests/test_query.py"],
+    ),
+    (
         "a false pass and an over-strict verdict are reported under the same word",
         "agreement.py",
         (
