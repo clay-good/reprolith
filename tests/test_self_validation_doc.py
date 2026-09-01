@@ -132,6 +132,39 @@ def test_the_committed_data_states_the_split_its_own_report_holds() -> None:
     assert "0/31" not in abstention["note"]
 
 
+def test_every_class_readme_states_its_own_report_s_agreement() -> None:
+    """The generalization of everything above, so the next class to move is caught by the first.
+
+    Only PK/PD drifted, because it is the only class whose numbers have moved: the other five each
+    say `8/8`, `6/6`, `9/9`, `3/3`, `3/3`, and each matches its own report exactly. That is luck
+    rather than a check — a class gaining an entry, or losing agreement on one, would leave its
+    README saying the old ratio with nothing to notice, which is precisely how PK/PD's four pages
+    got where they were.
+
+    A README carrying no `matched/total` ratio is skipped rather than failed: the PK/PD one states
+    its split in a table instead, and the tests above hold it to that.
+    """
+    import re
+
+    from reprolith.agreement import summarize_report
+    from reprolith.mcp_server import milestone_certificate_dirs
+
+    checked = 0
+    for model_class, directory in sorted(milestone_certificate_dirs().items()):
+        report = directory.parent / "agreement_report.json"
+        readme = directory.parent / "README.md"
+        if not report.is_file() or not readme.is_file():
+            continue
+        counts = summarize_report(json.loads(report.read_text(encoding="utf-8")))
+        ratios = set(re.findall(r"\b(\d+)/(\d+)\b", readme.read_text(encoding="utf-8")))
+        stated = {(int(a), int(b)) for a, b in ratios if int(b) == counts["total"]}
+        if not stated:
+            continue
+        assert stated == {(counts["matched"], counts["total"])}, (model_class, stated, counts)
+        checked += 1
+    assert checked >= 5, f"only {checked} class READMEs state a ratio; this check is going quiet"
+
+
 def test_every_class_row_names_a_milestone_directory_that_exists() -> None:
     """A row pointing at a directory nobody generated is a track record with no evidence under it."""
     import re
