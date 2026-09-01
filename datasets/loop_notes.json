@@ -334,7 +334,7 @@
         "curve-normalized-distance/digitized-figure"
       ],
       "basis": "spec",
-      "note": "Both are the numeric pair widened (to 15%/30% and 20%/40%) to absorb the added uncertainty of reading a value off a plot. Declared, not measured: no certified claim has yet used a digitized-figure reference, so nothing has exercised the widening. The certificate reports the reference kind alongside the tolerance, so a reader can see which of the two a verdict was judged under. One component of the CURVE widening is now measured, with no paper and no picture: read a function whose value is known everywhere at K points, resample it onto the run's grid, and compare it against the function itself. A flawless five-point reading of an oral PK curve misses it by 0.2518 \u2014 more than the whole 0.20 pass budget \u2014 and at ten points the worst point, rescaled the way judge_curve rescales it, sits at 94% of that budget. An exponential read off a log axis is recovered exactly at any K. That measures what the curator's straight lines spend, not the tolerance, which stays declared: no certified claim has used a digitized reference. That covers the curve band only. The scalar one is a single value read off a picture, whose error is set by the digitizer's calibration and the plot's pixel resolution rather than by anything computed here, so it stays unmeasured rather than borrowing the curve's number.",
+      "note": "Both are the numeric pair widened (to 15%/30% and 20%/40%) to absorb the added uncertainty of reading a value off a plot. Declared, not measured: no certified claim has yet used a digitized-figure reference, so nothing has exercised the widening, and that is why the basis here stays 'spec'. What IS measured is what a reading spends before any model is consulted, and both bands now have a number for it. CURVE: read a function whose value is known everywhere at K points, resample onto the run's grid, and compare against the function itself. A flawless five-point reading of an oral PK curve misses it by 0.2518 \u2014 more than the whole 0.20 pass budget \u2014 and at ten points the worst point, rescaled the way judge_curve rescales it, sits at 94% of it; an exponential read off a log axis is recovered exactly at any K. The same quantity is estimated from the curator's own reading, with no known function: drop each interior point, rejoin its neighbours, and the residual is the curve's own curvature. It over-states by 1.0x (K=5) to 3.9x (K=40) and is therefore not divided down, and it is charged over the window the claim is judged on rather than over the whole file, since a reading is required to cover the run and therefore permitted to exceed it \u2014 measured at 2.1x-2.3x in the under-stating direction before that was closed. SCALAR: a single value has no interpolation, and its pixel-resolution half is arithmetic. A click off by a pixel is off by one pixel's worth of the axis, so on a linear axis it is a constant ABSOLUTE error whose cost depends on where in the axis the value sits: on a 0-10 axis drawn 600 px tall, half a pixel is 0.6% of the 0.15 pass budget at the peak, 56% at a hundredth of it, and the whole budget below 0.56% of the span \u2014 1.1% at one pixel, which is what a drawn line's width costs. On a log axis a pixel is a constant RATIO: three decades over the same height cost 3.9% of the budget wherever the value is read. The digitizer's CALIBRATION error is the other half of the scalar band, is not computed anywhere, and is what the axis-range refusal in read_digitized_figure catches instead. Both tolerances stay declared; neither is now unaccounted for.",
       "evidence": [
         {
           "path": "python/reprolith/oracle.py",
@@ -348,7 +348,15 @@
           "path": "tests/test_digitization_interpolation_cost.py",
           "quotes": [
             "the curator's own straight lines, and at five points they cost 0.25 against a 0.20 budget",
-            "An exponential is a straight line on a log axis"
+            "An exponential is a straight line on a log axis",
+            "A leave-one-out join spans two gaps where the reference spans one, so it costs more than the"
+          ]
+        },
+        {
+          "path": "tests/test_digitization_scalar_cost.py",
+          "quotes": [
+            "not: on a **linear** axis one pixel is a constant *absolute* error, so what it costs relative to",
+            "pixel is a constant *ratio*, so the same reading costs the same everywhere."
           ]
         }
       ]
