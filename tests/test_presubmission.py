@@ -524,3 +524,51 @@ def test_one_assumption_across_many_claims_is_one_fix_and_not_one_per_claim() ->
     (only,) = presubmission_report(alone)["fix_list"]
     assert only["kind"] == "assumption" and only["claims"] == ["c0"]
     assert "listed above" not in only["fix"]
+
+
+def test_no_fix_is_the_finding_restated() -> None:
+    """A list headed FIX BEFORE YOU SUBMIT owes an instruction, not the finding a second time.
+
+    `_claim_issue_and_fix` was corrected for exactly this once — an author handed the discrepancy
+    back as the thing to do about it — and the certificate-level note row was still doing it, with
+    `"fix": note` beside `"issue": note`. Every gap-report entry is something the artifact or the
+    paper does not state, so one instruction is true of all of them.
+
+    Written as an invariant over the whole list rather than over the row that was wrong, since the
+    next one added is where it would come back.
+    """
+    from reprolith import (
+        Assumption,
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+        presubmission_report,
+    )
+
+    cert = build_certificate(
+        paper=PaperIdentity(title="p", doi="10.0/p"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[
+            ClaimAssessment(claim_id="c0", quantity="q0", source_location="Table 1",
+                            verdict=Verdict.REPRODUCED, assumption_qualified=True),
+            ClaimAssessment(claim_id="c1", quantity="q1", source_location="Table 1",
+                            verdict=Verdict.PARTIAL, discrepancy="off by 22%",
+                            root_cause="unstated volume", implicated="V_central",
+                            fault_hypothesis="reconstruction"),
+        ],
+        assumptions=[
+            Assumption(id="salt", description="the dose is the hydrochloride salt",
+                       chosen="each dose x 129.16/165.62", basis="the paper's own methods",
+                       attributed_to="reprolith", load_bearing=True),
+        ],
+        gap_report=["unit not stated by the artifact: units — 13 of 37 values state none"],
+    )
+    for item in presubmission_report(cert)["fix_list"]:
+        assert item["fix"] != item["issue"], item
+        assert item["fix"].strip(), item
+    note = next(i for i in presubmission_report(cert)["fix_list"] if i["kind"] == "note")
+    assert note["fix"] == (
+        "state it in your paper or your model file, so a reproducer need not infer it"
+    )

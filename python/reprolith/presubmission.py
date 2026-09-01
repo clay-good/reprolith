@@ -250,7 +250,15 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
                 "quantity": None,
                 "source_location": None,
                 "issue": note,
-                "fix": note,
+                # Not the note again. Under a heading reading *FIX BEFORE YOU SUBMIT*, this row
+                # printed the finding on one line and the identical sentence as its fix on the
+                # next — the shape `_claim_issue_and_fix` was already corrected for once, still
+                # standing here. Every entry in a gap report is something the artifact or the paper
+                # does not state (`_artifact_gaps` takes only the gaps the artifact does not carry;
+                # a blocked run's are the inputs it lacked), so one instruction is true of all of
+                # them, and it is the one the author can act on.
+                "fix": "state it in your paper or your model file, so a reproducer need not "
+                       "infer it",
             }
         )
     # Appended after the named assumptions so that, at the same priority and under a stable sort,
