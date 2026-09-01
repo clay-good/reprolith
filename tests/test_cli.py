@@ -1088,6 +1088,9 @@ def test_figure_template_writes_the_pairing_nobody_could_guess(tmp_path, capsys)
     ]
     assert all(s["points"] == [] for s in written["series"])
     assert written["figure"] == "" and written["digitizer"] == ""
+    # The one piece of guidance that has to arrive before the reading, not after it: a reading
+    # already taken cannot be made finer without taking it again.
+    assert any("read about twenty points per curve" in note for note in written["notes"])
     assert written["x_axis"]["minimum"] is None and written["y_axis"]["unit"] == ""
 
 

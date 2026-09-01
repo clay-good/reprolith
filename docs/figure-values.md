@@ -50,6 +50,10 @@ refusal exists to catch, and it cannot see it once it is written into the file.
 boundary is the point, not the number of invocations — a four-figure paper is still four files, and
 one that was already filled in is reported as replaced rather than quietly overwritten.
 
+The template also carries the one piece of guidance that has to arrive *before* the reading — read
+about twenty points per curve, and more where it bends — because a reading already taken cannot be
+made finer without taking it again. The number comes from the measurement below.
+
 It writes the ids and the curve each one plots, and leaves blank everything that is a *reading*:
 the figure, the tool, both axis ranges, and every point. None of those can be derived from a
 document, and a template that filled in an axis range would be stating what a picture shows.

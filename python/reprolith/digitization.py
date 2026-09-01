@@ -634,6 +634,16 @@ def figure_template(sedml: str, *, panel: str | None = None) -> dict[str, Any]:
         notes.append(
             "this document plots no curve that needs a reading, so there is nothing to digitize"
         )
+    else:
+        # Said here because here is where it is actionable: after the curve is read, "you read it
+        # too coarsely" costs the curator the reading. A flawless five-point reading of an oral PK
+        # curve misses the curve it was read off by 0.25 against a 0.20 pass budget, and a
+        # ten-point one by 0.09 (tests/test_digitization_interpolation_cost.py).
+        notes.append(
+            "read about twenty points per curve, and more where it bends: between two of your "
+            "readings the reference is a straight line, and a flawless five-point reading of a "
+            "PK-shaped curve already misses it by more than the whole tolerance"
+        )
     return {
         "figure": "",
         "digitizer": "",
