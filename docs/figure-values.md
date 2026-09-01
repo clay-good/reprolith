@@ -214,10 +214,11 @@ reading does not get it — the doubled gap covers a different shape. Measured, 
 runs from 1.0x at five points to 3.9x at forty. That is why nothing divides it down: a fixed
 correction would under-state the cost four-fold exactly where the reading is worst.
 
-What it cannot see is curvature the reading never resolved. A spike falling entirely between two
-read points leaves no residual at any read point, and no statistic computed from the reading can
-find it. This measures how much a reading disagrees with itself, which is a lower bound on how much
-it disagrees with the figure.
+That over-statement is about the curvature the reading *resolved*. What it cannot see at all is
+curvature the reading never resolved: a spike falling entirely between two read points leaves no
+residual at any read point, and no statistic computed from the reading can find it. So this is not
+a bound on the true cost in general — it is a measurement of how much a reading disagrees with
+itself, generous about what it can see and blind to what it cannot.
 
 Three things it buys that the gap could not. A straight line and a log-axis exponential score
 exactly zero however coarsely they are read, so the false alarm goes away. The false *reassurance*
@@ -225,9 +226,11 @@ goes with it, and that is the larger half: ten evenly spaced points span 11% eac
 gap the old warning fired at, and a ten-point reading of an oral PK curve spends about one and a
 half times the whole pass budget — geometry could not see it, because the cost is in the bend. And
 when a reading does cost too much, the report names the **x where it bends most** — the place to
-add points — rather than only saying that more are needed. The published guidance falls out of the curator's own data: an oral PK
-curve clears the budget at twenty points and not at ten, which is what the known-function table
-above already said.
+add points — rather than only saying that more are needed.
+
+The published guidance then falls out of the curator's own data rather than an assumed shape: an
+oral PK curve clears the budget at twenty points and not at ten, which is what the known-function
+table above already said.
 
 ## What the certificate then says
 
