@@ -577,3 +577,70 @@ def test_a_figure_claim_with_nothing_behind_it_still_abstains_rather_than_being_
         reference_kind=ReferenceKind.DIGITIZED_FIGURE,
     )
     assert unread.cited_source == "SED-ML plot2D 'plot_0', curve 'c'"
+
+
+def test_a_scalar_read_off_a_figure_walks_to_a_certificate_that_says_so(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The other half of the figure path, which nothing walked end to end.
+
+    A curve read off a picture has a walk (`tests/test_digitized_figure_end_to_end.py`). A *scalar*
+    read off one — a peak height, a Cmax a paper plots rather than prints — had a tolerance, a
+    reference kind, a render marker and now a fence demanding the tool that read it, and no test
+    that carried one from a claim to a rendered certificate. Each piece was covered; the join was
+    not.
+
+    Three things have to survive that join, and the middle one is the reason the fence exists: the
+    marker, the widened band, and the statement of what read the figure. A reader seeing
+    `[figure-reading]` and `<=0.15` where a printed number gets `<=0.05` can weigh the verdict only
+    if the certificate also says the number came off a picture and which tool took it off.
+    """
+    import reprolith.certify as certify_module
+    from reprolith import (
+        Claim,
+        ComparisonMethod,
+        EnginePin,
+        PaperIdentity,
+        ReferenceKind,
+        RunMetadata,
+        certify_model,
+        default_tolerance,
+        render_human,
+    )
+
+    times = tuple(float(i) for i in range(11))
+    monkeypatch.setattr(
+        certify_module, "simulate", lambda *a, **k: (times, tuple(4.6 for _ in times))
+    )
+    certificate = certify_model(
+        "<sbml/>",
+        paper=PaperIdentity(title="A peak the paper plots", doi="10.0/fig"),
+        engine_pin=EnginePin(engine="test-engine", version="0.0.0"),
+        duration=10.0,
+        steps=10,
+        claims=[Claim(
+            claim_id="peak", quantity="plasma Cmax", species="C", reported=4.2,
+            source_location="Figure 3A, the upper curve's maximum",
+            reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+            digitizer="WebPlotDigitizer 4.7",
+        )],
+    )
+    (assessment,) = certificate.assessments
+    assert assessment.verdict.value == "reproduced"
+
+    printed = render_human(certificate, RunMetadata(
+        created_at="2026-09-01T00:00:00Z", actor="a-test", tool_version="0.0.1"
+    ))
+    assert "[figure-reading]" in printed
+    # The band a printed number would have been judged in is 0.05; this is three times it, and the
+    # certificate has to say both the number and why it is that number.
+    assert "reproduced<=0.15" in printed
+    assert "read off the figure with WebPlotDigitizer 4.7" in printed
+    # And the band is doing work here rather than decorating a pass that would have held anyway:
+    # 4.6 against a reported 4.2 is 9.5%, inside the figure band's 15% and outside the 5% the same
+    # number would have been held to had it been printed. That is the case the marker exists for.
+    assert 0.09 < float(assessment.discrepancy.split()[-1]) < 0.10, assessment.discrepancy
+    printed_band = default_tolerance(
+        ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+    )
+    assert printed_band.reproduced_within == 0.05
