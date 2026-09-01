@@ -3313,6 +3313,12 @@ direction hours earlier, for an unrelated reason: the `other` column was the one
 page with no account of itself, sitting beside abstentions that carry a parenthetical explaining
 they are not wrong verdicts.
 
+The repository ran the control for this on its own. The *claim*-level headline on the same pages —
+eighty claims, 72 reproduce, 7 fail, 1 not evaluable — is asserted against the committed
+certificates by `tests/test_readme_claims.py`, and it is still exactly right. The *entry*-level
+summary beside it was asserted by nothing, and drifted in six places. Same authors, same pages,
+same day; the difference is the check.
+
 The count of surfaces is the finding. A run summarized six times drifts six times, and the fix is
 one check reading the report and asserting all six — `tests/test_self_validation_doc.py`, pure
 stdlib, on the dependency-free gate — rather than six checks each pinning its own copy. It is
