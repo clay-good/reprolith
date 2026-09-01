@@ -21,6 +21,9 @@ from pathlib import Path
 
 _ROOT = Path(__file__).parent.parent
 _PAGE = (_ROOT / "docs" / "self-validation.md").read_text(encoding="utf-8")
+#: The README repeats the same summary in one line, and repeated numbers drift apart. It is
+#: checked against the same record here rather than in a second place with its own idea of it.
+_README = (_ROOT / "README.md").read_text(encoding="utf-8")
 _REPORT = json.loads(
     (_ROOT / "datasets" / "milestone" / "agreement_report.json").read_text(encoding="utf-8")
 )
@@ -49,11 +52,17 @@ def test_the_page_does_not_claim_a_clean_sheet_it_no_longer_has() -> None:
     — and the second stopped being true. The first is the one that matters and the page now says
     exactly it.
     """
-    _, _, other = _split()
-    if other:
-        assert "0 wrong verdicts" not in _PAGE
-        assert "zero verdicts wrong" not in _PAGE
+    matched, abstained, other = _split()
+    for page in (_PAGE, _README):
+        if other:
+            assert "0 wrong verdicts" not in page
+            assert "zero verdicts wrong" not in page
+            assert "zero wrong verdicts" not in page
     assert "no false pass" in _PAGE
+    # The README states the same split in one line, and two places holding one number is how this
+    # drifted in the first place.
+    assert f"({abstained} abstentions" in _README
+    assert "three verdicts stricter than their label" in _README and other == 3
 
 
 def test_every_class_row_names_a_milestone_directory_that_exists() -> None:

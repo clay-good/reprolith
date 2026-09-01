@@ -382,8 +382,9 @@ With the extra installed the full loop runs end to end: a dossier compiles to SB
 scope-flagged certificate. The blind PK/PD self-validation set lives in
 [`datasets/pkpd_test_set.json`](datasets/pkpd_test_set.json), labelled from BioModels'
 curation status — which is also the accession prefix, so read that run as evidence of abstention
-discipline (30 abstentions, zero wrong verdicts) rather than of blind classification skill; the
-dataset and [docs/self-validation.md](docs/self-validation.md) both spell out why.
+discipline (27 abstentions, and three verdicts stricter than their label — a withheld pass, never
+a false one) rather than of blind classification skill; the dataset and
+[docs/self-validation.md](docs/self-validation.md) both spell out why.
 
 Constraint-based (FBA) models reproduce a different kind of claim — an optimization outcome, not
 a time course — so they get their own oracle behind the optional **`fba`** extra (scipy's linear
