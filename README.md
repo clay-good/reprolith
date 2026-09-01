@@ -243,6 +243,15 @@ refusing to compare any value an `initialAssignment` or a rule makes inert. On t
 metformin models it comes back clean: all ten tissue-plasma partition coefficients in each are the
 ones the paper's Table 3 prints.
 
+It also names what it could not check, which is the number this project is about. Ten of that
+model's sixteen settable parameters are reported and **six are not** — the body weight, the cardiac
+output, the glomerular filtration flow, two tissue coefficients, and the dose, which is the very
+quantity the certificate's one load-bearing assumption is about. Those are values a reproducer
+rebuilding from the paper has to take from the author's deposit or guess. A parameter the model's
+own math determines is not counted: it does not run at the number in its `value` attribute, so a
+paper omits nothing by leaving it out. Reported, never gated — which of the six belong in a paper
+is the author's call.
+
 `figure-template` and `figure-check` are the same shape for the other half of claim extraction.
 The template writes the one mechanical part of a digitization — which curve of your document each
 series is the reading for, an id nobody could guess and that has to match exactly — and leaves
