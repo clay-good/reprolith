@@ -1005,6 +1005,30 @@ def test_figure_check_reads_the_pairing_out_of_an_archive_too(tmp_path, capsys):
     assert packaged["pairing"]["faults"] == [] == loose["pairing"]["faults"]
 
 
+def test_figure_check_json_shape_is_pinned(tmp_path, capsys):
+    """This command has no MCP tool, so nothing else pins what a script reading it receives.
+
+    Every other read command's `--json` is held to the object its MCP tool returns; the two figure
+    commands work on a file the server has no path to, so the equivalent guard is here or nowhere.
+    """
+    series = _digitization(tmp_path / "fig2a.json", "plot_0__plot_0_0_0__plot_0_0_1")
+    assert run(["figure-check", "--series", str(series), "--sedml", str(_KINETIC_SEDML),
+                "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert set(payload) == {"series", "pairing"}
+    (reading,) = payload["series"]
+    assert set(reading) == {"claim", "curve", "figure", "digitizer", "points", "x_axis", "y_axis",
+                            "resolution"}
+    assert set(reading["resolution"]) == {"points", "span", "widest_gap", "widest_gap_fraction"}
+    assert set(payload["pairing"]) == {"checked_against", "faults", "curves_not_read", "windows",
+                                       "runs", "window_faults"}
+    assert payload["pairing"]["runs"] == [[0.0, 9000.0, 1000]]
+
+    # Without a document the pairing is absent rather than empty: nothing was checked.
+    assert run(["figure-check", "--series", str(series), "--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["pairing"] is None
+
+
 def test_figure_check_takes_one_document_or_the_other_and_not_both(tmp_path, capsys):
     series = _digitization(tmp_path / "fig2a.json", "plot_0__plot_0_0_0__plot_0_0_1")
     assert run(["figure-check", "--series", str(series), "some.omex",
