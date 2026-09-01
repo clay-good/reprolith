@@ -490,3 +490,62 @@ def test_a_value_read_off_a_figure_says_so_on_its_own_claim_line() -> None:
     assert "[fig3a] AUC: reproduced [figure-reading]" in rendered
     # And only where it applies, so no certificate already published renders differently.
     assert "[table2] AUC: reproduced (" in rendered
+
+
+def test_one_predicate_decides_what_a_figure_reading_is() -> None:
+    """Two surfaces answered this from two shapes, and one of them from a bare string literal.
+
+    The human render walks `render_machine`'s dicts by design, so the human and machine forms
+    cannot disagree; `figure_read_claims` walks the certificate's own assessments. Both spelled the
+    comparison out, and a rename of the enum member would have left the render silently marking
+    nothing while the summary went on listing claims.
+    """
+    from reprolith import (
+        EnginePin,
+        PaperIdentity,
+        ReferenceKind,
+        RunMetadata,
+        build_certificate,
+        judge_curve,
+        render_human,
+        render_machine,
+    )
+    from reprolith.render import figure_read_claims, is_figure_read
+
+    assert is_figure_read(ReferenceKind.DIGITIZED_FIGURE.value)
+    assert not is_figure_read(ReferenceKind.NUMERIC.value)
+    assert not is_figure_read(None)  # an assessment carrying no kind at all is not a reading
+
+    read = judge_curve(
+        claim_id="fig2", quantity="plasma", source_location="Figure 2",
+        reference=(1.0, 2.0, 3.0), predicted=(1.0, 2.0, 3.0),
+        reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+    )
+    printed = judge_curve(
+        claim_id="tab1", quantity="plasma", source_location="Table 1",
+        reference=(1.0, 2.0, 3.0), predicted=(1.0, 2.0, 3.0),
+    )
+    cert = build_certificate(
+        paper=PaperIdentity(title="one of each", doi="10.1/r"),
+        engine_pin=EnginePin(engine="copasi", version="4.46"),
+        assessments=[read, printed],
+    )
+    run = RunMetadata(created_at="t", actor="a", tool_version="0.0.1")
+
+    # The three surfaces agree, because they now consult one thing.
+    assert figure_read_claims(cert) == ["fig2"]
+    assert render_machine(cert, run)["summary"]["figure_read_claims"] == ["fig2"]
+    rendered = render_human(cert, run)
+    assert "[fig2] plasma: reproduced [figure-reading]" in rendered
+    assert "[tab1] plasma: reproduced (source" in rendered  # unmarked, as before
+
+
+def test_the_machine_summary_says_none_rather_than_omitting_the_field() -> None:
+    """So a consumer can tell "nothing was read off a picture" from "this predates the field"."""
+    from reprolith import RunMetadata, render_machine
+
+    summary = render_machine(
+        _cert([_claim(Verdict.REPRODUCED, cid="c")]),
+        RunMetadata(created_at="t", actor="a", tool_version="0.0.1"),
+    )["summary"]
+    assert summary["figure_read_claims"] == []

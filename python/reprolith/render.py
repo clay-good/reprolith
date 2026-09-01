@@ -42,20 +42,29 @@ def estimation_claims(cert: Certificate) -> list[str]:
     return [a.claim_id for a in cert.assessments if a.level is ReproductionLevel.ESTIMATION]
 
 
+def is_figure_read(reference_kind: object) -> bool:
+    """Whether a reference kind means the value was read off a picture.
+
+    One predicate, because two surfaces answer this question from two shapes: the human render
+    walks :func:`render_machine`'s dicts by design — so the human and machine forms cannot
+    disagree — and :func:`figure_read_claims` walks the certificate's own assessments. Both used
+    to spell the comparison out, one against a bare string literal, and a rename of the enum
+    member would have left the render silently marking nothing.
+    """
+    return reference_kind == ReferenceKind.DIGITIZED_FIGURE.value
+
+
 def figure_read_claims(cert: Certificate) -> list[str]:
     """The claims judged against values read off a picture rather than against published numbers.
 
     The reference counterpart of :func:`estimation_claims`, and it exists for the same reason: a
-    figure reading is a weaker result about the same question, and every surface that summarizes a
-    certificate should read one list rather than each deciding for itself what
-    ``digitized-figure`` implies. The human render already marks these ``[figure-reading]``; the
-    author-facing report had no notion of them at all, and called a pass judged in a band twice as
-    wide a clean pass with nothing to fix.
+    figure reading is a weaker result about the same question, so a surface summarizing a
+    certificate should read a list rather than decide for itself what ``digitized-figure`` implies.
+    The human render marks these ``[figure-reading]``; the author-facing report had no notion of
+    them at all, and called a pass judged in a band twice as wide a clean pass with nothing said
+    about it.
     """
-    return [
-        a.claim_id for a in cert.assessments
-        if a.reference_kind == ReferenceKind.DIGITIZED_FIGURE.value
-    ]
+    return [a.claim_id for a in cert.assessments if is_figure_read(a.reference_kind)]
 
 
 def gap_items(cert: Certificate) -> list[dict[str, Any]]:
@@ -186,6 +195,11 @@ def render_machine(cert: Certificate, run: RunMetadata) -> dict[str, Any]:
                 a.claim_id for a in cert.assessments if a.assumption_qualified
             ],
             "estimation_claims": estimation_claims(cert),
+            # The counterpart, and it belongs in the same block for the same reason: a script
+            # reading this summary should not have to walk the assessments and decide for itself
+            # what `digitized-figure` implies. Emitted always, so a consumer can tell "none read
+            # off a picture" from "this certificate predates the field".
+            "figure_read_claims": figure_read_claims(cert),
         },
         "gaps": gap_items(cert),
     }
@@ -311,7 +325,7 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
         # which a reader can see is 0.20 and cannot see is 0.20 *because* the reference is a
         # reading. Marked like the other qualifications, and only when it applies, so no
         # certificate already published renders differently.
-        reading = " [figure-reading]" if a.get("reference_kind") == "digitized-figure" else ""
+        reading = " [figure-reading]" if is_figure_read(a.get("reference_kind")) else ""
         lines.append(
             f"  [{a['claim_id']}] {a['quantity']}: {a['verdict']}{level}{qualified}{reading}"
             f" (source {a['source_location']}{method}{tol})"
