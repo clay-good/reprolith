@@ -214,9 +214,9 @@ reprolith claims-propose \            # candidate claims from the tables your pa
 reprolith claims-check \              # is each value printed in the table it cites?
   --claims <claims.json> --tables <tables.json>
 reprolith params-template \           # write the parameters file params-check reads
-  --model <model.xml> [--out <parameters.json>]
+  <file.omex> | --model <model.xml> [--out <parameters.json>]
 reprolith params-check \              # does your model carry the values your paper reports?
-  --model <model.xml> --parameters <parameters.json>
+  <file.omex> | --model <model.xml> --parameters <parameters.json>
 reprolith figure-template \           # the digitization file, with the claim pairing filled in
   <file.omex> | --sedml <exp.sedml> [--plot <plot_0>] [--out <f.json> | --out-dir <dir>]
 reprolith figure-check \              # is this digitization of your figure usable as a reference?

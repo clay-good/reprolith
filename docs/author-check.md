@@ -11,6 +11,7 @@ reprolith archive-check paper.omex --claims my_claims.json
 reprolith archive-check --sedml paper.sedml --model paper.xml --claims my_claims.json
 reprolith params-template --model paper.xml --out my_parameters.json
 reprolith params-check --model paper.xml --parameters my_parameters.json
+reprolith params-check paper.omex --parameters my_parameters.json
 ```
 
 The first line writes the claims file the other two read; see [the claims file](#the-claims-file).

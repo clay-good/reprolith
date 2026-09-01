@@ -854,6 +854,27 @@ def test_params_template_writes_the_file_params_check_reads(tmp_path, capsys):
     assert "3 parameter(s) were not compared" in checked and "ok:" not in checked
 
 
+def test_the_params_commands_read_an_archive_as_well_as_a_loose_model(capsys):
+    """Most papers ship the archive, and unzipping it to ask about your own model is the friction
+    this surface exists to remove. `claims-template` has taken both since it was written; the
+    parameter commands took only the loose file."""
+    archive = (
+        Path(__file__).parent.parent / "datasets" / "worked_examples"
+        / "metformin_reconstruction.omex"
+    )
+    assert run(["params-template", "--out", "/dev/null", str(archive)]) == 0
+    assert "row(s) to fill in" in capsys.readouterr().out
+
+
+def test_the_params_commands_refuse_two_models_and_none(capsys):
+    """Naming both says nothing about which model the paper reports, and naming neither reads
+    nothing — neither is a failure to read a file, so neither is worded as one."""
+    assert run(["params-template"]) == 1
+    assert capsys.readouterr().err.startswith("give either an archive or --model")
+    assert run(["params-template", "--model", "a.xml", "b.omex"]) == 1
+    assert capsys.readouterr().err.startswith("give either an archive or --model")
+
+
 def test_params_check_on_something_that_is_not_sbml_is_a_message(tmp_path, capsys):
     model = tmp_path / "model.xml"
     model.write_text("not xml at all", encoding="utf-8")

@@ -495,11 +495,45 @@ def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 1 if unsupported_claims(checks) else 0
 
 
+def _model_from_archive_or_file(args: argparse.Namespace) -> tuple[str, str]:
+    """The model text and the name to show for it, from an archive or a loose file.
+
+    Most papers ship one or the other, and `claims-template` has taken both since it was written.
+    The parameter commands took only the loose file, so an author with an archive had to unzip it
+    to ask about their own model — which is the friction the author-facing surface exists to
+    remove. Raises ``ValueError`` when neither or both are given.
+    """
+    if (args.archive is None) == (args.model is None):
+        raise ValueError(
+            "give either an archive or --model: the values are read from one model, and naming "
+            "two says nothing about which one your paper reports"
+        )
+    if args.archive is not None:
+        from .omex import archive_documents
+
+        _sedml, model = archive_documents(Path(args.archive).read_bytes())
+        return model, Path(args.archive).name
+    return Path(args.model).read_text(encoding="utf-8"), Path(args.model).name
+
+
+def _model_problem(args: argparse.Namespace, problem: Exception) -> str:
+    """How to word a failure to get a model, without naming the wrong file for it."""
+    if (args.archive is None) == (args.model is None):
+        return str(problem)  # the usage case: nothing was named, or two things were
+    return f"cannot read the model: {problem}"
+
+
 def _cmd_params_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Check a model's declared parameter values against the ones the paper reports for them."""
     try:
+        model, shown = _model_from_archive_or_file(args)
+    except (OSError, UnicodeDecodeError, ValueError) as unusable:
+        # Its own message: "cannot read the parameters" would name the wrong file, and the usage
+        # case — neither an archive nor --model — is not a read failure at all.
+        print(_model_problem(args, unusable), file=sys.stderr)
+        return 1
+    try:
         records = _claim_records(Path(args.parameters), args.accession)
-        model = Path(args.model).read_text(encoding="utf-8")
     except OSError as unreadable:
         print(f"cannot read the parameters: {unreadable}", file=sys.stderr)
         return 1
@@ -524,7 +558,7 @@ def _cmd_params_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             "not_reported_by_the_paper": {k: list(v) for k, v in unstated.items()},
         })
     else:
-        print(f"{len(checks)} PARAMETER(S) CHECKED AGAINST {Path(args.model).name}")
+        print(f"{len(checks)} PARAMETER(S) CHECKED AGAINST {shown}")
         for check in checks:
             mark = {True: "ok", False: "MISMATCH", None: "not compared"}[check.agrees]
             print(f"  [{check.parameter}] {mark}: {check.detail}")
@@ -551,13 +585,10 @@ _PLURAL = {"parameter": "parameters", "compartment": "compartments", "species": 
 def _cmd_params_template(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Write the parameters file params-check reads, with the blanks left for the author."""
     try:
-        model = Path(args.model).read_text(encoding="utf-8")
+        model, _shown = _model_from_archive_or_file(args)
         template = parameters_template(model, accession=args.accession)
-    except OSError as unreadable:
-        print(f"cannot read the model: {unreadable}", file=sys.stderr)
-        return 1
-    except (UnicodeDecodeError, ValueError) as unusable:
-        print(f"cannot read the model: {unusable}", file=sys.stderr)
+    except (OSError, UnicodeDecodeError, ValueError) as unusable:
+        print(_model_problem(args, unusable), file=sys.stderr)
         return 1
 
     rendered = json.dumps(template, indent=2, sort_keys=True) + "\n"
@@ -1190,7 +1221,11 @@ def build_parser() -> argparse.ArgumentParser:
         "params-check",
         help="check your model's parameter values against the ones your paper reports",
     )
-    p.add_argument("--model", required=True, help="the SBML model file to read the values from")
+    p.add_argument(
+        "archive", nargs="?", default=None,
+        help="the .omex archive to read the model out of (or use --model)",
+    )
+    p.add_argument("--model", default=None, help="the SBML model file, when it is not packaged")
     p.add_argument(
         "--parameters", required=True,
         help="a JSON file pairing each model parameter id with the value your paper reports for "
@@ -1243,7 +1278,11 @@ def build_parser() -> argparse.ArgumentParser:
         "params-template",
         help="write the parameters file params-check needs, with the blanks left for you",
     )
-    p.add_argument("--model", required=True, help="your model file")
+    p.add_argument(
+        "archive", nargs="?", default=None,
+        help="the .omex archive to read the model out of (or use --model)",
+    )
+    p.add_argument("--model", default=None, help="your model file, when it is not packaged")
     p.add_argument(
         "--accession", default=None,
         help="wrap the result under this accession, the shape a multi-paper file uses",
