@@ -234,7 +234,7 @@ _BASE_UNIT_KINDS = frozenset({
 #: two characters are in use for it — the micro sign and Greek mu — and a file saved from either
 #: keyboard is the same unit.
 _PREFIXES = {
-    "n": -9, "nano": -9, "µ": -6, "μ": -6, "u": -6, "micro": -6, "m": -3, "milli": -3,
+    "p": -12, "pico": -12, "n": -9, "nano": -9, "µ": -6, "μ": -6, "u": -6, "micro": -6, "m": -3, "milli": -3,
     "c": -2, "centi": -2, "d": -1, "deci": -1, "": 0, "k": 3, "kilo": 3, "M": 6, "mega": 6,
 }
 
@@ -260,6 +260,12 @@ _UNIT_SPELLINGS: dict[str, tuple[str, float]] = {
 #: One factor as this module renders one or an author writes one: an optional multiplier, an
 #: optional power of ten, and a name. ``3600*10^2 second`` and ``nmol`` are both one factor.
 _ONE_FACTOR = re.compile(r"^(?:([0-9.eE+-]+)\*)?(?:10\^(-?\d+) )?([A-Za-zµμ]+)$")
+
+#: Molar, which is the one unit in this domain that is written as a whole quantity rather than as
+#: a product: ``nM`` is nanomoles per litre and nothing about the spelling says so. It is read only
+#: when it is the whole unit, which is how it is written; a general algebra of composite symbols is
+#: not what this needs.
+_MOLAR = re.compile(r"^([A-Za-zµμ]*)M$")
 
 #: A factor that is only a number, which ``*`` splitting separates from the kind it multiplies.
 _NUMBER_ONLY = re.compile(r"^[0-9.eE+-]+$")
@@ -308,6 +314,9 @@ def _canonical_composite(text: str) -> tuple[float, tuple[str, ...], tuple[str, 
     Products are split on ``*`` and a factor that is only a number is re-joined to what follows it,
     because ``3600*10^2 second`` is one factor and ``nmol*h`` is two.
     """
+    molar = _MOLAR.match(text.strip())
+    if molar is not None and molar.group(1) in _PREFIXES:
+        return (10.0 ** _PREFIXES[molar.group(1)], ("mole",), ("litre",))
     groups = text.split("/")
     if len(groups) > 2:
         return None  # two solidi is an ambiguity, not a unit this should guess at
@@ -330,6 +339,22 @@ def _canonical_composite(text: str) -> tuple[float, tuple[str, ...], tuple[str, 
             kinds.append(kind)
         sides.append(tuple(sorted(kinds)))
     return (factor, sides[0], sides[1] if len(sides) > 1 else ())
+
+
+def _units_known_to_differ(stated: str, declared: str) -> bool:
+    """Whether the two are readable *and* different — the test a report needs, not a refusal.
+
+    :func:`_units_differ` answers the question a refusal asks: it says "different" when either side
+    cannot be read, so an unreadable unit is not compared. A line that *asserts* a disagreement
+    has to establish one, and this repository has already shipped one check that cried wolf on
+    correct files. A unit nobody here can parse is not evidence that two files disagree.
+    """
+    one, other = _canonical_composite(stated), _canonical_composite(declared)
+    if one is None or other is None:
+        return False
+    return not (
+        one[1] == other[1] and one[2] == other[2] and math.isclose(one[0], other[0], rel_tol=1e-12)
+    )
 
 
 def _unit_ratio(stated: str, declared: str) -> float | None:

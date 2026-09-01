@@ -113,6 +113,11 @@ cannot see it: 0-120 covers 0-24 as numbers. Given a model — packaged in the a
 — each reading's x axis is compared against the unit the model states its time in, and the answer
 names the factor between them.
 
+Neither says anything it cannot establish. A unit this cannot parse is not evidence that two files
+disagree — the opposite of how the same question is answered where *refusing* to compare is the
+safe answer — so `nM`, `µM` and their neighbours are read as molar, and an axis labelled
+"arbitrary units" is passed over in silence rather than accused.
+
 Both are **reported, never a refusal**. Which of the two files names the wrong unit is not this
 command's to decide, and there is a live example of the other one being wrong: every deposited
 metformin model declares its time as `multiplier="3600" scale="2"`, which SBML reads as 360000

@@ -177,7 +177,7 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         "a figure read in mg becomes the reference for a curve the model reads in nmol",
         "digitization.py",
         (
-            "        if declared == UNSTATED_UNIT or not _units_differ(stated, declared):",
+            "        if declared == UNSTATED_UNIT or not _units_known_to_differ(stated, declared):",
             "        if True:",
         ),
         ["tests/test_claim_units.py"],
@@ -186,7 +186,7 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         "a figure read on one clock is placed on a run that keeps another",
         "digitization.py",
         (
-            "        if not _units_differ(stated, declared):\n            continue",
+            "        if not _units_known_to_differ(stated, declared):\n            continue",
             "        if True:\n            continue",
         ),
         ["tests/test_claim_units.py"],

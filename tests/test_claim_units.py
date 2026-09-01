@@ -173,3 +173,30 @@ def test_a_readings_y_axis_is_compared_against_the_output_the_curve_reads() -> N
     # A claim id the document does not plot says nothing here: that is the pairing check's finding,
     # and answering it twice in two vocabularies helps nobody.
     assert value_unit_notes(reading("not_a_curve", "mg/mL"), sedml, model) == ()
+
+
+def test_a_report_only_asserts_a_disagreement_it_can_establish() -> None:
+    """The failure this repository has already shipped once: a check that cries wolf.
+
+    `_units_differ` answers the question a *refusal* asks — unreadable means not compared, which is
+    the safe direction there. A *report* is the opposite: a line saying two files disagree has to
+    establish it, and a unit this module cannot parse is not evidence of anything.
+
+    `nM` is why it matters. Molar is the one unit here written as a whole quantity rather than a
+    product, and a curve read in µM against a model reading `10^-9 mole / 10^-3 litre` is the same
+    quantity — a note there would be a false accusation against a correct file.
+    """
+    from reprolith.manuscript_values import (
+        _canonical_composite,
+        _units_differ,
+        _units_known_to_differ,
+    )
+
+    assert _canonical_composite("µM") == (1e-6, ("mole",), ("litre",))
+    assert _canonical_composite("M") == (1.0, ("mole",), ("litre",))
+    assert not _units_known_to_differ("µM", "10^-9 mole / 10^-3 litre")
+    assert _units_known_to_differ("nM", "10^-9 mole / 10^-3 litre")  # a thousandfold, still caught
+
+    # Unreadable on either side: the refusal says "do not compare", the report says nothing.
+    assert _units_differ("arbitrary units", "10^-9 mole")
+    assert not _units_known_to_differ("arbitrary units", "10^-9 mole")

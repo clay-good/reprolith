@@ -703,7 +703,7 @@ def time_unit_notes(
     not a disagreement. Raises ``ValueError`` if the model is not parseable SBML.
     """
     from .ingest import UNSTATED_UNIT
-    from .manuscript_values import _unit_ratio, _units_differ, model_time_unit
+    from .manuscript_values import _unit_ratio, _units_known_to_differ, model_time_unit
 
     declared = model_time_unit(model_sbml)
     if declared == UNSTATED_UNIT:
@@ -711,7 +711,10 @@ def time_unit_notes(
     notes = []
     for reading in series:
         stated = reading.x_axis.unit
-        if not _units_differ(stated, declared):
+        # The test a *report* needs: a line asserting that two files disagree has to establish
+        # it, and a unit nobody here can parse is not evidence of anything. The refusing form of
+        # this question — used where not comparing is the safe answer — is `_units_differ`.
+        if not _units_known_to_differ(stated, declared):
             continue
         ratio = _unit_ratio(stated, declared)
         notes.append(
@@ -746,7 +749,7 @@ def value_unit_notes(
     Raises ``ValueError`` if either document is not parseable.
     """
     from .ingest import UNSTATED_UNIT
-    from .manuscript_values import _unit_ratio, _units_differ, claim_units
+    from .manuscript_values import _unit_ratio, _units_known_to_differ, claim_units
     from .sedml import sedml_curve_targets
 
     targets = sedml_curve_targets(sedml)
@@ -760,7 +763,7 @@ def value_unit_notes(
         except ValueError:
             continue  # a curve reading something this model does not declare is a pairing fault
         stated = reading.y_axis.unit
-        if declared == UNSTATED_UNIT or not _units_differ(stated, declared):
+        if declared == UNSTATED_UNIT or not _units_known_to_differ(stated, declared):
             continue
         ratio = _unit_ratio(stated, declared)
         notes.append(
