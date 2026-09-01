@@ -913,6 +913,10 @@ def test_figure_check_reads_every_panel_a_paper_has(tmp_path, capsys):
     # The curator's label for the curve and the document's quantity, side by side and never
     # compared: a reading of the wrong curve of the right figure passes every other check here.
     assert "your document plots MAPK_PP there" in printed
+    # How much of the comparison is the curator's straight line, stated and not judged: a curve
+    # read at three points is judged on the run's own thousand samples.
+    assert ("your document samples 0-9000 s 1001 times, and this curve was read at 3: the other "
+            "998 are the straight line between readings") in printed
     assert "2 curve(s) your document plots are not read here" in printed
 
 

@@ -646,8 +646,8 @@ def _cmd_figure_template(query: ReprolithQuery, args: argparse.Namespace) -> int
 
 def _document_claims(
     args: argparse.Namespace,
-) -> tuple[tuple[Any, ...], tuple[tuple[float, float], ...], tuple[Any, ...]] | None:
-    """What the given document says: its curves, the windows it runs, and its panels."""
+) -> tuple[tuple[Any, ...], tuple[tuple[float, float, int], ...], tuple[Any, ...]] | None:
+    """What the given document says: its curves, the runs it states, and its panels."""
     if args.archive is None and args.sedml is None:
         return None
     from .sedml import enumerate_sedml_claims, enumerate_sedml_panels, parse_sedml_recipes
@@ -664,11 +664,12 @@ def _document_claims(
     else:
         document = Path(args.sedml).read_text(encoding="utf-8")
     # `parse_sedml_recipes` drops any time course it cannot run verbatim, so an empty set of
-    # windows is "this document states no run to judge a curve over" and not "the run is 0-0".
-    windows = tuple(dict.fromkeys(
-        (recipe.output_start, recipe.duration) for recipe in parse_sedml_recipes(document)
+    # runs is "this document states no run to judge a curve over" and not "the run is 0-0".
+    runs = tuple(dict.fromkeys(
+        (recipe.output_start, recipe.duration, recipe.steps)
+        for recipe in parse_sedml_recipes(document)
     ))
-    return tuple(enumerate_sedml_claims(document)), windows, enumerate_sedml_panels(document)
+    return tuple(enumerate_sedml_claims(document)), runs, enumerate_sedml_panels(document)
 
 
 def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
@@ -713,7 +714,8 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"cannot read the document: {unusable}", file=sys.stderr)
         return 1
 
-    claims, windows, panels = read if read is not None else (None, (), ())
+    claims, runs, panels = read if read is not None else (None, (), ())
+    windows = tuple((start, duration) for start, duration, _steps in runs)
     faults = pairing_faults(claims, series, carrier="your document") if claims is not None else ()
     # One file is one panel: `figure-template` will not write two plots into one file, and a file
     # written by hand or by an older template can still do it. Once the axis ranges are filled in
@@ -741,6 +743,7 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
                 "faults": list(faults),
                 "curves_not_read": list(unread),
                 "windows": [list(w) for w in windows],
+                "runs": [list(r) for r in runs],
                 "window_faults": list(short),
             },
         })
@@ -768,6 +771,20 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         # threshold this command invented.
         print(f"      widest gap between readings: {resolution['widest_gap_fraction']:.0%} of the "
               "span, over which the reference is interpolated")
+        # The thing a curator cannot see in their own file: a curve is judged on the run's own
+        # samples, so a reading of three points against a run of a thousand is judged almost
+        # entirely against the straight lines between them. Stated, never judged — the wider
+        # figure band is what covers it, and how much of it is doing work is theirs to weigh.
+        for start, duration, steps in runs:
+            if start > min(x for x, _ in reading.points) or duration > max(
+                x for x, _ in reading.points
+            ):
+                continue
+            samples = steps + 1
+            print(f"      your document samples {start:g}-{duration:g} {reading.x_axis.unit} "
+                  f"{samples} times, and this "
+                  f"curve was read at {resolution['points']}: the other "
+                  f"{samples - resolution['points']} are the straight line between readings")
     if claims is None:
         print("  the claim ids in this file were not checked: no document was given to check "
               "them against (pass the archive, or --sedml)")
