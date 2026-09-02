@@ -986,7 +986,7 @@ def test_params_template_writes_the_file_params_check_reads(tmp_path, capsys):
 
     written = json.loads(out.read_text(encoding="utf-8"))
     assert all(row["reported"] is None for row in written["parameters"])
-    assert written["determined_by_the_model"] == {"parameter": ["QLiver"]}
+    assert written["model_determines"] == {"parameter": ["QLiver"]}
 
     # Straight into the check, unedited: three unfilled rows, and not one of them a pass.
     assert run(["params-check", "--model", str(model), "--parameters", str(out)]) == 0

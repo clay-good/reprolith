@@ -394,7 +394,7 @@ def test_the_template_writes_a_row_per_settable_value_and_never_a_number() -> No
 
     # Muscle is set by an initialAssignment: listed, never offered as a row, because pairing one is
     # refused downstream as `not compared` and a template should not invite that.
-    assert template["determined_by_the_model"] == {"compartment": ["Muscle"]}
+    assert template["model_determines"] == {"compartment": ["Muscle"]}
     assert "Muscle" not in {row["parameter"] for row in template["parameters"]}
 
 

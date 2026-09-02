@@ -678,7 +678,7 @@ def _cmd_params_template(query: ReprolithQuery, args: argparse.Namespace) -> int
     print(f"wrote {args.out}")
     print(f"  {len(body['parameters'])} row(s) to fill in: "
           + ", ".join(f"{count} {_PLURAL[kind]}" for kind, count in sorted(kinds.items())))
-    inert = sum(len(names) for names in body["determined_by_the_model"].values())
+    inert = sum(len(names) for names in body["model_determines"].values())
     if inert:
         # Listed, not offered: pairing one is refused downstream, and a template that invited the
         # pairing would be inviting an answer about a number that never reaches the integrator.

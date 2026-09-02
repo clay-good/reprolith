@@ -772,7 +772,9 @@ def parameters_template(model_sbml: str, *, accession: str | None = None) -> dic
     and the comparison would agree by construction — which is the exact failure the check exists to
     catch, moved one file upstream.
 
-    Quantities the model's own math determines are listed apart, never as rows. Their declaring
+    Quantities the model's own math determines are listed apart, never as rows — under
+    ``model_determines``, the key `claims_template` already uses for the same fact, because two
+    files of this repository's own calling one thing two names is a seam a curator falls into once. Their declaring
     attribute is inert, so pairing one is refused downstream as *not compared*, and a template that
     invited the pairing would be inviting an answer about the wrong quantity.
 
@@ -798,7 +800,7 @@ def parameters_template(model_sbml: str, *, accession: str | None = None) -> dic
             inert.setdefault(kind, []).append(name)
     body: dict[str, Any] = {
         "parameters": rows,
-        "determined_by_the_model": {kind: sorted(names) for kind, names in sorted(inert.items())},
+        "model_determines": {kind: sorted(names) for kind, names in sorted(inert.items())},
         "fill_in": _PARAMETERS_FILL_IN,
     }
     return {"entries": {accession: body}} if accession is not None else body
