@@ -3644,25 +3644,43 @@ adding, so it never exercised the move it was written for. It was replaced by a 
 single drop lowers the score and the budget is full, which is the only regime where a swap is the
 only way out.
 
-Footprints are supplied, never derived. A claim's `quantity` and `conditions` are free text, and
-matching parameter names out of them would fabricate a dependency graph and then select against it.
-A `DossierClaim` records its footprint the way it records its source location, `dossier_from_dict`
-carries it back — a field a writer emits and a reader drops is the defect shape this package has
-tripped over often enough to test for by reflex — and the field is omitted from `to_dict` when
-empty, so every published dossier keeps its bytes and its digest. `reprolith select-claims` and the
-`select_claims` MCP tool publish the answer, each carrying the one-at-a-time ranking beside it: a
-selection nobody can compare against the obvious alternative is a decision with no stated reason.
+Footprints are never read off a claim's own prose. A claim's `quantity` and `conditions` are free
+text, and matching parameter names out of them would fabricate a dependency graph and then select
+against it. They are read off the **model** instead, which states in machine-readable form which
+symbols each quantity is computed from: `derive_footprints` walks the reactions, rules, initial
+assignments, compartments and function definitions to depth 2, and `DossierClaim` records the
+result the way it records a source location, with `dossier_from_dict` carrying it back — a field a
+writer emits and a reader drops is the defect shape this package has tripped over often enough to
+test for by reflex. Both the depth and the empty-footprint rule were measured rather than chosen,
+and both are in `tests/test_footprints.py`: the transitive closure gives all 80 claims one
+identical 116-element footprint on a strongly-connected PBPK model, and a target the walk cannot
+get beyond maps to the empty set rather than to `{itself}`, because a singleton would publish
+thirty-three views of one model as thirty-three independent pieces of evidence.
 
-What remains is the input. No dossier in the repository records a footprint, so every selection the
-engine can make today reports, in its own `limits` field, that it optimized nothing — honest, and
-useless. The corpus makes it starker: of the two committed dossiers one holds a single claim and
-the other holds none, which is the same wall finding 2 names. The proposal in
-`openspec/changes/budgeted-claim-selection` is the way through it, and its first half does not wait
-on the manuscript extractor: for an SBML-backed dossier the *model* states which parameters a
-claim's target depends on, and a footprint read off a rate law is a measurement rather than a guess.
-Its second half is the reason budgets need a certificate change at all — under a budget, a claim
-absent from a certificate may be one nobody ran, and that cannot share a representation with a
-claim the paper never made.
+And a footprint now has to say **where it came from**, because the two kinds are not equally
+checkable and read identically once written down. A derived footprint is re-derivable: anyone with
+the model file gets the same answer. A curator-stated one is a judgment about the model that the
+model was never asked to confirm — often better informed, and not checkable by re-running
+anything. A footprint with no stated origin is refused where it is built and where it is loaded,
+which is the door a contributed or hand-edited dossier comes through; the count is published in
+every selection report and printed by both surfaces, and a paper mixing the two says so in its
+`limits`. Measured on the corpus: **80 of 80** claims across the four dossiers that exist carry a
+footprint derived from the model, and none is curator-stated. The reach that number does *not*
+describe is the one that matters — those four papers are the only dossiers in the repository, so
+the derivation reaches 4 of the 31 seeded entries and none of the other five model classes, which
+ship certificates and agreement reports but nothing for a selection to read.
+
+The half that was left open was the certificate. Under a budget, a claim absent from a certificate
+may be one nobody ran, and that cannot share a representation with a claim the paper never made —
+and the direction of the error is the whole problem, because attempting only the claims that pass
+is the cheapest route to the word `reproduced`. A budgeted certificate now carries the budget, the
+objective, and every unattempted claim by id, in a shape that is not a `ClaimAssessment` with a
+spare verdict: `not-evaluable` means the claim was run and established nothing, which is a
+different statement about the paper. The overall verdict is qualified while one stands, exactly as
+a load-bearing assumption qualifies it, and one-directionally — a selection never turns a miss into
+a pass. The demonstration is the corpus's own clean sweep: BIOMD0000001027 reproduces all fourteen
+of its claims unqualified, and at a budget of three it comes back `partially-reproduced` naming the
+eleven it skipped. Three passes are a weaker result than fourteen, and the word has to say so.
 
 ## Status and what remains
 

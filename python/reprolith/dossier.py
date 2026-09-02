@@ -32,6 +32,21 @@ class ExtractionConfidence(str, Enum):
     INTERPRETED = "interpreted"  # inferred or interpreted from the source
 
 
+class FootprintOrigin(str, Enum):
+    """How a claim's footprint was arrived at — a measurement, or somebody's judgment.
+
+    The two are not equally contestable, and a selection defends itself with the overlap between
+    footprints, so a reader weighing what a budget skipped needs to know which they are looking at.
+    A derived footprint is re-derivable: the model file states which symbols each quantity is
+    computed from, and walking that graph produces the same answer for anyone who runs it. A
+    curator-stated one is an assertion about the model that the model was never asked to confirm —
+    legitimate, often better informed, and not checkable by re-running anything.
+    """
+
+    DERIVED = "derived-from-model"  # walked out of the model file's own dependency graph
+    CURATED = "curator-stated"  # written down by a person; nothing re-derives it
+
+
 class GapKind(str, Enum):
     """What kind of required element is missing from the source."""
 
@@ -238,6 +253,12 @@ class DossierClaim:
     #: string would invent a dependency and then let a selection be defended by it. Naming what a
     #: claim depends on is a modelling judgment, recorded here like every other extracted element.
     footprint: frozenset[str] = frozenset()
+    #: How that footprint was arrived at. Required whenever there is one — an unattributed
+    #: footprint cannot be weighed, because a re-derivable walk of the model and a person's
+    #: judgment about the model are different kinds of evidence and read identically once written
+    #: down. ``None`` only for a claim with no footprint at all, which is the ordinary case and
+    #: keeps every dossier written before this field byte-identical.
+    footprint_origin: FootprintOrigin | None = None
 
     def __post_init__(self) -> None:
         if not self.id.strip():
@@ -246,6 +267,19 @@ class DossierClaim:
             raise ValueError("every claim must cite its source location")
         if any(not element.strip() for element in self.footprint):
             raise ValueError(f"{self.id}: a footprint element must name something")
+        if self.footprint and self.footprint_origin is None:
+            raise ValueError(
+                f"{self.id}: a footprint has to say how it was arrived at — a walk of the model "
+                "and a curator's judgment about the model are different evidence, and a selection "
+                "that spends a budget on their overlap cannot tell a reader which it used"
+            )
+        if self.footprint_origin is not None and not self.footprint:
+            # The converse, and it is not pedantry: an origin on an empty footprint reads as a
+            # characterized claim in every count that groups by origin, while selection reads the
+            # same claim as uncharacterized and charges it no overlap.
+            raise ValueError(
+                f"{self.id}: states how its footprint was arrived at but records no footprint"
+            )
 
     def to_dict(self) -> dict[str, Any]:
         record: dict[str, Any] = {
@@ -262,6 +296,9 @@ class DossierClaim:
             # its exact bytes, and with them its content digest — the same rule an equation's kind
             # and a gap's `carried_by_artifact` already follow.
             record["footprint"] = sorted(self.footprint)
+            record["footprint_origin"] = (
+                self.footprint_origin.value if self.footprint_origin else None
+            )
         return record
 
 

@@ -54,6 +54,7 @@
         "mPlasmaVenous",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-plasma",
       "quantity": "Plasma Cmax after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -88,6 +89,7 @@
         "mPortalVein",
         "mStomach"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-portal-vein",
       "quantity": "Portal vein Cmax after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -117,6 +119,7 @@
         "mPlasmaArterial",
         "mPortalVein"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-liver",
       "quantity": "Liver Cmax after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -141,6 +144,7 @@
         "mHeart",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-heart",
       "quantity": "Heart Cmax after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -165,6 +169,7 @@
         "mMuscle",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-muscle",
       "quantity": "Muscle Cmax after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -189,6 +194,7 @@
         "mAdipose",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-adipose",
       "quantity": "Adipose Cmax after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -213,6 +219,7 @@
         "mBrain",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-brain",
       "quantity": "Brain Cmax after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -269,6 +276,7 @@
         "mPlasmaVenous",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "AUC24-plasma",
       "quantity": "Plasma AUC over 24 h after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -303,6 +311,7 @@
         "mPortalVein",
         "mStomach"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "AUC24-portal-vein",
       "quantity": "Portal vein AUC over 24 h after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -332,6 +341,7 @@
         "mPlasmaArterial",
         "mPortalVein"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "AUC24-liver",
       "quantity": "Liver AUC over 24 h after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -356,6 +366,7 @@
         "mHeart",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "AUC24-heart",
       "quantity": "Heart AUC over 24 h after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -380,6 +391,7 @@
         "mMuscle",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "AUC24-muscle",
       "quantity": "Muscle AUC over 24 h after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -404,6 +416,7 @@
         "mAdipose",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "AUC24-adipose",
       "quantity": "Adipose AUC over 24 h after a single 50 mg/kg oral dose in mice",
       "reference_data": [
@@ -428,6 +441,7 @@
         "mBrain",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "AUC24-brain",
       "quantity": "Brain AUC over 24 h after a single 50 mg/kg oral dose in mice",
       "reference_data": [

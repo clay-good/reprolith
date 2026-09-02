@@ -35,7 +35,7 @@ from itertools import combinations
 from math import comb
 from typing import Any
 
-from .dossier import Dossier
+from .dossier import Dossier, FootprintOrigin
 
 #: How many affordable subsets the exhaustive search will score before it gives up and hands the
 #: pool to greedy-seeded local search. What bounds the count is the budget as much as the pool:
@@ -226,6 +226,20 @@ SELECTION_NOTE = (
 SET_OBJECTIVE = "independent evidential value: set value less footprint overlap"
 
 
+def footprint_origins(dossier: Dossier) -> dict[str, int]:
+    """How many of a paper's *targetable* claims got their footprint from where.
+
+    Counted over the same claims the pool is built from, not over every claim in the dossier: a
+    schematic figure no verdict can come from is not a candidate, and counting its footprint here
+    would describe a selection that could never have included it.
+    """
+    counts = {origin.value: 0 for origin in FootprintOrigin}
+    for claim in dossier.claims:
+        if claim.targetable and claim.footprint and claim.footprint_origin is not None:
+            counts[claim.footprint_origin.value] += 1
+    return counts
+
+
 def stated_objective(selection: Selection) -> str:
     """The objective sentence a certificate records for ``selection``, search method included.
 
@@ -251,6 +265,16 @@ UNCHARACTERIZED_NOTE = (
 EMPTY_POOL_NOTE = (
     "this dossier records no targetable claim, so there was nothing to select from and a larger "
     "budget would change nothing"
+)
+
+#: Said when a paper's footprints do not all come from the same place. A derived footprint is
+#: re-derivable from the model file and a curator-stated one is an assertion nothing re-checks, so
+#: a selection that mixed them without saying so would defend one decision with two kinds of
+#: evidence under one name.
+MIXED_ORIGIN_NOTE = (
+    "{derived} of {characterized} characterized claims have a footprint derived from the model "
+    "and {curated} were stated by a curator; the two are not equally checkable, and the overlap "
+    "this selection spent its budget on is measured across both"
 )
 
 #: Said when only some claims record a footprint. An uncharacterized claim is charged no overlap
@@ -287,6 +311,7 @@ def claim_selection_report(
     joint = select_jointly(pool, budget=budget, redundancy=redundancy)
     greedy = select_greedily(pool, budget=budget, redundancy=redundancy)
     characterized = sum(1 for item in pool if item.footprint)
+    origins = footprint_origins(dossier)
     limits: list[str] = []
     if not pool:
         limits.append(EMPTY_POOL_NOTE)
@@ -294,11 +319,24 @@ def claim_selection_report(
         limits.append(UNCHARACTERIZED_NOTE)
     elif characterized < len(pool):
         limits.append(PARTIAL_NOTE.format(characterized=characterized, total=len(pool)))
+    if origins[FootprintOrigin.DERIVED.value] and origins[FootprintOrigin.CURATED.value]:
+        limits.append(
+            MIXED_ORIGIN_NOTE.format(
+                derived=origins[FootprintOrigin.DERIVED.value],
+                curated=origins[FootprintOrigin.CURATED.value],
+                characterized=characterized,
+            )
+        )
     return {
         "entry": dossier.entry,
         "budget": budget,
         "candidates": len(pool),
         "characterized_candidates": characterized,
+        # How each footprint was arrived at, which is what a reader needs to weigh the answer:
+        # a derived footprint is re-derivable from the model file, a curator-stated one is a
+        # judgment about the model that nothing re-checks. Always present, so "all derived" is
+        # distinguishable from a report that predates the question.
+        "footprint_origins": origins,
         "selection": joint.to_dict(),
         "greedy_baseline": greedy.to_dict(),
         "differs_from_greedy": joint.chosen != greedy.chosen,
@@ -432,12 +470,14 @@ __all__ = [
     "EMPTY_POOL_NOTE",
     "SET_OBJECTIVE",
     "EvidenceItem",
+    "MIXED_ORIGIN_NOTE",
     "PARTIAL_NOTE",
     "SELECTION_NOTE",
     "Selection",
     "UNCHARACTERIZED_NOTE",
     "claim_selection_pool",
     "claim_selection_report",
+    "footprint_origins",
     "jaccard",
     "score_set",
     "select_greedily",

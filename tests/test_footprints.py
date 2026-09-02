@@ -137,3 +137,30 @@ def test_every_shipped_bundle_covers_the_dossier_it_names_as_its_source() -> Non
             bundle.uncovered_claims(dossier),
             bundle.unmatched_steps(dossier),
         )
+
+
+def test_the_corpus_wide_origin_count_the_documents_publish_is_the_one_measured() -> None:
+    """Two documents state that every footprint in this corpus is derived and none is stated.
+
+    Prose cannot keep that true: one curator-supplied footprint, or one dossier written without
+    the join, changes it silently — and it is the number a reader uses to decide how much of the
+    selection's answer is re-derivable.
+    """
+    import json
+
+    from reprolith import dossier_from_dict
+    from reprolith.selection import footprint_origins
+
+    repo = Path(__file__).resolve().parent.parent
+    totals = {"derived-from-model": 0, "curator-stated": 0}
+    dossiers = sorted(repo.glob("datasets/**/dossiers/*.json"))
+    for path in dossiers:
+        counts = footprint_origins(dossier_from_dict(json.loads(path.read_text("utf-8"))))
+        for origin, count in counts.items():
+            totals[origin] += count
+
+    assert len(dossiers) == 4, "the documents say four dossiers exist"
+    assert totals == {"derived-from-model": 80, "curator-stated": 0}
+    for page in ("claim-selection.md", "findings-note.md"):
+        text = (repo / "docs" / page).read_text(encoding="utf-8")
+        assert "**80 of 80**" in text, f"docs/{page} no longer states the measured count"

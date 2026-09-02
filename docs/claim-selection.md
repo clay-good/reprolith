@@ -76,6 +76,31 @@ equations rather than the model file produced exactly that for 77 of the 80 clai
 models' dynamics are 33 reactions that `ingest_sbml` declines to carry and records as a gap. That
 is why the derivation reads the model file.
 
+## Where each footprint came from
+
+A derived footprint and a curator's footprint are not the same evidence, and once written down
+they look identical. The first is re-derivable — anyone with the model file gets the same set. The
+second is an assertion about the model that the model was never asked to confirm: often better
+informed than the walk, and not checkable by re-running anything. Since a selection defends itself
+with the *overlap between footprints*, a reader weighing what a budget skipped has to know which
+they are looking at.
+
+So every footprint states its origin, and one that does not is refused — where a dossier is built
+and where it is loaded, because a hand-edited or contributed dossier arrives through the loader.
+The count travels in every report and both surfaces print it:
+
+```
+  footprints: 0 curator-stated, 33 derived-from-model
+```
+
+A paper that mixes the two says so in its `limits`, naming how many of each, because a selection
+that spent one budget on two kinds of evidence under one name has not said what it did.
+
+Measured on this corpus: **80 of 80** claims across the four dossiers carry a footprint derived
+from the model, and none is curator-stated. What that number does not say is the reach — those
+four are the only dossiers here, so the derivation covers 4 of the 31 seeded entries and none of
+the other five classes.
+
 ## What it says when it cannot do the job
 
 Every report carries a `limits` field, and for most of this capability's life it was the whole

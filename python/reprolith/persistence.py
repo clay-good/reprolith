@@ -31,6 +31,7 @@ from .dossier import (
     Equation,
     EquationKind,
     ExtractionConfidence,
+    FootprintOrigin,
     Gap,
     GapKind,
     ModelArtifact,
@@ -251,6 +252,15 @@ def dossier_from_dict(record: dict[str, Any]) -> Dossier:
                 reference_kind=ReferenceKind(c["reference_kind"]) if c["reference_kind"] else None,
                 reference_data=tuple(c["reference_data"]),
                 footprint=frozenset(c.get("footprint", ())),
+                # Read back rather than defaulted: a stored footprint whose origin is missing is
+                # refused by `DossierClaim` itself, which is the point — the load path is where a
+                # hand-written or contributed dossier arrives, and an unattributed footprint would
+                # otherwise reach the selector looking exactly like a derived one.
+                footprint_origin=(
+                    FootprintOrigin(c["footprint_origin"])
+                    if c.get("footprint_origin")
+                    else None
+                ),
             )
             for c in record["claims"]
         ),

@@ -397,6 +397,14 @@ def _cmd_select_claims(query: ReprolithQuery, args: argparse.Namespace) -> int:
     )
     print(f"  spends {selected['cost']:.4g} of a {view['budget']:.4g} budget")
     print(f"  witnesses {len(selected['covered'])} distinct model element(s)")
+    # Where the overlap this answer rests on came from. A derived footprint is re-derivable from
+    # the model file; a curator-stated one is a judgment nothing re-checks. Printed for every
+    # report, including the all-derived case, so a reader never has to assume which they have.
+    origins = view["footprint_origins"]
+    print(
+        "  footprints: "
+        + ", ".join(f"{count} {origin}" for origin, count in sorted(origins.items()))
+    )
     # What the ranking would have bought instead is half the finding: a selection nobody can
     # compare against the obvious alternative is a decision with no stated reason.
     baseline = view["greedy_baseline"]

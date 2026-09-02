@@ -57,6 +57,7 @@
         "mRBC",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-500mg",
       "quantity": "plasma Cmax after 500 mg single oral dose",
       "reference_data": [
@@ -116,6 +117,7 @@
         "mRBC",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-1000mg",
       "quantity": "plasma Cmax after 1000 mg single oral dose",
       "reference_data": [
@@ -175,6 +177,7 @@
         "mRBC",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-250mg-Chung",
       "quantity": "plasma Cmax after a 250 mg oral dose, 375 mg administered 12 h earlier",
       "reference_data": [
@@ -234,6 +237,7 @@
         "mRBC",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-750mg-Wen",
       "quantity": "plasma Cmax after a 750 mg oral dose, 500 mg administered 12 h earlier",
       "reference_data": [
@@ -293,6 +297,7 @@
         "mRBC",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-500mg-El-Messaoudi",
       "quantity": "plasma Cmax after a 500 mg oral dose, the seventh of a twice-daily course",
       "reference_data": [
@@ -313,6 +318,7 @@
         "mPlasmaVenous",
         "mRBC"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-red-blood-cells-500mg",
       "quantity": "Red blood cells Cmax after a 500 mg single oral dose",
       "reference_data": [
@@ -337,6 +343,7 @@
         "mAdipose",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-adipose-500mg",
       "quantity": "Adipose Cmax after a 500 mg single oral dose",
       "reference_data": [
@@ -361,6 +368,7 @@
         "mBrain",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-brain-500mg",
       "quantity": "Brain Cmax after a 500 mg single oral dose",
       "reference_data": [
@@ -385,6 +393,7 @@
         "mPlasmaArterial",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-remainder-500mg",
       "quantity": "Remainder Cmax after a 500 mg single oral dose",
       "reference_data": [
@@ -409,6 +418,7 @@
         "mMuscle",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-muscle-500mg",
       "quantity": "Muscle Cmax after a 500 mg single oral dose",
       "reference_data": [
@@ -433,6 +443,7 @@
         "mLung",
         "mPlasmaVenous"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-lungs-500mg",
       "quantity": "Lungs Cmax after a 500 mg single oral dose",
       "reference_data": [
@@ -457,6 +468,7 @@
         "mPlasmaArterial",
         "mStomach"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-stomach-500mg",
       "quantity": "Stomach Cmax after a 500 mg single oral dose",
       "reference_data": [
@@ -481,6 +493,7 @@
         "mHeart",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-heart-500mg",
       "quantity": "Heart Cmax after a 500 mg single oral dose",
       "reference_data": [
@@ -510,6 +523,7 @@
         "mPlasmaArterial",
         "mPortalVein"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-liver-500mg",
       "quantity": "Liver Cmax after a 500 mg single oral dose",
       "reference_data": [
@@ -530,6 +544,7 @@
         "mPlasmaVenous",
         "mRBC"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-red-blood-cells-1000mg",
       "quantity": "Red blood cells Cmax after a 1000 mg single oral dose",
       "reference_data": [
@@ -554,6 +569,7 @@
         "mAdipose",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-adipose-1000mg",
       "quantity": "Adipose Cmax after a 1000 mg single oral dose",
       "reference_data": [
@@ -578,6 +594,7 @@
         "mBrain",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-brain-1000mg",
       "quantity": "Brain Cmax after a 1000 mg single oral dose",
       "reference_data": [
@@ -602,6 +619,7 @@
         "mPlasmaArterial",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-remainder-1000mg",
       "quantity": "Remainder Cmax after a 1000 mg single oral dose",
       "reference_data": [
@@ -626,6 +644,7 @@
         "mMuscle",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-muscle-1000mg",
       "quantity": "Muscle Cmax after a 1000 mg single oral dose",
       "reference_data": [
@@ -650,6 +669,7 @@
         "mLung",
         "mPlasmaVenous"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-lungs-1000mg",
       "quantity": "Lungs Cmax after a 1000 mg single oral dose",
       "reference_data": [
@@ -674,6 +694,7 @@
         "mPlasmaArterial",
         "mStomach"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-stomach-1000mg",
       "quantity": "Stomach Cmax after a 1000 mg single oral dose",
       "reference_data": [
@@ -698,6 +719,7 @@
         "mHeart",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-heart-1000mg",
       "quantity": "Heart Cmax after a 1000 mg single oral dose",
       "reference_data": [
@@ -727,6 +749,7 @@
         "mPlasmaArterial",
         "mPortalVein"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-liver-1000mg",
       "quantity": "Liver Cmax after a 1000 mg single oral dose",
       "reference_data": [
@@ -786,6 +809,7 @@
         "mRBC",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-plasma-1500mg",
       "quantity": "Plasma Cmax after a 1500 mg single oral dose",
       "reference_data": [
@@ -806,6 +830,7 @@
         "mPlasmaVenous",
         "mRBC"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-red-blood-cells-1500mg",
       "quantity": "Red blood cells Cmax after a 1500 mg single oral dose",
       "reference_data": [
@@ -830,6 +855,7 @@
         "mAdipose",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-adipose-1500mg",
       "quantity": "Adipose Cmax after a 1500 mg single oral dose",
       "reference_data": [
@@ -854,6 +880,7 @@
         "mBrain",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-brain-1500mg",
       "quantity": "Brain Cmax after a 1500 mg single oral dose",
       "reference_data": [
@@ -878,6 +905,7 @@
         "mPlasmaArterial",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-remainder-1500mg",
       "quantity": "Remainder Cmax after a 1500 mg single oral dose",
       "reference_data": [
@@ -902,6 +930,7 @@
         "mMuscle",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-muscle-1500mg",
       "quantity": "Muscle Cmax after a 1500 mg single oral dose",
       "reference_data": [
@@ -926,6 +955,7 @@
         "mLung",
         "mPlasmaVenous"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-lungs-1500mg",
       "quantity": "Lungs Cmax after a 1500 mg single oral dose",
       "reference_data": [
@@ -950,6 +980,7 @@
         "mPlasmaArterial",
         "mStomach"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-stomach-1500mg",
       "quantity": "Stomach Cmax after a 1500 mg single oral dose",
       "reference_data": [
@@ -974,6 +1005,7 @@
         "mHeart",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-heart-1500mg",
       "quantity": "Heart Cmax after a 1500 mg single oral dose",
       "reference_data": [
@@ -1003,6 +1035,7 @@
         "mPlasmaArterial",
         "mPortalVein"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-liver-1500mg",
       "quantity": "Liver Cmax after a 1500 mg single oral dose",
       "reference_data": [

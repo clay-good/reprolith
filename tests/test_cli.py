@@ -19,6 +19,7 @@ from reprolith import (
     Dossier,
     DossierClaim,
     EnginePin,
+    FootprintOrigin,
     GroundTruth,
     Identifiers,
     ModelClass,
@@ -44,6 +45,7 @@ def _dossier() -> Dossier:
         return DossierClaim(
             id=claim_id, quantity="plasma concentration", conditions="single oral dose",
             source_location=f"Fig {claim_id}", targetable=True, footprint=footprint,
+            footprint_origin=FootprintOrigin.DERIVED,
         )
 
     return Dossier(

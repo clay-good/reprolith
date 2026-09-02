@@ -57,6 +57,7 @@
         "mRBC",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-500mg-twice-daily",
       "quantity": "plasma Cmax under twice-daily 500 mg oral dosing",
       "reference_data": [
@@ -116,6 +117,7 @@
         "mRBC",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-1000mg-twice-daily",
       "quantity": "plasma Cmax under twice-daily 1000 mg oral dosing",
       "reference_data": [
@@ -175,6 +177,7 @@
         "mRBC",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-1500mg-twice-daily",
       "quantity": "plasma Cmax under twice-daily 1500 mg oral dosing",
       "reference_data": [
@@ -195,6 +198,7 @@
         "mPlasmaVenous",
         "mRBC"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-red-blood-cells-500mg-twice-daily",
       "quantity": "Red blood cells Cmax under twice-daily 500 mg oral dosing",
       "reference_data": [
@@ -219,6 +223,7 @@
         "mAdipose",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-adipose-500mg-twice-daily",
       "quantity": "Adipose Cmax under twice-daily 500 mg oral dosing",
       "reference_data": [
@@ -243,6 +248,7 @@
         "mBrain",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-brain-500mg-twice-daily",
       "quantity": "Brain Cmax under twice-daily 500 mg oral dosing",
       "reference_data": [
@@ -267,6 +273,7 @@
         "mPlasmaArterial",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-remainder-500mg-twice-daily",
       "quantity": "Remainder Cmax under twice-daily 500 mg oral dosing",
       "reference_data": [
@@ -291,6 +298,7 @@
         "mMuscle",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-muscle-500mg-twice-daily",
       "quantity": "Muscle Cmax under twice-daily 500 mg oral dosing",
       "reference_data": [
@@ -315,6 +323,7 @@
         "mLung",
         "mPlasmaVenous"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-lungs-500mg-twice-daily",
       "quantity": "Lungs Cmax under twice-daily 500 mg oral dosing",
       "reference_data": [
@@ -339,6 +348,7 @@
         "mPlasmaArterial",
         "mStomach"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-stomach-500mg-twice-daily",
       "quantity": "Stomach Cmax under twice-daily 500 mg oral dosing",
       "reference_data": [
@@ -363,6 +373,7 @@
         "mHeart",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-heart-500mg-twice-daily",
       "quantity": "Heart Cmax under twice-daily 500 mg oral dosing",
       "reference_data": [
@@ -392,6 +403,7 @@
         "mPlasmaArterial",
         "mPortalVein"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-liver-500mg-twice-daily",
       "quantity": "Liver Cmax under twice-daily 500 mg oral dosing",
       "reference_data": [
@@ -412,6 +424,7 @@
         "mPlasmaVenous",
         "mRBC"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-red-blood-cells-1000mg-twice-daily",
       "quantity": "Red blood cells Cmax under twice-daily 1000 mg oral dosing",
       "reference_data": [
@@ -436,6 +449,7 @@
         "mAdipose",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-adipose-1000mg-twice-daily",
       "quantity": "Adipose Cmax under twice-daily 1000 mg oral dosing",
       "reference_data": [
@@ -460,6 +474,7 @@
         "mBrain",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-brain-1000mg-twice-daily",
       "quantity": "Brain Cmax under twice-daily 1000 mg oral dosing",
       "reference_data": [
@@ -484,6 +499,7 @@
         "mPlasmaArterial",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-remainder-1000mg-twice-daily",
       "quantity": "Remainder Cmax under twice-daily 1000 mg oral dosing",
       "reference_data": [
@@ -508,6 +524,7 @@
         "mMuscle",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-muscle-1000mg-twice-daily",
       "quantity": "Muscle Cmax under twice-daily 1000 mg oral dosing",
       "reference_data": [
@@ -532,6 +549,7 @@
         "mLung",
         "mPlasmaVenous"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-lungs-1000mg-twice-daily",
       "quantity": "Lungs Cmax under twice-daily 1000 mg oral dosing",
       "reference_data": [
@@ -556,6 +574,7 @@
         "mPlasmaArterial",
         "mStomach"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-stomach-1000mg-twice-daily",
       "quantity": "Stomach Cmax under twice-daily 1000 mg oral dosing",
       "reference_data": [
@@ -580,6 +599,7 @@
         "mHeart",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-heart-1000mg-twice-daily",
       "quantity": "Heart Cmax under twice-daily 1000 mg oral dosing",
       "reference_data": [
@@ -609,6 +629,7 @@
         "mPlasmaArterial",
         "mPortalVein"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-liver-1000mg-twice-daily",
       "quantity": "Liver Cmax under twice-daily 1000 mg oral dosing",
       "reference_data": [
@@ -629,6 +650,7 @@
         "mPlasmaVenous",
         "mRBC"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-red-blood-cells-1500mg-twice-daily",
       "quantity": "Red blood cells Cmax under twice-daily 1500 mg oral dosing",
       "reference_data": [
@@ -653,6 +675,7 @@
         "mAdipose",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-adipose-1500mg-twice-daily",
       "quantity": "Adipose Cmax under twice-daily 1500 mg oral dosing",
       "reference_data": [
@@ -677,6 +700,7 @@
         "mBrain",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-brain-1500mg-twice-daily",
       "quantity": "Brain Cmax under twice-daily 1500 mg oral dosing",
       "reference_data": [
@@ -701,6 +725,7 @@
         "mPlasmaArterial",
         "mRemainder"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-remainder-1500mg-twice-daily",
       "quantity": "Remainder Cmax under twice-daily 1500 mg oral dosing",
       "reference_data": [
@@ -725,6 +750,7 @@
         "mMuscle",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-muscle-1500mg-twice-daily",
       "quantity": "Muscle Cmax under twice-daily 1500 mg oral dosing",
       "reference_data": [
@@ -749,6 +775,7 @@
         "mLung",
         "mPlasmaVenous"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-lungs-1500mg-twice-daily",
       "quantity": "Lungs Cmax under twice-daily 1500 mg oral dosing",
       "reference_data": [
@@ -773,6 +800,7 @@
         "mPlasmaArterial",
         "mStomach"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-stomach-1500mg-twice-daily",
       "quantity": "Stomach Cmax under twice-daily 1500 mg oral dosing",
       "reference_data": [
@@ -797,6 +825,7 @@
         "mHeart",
         "mPlasmaArterial"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-heart-1500mg-twice-daily",
       "quantity": "Heart Cmax under twice-daily 1500 mg oral dosing",
       "reference_data": [
@@ -826,6 +855,7 @@
         "mPlasmaArterial",
         "mPortalVein"
       ],
+      "footprint_origin": "derived-from-model",
       "id": "Cmax-liver-1500mg-twice-daily",
       "quantity": "Liver Cmax under twice-daily 1500 mg oral dosing",
       "reference_data": [

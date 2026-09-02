@@ -99,6 +99,7 @@ def main() -> None:
         estimate_difficulty,
         ingest_sbml,
     )
+    from reprolith.dossier import FootprintOrigin
     from reprolith.footprints import derive_footprints
 
 
@@ -133,6 +134,9 @@ def main() -> None:
                 reference_kind=ReferenceKind.NUMERIC,
                 reference_data=(float(record["reported"]),),
                 footprint=footprints[record["species"]],
+                footprint_origin=(
+                    FootprintOrigin.DERIVED if footprints[record["species"]] else None
+                ),
             )
             for record in entry["claims"]
         ))

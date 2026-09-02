@@ -17,6 +17,7 @@ from reprolith import (
     Dossier,
     DossierClaim,
     Equation,
+    FootprintOrigin,
     Gap,
     GapKind,
     Parameter,
@@ -31,7 +32,13 @@ from reprolith.query import ReprolithQuery
 from reprolith.supersession import CertificateLedger
 
 
-def _claim(claim_id: str, footprint: frozenset[str], *, targetable: bool = True) -> DossierClaim:
+def _claim(
+    claim_id: str,
+    footprint: frozenset[str],
+    *,
+    targetable: bool = True,
+    origin: FootprintOrigin | None = FootprintOrigin.DERIVED,
+) -> DossierClaim:
     return DossierClaim(
         id=claim_id,
         quantity="plasma concentration",
@@ -39,12 +46,14 @@ def _claim(claim_id: str, footprint: frozenset[str], *, targetable: bool = True)
         source_location=f"Fig {claim_id}",
         targetable=targetable,
         footprint=footprint,
+        footprint_origin=origin if footprint else None,
     )
 
 
 # One paper, five claims. Figure 2's three panels are one absorption/elimination fit at three
 # doses; Figure 3 and Table 1 rest on machinery nothing else touches.
 _CENTRAL = frozenset({"k_abs", "k_el", "V_central"})
+_PERIPHERAL = frozenset({"Q_periph", "peripheral"})
 _PAPER = Dossier(
     entry="ACC1",
     state_variables=("gut", "central", "peripheral"),
@@ -59,7 +68,7 @@ _PAPER = Dossier(
         _claim("fig2a", _CENTRAL),
         _claim("fig2b", _CENTRAL),
         _claim("fig2c", _CENTRAL),
-        _claim("fig3", frozenset({"Q_periph", "peripheral"})),
+        _claim("fig3", _PERIPHERAL),
         _claim("table1", frozenset({"dose_schedule"})),
         _claim("fig1_schematic", frozenset(), targetable=False),
     ),
@@ -158,7 +167,7 @@ def test_a_claim_with_no_footprint_writes_the_same_bytes_as_before_the_field_exi
 def test_a_blank_footprint_element_is_refused() -> None:
     with pytest.raises(ValueError, match="a footprint element must name something"):
         DossierClaim(id="c", quantity="q", conditions="x", source_location="Fig 1",
-                     footprint=frozenset({"  "}))
+                     footprint=frozenset({"  "}), footprint_origin=FootprintOrigin.DERIVED)
 
 
 def _repo(tmp_path: Path) -> Path:
@@ -212,3 +221,75 @@ def test_the_mcp_tool_refuses_an_absurd_budget() -> None:
     for budget in (0, -1, 1e12):
         with pytest.raises(ValueError, match="budget must be positive"):
             dispatch_tool(query, "select_claims", {"accession": "ACC1", "budget": budget})
+
+
+# --- where each footprint came from ---------------------------------------------------
+
+
+def test_a_footprint_has_to_say_how_it_was_arrived_at() -> None:
+    """An unattributed footprint reads exactly like a derived one and is not the same evidence."""
+    with pytest.raises(ValueError, match="how it was arrived at"):
+        DossierClaim(
+            id="c", quantity="q", conditions="x", source_location="Fig 1",
+            footprint=frozenset({"k_el"}),
+        )
+    # And the converse: an origin on no footprint would be counted as characterized by every
+    # surface that groups by origin, while selection charges that same claim no overlap.
+    with pytest.raises(ValueError, match="records no footprint"):
+        DossierClaim(
+            id="c", quantity="q", conditions="x", source_location="Fig 1",
+            footprint_origin=FootprintOrigin.CURATED,
+        )
+
+
+def test_the_load_path_refuses_an_unattributed_footprint() -> None:
+    # Where a contributed or hand-edited dossier arrives. The stored form carries the origin
+    # beside the footprint, so deleting it is the edit this refuses.
+    stored = _PAPER.to_dict()
+    for claim in stored["claims"]:
+        claim.pop("footprint_origin", None)
+    with pytest.raises(ValueError, match="how it was arrived at"):
+        dossier_from_dict(stored)
+
+
+def test_the_report_says_where_each_footprint_came_from() -> None:
+    derived_only = claim_selection_report(_PAPER, budget=3)
+    assert derived_only["footprint_origins"] == {"derived-from-model": 5, "curator-stated": 0}
+    # All from one place, so there is nothing to warn about.
+    assert not any("stated by a curator" in note for note in derived_only["limits"])
+
+
+def test_a_mixed_dossier_shows_both_and_says_so() -> None:
+    mixed = Dossier(
+        entry="ACC1",
+        claims=(
+            _claim("fig2a", _CENTRAL),
+            _claim("fig3", _PERIPHERAL, origin=FootprintOrigin.CURATED),
+        ),
+    )
+    report = claim_selection_report(mixed, budget=2)
+    assert report["footprint_origins"] == {"derived-from-model": 1, "curator-stated": 1}
+    note = next(n for n in report["limits"] if "stated by a curator" in n)
+    assert "1 of 2 characterized claims" in note
+
+
+def test_an_untargetable_claim_is_not_counted_among_the_origins() -> None:
+    # It is not a candidate, so counting its footprint here would describe a selection that could
+    # never have included it.
+    with_schematic = Dossier(
+        entry="ACC1",
+        claims=(_claim("fig2a", _CENTRAL), _claim("scheme", _PERIPHERAL, targetable=False)),
+    )
+    assert claim_selection_report(with_schematic, budget=2)["footprint_origins"] == {
+        "derived-from-model": 1, "curator-stated": 0,
+    }
+
+
+def test_both_surfaces_show_the_same_footprint_origins(tmp_path, capsys) -> None:
+    assert run(["--data-dir", str(_repo(tmp_path)), "select-claims", "ACC1", "--budget", "3"]) == 0
+    printed = capsys.readouterr().out
+    assert "footprints: 0 curator-stated, 5 derived-from-model" in printed
+
+    query = ReprolithQuery(Catalog(), CertificateLedger(), dossiers={"ACC1": _PAPER.to_dict()})
+    answer = dispatch_tool(query, "select_claims", {"accession": "ACC1", "budget": 3})
+    assert answer["footprint_origins"] == {"derived-from-model": 5, "curator-stated": 0}
