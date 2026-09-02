@@ -27,6 +27,7 @@ _PAIRS = {
     "catalog": ("list_catalog", {}),
     "backlog": ("backlog_health", {}),
     "self-validation": ("self_validation", {}),
+    "corroboration": ("corroboration", {}),
     "certificate": ("certificate", {"digest": "{digest}"}),
     "verdict": ("verdict", {"digest": "{digest}"}),
     "gaps": ("gaps", {"digest": "{digest}"}),

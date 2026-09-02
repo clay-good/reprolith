@@ -12,7 +12,11 @@ import re
 from pathlib import Path
 
 from reprolith import render_registry
-from reprolith.mcp_server import milestone_agreement_reports, milestone_certificate_dirs
+from reprolith.mcp_server import (
+    milestone_agreement_reports,
+    milestone_certificate_dirs,
+    milestone_corroboration_records,
+)
 from reprolith.query import self_validation_summary
 
 _REPO = Path(__file__).parent.parent
@@ -49,7 +53,7 @@ def _rebuild() -> str:
     return render_registry(
         builder.collect(),
         self_validation=self_validation,
-        corroboration=builder.collect_corroboration(),
+        corroboration=milestone_corroboration_records(),
     )
 
 

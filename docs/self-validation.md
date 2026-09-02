@@ -114,6 +114,52 @@ through the read surface. They pair an accession with its ground-truth label, an
 accessions sit in the live work queue — publishing them would hand a reproducing agent the answer
 key for the paper it is about to claim.
 
+### The other question: was it one solver's answer?
+
+Agreement with a ground-truth label says a verdict was *right*. It does not say the verdict was the
+**model's** behaviour rather than one simulator's quirk — a solver-specific integration artifact
+reproduces a paper for the wrong reason, and agrees with its label while doing it. That is what
+cross-engine corroboration asks: run the same model under a second, independently-implemented
+engine at the conditions each claim was certified at, and see whether the same numbers come out.
+
+It is reported beside the verdicts and never gates them, and it is now queryable from the same
+surface everything else here is (`reprolith corroboration`, or the MCP `corroboration` tool). Until
+then it was computed, committed to each milestone directory as `corroboration.json`, and rendered
+on the public registry page alone — so a reader at a terminal, and an agent reading over MCP, saw
+six classes of verdicts with nothing saying which of them a second simulator had ever confirmed.
+
+```
+$ reprolith corroboration
+CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
+  reported beside the verdicts, never gating them
+  kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
+  ode-pkpd             80 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
+  constraint-based      no second engine is registered — nothing was checked, which is not a pass
+  logical               no second engine is registered — nothing was checked, which is not a pass
+  spatial               no second engine is registered — nothing was checked, which is not a pass
+  stochastic            no second engine is registered — nothing was checked, which is not a pass
+
+  overall: 2 of 6 classes re-run on a second engine — 80 claim(s), 6 model(s)
+```
+
+Two things about that output are deliberate.
+
+The **four unchecked classes print in the same list as the two checked ones.** Four of the six have
+no second registered engine, so nothing was re-run for them. A table of the two that do would read
+as a whole-repository pass — the exact shape this repository keeps being caught by, a clean report
+standing in for a check nobody made. The absence is the finding, so it is as loud as the pass.
+
+And the **two counts are never added up.** The classes do not count the same thing: PK/PD re-runs
+each *claim* at the dose it was certified at, and the kinetic class re-runs each *model*'s curve
+once. Adding eighty claims to six models gives an `86` that reads as four times what was re-run, so
+the total states the two units apart, and each class's unit is read off its own record's keys
+rather than assumed.
+
+The bound published per class is the **worst** one in it, not the best, and each individual bound
+is already rounded up to a decade — a distance between two agreeing engines is a difference of
+nearly-equal numbers, and its leading digits are the engines' own last-place noise. The published
+number never states better agreement than was measured.
+
 ### What these numbers do and do not establish
 
 Read them as evidence about **abstention discipline**, not classification skill.

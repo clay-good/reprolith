@@ -589,8 +589,12 @@ def test_the_registry_names_the_classes_no_second_engine_ever_checked() -> None:
                 "BIOMD1:AUC": {"engines": ["copasi", "roadrunner"],
                                "engine_independent": True, "distance_at_most": 1e-07},
             },
-        },
-        ["logical", "ode-pkpd", "spatial"],
+            # Every published class appears, with an empty record standing for "no second engine
+            # was registered, so nothing was re-run" — which is what makes the absence as visible
+            # as the pass rather than something a caller can drop by omission.
+            "logical": {},
+            "spatial": {},
+        }
     )
     assert "ode-pkpd: 2 claim(s) re-run on copasi, roadrunner" in banner
     assert "all engine-independent to 1e-06" in banner  # the weakest bound, not the best
@@ -611,8 +615,7 @@ def test_the_registry_counts_models_as_models_and_claims_as_claims() -> None:
         {"kinetic": {
             "BIOMD5": {"engines": ["copasi", "roadrunner"], "engine_independent": True,
                        "distance_at_most": 1e-04},
-        }},
-        ["kinetic"],
+        }}
     )
     assert "kinetic: 1 model(s) re-run" in banner
 
@@ -627,8 +630,7 @@ def test_a_corroboration_that_did_not_hold_is_not_reported_as_holding() -> None:
                             "distance_at_most": 1e-06},
             "BIOMD1:AUC": {"engines": ["copasi", "roadrunner"], "engine_independent": False,
                            "distance_at_most": 0.4},
-        }},
-        ["ode-pkpd"],
+        }}
     )
     assert "1 of 2 engine-independent" in banner
     assert "all engine-independent" not in banner

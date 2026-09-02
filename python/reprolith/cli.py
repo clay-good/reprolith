@@ -157,6 +157,42 @@ def _cmd_self_validation(query: ReprolithQuery, args: argparse.Namespace) -> int
     return 0
 
 
+def _cmd_corroboration(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    report = query.corroboration()
+    if args.json:
+        _print_json(report)
+        return 0
+    by_class = report["by_class"]
+    unchecked = report["unchecked"]
+    if not by_class and not unchecked:
+        print("(no corroboration records loaded)")
+        return 0
+    print("CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)")
+    print("  reported beside the verdicts, never gating them")
+    for label in sorted(by_class):
+        entry = by_class[label]
+        bound = entry["distance_at_most"]
+        held = (
+            f"all engine-independent to {bound:.0e}"
+            if entry["engine_independent"] == entry["checked"] and bound is not None
+            else f"{entry['engine_independent']} of {entry['checked']} engine-independent"
+        )
+        print(f"  {label:<18} {entry['checked']:>4} {entry['unit']}(s) on "
+              f"{', '.join(entry['engines'])} — {held}")
+    # The absence is the finding, so it prints in the same list rather than as a footnote a reader
+    # can miss: four of the six classes have no second engine, and a table of the two that do
+    # would read as a whole-repository pass.
+    for label in unchecked:
+        print(f"  {label:<18}    no second engine is registered — nothing was checked, "
+              f"which is not a pass")
+    o = report["overall"]
+    runs = ", ".join(f"{n} {unit}(s)" for unit, n in sorted(o["runs"].items()))
+    print(f"\n  overall: {o['classes_checked']} of "
+          f"{o['classes_checked'] + o['classes_unchecked']} classes re-run on a second engine"
+          + (f" — {runs}" if runs else ""))
+    return 0
+
+
 def _cmd_status(query: ReprolithQuery, args: argparse.Namespace) -> int:
     view = query.status(**_identifier_kwargs(args))
     if view is None:
@@ -1305,8 +1341,8 @@ def build_parser() -> argparse.ArgumentParser:
             "has seen them."
         ),
         epilog=(
-            "reading this repository: catalog, backlog, self-validation, status, certificate, "
-            "verdict, gaps, presubmission, certificates-for, dossier, bundle\n"
+            "reading this repository: catalog, backlog, self-validation, corroboration, status, "
+            "certificate, verdict, gaps, presubmission, certificates-for, dossier, bundle\n"
             "checking your own files: archive-check, claims-template, claims-propose, "
             "claims-check, params-template, params-propose, params-check, figure-template, "
             "figure-check\n"
@@ -1355,6 +1391,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_json(p)
     p.set_defaults(func=_cmd_self_validation)
+
+    p = sub.add_parser(
+        "corroboration",
+        help="what a second, independent engine said about these verdicts (and where none was asked)",
+    )
+    add_json(p)
+    p.set_defaults(func=_cmd_corroboration)
 
     p = sub.add_parser("status", help="a paper's lifecycle status and history")
     add_identifier(p)

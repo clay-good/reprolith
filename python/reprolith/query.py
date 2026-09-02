@@ -95,6 +95,65 @@ def self_validation_summary(agreement_reports: dict[str, dict[str, Any]]) -> dic
     }
 
 
+def corroboration_summary(records: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """What a second, independent engine said about each class's verdicts — and where none was asked.
+
+    Pure function of :func:`reprolith.mcp_server.milestone_corroboration_records`, so the public
+    registry page, the terminal and the agent surface all describe one computation rather than
+    three readings of the same files. It was the registry page's alone, which meant a reader at a
+    terminal — and an agent — could see six classes of verdicts with nothing saying which of them
+    a second simulator had ever confirmed.
+
+    ``by_class`` carries only the classes that were checked. ``unchecked`` names the rest, and is
+    the half that earns this: four classes have no second registered engine, so nothing was
+    re-run for them, and a summary listing only the corroborated classes would leave every reader
+    to infer the others had been checked and passed.
+
+    Counts are never blended across classes, because the classes do not count the same thing.
+    PK/PD re-runs each *claim* at the dose it was certified at; the kinetic class re-runs each
+    *model*'s curve once. Adding eighty claims to six models gives an ``86`` that reads as four
+    times what was actually re-run, so ``overall`` reports the two units apart and the unit is
+    read off each record's own keys rather than assumed.
+    """
+    by_class: dict[str, dict[str, Any]] = {}
+    unchecked: list[str] = []
+    for model_class in sorted(records):
+        record = records[model_class]
+        if not record:
+            unchecked.append(model_class)
+            continue
+        bounds = [
+            float(row["distance_at_most"])
+            for row in record.values()
+            if row.get("distance_at_most") is not None
+        ]
+        by_class[model_class] = {
+            # A key of `accession:claim_id` is a claim; a bare accession is a model.
+            "unit": "claim" if all(":" in key for key in record) else "model",
+            "checked": len(record),
+            "engine_independent": sum(1 for row in record.values() if row.get("engine_independent")),
+            "engines": sorted({e for row in record.values() for e in row.get("engines", ())}),
+            # The worst published bound in the class: the agreement this class is only as good as.
+            "distance_at_most": max(bounds) if bounds else None,
+        }
+    runs: dict[str, int] = {}
+    independent: dict[str, int] = {}
+    for entry in by_class.values():
+        unit = str(entry["unit"])
+        runs[unit] = runs.get(unit, 0) + int(entry["checked"])
+        independent[unit] = independent.get(unit, 0) + int(entry["engine_independent"])
+    return {
+        "by_class": by_class,
+        "unchecked": unchecked,
+        "overall": {
+            "classes_checked": len(by_class),
+            "classes_unchecked": len(unchecked),
+            "runs": runs,
+            "engine_independent": independent,
+        },
+    }
+
+
 class ReprolithQuery:
     """A read-only view over a catalog and a certificate ledger.
 
@@ -109,6 +168,7 @@ class ReprolithQuery:
         dossiers: dict[str, dict[str, Any]] | None = None,
         bundles: dict[str, dict[str, Any]] | None = None,
         agreement_reports: dict[str, dict[str, Any]] | None = None,
+        corroboration: dict[str, dict[str, Any]] | None = None,
     ) -> None:
         self._catalog = catalog
         self._ledger = ledger
@@ -120,6 +180,12 @@ class ReprolithQuery:
         # Per-class blind self-validation reports keyed by model-class label — how each class's
         # verdicts matched independently-established ground truth. Empty when none are loaded.
         self._agreement_reports = agreement_reports or {}
+        # Per-class committed cross-engine records keyed by model-class label — what a second,
+        # independent simulator said about the same runs. Every class this repository
+        # publishes appears, with an empty record where no second engine is registered, so
+        # the unchecked classes are as reachable here as the checked ones. Empty when none
+        # are loaded.
+        self._corroboration = corroboration or {}
 
     # --- catalog / status (blind: no ground-truth label leaves the catalog) --------
 
@@ -210,6 +276,18 @@ class ReprolithQuery:
         read the confusion matrices for their structure. Empty ``by_class`` when none are loaded.
         """
         return self_validation_summary(self._agreement_reports)
+
+    def corroboration(self) -> dict[str, Any]:
+        """What a second, independent engine said about these verdicts, per model class.
+
+        The companion of :meth:`self_validation`: that one asks whether a verdict matched
+        independently-established ground truth, this one whether the verdict is the model's
+        behaviour or one solver's quirk. Reported beside the certificates rather than gating
+        them (spec: ``simulation-oracle`` — engine sensitivity). ``unchecked`` names the
+        classes with no second registered engine, where nothing was re-run — an absence, not
+        a pass. See :func:`corroboration_summary`. Empty when none are loaded.
+        """
+        return corroboration_summary(self._corroboration)
 
     def dossier(self, accession: str) -> dict[str, Any] | None:
         """The ingested dossier for an entry accession — its extracted model structure."""
@@ -417,4 +495,4 @@ class ReprolithQuery:
         return Identifiers(title=p.title, doi=p.doi, pubmed_id=p.pubmed_id).keys()
 
 
-__all__ = ["ReprolithQuery", "self_validation_summary"]
+__all__ = ["ReprolithQuery", "corroboration_summary", "self_validation_summary"]

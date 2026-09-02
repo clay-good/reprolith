@@ -454,50 +454,39 @@ def _track_record_banner(self_validation: dict[str, Any]) -> str:
     )
 
 
-def _corroboration_banner(
-    corroboration: dict[str, dict[str, Any]], classes: Iterable[str]
-) -> str:
+def _corroboration_banner(corroboration: dict[str, dict[str, Any]]) -> str:
     """What a second independent engine said, per class — including where none was asked.
 
     Cross-engine corroboration is the check that separates a model's behaviour from one solver's
-    quirks, and until now it reached no reader: it was computed, committed to each milestone
-    directory as ``corroboration.json``, and described in that directory's README. The public page
-    that publishes the verdicts said nothing about it either way.
+    quirks. Both halves are rendered, and the second is the one that earns this: two classes have
+    a second registered engine, four do not, and for those nothing was checked. A page that
+    listed only the corroborated classes would leave a reader to infer that the others had been
+    checked and passed, which is the shape this repository keeps being caught by — a clean report
+    standing in for a check nobody made.
 
-    Both halves are rendered, and the second is the one that earns this. Two classes have a second
-    registered engine; four do not, and for those nothing was checked. A page that listed only the
-    corroborated classes would leave a reader to infer that the others had been checked and passed,
-    which is the shape this repository keeps being caught by — a clean report standing in for a
-    check nobody made.
-
-    ``corroboration`` maps a model class to the committed record for it, keyed by what that class
-    actually corroborated: PK/PD re-runs each *claim* at the dose it was certified at (a key of
-    ``accession:claim_id``), while the kinetic class re-runs each *model*'s curve once (a bare
-    accession). The unit is read off the key rather than assumed, because calling six models "six
-    claims" is a number that reads as four times what was checked.
+    ``corroboration`` is the per-class committed record for **every** published class, and the
+    split, the counts and the units are all computed by
+    :func:`reprolith.query.corroboration_summary` rather than here. That function is what the
+    terminal and the agent surface answer from too, so the public page and the two queried views
+    cannot disagree about which classes a second engine has confirmed — which they could when
+    this banner was the only reader of these files.
     """
-    checked, unchecked = [], []
-    for model_class in sorted(classes):
-        record = corroboration.get(model_class)
-        if not record:
-            unchecked.append(model_class)
-            continue
-        engines = sorted({e for row in record.values() for e in row.get("engines", ())})
-        agreed = sum(1 for row in record.values() if row.get("engine_independent"))
-        bound = max(
-            (float(row["distance_at_most"]) for row in record.values()
-             if row.get("distance_at_most") is not None),
-            default=None,
-        )
+    from .query import corroboration_summary
+
+    summary = corroboration_summary(corroboration)
+    checked = []
+    for model_class, entry in sorted(summary["by_class"].items()):
+        bound = entry["distance_at_most"]
         held = (
-            f" all engine-independent to {bound:.0e}" if agreed == len(record) and bound is not None
-            else f" {agreed} of {len(record)} engine-independent"
+            f" all engine-independent to {bound:.0e}"
+            if entry["engine_independent"] == entry["checked"] and bound is not None
+            else f" {entry['engine_independent']} of {entry['checked']} engine-independent"
         )
-        unit = "claim" if all(":" in key for key in record) else "model"
         checked.append(
-            f"<li>{html.escape(model_class)}: {len(record)} {unit}(s) re-run on "
-            f"{html.escape(', '.join(engines))} —{held}</li>"
+            f"<li>{html.escape(model_class)}: {entry['checked']} {entry['unit']}(s) re-run on "
+            f"{html.escape(', '.join(entry['engines']))} —{held}</li>"
         )
+    unchecked = summary["unchecked"]
     if not checked and not unchecked:
         return ""
     absent = (
@@ -678,7 +667,7 @@ def render_registry(
         f"<h1>{html.escape(title)}</h1>"
         f'<p class="disclaimer">{html.escape(scope_human)}</p>'
         f"{_track_record_banner(self_validation) if self_validation else ''}"
-        f"{_corroboration_banner(corroboration, classes) if corroboration is not None else ''}"
+        f"{_corroboration_banner(corroboration) if corroboration is not None else ''}"
         f"{_AUTHOR_BANNER}"
         '<div class="filters">'
         f"{buttons('class', classes)}{buttons('verdict', verdicts)}</div>"

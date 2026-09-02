@@ -163,6 +163,15 @@ guessing — just: *does the described model produce the shown result?*
 - **A verdict that expires.** Every certificate names the software that computed it — including,
   for the classes Reprolith solves itself, the revision of that code — so changing a solver flags
   every certificate it invalidates instead of leaving them looking current.
+- **A second opinion, or an honest blank.** A model can reproduce its paper for the wrong reason —
+  a solver artifact that agrees with the figure. So the same runs go through a second,
+  independently-implemented engine and the agreement is published beside the verdict, never gating
+  it: 80 PK/PD claims at the dose each was certified at and 6 kinetic models, all
+  engine-independent, COPASI against libRoadRunner. Four of the six classes have **no** second
+  registered engine, so nothing was re-run for them — and `reprolith corroboration` prints those
+  four in the same list as the two, because a table of only the corroborated classes would read as
+  a whole-repository pass. It is reachable from the terminal and over MCP, not only from the
+  published page ([`docs/self-validation.md`](docs/self-validation.md)).
 
 ## What it is *not*
 
@@ -207,6 +216,7 @@ reprolith dossier <accession>        # what was extracted from the paper, and fr
 reprolith bundle <accession>         # the reconstruction the certificate was issued against
 reprolith certificates-for <id>      # every certificate digest for one paper, newest first
 reprolith self-validation            # the blind track record, per class and overall
+reprolith corroboration              # what a second engine said — and where none was asked
 reprolith export <accession> \       # the reconstruction as a runnable COMBINE archive
   --model <model.xml> --out <out.omex>
 reprolith archive-check <file.omex> \ # what a reproducer would find in your archive

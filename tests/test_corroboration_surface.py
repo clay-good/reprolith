@@ -1,0 +1,147 @@
+"""Cross-engine corroboration, read from the terminal and over MCP — and its absences.
+
+Corroboration answers the question self-validation cannot: agreement with a ground-truth label
+says a verdict was right, not that it was the *model's* behaviour rather than one solver's quirk.
+It was computed and committed per class, and rendered on the public registry page alone — so the
+two surfaces this repository promises parity between ("the terminal view and the agent view can't
+disagree") said nothing about it at all.
+
+What these pin is not that the numbers are large. It is that the **absence** of a check travels as
+far as the check does, and that two classes counting different things are never added together.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+from reprolith.cli import build_parser, run
+from reprolith.mcp_server import milestone_certificate_dirs, milestone_corroboration_records
+from reprolith.query import corroboration_summary
+
+_ROOT = Path(__file__).parent.parent
+
+
+def test_every_published_class_appears_even_with_no_second_engine() -> None:
+    """A class with no record is present and empty, never missing.
+
+    Returning only the classes that have a file would let any reader publish "all corroborated" by
+    iterating what happens to be there. Four of the six classes have no second registered engine;
+    they have to be as reachable as the two that do, because an absence is not a pass.
+    """
+    records = milestone_corroboration_records()
+    assert set(records) == set(milestone_certificate_dirs())
+    assert any(records.values()), "no class has a committed record; this would pass vacuously"
+    assert not all(records.values()), "every class has one; the absence path is untested here"
+
+
+def test_an_empty_committed_record_is_an_absence_and_not_a_vacuous_pass() -> None:
+    """A file holding no rows says nothing was re-run. Counted as checked, it would publish a
+    class as corroborated on the strength of zero comparisons — `all()` over no rows is true."""
+    summary = corroboration_summary({"kinetic": {}, "logical": {}})
+    assert summary["by_class"] == {}
+    assert summary["unchecked"] == ["kinetic", "logical"]
+    assert summary["overall"]["classes_checked"] == 0
+
+
+def test_claims_and_models_are_never_added_into_one_number() -> None:
+    """PK/PD re-runs each claim at its certified dose; the kinetic class re-runs each model once.
+    A blended `86` reads as four times what was re-run, so the total keeps the units apart."""
+    summary = corroboration_summary(
+        {
+            "ode-pkpd": {
+                "BIOMD1:Cmax": {"engines": ["copasi", "roadrunner"],
+                                "engine_independent": True, "distance_at_most": 1e-06},
+                "BIOMD1:AUC": {"engines": ["copasi", "roadrunner"],
+                               "engine_independent": True, "distance_at_most": 1e-07},
+            },
+            "kinetic": {
+                "BIOMD5": {"engines": ["copasi", "roadrunner"],
+                           "engine_independent": True, "distance_at_most": 1e-04},
+            },
+            "spatial": {},
+        }
+    )
+    assert summary["by_class"]["ode-pkpd"]["unit"] == "claim"
+    assert summary["by_class"]["kinetic"]["unit"] == "model"
+    assert summary["overall"]["runs"] == {"claim": 2, "model": 1}
+    assert summary["overall"]["engine_independent"] == {"claim": 2, "model": 1}
+    assert 3 not in summary["overall"]["runs"].values()
+
+
+def test_the_published_bound_is_the_worst_in_the_class() -> None:
+    """A class is only as corroborated as its weakest agreement; publishing the best bound would
+    state agreement no claim in it reached."""
+    summary = corroboration_summary(
+        {"ode-pkpd": {
+            "a:1": {"engines": ["copasi"], "engine_independent": True, "distance_at_most": 1e-07},
+            "a:2": {"engines": ["copasi"], "engine_independent": True, "distance_at_most": 1e-03},
+        }}
+    )
+    assert summary["by_class"]["ode-pkpd"]["distance_at_most"] == 1e-03
+
+
+def test_a_class_that_did_not_hold_is_not_summarized_as_holding() -> None:
+    summary = corroboration_summary(
+        {"ode-pkpd": {
+            "a:1": {"engines": ["copasi"], "engine_independent": True, "distance_at_most": 1e-07},
+            "a:2": {"engines": ["copasi"], "engine_independent": False, "distance_at_most": 0.4},
+        }}
+    )
+    entry = summary["by_class"]["ode-pkpd"]
+    assert (entry["engine_independent"], entry["checked"]) == (1, 2)
+
+
+def test_the_terminal_names_the_classes_nothing_was_checked_for(capsys) -> None:
+    """The four unchecked classes print in the same list as the two checked ones. A table of only
+    the corroborated classes reads as a whole-repository pass."""
+    assert run(["corroboration"]) == 0
+    out = capsys.readouterr().out
+    records = milestone_corroboration_records()
+    for model_class, record in records.items():
+        assert model_class in out
+        if not record:
+            assert "nothing was checked" in out
+    assert "not a pass" in out
+
+
+def test_the_registry_page_and_the_queried_surface_read_one_computation(capsys) -> None:
+    """The page is the reason this existed at all, and it must not be able to disagree with the
+    surfaces now answering the same question — which it could when it was their only reader."""
+    from reprolith.render import _corroboration_banner
+
+    records = milestone_corroboration_records()
+    banner = _corroboration_banner(records)
+    summary = corroboration_summary(records)
+    for model_class, entry in summary["by_class"].items():
+        assert f"{model_class}: {entry['checked']} {entry['unit']}(s) re-run" in banner
+    assert ", ".join(summary["unchecked"]) in banner
+
+    assert run(["corroboration", "--json"]) == 0
+    assert json.loads(capsys.readouterr().out) == summary
+
+
+def test_the_committed_registry_page_states_what_the_terminal_states(capsys) -> None:
+    """Not the shared function — the published bytes. The page in the repository was built by a
+    script; nothing until now checked that it said what a reader at a terminal is told today."""
+    page = (_ROOT / "datasets" / "registry.html").read_text(encoding="utf-8")
+    assert run(["corroboration"]) == 0
+    out = capsys.readouterr().out
+    summary = corroboration_summary(milestone_corroboration_records())
+    for model_class, entry in summary["by_class"].items():
+        assert f"{model_class}: {entry['checked']} {entry['unit']}(s) re-run" in page
+        assert f"{model_class:<18} {entry['checked']:>4} {entry['unit']}(s)" in out
+    assert ", ".join(summary["unchecked"]) in page
+
+
+def test_the_mcp_tool_and_the_command_are_the_same_answer() -> None:
+    """`corroboration` is on the query surface, so both surfaces must expose it. The parity test
+    that enumerates every pairing covers the general rule; this one names this tool."""
+    from reprolith.mcp_server import TOOL_DEFINITIONS
+
+    assert "corroboration" in {tool["name"] for tool in TOOL_DEFINITIONS}
+    subcommands = next(
+        a for a in build_parser()._actions if isinstance(a, argparse._SubParsersAction)
+    ).choices
+    assert "corroboration" in subcommands

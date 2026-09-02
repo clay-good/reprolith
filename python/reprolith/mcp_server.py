@@ -130,6 +130,15 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
+        "name": "corroboration",
+        "description": (
+            "What a second, independent simulator said about these verdicts, per model class — "
+            "and which classes have no second engine, where nothing was checked. Reported beside "
+            "the certificates, never gating them. An absence is not a pass."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
         "name": "dossier",
         "description": "The ingested dossier for an entry accession — its extracted model structure.",
         "inputSchema": {
@@ -782,6 +791,8 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return {"version": __version__, "judge_revisions": class_revisions()}
     if name == "self_validation":
         return query.self_validation()
+    if name == "corroboration":
+        return query.corroboration()
     if name == "dossier":
         return query.dossier(arguments["accession"])
     if name == "bundle":
@@ -1295,6 +1306,33 @@ def milestone_agreement_reports() -> dict[str, dict[str, Any]]:
     return reports
 
 
+def milestone_corroboration_records() -> dict[str, dict[str, Any]]:
+    """Each class's committed cross-engine record, keyed by class — **every** class, always.
+
+    Sits beside :func:`milestone_agreement_reports` — one directory up from each certificates
+    folder, as ``corroboration.json`` — and is written by that class's milestone script when the
+    ``corroborate`` extra is installed.
+
+    Unlike the agreement reports, a missing file here is not an error. Two classes have a second
+    registered engine and four do not, so an absent record is a real state of the world rather
+    than an un-run script. It is still the finding, and that is why every class appears here with
+    an empty record standing for "nothing was re-run" rather than being left out: a reader
+    iterating this mapping cannot publish "all corroborated" by seeing only the classes that
+    happened to have a file. An absence is not a pass, and it has to be as visible as a pass.
+
+    An empty *committed* file is folded into that same absence: a record holding no rows says
+    nothing was re-run, and counting it as a checked class would publish a vacuous one.
+    """
+    records: dict[str, dict[str, Any]] = {}
+    for label, certs_dir in milestone_certificate_dirs().items():
+        path = certs_dir.parent / "corroboration.json"
+        record: dict[str, Any] = {}
+        if path.is_file():
+            record = json.loads(path.read_text(encoding="utf-8"))
+        records[label] = record or {}
+    return records
+
+
 def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[ReprolithQuery, Catalog]:
     """Load the persisted catalog, certificates, dossiers, and bundles into a read surface.
 
@@ -1333,14 +1371,23 @@ def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[R
     ledger = CertificateLedger()
     load_certificates(ledger, directory / "certificates")
     agreement_reports: dict[str, dict[str, Any]] = {}
+    corroboration: dict[str, dict[str, Any]] = {}
     if aggregate:
         # Idempotent by digest, so re-loading data_dir's own certificates here is harmless.
         for certs_dir in milestone_certificate_dirs().values():
             load_certificates(ledger, certs_dir)
         agreement_reports = milestone_agreement_reports()
+        corroboration = milestone_corroboration_records()
     dossiers = load_dossiers(directory / "dossiers")
     bundles = load_dossiers(directory / "bundles")
-    query = ReprolithQuery(catalog, ledger, dossiers, bundles, agreement_reports=agreement_reports)
+    query = ReprolithQuery(
+        catalog,
+        ledger,
+        dossiers,
+        bundles,
+        agreement_reports=agreement_reports,
+        corroboration=corroboration,
+    )
     return query, catalog
 
 

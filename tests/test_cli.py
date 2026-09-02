@@ -661,8 +661,8 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     # Everything else must be reachable as an MCP tool name or be a pure formatting view of one.
     on_the_query_surface = set(subcommands) - file_based
     assert on_the_query_surface == {
-        "backlog", "bundle", "catalog", "certificate", "certificates-for", "dossier", "gaps",
-        "presubmission", "self-validation", "status", "verdict",
+        "backlog", "bundle", "catalog", "certificate", "certificates-for", "corroboration",
+        "dossier", "gaps", "presubmission", "self-validation", "status", "verdict",
     }
 
 

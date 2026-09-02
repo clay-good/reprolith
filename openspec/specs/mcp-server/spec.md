@@ -90,6 +90,33 @@ misrepresents the discipline.
 - **AND** no single blended agreement rate is presented that would conflate honest abstentions
   with wrong verdicts
 
+### Requirement: Cross-engine corroboration is queryable, and its absences are stated
+
+The read surface SHALL expose what a second, independently-implemented engine said about the
+verdicts it publishes — reported beside them, never gating them — and SHALL name every model class
+for which no second engine was run, so a reader cannot mistake an unasked question for a passed
+one.
+
+#### Scenario: Corroboration reported per class
+
+- **WHEN** an agent or a human surface requests the cross-engine corroboration record
+- **THEN** it receives, for each class that was re-run on a second engine, how many runs were
+  compared, which engines compared them, how many were engine-independent, and the weakest
+  published agreement bound in that class
+- **AND** the call returns data and changes no state
+
+#### Scenario: A class with no second engine is named, not omitted
+
+- **WHEN** a model class has no second registered engine, or its committed record holds no rows
+- **THEN** that class is reported as unchecked in the same response as the checked classes
+- **AND** it is never presented as corroborated on the strength of zero comparisons
+
+#### Scenario: Runs of different kinds are counted apart
+
+- **WHEN** one class re-runs each claim and another re-runs each model
+- **THEN** the totals report the two kinds separately, and no single blended count is presented
+  that would state more runs than were compared
+
 ### Requirement: Deterministic linter mode
 
 The server SHALL support the common agent pattern of checking a single model or claim inline,
