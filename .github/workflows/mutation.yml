@@ -1,0 +1,32 @@
+name: Mutation check
+
+# The suite says every test passes. This says every guard is *held* by one: it removes each
+# guard from a copy of the package and requires the named tests to go red.
+#
+# On a schedule rather than on every push, for the two reasons the check itself is about. It
+# takes twenty minutes, which is a poor fit for a gate on a one-line change; and the failure it
+# catches is not introduced by the commit that reveals it — two of its anchors had been naming
+# code that had moved, so those guards were checking nothing, and nobody noticed because the tool
+# only ever ran when somebody remembered to run it. A weekly run is what makes "the checker
+# quietly checks less than it did last week" a thing that reports itself.
+on:
+  schedule:
+    - cron: "17 6 * * 1"  # Mondays, early UTC
+  workflow_dispatch:
+
+jobs:
+  mutate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # Every extra the mutated tests need: a mutation whose tests skip is a mutation that
+      # survives, and a survivor is what this job exists to report.
+      - name: Install with every extra the mutated tests need
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,engine,fba,sat,validate,corroborate]"
+      - name: Break each guard and require a test to notice
+        run: python scripts/mutation_check.py
