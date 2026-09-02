@@ -1,0 +1,78 @@
+{
+  "description": "Curated-branch PK/PD models the BioModels search returns that the seeded test set does not contain, with whether each one's paper is open access and whether its tables state a quantity a reproduction targets. Identifiers and counts only.",
+  "entries": [
+    {
+      "accession": "BIOMD0000000234",
+      "candidates": 0,
+      "doi": "",
+      "metrics": [],
+      "name": "Tham2008 - PDmodel, Tumour shrinkage by gemcitabine and carboplatin",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "18594002",
+      "tables": 0
+    },
+    {
+      "accession": "BIOMD0000000668",
+      "candidates": 0,
+      "doi": "",
+      "metrics": [],
+      "name": "Zhu2015 - Combined gemcitabine and birinapant in pancreatic cancer cells - basic PD model",
+      "open_access": false,
+      "pmcid": "PMC4583820",
+      "pubmed_id": "26252969",
+      "tables": 0
+    },
+    {
+      "accession": "BIOMD0000000669",
+      "candidates": 0,
+      "doi": "",
+      "metrics": [],
+      "name": "Zhu2015 - Combined gemcitabine and birinapant in pancreatic cancer cells - mechanistic PD model",
+      "open_access": false,
+      "pmcid": "PMC4583820",
+      "pubmed_id": "26252969",
+      "tables": 0
+    },
+    {
+      "accession": "BIOMD0000000788",
+      "candidates": 95,
+      "doi": "",
+      "metrics": [],
+      "name": "Schropp2019 - Target-Mediated Drug Disposition Model for Bispecific Antibodies",
+      "open_access": true,
+      "pmcid": "PMC6430159",
+      "pubmed_id": "30480383",
+      "tables": 2
+    },
+    {
+      "accession": "BIOMD0000001024",
+      "candidates": 0,
+      "doi": "",
+      "metrics": [],
+      "name": "Chaudhury2020 - Lotka-Volterra mathematical model of CAR-T cell and tumour kinetics",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "33205434",
+      "tables": 0
+    },
+    {
+      "accession": "BIOMD0000001025",
+      "candidates": 0,
+      "doi": "",
+      "metrics": [],
+      "name": "Chaudhury2020 - EC50 expansion and killing mathematical model of CAR-T cell and tumour kinetics",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "33205434",
+      "tables": 0
+    }
+  ],
+  "reachable": [],
+  "search_terms": [
+    "pharmacokinetic",
+    "pharmacodynamic",
+    "PBPK",
+    "physiologically based pharmacokinetic"
+  ]
+}

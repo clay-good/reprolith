@@ -148,7 +148,13 @@ a change under `openspec/changes/`.
   SBML models run**, and joining the two surveys they are disjoint — the one entry whose paper
   prints a results table is the estradiol model that does not run, and of the five that do, four
   name no reachable paper and the fifth's prints no table. Nothing is waiting on a better engine.
-  Figure digitization is the only lift left. **Its intake half landed 2026-08-30**
+  Figure digitization is the only lift left. **And the ceiling is not this set's doing**
+  (2026-09-02): the same question put to the curated models the seeded set does *not* contain —
+  every one the repository's own search returns for pharmacokinetic and pharmacodynamic terms —
+  finds six, five of them behind papers that are not open access, and the sixth printing
+  ninety-five numbers across two tables with no column heading naming a quantity a reproduction
+  targets. Nothing reachable outside the seeded thirty-one either
+  (`datasets/manuscripts/candidate_survey.json`). **Its intake half landed 2026-08-30**
   (`reprolith.digitization`, `reprolith figure-check`, [`docs/figure-values.md`](../../../docs/figure-values.md)):
   a curator's plot-digitizer output becomes a claim's reference data on the run's own sample grid,
   interpolated in the axis's own scale and never extrapolated, with a mis-calibrated reading — a

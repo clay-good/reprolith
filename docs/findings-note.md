@@ -3571,6 +3571,25 @@ and the empty value are kept apart where they mean different things: a claims re
 `metric` means the documented default, and one that states an empty `metric` means the reader that
 wrote it found none.
 
+## The ceiling is not the seeded set's doing
+
+The corpus's reach has been measured on the thirty-one seeded PK/PD entries: a table reader gets
+to three papers in ten of the open-access subset, and the entries clearing both that bar and
+"ships a curated model" are exactly the four already certified. The honest objection is that
+somebody chose that set, so the number might be measuring the choice.
+
+So the same question was put to the entries the seeded set does *not* contain — every curated model
+the repository's own search returns for pharmacokinetic and pharmacodynamic terms. There are six.
+**Five belong to papers that are not open access**, so nothing here can read a table of theirs at
+all. The sixth is open access, prints ninety-five numbers across two tables, and not one of its
+column headings names a quantity a reproduction targets: a parameter table, not a results table.
+
+Nothing reachable, in either direction. The ceiling is the literature's — open access first, and
+then whether a paper prints its model's own outputs as numbers — and not an artifact of which
+thirty-one entries were seeded (`scripts/survey_candidate_papers.py`,
+`datasets/manuscripts/candidate_survey.json`, read by a test that also fails if a candidate with a
+results table ever stops being named).
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
