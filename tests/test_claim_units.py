@@ -160,8 +160,12 @@ def test_a_readings_y_axis_is_compared_against_the_output_the_curve_reads() -> N
                         "points": [[0, 0.0], [1, 20.0], [24, 2.0]]}],
         }))
 
-    # p2's venous plasma curve reads the nmol species; p1's reads the mg one.
+    # p2's venous plasma curve reads the nmol species, and that unit is composed and agrees.
     assert value_unit_notes(reading("p2_curve_17_task2", "nmol/mL"), sedml, model) == ()
+    # p1's plots the model's `mg…` *parameter* for the same tissue, and this model declares no unit
+    # on it — so nothing is said. An absence, not agreement, and the reason is worth being exact
+    # about: the check reads parameters as well as species, and it is this model that is silent.
+    assert claim_units(model, "mgVenousPlasma") == "unstated"
     assert value_unit_notes(reading("p1_curve_23_task2", "mg/mL"), sedml, model) == ()
 
     (note,) = value_unit_notes(
@@ -173,6 +177,57 @@ def test_a_readings_y_axis_is_compared_against_the_output_the_curve_reads() -> N
     # A claim id the document does not plot says nothing here: that is the pairing check's finding,
     # and answering it twice in two vocabularies helps nobody.
     assert value_unit_notes(reading("not_a_curve", "mg/mL"), sedml, model) == ()
+
+
+def test_a_curve_plotting_a_parameter_is_read_in_that_parameters_own_unit() -> None:
+    """A time course carries parameters as well as species, and either can be what a curve plots.
+
+    A parameter is read as its value rather than as a concentration, so nothing is composed: the
+    unit is the one the parameter declares. Leaving them out meant such a curve was passed over in
+    silence, which reads exactly like agreement.
+    """
+    from reprolith import claim_units, read_digitized_figure, value_unit_notes
+
+    model = """<?xml version="1.0"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m" timeUnits="time">
+    <listOfUnitDefinitions>
+      <unitDefinition id="time"><listOfUnits>
+        <unit kind="second" exponent="1" scale="0" multiplier="3600"/>
+      </listOfUnits></unitDefinition>
+      <unitDefinition id="mass"><listOfUnits>
+        <unit kind="gram" exponent="1" scale="-3" multiplier="1"/>
+      </listOfUnits></unitDefinition>
+    </listOfUnitDefinitions>
+    <listOfParameters><parameter id="mgLiver" value="0" units="mass" constant="false"/>
+    </listOfParameters>
+  </model>
+</sbml>
+"""
+    assert claim_units(model, "mgLiver") == "10^-3 gram"
+    # An area under that curve carries the run's clock, exactly as a species' does.
+    assert claim_units(model, "mgLiver", "auc") == "10^-3 gram * 3600*second"
+
+    sedml = """<?xml version="1.0"?>
+<sedML xmlns="http://sed-ml.org/sed-ml/level1/version3" level="1" version="3">
+  <listOfDataGenerators>
+    <dataGenerator id="g"><listOfVariables>
+      <variable id="v" target="/sbml:sbml/sbml:model/sbml:listOfParameters/sbml:parameter[@id='mgLiver']" taskReference="t"/>
+    </listOfVariables></dataGenerator>
+  </listOfDataGenerators>
+  <listOfOutputs><plot2D id="p1"><listOfCurves>
+    <curve id="c1" logX="false" logY="false" xDataReference="g" yDataReference="g"/>
+  </listOfCurves></plot2D></listOfOutputs>
+</sedML>
+"""
+    reading = read_digitized_figure(json.dumps({
+        "figure": "Figure 1", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 500, "unit": "g"},
+        "series": [{"claim": "c1", "curve": "liver", "points": [[0, 0.0], [1, 300.0], [24, 20.0]]}],
+    }))
+    (note,) = value_unit_notes(reading, sedml, model, carrier="your model")
+    assert "y axis in g" in note and "'mgLiver'" in note and "10^-3 gram" in note
 
 
 def test_a_report_only_asserts_a_disagreement_it_can_establish() -> None:

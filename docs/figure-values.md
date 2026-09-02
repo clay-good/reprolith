@@ -102,9 +102,9 @@ another — so a reading of one panel paired with the other's curve is internall
 with a curve the document really plots, covering the run, and off by six orders of magnitude. Given
 the document and a model, each reading's y axis is compared against the unit the model reads *that
 curve's own output* in: which element a curve reads is what the document says, and a species is
-read as a concentration, so the unit is its substance unit over its compartment's. Nothing is said
-about a curve plotting an expression over several elements — no one declared unit is the unit of
-that.
+read as a concentration, so the unit is its substance unit over its compartment's. A curve plotting a *parameter* is read in that parameter's own unit instead, since a
+time course carries both and either can be what a curve plots. Nothing is said about a curve
+plotting an expression over several elements — no one declared unit is the unit of that.
 
 **The x axis is the same question about the clock.** A reading is put on the run's
 sample grid by its x values, so a figure read in minutes against a model running in hours produces

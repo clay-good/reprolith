@@ -836,15 +836,20 @@ def model_time_unit(model_sbml: str) -> str:
 def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
     """The unit a claim's value is read in, composed from the model's own declarations.
 
-    A species' time course is read as a **concentration** — the engine asks for concentration data
+    A **species'** time course is read as a concentration — the engine asks for concentration data
     for every species, whatever the species declares its initial value as — so the unit is the
-    substance unit over the compartment's own. An ``auc`` carries the run's time as well, which is
-    why the metric is a term: the same output read two ways is two different quantities, and the
-    paper's table says so in its own column headers.
+    substance unit over the compartment's own. A **parameter's** is read as the value itself, so
+    it is that parameter's own declared unit and nothing is composed. Both appear in a time course
+    and either can be what a claim reads; leaving parameters out meant a curve plotting one was
+    passed over in silence, which reads exactly like agreement.
+
+    An ``auc`` carries the run's time as well, which is why the metric is a term: the same output
+    read two ways is two different quantities, and the paper's table says so in its own column
+    headers.
 
     Returns ``"unstated"`` when any part of the composition is not resolvable, rather than a
     partial unit that reads as if it were established. Raises ``ValueError`` if the model is not
-    parseable SBML or declares no such species.
+    parseable SBML or declares no such output.
     """
     model, definitions, level = _model_and_definitions(model_sbml)
     element = next(
@@ -858,7 +863,23 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
         None,
     )
     if element is None:
-        raise ValueError(f"the model declares no species {species!r}")
+        parameter = next(
+            (
+                child
+                for container in model
+                if _localname(container.tag) == "listOfParameters"
+                for child in container
+                if child.get("id") == species
+            ),
+            None,
+        )
+        if parameter is None:
+            raise ValueError(f"the model declares no species or parameter {species!r}")
+        own = _resolve_unit(parameter.get("units") or "", definitions, level)
+        time = _resolve_unit(model.get("timeUnits") or "", definitions, level)
+        if own == UNSTATED_UNIT or (metric == "auc" and time == UNSTATED_UNIT):
+            return UNSTATED_UNIT
+        return f"{own} * {time}" if metric == "auc" else own
     compartment = next(
         (
             child

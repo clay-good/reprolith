@@ -742,10 +742,9 @@ def value_unit_notes(
     declarations — a species is read as a concentration, so its substance unit over its
     compartment's — and the document is what says which species a given curve reads.
 
-    Nothing is said unless the curve reads exactly one **species**: a normalized or summed trace is
-    an expression and no single declared unit is the unit of one, and a curve plotting a parameter
-    is read as that parameter's own value rather than as a concentration, which this does not
-    compose. **Reported, never a refusal**, for the reason :func:`time_unit_notes` gives.
+    Nothing is said unless the curve reads exactly one model output — a species, read as a
+    concentration, or a parameter, read as its own value. A normalized or summed trace is an
+    expression, and no single declared unit is the unit of one. **Reported, never a refusal**, for the reason :func:`time_unit_notes` gives.
 
     Raises ``ValueError`` if either document is not parseable.
     """
