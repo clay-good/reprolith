@@ -6,6 +6,7 @@ OVERALL: reproduced
 
 CLAIMS
   [mapk_cancer-fixed_points] steady-state (fixed-point) set: reproduced (source MAPK network / cancer cell-fate decision (Grieco et al. 2013); via Cell Collective (Helikar et al. 2012) — reference computed by sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0, not a count read from the paper via attractor-set-match, tol=exact match on the fixed-point set (SHA-256 of the sorted states))
+      measured: reproduced 12 fixed points, set digest 90613385f4a0… vs the independent 12, 90613385f4a0…
       protocol: 53 nodes, SAT search (2^53 states is beyond exhaustive enumeration)
 
 SCOPE

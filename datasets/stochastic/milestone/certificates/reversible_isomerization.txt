@@ -7,6 +7,7 @@ OVERALL: partially-reproduced
 
 CLAIMS
   [reversible_isomerization-mean] mean copy number: reproduced [assumption-qualified] (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0063
       protocol: SSA ensemble: 400 trajectories to t=30, seed 1234, read=species[1]
 
 ASSUMPTIONS (supplied by Reprolith, not the paper)

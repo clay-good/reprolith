@@ -6,6 +6,7 @@ OVERALL: reproduced
 
 CLAIMS
   [drosophila-attractors] attractor signature (count and periods): reproduced (source Drosophila melanogaster segment polarity, single cell (Albert & Othmer 2003) — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper via attractor-signature-match, tol=exact match on the attractor count and every period)
+      measured: reproduced 10 attractors with periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1] vs the independent 10 with periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
       protocol: 17 nodes, exhaustive enumeration of all 2^17 states
 
 SCOPE

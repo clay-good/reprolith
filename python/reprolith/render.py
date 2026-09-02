@@ -330,6 +330,14 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
             f"  [{a['claim_id']}] {a['quantity']}: {a['verdict']}{level}{qualified}{reading}"
             f" (source {a['source_location']}{method}{tol})"
         )
+        if a.get("discrepancy"):
+            # How far off it was, which the machine form has carried for every judged claim since
+            # the beginning and this one printed for none. A reader saw "reproduced" and the budget
+            # it was judged against, and could not see whether the number came in at a fifth of
+            # that budget or at nine tenths of it — the evidence for the certificate's own
+            # headline. For a non-pass it appeared once, buried inside the root cause under WHAT
+            # WAS MISSING, and for a pass there is no root cause and it appeared nowhere.
+            lines.append(f"      measured: {a['discrepancy']}")
         if a.get("protocol"):
             # A judgment's number is only re-runnable with the run that produced it — the sampling
             # for an ensemble, the window and sample count for a time course.

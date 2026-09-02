@@ -59,6 +59,26 @@ def test_both_renderings_report_the_same_facts() -> None:
     assert machine["content"]["scope"]["human"] in human
 
 
+def test_the_human_form_shows_how_far_off_every_judged_claim_was() -> None:
+    """The evidence for the certificate's own headline, which only the machine form carried.
+
+    A reader saw `reproduced` and the budget it was judged against, and could not see whether the
+    number came in at a fifth of that budget or at nine tenths of it. For a non-pass the figure
+    appeared once, inside the root cause under WHAT WAS MISSING; for a pass there is no root cause,
+    so it appeared nowhere at all — in a document whose whole purpose is to be checkable.
+    """
+    cert = _cert([
+        _claim(Verdict.REPRODUCED, cid="a", discrepancy="relative error 0.0107"),
+        _claim(Verdict.FAILED, cid="b", discrepancy="relative error 0.7475"),
+    ])
+    machine = render_machine(cert, RUN)
+    human = render_human(cert, RUN)
+    stated = [a["discrepancy"] for a in machine["content"]["assessments"] if a["discrepancy"]]
+    assert stated, "this fixture judges nothing; the check would pass vacuously"
+    for discrepancy in stated:
+        assert f"measured: {discrepancy}" in human
+
+
 def test_human_certificate_is_self_contained() -> None:
     cert = _cert([_claim(Verdict.REPRODUCED, cid="a", method="normalized curve distance",
                          tolerance="10% relative")])

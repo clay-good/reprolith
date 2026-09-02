@@ -7,8 +7,10 @@ OVERALL: reproduced
 
 CLAIMS
   [ss_on] A-ON steady state: reproduced (source Fig 1a via attractor-set-match, tol=reproduced<=0, partial<=0 (class-default))
+      measured: reported steady state is a fixed point
       protocol: 2 nodes, exhaustive enumeration of all 2^2 states
   [ss_off] A-OFF steady state: reproduced (source Fig 1b via attractor-set-match, tol=reproduced<=0, partial<=0 (class-default))
+      measured: reported steady state is a fixed point
       protocol: 2 nodes, exhaustive enumeration of all 2^2 states
 
 SCOPE

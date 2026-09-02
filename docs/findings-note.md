@@ -3408,6 +3408,9 @@ declarations would be, by a factor of 100, and that reproducer is exactly who th
 The answer says how far off rather than only that something differs: `10^-9 mole * 3600*10^2 second
 / 10^-3 litre` is notation, and "100 times as large" is the finding.
 
+`archive-check` says the same thing one level up, where it is the run's own numbers that need a
+unit: an experiment running 0 to 30 is thirty of something, and only the model states which.
+
 It reaches an author through `claims-check --model`, beside the check that each value is printed in
 the table it cites. A claim that states no unit is reported as not checked and never as agreement:
 the absence of a statement is not a statement.
@@ -3429,6 +3432,25 @@ and the wording of that check is decided by the finding above — it is **report
 refusal**, because the deposit here is the file with the wrong declaration, and refusing would
 reject a correct reading on the strength of it. `window_faults`'s own docstring claimed this case
 "fails here"; it fails only in the direction where the reading is too narrow, and it now says so.
+
+## A pass with no measurement behind it
+
+Read the metformin certificate as the person it is written for. Every reproduced claim says
+`reproduced`, names the method, and names the budget it was judged against — and does not say how
+far off it actually was. The machine-readable form has carried `discrepancy` for every judged claim
+since the beginning: `relative error 0.0055`, `0.0003`, `0.0164`. The human form printed none of
+them.
+
+For a non-pass the number did appear, once, inside the root cause under WHAT WAS MISSING. For a
+pass there is no root cause, so it appeared nowhere at all. A reader saw "reproduced against a 5%
+budget" and could not tell a claim that came in at a tenth of that budget from one that came in at
+nine tenths — which is the evidence for the certificate's own headline, in a document whose whole
+purpose is to be checkable without re-running anything.
+
+It is printed now, on every judged claim, and the two forms are held to each other on it by
+`tests/test_render.py` rather than by inspection. Eighteen committed renders were re-rendered from
+the certificates they render; nothing algorithmic moved, and the gate that compares each render to
+its own certificate JSON is what says so.
 
 ## Status and what remains
 

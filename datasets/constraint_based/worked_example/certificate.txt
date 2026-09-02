@@ -7,6 +7,7 @@ OVERALL: reproduced
 
 CLAIMS
   [growth-glucose-aerobic] maximal aerobic growth rate, glucose minimal medium (R_BIOMASS_Ecoli_core_w_GAM, maximize): reproduced (source Orth, Fleming & Palsson (2010), EcoSal Plus; BiGG e_coli_core via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0000
       protocol: medium: R_EX_glc__D_e<=10.0 mmol/gDW/h, R_EX_o2_e<=1000.0 mmol/gDW/h; maximize: R_BIOMASS_Ecoli_core_w_GAM
 
 SCOPE

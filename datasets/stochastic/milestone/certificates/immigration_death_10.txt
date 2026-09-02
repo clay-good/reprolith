@@ -7,6 +7,7 @@ OVERALL: partially-reproduced
 
 CLAIMS
   [immigration_death_10-mean] mean copy number: reproduced [assumption-qualified] (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0227
       protocol: SSA ensemble: 400 trajectories to t=40, seed 20260807, read=species[0]
 
 ASSUMPTIONS (supplied by Reprolith, not the paper)

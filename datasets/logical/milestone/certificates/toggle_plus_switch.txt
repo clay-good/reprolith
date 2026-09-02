@@ -6,6 +6,7 @@ OVERALL: reproduced
 
 CLAIMS
   [toggle_plus_switch-attractors] attractor signature (count and periods): reproduced (source A mutual-repression toggle (2-cycle) crossed with a bistable self-activating switch — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper via attractor-signature-match, tol=exact match on the attractor count and every period)
+      measured: reproduced 6 attractors with periods [1, 1, 1, 1, 2, 2] vs the independent 6 with periods [1, 1, 1, 1, 2, 2]
       protocol: 3 nodes, exhaustive enumeration of all 2^3 states
 
 SCOPE

@@ -6,6 +6,7 @@ OVERALL: reproduced
 
 CLAIMS
   [marques_pita-attractors] attractor signature (count and periods): reproduced (source Two-symbol schemata example network (Marques-Pita & Rocha 2013) — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper via attractor-signature-match, tol=exact match on the attractor count and every period)
+      measured: reproduced 1 attractors with periods [1] vs the independent 1 with periods [1]
       protocol: 7 nodes, exhaustive enumeration of all 2^7 states
 
 SCOPE

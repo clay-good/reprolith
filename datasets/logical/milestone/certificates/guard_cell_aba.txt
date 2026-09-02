@@ -6,6 +6,7 @@ OVERALL: reproduced
 
 CLAIMS
   [guard_cell_aba-fixed_points] steady-state (fixed-point) set: reproduced (source Guard-cell abscisic-acid signalling; via Cell Collective (Helikar et al. 2012) — reference computed by sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0, not a count read from the paper via attractor-set-match, tol=exact match on the fixed-point set (SHA-256 of the sorted states))
+      measured: reproduced 16 fixed points, set digest b19c8579ee8a… vs the independent 16, b19c8579ee8a…
       protocol: 44 nodes, SAT search (2^44 states is beyond exhaustive enumeration)
 
 SCOPE

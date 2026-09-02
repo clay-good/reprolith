@@ -6,6 +6,7 @@ OVERALL: reproduced
 
 CLAIMS
   [budding_yeast-attractors] attractor signature (count and periods): reproduced (source Budding yeast cell-cycle network, CANA's 12-node variant (after Li et al. 2004) — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper via attractor-signature-match, tol=exact match on the attractor count and every period)
+      measured: reproduced 11 attractors with periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] vs the independent 11 with periods [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
       protocol: 12 nodes, exhaustive enumeration of all 2^12 states
 
 SCOPE

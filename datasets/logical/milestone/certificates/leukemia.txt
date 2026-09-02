@@ -6,6 +6,7 @@ OVERALL: reproduced
 
 CLAIMS
   [leukemia-fixed_points] steady-state (fixed-point) set: reproduced (source T-LGL leukemia signalling network (Zhang et al. 2008) — reference computed by sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0, not a count read from the paper via attractor-set-match, tol=exact match on the fixed-point set (SHA-256 of the sorted states))
+      measured: reproduced 71 fixed points, set digest e37a90b7bc27… vs the independent 71, e37a90b7bc27…
       protocol: 60 nodes, SAT search (2^60 states is beyond exhaustive enumeration)
 
 SCOPE

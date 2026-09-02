@@ -255,6 +255,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_manuscript_reference_values.py"],
     ),
     (
+        "the human certificate publishes a pass with no measurement behind it",
+        "render.py",
+        (
+            '            lines.append(f"      measured: {a[\'discrepancy\']}")',
+            "            pass",
+        ),
+        ["tests/test_render.py"],
+    ),
+    (
         "the registry omits the classes no second engine ever checked",
         "render.py",
         (

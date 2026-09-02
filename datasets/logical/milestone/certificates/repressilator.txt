@@ -6,6 +6,7 @@ OVERALL: reproduced
 
 CLAIMS
   [repressilator-attractors] attractor signature (count and periods): reproduced (source Three-gene repressilator ring — a synchronous limit cycle, no fixed point — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper via attractor-signature-match, tol=exact match on the attractor count and every period)
+      measured: reproduced 2 attractors with periods [2, 6] vs the independent 2 with periods [2, 6]
       protocol: 3 nodes, exhaustive enumeration of all 2^3 states
 
 SCOPE
