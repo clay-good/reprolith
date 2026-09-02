@@ -6,21 +6,28 @@ work from those files. This is the check that tells you what they will hit, befo
 
 ```bash
 pip install reprolith
+
+# what a reproducer finds in your files, and whether they run what your paper reports
 reprolith claims-template --model paper.xml --sedml paper.sedml --out my_claims.json
 reprolith archive-check paper.omex --claims my_claims.json
 reprolith archive-check --sedml paper.sedml --model paper.xml --claims my_claims.json
+
+# whether your deposit carries the values your paper reports
 reprolith params-template --model paper.xml --out my_parameters.json
-reprolith params-check --model paper.xml --parameters my_parameters.json
 reprolith params-check paper.omex --parameters my_parameters.json
 ```
 
-The first line writes the claims file the other two read; see [the claims file](#the-claims-file).
-It is the only step that needs anything from you, and it needs two things per published result.
+The first line writes the claims file the two `archive-check` lines read; see
+[the claims file](#the-claims-file). It is the only step that needs anything from you, and it needs
+two things per published result.
 
-Both forms answer the same question. Use the second if your files are loose, which most papers'
-are: they are packaged into the archive they describe and that archive is checked. The exit status
-is the answer — `0` when a reproducer can read your files and knows what to check, non-zero
-otherwise — so it drops into a pre-submission hook or a CI job.
+The two `archive-check` forms answer the same question. Use the second if your files are loose,
+which most papers' are: they are packaged into the archive they describe and that archive is
+checked. The exit status is the answer — `0` when a reproducer can read your files and knows what
+to check, non-zero otherwise — so it drops into a pre-submission hook or a CI job.
+
+The second pair asks about your model's **inputs** rather than its outputs, and is described under
+[the parameters file](#the-parameters-file).
 
 ## What it checks
 
@@ -188,6 +195,17 @@ judgment, and a wrong match checks a real number against the wrong species, whic
 candidate at all. It also refuses a table whose rows are not all the width of its header: a cell
 spanning rows is written once, and reading the rest positionally puts a value under the wrong
 column.
+
+The same reading, in the parameters file's shape, is `params-propose`:
+
+```bash
+reprolith params-propose --tables my_tables.json --out proposed_parameters.json
+```
+
+Nothing mechanical tells one of your model's **inputs** from one of its results — a parameter table
+and a results table are both numbers in cells — so it offers the same candidates and says so. What
+it buys is the shape: `params-template` lists your model's ids with the values blank, this lists
+your paper's values with the ids blank, and the pairing between them is yours.
 
 ## Checking your claims against your own paper
 
