@@ -60,6 +60,9 @@ def test_the_archive_check_finds_exactly_what_the_export_said_it_could_not_write
     only those three missing — the exporter's list and the checker's list are produced by different
     modules from different inputs, and they agree.
     """
+    # Reading an archive means ingesting its model, which needs the engine extra. Every other step
+    # of this walk is dependency-free, which is the contract the author path is built on.
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     unexpressed = ("Cmax-250mg-Chung", "Cmax-750mg-Wen", "Cmax-500mg-El-Messaoudi")
 
     code = run(["archive-check", str(_ARCHIVE), "--claims", str(_CLAIMS),
@@ -103,6 +106,7 @@ def test_the_claims_and_the_parameters_check_clean_against_the_paper(capsys) -> 
 
 def test_the_export_writes_an_archive_the_check_reads_back(tmp_path, capsys) -> None:
     """The one writing command, and the loop closing on its own output."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     out = tmp_path / "reconstruction.omex"
     assert run(["export", _ACCESSION, "--model", str(_MODEL), "--out", str(out)]) == 0
     capsys.readouterr()
