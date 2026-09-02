@@ -6,12 +6,14 @@ The CLI is Reprolith's human-facing surface at a terminal, the counterpart to th
 MCP server. It exposes the same read-only query model — browse the catalog, read a certificate,
 list its gaps, see the blind self-validation track record — so a person can obtain a verdict
 without speaking JSON-RPC or writing Python. It re-presents what the engine already produced; it
-computes no verdict of its own. Three commands write, and all three write files the caller names,
-never repository state: `export` turns a published reconstruction into a runnable COMBINE archive,
-because a reconstruction nobody can re-run without Reprolith is not a published artifact;
-`claims-template` writes the claims file the archive check reads, because the one input that check
-cannot derive was also the one nothing helped an author produce; and `figure-template` writes the
-digitization file whose claim pairing nobody could guess.
+computes no verdict of its own. Some commands write, and every one of them writes a file the
+caller names and never repository state: `export` turns a published reconstruction into a runnable
+COMBINE archive, because a reconstruction nobody can re-run without Reprolith is not a published
+artifact, and the rest write the input files the checks need — the claims file the archive check
+reads, the digitization file whose claim pairing nobody could guess, and the parameters file that
+pairs a paper's reported values with the model elements carrying them. Each of those was an input
+a check demanded and nothing helped an author produce. The count is deliberately not stated here:
+it has been wrong once already, and the CLI's own help groups every command it has.
 
 ## Requirements
 

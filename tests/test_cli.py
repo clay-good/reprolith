@@ -267,6 +267,35 @@ def test_dossier_unknown_accession_exits_nonzero(tmp_path, capsys):
     assert "no dossier" in capsys.readouterr().err
 
 
+def test_every_command_that_writes_a_file_writes_only_where_the_caller_says() -> None:
+    """The spec's promise: some commands write, and each writes a file the caller names.
+
+    It used to say *three* do, and named them; there are six, and the count had been wrong since
+    `claims-propose` was added. The rule is what matters and the rule is checkable — every command
+    offering an output path is one of these, and none of them writes anywhere else.
+    """
+    import argparse
+
+    from reprolith.cli import build_parser
+
+    subparsers = next(
+        a for a in build_parser()._actions if isinstance(a, argparse._SubParsersAction)
+    ).choices
+    writing = {
+        name for name, parser in subparsers.items()
+        if any(action.dest in ("out", "out_dir") for action in parser._actions)
+    }
+    assert writing == {
+        "export", "claims-template", "claims-propose", "params-template", "params-propose",
+        "figure-template",
+    }, sorted(writing)
+    # And every one of them takes the path from the caller rather than choosing one: no default.
+    for name in writing:
+        for action in subparsers[name]._actions:
+            if action.dest in ("out", "out_dir"):
+                assert action.default is None, (name, action.dest)
+
+
 def test_the_help_groups_every_command_it_has_exactly_once() -> None:
     """A twenty-command help is a wall, and half of these commands read no repository at all.
 
