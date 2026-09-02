@@ -198,11 +198,31 @@ def test_self_validation_json_splits_abstentions(capsys):
 
 def test_presubmission_report(tmp_path, capsys):
     repo, digest = _write_repo(tmp_path)
-    assert run(["--data-dir", str(repo), "presubmission", digest]) == 0
+    assert run(["--data-dir", str(repo), "presubmission", digest, "--json"]) == 0
     report = json.loads(capsys.readouterr().out)
     # a partial certificate is never reported ready to submit, and scope always travels
     assert report["ready_to_submit"] is False
     assert "clinical" in json.dumps(report).lower()
+
+
+def test_presubmission_reads_as_a_report_and_not_as_a_machine_view(tmp_path, capsys):
+    """The one report written for an author to read was the one served to them as JSON.
+
+    It printed the machine view whatever was asked, so `--json` changed nothing — while its sibling
+    `archive-check`, which answers the same question before any certificate exists, has had a
+    plain-text rendering from the start, and the renderer for this one existed, exported and
+    tested, with no surface calling it.
+    """
+    repo, digest = _write_repo(tmp_path)
+    assert run(["--data-dir", str(repo), "presubmission", digest]) == 0
+    printed = capsys.readouterr().out
+    assert printed.startswith("PRE-SUBMISSION REPRODUCIBILITY CHECK")
+    assert "FIX BEFORE YOU SUBMIT" in printed and "NOT YET READY" in printed
+    # The scope travels into the rendering, as it does into every other published surface.
+    assert "clinical" in printed
+    # And it is a rendering, not a JSON dump that happens to start with a word.
+    with pytest.raises(json.JSONDecodeError):
+        json.loads(printed)
 
 
 def test_presubmission_unknown_digest_exits_nonzero(tmp_path, capsys):

@@ -63,6 +63,7 @@ from .presubmission import (
     pair_report,
     render_archive_human,
     render_pair_human,
+    render_presubmission_human,
 )
 from .query import ReprolithQuery
 from .render import render_human
@@ -267,11 +268,29 @@ def _cmd_gaps(query: ReprolithQuery, args: argparse.Namespace) -> int:
 
 
 def _cmd_presubmission(query: ReprolithQuery, args: argparse.Namespace) -> int:
-    view = query.presubmission(args.digest)
-    if view is None:
+    """The author-facing report for a certified paper, rendered like every other command's."""
+    if args.json:
+        view = query.presubmission(args.digest)
+        if view is None:
+            print(f"unknown digest: {args.digest}", file=sys.stderr)
+            return 1
+        _print_json(view)
+        return 0
+    # This command printed the JSON whatever was asked, so `--json` changed nothing and the one
+    # report written for an author to read was served to them as a machine view — while its
+    # sibling `archive-check`, which answers the same question before a certificate exists, has
+    # had a plain-text rendering all along. The renderer existed too, exported and tested, with
+    # no surface calling it.
+    cert = query.certificate_object(args.digest)
+    if cert is None:
         print(f"unknown digest: {args.digest}", file=sys.stderr)
         return 1
-    _print_json(view)
+    print(render_presubmission_human(cert))
+    replacement = query.superseded_by(args.digest)
+    if replacement:
+        # The same forward link `certificate` prints, for the same reason: a withdrawn certificate
+        # must not be served in the terminal as the current answer.
+        print(f"\nSUPERSEDED — a later certificate replaced this one: {replacement}")
     return 0
 
 

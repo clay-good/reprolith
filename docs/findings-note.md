@@ -3452,6 +3452,18 @@ It is printed now, on every judged claim, and the two forms are held to each oth
 the certificates they render; nothing algorithmic moved, and the gate that compares each render to
 its own certificate JSON is what says so.
 
+## The report written for an author, served to them as JSON
+
+`presubmission` is the one command whose whole purpose is to be read by a person: it turns a
+certificate into a prioritized list of what to fix before submitting. It printed the machine view,
+always — `--json` was a flag that changed nothing — while `archive-check`, which answers the same
+question before any certificate exists, has had a plain-text rendering from the start.
+
+The renderer for it existed too: `render_presubmission_human`, exported from the package and
+covered by its own tests, with no surface calling it. Both halves of the defect are the same shape
+this repository keeps finding — a check, or a rendering, that exists everywhere except where a
+reader would meet it.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

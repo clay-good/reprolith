@@ -255,6 +255,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_manuscript_reference_values.py"],
     ),
     (
+        "the author-facing report is served to its author as a machine view",
+        "cli.py",
+        (
+            "    print(render_presubmission_human(cert))",
+            "    _print_json(query.presubmission(args.digest))",
+        ),
+        ["tests/test_cli.py"],
+    ),
+    (
         "the human certificate publishes a pass with no measurement behind it",
         "render.py",
         (
