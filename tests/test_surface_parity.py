@@ -75,4 +75,8 @@ def test_the_terminal_emits_what_the_tool_returns(command, tmp_path, capsys) -> 
     filled = {
         key: (digest if value == "{digest}" else value) for key, value in arguments.items()
     }
-    assert printed == dispatch_tool(query, tool, filled), command
+    answer = dispatch_tool(query, tool, filled)
+    # Not vacuous: two surfaces agreeing that there is nothing to report would pass this check
+    # while saying nothing about either, and every one of these views has content in this fixture.
+    assert answer, command
+    assert printed == answer, command
