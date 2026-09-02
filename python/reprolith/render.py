@@ -482,9 +482,13 @@ def _corroboration_banner(corroboration: dict[str, dict[str, Any]]) -> str:
             if entry["engine_independent"] == entry["checked"] and bound is not None
             else f" {entry['engine_independent']} of {entry['checked']} engine-independent"
         )
+        versions = entry["engine_versions"]
+        built = (
+            f" ({html.escape(', '.join(versions))})" if versions else " (engine builds unstated)"
+        )
         checked.append(
             f"<li>{html.escape(model_class)}: {entry['checked']} {entry['unit']}(s) re-run on "
-            f"{html.escape(', '.join(entry['engines']))} —{held}</li>"
+            f"{html.escape(', '.join(entry['engines']))}{built} —{held}</li>"
         )
     unchecked = summary["unchecked"]
     if not checked and not unchecked:

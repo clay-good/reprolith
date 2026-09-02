@@ -179,6 +179,11 @@ def _cmd_corroboration(query: ReprolithQuery, args: argparse.Namespace) -> int:
         )
         print(f"  {label:<18} {entry['checked']:>4} {entry['unit']}(s) on "
               f"{', '.join(entry['engines'])} — {held}")
+        # Which builds produced the number. A certificate expires when its software changes and
+        # says so; a corroboration bound carries the same weight, and a record naming no build
+        # could not be told apart from a current one.
+        versions = entry["engine_versions"]
+        print(f"  {'':<18}      {'as ' + ', '.join(versions) if versions else 'engine builds unstated'}")
     # The absence is the finding, so it prints in the same list rather than as a footnote a reader
     # can miss: four of the six classes have no second engine, and a table of the two that do
     # would read as a whole-repository pass.

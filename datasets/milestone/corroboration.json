@@ -2,6 +2,10 @@
   "BIOMD0000001027:AUC24-adipose": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -12,6 +16,10 @@
   "BIOMD0000001027:AUC24-brain": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -22,6 +30,10 @@
   "BIOMD0000001027:AUC24-heart": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -32,6 +44,10 @@
   "BIOMD0000001027:AUC24-liver": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -42,6 +58,10 @@
   "BIOMD0000001027:AUC24-muscle": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -52,6 +72,10 @@
   "BIOMD0000001027:AUC24-plasma": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -62,6 +86,10 @@
   "BIOMD0000001027:AUC24-portal-vein": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -72,6 +100,10 @@
   "BIOMD0000001027:Cmax-adipose": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -82,6 +114,10 @@
   "BIOMD0000001027:Cmax-brain": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -92,6 +128,10 @@
   "BIOMD0000001027:Cmax-heart": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -102,6 +142,10 @@
   "BIOMD0000001027:Cmax-liver": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -112,6 +156,10 @@
   "BIOMD0000001027:Cmax-muscle": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -122,6 +170,10 @@
   "BIOMD0000001027:Cmax-plasma": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -132,6 +184,10 @@
   "BIOMD0000001027:Cmax-portal-vein": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -142,6 +198,10 @@
   "BIOMD0000001028:Cmax-1000mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -154,6 +214,10 @@
   "BIOMD0000001028:Cmax-250mg-Chung": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -173,6 +237,10 @@
   "BIOMD0000001028:Cmax-500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -183,6 +251,10 @@
   "BIOMD0000001028:Cmax-500mg-El-Messaoudi": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -232,6 +304,10 @@
   "BIOMD0000001028:Cmax-750mg-Wen": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -251,6 +327,10 @@
   "BIOMD0000001028:Cmax-adipose-1000mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -263,6 +343,10 @@
   "BIOMD0000001028:Cmax-adipose-1500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -275,6 +359,10 @@
   "BIOMD0000001028:Cmax-adipose-500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -285,6 +373,10 @@
   "BIOMD0000001028:Cmax-brain-1000mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -297,6 +389,10 @@
   "BIOMD0000001028:Cmax-brain-1500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -309,6 +405,10 @@
   "BIOMD0000001028:Cmax-brain-500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -319,6 +419,10 @@
   "BIOMD0000001028:Cmax-heart-1000mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -331,6 +435,10 @@
   "BIOMD0000001028:Cmax-heart-1500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -343,6 +451,10 @@
   "BIOMD0000001028:Cmax-heart-500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -353,6 +465,10 @@
   "BIOMD0000001028:Cmax-liver-1000mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -365,6 +481,10 @@
   "BIOMD0000001028:Cmax-liver-1500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -377,6 +497,10 @@
   "BIOMD0000001028:Cmax-liver-500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -387,6 +511,10 @@
   "BIOMD0000001028:Cmax-lungs-1000mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -399,6 +527,10 @@
   "BIOMD0000001028:Cmax-lungs-1500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -411,6 +543,10 @@
   "BIOMD0000001028:Cmax-lungs-500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -421,6 +557,10 @@
   "BIOMD0000001028:Cmax-muscle-1000mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -433,6 +573,10 @@
   "BIOMD0000001028:Cmax-muscle-1500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -443,8 +587,12 @@
     "prior_administrations": []
   },
   "BIOMD0000001028:Cmax-muscle-500mg": {
-    "distance_at_most": 1e-07,
+    "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -455,6 +603,10 @@
   "BIOMD0000001028:Cmax-plasma-1500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -467,6 +619,10 @@
   "BIOMD0000001028:Cmax-red-blood-cells-1000mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -479,6 +635,10 @@
   "BIOMD0000001028:Cmax-red-blood-cells-1500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -491,6 +651,10 @@
   "BIOMD0000001028:Cmax-red-blood-cells-500mg": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -501,6 +665,10 @@
   "BIOMD0000001028:Cmax-remainder-1000mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -513,6 +681,10 @@
   "BIOMD0000001028:Cmax-remainder-1500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -525,6 +697,10 @@
   "BIOMD0000001028:Cmax-remainder-500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -535,6 +711,10 @@
   "BIOMD0000001028:Cmax-stomach-1000mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -547,6 +727,10 @@
   "BIOMD0000001028:Cmax-stomach-1500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -559,6 +743,10 @@
   "BIOMD0000001028:Cmax-stomach-500mg": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -569,6 +757,10 @@
   "BIOMD0000001029:Cmax-1000mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -581,6 +773,10 @@
   "BIOMD0000001029:Cmax-1500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -593,6 +789,10 @@
   "BIOMD0000001029:Cmax-500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -603,6 +803,10 @@
   "BIOMD0000001029:Cmax-adipose-1000mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -615,6 +819,10 @@
   "BIOMD0000001029:Cmax-adipose-1500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -627,6 +835,10 @@
   "BIOMD0000001029:Cmax-adipose-500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -637,6 +849,10 @@
   "BIOMD0000001029:Cmax-brain-1000mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -649,6 +865,10 @@
   "BIOMD0000001029:Cmax-brain-1500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -661,6 +881,10 @@
   "BIOMD0000001029:Cmax-brain-500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -671,6 +895,10 @@
   "BIOMD0000001029:Cmax-heart-1000mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -683,6 +911,10 @@
   "BIOMD0000001029:Cmax-heart-1500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -695,6 +927,10 @@
   "BIOMD0000001029:Cmax-heart-500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -705,6 +941,10 @@
   "BIOMD0000001029:Cmax-liver-1000mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -717,6 +957,10 @@
   "BIOMD0000001029:Cmax-liver-1500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -729,6 +973,10 @@
   "BIOMD0000001029:Cmax-liver-500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -739,6 +987,10 @@
   "BIOMD0000001029:Cmax-lungs-1000mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -751,6 +1003,10 @@
   "BIOMD0000001029:Cmax-lungs-1500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -763,6 +1019,10 @@
   "BIOMD0000001029:Cmax-lungs-500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -773,6 +1033,10 @@
   "BIOMD0000001029:Cmax-muscle-1000mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -785,6 +1049,10 @@
   "BIOMD0000001029:Cmax-muscle-1500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -797,6 +1065,10 @@
   "BIOMD0000001029:Cmax-muscle-500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -807,6 +1079,10 @@
   "BIOMD0000001029:Cmax-red-blood-cells-1000mg-twice-daily": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -819,6 +1095,10 @@
   "BIOMD0000001029:Cmax-red-blood-cells-1500mg-twice-daily": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -831,6 +1111,10 @@
   "BIOMD0000001029:Cmax-red-blood-cells-500mg-twice-daily": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -841,6 +1125,10 @@
   "BIOMD0000001029:Cmax-remainder-1000mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -853,6 +1141,10 @@
   "BIOMD0000001029:Cmax-remainder-1500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -865,6 +1157,10 @@
   "BIOMD0000001029:Cmax-remainder-500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -875,6 +1171,10 @@
   "BIOMD0000001029:Cmax-stomach-1000mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -887,6 +1187,10 @@
   "BIOMD0000001029:Cmax-stomach-1500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -899,6 +1203,10 @@
   "BIOMD0000001029:Cmax-stomach-500mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -909,6 +1217,10 @@
   "BIOMD0000001039:AUC24-liver": {
     "distance_at_most": 1e-06,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -919,6 +1231,10 @@
   "BIOMD0000001039:AUC24-plasma": {
     "distance_at_most": 1e-08,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"
@@ -929,6 +1245,10 @@
   "BIOMD0000001039:AUC24-stomach": {
     "distance_at_most": 1e-07,
     "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
     "engines": [
       "copasi",
       "roadrunner"

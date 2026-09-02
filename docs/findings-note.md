@@ -789,7 +789,11 @@ can produce a certificate that claims more than it checked:
   longer fabricated — see below.)
 - **The committed corroboration file records no engine versions**, so its staleness cannot be
   detected. A CI job does now install the extra and run the cross-engine tests against live
-  engines, so what CI checks is no longer only that a committed JSON says `true`.
+  engines, so what CI checks is no longer only that a committed JSON says `true`. *(Closed 2026-09-02: every row now
+  carries `engine_versions`, read off the two libraries after they produced the trajectories, and
+  the three surfaces that publish these bounds print them. A record written before this says
+  "engine builds unstated" rather than borrowing the versions installed today, which would make a
+  stale bound read as a fresh one.)*
 - **An estimation or population certificate accepts any engine pin.** Both are built from numbers
   the caller supplies, with no run of their own, so the pin can name an engine that is not
   installed. Validating it needs engine dispatch, which does not exist; what the claim *can* be

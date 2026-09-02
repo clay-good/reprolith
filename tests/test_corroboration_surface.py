@@ -93,6 +93,47 @@ def test_a_class_that_did_not_hold_is_not_summarized_as_holding() -> None:
     assert (entry["engine_independent"], entry["checked"]) == (1, 2)
 
 
+def test_a_record_written_before_versions_were_captured_does_not_borrow_todays() -> None:
+    """The staleness the engine build exists to make visible.
+
+    A certificate names the software that computed it, and expires when that changes. A
+    corroboration bound carries the same weight and named no software at all — a number measured
+    against one libRoadRunner read as current against any later build. Filling the gap from the
+    installed engines would be worse than leaving it: it would make a stale bound look fresh.
+    """
+    summary = corroboration_summary(
+        {"kinetic": {
+            "BIOMD5": {"engines": ["copasi", "roadrunner"],
+                       "engine_independent": True, "distance_at_most": 1e-04},
+        }}
+    )
+    assert summary["by_class"]["kinetic"]["engine_versions"] == []
+
+
+def test_a_class_re_run_across_a_version_change_says_both_builds() -> None:
+    """Collapsing them to one would publish a part-stale record as measured on one build."""
+    summary = corroboration_summary(
+        {"kinetic": {
+            "A": {"engines": ["copasi", "roadrunner"], "engine_independent": True,
+                  "distance_at_most": 1e-04, "engine_versions": ["4.46", "2.7.0"]},
+            "B": {"engines": ["copasi", "roadrunner"], "engine_independent": True,
+                  "distance_at_most": 1e-04, "engine_versions": ["4.46", "2.9.0"]},
+        }}
+    )
+    assert summary["by_class"]["kinetic"]["engine_versions"] == [
+        "copasi 4.46", "roadrunner 2.7.0", "roadrunner 2.9.0"
+    ]
+
+
+def test_the_committed_records_name_the_builds_they_were_measured_on() -> None:
+    """Not that they are any particular version — that they say which."""
+    for model_class, record in milestone_corroboration_records().items():
+        for key, row in record.items():
+            versions = row.get("engine_versions")
+            assert versions and all(versions), f"{model_class}/{key} names no engine build"
+            assert len(versions) == len(row["engines"])
+
+
 def test_the_terminal_names_the_classes_nothing_was_checked_for(capsys) -> None:
     """The four unchecked classes print in the same list as the two checked ones. A table of only
     the corroborated classes reads as a whole-repository pass."""
@@ -104,6 +145,8 @@ def test_the_terminal_names_the_classes_nothing_was_checked_for(capsys) -> None:
         if not record:
             assert "nothing was checked" in out
     assert "not a pass" in out
+    for entry in corroboration_summary(records)["by_class"].values():
+        assert ", ".join(entry["engine_versions"]) in out
 
 
 def test_the_registry_page_and_the_queried_surface_read_one_computation(capsys) -> None:
@@ -131,6 +174,7 @@ def test_the_committed_registry_page_states_what_the_terminal_states(capsys) -> 
     summary = corroboration_summary(milestone_corroboration_records())
     for model_class, entry in summary["by_class"].items():
         assert f"{model_class}: {entry['checked']} {entry['unit']}(s) re-run" in page
+        assert ", ".join(entry["engine_versions"]) in page
         assert f"{model_class:<18} {entry['checked']:>4} {entry['unit']}(s)" in out
     assert ", ".join(summary["unchecked"]) in page
 

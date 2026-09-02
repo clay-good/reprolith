@@ -111,6 +111,14 @@ one.
 - **THEN** that class is reported as unchecked in the same response as the checked classes
 - **AND** it is never presented as corroborated on the strength of zero comparisons
 
+#### Scenario: The record names the engine builds it was measured on
+
+- **WHEN** a corroboration record is reported
+- **THEN** it names the build of each engine the compared trajectories were produced by, read
+  from the running libraries rather than declared
+- **AND** a record written without them is reported as not stating them, never filled in from the
+  builds installed at read time
+
 #### Scenario: Runs of different kinds are counted apart
 
 - **WHEN** one class re-runs each claim and another re-runs each model

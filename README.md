@@ -167,7 +167,8 @@ guessing — just: *does the described model produce the shown result?*
   a solver artifact that agrees with the figure. So the same runs go through a second,
   independently-implemented engine and the agreement is published beside the verdict, never gating
   it: 80 PK/PD claims at the dose each was certified at and 6 kinetic models, all
-  engine-independent, COPASI against libRoadRunner. Four of the six classes have **no** second
+  engine-independent, COPASI 4.46.300 against libRoadRunner 2.7.0 — builds the record names,
+  because a bound measured against one of them says nothing about the next. Four of the six classes have **no** second
   registered engine, so nothing was re-run for them — and `reprolith corroboration` prints those
   four in the same list as the two, because a table of only the corroborated classes would read as
   a whole-repository pass. It is reachable from the terminal and over MCP, not only from the

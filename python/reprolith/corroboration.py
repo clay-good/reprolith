@@ -20,7 +20,9 @@ from dataclasses import dataclass, replace
 from .engine import ENGINE as _COPASI_ENGINE
 from .engine import (
     ROADRUNNER_ENGINE,
+    engine_version,
     final_state_with_roadrunner,
+    roadrunner_version,
     simulate,
     simulate_with_roadrunner,
 )
@@ -41,6 +43,13 @@ class EngineCorroboration:
     engines: tuple[str, str]
     distance: float
     stable: bool
+    #: The installed build of each engine in :attr:`engines`, in the same order — read off the
+    #: running libraries, never asserted. A certificate expires when the software that computed it
+    #: changes; a corroboration bound carried the same weight and named no software at all, so a
+    #: number measured against libRoadRunner 2.7 read as current against any later build. Empty
+    #: strings mean the versions were not captured, which is what a record written before this
+    #: existed says — and it has to keep saying that rather than borrowing today's.
+    versions: tuple[str, str] = ("", "")
     #: The tolerance the caller asked for. The verdict is decided on the *published* bound, so the
     #: criterion actually applied is :meth:`effective_criterion` — never looser than this, and up
     #: to five times tighter when this is not itself a power of ten.
@@ -59,6 +68,21 @@ class EngineCorroboration:
             f"at most {self.distance_bound():.0e} against a {self.effective_criterion():.0e} "
             f"criterion -> {verdict}"
         )
+
+    def record(self) -> dict[str, object]:
+        """This comparison as the committed record's shared fields, in one place.
+
+        Both milestone scripts assembled these by hand, so a field added to one was missing from
+        the other — which is how the published corroboration went years naming no engine build.
+        The distance is published as a bound rather than a measurement; see
+        :meth:`distance_bound`.
+        """
+        return {
+            "engines": list(self.engines),
+            "engine_versions": list(self.versions),
+            "distance_at_most": self.distance_bound(),
+            "engine_independent": self.stable,
+        }
 
     def distance_bound(self) -> float:
         """The distance rounded *up* to the next power of ten — what is safe to publish.
@@ -154,6 +178,9 @@ def corroborate_curve(
         engines=(_COPASI_ENGINE, ROADRUNNER_ENGINE),
         distance=distance,
         stable=False,
+        # Read off the libraries that just produced these two trajectories, after they ran, so the
+        # record names the builds the number came from rather than what was declared anywhere.
+        versions=(engine_version(), roadrunner_version()),
     )
     # The verdict answers to the number that is published, not the one that was measured. The
     # artifact records the distance rounded *up* to the next decade, so a raw 0.011 was published

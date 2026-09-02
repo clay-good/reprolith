@@ -123,14 +123,11 @@ def main() -> None:
             (KIN / f"{spec['id']}.xml").read_text(encoding="utf-8"),
             spec["species"], duration=spec["duration"], steps=spec["steps"],
         )
-        corroboration[spec["id"]] = {
-            "engines": list(result.engines),
-            # Published as a bound, not a measurement: COPASI is not bit-identical across
-            # repeated calls, and the distance between two agreeing engines amplifies that noise
-            # — five figures of it were not regenerable on the same machine.
-            "distance_at_most": result.distance_bound(),
-            "engine_independent": result.stable,
-        }
+        # `record()` carries the fields every class's record shares — the engines, the builds
+        # they ran as, and the distance as a *bound* rather than a measurement (COPASI is not
+        # bit-identical across repeated calls, and five figures of it were not regenerable on the
+        # same machine). Assembled by hand here and in the PK/PD script, they drifted.
+        corroboration[spec["id"]] = result.record()
     (milestone / "corroboration.json").write_text(
         json.dumps(corroboration, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",

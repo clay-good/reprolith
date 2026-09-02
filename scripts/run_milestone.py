@@ -174,11 +174,9 @@ def main() -> None:
                 schedule=step.schedule,
             )
             corroboration[f"{accession}:{step.claim_id}"] = {
-                "engines": list(result.engines),
-                # A bound, not a measurement: COPASI is not bit-identical across repeated calls,
-                # and the distance between two agreeing engines amplifies that noise.
-                "distance_at_most": result.distance_bound(),
-                "engine_independent": result.stable,
+                # The engines, the builds they ran as, and the distance as a bound rather than a
+                # measurement — the fields every class's record shares, from one place.
+                **result.record(),
                 # The values in force for the window that was corroborated. For a scheduled step
                 # they live in its last segment, and reading `parameter_overrides` alone showed
                 # `{}` for a claim that runs at 194.96 mg — a record saying the default arm ran.

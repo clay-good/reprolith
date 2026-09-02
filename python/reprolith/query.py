@@ -114,6 +114,10 @@ def corroboration_summary(records: dict[str, dict[str, Any]]) -> dict[str, Any]:
     *model*'s curve once. Adding eighty claims to six models gives an ``86`` that reads as four
     times what was actually re-run, so ``overall`` reports the two units apart and the unit is
     read off each record's own keys rather than assumed.
+
+    ``engine_versions`` names the builds each class's numbers came out of. A record written before
+    those were captured carries none, and publishes an empty list — it must not borrow the
+    versions installed today, which would make a stale bound read as a fresh one.
     """
     by_class: dict[str, dict[str, Any]] = {}
     unchecked: list[str] = []
@@ -133,6 +137,20 @@ def corroboration_summary(records: dict[str, dict[str, Any]]) -> dict[str, Any]:
             "checked": len(record),
             "engine_independent": sum(1 for row in record.values() if row.get("engine_independent")),
             "engines": sorted({e for row in record.values() for e in row.get("engines", ())}),
+            # The builds these numbers came out of, as `engine version` and deduplicated across
+            # the class. A bound measured against one libRoadRunner says nothing about the next,
+            # and a corroboration record naming no software could not be told from a current one
+            # — the same staleness a certificate's engine pin exists to make visible. More than
+            # one build for an engine here means the record was written across a version change
+            # and is part-stale, which is exactly what should be visible rather than collapsed.
+            "engine_versions": sorted(
+                {
+                    f"{engine} {version}"
+                    for row in record.values()
+                    for engine, version in zip(row.get("engines", ()), row.get("engine_versions", ()))
+                    if version
+                }
+            ),
             # The worst published bound in the class: the agreement this class is only as good as.
             "distance_at_most": max(bounds) if bounds else None,
         }

@@ -133,7 +133,9 @@ $ reprolith corroboration
 CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   reported beside the verdicts, never gating them
   kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
+                          as copasi 4.46.300 (Source), roadrunner 2.7.0
   ode-pkpd             80 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
+                          as copasi 4.46.300 (Source), roadrunner 2.7.0
   constraint-based      no second engine is registered — nothing was checked, which is not a pass
   logical               no second engine is registered — nothing was checked, which is not a pass
   spatial               no second engine is registered — nothing was checked, which is not a pass
@@ -154,6 +156,14 @@ each *claim* at the dose it was certified at, and the kinetic class re-runs each
 once. Adding eighty claims to six models gives an `86` that reads as four times what was re-run, so
 the total states the two units apart, and each class's unit is read off its own record's keys
 rather than assumed.
+
+And the record **names the builds it was measured on**. A certificate expires when the software
+that computed it changes, and says which software that was; a corroboration bound carries the same
+weight and for a long time named none at all, so a number measured against one libRoadRunner read
+as current against every later build. The versions are read off the two libraries after they
+produce the trajectories, never declared. A record written before they were captured prints
+"engine builds unstated" rather than borrowing the versions installed today — filling that gap
+would make a stale bound look fresh, which is the opposite of what naming it is for.
 
 The bound published per class is the **worst** one in it, not the best, and each individual bound
 is already rounded up to a decade — a distance between two agreeing engines is a difference of
