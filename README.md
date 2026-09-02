@@ -357,7 +357,9 @@ the catalog does not list: the catalog is the PK/PD work queue, while the ledger
 classes' published certificates. The certificate and verdict commands take the digest it returns.
 
 Add `--json` to any read command to get the exact object an agent receives over MCP. Run
-`reprolith --help` for the full command list.
+`reprolith --help` for the full command list, and `reprolith --version` for this copy's version
+*and* the judge revision each class would publish under — which is what a certificate names, and
+what tells you whether your copy would still produce the one in front of you.
 
 ## Where it starts
 

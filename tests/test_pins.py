@@ -60,6 +60,23 @@ _CLASSES = {
 }
 
 
+def test_the_package_names_the_same_judge_modules_this_gate_sweeps() -> None:
+    """One definition of what decides a class's verdict, checked against the other.
+
+    The freshness gate below has always carried its own list of which modules a class's revision is
+    over. The package needs the same list to answer `reprolith --version` — what revision would
+    this checkout publish under — and two copies of that answer is one more than can stay right.
+    The gate keeps its literal, because a check that reads its expectation from the thing it checks
+    is not a check; this asserts the two agree.
+    """
+    from reprolith.pins import JUDGE_MODULES, class_revisions
+
+    assert JUDGE_MODULES == {name: modules for name, (_dir, modules) in _CLASSES.items()}
+    assert class_revisions() == {
+        name: algorithm_revision(*modules) for name, modules in JUDGE_MODULES.items()
+    }
+
+
 def test_a_revision_of_nothing_is_refused() -> None:
     # sha256 of no bytes is a well-formed digest, and a pin carrying it would read as the revision
     # of some code rather than of none.

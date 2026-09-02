@@ -1197,6 +1197,38 @@ def _cmd_archive_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0 if report["ready_to_submit"] else 1
 
 
+class _PrintVersion(argparse.Action):
+    """Print the version block as written, and stop.
+
+    argparse's own version action runs the text through the help formatter, which rewraps it into
+    a paragraph — three facts a reader has to disentangle. This one prints the lines.
+    """
+
+    def __call__(self, parser, namespace, values, option_string=None):  # type: ignore[no-untyped-def]
+        print(_version_text())
+        parser.exit()
+
+
+def _version_text() -> str:
+    """What this checkout is, in the terms a certificate is read in.
+
+    A package version answers "which release" and nothing else, and this tool's verdicts do not
+    turn on the release: they turn on the *judge revision*, the digest over the code that computed
+    them, which is what a certificate names and what expires when that code changes. Someone
+    holding a certificate and asking whether their copy would still produce it needs both.
+    """
+    from . import __version__
+    from .pins import class_revisions
+
+    revisions = ", ".join(f"{name} {rev}" for name, rev in class_revisions().items())
+    return (
+        f"reprolith {__version__}\n"
+        f"judge revisions: {revisions}\n"
+        "a certificate names the revision it was judged under; one naming another was produced "
+        "by different code"
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="reprolith",
@@ -1206,6 +1238,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--data-dir", default=None,
         help="repository state to read (default: the bundled milestone run)",
+    )
+    parser.add_argument(
+        "--version", action=_PrintVersion, nargs=0,
+        help="this package's version and the judge revision each class would publish under",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

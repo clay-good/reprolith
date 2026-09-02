@@ -267,6 +267,27 @@ def test_dossier_unknown_accession_exits_nonzero(tmp_path, capsys):
     assert "no dossier" in capsys.readouterr().err
 
 
+def test_version_names_the_revision_a_verdict_would_be_judged_under(capsys):
+    """A release number answers "which version"; a certificate turns on the judge revision.
+
+    Someone holding a certificate and asking whether their copy would still produce it needs the
+    digest over the code that judged it, and there was no way to ask this tool for it at all.
+    """
+    with pytest.raises(SystemExit) as exited:
+        run(["--version"])
+    assert exited.value.code == 0
+    printed = capsys.readouterr().out
+    assert printed.startswith("reprolith ")
+    from reprolith.pins import class_revisions
+
+    revisions = class_revisions()
+    assert revisions, "no classes to report; this check would pass vacuously"
+    for name, revision in revisions.items():
+        assert f"{name} {revision}" in printed
+    # Printed as written rather than rewrapped into a paragraph of three facts.
+    assert len(printed.splitlines()) == 3
+
+
 def test_command_required(capsys):
     with pytest.raises(SystemExit):
         run([])

@@ -33,6 +33,29 @@ from pathlib import Path
 _HERE = Path(__file__).resolve().parent
 
 
+#: Which modules decide each model class's verdict, and therefore what its judge revision is over.
+#:
+#: The classes' own pins pass these tuples directly — this module is in none of them, so naming
+#: them here changes no certificate. It exists so a reader can ask what revision the tool they are
+#: running would publish under, and so the freshness gate and that answer cannot drift apart.
+JUDGE_MODULES: dict[str, tuple[str, ...]] = {
+    # `engine` picks the grid and the species column and `certify` derives the metric, so either
+    # can change the number being judged without the solver's version or the verdict rule moving.
+    "ode-pkpd": ("engine", "certify", "oracle", "certificate"),
+    "kinetic": ("engine", "certify", "oracle", "certificate"),
+    # `sbml` decides which LP is solved for this class — see fba.solver_pin.
+    "constraint_based": ("fba", "sbml", "constraint_based", "oracle", "certificate"),
+    "logical": ("logical", "oracle", "certificate"),
+    "spatial": ("spatial", "oracle", "certificate"),
+    "stochastic": ("stochastic", "oracle", "certificate"),
+}
+
+
+def class_revisions() -> dict[str, str]:
+    """Each class's judge revision, as the certificates this checkout would publish carry it."""
+    return {name: algorithm_revision(*modules) for name, modules in sorted(JUDGE_MODULES.items())}
+
+
 @cache
 def algorithm_revision(*modules: str) -> str:
     """A short digest of the named sibling modules' source, in the order given.
