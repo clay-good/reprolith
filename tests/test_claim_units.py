@@ -336,3 +336,23 @@ def test_every_committed_claim_is_in_the_unit_its_cited_table_prints() -> None:
         ]
         checked += len(results)
     assert checked == 80, checked
+
+
+def test_a_count_based_class_is_passed_over_rather_than_accused() -> None:
+    """What this composes is how a *time course* is read, and not every class reads one.
+
+    The unit here is substance over volume because the ODE engine asks for concentration data. A
+    class whose engine reports copy numbers reads the same species as an amount, and a curator
+    stating one of those is not describing what this composes. Nothing here can parse "molecules",
+    so every check that uses it stays silent — which is the right answer, and it is the safe
+    direction of the same rule that keeps an unreadable unit from becoming a disagreement.
+    """
+    from reprolith.manuscript_values import _units_known_to_differ
+
+    for stated in ("molecules", "copies", "copy number", "counts"):
+        assert not _units_known_to_differ(stated, "10^-9 mole / 10^-3 litre"), stated
+    (check,) = check_claim_units(
+        _model("BIOMD0000001027"),
+        [{"claim_id": "c", "species": "mPlasmaVenous", "reported_units": "molecules"}],
+    )
+    assert check.agrees is None and claims_in_another_unit((check,)) == ()

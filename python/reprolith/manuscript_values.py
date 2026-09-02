@@ -847,6 +847,11 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
     read two ways is two different quantities, and the paper's table says so in its own column
     headers.
 
+    This describes how a **time course** is read — the ODE path, where the engine asks for
+    concentration data. A class whose engine reports copy numbers reads the same species as an
+    amount, and a claim stating one of those is not what this composes; such a unit is one nothing
+    here can parse, so the checks that use this stay silent rather than accusing.
+
     Returns ``"unstated"`` when any part of the composition is not resolvable, rather than a
     partial unit that reads as if it were established. Raises ``ValueError`` if the model is not
     parseable SBML or declares no such output.
