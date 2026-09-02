@@ -1100,6 +1100,18 @@ def disagreeing_parameters(checks: Sequence[ParameterCheck]) -> tuple[ParameterC
     return tuple(check for check in checks if check.agrees is False)
 
 
+def compared_parameters(checks: Sequence[ParameterCheck]) -> tuple[ParameterCheck, ...]:
+    """The checks that actually put two numbers beside each other — ``agrees`` is not ``None``.
+
+    The count that separates a clean report from an unmade check. A parameters file straight out
+    of ``params-template`` pairs nothing, so every row comes back "not compared" and the run had
+    nothing to disagree with — which read as a pass, header and exit status both, on a file the
+    author had not started filling in. The author-facing surface documents its exit status as
+    droppable into a pre-submission hook, so that pass was the whole answer a CI job got.
+    """
+    return tuple(check for check in checks if check.agrees is not None)
+
+
 def unsupported_claims(checks: Sequence[ValueCheck]) -> tuple[ValueCheck, ...]:
     """The checks that came back false — a value the cited table does not print.
 
@@ -1120,6 +1132,7 @@ __all__ = [
     "check_parameter_values",
     "claim_units",
     "claims_in_another_unit",
+    "compared_parameters",
     "model_time_unit",
     "disagreeing_parameters",
     "parameters_template",

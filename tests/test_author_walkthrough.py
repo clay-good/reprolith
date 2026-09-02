@@ -44,11 +44,22 @@ def test_the_templates_write_files_the_checks_can_read(tmp_path, capsys) -> None
     capsys.readouterr()
     assert json.loads(parameters.read_text(encoding="utf-8"))["parameters"]
 
-    # And an unedited template reaches the check that reads it, reported as unfilled rather than
-    # failing: it is the ordinary mistake, and the guide sends an author straight from one to the
-    # other.
-    assert run(["params-check", "--model", str(_MODEL), "--parameters", str(parameters)]) == 0
-    assert "not compared" in capsys.readouterr().out
+    # And an unedited template reaches the check that reads it, reported as unfilled — and
+    # refused, which this asserted the opposite of until 2026-09-02. The two author-facing checks
+    # met the identical situation and answered it oppositely: an unedited *claims* template has
+    # always been refused by name, while an unedited *parameters* template printed "41
+    # PARAMETER(S) CHECKED" over 41 rows it skipped and exited 0. This command's exit status is
+    # documented as droppable into a pre-submission hook, where that 0 says the model carries the
+    # paper's values — over a file the tool had just told the author to go and fill in.
+    #
+    # It is the ordinary mistake, and the guide sends an author straight from one command to the
+    # other, so the message still says "unfilled" rather than accusing the model of anything. Only
+    # the status changed, and only for a file where *nothing* was compared and every row is blank.
+    assert run(["params-check", "--model", str(_MODEL), "--parameters", str(parameters)]) == 1
+    captured = capsys.readouterr()
+    assert "not compared" in captured.out
+    assert "NOTHING WAS COMPARED" in captured.err
+    assert "still has the blanks params-template leaves for you" in captured.err
 
 
 def test_an_unedited_proposal_is_reported_as_unfinished_not_as_a_failure(capsys, tmp_path) -> None:

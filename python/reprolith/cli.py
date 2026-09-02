@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
@@ -51,6 +52,7 @@ from .manuscript_values import (
     check_claim_values,
     check_parameter_values,
     claims_in_another_unit,
+    compared_parameters,
     disagreeing_parameters,
     parameters_template,
     quantities_the_paper_does_not_state,
@@ -661,13 +663,18 @@ def _cmd_params_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     # the author's file, or guess. Grouped by kind, because a tissue volume is a compartment and an
     # initial condition is a species, and neither is a parameter.
     unstated = quantities_the_paper_does_not_state(model, records)
+    compared = compared_parameters(checks)
     if args.json:
         _print_json({
             "checks": [c.to_dict() for c in checks],
+            "compared": len(compared),
             "not_reported_by_the_paper": {k: list(v) for k, v in unstated.items()},
         })
     else:
-        print(f"{len(checks)} PARAMETER(S) CHECKED AGAINST {shown}")
+        # "41 PARAMETER(S) CHECKED" over 41 rows that were every one of them skipped is the
+        # report this project keeps being caught by: a clean headline standing in for a check
+        # nobody made. The header counts what was actually put beside a model value.
+        print(f"{len(compared)} OF {len(checks)} PARAMETER(S) COMPARED AGAINST {shown}")
         for check in checks:
             mark = {True: "ok", False: "MISMATCH", None: "not compared"}[check.agrees]
             # The unit rides on every answer: two numbers agreeing says nothing until they are in
@@ -687,6 +694,37 @@ def _cmd_params_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
                   "would have to take from your file or guess:")
             for kind, names in unstated.items():
                 print(f"      {kind}: {', '.join(names)}")
+    if checks and not compared:
+        # The header now counts comparisons, but a reader who sees `0 OF 41` still needs telling
+        # what that means for the question they asked, so it is said in words.
+        unfilled = all(
+            check.agrees is None and check.carried is None and math.isnan(check.reported)
+            for check in checks
+        )
+        print(
+            "\nNOTHING WAS COMPARED, so this is not evidence your model carries your paper's "
+            "values.",
+            file=sys.stderr,
+        )
+        if unfilled:
+            # And only here is it non-zero. This command's exit status is documented as droppable
+            # into a pre-submission hook, and straight out of `params-template` every row is
+            # blank — so the file an author is *told* to fill in passed that gate before they had
+            # filled in anything, under a header reading "41 PARAMETER(S) CHECKED". It is the
+            # same unedited-template refusal the claims side already makes, on the surface that
+            # never got it.
+            #
+            # Deliberately no wider than that. A file the author did fill in, whose rows were all
+            # skipped for a reason printed beside each — an inert value, an unpaired proposal —
+            # keeps its zero: a value that could not be compared is not a value that is wrong,
+            # and failing a submission on one would be this check calling a correct model bad.
+            print(
+                "  This parameters file still has the blanks params-template leaves for you: "
+                "pair each\n  model element with the number your paper prints for it, and run "
+                "this again.",
+                file=sys.stderr,
+            )
+            return 1
     return 1 if disagreeing_parameters(checks) else 0
 
 

@@ -5,7 +5,9 @@ work from those files. This is the check that tells you what they will hit, befo
 — it runs no model, reaches no verdict, and issues no certificate.
 
 ```bash
-pip install reprolith
+# Reprolith is not on PyPI yet, so it installs from a clone. Nothing below needs a
+# simulator: every command here reads your files and formats what it finds.
+git clone https://github.com/clay-good/reprolith && pip install -e ./reprolith
 
 # what a reproducer finds in your files, and whether they run what your paper reports
 reprolith claims-template --model paper.xml --sedml paper.sedml --out my_claims.json
@@ -24,7 +26,13 @@ two things per published result.
 The two `archive-check` forms answer the same question. Use the second if your files are loose,
 which most papers' are: they are packaged into the archive they describe and that archive is
 checked. The exit status is the answer — `0` when a reproducer can read your files and knows what
-to check, non-zero otherwise — so it drops into a pre-submission hook or a CI job.
+to check, non-zero otherwise — so it drops into a pre-submission hook or a CI job. That applies to
+`params-check` too, including the case it used to get wrong: a parameters file straight out of the
+template pairs nothing, so nothing is compared, and a `0` there would tell your CI your model
+carries your paper's values on the strength of no comparison at all. It says
+`NOTHING WAS COMPARED` and exits non-zero. A file you *did* fill in whose rows could not be
+compared — an inert value, an unpaired proposal — still exits `0`: a value nobody could check is
+not a value that is wrong.
 
 The second pair asks about your model's **inputs** rather than its outputs, and is described under
 [the parameters file](#the-parameters-file).

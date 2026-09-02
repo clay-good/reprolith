@@ -233,6 +233,16 @@ prints, and SHALL be told what that question could not reach.
 - **THEN** it is reported as not compared, because a file that is not finished is not a model that
   fails its paper
 
+#### Scenario: A run that compared nothing does not report a pass
+
+- **WHEN** no pair in the file could be compared
+- **THEN** the report states that nothing was compared, rather than a count of rows it read
+- **AND** the check exits non-zero when every row is an unfilled template blank, since this
+  status is documented as droppable into a pre-submission gate and the author has not yet said
+  what to check
+- **AND** it exits zero when the author did fill the file in and each row was skipped for a
+  stated reason, since a value that could not be compared is not a value that is wrong
+
 ### Requirement: A claim's number is checked in the unit it is a number of
 
 Two numbers agreeing says nothing until they are the same quantity, and a paper's litres against a

@@ -1017,10 +1017,54 @@ def test_params_template_writes_the_file_params_check_reads(tmp_path, capsys):
     assert all(row["reported"] is None for row in written["parameters"])
     assert written["model_determines"] == {"parameter": ["QLiver"]}
 
-    # Straight into the check, unedited: three unfilled rows, and not one of them a pass.
-    assert run(["params-check", "--model", str(model), "--parameters", str(out)]) == 0
-    checked = capsys.readouterr().out
-    assert "3 parameter(s) were not compared" in checked and "ok:" not in checked
+    # Straight into the check, unedited: three unfilled rows, and not one of them a pass — nor the
+    # run as a whole, which is what the zero used to say. The header counted rows rather than
+    # comparisons, so a file with nothing in it printed "3 PARAMETER(S) CHECKED" and exited 0 into
+    # a pre-submission hook whose documented reading of a 0 is that the model carries the paper's
+    # values.
+    assert run(["params-check", "--model", str(model), "--parameters", str(out)]) == 1
+    captured = capsys.readouterr()
+    assert "0 OF 3 PARAMETER(S) COMPARED" in captured.out
+    assert "3 parameter(s) were not compared" in captured.out and "ok:" not in captured.out
+    assert "NOTHING WAS COMPARED" in captured.err
+
+
+def test_a_run_that_compared_nothing_is_only_refused_when_the_file_is_blank(tmp_path, capsys):
+    """The refusal is exactly as wide as the defect and no wider.
+
+    An unfilled template is a file the author has not started, and passing it is the failure. A
+    file they *did* fill in, whose one row could not be compared for a reason printed beside it —
+    here an `initialAssignment` making the declared value inert — is a value that could not be
+    checked, not a value that is wrong, and failing a submission on it would be this check calling
+    a correct model bad. Both runs compare nothing; only one is refused.
+    """
+    model = tmp_path / "model.xml"
+    model.write_text(
+        '<?xml version="1.0"?><sbml xmlns="http://www.sbml.org/sbml/level2/version4" '
+        'level="2" version="4"><model id="m"><listOfParameters>'
+        '<parameter id="k" value="9.9"/></listOfParameters><listOfInitialAssignments>'
+        '<initialAssignment symbol="k"><math '
+        'xmlns="http://www.w3.org/1998/Math/MathML"><cn>1</cn></math></initialAssignment>'
+        '</listOfInitialAssignments></model></sbml>',
+        encoding="utf-8",
+    )
+    filled = tmp_path / "filled.json"
+    filled.write_text(json.dumps({"parameters": [
+        {"parameter": "k", "reported": 0.7, "source_location": "Table 3"},
+    ]}), encoding="utf-8")
+    assert run(["params-check", "--model", str(model), "--parameters", str(filled)]) == 0
+    captured = capsys.readouterr()
+    # It still says what happened — a 0 here does not mean anything was verified.
+    assert "0 OF 1 PARAMETER(S) COMPARED" in captured.out
+    assert "NOTHING WAS COMPARED" in captured.err
+    assert "still has the blanks" not in captured.err
+
+    blank = tmp_path / "blank.json"
+    blank.write_text(json.dumps({"parameters": [
+        {"parameter": "k", "reported": None, "source_location": None},
+    ]}), encoding="utf-8")
+    assert run(["params-check", "--model", str(model), "--parameters", str(blank)]) == 1
+    assert "still has the blanks" in capsys.readouterr().err
 
 
 def test_the_params_commands_read_an_archive_as_well_as_a_loose_model(capsys):

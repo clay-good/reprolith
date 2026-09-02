@@ -264,6 +264,14 @@ refusing to compare any value an `initialAssignment` or a rule makes inert. On t
 metformin models it comes back clean: all ten tissue-plasma partition coefficients in each are the
 ones the paper's Table 3 prints.
 
+And it counts **comparisons, not rows**. A parameters file straight out of `params-template` pairs
+nothing, so nothing is compared — and it used to print "41 PARAMETER(S) CHECKED" over 41 rows it
+had skipped and exit `0`, which is the status this command documents as droppable into a
+pre-submission gate. The header now reads `10 OF 10`, and a file where nothing was compared says so
+and exits non-zero when the rows are still the template's blanks. Only then: a file the author did
+fill in, whose rows could not be compared for a reason printed beside each, keeps its zero, because
+a value nobody could check is not a value that is wrong.
+
 It also names what it could not check, which is the number this project is about. Ten of that
 model's sixteen settable parameters are reported and **six are not** — the body weight, the cardiac
 output, the glomerular filtration flow, two tissue coefficients, and the dose, which is the very

@@ -101,3 +101,27 @@ def test_the_sweep_covers_the_pages_that_show_commands() -> None:
         if _lines(path.read_text(encoding="utf-8"))
     }
     assert {"README.md", "docs/author-check.md", "docs/figure-values.md"} <= with_commands
+
+
+def test_no_document_promises_an_install_route_that_does_not_exist() -> None:
+    """`pip install reprolith` opened the author-facing guide and does not work.
+
+    That guide is the one page written for a stranger — an author who is not a contributor, who
+    arrives from a paper rather than from the repository — and its first line failed. The package
+    is not published on PyPI; every other page in this repository says `pip install -e .` from a
+    checkout, and only this one did not.
+
+    Pinned rather than fixed-and-forgotten because the fix will need reverting the day the package
+    *is* published, and a stale clone-first instruction is the same defect in the other direction.
+    """
+    root = Path(__file__).resolve().parents[1]
+    pages = [root / "README.md", root / "CONTRIBUTING.md", *sorted((root / "docs").glob("*.md"))]
+    for page in pages:
+        for number, line in enumerate(page.read_text(encoding="utf-8").splitlines(), start=1):
+            stripped = line.strip().lstrip("$ ").strip("`")
+            if not stripped.startswith("pip install"):
+                continue
+            assert "-e" in stripped or "--editable" in stripped, (
+                f"{page.name}:{number} tells a reader to `{stripped}`, which does not work: "
+                "reprolith is not published, and this repository installs from a checkout"
+            )
