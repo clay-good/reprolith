@@ -69,3 +69,29 @@ def test_a_blocked_certificate_refuses_a_malformed_missing_input() -> None:
     for bad in ([], ("",), [None]):
         with pytest.raises(ValueError, match="at least one non-empty missing input"):
             blocked_certificate(paper, pin, reason=bad)  # type: ignore[arg-type]
+
+
+def test_a_family_of_entry_points_reaches_the_surface_together() -> None:
+    """One sibling exported and the rest not is worse than none: it teaches the wrong pattern.
+
+    `corroborate_curve` was on the surface and the three classes added after it were not, so a
+    consumer who found the ODE one and went looking for their own class's would conclude the
+    package had none. The same happened one module over on the day `footprint_origins` and its
+    note were added beside already-exported siblings.
+
+    Asserted as families rather than as "everything in every module's `__all__`", which would be
+    the wrong rule: `cli.main`, the MCP server's internals, and the per-class `solver_pin` names
+    that collide are all deliberately not re-exported.
+    """
+    import reprolith.corroboration as corroboration
+    import reprolith.selection as selection
+
+    for module in (corroboration, selection):
+        unreachable = [name for name in module.__all__ if not hasattr(R, name)]
+        assert not unreachable, (
+            f"{module.__name__} declares {unreachable} public and the package does not export "
+            "them, while their siblings are on the surface"
+        )
+    # And the one the selection guide tells a reader to use, which lives in its own module.
+    assert callable(R.derive_footprints)
+

@@ -43,7 +43,13 @@ from .constraint_based import (
     constraint_based_dossier,
     validate_constraint_based,
 )
-from .corroboration import EngineCorroboration, corroborate_curve
+from .corroboration import (
+    EngineCorroboration,
+    corroborate_attractors,
+    corroborate_curve,
+    corroborate_fixed_points,
+    corroborate_objective,
+)
 from .determinism import certificate_digest, same_modulo_run_metadata
 from .digitization import (
     AmbiguousPanel,
@@ -134,6 +140,7 @@ from .fba import (
 from .fba import (
     solver_pin as fba_solver_pin,
 )
+from .footprints import derive_footprints
 from .ingest import ingest_sbml
 from .linter import (
     LintResult,
@@ -300,6 +307,7 @@ from .sedml import (
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
 from .selection import (
     EMPTY_POOL_NOTE,
+    MIXED_ORIGIN_NOTE,
     PARTIAL_NOTE,
     SELECTION_NOTE,
     SET_OBJECTIVE,
@@ -308,6 +316,7 @@ from .selection import (
     Selection,
     claim_selection_pool,
     claim_selection_report,
+    footprint_origins,
     jaccard,
     score_set,
     select_greedily,
@@ -425,6 +434,8 @@ __all__ = [
     "quantities_the_paper_does_not_state",
     "claim_selection_pool",
     "claim_selection_report",
+    "derive_footprints",
+    "footprint_origins",
     "claim_counts",
     "claims_template",
     "ClaimAssessment",
@@ -459,6 +470,9 @@ __all__ = [
     "engine_pin",
     "engine_version",
     "EngineCorroboration",
+    "corroborate_attractors",
+    "corroborate_fixed_points",
+    "corroborate_objective",
     "EnginePin",
     "EngineUnavailable",
     "ensemble_final_counts",
@@ -474,6 +488,7 @@ __all__ = [
     "EstimationClaim",
     "EstimationResult",
     "EMPTY_POOL_NOTE",
+    "MIXED_ORIGIN_NOTE",
     "EvidenceItem",
     "ExportedExperiment",
     "ExtractionConfidence",
