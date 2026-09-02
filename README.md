@@ -172,7 +172,8 @@ guessing — just: *does the described model produce the shown result?*
   rests on is **derived from the model**, not from the claim's own prose — its tissue's partition
   coefficient, that tissue's blood flow, the two reactions moving drug in and out of it, and the
   arterial pool every tissue routes through. It is a plan, not a verdict: no model is run, and a
-  claim left unselected is unattempted rather than unreproduced.
+  claim left unselected is unattempted rather than unreproduced
+  ([`docs/claim-selection.md`](docs/claim-selection.md)).
 - **A second opinion, or an honest blank.** A model can reproduce its paper for the wrong reason —
   a solver artifact that agrees with the figure. So the same runs go through a second,
   independently-implemented engine and the agreement is published beside the verdict, never gating

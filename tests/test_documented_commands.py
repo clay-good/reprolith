@@ -13,6 +13,8 @@ is normalized, because `<digest>` is not an argument anyone types.
 
 from __future__ import annotations
 
+import contextlib
+import io
 import re
 from pathlib import Path
 
@@ -127,3 +129,20 @@ def test_no_document_promises_an_install_route_that_does_not_exist() -> None:
                 f"{page.name}:{number} tells a reader to `{stripped}`, which does not work: "
                 "reprolith is not published, and this repository installs from a checkout"
             )
+
+
+def test_the_selection_guide_prints_the_numbers_the_command_prints() -> None:
+    """The doc's worked example makes a specific claim — that choosing as a set beats reading a
+    ranking, by these numbers on this paper — and prose cannot keep that true. A footprint depth,
+    an objective weight or one more curated claim would all change it silently."""
+    from reprolith.cli import run as run_cli
+
+    page = (REPO / "docs" / "claim-selection.md").read_text(encoding="utf-8")
+    printed = io.StringIO()
+    with contextlib.redirect_stdout(printed):
+        assert run_cli(["select-claims", "BIOMD0000001028", "--budget", "3"]) == 0
+    for line in printed.getvalue().splitlines():
+        stripped = line.strip()
+        # The note and the header wrap in prose; the numbers are what has to match.
+        if stripped.startswith(("independent evidential", "witnesses", "and scored", "SELECTED")):
+            assert stripped in page, f"docs/claim-selection.md does not show: {stripped}"
