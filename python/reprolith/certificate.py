@@ -20,6 +20,7 @@ from .model import (
     Assumption,
     Certificate,
     ClaimAssessment,
+    ClaimSelection,
     EnginePin,
     PaperIdentity,
 )
@@ -29,6 +30,7 @@ from .scope import Scope
 def derive_overall(
     assessments: Sequence[ClaimAssessment],
     assumptions: Sequence[Assumption] = (),
+    selection: ClaimSelection | None = None,
 ) -> OverallVerdict:
     """Derive the certificate-level verdict from per-claim assessments.
 
@@ -38,8 +40,9 @@ def derive_overall(
     * every evaluable claim ``reproduced``, none assumption-qualified, and no load-bearing or
       awaiting-verification assumption on the record -> ``reproduced``;
     * every evaluable claim ``reproduced`` but at least one assumption-qualified, *or* a
-      load-bearing assumption present, *or* an assumption still awaiting expert verification ->
-      ``partially-reproduced`` (any of the three forbids a clean pass);
+      load-bearing assumption present, *or* an assumption still awaiting expert verification, *or*
+      a budgeted selection left a claim unattempted -> ``partially-reproduced`` (any of the four
+      forbids a clean pass);
     * some but not all evaluable claims ``reproduced`` -> ``partially-reproduced``;
     * no evaluable claim ``reproduced`` -> ``not-reproduced``.
 
@@ -52,6 +55,14 @@ def derive_overall(
     that decision comes back. Nothing sets the field today, so this changes no existing
     certificate — but the rule belongs with the other two rather than waiting for the first caller
     that would need it.
+
+    The fourth is the budget. A paper's claims are not equally likely to reproduce, so a
+    certification that attempted three of a paper's thirty-three and passed all three has
+    demonstrated something much weaker than one that attempted all thirty-three — and read as an
+    unqualified ``reproduced`` it would be indistinguishable from it, while being the cheapest
+    route to the word. So an unattempted claim withholds the clean pass for the same reason a
+    load-bearing assumption does: the result is real, and it rests on something the reader has to
+    be told about. It cannot *rescue* a verdict — a selection never turns a miss into a pass.
     """
     evaluable = [a for a in assessments if a.verdict is not Verdict.NOT_EVALUABLE]
     if not evaluable:
@@ -63,7 +74,8 @@ def derive_overall(
         qualified = any(a.assumption_qualified for a in reproduced)
         load_bearing = any(a.load_bearing for a in assumptions)
         awaiting = any(a.verification_item for a in assumptions)
-        if qualified or load_bearing or awaiting:
+        unattempted = bool(selection is not None and selection.unattempted)
+        if qualified or load_bearing or awaiting or unattempted:
             return OverallVerdict.PARTIALLY_REPRODUCED
         return OverallVerdict.REPRODUCED
 
@@ -208,6 +220,33 @@ def require_stated_cause(assessments: Iterable[ClaimAssessment]) -> None:
             )
 
 
+def require_selection_is_disjoint(
+    assessments: Sequence[ClaimAssessment], selection: ClaimSelection | None
+) -> None:
+    """Refuse a certificate that both judges a claim and says it never attempted it.
+
+    The two lists answer the same question — did Reprolith look at this claim — and a claim in
+    both makes the certificate say yes and no at once. Which half a surface believes then depends
+    on which one it walks: the verdict counters would count the assessment, the human render would
+    print the claim under NOT ATTEMPTED, and a reader comparing the two would be told the
+    certificate is inconsistent by a page that is supposed to be the evidence.
+
+    Cheap to trip by accident, too, and in the direction that flatters: the budgeted path hands
+    ``certify_model`` the selected claims and the record of the rest, so passing the *whole* claim
+    set alongside the record produces a certificate that judged everything while advertising that
+    it did not — a full result wearing a budget's excuse.
+    """
+    if selection is None:
+        return
+    judged = {a.claim_id for a in assessments}
+    for claim in selection.unattempted:
+        if claim.claim_id in judged:
+            raise ValueError(
+                f"claim {claim.claim_id!r} is recorded as unattempted and also carries a verdict; "
+                "a certificate cannot both judge a claim and say it never ran it"
+            )
+
+
 def build_certificate(
     *,
     paper: PaperIdentity,
@@ -216,6 +255,7 @@ def build_certificate(
     assumptions: Iterable[Assumption] = (),
     gap_report: Sequence[str] = (),
     scope: Scope | None = None,
+    selection: ClaimSelection | None = None,
     supersedes: Certificate | None = None,
 ) -> Certificate:
     """Construct a certificate with its overall verdict derived and scope attached.
@@ -224,9 +264,10 @@ def build_certificate(
     invariants cannot be sidestepped by a caller. Both the per-claim ``assumption_qualified``
     flags and the load-bearing flags on ``assumptions`` feed the downgrade, so handing a
     load-bearing assumption to this builder forces *partially reproduced* even when every claim
-    is otherwise a clean pass. The scope statement is always present. When ``supersedes`` is
-    given, the new certificate links to that prior one by its content digest; the prior
-    certificate is not modified and remains a distinct, retrievable record.
+    is otherwise a clean pass, and so does a ``selection`` that left a claim unattempted. The
+    scope statement is always present. When ``supersedes`` is given, the new certificate links to
+    that prior one by its content digest; the prior certificate is not modified and remains a
+    distinct, retrievable record.
     """
     frozen_assessments = tuple(assessments)
     frozen_assumptions = tuple(assumptions)
@@ -235,6 +276,7 @@ def build_certificate(
     require_distinct_claim_ids(frozen_assessments)
     require_distinct_assumption_ids(frozen_assumptions)
     require_reprolith_attribution(frozen_assumptions)
+    require_selection_is_disjoint(frozen_assessments, selection)
     frozen_gaps = require_readable_gap_notes(gap_report)
     # …including the pin/protocol agreement the load path checks, so the builder cannot mint a
     # certificate that its own loader refuses. The check lives in `persistence` beside the other
@@ -245,8 +287,9 @@ def build_certificate(
     return Certificate(
         paper=paper,
         engine_pin=engine_pin,
-        overall=derive_overall(frozen_assessments, frozen_assumptions),
+        overall=derive_overall(frozen_assessments, frozen_assumptions, selection),
         scope=scope if scope is not None else Scope(),
+        selection=selection,
         assessments=frozen_assessments,
         assumptions=frozen_assumptions,
         gap_report=frozen_gaps,

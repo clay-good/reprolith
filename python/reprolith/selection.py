@@ -218,6 +218,24 @@ SELECTION_NOTE = (
     "results matter is the reader's judgment, never this selection's."
 )
 
+#: How a selection describes what it maximized, for the certificate that ends up resting on it.
+#: The reader of a budgeted certificate is being asked to accept that the claims it did not
+#: attempt were the right ones to skip, and the only way to contest that is to know the criterion.
+#: Named here, beside the objective it names, so the sentence on the certificate and the code that
+#: chose cannot drift apart.
+SET_OBJECTIVE = "independent evidential value: set value less footprint overlap"
+
+
+def stated_objective(selection: Selection) -> str:
+    """The objective sentence a certificate records for ``selection``, search method included.
+
+    The method belongs in it: ``local-search`` returns a set that is never worse than the greedy
+    baseline but is not proven optimal, and a reader weighing what was skipped should not have to
+    guess which of the two answers they are looking at.
+    """
+    return f"{SET_OBJECTIVE} ({selection.method})"
+
+
 #: Said whenever no candidate claim records what it rests on. The selection is then greedy's
 #: answer under another name, and a surface that presented it as an optimized set would be
 #: claiming an analysis it did not perform.
@@ -259,9 +277,11 @@ def claim_selection_report(
     part of the finding: where the two agree there was no set-level structure to exploit, and where
     they differ the report shows what the ranking would have bought instead.
 
-    ``limits`` is where the report says what it could not do. It is the field that keeps this
-    surface honest on the corpus as it stands today, where no dossier records a footprint at all
-    and the joint answer is therefore the greedy one.
+    ``limits`` is where the report says what it could not do — a claim with no recorded footprint
+    is charged no overlap, so a pool of them gets the greedy answer back under another name, and
+    saying so is the difference between an honest report and one claiming an analysis it did not
+    perform. That was the whole corpus's state until footprints were derived from the model files;
+    it is still every dossier outside the four metformin entries.
     """
     pool = claim_selection_pool(dossier, values=values, costs=costs)
     joint = select_jointly(pool, budget=budget, redundancy=redundancy)
@@ -410,6 +430,7 @@ def _moves(
 
 __all__ = [
     "EMPTY_POOL_NOTE",
+    "SET_OBJECTIVE",
     "EvidenceItem",
     "PARTIAL_NOTE",
     "SELECTION_NOTE",
@@ -421,4 +442,5 @@ __all__ = [
     "score_set",
     "select_greedily",
     "select_jointly",
+    "stated_objective",
 ]

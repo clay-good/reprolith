@@ -156,6 +156,79 @@ class ClaimAssessment:
 
 
 @dataclass(frozen=True)
+class UnattemptedClaim:
+    """A claim the paper made that a budgeted certification did not attempt.
+
+    It is deliberately not a :class:`ClaimAssessment` carrying a spare verdict. ``not-evaluable``
+    means Reprolith ran the claim and could establish nothing; this claim was never run, and the
+    two are different statements about the paper. Keeping the shapes apart is what stops a verdict
+    counter, a badge, or a gap report from turning "we did not look" into "we looked and found
+    nothing".
+    """
+
+    claim_id: str
+    quantity: str
+    source_location: str
+
+    def __post_init__(self) -> None:
+        if not self.claim_id.strip():
+            raise ValueError("an unattempted claim needs an id: it is how a reader asks for it")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "claim_id": self.claim_id,
+            "quantity": self.quantity,
+            "source_location": self.source_location,
+        }
+
+
+@dataclass(frozen=True)
+class ClaimSelection:
+    """Why a certificate holds fewer claims than the paper made.
+
+    A certificate that simply omits the claims a budget could not afford is indistinguishable from
+    one for a paper that never made them — and the omission is exactly where an over-flattering
+    result hides, because the cheapest route to a clean pass is to attempt only the claims that
+    pass. So the budget, the objective that spent it, and every claim it excluded travel *on* the
+    certificate, and :func:`~reprolith.certificate.derive_overall` withholds an unqualified
+    ``reproduced`` while any of them stands.
+
+    ``None`` on every certificate produced without a budget, and omitted from the content entirely
+    in that case, so nothing already published is changed by this field existing.
+    """
+
+    budget: float
+    objective: str
+    unattempted: tuple[UnattemptedClaim, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.budget > 0.0:
+            raise ValueError("a selection budget must be positive, or it bounded nothing")
+        if not self.objective.strip():
+            # The spec asks for the budget *and* the objective that excluded a claim: a budget
+            # alone says how much was spent, not what it was spent on, and a reader cannot contest
+            # a choice whose criterion is unstated.
+            raise ValueError(
+                "a selection must name the objective that chose against it, not only its budget"
+            )
+        seen = set()
+        for claim in self.unattempted:
+            if claim.claim_id in seen:
+                raise ValueError(
+                    f"unattempted claim id {claim.claim_id!r} appears twice; a claim this "
+                    "certificate says it did not attempt has to be identifiable"
+                )
+            seen.add(claim.claim_id)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "budget": self.budget,
+            "objective": self.objective,
+            "unattempted": [claim.to_dict() for claim in self.unattempted],
+        }
+
+
+@dataclass(frozen=True)
 class RunMetadata:
     """When and by whom a certificate was produced.
 
@@ -193,6 +266,10 @@ class Certificate:
     assumptions: tuple[Assumption, ...] = ()
     gap_report: tuple[str, ...] = field(default=())
     supersedes: str | None = None
+    #: The budget that chose which of the paper's claims to attempt, and the ones it excluded.
+    #: ``None`` — and absent from the content — for a certificate that attempted every claim it
+    #: was handed, which is every certificate published to date.
+    selection: ClaimSelection | None = None
 
     def content(self) -> dict[str, Any]:
         """The deterministic content of the certificate (no run metadata).
@@ -201,6 +278,11 @@ class Certificate:
         (``None`` for a first certification); it is part of the content because a
         re-certification that links to a different predecessor is a genuinely different
         record.
+
+        ``selection`` is part of the content for a stronger reason — what a certification did
+        *not* attempt bounds what its verdict means, so a copy without it is a different claim
+        about the paper — and it is omitted entirely when there was no budget, so every digest
+        published before this field existed hashes to exactly what it did before.
         """
         return {
             "paper": self.paper.to_dict(),
@@ -211,6 +293,7 @@ class Certificate:
             "assumptions": [a.to_dict() for a in self.assumptions],
             "gap_report": list(self.gap_report),
             "supersedes": self.supersedes,
+            **({} if self.selection is None else {"selection": self.selection.to_dict()}),
         }
 
     def to_dict(self, run: RunMetadata) -> dict[str, Any]:

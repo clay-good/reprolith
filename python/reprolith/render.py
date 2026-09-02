@@ -32,6 +32,27 @@ def claim_counts(cert: Certificate) -> dict[str, int]:
     return counts
 
 
+def unattempted_claims(cert: Certificate) -> list[dict[str, Any]]:
+    """The paper's claims a budget left unattempted — never a verdict, and never silence.
+
+    One reader of the selection record, for the same reason :func:`estimation_claims` is one reader
+    of the level field: every surface that summarizes a certificate answers "what did this not
+    look at" from here rather than deciding for itself what an absent claim means.
+    """
+    if cert.selection is None:
+        return []
+    return [claim.to_dict() for claim in cert.selection.unattempted]
+
+
+def claims_in_paper(cert: Certificate) -> int:
+    """How many claims the certification was choosing among — attempted plus unattempted.
+
+    The number a reader needs beside the verdict counts, which sum to the *attempt*. Three of three
+    reproduced reads as a complete result until you know the paper made thirty-three.
+    """
+    return len(cert.assessments) + len(unattempted_claims(cert))
+
+
 def estimation_claims(cert: Certificate) -> list[str]:
     """The claims reproduced at estimation level rather than by simulation.
 
@@ -201,6 +222,19 @@ def render_machine(cert: Certificate, run: RunMetadata) -> dict[str, Any]:
             # what `digitized-figure` implies. Emitted always, so a consumer can tell "none read
             # off a picture" from "this certificate predates the field".
             "figure_read_claims": figure_read_claims(cert),
+            # Emitted only under a budget, and with the budget beside it. A certificate that
+            # attempted every claim it was handed has nothing to say here, and adding an always-
+            # empty key would change every summary already published without telling a reader
+            # anything: `claim_counts` already sums to the whole paper when there was no budget.
+            **(
+                {}
+                if cert.selection is None
+                else {
+                    "claims_in_paper": claims_in_paper(cert),
+                    "selection": cert.selection.to_dict(),
+                    "unattempted_claims": unattempted_claims(cert),
+                }
+            ),
         },
         "gaps": gap_items(cert),
     }
@@ -307,6 +341,15 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
     if summary["assumption_qualified_claims"]:
         joined = ", ".join(summary["assumption_qualified_claims"])
         lines.append(f"  assumption-qualified claims: {joined}")
+    if "selection" in summary:
+        # The verdict counts sum to what was *attempted*, so under a budget they are a share of
+        # the paper and read as the whole of it. Stated here, next to them, rather than left for a
+        # reader to work out from a section further down the page.
+        attempted = sum(counts.values())
+        lines.append(
+            f"  claims: {summary['claims_in_paper']} in the paper, {attempted} attempted, "
+            f"{len(summary['unattempted_claims'])} left unattempted under a budget"
+        )
     lines.append("")
 
     lines.append("CLAIMS")
@@ -344,6 +387,23 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
             # for an ensemble, the window and sample count for a time course.
             lines.append(f"      protocol: {a['protocol']}")
     lines.append("")
+
+    if summary.get("unattempted_claims"):
+        selection = summary["selection"]
+        lines.append("NOT ATTEMPTED (chosen against by a budget, not judged)")
+        lines.append(
+            f"  budget {selection['budget']:.4g}, objective: {selection['objective']}"
+        )
+        for claim in summary["unattempted_claims"]:
+            lines.append(
+                f"  [{claim['claim_id']}] {claim['quantity']} (source {claim['source_location']})"
+            )
+        # Said in words as well as by the section's placement: these carry no verdict, and the
+        # sentence a reader most needs is that their absence is not evidence about the paper.
+        lines.append(
+            "  These claims were neither reproduced nor unreproduced — nothing was run for them."
+        )
+        lines.append("")
 
     if content["assumptions"]:
         lines.append("ASSUMPTIONS (supplied by Reprolith, not the paper)")
@@ -559,6 +619,13 @@ def render_registry(
             if cert.paper.to_dict().get(k)
         )
         count_line = ", ".join(f"{k}={counts[k]}" for k in counts if counts[k])
+        if cert.selection is not None:
+            # The card's counts are of what was *attempted*, and this is the one page where a
+            # reader sees a verdict with no way to ask the certificate a follow-up question.
+            count_line += (
+                f" (of {claims_in_paper(cert)} claims in the paper; "
+                f"{len(unattempted_claims(cert))} not attempted under a budget)"
+            )
         digest = content_hash(cert.content())
         gaps = "".join(
             f"<li>{html.escape(item['needs'])}</li>" for item in gap_items(cert)

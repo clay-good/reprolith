@@ -16,10 +16,10 @@ Each task names how it is verified. Do not mark one done until its verification 
 
 ## 3. A certificate that says what it did not attempt
 
-- [ ] 3.1 Record the selection in a certificate produced under a budget: attempted claims, unattempted claims, the budget, and the objective → verify: a budgeted run over a five-claim paper with a budget of three lists two unattempted claims by id
-- [ ] 3.2 An unattempted claim appears as unattempted, never as a verdict and never absent → verify: no verdict counter includes it, and the claim count in the render matches the paper's, not the attempt's
-- [ ] 3.3 Qualify the overall verdict of a budgeted certificate by its selection → verify: a paper whose attempted claims all reproduce does not report an unqualified `reproduced` while claims were left unattempted
-- [ ] 3.4 A certificate produced without a budget is unchanged → verify: every published digest in `datasets/` regenerates identically
+- [x] 3.1 Record the selection in a certificate produced under a budget: attempted claims, unattempted claims, the budget, and the objective → verify: a budgeted run over a five-claim paper with a budget of three lists two unattempted claims by id — done on a real one instead: `tests/test_budgeted_end_to_end.py` runs BIOMD0000001027 at a budget of three and names the eleven, and `tests/test_budgeted_certificate.py` holds the five-claim case
+- [x] 3.2 An unattempted claim appears as unattempted, never as a verdict and never absent → verify: no verdict counter includes it, and the claim count in the render matches the paper's, not the attempt's
+- [x] 3.3 Qualify the overall verdict of a budgeted certificate by its selection → verify: a paper whose attempted claims all reproduce does not report an unqualified `reproduced` while claims were left unattempted — the corpus's one clean pass, budgeted to three of fourteen, comes back `partially-reproduced`
+- [x] 3.4 A certificate produced without a budget is unchanged → verify: every published digest in `datasets/` regenerates identically — every committed certificate is reloaded and re-serialized through the new load path and compared to its stored bytes
 
 ## 4. Surfaces and record
 

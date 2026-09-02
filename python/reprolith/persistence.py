@@ -20,6 +20,7 @@ from .certificate import (
     require_distinct_claim_ids,
     require_readable_gap_notes,
     require_reprolith_attribution,
+    require_selection_is_disjoint,
     require_stated_cause,
     require_stated_protocol,
 )
@@ -40,8 +41,10 @@ from .model import (
     Assumption,
     Certificate,
     ClaimAssessment,
+    ClaimSelection,
     EnginePin,
     PaperIdentity,
+    UnattemptedClaim,
 )
 from .oracle import ReferenceKind
 from .reconstruction import (
@@ -134,6 +137,29 @@ def require_pin_agrees_with_protocol(
         )
 
 
+def _selection_from(record: dict[str, Any] | None) -> ClaimSelection | None:
+    """The stored budgeted selection, or ``None`` when the certification attempted everything.
+
+    Absence is the answer for every certificate published before budgeted selection existed, so it
+    is read as "no budget" rather than defaulted into an empty one — an empty selection would put a
+    budget of nothing on the record of a run that had none.
+    """
+    if record is None:
+        return None
+    return ClaimSelection(
+        budget=float(record["budget"]),
+        objective=record["objective"],
+        unattempted=tuple(
+            UnattemptedClaim(
+                claim_id=claim["claim_id"],
+                quantity=claim["quantity"],
+                source_location=claim["source_location"],
+            )
+            for claim in record.get("unattempted", ())
+        ),
+    )
+
+
 def certificate_from_content(content: dict[str, Any]) -> Certificate:
     """Reconstruct a :class:`Certificate` from the dict produced by :meth:`Certificate.content`.
 
@@ -152,6 +178,7 @@ def certificate_from_content(content: dict[str, Any]) -> Certificate:
     scope = content["scope"]
     assessments = tuple(_assessment_from(a) for a in content["assessments"])
     assumptions = tuple(_assumption_from(a) for a in content["assumptions"])
+    selection = _selection_from(content.get("selection"))
     if (scope["machine"], scope["human"]) != (SCOPE_MACHINE, SCOPE_HUMAN):
         raise ValueError(
             "certificate carries a scope statement that is not Reprolith's: the scope is fixed "
@@ -167,10 +194,11 @@ def certificate_from_content(content: dict[str, Any]) -> Certificate:
     require_distinct_claim_ids(assessments)
     require_distinct_assumption_ids(assumptions)
     require_reprolith_attribution(assumptions)
+    require_selection_is_disjoint(assessments, selection)
     require_readable_gap_notes(content.get("gap_report", ()))
     require_pin_agrees_with_protocol(assessments, pin["algorithm"])
     stored = OverallVerdict(content["overall"])
-    derived = derive_overall(assessments, assumptions)
+    derived = derive_overall(assessments, assumptions, selection)
     if stored is not derived:
         raise ValueError(
             f"certificate overall verdict {stored.value!r} does not follow from its own "
@@ -185,6 +213,7 @@ def certificate_from_content(content: dict[str, Any]) -> Certificate:
         assumptions=assumptions,
         gap_report=tuple(content["gap_report"]),
         supersedes=content.get("supersedes"),
+        selection=selection,
     )
 
 

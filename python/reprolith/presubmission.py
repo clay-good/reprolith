@@ -24,7 +24,7 @@ from .ingest import UNSTATED_UNIT
 from .manuscript_values import model_time_unit
 from .model import Certificate
 from .oracle import ComparisonMethod, Fault, figure_band_widening
-from .render import estimation_claims, is_figure_read
+from .render import claims_in_paper, estimation_claims, is_figure_read, unattempted_claims
 
 if TYPE_CHECKING:  # a type-only import: the archive check takes claims, it does not build them
     from .certify import Claim
@@ -303,6 +303,16 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
         "readiness": _READINESS[cert.overall] if ready or cert.overall is not OverallVerdict.REPRODUCED
         else _REPRODUCED_BUT_NOT_READY,
         "per_claim": [a.to_dict() for a in cert.assessments],
+        # What this check did *not* look at, when a budget chose against it. An author reading
+        # "three claims, all clean" about a fourteen-claim paper is reading a true sentence as an
+        # answer to a question it did not address, and `per_claim` alone cannot tell them apart.
+        # Not a fix — nothing here is theirs to fix — and it gates nothing: `ready_to_submit`
+        # already requires an unqualified `reproduced`, which a budgeted certificate never is.
+        **(
+            {}
+            if cert.selection is None
+            else {"not_attempted": unattempted_claims(cert), "claims_in_paper": claims_in_paper(cert)}
+        ),
         "fix_list": actions,
         # Reported, and deliberately *not* a fix that gates readiness — the same call the archive
         # check makes about `curves_without_values`, one surface over, and for the same reason.
@@ -360,6 +370,16 @@ def render_presubmission_human(cert: Certificate) -> str:
     # printed even above a READY TO SUBMIT, because "every claim reproduces cleanly" and "one of
     # them was checked against a reading of your picture" are both true, and the second is the one
     # the author can do something cheap about.
+    if report.get("not_attempted"):
+        lines.append("NOT CHECKED (a budget chose against these — not a fix, and not your doing)")
+        lines.append(
+            f"  {len(report['not_attempted'])} of your paper's {report['claims_in_paper']} claims "
+            "were never run, so nothing above says anything about them"
+        )
+        for item in report["not_attempted"]:
+            lines.append(f"  - [{item['claim_id']}] {item['quantity']}")
+        lines.append("")
+
     readings = report["judged_from_figure_readings"]
     if readings:
         lines.append("JUDGED FROM A READING OF YOUR FIGURE (not a fix — a consequence)")

@@ -171,8 +171,12 @@ guessing — just: *does the described model produce the shown result?*
   model elements; choosing as a set takes four different tissues and witnesses 60. What each claim
   rests on is **derived from the model**, not from the claim's own prose — its tissue's partition
   coefficient, that tissue's blood flow, the two reactions moving drug in and out of it, and the
-  arterial pool every tissue routes through. It is a plan, not a verdict: no model is run, and a
-  claim left unselected is unattempted rather than unreproduced
+  arterial pool every tissue routes through. The plan itself is not a verdict: no model is run, and
+  a claim left unselected is unattempted rather than unreproduced. When one *is* followed, the
+  certificate says so — the budget, the objective, and every claim by id that it did not attempt,
+  and its verdict is qualified for as long as one of them stands. The corpus's only unqualified
+  `reproduced` (fourteen claims on the mouse oral model) stops being one under a budget of three,
+  which is the point: three passes are a weaker result than fourteen and the word has to say so
   ([`docs/claim-selection.md`](docs/claim-selection.md)).
 - **A second opinion, or an honest blank.** A model can reproduce its paper for the wrong reason —
   a solver artifact that agrees with the figure. So the same runs go through a second,

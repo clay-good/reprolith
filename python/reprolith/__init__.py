@@ -30,6 +30,7 @@ from .certify import (
     certify_estimation,
     certify_model,
     certify_population,
+    plan_under_budget,
 )
 from .claim_candidates import (
     propose_claims,
@@ -197,9 +198,11 @@ from .model import (
     Assumption,
     Certificate,
     ClaimAssessment,
+    ClaimSelection,
     EnginePin,
     PaperIdentity,
     RunMetadata,
+    UnattemptedClaim,
 )
 from .omex import archive_mismatches, ingest_omex
 from .oracle import (
@@ -298,6 +301,7 @@ from .selection import (
     EMPTY_POOL_NOTE,
     PARTIAL_NOTE,
     SELECTION_NOTE,
+    SET_OBJECTIVE,
     UNCHARACTERIZED_NOTE,
     EvidenceItem,
     Selection,
@@ -307,6 +311,7 @@ from .selection import (
     score_set,
     select_greedily,
     select_jointly,
+    stated_objective,
 )
 from .spatial import (
     SpatialClaim,
@@ -390,6 +395,8 @@ __all__ = [
     "Catalog",
     "CatalogEntry",
     "Certificate",
+    "ClaimSelection",
+    "UnattemptedClaim",
     "certificate_digest",
     "certificate_from_content",
     "CertificateLedger",
@@ -400,6 +407,7 @@ __all__ = [
     "certify_estimation",
     "certify_logical",
     "certify_model",
+    "plan_under_budget",
     "certify_population",
     "certify_spatial",
     "certify_stochastic",
@@ -599,6 +607,8 @@ __all__ = [
     "RunMetadata",
     "same_modulo_run_metadata",
     "SELECTION_NOTE",
+    "SET_OBJECTIVE",
+    "stated_objective",
     "Scope",
     "score_set",
     "screen_candidate",

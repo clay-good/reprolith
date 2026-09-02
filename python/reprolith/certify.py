@@ -23,7 +23,14 @@ from typing import Any
 from .certificate import build_certificate
 from .digitization import DIGITIZED_BY
 from .engine import final_state, simulate
-from .model import Assumption, Certificate, EnginePin, PaperIdentity
+from .model import (
+    Assumption,
+    Certificate,
+    ClaimSelection,
+    EnginePin,
+    PaperIdentity,
+    UnattemptedClaim,
+)
 from .oracle import (
     Attribution,
     ComparisonMethod,
@@ -40,6 +47,7 @@ from .oracle import (
     not_evaluable,
     undetermined_shortfall,
 )
+from .selection import Selection, stated_objective
 
 
 def _reading_required(
@@ -627,6 +635,47 @@ def _auc_is_established(
     return change <= within, change
 
 
+def plan_under_budget(
+    claims: Iterable[Claim], selection: Selection
+) -> tuple[tuple[Claim, ...], ClaimSelection]:
+    """Split a paper's claims into the ones ``selection`` chose and the record of the rest.
+
+    This is the join between :mod:`reprolith.selection`, which decides what is worth attempting,
+    and :func:`certify_model`, which attempts it. Doing it here rather than at each call site is
+    what keeps the two halves from disagreeing: a caller filtering the claims itself and then
+    describing the leftovers by hand can produce a certificate whose "not attempted" list is not
+    the complement of what it ran, and nothing downstream could tell.
+
+    A chosen id that names no claim is refused. It means the selection was run over a different
+    claim set than the one being certified, and the honest-looking outcome — certify what matched,
+    say nothing about the rest — is the one that hides it.
+    """
+    pool = tuple(claims)
+    by_id = {claim.claim_id: claim for claim in pool}
+    missing = sorted(set(selection.chosen) - set(by_id))
+    if missing:
+        raise ValueError(
+            f"the selection chose claims this paper's claim set does not contain: "
+            f"{', '.join(missing)}; it was made over a different set of claims"
+        )
+    selected = set(selection.chosen)
+    chosen = tuple(claim for claim in pool if claim.claim_id in selected)
+    unattempted = tuple(
+        UnattemptedClaim(
+            claim_id=claim.claim_id,
+            quantity=claim.quantity,
+            source_location=claim.cited_source,
+        )
+        for claim in pool
+        if claim.claim_id not in selected
+    )
+    return chosen, ClaimSelection(
+        budget=selection.budget,
+        objective=stated_objective(selection),
+        unattempted=unattempted,
+    )
+
+
 def certify_model(
     sbml: str,
     *,
@@ -635,6 +684,7 @@ def certify_model(
     claims: Iterable[Claim],
     assumptions: Iterable[Assumption] = (),
     gap_report: Sequence[str] = (),
+    selection: ClaimSelection | None = None,
     duration: float,
     steps: int = 480,
 ) -> Certificate:
@@ -644,6 +694,11 @@ def certify_model(
     load-bearing assumption cannot report an unqualified ``reproduced``. Each assessment records
     the run behind it — the window, the sample count, and the claim's parameter overrides — so the
     published number can be re-derived from the certificate alone.
+
+    ``selection`` is the record of a budget that chose ``claims`` out of a larger set — build the
+    pair with :func:`plan_under_budget`. It never changes what is run; it states what was not, and
+    withholds the unqualified pass while it stands. Omitted, the certificate is exactly what this
+    function has always produced.
 
     ``gap_report`` carries what the dossier found missing from the *artifact*, which this path
     cannot see for itself: it takes claims and an SBML string, never a dossier. The
@@ -743,6 +798,7 @@ def certify_model(
         assessments=assessments,
         assumptions=tuple(assumptions),
         gap_report=tuple(gap_report),
+        selection=selection,
     )
 
 

@@ -93,6 +93,57 @@ rejected: it changes mean overlap from 0.195 to 0.175, so it costs nothing in di
 it would make every footprint *look* anchored while the dossier still cannot corroborate the
 reactions.
 
+## What a certificate produced under a budget says
+
+A plan is only half of it. The other half is what the *certificate* has to admit when the plan was
+followed — because a certification that attempts three of a paper's fourteen claims and passes all
+three has demonstrated something much weaker than one that attempts all fourteen, and a reader who
+cannot see the difference is being flattered. Attempting only the claims that pass is the cheapest
+route to the word `reproduced`.
+
+So a budgeted certificate carries the budget, the objective that spent it, and **every claim it did
+not attempt, by id** — and the overall verdict is qualified for as long as one of them stands, the
+same way a load-bearing assumption qualifies it.
+
+The demonstration is the corpus's own clean pass. BIOMD0000001027 — metformin in mice, single oral
+dose — is the only published certificate here reading an unqualified `reproduced`: fourteen claims,
+all of them clean. Under a budget of three it stops being one:
+
+```
+OVERALL: partially-reproduced
+  claims by verdict: reproduced=3, partial=0, failed=0, not-evaluable=0
+  claims: 14 in the paper, 3 attempted, 11 left unattempted under a budget
+...
+NOT ATTEMPTED (chosen against by a budget, not judged)
+  budget 3, objective: independent evidential value: set value less footprint overlap (exact)
+  [Cmax-plasma] Plasma Cmax after a single 50 mg/kg oral dose in mice (source Table 1, ...)
+  ... 10 more ...
+  These claims were neither reproduced nor unreproduced — nothing was run for them.
+```
+
+Three things are load-bearing in that output and each is enforced rather than written:
+
+- **The verdict counts sum to the attempt, so the paper's own total is printed beside them.**
+  `reproduced=3` is a true sentence about a fourteen-claim paper and a misleading one on its own.
+- **An unattempted claim never acquires a verdict.** It is not `not-evaluable` — that means
+  Reprolith ran the claim and could establish nothing, which is a different statement about the
+  paper — so it is a different shape entirely (`UnattemptedClaim`), invisible to every verdict
+  counter, badge and gap report by construction.
+- **The record cannot be edited into a better result.** A claim listed as both judged and
+  unattempted is refused on the way in *and* on the way out, and the stored verdict is re-derived
+  from the stored selection when a certificate is read back — so deleting the selection from a file
+  to promote its own verdict makes the file unloadable rather than green.
+
+A selection only ever runs in one direction: it can withhold a clean pass, never rescue a miss.
+
+The join is `plan_under_budget`, which splits a paper's claims into the chosen set and the record
+of the rest, and hands both to `certify_model`. Doing it in one place is what keeps a certificate's
+"not attempted" list the exact complement of what it ran, and a selection made over some *other*
+paper's claims is refused rather than quietly certifying whatever matched. The walk from dossier
+footprints to certificate is `tests/test_budgeted_end_to_end.py`; on this paper the set-level
+objective takes plasma, portal vein and adipose — score 2.592, witnessing 62 model elements —
+where the ranking would have taken adipose, brain and heart (2.118, 23 elements).
+
 ## What it reaches today
 
 Four papers — the metformin entries, which are the only ones in this repository with dossiers at
