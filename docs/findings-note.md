@@ -3471,6 +3471,23 @@ reproduced the defect it summarizes: `unit` is the string `"unstated"` when the 
 none, and a string is truthy, so the first version counted thirteen values with no unit as thirteen
 that had one — on the entry whose own gap report says "13 of 37 extracted values state no unit".
 
+## The division a reader takes the corpus's reach from, off by one
+
+The front page divides these certificates in two, and it is the most load-bearing sentence on the
+page: the ones whose reference is a number a publication printed, and the ones whose reference is
+an independent tool or closed-form mathematics re-running the same model file. Only the first kind
+says anything about a *paper*.
+
+It was prose. Counting it — every claim in every committed certificate, classified from its own
+cited source — put it off by one. The E. coli core certificate is checked against **0.873922**, the
+maximal growth rate reported by the publication that distributes that model, which is a published
+number and not a tool's answer, and it was sitting inside the "checked against an independent tool"
+count. Five against a publication, twenty-two against a tool, six against mathematics.
+
+Not a large error, and the same shape as every other one here: a true sentence, written once,
+about a set that grew. It is counted now (`tests/test_reference_provenance.py`), so the next
+certificate lands in one of the three buckets and the sentence it changes fails.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

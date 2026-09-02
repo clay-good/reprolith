@@ -40,9 +40,14 @@ anything not committed: every reference value is quoted from the article in
 of this repository's life nothing did — one of the first two was recorded as 6.2, a number the
 paper does not contain.
 
-The other twenty-nine certificates check Reprolith's engine against an independent tool — COBRApy,
-libRoadRunner, CANA — or against closed-form mathematics, re-running the same model file. Each
-certificate says which on its own claim line. Getting a paper's claims out of its manuscript *at scale* is the piece that is not built.
+Twenty-eight of the other twenty-nine certificates check Reprolith's engine against an independent
+tool — COBRApy, libRoadRunner, CANA — or against closed-form mathematics, re-running the same model
+file. The twenty-ninth is checked against a published number like the four above: the E. coli core
+model's maximal growth rate of **0.873922**, which the publication that distributes that model
+reports. Five against a publication, then, and twenty-eight against a tool or against mathematics —
+counted from the certificates themselves by `tests/test_reference_provenance.py`, because this
+division is the reader's whole guide to what the corpus reaches, and it was prose that was off by
+one. Each certificate says which on its own claim line. Getting a paper's claims out of its manuscript *at scale* is the piece that is not built.
 `claims-propose` reads candidates out of a paper's **tables**, which is how those sixty-three
 arrived — but a curator still chooses which candidate is a claim and which model output it reads,
 and measured on this test set, only **three papers in ten** of the open-access subset print a
