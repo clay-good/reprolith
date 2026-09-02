@@ -6,7 +6,836 @@
       "validates": true
     }
   ],
-  "claims": [],
+  "claims": [
+    {
+      "conditions": "cmax of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "id": "Cmax-500mg-twice-daily",
+      "quantity": "plasma Cmax under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        6.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, plasma row, 500 mg twice-daily regimen (the paper simulates 6.9 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "id": "Cmax-1000mg-twice-daily",
+      "quantity": "plasma Cmax under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        12.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, plasma row, 1000 mg twice-daily regimen (the paper simulates 12.8 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "id": "Cmax-1500mg-twice-daily",
+      "quantity": "plasma Cmax under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        18.5
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, plasma row, 1500 mg twice-daily regimen (the paper simulates 18.5 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mRBC",
+      "footprint": [
+        "ModelValue_1",
+        "PlasmaVenous",
+        "RBC",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mPlasmaVenous",
+        "mRBC"
+      ],
+      "id": "Cmax-red-blood-cells-500mg-twice-daily",
+      "quantity": "Red blood cells Cmax under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        3.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Red blood cells row, 500 mg twice-daily regimen (the paper simulates 3.2 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-adipose-500mg-twice-daily",
+      "quantity": "Adipose Cmax under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        4.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Adipose row, 500 mg twice-daily regimen (the paper simulates 4.6 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-brain-500mg-twice-daily",
+      "quantity": "Brain Cmax under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        6.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Brain row, 500 mg twice-daily regimen (the paper simulates 6.9 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mRemainder",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Remainder",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QRemainder",
+        "Remainder",
+        "_12_1__PlasmaArterial____Remainder",
+        "_12_2__Remainder____PlasmaVenous",
+        "mPlasmaArterial",
+        "mRemainder"
+      ],
+      "id": "Cmax-remainder-500mg-twice-daily",
+      "quantity": "Remainder Cmax under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        5.5
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Remainder row, 500 mg twice-daily regimen (the paper simulates 5.5 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-muscle-500mg-twice-daily",
+      "quantity": "Muscle Cmax under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        21.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Muscle row, 500 mg twice-daily regimen (the paper simulates 21.6 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLung",
+      "footprint": [
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Lung",
+        "Lung",
+        "ModelValue_1",
+        "PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_07_2__Lung____PlasmaArterial",
+        "mLung",
+        "mPlasmaVenous"
+      ],
+      "id": "Cmax-lungs-500mg-twice-daily",
+      "quantity": "Lungs Cmax under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        20.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Lungs row, 500 mg twice-daily regimen (the paper simulates 20.6 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "id": "Cmax-stomach-500mg-twice-daily",
+      "quantity": "Stomach Cmax under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        21.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Stomach row, 500 mg twice-daily regimen (the paper simulates 21.9 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-heart-500mg-twice-daily",
+      "quantity": "Heart Cmax under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        17.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Heart row, 500 mg twice-daily regimen (the paper simulates 17.2 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "id": "Cmax-liver-500mg-twice-daily",
+      "quantity": "Liver Cmax under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        76.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Liver row, 500 mg twice-daily regimen (the paper simulates 76.7 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mRBC",
+      "footprint": [
+        "ModelValue_1",
+        "PlasmaVenous",
+        "RBC",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mPlasmaVenous",
+        "mRBC"
+      ],
+      "id": "Cmax-red-blood-cells-1000mg-twice-daily",
+      "quantity": "Red blood cells Cmax under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        5.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Red blood cells row, 1000 mg twice-daily regimen (the paper simulates 5.9 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-adipose-1000mg-twice-daily",
+      "quantity": "Adipose Cmax under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        8.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Adipose row, 1000 mg twice-daily regimen (the paper simulates 8.6 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-brain-1000mg-twice-daily",
+      "quantity": "Brain Cmax under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        12.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Brain row, 1000 mg twice-daily regimen (the paper simulates 12.8 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mRemainder",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Remainder",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QRemainder",
+        "Remainder",
+        "_12_1__PlasmaArterial____Remainder",
+        "_12_2__Remainder____PlasmaVenous",
+        "mPlasmaArterial",
+        "mRemainder"
+      ],
+      "id": "Cmax-remainder-1000mg-twice-daily",
+      "quantity": "Remainder Cmax under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        10.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Remainder row, 1000 mg twice-daily regimen (the paper simulates 10.1 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-muscle-1000mg-twice-daily",
+      "quantity": "Muscle Cmax under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        39.5
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Muscle row, 1000 mg twice-daily regimen (the paper simulates 39.5 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLung",
+      "footprint": [
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Lung",
+        "Lung",
+        "ModelValue_1",
+        "PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_07_2__Lung____PlasmaArterial",
+        "mLung",
+        "mPlasmaVenous"
+      ],
+      "id": "Cmax-lungs-1000mg-twice-daily",
+      "quantity": "Lungs Cmax under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        38.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Lungs row, 1000 mg twice-daily regimen (the paper simulates 38.3 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "id": "Cmax-stomach-1000mg-twice-daily",
+      "quantity": "Stomach Cmax under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        40.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Stomach row, 1000 mg twice-daily regimen (the paper simulates 40.7 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-heart-1000mg-twice-daily",
+      "quantity": "Heart Cmax under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        31.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Heart row, 1000 mg twice-daily regimen (the paper simulates 31.9 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "id": "Cmax-liver-1000mg-twice-daily",
+      "quantity": "Liver Cmax under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        143.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Liver row, 1000 mg twice-daily regimen (the paper simulates 143.8 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mRBC",
+      "footprint": [
+        "ModelValue_1",
+        "PlasmaVenous",
+        "RBC",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mPlasmaVenous",
+        "mRBC"
+      ],
+      "id": "Cmax-red-blood-cells-1500mg-twice-daily",
+      "quantity": "Red blood cells Cmax under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        8.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Red blood cells row, 1500 mg twice-daily regimen (the paper simulates 8.4 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-adipose-1500mg-twice-daily",
+      "quantity": "Adipose Cmax under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        12.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Adipose row, 1500 mg twice-daily regimen (the paper simulates 12.3 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-brain-1500mg-twice-daily",
+      "quantity": "Brain Cmax under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        18.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Brain row, 1500 mg twice-daily regimen (the paper simulates 18.7 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mRemainder",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Remainder",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QRemainder",
+        "Remainder",
+        "_12_1__PlasmaArterial____Remainder",
+        "_12_2__Remainder____PlasmaVenous",
+        "mPlasmaArterial",
+        "mRemainder"
+      ],
+      "id": "Cmax-remainder-1500mg-twice-daily",
+      "quantity": "Remainder Cmax under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        14.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Remainder row, 1500 mg twice-daily regimen (the paper simulates 14.7 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-muscle-1500mg-twice-daily",
+      "quantity": "Muscle Cmax under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        56.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Muscle row, 1500 mg twice-daily regimen (the paper simulates 56.6 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLung",
+      "footprint": [
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Lung",
+        "Lung",
+        "ModelValue_1",
+        "PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_07_2__Lung____PlasmaArterial",
+        "mLung",
+        "mPlasmaVenous"
+      ],
+      "id": "Cmax-lungs-1500mg-twice-daily",
+      "quantity": "Lungs Cmax under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        55.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Lungs row, 1500 mg twice-daily regimen (the paper simulates 55.6 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "id": "Cmax-stomach-1500mg-twice-daily",
+      "quantity": "Stomach Cmax under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        59.0
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Stomach row, 1500 mg twice-daily regimen (the paper simulates 59.0 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-heart-1500mg-twice-daily",
+      "quantity": "Heart Cmax under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        46.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Heart row, 1500 mg twice-daily regimen (the paper simulates 46.3 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "id": "Cmax-liver-1500mg-twice-daily",
+      "quantity": "Liver Cmax under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        210.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Liver row, 1500 mg twice-daily regimen (the paper simulates 210.1 nmol/mL)",
+      "targetable": true
+    }
+  ],
   "entry": "BIOMD0000001029",
   "equations": [
     {

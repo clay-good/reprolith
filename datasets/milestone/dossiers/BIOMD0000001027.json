@@ -6,7 +6,438 @@
       "validates": true
     }
   ],
-  "claims": [],
+  "claims": [
+    {
+      "conditions": "cmax of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "Metformin_Dose_in_Plasma_in_mg",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRemainder"
+      ],
+      "id": "Cmax-plasma",
+      "quantity": "Plasma Cmax after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        27.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Plasma row, Fitted (the paper simulates 27.2 nmol/mL after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mPortalVein",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "IntestineVascular",
+        "Ktp_IntestineVascular",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QIntestineVascular",
+        "QPortalVein",
+        "QPortalVeinOut",
+        "QStomach",
+        "Stomach",
+        "_03_5__IntestineVascular____PortalVein",
+        "_04__PlasmaArterial____PortalVein",
+        "_05_2__Stomach____PortalVein",
+        "_06_2__PortalVein____Liver",
+        "mIntestineVascular",
+        "mPlasmaArterial",
+        "mPortalVein",
+        "mStomach"
+      ],
+      "id": "Cmax-portal-vein",
+      "quantity": "Portal vein Cmax after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        40.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Portal vein row, Fitted (the paper simulates 40.7 nmol/mL after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "id": "Cmax-liver",
+      "quantity": "Liver Cmax after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        216.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Liver row, Fitted (the paper simulates 216.6 nmol/mL after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-heart",
+      "quantity": "Heart Cmax after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        68.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Heart row, Fitted (the paper simulates 68.1 nmol/mL after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-muscle",
+      "quantity": "Muscle Cmax after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        107.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Muscle row, Fitted (the paper simulates 107.3 nmol/mL after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-adipose",
+      "quantity": "Adipose Cmax after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        19.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Adipose row, Fitted (the paper simulates 19.1 nmol/mL after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-brain",
+      "quantity": "Brain Cmax after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        21.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Brain row, Fitted (the paper simulates 21.8 nmol/mL after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "Metformin_Dose_in_Plasma_in_mg",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRemainder"
+      ],
+      "id": "AUC24-plasma",
+      "quantity": "Plasma AUC over 24 h after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        105.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Plasma row, Fitted (the paper simulates 105.3 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mPortalVein",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "IntestineVascular",
+        "Ktp_IntestineVascular",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QIntestineVascular",
+        "QPortalVein",
+        "QPortalVeinOut",
+        "QStomach",
+        "Stomach",
+        "_03_5__IntestineVascular____PortalVein",
+        "_04__PlasmaArterial____PortalVein",
+        "_05_2__Stomach____PortalVein",
+        "_06_2__PortalVein____Liver",
+        "mIntestineVascular",
+        "mPlasmaArterial",
+        "mPortalVein",
+        "mStomach"
+      ],
+      "id": "AUC24-portal-vein",
+      "quantity": "Portal vein AUC over 24 h after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        142.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Portal vein row, Fitted (the paper simulates 142.9 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "id": "AUC24-liver",
+      "quantity": "Liver AUC over 24 h after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        768.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Liver row, Fitted (the paper simulates 768.7 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "id": "AUC24-heart",
+      "quantity": "Heart AUC over 24 h after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        263.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Heart row, Fitted (the paper simulates 263.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "id": "AUC24-muscle",
+      "quantity": "Muscle AUC over 24 h after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        431.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Muscle row, Fitted (the paper simulates 431.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "id": "AUC24-adipose",
+      "quantity": "Adipose AUC over 24 h after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        76.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Adipose row, Fitted (the paper simulates 76.8 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "id": "AUC24-brain",
+      "quantity": "Brain AUC over 24 h after a single 50 mg/kg oral dose in mice",
+      "reference_data": [
+        84.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 1, Brain row, Fitted (the paper simulates 84.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
+      "targetable": true
+    }
+  ],
   "entry": "BIOMD0000001027",
   "equations": [
     {

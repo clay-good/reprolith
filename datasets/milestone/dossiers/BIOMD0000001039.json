@@ -6,7 +6,117 @@
       "validates": true
     }
   ],
-  "claims": [],
+  "claims": [
+    {
+      "conditions": "auc of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "Metformin_Dose_in_Plasma_in_mg",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRemainder"
+      ],
+      "id": "AUC24-plasma",
+      "quantity": "Plasma AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
+      "reference_data": [
+        91.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 2, Plasma row, Fitted (the paper simulates 91.4 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "id": "AUC24-stomach",
+      "quantity": "Stomach AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
+      "reference_data": [
+        529.5
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 2, Stomach row, Fitted (the paper simulates 529.5 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "id": "AUC24-liver",
+      "quantity": "Liver AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
+      "reference_data": [
+        523.5
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 2, Liver row, Fitted (the paper simulates 523.5 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
+      "targetable": true
+    }
+  ],
   "entry": "BIOMD0000001039",
   "equations": [
     {

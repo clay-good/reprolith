@@ -3733,3 +3733,27 @@ failed — the certificate, the author-facing report, the loop-note record, and 
 itself.
 
 Tasks 2.1-2.3 remain open for the half a table reader does not close.
+
+## A published bound that moved a decade between two runs of one script
+
+Recorded as an observation, with the numbers, rather than fixed: it is the hazard
+`EngineCorroboration.distance_bound` documents itself as existing to prevent, and it has now been
+seen live rather than argued about.
+
+Regenerating `datasets/milestone/corroboration.json` twice on one machine, within one session and
+against identical code and identical engine builds, published different bounds for two of the
+eighty PK/PD claims — `BIOMD0000001027:AUC24-muscle` and `BIOMD0000001028:Cmax-muscle-500mg` both
+moved from `1e-06` to `1e-07`. Every other one of the eighty was byte-identical across the two
+runs.
+
+That is the straddling case `_MARGIN` was introduced for, and it is still reachable: the margin
+lifts a raw distance by a factor of two before rounding up to a decade, so a distance sitting
+within a factor of two of a decade boundary lands on one side or the other depending on COPASI's
+own last-place alternation. The remedy is a wider margin, and widening a published bound is
+one-directional — it can only ever state *weaker* agreement than was measured — but the number is
+a declared tolerance and this repository does not move one without measuring what it costs. Two
+claims out of eighty is the measurement of how often it fires; what it would take to stop firing
+is not measured, so the margin stays where it is and this says so.
+
+Both bounds are three to five orders inside the criterion either way, so no verdict moved. What
+moved is a committed number, which is the thing the method exists to keep still.

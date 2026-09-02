@@ -84,17 +84,23 @@ def main() -> None:
     # Ingest and store each certified entry's dossier (its extracted model structure) and its
     # reconstruction bundle (the adopted model, the recipe, and the assumptions), so the MCP
     # server can serve both for inspection.
+    from dataclasses import replace
+
     from reprolith import (
         Assumption,
         Claim,
+        DossierClaim,
         Identifiers,
         ModelArtifact,
         ModelOrigin,
         RecipeStep,
         ReconstructionBundle,
+        ReferenceKind,
         estimate_difficulty,
         ingest_sbml,
     )
+    from reprolith.footprints import derive_footprints
+
 
     dossier_dir = DATASETS / "milestone" / "dossiers"
     bundle_dir = DATASETS / "milestone" / "bundles"
@@ -103,6 +109,33 @@ def main() -> None:
     for accession, entry in claims["entries"].items():
         sbml = (DATASETS / entry["model_file"]).read_text(encoding="utf-8")
         dossier = ingest_sbml(sbml, entry=accession, source_label=f"BioModels {accession}")
+        # The paper's own claims, joined onto the structure ingested from its model file. A model
+        # states no claims — it says what *can* be read, never what the paper showed — so an
+        # SBML-only dossier records none, and every dossier in this repository recorded zero.
+        # `select-claims` reads a dossier's claims, so it had nothing to select from anywhere;
+        # `covers()` compared a bundle against a dossier that listed nothing. The claims are not
+        # invented here: each is the curated record from `pkpd_claims.json`, carrying the source
+        # location the curator read it from.
+        #
+        # And each one's footprint is derived from the model that produces it — what the claim's
+        # verdict rests on, read off the reactions, rules and compartments rather than matched out
+        # of its own prose. See `reprolith.footprints`.
+        targets = [record["species"] for record in entry["claims"]]
+        footprints = derive_footprints(sbml, targets)
+        dossier = replace(dossier, claims=tuple(
+            DossierClaim(
+                id=record["claim_id"],
+                quantity=record["quantity"],
+                # What distinguishes this claim's run from the entry's other ones. The dose arm is
+                # in the quantity for these papers; the conditions field carries the metric read.
+                conditions=f"{record['metric']} of {record['species']}",
+                source_location=record["source_location"],
+                reference_kind=ReferenceKind.NUMERIC,
+                reference_data=(float(record["reported"]),),
+                footprint=footprints[record["species"]],
+            )
+            for record in entry["claims"]
+        ))
         (dossier_dir / f"{accession}.json").write_text(
             json.dumps(dossier.to_dict(), indent=2, sort_keys=True) + "\n",
             encoding="utf-8",

@@ -6,7 +6,1013 @@
       "validates": true
     }
   ],
-  "claims": [],
+  "claims": [
+    {
+      "conditions": "cmax of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "id": "Cmax-500mg",
+      "quantity": "plasma Cmax after 500 mg single oral dose",
+      "reference_data": [
+        6.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, plasma row, 500 mg single PO dose (the paper simulates 6.1 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "id": "Cmax-1000mg",
+      "quantity": "plasma Cmax after 1000 mg single oral dose",
+      "reference_data": [
+        11.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, plasma row, 1000 mg single PO dose (the paper simulates 11.2 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "id": "Cmax-250mg-Chung",
+      "quantity": "plasma Cmax after a 250 mg oral dose, 375 mg administered 12 h earlier",
+      "reference_data": [
+        3.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 5, Chung 250mg row, Fitted (the paper simulates 3.9 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "id": "Cmax-750mg-Wen",
+      "quantity": "plasma Cmax after a 750 mg oral dose, 500 mg administered 12 h earlier",
+      "reference_data": [
+        9.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 5, Wen 750m row, Fitted (the paper simulates 9.4 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "id": "Cmax-500mg-El-Messaoudi",
+      "quantity": "plasma Cmax after a 500 mg oral dose, the seventh of a twice-daily course",
+      "reference_data": [
+        6.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 5, El Messaoudi 500mg row, Fitted (the paper simulates 6.8 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mRBC",
+      "footprint": [
+        "ModelValue_1",
+        "PlasmaVenous",
+        "RBC",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mPlasmaVenous",
+        "mRBC"
+      ],
+      "id": "Cmax-red-blood-cells-500mg",
+      "quantity": "Red blood cells Cmax after a 500 mg single oral dose",
+      "reference_data": [
+        1.0
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Red blood cells row, 500 mg single PO dose (the paper simulates 1.0 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-adipose-500mg",
+      "quantity": "Adipose Cmax after a 500 mg single oral dose",
+      "reference_data": [
+        4.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Adipose row, 500 mg single PO dose (the paper simulates 4.1 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-brain-500mg",
+      "quantity": "Brain Cmax after a 500 mg single oral dose",
+      "reference_data": [
+        4.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Brain row, 500 mg single PO dose (the paper simulates 4.9 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mRemainder",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Remainder",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QRemainder",
+        "Remainder",
+        "_12_1__PlasmaArterial____Remainder",
+        "_12_2__Remainder____PlasmaVenous",
+        "mPlasmaArterial",
+        "mRemainder"
+      ],
+      "id": "Cmax-remainder-500mg",
+      "quantity": "Remainder Cmax after a 500 mg single oral dose",
+      "reference_data": [
+        4.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Remainder row, 500 mg single PO dose (the paper simulates 4.8 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-muscle-500mg",
+      "quantity": "Muscle Cmax after a 500 mg single oral dose",
+      "reference_data": [
+        18.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Muscle row, 500 mg single PO dose (the paper simulates 18.1 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLung",
+      "footprint": [
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Lung",
+        "Lung",
+        "ModelValue_1",
+        "PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_07_2__Lung____PlasmaArterial",
+        "mLung",
+        "mPlasmaVenous"
+      ],
+      "id": "Cmax-lungs-500mg",
+      "quantity": "Lungs Cmax after a 500 mg single oral dose",
+      "reference_data": [
+        18.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Lungs row, 500 mg single PO dose (the paper simulates 18.2 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "id": "Cmax-stomach-500mg",
+      "quantity": "Stomach Cmax after a 500 mg single oral dose",
+      "reference_data": [
+        19.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Stomach row, 500 mg single PO dose (the paper simulates 19.3 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-heart-500mg",
+      "quantity": "Heart Cmax after a 500 mg single oral dose",
+      "reference_data": [
+        15.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Heart row, 500 mg single PO dose (the paper simulates 15.2 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "id": "Cmax-liver-500mg",
+      "quantity": "Liver Cmax after a 500 mg single oral dose",
+      "reference_data": [
+        71.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Liver row, 500 mg single PO dose (the paper simulates 71.8 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mRBC",
+      "footprint": [
+        "ModelValue_1",
+        "PlasmaVenous",
+        "RBC",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mPlasmaVenous",
+        "mRBC"
+      ],
+      "id": "Cmax-red-blood-cells-1000mg",
+      "quantity": "Red blood cells Cmax after a 1000 mg single oral dose",
+      "reference_data": [
+        1.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Red blood cells row, 1000 mg single PO dose (the paper simulates 1.9 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-adipose-1000mg",
+      "quantity": "Adipose Cmax after a 1000 mg single oral dose",
+      "reference_data": [
+        7.5
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Adipose row, 1000 mg single PO dose (the paper simulates 7.5 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-brain-1000mg",
+      "quantity": "Brain Cmax after a 1000 mg single oral dose",
+      "reference_data": [
+        9.0
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Brain row, 1000 mg single PO dose (the paper simulates 9.0 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mRemainder",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Remainder",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QRemainder",
+        "Remainder",
+        "_12_1__PlasmaArterial____Remainder",
+        "_12_2__Remainder____PlasmaVenous",
+        "mPlasmaArterial",
+        "mRemainder"
+      ],
+      "id": "Cmax-remainder-1000mg",
+      "quantity": "Remainder Cmax after a 1000 mg single oral dose",
+      "reference_data": [
+        8.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Remainder row, 1000 mg single PO dose (the paper simulates 8.9 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-muscle-1000mg",
+      "quantity": "Muscle Cmax after a 1000 mg single oral dose",
+      "reference_data": [
+        33.0
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Muscle row, 1000 mg single PO dose (the paper simulates 33.0 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLung",
+      "footprint": [
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Lung",
+        "Lung",
+        "ModelValue_1",
+        "PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_07_2__Lung____PlasmaArterial",
+        "mLung",
+        "mPlasmaVenous"
+      ],
+      "id": "Cmax-lungs-1000mg",
+      "quantity": "Lungs Cmax after a 1000 mg single oral dose",
+      "reference_data": [
+        33.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Lungs row, 1000 mg single PO dose (the paper simulates 33.7 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "id": "Cmax-stomach-1000mg",
+      "quantity": "Stomach Cmax after a 1000 mg single oral dose",
+      "reference_data": [
+        35.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Stomach row, 1000 mg single PO dose (the paper simulates 35.9 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-heart-1000mg",
+      "quantity": "Heart Cmax after a 1000 mg single oral dose",
+      "reference_data": [
+        28.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Heart row, 1000 mg single PO dose (the paper simulates 28.1 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "id": "Cmax-liver-1000mg",
+      "quantity": "Liver Cmax after a 1000 mg single oral dose",
+      "reference_data": [
+        134.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Liver row, 1000 mg single PO dose (the paper simulates 134.7 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "id": "Cmax-plasma-1500mg",
+      "quantity": "Plasma Cmax after a 1500 mg single oral dose",
+      "reference_data": [
+        16.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Plasma row, 1500 mg single PO dose (the paper simulates 16.3 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mRBC",
+      "footprint": [
+        "ModelValue_1",
+        "PlasmaVenous",
+        "RBC",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mPlasmaVenous",
+        "mRBC"
+      ],
+      "id": "Cmax-red-blood-cells-1500mg",
+      "quantity": "Red blood cells Cmax after a 1500 mg single oral dose",
+      "reference_data": [
+        2.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Red blood cells row, 1500 mg single PO dose (the paper simulates 2.7 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-adipose-1500mg",
+      "quantity": "Adipose Cmax after a 1500 mg single oral dose",
+      "reference_data": [
+        10.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Adipose row, 1500 mg single PO dose (the paper simulates 10.8 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-brain-1500mg",
+      "quantity": "Brain Cmax after a 1500 mg single oral dose",
+      "reference_data": [
+        13.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Brain row, 1500 mg single PO dose (the paper simulates 13.1 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mRemainder",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Remainder",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QRemainder",
+        "Remainder",
+        "_12_1__PlasmaArterial____Remainder",
+        "_12_2__Remainder____PlasmaVenous",
+        "mPlasmaArterial",
+        "mRemainder"
+      ],
+      "id": "Cmax-remainder-1500mg",
+      "quantity": "Remainder Cmax after a 1500 mg single oral dose",
+      "reference_data": [
+        12.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Remainder row, 1500 mg single PO dose (the paper simulates 12.9 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-muscle-1500mg",
+      "quantity": "Muscle Cmax after a 1500 mg single oral dose",
+      "reference_data": [
+        47.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Muscle row, 1500 mg single PO dose (the paper simulates 47.2 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLung",
+      "footprint": [
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Lung",
+        "Lung",
+        "ModelValue_1",
+        "PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_07_2__Lung____PlasmaArterial",
+        "mLung",
+        "mPlasmaVenous"
+      ],
+      "id": "Cmax-lungs-1500mg",
+      "quantity": "Lungs Cmax after a 1500 mg single oral dose",
+      "reference_data": [
+        49.0
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Lungs row, 1500 mg single PO dose (the paper simulates 49.0 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "id": "Cmax-stomach-1500mg",
+      "quantity": "Stomach Cmax after a 1500 mg single oral dose",
+      "reference_data": [
+        52.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Stomach row, 1500 mg single PO dose (the paper simulates 52.1 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "id": "Cmax-heart-1500mg",
+      "quantity": "Heart Cmax after a 1500 mg single oral dose",
+      "reference_data": [
+        40.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Heart row, 1500 mg single PO dose (the paper simulates 40.8 nmol/mL)",
+      "targetable": true
+    },
+    {
+      "conditions": "cmax of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "id": "Cmax-liver-1500mg",
+      "quantity": "Liver Cmax after a 1500 mg single oral dose",
+      "reference_data": [
+        196.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Liver row, 1500 mg single PO dose (the paper simulates 196.9 nmol/mL)",
+      "targetable": true
+    }
+  ],
   "entry": "BIOMD0000001028",
   "equations": [
     {

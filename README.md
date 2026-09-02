@@ -163,6 +163,16 @@ guessing — just: *does the described model produce the shown result?*
 - **A verdict that expires.** Every certificate names the software that computed it — including,
   for the classes Reprolith solves itself, the revision of that code — so changing a solver flags
   every certificate it invalidates instead of leaving them looking current.
+- **A plan for a budget you can actually afford.** A paper's thirty-three published numbers are
+  not thirty-three independent things to check: ten tissues at three doses is one model shown
+  thirty-three ways. `select-claims` picks the *set* that buys the most independent evidence for a
+  given budget, penalizing overlap between what each claim rests on. On the metformin paper at a
+  budget of four, reading a ranking one claim at a time takes plasma at four doses and witnesses 46
+  model elements; choosing as a set takes four different tissues and witnesses 60. What each claim
+  rests on is **derived from the model**, not from the claim's own prose — its tissue's partition
+  coefficient, that tissue's blood flow, the two reactions moving drug in and out of it, and the
+  arterial pool every tissue routes through. It is a plan, not a verdict: no model is run, and a
+  claim left unselected is unattempted rather than unreproduced.
 - **A second opinion, or an honest blank.** A model can reproduce its paper for the wrong reason —
   a solver artifact that agrees with the figure. So the same runs go through a second,
   independently-implemented engine and the agreement is published beside the verdict, never gating
