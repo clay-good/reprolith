@@ -255,6 +255,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_manuscript_reference_values.py"],
     ),
     (
+        "the linter compares an agent's reference against a model reading another quantity",
+        "linter.py",
+        (
+            "    refusal = _units_refusal(sbml, species, reference_units)",
+            "    refusal = None",
+        ),
+        ["tests/test_linter.py"],
+    ),
+    (
         "a candidate is proposed with a unit nothing could read as one",
         "claim_candidates.py",
         (

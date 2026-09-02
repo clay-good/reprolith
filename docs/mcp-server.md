@@ -60,7 +60,7 @@ call, `[]` or `null` reads as a fact about the paper rather than about the call.
 | `self_validation` | — | The blind track record per class: matched / abstained / other, aggregate only |
 | `dossier` | `accession` | The ingested dossier — extracted model structure |
 | `bundle` | `accession` | The reconstruction bundle — model, recipe, assumptions |
-| `lint` | `sbml`, `species`, `reference`, `duration`, `steps`, `reference_kind` (optional) | A deterministic per-claim verdict for an ODE model curve (needs the engine extra) |
+| `lint` | `sbml`, `species`, `reference`, `duration`, `steps`, `reference_kind` (optional), `reference_units` (optional) | A deterministic per-claim verdict for an ODE model curve (needs the engine extra). With `reference_units`, a reference in a different quantity from the one the model reads that species in **abstains** rather than being compared — a distance between µg/mL and nmol/mL is arithmetic, and this is the surface an agent gates on immediately |
 | `lint_objective` | `sbml`, `reported`, `medium` (optional), `reference_kind` (optional) | A deterministic verdict for an SBML-fbc model's optimal objective under an optional medium (needs the engine and fba extras) |
 | `lint_steady_state` | `rules`, `reported` | A deterministic verdict on whether a reported steady state is a fixed point of a supplied Boolean network (pure, no extra) |
 | `lint_estimation` | `reported`, `recovered` | A deterministic verdict on a re-derived parameter estimate vs a reported one, at the estimation tolerance (pure, no extra) |

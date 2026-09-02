@@ -156,6 +156,14 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                 "duration": {"type": "number"},
                 "steps": {"type": "integer"},
                 "reference_kind": _REFERENCE_KIND_PROPERTY,
+                "reference_units": {
+                    "type": "string",
+                    "description": (
+                        "what your reference values are in (e.g. 'nmol/mL'). Supplied, it is "
+                        "checked against the unit the model reads that species in, and a "
+                        "different quantity abstains rather than being compared"
+                    ),
+                },
             },
             "required": ["sbml", "species", "reference", "duration", "steps"],
         },
@@ -782,6 +790,7 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
             duration=_bounded_duration(arguments["duration"]),
             steps=steps,
             reference_kind=_reference_kind(arguments),
+            reference_units=str(arguments.get("reference_units") or ""),
         )
         return result.to_dict()
     if name == "lint_steady_state":

@@ -100,6 +100,39 @@ def _not_evaluable(method: ComparisonMethod, tolerance: Tolerance) -> LintResult
     )
 
 
+def _units_refusal(sbml: str, species: str, stated: str) -> LintResult | None:
+    """Abstain when the caller's unit and the model's are different quantities, else ``None``.
+
+    Only when both can be read and they disagree. A unit this cannot parse is not evidence that
+    the two differ — the same rule the figure and claim reports follow, for the same reason: an
+    abstention here stops an agent's workflow, so it has to be a fact rather than a guess.
+    """
+    if not stated:
+        return None
+    from .ingest import UNSTATED_UNIT
+    from .manuscript_values import _unit_ratio, _units_known_to_differ, claim_units
+
+    try:
+        declared = claim_units(sbml, species)
+    except ValueError:
+        return None  # an output this model does not declare is the engine's finding, not this one
+    if declared == UNSTATED_UNIT or not _units_known_to_differ(stated, declared):
+        return None
+    ratio = _unit_ratio(stated, declared)
+    return LintResult(
+        verdict=Verdict.NOT_EVALUABLE,
+        method=ComparisonMethod.CURVE_NORMALIZED_DISTANCE.value,
+        discrepancy=(
+            f"your reference is in {stated} and the model reads {species!r} in {declared}"
+            + (f", which is {ratio:g} times as large" if ratio is not None else "")
+            + "; the two are not the same quantity, so no distance between them means anything"
+        ),
+        tolerance=default_tolerance(
+            ComparisonMethod.CURVE_NORMALIZED_DISTANCE, ReferenceKind.NUMERIC
+        ).label(),
+    )
+
+
 def _curve_lint(reference: Sequence[float], predicted: Sequence[float], tol: Tolerance) -> LintResult:
     """Judge a curve the way :func:`reprolith.judge_curve` does — average *and* worst point.
 
@@ -158,6 +191,7 @@ def lint_curve(
     steps: int,
     tolerance: Tolerance | None = None,
     reference_kind: ReferenceKind = ReferenceKind.NUMERIC,
+    reference_units: str = "",
 ) -> LintResult:
     """Check a supplied SBML model's ``species`` curve against a claim's reference points.
 
@@ -165,7 +199,17 @@ def lint_curve(
     intervals — so ``reference`` must supply ``steps + 1`` values at those same points — and
     returns the verdict, the normalized distance, and the tolerance used. Deterministic: the
     same model and reference always yield the same result.
+
+    ``reference_units`` says what the caller's numbers are *of*. Supplied, it is checked against
+    the unit the model reads that species in, and a different quantity **abstains** rather than
+    being compared: a reference in µg/mL against a model reading nmol/mL produces a distance that
+    is arithmetic and not a statement about the model, and this is the surface an agent gates its
+    work on immediately. Omitted, nothing is checked and nothing is claimed — the same opt-in
+    `claims-check --model` offers an author.
     """
+    refusal = _units_refusal(sbml, species, reference_units)
+    if refusal is not None:
+        return refusal
     _, predicted = simulate(sbml, species, duration=duration, steps=steps)
     if len(reference) != len(predicted):
         raise ValueError(

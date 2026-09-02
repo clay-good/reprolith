@@ -132,3 +132,45 @@ def test_lint_diffusion_states_the_protocol_its_verdict_rests_on() -> None:
     assert result.protocol is not None
     assert "zero-flux (Neumann) boundaries" in result.protocol
     assert "D=1.0" in result.protocol and "dx=1.0" in result.protocol and "2 steps" in result.protocol
+
+
+_UNIT_MODEL = ONE_COMPARTMENT_SBML.replace(
+    '<compartment id="c" size="1" constant="true"/>',
+    '<compartment id="c" size="1" units="volume" constant="true"/>',
+).replace(
+    '<listOfCompartments>',
+    '<listOfUnitDefinitions>'
+    '<unitDefinition id="volume"><listOfUnits>'
+    '<unit kind="litre" exponent="1" scale="-3" multiplier="1"/></listOfUnits></unitDefinition>'
+    '<unitDefinition id="substance"><listOfUnits>'
+    '<unit kind="mole" exponent="1" scale="-9" multiplier="1"/></listOfUnits></unitDefinition>'
+    '</listOfUnitDefinitions><listOfCompartments>',
+).replace('initialAmount="100"', 'initialAmount="100" substanceUnits="substance"')
+
+
+def test_a_reference_in_another_unit_abstains_rather_than_being_compared() -> None:
+    """The agent-facing surface, held to the rule the author-facing one follows.
+
+    An agent gates its work on this verdict immediately, and a reference in µg/mL against a model
+    reading nmol/mL produces a distance that is arithmetic — not a statement about the model, and
+    not something anything downstream can see.
+    """
+    from reprolith import claim_units
+
+    assert claim_units(_UNIT_MODEL, "A") == "10^-9 mole / 10^-3 litre"
+
+    same = lint_curve(_UNIT_MODEL, "A", reference=_TRUE_CURVE, duration=10.0, steps=10,
+                      reference_units="nmol/mL")
+    assert same.verdict is Verdict.REPRODUCED
+
+    other = lint_curve(_UNIT_MODEL, "A", reference=_TRUE_CURVE, duration=10.0, steps=10,
+                       reference_units="mg/mL")
+    assert other.verdict is Verdict.NOT_EVALUABLE
+    assert "not the same quantity" in other.discrepancy
+
+    # Opt-in on both sides: no unit stated, nothing checked and nothing claimed — and a unit this
+    # cannot read is not evidence that the two differ, so it is not an abstention either.
+    assert lint_curve(_UNIT_MODEL, "A", reference=_TRUE_CURVE, duration=10.0,
+                      steps=10).verdict is Verdict.REPRODUCED
+    assert lint_curve(_UNIT_MODEL, "A", reference=_TRUE_CURVE, duration=10.0, steps=10,
+                      reference_units="arbitrary units").verdict is Verdict.REPRODUCED
