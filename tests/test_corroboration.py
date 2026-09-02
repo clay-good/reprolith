@@ -208,25 +208,40 @@ def test_the_published_bound_does_not_move_between_two_measurements_of_one_run()
     assert len(bounds) == 1, f"the published bound moved between runs: {sorted(bounds)}"
 
 
-def test_one_draw_can_be_asked_for_and_never_states_better_agreement() -> None:
-    """The worst of several measurements is weaker than any single one, never stronger — so the
-    default cannot turn an engine-sensitive result into an engine-independent one.
+def test_the_draws_are_aggregated_by_the_worst_never_the_best(monkeypatch) -> None:
+    """The rule `draws` exists for: the reported distance is the worst measurement, not the best.
 
-    Compared at the *bound*, which is what gets published, and at the raw distance only up to the
-    solver's own last places. `single` and `doubled` are two separate invocations, so the draw one
-    takes and the draws the other maximizes over are different calls into COPASI — and where the
-    alternation's two phases nearly coincide, which phase lands first decides the last digit. This
-    assertion demanded an exact ordering across invocations that the engine does not offer, and it
-    failed in CI on a pair 6e-07 apart in relative terms. The defect it exists to catch — a `min`
-    where the `max` belongs — is a 13% drop on this curve, which the slack below cannot hide.
+    Asserted on the aggregation itself rather than by comparing two invocations. Two calls into
+    COPASI take different draws of a period-two alternation, so which of them is the worse phase
+    is not a property either call controls — a version of this test compared a single-draw call
+    against a two-draw call and failed twice in CI, once on the raw distance and once on the
+    published bound, both times because the single draw had landed on the worse phase. Nothing
+    about the code was wrong either time, which is the definition of a test that reports noise.
+
+    What must hold is that `max` is the aggregation, since a `min` would let a two-draw call state
+    *better* agreement than one of its own draws and turn an engine-sensitive result into an
+    engine-independent one. That is exact, and it is checked exactly.
     """
+    from reprolith import corroboration as module
+
     sbml = (
         Path(__file__).parent.parent / "datasets" / "worked_examples"
         / "Zake2021_metformin_human_single_PO.xml"
     ).read_text(encoding="utf-8")
-    single = corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=1)
-    doubled = corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=2)
-    assert doubled.distance_bound() >= single.distance_bound()
-    assert doubled.distance >= single.distance * (1.0 - 1e-4)
+
+    def _distances(*values: float):
+        remaining = list(values)
+        return lambda a, b: remaining.pop(0)
+
+    monkeypatch.setattr(module, "normalized_curve_distance", _distances(0.5, 0.1))
+    worse_first = corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=2)
+    monkeypatch.setattr(module, "normalized_curve_distance", _distances(0.1, 0.5))
+    worse_second = corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=2)
+    assert worse_first.distance == worse_second.distance == 0.5
+
+    # And a single draw is that draw, so a caller who asks for one is told what one measured.
+    monkeypatch.setattr(module, "normalized_curve_distance", _distances(0.1))
+    assert corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=1).distance == 0.1
+
     with pytest.raises(ValueError, match="at least one draw"):
         corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=0)
