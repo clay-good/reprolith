@@ -161,6 +161,14 @@ dropped, a published schema nobody enforced, an attribute SBML makes inert read 
 list doubles as the record of what has bitten. It is not in CI: it runs the suite once per
 mutation, and it is a deliberate pass, not a per-push gate.
 
+Which modules it covers is itself worth looking at. Counting the guards by module found the two
+honesty invariants this repository states first — the overall-verdict rule and the fixed scope
+statement — with none at all, and adding one to each found a **survivor**: the refusal that stops a
+scope being *reworded* (as against emptied) could be deleted with the entire suite still green. Not
+emptiable was never the whole invariant — a scope reading "clinically validated" is worse than a
+missing one, and it travels through the badge, the registry, the human render and the query — and
+only the load path had ever been tested for it. It is held now.
+
 It fails two ways, and the second is the one worth having. A **surviving** mutation means the guard
 has no test, or the test never reaches the case that makes it load-bearing — which is how the
 manuscript check's suppression of a model-computed parameter was found passing with its branch

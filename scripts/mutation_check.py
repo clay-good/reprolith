@@ -309,6 +309,24 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_cli.py"],
     ),
     (
+        "a load-bearing assumption no claim was flagged for still certifies a clean pass",
+        "certificate.py",
+        (
+            "        if qualified or load_bearing or awaiting:",
+            "        if qualified:",
+        ),
+        ["tests/test_certificate.py"],
+    ),
+    (
+        "a scope statement reworded to say something else is minted without complaint",
+        "scope.py",
+        (
+            "        if (self.machine, self.human) != (SCOPE_MACHINE, SCOPE_HUMAN):",
+            "        if False:",
+        ),
+        ["tests/test_scope.py"],
+    ),
+    (
         "an archive member is decompressed however large it expands to",
         "omex.py",
         (

@@ -27,6 +27,28 @@ def test_empty_scope_is_rejected() -> None:
         Scope(machine="", human="")
 
 
+def test_a_reworded_scope_is_refused_at_construction() -> None:
+    """Not emptiable was never the whole invariant, and the other half had no test.
+
+    A scope reworded to "clinically validated" is worse than a missing one, and it travels through
+    every read surface — the badge, the registry, the human render, the query. The load path
+    already refused a stored certificate that reworded it; construction refuses one too, and
+    `scripts/mutation_check.py` found that refusal surviving its own deletion with the whole suite
+    still green, which is the definition of an unheld guard.
+    """
+    from reprolith.scope import SCOPE_HUMAN, SCOPE_MACHINE
+
+    with pytest.raises(ValueError, match="cannot be reworded"):
+        Scope(machine="clinically-validated", human=SCOPE_HUMAN)
+    with pytest.raises(ValueError, match="cannot be reworded"):
+        Scope(machine=SCOPE_MACHINE, human="This model is clinically validated.")
+    # A near-miss is still a rewording: the text is fixed, not merely non-empty.
+    with pytest.raises(ValueError, match="cannot be reworded"):
+        Scope(machine=SCOPE_MACHINE, human=SCOPE_HUMAN.replace("no claim", "little claim"))
+    # And the exact pair is what a certificate carries, so the default still constructs.
+    assert Scope().to_dict() == {"machine": SCOPE_MACHINE, "human": SCOPE_HUMAN}
+
+
 def test_scope_travels_in_content() -> None:
     # Whatever else is in the certificate, the scope statement is part of the
     # hashed content — it cannot be dropped in serialization.
