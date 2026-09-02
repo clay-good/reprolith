@@ -356,3 +356,40 @@ def test_a_count_based_class_is_passed_over_rather_than_accused() -> None:
         [{"claim_id": "c", "species": "mPlasmaVenous", "reported_units": "molecules"}],
     )
     assert check.agrees is None and claims_in_another_unit((check,)) == ()
+
+
+def test_a_row_that_states_no_metric_is_not_judged_against_a_column_it_never_named() -> None:
+    """An absent field and an empty one are different facts, and collapsing them invented a verdict.
+
+    A claims record that *omits* `metric` means the claims file's documented default, a peak. A
+    candidate whose `metric` is present and empty means the table reader found none stated — a
+    "Tmax, h" column, whose heading names no metric it knows. Defaulting the second to a peak
+    compared that candidate against the Cmax column's unit and reported ANOTHER UNIT: an
+    accusation manufactured out of a missing field, on an unedited proposal.
+    """
+    from reprolith.manuscript_values import check_claim_units_in_tables
+
+    tables = {"Table 1": {"caption": "x", "rows": [
+        ["Tissue", "Cmax. nmol/mL", "Tmax. h"],
+        ["Plasma", "27.2", "1.3"],
+    ]}}
+    rows = [
+        {"claim_id": "peak", "reported": 27.2, "metric": "cmax", "reported_units": "nmol/mL",
+         "source_location": "Table 1, Plasma row"},
+        {"claim_id": "time", "reported": 1.3, "metric": "", "reported_units": "h",
+         "source_location": "Table 1, Plasma row"},
+        {"claim_id": "default", "reported": 27.2, "reported_units": "nmol/mL",
+         "source_location": "Table 1, Plasma row"},
+    ]
+    by_id = {c.claim_id: c for c in check_claim_units_in_tables(rows, tables)}
+    assert by_id["peak"].agrees is True
+    assert by_id["time"].agrees is None and "states no metric" in by_id["time"].detail
+    # The key omitted entirely still means the documented default.
+    assert by_id["default"].agrees is True
+
+    # The model side reads the same rule: an unstated metric is not a peak by assumption.
+    (unstated,) = check_claim_units(
+        _model("BIOMD0000001027"),
+        [{"claim_id": "time", "species": "mPlasmaVenous", "metric": "", "reported_units": "h"}],
+    )
+    assert unstated.agrees is None and "states no metric" in unstated.detail

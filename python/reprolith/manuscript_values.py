@@ -382,6 +382,18 @@ def _units_differ(stated: str, declared: str) -> bool:
     )
 
 
+#: A record whose ``metric`` key is *absent* means the claims file's documented default; one whose
+#: ``metric`` is present and empty means the reader that wrote it found none stated — a candidate
+#: from a "Tmax, h" column, whose heading names no metric this knows. The two are different facts,
+#: and collapsing them made a Tmax candidate get judged against the Cmax column's unit.
+def _stated_metric(record: Mapping[str, Any]) -> str | None:
+    """The metric a record states, ``None`` when it states none, the default when it omits the key."""
+    if "metric" not in record:
+        return "cmax"
+    metric = str(record.get("metric") or "").strip()
+    return metric or None
+
+
 #: Which attribute names each kind's unit. A species' is its *substance* unit; when the value read
 #: is an ``initialConcentration`` the unit is that per the compartment's own, which is composed
 #: below rather than reported as if the species were an amount.
@@ -944,10 +956,16 @@ def check_claim_units(
     for record in claims:
         claim_id = str(record.get("claim_id") or "")
         stated = str(record.get("reported_units") or "")
+        metric = _stated_metric(record)
+        if metric is None:
+            results.append(UnitCheck(
+                claim_id, stated, UNSTATED_UNIT, None,
+                "this row states no metric, so what its number is read off — a peak, an area — is "
+                "not established, and neither is the unit that would be in",
+            ))
+            continue
         try:
-            declared = claim_units(
-                model_sbml, str(record.get("species") or ""), str(record.get("metric") or "cmax")
-            )
+            declared = claim_units(model_sbml, str(record.get("species") or ""), metric)
         except ValueError as unreadable:
             results.append(UnitCheck(claim_id, stated, UNSTATED_UNIT, None, str(unreadable)))
             continue
@@ -1011,10 +1029,20 @@ def check_claim_units_in_tables(
     for record in claims:
         claim_id = str(record.get("claim_id") or "")
         stated = str(record.get("reported_units") or "")
-        metric = str(record.get("metric") or "cmax")
+        metric = _stated_metric(record)
         label = _cited_label(str(record.get("source_location") or ""), tables)
         if not stated or label is None:
             continue  # nothing stated, or no supplied table to state it against
+        if metric is None:
+            # Which column names this row's unit is decided by its metric, and this row states
+            # none. Defaulting to a peak compared a "Tmax, h" candidate against the Cmax column
+            # and called it another unit — an accusation manufactured out of a missing field.
+            results.append(UnitCheck(
+                claim_id, stated, UNSTATED_UNIT, None,
+                f"this row states no metric, so which column of {label} names its unit is not "
+                "established",
+            ))
+            continue
         rows = tables[label].get("rows") or ()
         headings = [str(cell) for cell in (rows[0] if rows else ())]
         columns = [h for h in headings if _metric_for(h) == metric and _unit_for(h)]

@@ -271,6 +271,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_manuscript_reference_values.py"],
     ),
     (
+        "a row that states no metric is judged against the peak column anyway",
+        "manuscript_values.py",
+        (
+            "    if \"metric\" not in record:\n        return \"cmax\"",
+            "    if True:\n        return \"cmax\"",
+        ),
+        ["tests/test_claim_units.py"],
+    ),
+    (
         "a claim labelled with a unit its own cited table does not print reads as checked",
         "manuscript_values.py",
         (
