@@ -42,7 +42,7 @@ _PAIRS = {
 #: tool to be in parity with, and listing them here is what keeps that an explicit decision.
 _NO_TOOL = {
     "export", "archive-check", "claims-template", "claims-propose", "claims-check",
-    "params-template", "params-check", "figure-template", "figure-check",
+    "params-template", "params-propose", "params-check", "figure-template", "figure-check",
 }
 
 

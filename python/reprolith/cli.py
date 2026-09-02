@@ -28,7 +28,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .certify import Claim
-from .claim_candidates import propose_claims
+from .claim_candidates import propose_claims, propose_parameters
 from .claims_template import claims_template, unfilled_claims
 from .digitization import (
     AmbiguousPanel,
@@ -686,6 +686,22 @@ def _cmd_params_template(query: ReprolithQuery, args: argparse.Namespace) -> int
     return 0
 
 
+def _tables_file(path: Path) -> dict[str, Any]:
+    """The tables a paper prints, in either shape a caller has them in.
+
+    Raises ``ValueError`` when the file holds none, with the message both proposers used to carry
+    separately — one refusal, so the two cannot come to disagree about what an unusable file is.
+    """
+    loaded = json.loads(path.read_text(encoding="utf-8"))
+    tables = loaded.get("tables", loaded) if isinstance(loaded, dict) else {}
+    if not isinstance(tables, dict) or not tables:
+        raise ValueError(
+            "the tables file holds no tables: expected {'Table 6': {'rows': [[...]]}}, or the "
+            "shape datasets/manuscripts/ uses, which nests that under 'tables'"
+        )
+    return tables
+
+
 def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Propose candidate claims from the tables the paper prints."""
     try:
@@ -722,6 +738,31 @@ def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"  note: {note}")
     return 0
 
+
+
+def _cmd_params_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Propose candidate parameter values from the tables the paper prints."""
+    try:
+        tables = _tables_file(Path(args.tables))
+    except (OSError, UnicodeDecodeError, ValueError) as unusable:
+        print(f"cannot read the tables: {unusable}", file=sys.stderr)
+        return 1
+
+    proposed = propose_parameters(tables, accession=args.accession)
+    rendered = json.dumps(proposed, indent=2, sort_keys=True) + "\n"
+    if args.out is None:
+        print(rendered, end="")
+        return 0
+    try:
+        Path(args.out).write_text(rendered, encoding="utf-8")
+    except OSError as unwritable:
+        print(f"cannot write the candidates: {unwritable}", file=sys.stderr)
+        return 1
+    body = proposed["entries"][args.accession] if args.accession is not None else proposed
+    print(f"wrote {args.out}")
+    print(f"  {len(body['parameters'])} candidate value(s); name the model element each one is, "
+          "which `reprolith params-template` lists")
+    return 0
 
 
 def _write_every_panel(document: str, out_dir: Path) -> int:
@@ -1267,7 +1308,8 @@ def build_parser() -> argparse.ArgumentParser:
             "reading this repository: catalog, backlog, self-validation, status, certificate, "
             "verdict, gaps, presubmission, certificates-for, dossier, bundle\n"
             "checking your own files: archive-check, claims-template, claims-propose, "
-            "claims-check, params-template, params-check, figure-template, figure-check\n"
+            "claims-check, params-template, params-propose, params-check, figure-template, "
+            "figure-check\n"
             "writing: export — the one command that creates a file\n\n"
             "reprolith --version prints this copy's version and the judge revision each class "
             "publishes under."
@@ -1453,6 +1495,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--out", default=None, help="write here instead of to standard output")
     p.set_defaults(func=_cmd_claims_template)
+
+    p = sub.add_parser(
+        "params-propose",
+        help="propose candidate parameter values from the tables your paper prints (you pair them)",
+    )
+    p.add_argument(
+        "--tables", required=True,
+        help="the paper's table rows as JSON — the shape datasets/manuscripts/ uses",
+    )
+    p.add_argument(
+        "--accession", default=None,
+        help="wrap the result under this accession, the shape a multi-paper file uses",
+    )
+    p.add_argument("--out", default=None, help="write here instead of to standard output")
+    p.set_defaults(func=_cmd_params_propose)
 
     p = sub.add_parser(
         "params-template",

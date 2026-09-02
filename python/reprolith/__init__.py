@@ -31,7 +31,11 @@ from .certify import (
     certify_model,
     certify_population,
 )
-from .claim_candidates import propose_claims, propose_claims_from_prose
+from .claim_candidates import (
+    propose_claims,
+    propose_claims_from_prose,
+    propose_parameters,
+)
 from .claims_template import claims_template, unfilled_claims
 from .constraint_based import (
     certify_constraint_based,
@@ -534,6 +538,7 @@ __all__ = [
     "presubmission_report",
     "propose_claims",
     "propose_claims_from_prose",
+    "propose_parameters",
     "production_envelope",
     "ProductionEnvelope",
     "react_diffuse_1d",

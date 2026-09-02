@@ -334,3 +334,53 @@ def test_a_heading_that_separates_its_unit_with_a_period_still_states_its_metric
     assert _metric_for("AUC24. nmol*h/mL") == "auc"
     # Still not a metric: a percentage column is a difference between two numbers, not one of them.
     assert _metric_for("Cmax measured -fitted. %") == ""
+
+
+def test_the_same_cells_are_offered_in_the_shape_the_parameter_check_reads() -> None:
+    """A paper's tables carry its model's inputs as well as its results.
+
+    The metformin paper's Table 3 is ten tissue-plasma partition coefficients, and
+    `datasets/pkpd_parameters.json` was typed out of it by hand. Nothing mechanical tells an input
+    from an output — which is why this proposes the same cells in the other file's shape and says
+    so, rather than pretending to a judgment it refuses everywhere else.
+
+    It is the second half of a bracket: `params-template` writes the model's ids with the values
+    blank, and this writes the paper's values with the ids blank. A curator has both sides of the
+    pairing in front of them and makes the join.
+    """
+    import json
+
+    from reprolith.claim_candidates import propose_parameters
+
+    repo = Path(__file__).resolve().parents[1]
+    tables = json.loads(
+        (repo / "datasets" / "manuscripts" / "BIOMD0000001027_tables.json").read_text(
+            encoding="utf-8"
+        )
+    )["tables"]
+    proposed = propose_parameters({"Table 3": tables["Table 3"]})["parameters"]
+    assert proposed, "Table 3 prints numbers; nothing was proposed from it"
+
+    # Every value a curator committed for this paper is among the candidates, with the row and
+    # column that name it — which is the whole of what a reader can check mechanically.
+    committed = json.loads(
+        (repo / "datasets" / "pkpd_parameters.json").read_text(encoding="utf-8")
+    )["entries"]["BIOMD0000001027"]["parameters"]
+    offered = {
+        (candidate["reported"], candidate["source_location"]) for candidate in proposed
+    }
+    for record in committed:
+        assert any(
+            value == record["reported"] and "Estimated Kt:p" in where
+            and record["source_location"].split(",")[1].strip().split(" ")[0] in where
+            for value, where in offered
+        ), record
+
+    # The pairing is never proposed, here as in the claims reader.
+    assert all(candidate["parameter"] == "" for candidate in proposed)
+    # And the closing note is this file's question, not the claims file's.
+    from reprolith.claim_candidates import _PICK_YOUR_OWN
+
+    notes = propose_parameters({"Table 3": tables["Table 3"]})["notes"]
+    assert _PICK_YOUR_OWN not in notes
+    assert any("carries as an input is your judgment" in note for note in notes)

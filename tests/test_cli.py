@@ -620,7 +620,7 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     ).choices
     named = {
         "export", "archive-check", "claims-template", "claims-check", "claims-propose",
-        "params-check", "params-template", "figure-check", "figure-template",
+        "params-check", "params-template", "params-propose", "figure-check", "figure-template",
     }
     file_based = {name for name in subcommands if name in named}
     assert file_based == named

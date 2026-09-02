@@ -115,6 +115,16 @@ def _unit_for(heading: str) -> str:
     return tail if tail and _canonical_composite(tail) is not None else ""
 
 
+#: The sentence that ends every proposal: what the reader has to decide, in the vocabulary of the
+#: file being proposed. It is not a refusal, so a caller reshaping the candidates drops this one
+#: and keeps the rest.
+_PICK_YOUR_OWN = (
+    "These are candidates, not claims: a table prints measured values, fitted values, "
+    "percentage differences and doses side by side, and which of them your model should "
+    "reproduce is your judgment. Delete the rest, then name the model output each one reads."
+)
+
+
 def propose_claims(
     tables: Mapping[str, Mapping[str, Any]], *, accession: str | None = None
 ) -> dict[str, Any]:
@@ -210,11 +220,10 @@ def propose_claims(
                 candidates.append(record)
     if not candidates and not notes:
         notes.append("no table printed a number on its own in a cell, so nothing was proposed")
-    notes.append(
-        "These are candidates, not claims: a table prints measured values, fitted values, "
-        "percentage differences and doses side by side, and which of them your model should "
-        "reproduce is your judgment. Delete the rest, then name the model output each one reads."
-    )
+    # Last, and last on purpose: everything before it is a *refusal* — a table this could not read
+    # positionally, a cell it would not split — and a caller reshaping these candidates into
+    # another file's vocabulary keeps those and replaces this one.
+    notes.append(_PICK_YOUR_OWN)
 
     body: dict[str, Any] = {
         "description": (
@@ -284,6 +293,58 @@ def _sentences(text: str) -> list[str]:
     carry the number's context. Splitting on terminal punctuation followed by a space does that.
     """
     return [part.strip() for part in re.split(r"(?<=[.!?])\s+", text) if part.strip()]
+
+
+def propose_parameters(
+    tables: Mapping[str, Mapping[str, Any]], *, accession: str | None = None
+) -> dict[str, Any]:
+    """The same table reading, written into the file `params-check` reads.
+
+    A paper's tables carry its model's **inputs** as well as its results — the metformin paper's
+    Table 3 is ten tissue-plasma partition coefficients, and the committed
+    `datasets/pkpd_parameters.json` was typed out of it by hand. Nothing mechanical tells an input
+    from an output: which is which is a judgment about the paper, the same one
+    :func:`propose_claims` refuses to make about a result. So this proposes the same cells in the
+    other shape, and says so.
+
+    It is the second half of a bracket. :func:`reprolith.parameters_template` writes the model's
+    ids with the values blank; this writes the paper's values with the ids blank. A curator has
+    both sides of the pairing in front of them and makes the join, which is the one thing neither
+    can do.
+    """
+    proposed = propose_claims(tables)
+    candidates = [
+        {
+            # The model id this value belongs to is never guessed, for the reason the claim reader
+            # gives about outputs: a wrong pairing checks a real number against the wrong element.
+            "parameter": "",
+            "reported": candidate["reported"],
+            "reported_units": candidate["reported_units"],
+            "source_location": candidate["source_location"],
+            "quantity": candidate["quantity"],
+        }
+        for candidate in proposed["candidates"]
+    ]
+    body: dict[str, Any] = {
+        "description": (
+            "Candidate parameter values read from the tables a paper prints. Nothing here knows "
+            "an input from an output — a results table and a parameter table are both numbers in "
+            "cells — so delete the ones your model does not carry, then name the model element "
+            "each survivor is, which `reprolith params-template` lists for you."
+        ),
+        "parameters": candidates,
+        # Every refusal the reading made, and this file's own closing sentence in place of the
+        # claims file's: the two ask a reader for different judgments about the same cells.
+        "notes": [
+            *(note for note in proposed["notes"] if note != _PICK_YOUR_OWN),
+            "Which of these your model carries as an input is your judgment, and the pairing to a "
+            "model id is never proposed: a wrong pairing checks a real number against the wrong "
+            "element, which is worse than no candidate at all.",
+        ],
+    }
+    if accession is not None:
+        return {"description": body["description"], "entries": {accession: body}}
+    return body
 
 
 def propose_claims_from_prose(
@@ -369,4 +430,4 @@ def propose_claims_from_prose(
     return body
 
 
-__all__ = ["propose_claims", "propose_claims_from_prose"]
+__all__ = ["propose_claims", "propose_claims_from_prose", "propose_parameters"]

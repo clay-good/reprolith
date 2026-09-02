@@ -170,6 +170,7 @@ Eight commands work on a **file**, not on repository state, and have no MCP tool
 | `reprolith claims-check` | It compares a claims file against the rows of the tables a paper prints — two files supplied by the caller, neither of which the server holds. The server has certificates, not the manuscripts behind them, and a tool that answered from repository state would be answering a different question. |
 | `reprolith claims-template` | It writes the claims file `archive-check` reads, out of the author's own model and simulation document — two files the server has no path to, for an author who has no entry in this repository yet. It is also the one command whose output is meant to be edited by hand before it is used again, which is a file on disk, not a JSON-RPC result. |
 | `reprolith params-check` | It compares an author's own model file against the parameter values their paper reports for it — again two caller-supplied files, and again a question about a paper the server has no entry for. The pairing of a table row to a parameter id is the author's judgment and travels in the file they supply; nothing in repository state could stand in for it. |
+| `reprolith params-propose` | It reads the tables an author's own *paper* prints, like `claims-propose`, and writes them into the shape `params-check` reads. Same two reasons: a file the server does not hold, and output meant to be edited by hand before it is used. |
 | `reprolith params-template` | It writes the parameters file `params-check` reads out of the author's own model, and exists to be filled in by hand before it is used — a file on disk, for a model the server does not hold. |
 | `reprolith figure-template` | It writes the digitization file out of the author's own simulation document, for a figure only they can read. Like `claims-template`, its output exists to be filled in by hand before it is used again, which is a file on disk and not a JSON-RPC result. |
 | `reprolith figure-check` | It reads a plot digitizer's output for one of the author's own figures — a file that exists on their machine before any of this reaches a repository, and which pairs each curve to a claim by the curator's own judgment. There is no repository state that could supply it, and the reading it checks is a measurement of a picture the server has never seen. |
@@ -177,4 +178,4 @@ Eight commands work on a **file**, not on repository state, and have no MCP tool
 
 This is an absence, not a divergence: neither command reads or writes anything the query surface
 covers, so nothing either surface reports about a paper can disagree. `tests/test_cli.py` pins the
-set, so adding a tenth without deciding this question fails.
+set, so adding an eleventh without deciding this question fails.

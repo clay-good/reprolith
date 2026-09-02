@@ -116,6 +116,12 @@ Every file validates. The run completes. The number is close. That is the failur
 
 ## The parameters file
 
+`params-propose --tables` reads the same tables from the other side: it writes every number they
+print into the shape this file takes, with the model id left blank. Nothing mechanical tells an
+input from an output — a results table and a parameter table are both numbers in cells — so it
+proposes them all and says so. Between the two you have both halves of the pairing: `params-template`
+lists your model's ids with the values blank, and this lists your paper's values with the ids blank.
+
 `claims-template` writes `reported_units` blank on every stub, and `claims-propose` fills it in
 from the column heading when the heading names one. It is optional: without it the value check is
 unaffected, and with it `claims-check --model` can say whether the number is in the unit your model
