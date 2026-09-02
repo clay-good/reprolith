@@ -117,7 +117,15 @@ practitioner can act on.
   the model and not about COPASI, and none of the tolerance is absorbing solver disagreement
   (`tests/test_engine_floor.py`, read off the committed records so an engine upgrade that widened
   the gap fails rather than passing quietly). The other four classes have no second registered
-  engine and this is not measured for them — an absence, which the public registry now names.
+  engine and this is not measured for them — an absence, which the public registry now names. It is
+  an absence of *corroboration*, and worth separating from a second question it is easy to read it
+  as: three of those four are certified against something outside this engine already. The
+  constraint-based class's references are COBRApy's own answers, and the stochastic and spatial
+  classes' are closed-form mathematics, so each of those certificates' published discrepancy is a
+  distance from an independent standard — not the same thing as re-running a certified result under
+  a second simulator, and not nothing either. The logical class's references are CANA's. What none
+  of the four has is a *second engine of its own kind* to re-run under
+  (`tests/test_reference_provenance.py` counts which certificate is checked against what).
 - **Stochastic mean — 5% / 15%, and the ensemble is the cost.** The number judged is the mean of an
   ensemble Reprolith drew, so drawing the *right* model twice moves it. The class already refuses to
   publish a verdict when the standard error of that mean is more than half the pass threshold, and

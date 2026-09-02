@@ -3488,6 +3488,25 @@ Not a large error, and the same shape as every other one here: a true sentence, 
 about a set that grew. It is counted now (`tests/test_reference_provenance.py`), so the next
 certificate lands in one of the three buckets and the sentence it changes fails.
 
+## Two artifacts that could not say what they were
+
+The exported COMBINE archive is the one thing this repository *sends* somewhere. It left anonymous:
+a model, an experiment, and nothing saying Reprolith wrote them, which entry they came from, or
+whether the reconstruction adopted the author's own model or rebuilt one. It says all three now,
+and says what it is *not* — an archive arriving with a reproducibility tool's name on it is exactly
+what a reader might take for a finding, so it states in the same words every other surface uses
+that it carries a run and no verdict. The first draft of that note wrote the engine pin in, which
+would have quietly contradicted a decision `docs/sedml-fast-path.md` had already written down and
+reasoned: the pin belongs to the certificate, which is what expires when a solver changes.
+
+And the tool could not say what *it* was. There was no `--version` at all — and a release number
+would not have been the answer, since nothing here turns on the release. A verdict turns on the
+judge revision, the digest over the code that computed it, which every certificate names. Someone
+holding a certificate and asking whether their copy would still produce it needs that digest;
+`reprolith --version` prints it, per class. The mapping from a class to the modules its revision is
+over now lives in the package rather than only in the test that sweeps for stale renders, with the
+two held to each other.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
