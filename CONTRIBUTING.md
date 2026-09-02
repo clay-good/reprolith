@@ -154,6 +154,19 @@ when you add a check, a refusal, or a stability rule:
   requested, so a run that stopped at t = 5 of 100 was judged as if it had finished, at relative
   error 0.0000. Validate what came back, not only what went in.
 
+- **A refusal and a report ask the same question in opposite directions.** "These two units differ"
+  is the safe answer when the outcome is *not compared* — an unreadable unit should stop a
+  comparison. It is the wrong answer when the outcome is a line telling someone their file
+  disagrees with their model: that asserts something, and an unparseable unit is not evidence of
+  it. The same helper served both for an hour, so `figure-check` accused a curator writing `µM`
+  against a model in `10^-9 mole / 10^-3 litre` — the same quantity. Before reusing a predicate,
+  ask whether its caller is refusing to answer or making a claim.
+- **A suite that only reads what it wrote says nothing about what you ship.** Every CLI test built
+  its own repository in a temp directory and pointed `--data-dir` at it, so the committed state —
+  the one every reader meets on their first command — was exercised by nothing. A data file that
+  gained a field the loader refuses, or a directory that moved, would have passed the whole suite
+  and failed on `reprolith catalog`. Walk your published artifacts with your published defaults.
+
 [`docs/findings-note.md`](docs/findings-note.md) records what each round found, with the numbers.
 
 ## Extending a self-validation set
