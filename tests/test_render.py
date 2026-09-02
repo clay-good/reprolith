@@ -632,3 +632,58 @@ def test_a_corroboration_that_did_not_hold_is_not_reported_as_holding() -> None:
     )
     assert "1 of 2 engine-independent" in banner
     assert "all engine-independent" not in banner
+
+
+def test_the_dossier_page_counts_a_stated_unit_and_never_the_word_unstated() -> None:
+    """A count that says the opposite of the truth is worse than no count.
+
+    `unit` is the string "unstated" when the artifact names none, and a string is truthy — so the
+    first version of this line read thirteen values with no unit as thirteen that had one, on the
+    very entry whose own gap report says "13 of 37 extracted values state no unit".
+    """
+    from reprolith.render import render_dossier_human
+
+    page = render_dossier_human({
+        "entry": "ACC1",
+        "artifacts": [{"filename": "m.xml", "detected_format": "sbml", "validates": True}],
+        "parameters": [
+            {"name": "k", "value": 1.0, "unit": "unstated", "normalized_unit": None},
+            {"name": "V", "value": 2.0, "unit": "unit_0", "normalized_unit": "10^-3 litre"},
+        ],
+        "state_variables": ["x"],
+        "gaps": [
+            {"element": "events", "detail": "one event", "load_bearing": True,
+             "carried_by_artifact": True},
+            {"element": "units", "detail": "no unit", "load_bearing": True,
+             "carried_by_artifact": False},
+        ],
+    })
+    assert "parameters: 2 (1 of 2 with a stated unit)" in page
+    # The two kinds of gap are not the same finding, and the fix differs: one asks an author to
+    # state something, the other says the dossier cannot hold what they already stated.
+    assert "the artifact states it; the dossier cannot carry it" in page
+    assert "not stated by the artifact" in page
+
+
+def test_the_bundle_page_leads_with_the_origin_and_the_assumptions() -> None:
+    """Its two load-bearing facts, published only inside a dump of every run in the recipe."""
+    from reprolith.render import render_bundle_human
+
+    page = render_bundle_human({
+        "entry": "ACC1",
+        "origin": "author-supplied",
+        "model": {"filename": "m.xml", "detected_format": "sbml"},
+        "engine_pin": {"engine": "copasi", "version": "4.46", "algorithm": "lsoda"},
+        "recipe": [{"time_span": "0-24.0"}, {"time_span": "0-24.0"}],
+        "assumptions": [{
+            "description": "the doses are the salt", "chosen": "x 129.16/165.62",
+            "basis": "the model's default equals 500 mg as free base", "load_bearing": True,
+            "alternatives": ["take the dose as stated"],
+        }],
+        "non_reconstructable": ["one event"],
+    })
+    assert "origin: author-supplied" in page
+    assert "runs: 2 over 0-24.0" in page
+    assert "the doses are the salt [load-bearing]" in page
+    assert "alternatives: take the dose as stated" in page
+    assert "NOT RECONSTRUCTABLE" in page

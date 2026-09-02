@@ -66,7 +66,7 @@ from .presubmission import (
     render_presubmission_human,
 )
 from .query import ReprolithQuery
-from .render import render_human
+from .render import render_bundle_human, render_dossier_human, render_human
 
 # render_human derives its text from the certificate content and never reads the run block, so a
 # placeholder is correct here: run metadata is deliberately excluded from stored content (it is not
@@ -314,20 +314,25 @@ def _cmd_certificates_for(query: ReprolithQuery, args: argparse.Namespace) -> in
 
 
 def _cmd_dossier(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """What Reprolith read out of one paper's artifact."""
     view = query.dossier(args.accession)
     if view is None:
         print(f"no dossier for accession: {args.accession}", file=sys.stderr)
         return 1
-    _print_json(view)
+    # Ninety-five equations and thirty-seven values deep on the metformin entry: a shape for a
+    # program to read, printed at a person whatever they asked for. The gaps — the part a reader
+    # is actually looking for — were the last thing in it.
+    _print_json(view) if args.json else print(render_dossier_human(view))
     return 0
 
 
 def _cmd_bundle(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """The reconstruction: where its model came from, and what Reprolith had to assume."""
     view = query.bundle(args.accession)
     if view is None:
         print(f"no bundle for accession: {args.accession}", file=sys.stderr)
         return 1
-    _print_json(view)
+    _print_json(view) if args.json else print(render_bundle_human(view))
     return 0
 
 

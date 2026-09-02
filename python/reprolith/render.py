@@ -15,10 +15,11 @@ the claim it blocks.
 from __future__ import annotations
 
 import html
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 from .enums import ReproductionLevel, Verdict
+from .ingest import UNSTATED_UNIT
 from .model import Certificate, RunMetadata
 from .oracle import ReferenceKind
 
@@ -660,10 +661,114 @@ def render_registry(
     )
 
 
+def render_dossier_human(view: Mapping[str, Any]) -> str:
+    """What Reprolith read out of one paper's artifact, as a page a curator can check.
+
+    The dossier is the answer to "what did you understand of my model", and it was published only
+    as its own JSON — ninety-five equations and thirty-seven values deep for the metformin entry,
+    which is a shape for a program to read and not an answer for a person. This counts what is
+    there, says how much of it carries a unit and how much is quoted rather than inferred, and
+    then prints the gaps in full, because a gap is the part a reader is looking for.
+    """
+    lines = [f"DOSSIER — {view.get('entry', '(no entry)')}", ""]
+    for artifact in view.get("artifacts") or ():
+        validates = "validates" if artifact.get("validates") else "does not validate"
+        lines.append(
+            f"  artifact: {artifact.get('filename')} "
+            f"({artifact.get('detected_format')}, {validates})"
+        )
+    lines.append("")
+
+    lines.append("WHAT WAS EXTRACTED")
+    for name, key in (
+        ("state variables", "state_variables"),
+        ("parameters", "parameters"),
+        ("initial conditions", "initial_conditions"),
+        ("equations", "equations"),
+        ("claims", "claims"),
+    ):
+        items = view.get(key) or ()
+        # A unit is stated for some values and not others, and the count of each is the fact a
+        # reader wants — "37 parameters" says nothing about whether any of them can be rebuilt.
+        # `unit` is "unstated" when the artifact names none, which is a string and therefore
+        # truthy: counting it read thirteen values with no unit as thirteen that had one.
+        countable = [item for item in items if isinstance(item, Mapping) and "value" in item]
+        stated = sum(1 for item in countable if item.get("unit") not in (None, "", UNSTATED_UNIT))
+        detail = f" ({stated} of {len(countable)} with a stated unit)" if countable else ""
+        lines.append(f"  {name}: {len(items)}{detail}")
+    lines.append("")
+
+    gaps = view.get("gaps") or ()
+    lines.append(f"GAPS ({len(gaps)})")
+    if not gaps:
+        lines.append("  (none recorded)")
+    for gap in gaps:
+        # `carried_by_artifact` is the distinction the fix depends on: the artifact states it and
+        # the dossier cannot hold it, or nobody states it at all. Naming one as the other sends a
+        # reader to fix a file that is already correct.
+        where = (
+            "the artifact states it; the dossier cannot carry it"
+            if gap.get("carried_by_artifact") else "not stated by the artifact"
+        )
+        flag = " [load-bearing]" if gap.get("load_bearing") else ""
+        lines.append(f"  - {gap.get('element')}{flag}: {gap.get('detail')}")
+        lines.append(f"      {where}")
+    return "\n".join(lines)
+
+
+def render_bundle_human(view: Mapping[str, Any]) -> str:
+    """The reconstruction as a reader meets it: where the model came from, and what was assumed.
+
+    Its two load-bearing facts are the origin — an author's own file adopted, or a model rebuilt
+    from the dossier — and the assumptions Reprolith supplied where the paper left a gap. Both were
+    published only inside a JSON dump of every run in the recipe.
+    """
+    lines = [f"RECONSTRUCTION BUNDLE — {view.get('entry', '(no entry)')}", ""]
+    lines.append(f"  origin: {view.get('origin')}")
+    model = view.get("model") or {}
+    if model:
+        lines.append(f"  model: {model.get('filename')} ({model.get('detected_format')})")
+    pin = view.get("engine_pin") or {}
+    if pin:
+        algorithm = f" / {pin['algorithm']}" if pin.get("algorithm") else ""
+        lines.append(f"  engine pin: {pin.get('engine')} {pin.get('version')}{algorithm}")
+    recipe = view.get("recipe") or ()
+    spans = sorted({str(run.get("time_span")) for run in recipe if run.get("time_span")})
+    over = f" over {', '.join(spans)}" if spans else ""
+    lines.append(f"  runs: {len(recipe)}{over}")
+    if view.get("source_dossier"):
+        lines.append(f"  built from dossier: {view['source_dossier']}")
+    lines.append("")
+
+    assumptions = view.get("assumptions") or ()
+    lines.append(f"ASSUMPTIONS (supplied by Reprolith, not the paper) ({len(assumptions)})")
+    if not assumptions:
+        lines.append("  (none — nothing had to be filled in)")
+    for assumption in assumptions:
+        flag = " [load-bearing]" if assumption.get("load_bearing") else ""
+        lines.append(f"  - {assumption.get('description')}{flag}")
+        lines.append(f"      chosen: {assumption.get('chosen')}")
+        lines.append(f"      basis: {assumption.get('basis')}")
+        alternatives = assumption.get("alternatives") or ()
+        if alternatives:
+            lines.append(f"      alternatives: {', '.join(alternatives)}")
+
+    for name, key in (("NOT RECONSTRUCTABLE", "non_reconstructable"), ("MISMATCHES", "mismatches")):
+        items = view.get(key) or ()
+        if items:
+            lines.append("")
+            lines.append(name)
+            for item in items:
+                lines.append(f"  - {item}")
+    return "\n".join(lines)
+
+
 __all__ = [
     "claim_counts",
     "gap_items",
     "render_badge",
+    "render_bundle_human",
+    "render_dossier_human",
     "render_human",
     "render_machine",
     "render_registry",

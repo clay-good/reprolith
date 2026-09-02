@@ -233,10 +233,32 @@ def test_presubmission_unknown_digest_exits_nonzero(tmp_path, capsys):
 
 def test_dossier_and_bundle(tmp_path, capsys):
     repo, _ = _write_repo(tmp_path)
-    assert run(["--data-dir", str(repo), "dossier", "ACC1"]) == 0
+    assert run(["--data-dir", str(repo), "dossier", "ACC1", "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["kind"] == "dossiers"
-    assert run(["--data-dir", str(repo), "bundle", "ACC1"]) == 0
+    assert run(["--data-dir", str(repo), "bundle", "ACC1", "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["kind"] == "bundles"
+
+
+def test_dossier_and_bundle_read_as_pages_and_not_as_dumps(tmp_path, capsys):
+    """Both printed their JSON whatever was asked, so `--json` changed nothing on either.
+
+    The metformin dossier is ninety-five equations and thirty-seven values deep — a shape for a
+    program to read, put in front of a person, with the gaps they are looking for at the end of it.
+    """
+    repo, _ = _write_repo(tmp_path)
+    assert run(["--data-dir", str(repo), "dossier", "ACC1"]) == 0
+    printed = capsys.readouterr().out
+    assert printed.startswith("DOSSIER — ") and "WHAT WAS EXTRACTED" in printed
+    assert "GAPS" in printed
+    with pytest.raises(json.JSONDecodeError):
+        json.loads(printed)
+
+    assert run(["--data-dir", str(repo), "bundle", "ACC1"]) == 0
+    printed = capsys.readouterr().out
+    assert printed.startswith("RECONSTRUCTION BUNDLE — ")
+    assert "origin:" in printed and "ASSUMPTIONS" in printed
+    with pytest.raises(json.JSONDecodeError):
+        json.loads(printed)
 
 
 def test_dossier_unknown_accession_exits_nonzero(tmp_path, capsys):

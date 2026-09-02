@@ -3464,6 +3464,13 @@ covered by its own tests, with no surface calling it. Both halves of the defect 
 this repository keeps finding — a check, or a rendering, that exists everywhere except where a
 reader would meet it.
 
+`dossier` and `bundle` were the same, and had no renderer at all. The metformin dossier is
+ninety-five equations and thirty-seven values deep, printed at a person, with the gaps they are
+looking for at the end of it. Both read as pages now, and writing the dossier's own summary line
+reproduced the defect it summarizes: `unit` is the string `"unstated"` when the artifact names
+none, and a string is truthy, so the first version counted thirteen values with no unit as thirteen
+that had one — on the entry whose own gap report says "13 of 37 extracted values state no unit".
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

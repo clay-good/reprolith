@@ -255,6 +255,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_manuscript_reference_values.py"],
     ),
     (
+        "the dossier page counts the word 'unstated' as a stated unit",
+        "render.py",
+        (
+            '        stated = sum(1 for item in countable if item.get("unit") not in (None, "", UNSTATED_UNIT))',
+            '        stated = sum(1 for item in countable if item.get("unit"))',
+        ),
+        ["tests/test_render.py"],
+    ),
+    (
         "the author-facing report is served to its author as a machine view",
         "cli.py",
         (
