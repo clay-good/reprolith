@@ -51,6 +51,42 @@ def test_the_templates_write_files_the_checks_can_read(tmp_path, capsys) -> None
     assert "not compared" in capsys.readouterr().out
 
 
+def test_an_unedited_proposal_is_reported_as_unfinished_not_as_a_failure(capsys, tmp_path) -> None:
+    """The state a curator's file is in first, at the surface they see it on.
+
+    Both proposals leave the pairing to the reader — `params-propose` the model element,
+    `claims-propose` the model output — and running one straight into the check it feeds is the
+    first thing anybody does. Each of those checks answered with a confident accusation until
+    today: 169 lines of `MISMATCH: the model declares no parameter ''`, and a candidate from a
+    "Tmax, h" column reported as being in the wrong unit for the peak column it never named.
+
+    Held here as well as in the unit tests, because what a curator meets is the message, not the
+    function.
+    """
+    tables = str(_REPO / "datasets" / "manuscripts" / "BIOMD0000001027_tables.json")
+    mouse = str(_WORKED / "Zake2021_Metformin_Mice_PO.xml")
+
+    parameters = tmp_path / "proposed_parameters.json"
+    assert run(["params-propose", "--tables", tables, "--out", str(parameters)]) == 0
+    capsys.readouterr()
+    assert run(["params-check", "--model", mouse, "--parameters", str(parameters)]) == 0
+    printed = capsys.readouterr().out
+    assert "MISMATCH" not in printed
+    assert "names no model element yet" in printed
+
+    candidates = tmp_path / "candidates.json"
+    assert run(["claims-propose", "--tables", tables, "--out", str(candidates)]) == 0
+    capsys.readouterr()
+    assert run([
+        "claims-check", "--claims", str(candidates), "--tables", tables, "--model", mouse,
+    ]) == 0
+    printed = capsys.readouterr().out
+    assert "NOT FOUND" not in printed and "ANOTHER UNIT" not in printed
+    # The rows a curator has not paired yet say which half is missing, in the file's own terms.
+    assert "names no model output yet" in printed
+    assert "states no metric" in printed
+
+
 def test_the_archive_check_finds_exactly_what_the_export_said_it_could_not_write(capsys) -> None:
     """Two sides of one fact, reached by different code.
 
