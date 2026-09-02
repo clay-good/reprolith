@@ -218,6 +218,8 @@ reprolith bundle <accession>         # the reconstruction the certificate was is
 reprolith certificates-for <id>      # every certificate digest for one paper, newest first
 reprolith self-validation            # the blind track record, per class and overall
 reprolith corroboration              # what a second engine said — and where none was asked
+reprolith select-claims <accession> \ # which claims to reproduce on a budget you can afford
+  --budget <n>
 reprolith export <accession> \       # the reconstruction as a runnable COMBINE archive
   --model <model.xml> --out <out.omex>
 reprolith archive-check <file.omex> \ # what a reproducer would find in your archive

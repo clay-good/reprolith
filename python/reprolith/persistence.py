@@ -221,6 +221,7 @@ def dossier_from_dict(record: dict[str, Any]) -> Dossier:
                 targetable=c["targetable"],
                 reference_kind=ReferenceKind(c["reference_kind"]) if c["reference_kind"] else None,
                 reference_data=tuple(c["reference_data"]),
+                footprint=frozenset(c.get("footprint", ())),
             )
             for c in record["claims"]
         ),

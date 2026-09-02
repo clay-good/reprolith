@@ -3607,6 +3607,63 @@ which thirty-one entries were seeded (`scripts/survey_candidate_papers.py`,
 `datasets/manuscripts/candidate_survey.json`, read by a test that also fails if a candidate with a
 results table ever stops being named).
 
+## Which claims to reproduce, when the budget will not cover them all
+
+A sweep for greedy subset selection — anywhere the engine picks some of a larger candidate pool —
+found that the engine does not select at all. `certify_model` and its five siblings check every
+claim they are handed; `Dossier.targetable_claims` filters by targetability, not by budget; the
+catalog's queue and the verification queue *order* their pools and truncate neither. The only
+truncations in the package are five display strings, each of which prints an ellipsis. So the
+choosing happens outside the engine, by hand, when a claims dataset is written, and it had no
+surface at which to be explainable or contestable.
+
+That is the finding, and it is worse than a greedy implementation would be, because an implicit
+selection cannot be audited. `reprolith.selection` is the surface. `select_greedily` is the
+baseline — rank by value per unit cost, read down the list — which is the shape every ad-hoc
+"which claims can we afford" decision reduces to. `select_jointly` scores the **set**: the sum of
+its items' worth, less a penalty for the evidence they share, where two items overlap in
+proportion to the Jaccard ratio of their footprints — the parameters, model components, and
+upstream assumptions each one's verdict rests on. The penalty for a pair is charged against the
+cheaper one, so a pair of duplicates keeps the better claim's evidence and cancels the other's.
+
+The case it exists for, and the test that pins it: a paper whose three highest-scoring claims are
+three panels of one figure — the same absorption/elimination fit shown at three doses. Greedy takes
+all three and buys three of the model's seven components. The joint search keeps one panel and
+spends the rest of the budget on the peripheral compartment and the dosing table, scoring higher on
+the objective and covering more of the model. Two structural choices are one-directional on
+purpose. An empty footprint means *not characterized* and is charged no overlap, so the objective
+never invents a redundancy and drops a claim on the strength of it; and above two hundred thousand
+affordable subsets the exhaustive search hands over to a local search **seeded from greedy**, which
+only ever moves uphill, so the heuristic path cannot return an answer worse than the baseline it
+replaces.
+
+Mutation-testing the suite is what shaped it. Deleting the penalty, the empty-footprint rule, the
+cost tie-break, and greedy's own cost-awareness each turned a test red. Deleting the local search's
+*swap* neighbourhood did not — the first large-pool test could reach the better set by dropping and
+adding, so it never exercised the move it was written for. It was replaced by a pool where every
+single drop lowers the score and the budget is full, which is the only regime where a swap is the
+only way out.
+
+Footprints are supplied, never derived. A claim's `quantity` and `conditions` are free text, and
+matching parameter names out of them would fabricate a dependency graph and then select against it.
+A `DossierClaim` records its footprint the way it records its source location, `dossier_from_dict`
+carries it back — a field a writer emits and a reader drops is the defect shape this package has
+tripped over often enough to test for by reflex — and the field is omitted from `to_dict` when
+empty, so every published dossier keeps its bytes and its digest. `reprolith select-claims` and the
+`select_claims` MCP tool publish the answer, each carrying the one-at-a-time ranking beside it: a
+selection nobody can compare against the obvious alternative is a decision with no stated reason.
+
+What remains is the input. No dossier in the repository records a footprint, so every selection the
+engine can make today reports, in its own `limits` field, that it optimized nothing — honest, and
+useless. The corpus makes it starker: of the two committed dossiers one holds a single claim and
+the other holds none, which is the same wall finding 2 names. The proposal in
+`openspec/changes/budgeted-claim-selection` is the way through it, and its first half does not wait
+on the manuscript extractor: for an SBML-backed dossier the *model* states which parameters a
+claim's target depends on, and a footprint read off a rate law is a measurement rather than a guess.
+Its second half is the reason budgets need a certificate change at all — under a budget, a claim
+absent from a certificate may be one nobody ran, and that cannot share a representation with a
+claim the paper never made.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

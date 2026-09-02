@@ -157,6 +157,28 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "select_claims",
+        "description": (
+            "Which of a paper's claims to reproduce within a budget, when the budget will not "
+            "cover them all. Maximizes independent evidential value — item value less the "
+            "overlap between claims resting on the same parameters, model components, and "
+            "upstream assumptions — and reports the plain one-at-a-time ranking beside it. A "
+            "plan, not a verdict: no model is run and no certificate is issued."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "accession": {"type": "string"},
+                "budget": {
+                    "type": "number",
+                    "description": "reproduction effort available; claims cost 1.0 each unless "
+                                   "stated, so a whole number is a claim count",
+                },
+            },
+            "required": ["accession", "budget"],
+        },
+    },
+    {
         "name": "lint",
         "description": (
             "Deterministic linter: run a supplied SBML model under the pinned engine and judge "
@@ -709,6 +731,11 @@ _MAX_LINT_NODES = 14
 # integral of its propensities over the duration, so a large one is unbounded work even with the
 # trajectory count capped, and the stdio loop is single-threaded.
 _MAX_LINT_DURATION = 1.0e6
+# A selection's work is bounded by the *dossier's* claim count, which is repository data and not
+# the caller's to inflate: past two hundred thousand affordable subsets the selector abandons the
+# exhaustive search for a polynomial one. So this ceiling is not a work bound — it refuses a budget
+# that is nonsense on its face, the way a negative one is, rather than letting it read as a plan.
+_MAX_SELECTION_BUDGET = 1.0e6
 # A lease is a coordination hint an agent holds while it works; a week is far past any run.
 _MAX_LEASE_SECONDS = 7 * 24 * 3600.0
 
@@ -797,6 +824,11 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return query.dossier(arguments["accession"])
     if name == "bundle":
         return query.bundle(arguments["accession"])
+    if name == "select_claims":
+        budget = float(arguments["budget"])
+        if not (budget > 0.0) or budget > _MAX_SELECTION_BUDGET:
+            raise ValueError(f"budget must be positive and at most {_MAX_SELECTION_BUDGET:g}")
+        return query.claim_selection(arguments["accession"], budget=budget)
     if name == "lint":
         from .linter import lint_curve
 

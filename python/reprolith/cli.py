@@ -370,6 +370,53 @@ def _cmd_dossier(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_select_claims(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Which claims a budget should be spent reproducing — a plan, never a verdict."""
+    if args.budget <= 0:
+        print("budget must be positive", file=sys.stderr)
+        return 1
+    view = query.claim_selection(args.accession, budget=args.budget)
+    if view is None:
+        print(f"no dossier for accession: {args.accession}", file=sys.stderr)
+        return 1
+    if args.json:
+        _print_json(view)
+        return 0
+    selected = view["selection"]
+    print(f"SELECTED {len(selected['chosen'])} OF {view['candidates']} TARGETABLE CLAIMS")
+    for claim_id in selected["chosen"]:
+        print(f"  {claim_id}")
+    if not selected["chosen"]:
+        # "the budget affords no claim" would be false for the common case, which is a dossier
+        # with no targetable claim in it — a bigger budget fixes one of these and not the other.
+        reason = "nothing to select from" if not view["candidates"] else "the budget affords none"
+        print(f"  (none — {reason})")
+    print(
+        f"  independent evidential value: {selected['score']:.4g} "
+        f"(gross {selected['gross_value']:.4g} less {selected['overlap_penalty']:.4g} overlap)"
+    )
+    print(f"  spends {selected['cost']:.4g} of a {view['budget']:.4g} budget")
+    print(f"  witnesses {len(selected['covered'])} distinct model element(s)")
+    # What the ranking would have bought instead is half the finding: a selection nobody can
+    # compare against the obvious alternative is a decision with no stated reason.
+    baseline = view["greedy_baseline"]
+    if view["differs_from_greedy"]:
+        print(f"  ranking one at a time would have taken: {', '.join(baseline['chosen'])}")
+        print(
+            f"  and scored {baseline['score']:.4g} over "
+            f"{len(baseline['covered'])} distinct model element(s)"
+        )
+    else:
+        print("  ranking one at a time would have chosen the same set")
+    for limit in view["limits"]:
+        print(f"  limit: {limit}")
+    if view["unanchored_footprint_elements"]:
+        named = ", ".join(view["unanchored_footprint_elements"])
+        print(f"  footprint names this dossier records nothing for: {named}")
+    print(f"  note: {view['note']}")
+    return 0
+
+
 def _cmd_bundle(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """The reconstruction: where its model came from, and what Reprolith had to assume."""
     view = query.bundle(args.accession)
@@ -1385,7 +1432,8 @@ def build_parser() -> argparse.ArgumentParser:
         ),
         epilog=(
             "reading this repository: catalog, backlog, self-validation, corroboration, status, "
-            "certificate, verdict, gaps, presubmission, certificates-for, dossier, bundle\n"
+            "certificate, verdict, gaps, presubmission, certificates-for, dossier, bundle, "
+            "select-claims\n"
             "checking your own files: archive-check, claims-template, claims-propose, "
             "claims-check, params-template, params-propose, params-check, figure-template, "
             "figure-check\n"
@@ -1481,6 +1529,19 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("accession", help="the entry accession")
     add_json(p)
     p.set_defaults(func=_cmd_bundle)
+
+    p = sub.add_parser(
+        "select-claims",
+        help="which claims to reproduce within a budget, and what a plain ranking would take",
+    )
+    p.add_argument("accession", help="the entry accession")
+    p.add_argument(
+        "--budget", type=float, required=True,
+        help="how much reproduction effort is available, in the same units as the claims' costs "
+             "(claims cost 1.0 each unless stated, so a whole number is a claim count)",
+    )
+    add_json(p)
+    p.set_defaults(func=_cmd_select_claims)
 
     p = sub.add_parser(
         "archive-check",

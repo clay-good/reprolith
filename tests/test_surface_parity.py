@@ -28,6 +28,7 @@ _PAIRS = {
     "backlog": ("backlog_health", {}),
     "self-validation": ("self_validation", {}),
     "corroboration": ("corroboration", {}),
+    "select-claims": ("select_claims", {"accession": "ACC1", "budget": 2}),
     "certificate": ("certificate", {"digest": "{digest}"}),
     "verdict": ("verdict", {"digest": "{digest}"}),
     "gaps": ("gaps", {"digest": "{digest}"}),
@@ -68,7 +69,15 @@ def test_the_terminal_emits_what_the_tool_returns(command, tmp_path, capsys) -> 
         digest if value == "{digest}" else value
         for key, value in arguments.items() if key in ("digest", "accession")
     ]
-    argv = ["--data-dir", str(repo), command, *positional, "--json"]
+    # Everything the command takes that is not its positional, in the flag spelling the terminal
+    # uses. Without this the one command carrying a required option could not be paired at all,
+    # and leaving it out of the table is how a surface drifts unnoticed.
+    flags = [
+        token
+        for key, value in arguments.items() if key not in ("digest", "accession")
+        for token in (f"--{key.replace('_', '-')}", str(value))
+    ]
+    argv = ["--data-dir", str(repo), command, *positional, *flags, "--json"]
     assert run(argv) == 0, command
     printed = json.loads(capsys.readouterr().out)
 

@@ -16,18 +16,49 @@ from reprolith import (
     Assumption,
     Catalog,
     ClaimAssessment,
+    Dossier,
+    DossierClaim,
     EnginePin,
     GroundTruth,
     Identifiers,
     ModelClass,
     OverallVerdict,
     PaperIdentity,
+    Parameter,
     Verdict,
     build_certificate,
     certificate_digest,
 )
 from reprolith.cli import run
 from reprolith.mcp_server import dispatch_tool, load_repository
+
+
+def _dossier() -> Dossier:
+    """One paper's extracted structure, with two claims and the machinery each rests on.
+
+    Real rather than a stub because `select-claims` reads the claims out of it, and the two
+    footprints overlap in one element — enough that a selection over it has something to say
+    rather than reporting that it optimized nothing.
+    """
+    def claim(claim_id: str, footprint: frozenset) -> DossierClaim:
+        return DossierClaim(
+            id=claim_id, quantity="plasma concentration", conditions="single oral dose",
+            source_location=f"Fig {claim_id}", targetable=True, footprint=footprint,
+        )
+
+    return Dossier(
+        entry="ACC1",
+        state_variables=("central",),
+        parameters=(
+            Parameter(name="k_el", value=0.3, unit="1/h", source_location="Table 1"),
+            Parameter(name="V_central", value=12.0, unit="L", source_location="Table 1"),
+            Parameter(name="Q_periph", value=2.0, unit="L/h", source_location="Table 1"),
+        ),
+        claims=(
+            claim("AUC", frozenset({"k_el", "V_central"})),
+            claim("Cmax", frozenset({"k_el", "Q_periph"})),
+        ),
+    )
 
 
 def _write_repo(tmp_path: Path) -> tuple[Path, str]:
@@ -61,11 +92,17 @@ def _write_repo(tmp_path: Path) -> tuple[Path, str]:
         json.dumps(cert.content(), indent=2, sort_keys=True), encoding="utf-8"
     )
     # A dossier and a reconstruction bundle keyed by the entry accession, as the milestone writes.
-    for kind in ("dossiers", "bundles"):
-        (tmp_path / kind).mkdir()
-        (tmp_path / kind / "ACC1.json").write_text(
-            json.dumps({"accession": "ACC1", "kind": kind}, sort_keys=True), encoding="utf-8"
-        )
+    # The dossier is a real one rather than a stub: `select-claims` reads its claims, and a
+    # fixture the surfaces cannot parse would have left the one command carrying a required option
+    # unpaired — the surface most likely to drift, held by the weakest fixture.
+    (tmp_path / "dossiers").mkdir()
+    (tmp_path / "dossiers" / "ACC1.json").write_text(
+        json.dumps(_dossier().to_dict(), indent=2, sort_keys=True), encoding="utf-8"
+    )
+    (tmp_path / "bundles").mkdir()
+    (tmp_path / "bundles" / "ACC1.json").write_text(
+        json.dumps({"accession": "ACC1", "kind": "bundles"}, sort_keys=True), encoding="utf-8"
+    )
     return tmp_path, digest
 
 
@@ -234,7 +271,8 @@ def test_presubmission_unknown_digest_exits_nonzero(tmp_path, capsys):
 def test_dossier_and_bundle(tmp_path, capsys):
     repo, _ = _write_repo(tmp_path)
     assert run(["--data-dir", str(repo), "dossier", "ACC1", "--json"]) == 0
-    assert json.loads(capsys.readouterr().out)["kind"] == "dossiers"
+    # The stored dossier is a real one now, so this reads its content rather than a stub marker.
+    assert json.loads(capsys.readouterr().out)["entry"] == "ACC1"
     assert run(["--data-dir", str(repo), "bundle", "ACC1", "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["kind"] == "bundles"
 
@@ -662,7 +700,8 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     on_the_query_surface = set(subcommands) - file_based
     assert on_the_query_surface == {
         "backlog", "bundle", "catalog", "certificate", "certificates-for", "corroboration",
-        "dossier", "gaps", "presubmission", "self-validation", "status", "verdict",
+        "dossier", "gaps", "presubmission", "select-claims", "self-validation", "status",
+        "verdict",
     }
 
 

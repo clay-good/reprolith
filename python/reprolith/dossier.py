@@ -230,15 +230,25 @@ class DossierClaim:
     targetable: bool = True
     reference_kind: ReferenceKind | None = None
     reference_data: tuple[float, ...] = ()
+    #: The parameters, model components, and upstream assumptions this claim's verdict rests on —
+    #: what two claims can *share*, and so the only thing that makes a set of claims more or less
+    #: independent evidence than the sum of its members
+    #: (see :mod:`reprolith.selection`). Empty means **not characterized**, which is why it is not
+    #: derived from the claim's own free text: matching parameter names out of a ``quantity``
+    #: string would invent a dependency and then let a selection be defended by it. Naming what a
+    #: claim depends on is a modelling judgment, recorded here like every other extracted element.
+    footprint: frozenset[str] = frozenset()
 
     def __post_init__(self) -> None:
         if not self.id.strip():
             raise ValueError("claim id is required")
         if not self.source_location.strip():
             raise ValueError("every claim must cite its source location")
+        if any(not element.strip() for element in self.footprint):
+            raise ValueError(f"{self.id}: a footprint element must name something")
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        record: dict[str, Any] = {
             "id": self.id,
             "quantity": self.quantity,
             "conditions": self.conditions,
@@ -247,6 +257,12 @@ class DossierClaim:
             "reference_kind": self.reference_kind.value if self.reference_kind else None,
             "reference_data": list(self.reference_data),
         }
+        if self.footprint:
+            # Omitted when empty so every dossier written before claims carried a footprint keeps
+            # its exact bytes, and with them its content digest — the same rule an equation's kind
+            # and a gap's `carried_by_artifact` already follow.
+            record["footprint"] = sorted(self.footprint)
+        return record
 
 
 @dataclass(frozen=True)
@@ -314,6 +330,40 @@ class Dossier:
     def load_bearing_gaps(self) -> tuple[Gap, ...]:
         """Gaps whose closure plausibly changes a claim's outcome."""
         return tuple(g for g in self.gaps if g.load_bearing)
+
+    def footprint_vocabulary(self) -> frozenset[str]:
+        """Every element name a claim's footprint could anchor to in *this* dossier.
+
+        Parameters, initial conditions, state variables, equation targets, and the gaps
+        reconstruction will have to close — the four kinds of thing a claim's verdict rests on that
+        a dossier actually records.
+        """
+        return frozenset(
+            [p.name for p in self.parameters]
+            + [p.name for p in self.initial_conditions]
+            + list(self.state_variables)
+            + [e.target for e in self.equations]
+            + [g.element for g in self.gaps]
+        )
+
+    def unanchored_footprint_elements(self) -> tuple[str, ...]:
+        """Footprint names this dossier records nothing for — reported, never refused.
+
+        A dossier adopted from a shipped model file keeps its structure in the artifact rather than
+        in extracted equations, so a claim there legitimately rests on a reaction or a compartment
+        the dossier never names. Refusing those would make footprints unusable for exactly the
+        adopt-and-verify entries that are most of the catalog. They are still worth seeing: an
+        unanchored name is one nothing in the dossier can corroborate, so a reader can tell a
+        footprint anchored in recorded structure from one that is a bare assertion.
+        """
+        vocabulary = self.footprint_vocabulary()
+        unanchored = {
+            element
+            for claim in self.claims
+            for element in claim.footprint
+            if element not in vocabulary
+        }
+        return tuple(sorted(unanchored))
 
     def to_dict(self) -> dict[str, Any]:
         record: dict[str, Any] = {

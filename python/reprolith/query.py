@@ -26,8 +26,10 @@ from .catalog import Catalog, CatalogEntry, Identifiers
 from .determinism import certificate_digest
 from .enums import LifecycleState, ModelClass, ReproductionLevel, Verdict
 from .model import Certificate
+from .persistence import dossier_from_dict
 from .presubmission import presubmission_report
 from .render import claim_counts, gap_items
+from .selection import claim_selection_report
 from .supersession import CertificateLedger
 
 
@@ -314,6 +316,29 @@ class ReprolithQuery:
     def bundle(self, accession: str) -> dict[str, Any] | None:
         """The reconstruction bundle for an entry accession — the model, recipe, and assumptions."""
         return self._bundles.get(accession)
+
+    def claim_selection(self, accession: str, *, budget: float) -> dict[str, Any] | None:
+        """Which of a paper's claims a budget of ``budget`` should be spent reproducing.
+
+        A plan, not a verdict: nothing is run and no certificate is touched. The report carries the
+        greedy baseline beside the chosen set, and says plainly when the dossier records nothing
+        for the objective to act on — which is true of every dossier in the repository today
+        (spec: ``claim-selection``).
+        """
+        record = self._dossiers.get(accession)
+        if record is None:
+            return None
+        try:
+            dossier = dossier_from_dict(record)
+        except (KeyError, TypeError, ValueError) as unreadable:
+            # Every other read here hands back the stored JSON untouched; this one is the first to
+            # rebuild an object from it, so it is the first that a malformed stored dossier can
+            # break — and a KeyError escaping to the terminal is a traceback where the repository
+            # promises a message.
+            raise ValueError(
+                f"the stored dossier for {accession} cannot be read as a dossier: {unreadable}"
+            ) from unreadable
+        return claim_selection_report(dossier, budget=budget)
 
     # --- certificates / verdicts (scope always travels) ----------------------------
 

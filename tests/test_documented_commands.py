@@ -69,7 +69,9 @@ def _lines(text: str) -> list[str]:
         line = line.replace("|", " ")
         # Optional arguments are shown in square brackets; a reader types one or the other.
         line = re.sub(r"\[[^\]]*\]", " ", line)
-        found.append(_PLACEHOLDER.sub("X", line).strip())
+        # "1" rather than a letter: a placeholder can stand in for a number as well as a path
+        # (`--budget <n>`), and a non-numeric stand-in failed a documented line that parses fine.
+        found.append(_PLACEHOLDER.sub("1", line).strip())
     return found
 
 
