@@ -45,6 +45,57 @@ REPO = Path(__file__).resolve().parents[1]
 #: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
+        "a budgeted certificate takes the clean pass while claims went unattempted",
+        "certificate.py",
+        (
+            "        if qualified or load_bearing or awaiting or unattempted:",
+            "        if qualified or load_bearing or awaiting:",
+        ),
+        ["tests/test_budgeted_certificate.py"],
+    ),
+    (
+        "a certificate both judges a claim and says it never attempted it",
+        "certificate.py",
+        ("    if selection is None:\n        return", "    return"),
+        ["tests/test_budgeted_certificate.py"],
+    ),
+    (
+        "a certificate's selection is left out of the content it is digested from",
+        "model.py",
+        (
+            '            **({} if self.selection is None else {"selection": self.selection.to_dict()}),',
+            "",
+        ),
+        ["tests/test_budgeted_certificate.py"],
+    ),
+    (
+        "a footprint reaches the selector without saying whether a walk or a person produced it",
+        "dossier.py",
+        ("        if self.footprint and self.footprint_origin is None:", "        if False:"),
+        ["tests/test_claim_selection.py"],
+    ),
+    (
+        "an LP bound is published at the machine's own last places",
+        "corroboration.py",
+        ("    distance = max(measured, _LP_NOISE_FLOOR)", "    distance = measured"),
+        ["tests/test_fba_corroboration.py"],
+    ),
+    (
+        "a partial SAT model is compared against a complete state",
+        "corroboration.py",
+        ("    if missing:", "    if False:"),
+        ["tests/test_logical_corroboration.py"],
+    ),
+    (
+        "the corroboration draws report the best measurement instead of the worst",
+        "corroboration.py",
+        (
+            "    distance = max(measure() for _ in range(draws))",
+            "    distance = min(measure() for _ in range(draws))",
+        ),
+        ["tests/test_corroboration.py"],
+    ),
+    (
         "the manuscript check reads a parameter the model's own math determines",
         "manuscript.py",
         ("            if parameter in computed:", "            if False:"),
@@ -355,8 +406,8 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         "a load-bearing assumption no claim was flagged for still certifies a clean pass",
         "certificate.py",
         (
-            "        if qualified or load_bearing or awaiting:",
-            "        if qualified:",
+            "        if qualified or load_bearing or awaiting or unattempted:",
+            "        if qualified or unattempted:",
         ),
         ["tests/test_certificate.py"],
     ),
@@ -397,13 +448,18 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_render.py"],
     ),
     (
+        # The branch moved to `query.corroboration_summary` when the terminal and the agent
+        # surface started answering from the same computation as the page. This entry went on
+        # naming render.py and reported STALE — which is the checker working, and nobody was
+        # running it: the registry, the CLI and MCP all read this one branch now, so the tests it
+        # is held by are the surface's rather than the renderer's alone.
         "the registry omits the classes no second engine ever checked",
-        "render.py",
+        "query.py",
         (
             "            unchecked.append(model_class)",
             "            pass",
         ),
-        ["tests/test_render.py"],
+        ["tests/test_corroboration_surface.py"],
     ),
     (
         "the verdict summary names the qualified claims and not what qualified them",
