@@ -3408,6 +3408,21 @@ declarations would be, by a factor of 100, and that reproducer is exactly who th
 The answer says how far off rather than only that something differs: `10^-9 mole * 3600*10^2 second
 / 10^-3 litre` is notation, and "100 times as large" is the finding.
 
+The paper's own heading is the third side of that triangle, and it was the last one unread. A
+curator who takes a value out of a µmol column and labels it nmol passes both the other checks —
+the number *is* printed where they say, and the model's unit is whatever it is. `claims-check` now
+compares each claim's stated unit against the heading of the column its metric names, in the table
+it cites, and only when exactly one column states that metric: a table with two, or none, is
+reported as unchecked rather than guessed at. All eighty committed claims are in the unit their own
+cited table prints.
+
+The same reading is what a candidate now carries out of `claims-propose`: the unit is in the
+heading — `Cmax, nmol/mL` — and dropping it left a curator with a bare number to go back to the
+paper for. Measuring that turned up a defect beside it: every table of that paper writes
+`Cmax, nmol/mL` except its Table 1, which writes `Cmax. nmol/mL`, and the metric reader split on
+the comma alone. Every candidate proposed from that table — the mouse oral-dose model's, one of the
+four entries certified here — carried no metric at all, while the unit beside it read cleanly.
+
 `archive-check` says the same thing one level up, where it is the run's own numbers that need a
 unit: an experiment running 0 to 30 is thirty of something, and only the model states which.
 
