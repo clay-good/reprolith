@@ -309,6 +309,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_cli.py"],
     ),
     (
+        "the public page publishes a verdict with no measurement behind it",
+        "render.py",
+        (
+            '            f\'<details class="claims"><summary>how close each claim came \'',
+            '            f\'<details class="claims" hidden><summary>\'',
+        ),
+        ["tests/test_render.py"],
+    ),
+    (
         "the human certificate publishes a pass with no measurement behind it",
         "render.py",
         (

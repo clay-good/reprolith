@@ -576,6 +576,27 @@ def render_registry(
             if gaps
             else ""
         )
+        # What each claim came in at, collapsed. The page published a verdict and a count of
+        # verdicts, and no measurement behind either: a reader could not tell a claim that landed
+        # at a tenth of its budget from one at nine tenths, which is the evidence for the word in
+        # the badge. The certificate carried it all along, and the terminal rendering prints it.
+        judged = "".join(
+            "<li>{claim}: {verdict}{measured}</li>".format(
+                claim=html.escape(a.claim_id),
+                verdict=html.escape(a.verdict.value),
+                measured=(
+                    f" — {html.escape(a.discrepancy.strip())}"
+                    if (a.discrepancy or "").strip() else ""
+                ),
+            )
+            for a in cert.assessments
+        )
+        judged_block = (
+            f'<details class="claims"><summary>how close each claim came '
+            f'({len(cert.assessments)})</summary><ul>{judged}</ul></details>'
+            if judged
+            else ""
+        )
         replaced_by = superseded.get(digest)
         superseded_block = (
             f'<p class="superseded">superseded — a later certificate replaced this one: '
@@ -594,6 +615,7 @@ def render_registry(
             f'{" · " + html.escape(ids) if ids else ""}</p>'
             f'<p class="verdict v-{verdict}">{verdict}</p>'
             f'<p class="counts">{html.escape(count_line) if count_line else "no evaluable claims"}</p>'
+            f'{judged_block}'
             f'{gap_block}'
             f'<p class="digest"><code>{html.escape(digest)}</code></p>'
             f"</article>"
@@ -617,6 +639,8 @@ def render_registry(
         ".entry h3{margin:.4rem 0}.meta{color:#666;font-size:.9rem;margin:.2rem 0}"
         ".verdict{font-weight:600}.v-reproduced{color:#3a3}.v-partially-reproduced{color:#a80}"
         ".v-not-reproduced{color:#c33}.v-blocked{color:#777}.counts{color:#444;font-size:.9rem}"
+        ".claims{margin:.4rem 0;font-size:.9rem}.claims summary{cursor:pointer;color:#456}"
+        ".claims ul{margin:.3rem 0 .3rem 1.2rem;color:#444}"
         ".gaps{margin:.4rem 0;font-size:.9rem}.gaps summary{cursor:pointer;color:#a80}"
         ".gaps ul{margin:.3rem 0 .3rem 1.2rem;color:#444}"
         ".digest{margin:.3rem 0 0;font-size:.75rem;color:#888;word-break:break-all}"

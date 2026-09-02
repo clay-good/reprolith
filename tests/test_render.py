@@ -687,3 +687,25 @@ def test_the_bundle_page_leads_with_the_origin_and_the_assumptions() -> None:
     assert "the doses are the salt [load-bearing]" in page
     assert "alternatives: take the dose as stated" in page
     assert "NOT RECONSTRUCTABLE" in page
+
+
+def test_the_public_page_shows_how_close_each_claim_came() -> None:
+    """The page published a verdict and a count of verdicts, and no measurement behind either.
+
+    A reader could not tell a claim that landed at a tenth of its budget from one at nine tenths —
+    which is the evidence for the word in the badge. The certificate has carried it since the
+    beginning, and the terminal rendering prints it.
+    """
+    from reprolith import render_registry
+
+    cert = _cert([
+        _claim(Verdict.REPRODUCED, cid="a", discrepancy="relative error 0.0107"),
+        _claim(Verdict.FAILED, cid="b", discrepancy="relative error 0.7475"),
+    ])
+    page = render_registry([("ode-pkpd", cert)])
+    assert "how close each claim came (2)" in page
+    assert "a: reproduced — relative error 0.0107" in page
+    assert "b: failed — relative error 0.7475" in page
+    # A claim with nothing measured says only its verdict, rather than an empty dash.
+    bare = render_registry([("ode-pkpd", _cert([_claim(Verdict.NOT_EVALUABLE, cid="c")]))])
+    assert "c: not-evaluable<" in bare
