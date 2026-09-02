@@ -286,6 +286,19 @@ are the same number. State the unit you published in and a difference is **refus
 compared — two numbers in different quantities mean nothing to each other in either direction, and
 the pair that agrees at a factor of a thousand is the one no output check downstream can catch.
 
+A claim's number gets the same question asked three ways, because three different things can be
+wrong about it. `claims-check` asks whether the cited table prints that number; with `--model` it
+asks whether the model reads that output in the unit the claim states; and against the table's own
+column heading it asks whether the *paper* states it in that unit — a value read out of a µmol
+column and labelled nmol passes the other two, since the number is printed and the model's unit is
+whatever it is. All eighty committed claims pass all three.
+
+Every deposit here fails one of those questions in a way worth naming: each metformin model
+declares its time unit as `multiplier="3600" scale="2"`, which SBML reads as **360000 seconds** —
+a hundred hours — while the paper's tables and the model's own shipped run are in hours. No
+certificate is wrong because of it, since nothing in the pipeline reads `timeUnits`; a reproducer
+rebuilding from the deposit's own declarations would be, by a factor of a hundred.
+
 `params-template` writes that pairing file out of the model, one row per settable value with the
 blanks left for the author — and never with a number in them, because a template carrying the
 model's own value would hand the check that value as the paper's and the comparison would agree by
