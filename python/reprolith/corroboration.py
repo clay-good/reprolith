@@ -27,6 +27,7 @@ from .engine import (
     simulate,
     simulate_with_roadrunner,
 )
+from .model import EnginePin
 from .oracle import normalized_curve_distance
 
 #: How far a raw distance is lifted before it is rounded up to a decade. Two: the measured
@@ -318,6 +319,19 @@ def corroborate_objective(sbml: str, *, rel_tol: float = 1e-6) -> EngineCorrobor
     return replace(result, stable=result.distance_bound() <= rel_tol, criterion=rel_tol)
 
 
+def _reprolith_build(pin: EnginePin) -> str:
+    """The build string for a side of the comparison that *is* Reprolith.
+
+    Not the package version. Every other engine here reports a version that moves when its code
+    does — COPASI's, libRoadRunner's, scipy's, COBRApy's — and Reprolith's has been 0.0.1
+    throughout, so a record naming it says nothing about which code produced the agreement and
+    cannot be told from one written a hundred commits ago. The pin's algorithm string is what
+    carries the path taken *and* the revision of the code that took it, which is the same thing a
+    certificate's freshness check reads.
+    """
+    return pin.algorithm or pin.version
+
+
 #: The independent Boolean-network library the logical class is corroborated against. Named here
 #: for the same reason the others are: the record is keyed by these strings.
 CANA_ENGINE = "cana"
@@ -370,20 +384,43 @@ def corroborate_attractors(rules: Mapping[str, str]) -> EngineCorroboration:
     the large signalling models are corroborated on their fixed points instead
     (:func:`corroborate_fixed_points`).
     """
-    from .logical import parse_boolean_network, solver_pin
+    from .logical import parse_boolean_network, solver_pin_for
 
     mine = parse_boolean_network(dict(rules)).attractors()
     signature = (len(mine), tuple(sorted(len(cycle) for cycle in mine)))
     theirs, cana_version = _cana_signature(rules)
-    pin = solver_pin()
+    pin = solver_pin_for(nodes=len(rules))
     return EngineCorroboration(
         quantity=f"{len(rules)}-node synchronous attractor set",
         engines=(pin.engine, CANA_ENGINE),
         distance=0.0 if signature == theirs else 1.0,
         stable=signature == theirs,
-        versions=(pin.version, cana_version),
+        versions=(_reprolith_build(pin), cana_version),
         comparison="exact-match",
     )
+
+
+def _complete_assignment(
+    solution: Mapping[object, object], rules: Mapping[str, str]
+) -> frozenset[tuple[str, int]]:
+    """One satisfying model as a full state, refusing a partial one rather than comparing it.
+
+    A DPLL search returns the assignment it needed, which may leave a variable undecided. Such a
+    model is a *set* of states, not one, and silently comparing it against a complete state makes
+    the two sides differ for a reason that has nothing to do with the network — publishing "these
+    steady states are solver-dependent" about a model whose steady states both tools agree on.
+    """
+    assignment = {str(symbol): int(bool(value)) for symbol, value in solution.items()}
+    missing = sorted(set(rules) - set(assignment))
+    if missing:
+        raise ValueError(
+            "the independent solver returned a model that leaves "
+            f"{len(missing)} node(s) undecided ({', '.join(missing[:5])}"
+            f"{'…' if len(missing) > 5 else ''}), so it describes a set of states rather than "
+            "one; comparing it against a complete state would report a disagreement that is "
+            "about the answer's shape and not about the network"
+        )
+    return frozenset(assignment.items())
 
 
 def corroborate_fixed_points(rules: Mapping[str, str]) -> EngineCorroboration:
@@ -395,19 +432,22 @@ def corroborate_fixed_points(rules: Mapping[str, str]) -> EngineCorroboration:
     the answer a 60-node model's certificate rests on, where 2ⁿ enumeration is impossible for
     either of them.
 
-    The state sets are compared rather than their sizes because both sides return states over the
-    same variables here: unlike CANA, sympy is given the rules as written and reduces nothing.
+    The state sets are compared rather than their sizes, which means both sides have to describe
+    the same variables — checked rather than assumed, because a satisfiability search may return a
+    *partial* model, leaving a variable its search never had to decide. Compared against a complete
+    state that is unequal, and the artifact would then report a model's certified steady states as
+    solver-dependent when what differed was the shape of one answer. It is refused by name
+    instead: a disagreement Reprolith cannot attribute to the model is not a finding about the
+    model.
 
     Needs the ``sat`` extra (z3, Reprolith's own path) and the ``corroborate`` extra (sympy).
     """
     import sympy
 
-    from .logical import parse_boolean_network, solver_pin
+    from .logical import parse_boolean_network, solver_pin_for
 
-    mine = {
-        frozenset(state.items())
-        for state in parse_boolean_network(dict(rules)).fixed_points()
-    }
+    network = parse_boolean_network(dict(rules))
+    mine = {frozenset(state.items()) for state in network.fixed_points()}
     symbols = {node: sympy.Symbol(node) for node in rules}
     condition = sympy.And(*[
         sympy.Equivalent(symbols[node], sympy.sympify(rule.replace("!", "~"), locals=symbols))
@@ -417,14 +457,17 @@ def corroborate_fixed_points(rules: Mapping[str, str]) -> EngineCorroboration:
     for solution in sympy.logic.inference.satisfiable(condition, all_models=True):
         if not solution:
             continue  # sympy yields a single falsey model when there is no solution at all
-        theirs.add(frozenset((str(sym), int(bool(value))) for sym, value in solution.items()))
-    pin = solver_pin(sat=True)
+        theirs.add(_complete_assignment(solution, rules))
+    # The path that actually ran, read off the network's size rather than asserted: below the
+    # enumeration bound `fixed_points` walks the state space and never calls z3, and a pin naming
+    # z3 over a number z3 did not produce is the defect `solver_pin_for` exists to prevent.
+    pin = solver_pin_for(nodes=len(rules))
     return EngineCorroboration(
         quantity=f"{len(rules)}-node fixed-point set",
         engines=(pin.engine, SYMPY_ENGINE),
         distance=0.0 if mine == theirs else 1.0,
         stable=mine == theirs,
-        versions=(pin.version, str(sympy.__version__)),
+        versions=(_reprolith_build(pin), str(sympy.__version__)),
         comparison="exact-match",
     )
 

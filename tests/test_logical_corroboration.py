@@ -106,3 +106,44 @@ def test_the_record_names_the_builds_it_was_measured_on() -> None:
     for accession, row in _committed().items():
         assert row["comparison"] == "exact-match", accession
         assert all(version for version in row["engine_versions"]), accession
+        # Reprolith's own side names the code that ran, not a package version that never moves —
+        # the same thing a certificate's freshness check reads.
+        assert "rev " in row["engine_versions"][0], accession
+
+
+def test_a_partial_model_is_refused_rather_than_compared() -> None:
+    """A satisfiability search may leave a variable undecided; that answer is a set, not a state.
+
+    Compared against a complete state it is simply unequal, and the record would then say a
+    model's certified steady states are solver-dependent — a claim about the network, made on
+    evidence about the shape of one answer. Exercised directly, because the three committed
+    networks never produce one.
+    """
+    import sympy
+
+    from reprolith.corroboration import _complete_assignment
+
+    rules = {"a": "b", "b": "a", "c": "!c"}
+    complete = {sympy.Symbol("a"): True, sympy.Symbol("b"): True, sympy.Symbol("c"): False}
+    assert _complete_assignment(complete, rules) == frozenset(
+        {("a", 1), ("b", 1), ("c", 0)}
+    )
+    with pytest.raises(ValueError, match="undecided"):
+        _complete_assignment({sympy.Symbol("a"): True}, rules)
+
+
+def test_the_pin_names_the_path_that_actually_ran() -> None:
+    """Below the enumeration bound no SAT solver is called, and the record must not name one.
+
+    `solver_pin_for` exists because a caller choosing the pin publishes one that contradicts its
+    own protocol; this comparison reintroduced that choice and now reads the network's size.
+    """
+    small = corroborate_fixed_points(_SMALL["repressilator"]["rules"])
+    large = corroborate_fixed_points(_LARGE["leukemia"]["rules"])
+    assert small.stable and large.stable
+    # A 3-node network is walked state by state and a 60-node one is solved by z3; one build
+    # string cannot be right for both, and the package version — which has never moved — is right
+    # for neither.
+    assert "enumeration" in small.versions[0]
+    assert "sat-fixed-points" in large.versions[0]
+    assert "rev " in small.versions[0] and "rev " in large.versions[0]
