@@ -116,15 +116,23 @@ practitioner can act on.
   class's six models agree to 1e-03, one percent of it. So a numeric verdict is a statement about
   the model and not about COPASI, and none of the tolerance is absorbing solver disagreement
   (`tests/test_engine_floor.py`, read off the committed records so an engine upgrade that widened
-  the gap fails rather than passing quietly). The other four classes have no second registered
-  engine and this is not measured for them — an absence, which the public registry now names. It is
-  an absence of *corroboration*, and worth separating from a second question it is easy to read it
-  as: three of those four are certified against something outside this engine already. The
-  constraint-based class's references are COBRApy's own answers, and the stochastic and spatial
-  classes' are closed-form mathematics, so each of those certificates' published discrepancy is a
-  distance from an independent standard — not the same thing as re-running a certified result under
-  a second simulator, and not nothing either. The logical class's references are CANA's. What none
-  of the four has is a *second engine of its own kind* to re-run under
+  the gap fails rather than passing quietly). Two more classes have since acquired one, and both
+  are measured in the units their own verdicts are in rather than in a curve distance: the eight
+  constraint-based models agree with COBRApy on the optimal objective value — floored at 1e-08,
+  because below that the digits are the machine's BLAS rather than the two implementations, which
+  CI proved by producing 4e-11 where this machine produced 1e-13 — and all nine logical networks
+  agree with CANA and with an independent SAT solver *exactly*, which is the only agreement an
+  attractor set or a fixed-point set admits.
+
+  The two left, spatial and stochastic, have no second registered engine and this is not measured
+  for them — an absence, which the public registry names. It is an absence of *corroboration*, and
+  worth separating from a second question it is easy to read it as: both are certified against
+  something outside this engine already. Their references are closed-form mathematics, so each of
+  those certificates' published discrepancy is a distance from an independent standard — not the
+  same thing as re-running a certified result under a second simulator, and not nothing either.
+  What neither has is a *second engine of its own kind* to re-run under, and what such a
+  comparison would report is different in kind again: two Gillespie ensembles agree only up to
+  Monte Carlo error, and two finite-difference solvers only up to their discretizations
   (`tests/test_reference_provenance.py` counts which certificate is checked against what).
 - **Stochastic mean — 5% / 15%, and the ensemble is the cost.** The number judged is the mean of an
   ensemble Reprolith drew, so drawing the *right* model twice moves it. The class already refuses to
