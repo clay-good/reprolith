@@ -3522,6 +3522,33 @@ holding a certificate and asking whether their copy would still produce it needs
 over now lives in the package rather than only in the test that sweeps for stale renders, with the
 two held to each other.
 
+## Three checks whose population was one example
+
+A pattern showed up three times in one pass, each time in a check that was right about what it
+looked at and silent about everything else.
+
+**Surface parity was tested on one command.** The specs ask that the terminal and the agent surface
+answer the same — "the same entry reports the same verdict through both" — and `catalog` was the
+command held to it. Eleven read commands offer `--json`, each documented as emitting what its MCP
+tool returns, and ten were checked by nothing: the CLI tests read the CLI, the server tests read
+the server, and neither read the other. All eleven agree, and the population is driven from the
+CLI's own subcommand list now, so a read command added without a pair fails rather than being
+skipped.
+
+**Every CLI test built its own repository.** Each one wrote a catalog and a certificate into a temp
+directory and pointed `--data-dir` at it, so the *committed* state — the one a reader meets on
+their first command after installing — was exercised by nothing at all. A data file that gained a
+field the loader refuses, or a directory that moved, would have passed the whole suite and failed
+on `reprolith catalog`.
+
+**And the mutation guards had never been counted by module.** Doing that found the two invariants
+this repository states first — the overall-verdict rule and the fixed scope statement — with none
+between them, and adding one to each produced a survivor: the refusal that stops a scope being
+*reworded* could be deleted with the entire suite green. Not emptiable was never the whole
+invariant. A scope reading "clinically validated" is worse than a missing one, and it travels
+through the badge, the registry, the human render and the query; only the load path had ever been
+tested for it.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone
