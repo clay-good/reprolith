@@ -182,3 +182,41 @@ def test_a_model_reprolith_built_is_engine_independent_too() -> None:
     for species in ("central", "peripheral"):
         result = corroborate_curve(built, species, duration=24.0, steps=240)
         assert result.stable, result.summary()
+
+
+def test_the_published_bound_does_not_move_between_two_measurements_of_one_run() -> None:
+    """The committed artifact used to oscillate, and this is the claim that it no longer can.
+
+    COPASI alternates in its last places within one process, so a single draw's distance moves by
+    about 13% between consecutive calls on this model's muscle curve — 4.89e-08 against 5.53e-08.
+    `distance_bound`'s fixed margin lifts those to either side of 1e-07, so three regenerations of
+    the PK/PD milestone published 1e-06, then 1e-07, then 1e-06 for one claim. A fixed margin
+    cannot fix that in general: whatever it is, some pair of phases straddles a boundary after it.
+
+    Measuring twice and publishing the worst does, because the alternation is period-two. This
+    calls the whole path repeatedly and requires one number, which is the property the committed
+    file needs and the one no test held.
+    """
+    sbml = (
+        Path(__file__).parent.parent / "datasets" / "worked_examples"
+        / "Zake2021_metformin_human_single_PO.xml"
+    ).read_text(encoding="utf-8")
+    bounds = {
+        corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480).distance_bound()
+        for _ in range(3)
+    }
+    assert len(bounds) == 1, f"the published bound moved between runs: {sorted(bounds)}"
+
+
+def test_one_draw_can_be_asked_for_and_never_states_better_agreement() -> None:
+    """The worst of several measurements is weaker than any single one, never stronger — so the
+    default cannot turn an engine-sensitive result into an engine-independent one."""
+    sbml = (
+        Path(__file__).parent.parent / "datasets" / "worked_examples"
+        / "Zake2021_metformin_human_single_PO.xml"
+    ).read_text(encoding="utf-8")
+    single = corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=1)
+    doubled = corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=2)
+    assert doubled.distance >= single.distance
+    with pytest.raises(ValueError, match="at least one draw"):
+        corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=0)

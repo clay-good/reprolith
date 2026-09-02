@@ -110,3 +110,30 @@ def test_the_committed_dossiers_carry_the_papers_claims_with_footprints() -> Non
         for claim in claims:
             assert claim["source_location"], claim["id"]
             assert claim.get("footprint"), f"{path.name}/{claim['id']} carries no footprint"
+
+
+def test_every_shipped_bundle_covers_the_dossier_it_names_as_its_source() -> None:
+    """`covers()` was dead code on the shipped data, and this is why.
+
+    It exists to stop a reconstruction overstating what it addresses — every targetable claim has
+    a recipe step, and every step names a claim the paper actually makes. It compared a recipe
+    against a dossier that listed no claims at all, so it returned false for all four shipped
+    pairs and was called from nowhere. Both sides name the same claims now, so it is a real check
+    on the published artifacts rather than a function nothing reaches.
+    """
+    from reprolith.persistence import bundle_from_dict, dossier_from_dict
+
+    milestone = _ROOT / "datasets" / "milestone"
+    pairs = sorted((milestone / "bundles").glob("*.json"))
+    assert pairs, "no bundles found; this check would pass vacuously"
+    for bundle_path in pairs:
+        dossier_path = milestone / "dossiers" / bundle_path.name
+        assert dossier_path.is_file(), bundle_path.name
+        dossier = dossier_from_dict(json.loads(dossier_path.read_text(encoding="utf-8")))
+        bundle = bundle_from_dict(json.loads(bundle_path.read_text(encoding="utf-8")))
+        assert dossier.claims, f"{dossier_path.name} lists no claim, so this would pass vacuously"
+        assert bundle.covers(dossier), (
+            bundle_path.name,
+            bundle.uncovered_claims(dossier),
+            bundle.unmatched_steps(dossier),
+        )

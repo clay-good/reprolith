@@ -3736,24 +3736,33 @@ Tasks 2.1-2.3 remain open for the half a table reader does not close.
 
 ## A published bound that moved a decade between two runs of one script
 
-Recorded as an observation, with the numbers, rather than fixed: it is the hazard
-`EngineCorroboration.distance_bound` documents itself as existing to prevent, and it has now been
-seen live rather than argued about.
+Seen live, then diagnosed exactly, then fixed — and the fix replaced an argument that did not
+hold.
 
-Regenerating `datasets/milestone/corroboration.json` twice on one machine, within one session and
+Regenerating `datasets/milestone/corroboration.json` on one machine, within one session and
 against identical code and identical engine builds, published different bounds for two of the
-eighty PK/PD claims — `BIOMD0000001027:AUC24-muscle` and `BIOMD0000001028:Cmax-muscle-500mg` both
-moved from `1e-06` to `1e-07`. Every other one of the eighty was byte-identical across the two
-runs.
+eighty PK/PD claims. `BIOMD0000001027:AUC24-muscle` and `BIOMD0000001028:Cmax-muscle-500mg` went
+`1e-06`, then `1e-07`, then `1e-06` across three runs. The other seventy-eight were byte-identical
+every time.
 
-That is the straddling case `_MARGIN` was introduced for, and it is still reachable: the margin
-lifts a raw distance by a factor of two before rounding up to a decade, so a distance sitting
-within a factor of two of a decade boundary lands on one side or the other depending on COPASI's
-own last-place alternation. The remedy is a wider margin, and widening a published bound is
-one-directional — it can only ever state *weaker* agreement than was measured — but the number is
-a declared tolerance and this repository does not move one without measuring what it costs. Two
-claims out of eighty is the measurement of how often it fires; what it would take to stop firing
-is not measured, so the margin stays where it is and this says so.
+**The mechanism, measured.** COPASI is not bit-identical across repeated calls in one process — a
+period-two alternation, documented on `distance_bound` and previously measured at about 1e-11
+relative. On this model's muscle curve the two phases give normalized distances of **4.89e-08** and
+**5.53e-08**, a 13% spread. `distance_bound` lifts a distance by `_MARGIN` (two) before rounding up
+to a decade, precisely so two draws either side of a boundary land on one number. Here it lifts
+them to 9.79e-08 and 1.11e-07 — either side of 1e-07. The margin did not fail to be big enough; a
+*fixed* margin only relocates the unlucky case, because whatever it is, some pair of phases
+straddles a boundary after it.
 
-Both bounds are three to five orders inside the criterion either way, so no verdict moved. What
-moved is a committed number, which is the thing the method exists to keep still.
+**The fix is to stop publishing one draw.** `corroborate_curve` now measures the comparison twice
+and reports the **worst** distance. Two draws, because the non-determinism is period-two within one
+process, so two consecutive draws sample both phases and a third adds nothing. Taking the worst of
+two published `1e-06` six times out of six, and regenerating both classes' artifacts twice now
+produces byte-identical files.
+
+One-directional, like the margin it backs up: the worst of several measurements can only ever state
+*weaker* agreement than a single one, so it cannot turn an engine-sensitive result into an
+engine-independent one. Two of eighty PK/PD bounds loosened by a decade; the kinetic artifact did
+not move at all. No verdict moved either way — every one of these is three to five orders inside
+the criterion. What moved is a committed number, which is the thing the method exists to keep
+still.

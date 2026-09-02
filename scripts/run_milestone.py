@@ -181,6 +181,19 @@ def main() -> None:
             # publish a vacuous agreement as though something had been verified.
             mismatches=None,
         )
+        # `covers()` exists to stop a bundle overstating what it addresses, and until the dossiers
+        # carried the paper's claims it could not be called on anything: it compared a recipe
+        # against a dossier that listed nothing, returned false on every shipped pair, and was
+        # called from no code at all. Now that both sides name the same claims it is a gate. A
+        # bundle that has drifted from its dossier — a claim with no recipe step, a step naming a
+        # claim the paper does not make — is a reconstruction whose published scope is wrong, and
+        # publishing it quietly is exactly what this was written to prevent.
+        if not bundle.covers(dossier):
+            raise SystemExit(
+                f"{accession}: the reconstruction bundle does not cover its dossier — "
+                f"claims with no recipe step: {bundle.uncovered_claims(dossier)}; "
+                f"steps naming no claim: {bundle.unmatched_steps(dossier)}"
+            )
         (bundle_dir / f"{accession}.json").write_text(
             json.dumps(bundle.to_dict(), indent=2, sort_keys=True) + "\n",
             encoding="utf-8",

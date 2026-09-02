@@ -127,6 +127,7 @@ def corroborate_curve(
     rel_tol: float = 0.02,
     overrides: tuple[tuple[str, float], ...] = (),
     schedule: tuple[tuple[float, tuple[tuple[str, float], ...]], ...] = (),
+    draws: int = 2,
 ) -> EngineCorroboration:
     """Run a species curve under both engines and report whether the verdict is engine-independent.
 
@@ -147,32 +148,58 @@ def corroborate_curve(
     ``schedule`` is the claim's prior administrations, when it has them. It replaces ``overrides``
     rather than joining them — the schedule's last segment carries the claim's own values — and
     both engines walk the same segments, carrying state forward the same way.
+
+    ``draws`` is how many times the comparison is measured, and the **worst** distance is the one
+    reported. Two, because COPASI's non-determinism is a period-two alternation within one
+    process, so two consecutive draws sample both phases and a third adds nothing.
+
+    This is what makes a published bound reproducible, and it replaces an argument that did not
+    hold. ``distance_bound`` lifts a distance by a fixed margin before rounding up to a decade, so
+    that two draws either side of a decade boundary land on the same number — but a fixed margin
+    only relocates the unlucky case. Measured on this model's muscle curve: the two phases are
+    4.89e-08 and 5.53e-08, a 13% spread, and the margin of two lifts them to 9.79e-08 and 1.11e-07
+    — either side of 1e-07. Three regenerations of the PK/PD milestone on one machine, with
+    identical code and identical engine builds, published 1e-06, then 1e-07, then 1e-06 for that
+    claim. Taking the worst of two draws published 1e-06 six times out of six.
+
+    It is one-directional, like the margin it backs up: the worst of several measurements can only
+    ever state *weaker* agreement than a single one, never better, so it cannot turn an
+    engine-sensitive result into an engine-independent one.
     """
-    if schedule:
-        # A claim with prior administrations is a different run from the model's default arm, and
-        # corroborating the default one would publish engine agreement about a run the claim never
-        # made — with the claim's id on it. Both engines walk the same segments.
-        from .certify import _run_schedule
+    if draws < 1:
+        raise ValueError(f"a corroboration needs at least one draw, not {draws!r}")
+    if overrides and not schedule:
+        # Applied once, outside the draw loop: it rewrites the model text, and re-applying it to
+        # an already-overridden model is work every draw would repeat.
+        from .certify import _apply_overrides
 
-        _, copasi_values = _run_schedule(sbml, species, schedule=schedule, steps=steps)
-        _, roadrunner_values = _run_schedule(
-            sbml, species, schedule=schedule, steps=steps,
-            run=simulate_with_roadrunner,
-            # Its own end state too: reading it with COPASI would make the corroborated run half
-            # COPASI, and a corroboration that shares half its arithmetic with the thing it is
-            # corroborating is not one.
-            read_final_state=final_state_with_roadrunner,
-        )
-    else:
-        if overrides:
-            from .certify import _apply_overrides
+        sbml = _apply_overrides(sbml, overrides)
 
-            sbml = _apply_overrides(sbml, overrides)
-        _, copasi_values = simulate(sbml, species, duration=duration, steps=steps)
-        _, roadrunner_values = simulate_with_roadrunner(
-            sbml, species, duration=duration, steps=steps
-        )
-    distance = normalized_curve_distance(copasi_values, roadrunner_values)
+    def measure() -> float:
+        """One comparison of the two engines on this run."""
+        if schedule:
+            # A claim with prior administrations is a different run from the model's default arm,
+            # and corroborating the default one would publish engine agreement about a run the
+            # claim never made — with the claim's id on it. Both engines walk the same segments.
+            from .certify import _run_schedule
+
+            _, copasi = _run_schedule(sbml, species, schedule=schedule, steps=steps)
+            _, roadrunner = _run_schedule(
+                sbml, species, schedule=schedule, steps=steps,
+                run=simulate_with_roadrunner,
+                # Its own end state too: reading it with COPASI would make the corroborated run
+                # half COPASI, and a corroboration that shares half its arithmetic with the thing
+                # it is corroborating is not one.
+                read_final_state=final_state_with_roadrunner,
+            )
+        else:
+            _, copasi = simulate(sbml, species, duration=duration, steps=steps)
+            _, roadrunner = simulate_with_roadrunner(
+                sbml, species, duration=duration, steps=steps
+            )
+        return normalized_curve_distance(copasi, roadrunner)
+
+    distance = max(measure() for _ in range(draws))
     result = EngineCorroboration(
         species=species,
         engines=(_COPASI_ENGINE, ROADRUNNER_ENGINE),
