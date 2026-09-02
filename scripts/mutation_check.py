@@ -36,6 +36,13 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 
 #: ``(what removing it means, module, (anchor, replacement), tests that must go red)``.
+#:
+#: One shape does not belong here: a guard whose absence makes a test **hang** rather than fail.
+#: `supersession.chain` breaks on a digest it has already seen, and `tests/test_supersession.py`
+#: injects a cycle to prove it — remove the break and that test loops forever, which stalls this
+#: checker instead of reporting anything. The invariant is real and tested; it is the *mutation*
+#: that is unusable, because this harness runs a suite to completion to decide what a guard is
+#: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "the manuscript check reads a parameter the model's own math determines",
