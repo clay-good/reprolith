@@ -53,10 +53,32 @@ def test_no_candidate_outside_the_seeded_set_is_reachable_either() -> None:
     assert _SURVEY["reachable"] == []
 
 
+def test_the_kinetic_class_has_never_been_checked_against_a_paper_and_cannot_be() -> None:
+    """The same question, asked of a class whose certificates check a tool rather than a paper.
+
+    The kinetic class's six certificates compare Reprolith against libRoadRunner on the same model
+    file, which says nothing about the papers those models came from. Every one of those papers is
+    closed — one has a PMC identifier and is still not open access — so no table of theirs can be
+    read at all, and the class cannot be moved onto a paper-checked footing by this route.
+    """
+    kinetic = _SURVEY["kinetic"]
+    assert len(kinetic) == 6
+    assert not any(entry["open_access"] for entry in kinetic)
+    assert all(entry["metrics"] == [] for entry in kinetic)
+    # Its certificates exist; it is the papers that are out of reach, not the entries.
+    certificates = sorted(
+        path.stem for path in
+        (Path(__file__).parent.parent / "datasets" / "kinetic" / "milestone" / "certificates")
+        .glob("*.json")
+    )
+    assert sorted(entry["accession"] for entry in kinetic) == certificates
+
+
 def test_a_candidate_with_a_results_table_would_be_named() -> None:
     """The check is not written so that it can only pass.
 
     `reachable` is the list a curator would work from, and it is empty because every candidate's
     metrics list is. A candidate whose table named a metric would appear in both.
     """
-    assert all(bool(e["metrics"]) == (e["accession"] in _SURVEY["reachable"]) for e in _ENTRIES)
+    for entry in _ENTRIES + _SURVEY["kinetic"]:
+        assert bool(entry["metrics"]) == (entry["accession"] in _SURVEY["reachable"]), entry

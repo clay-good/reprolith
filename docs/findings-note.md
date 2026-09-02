@@ -3584,9 +3584,14 @@ the repository's own search returns for pharmacokinetic and pharmacodynamic term
 all. The sixth is open access, prints ninety-five numbers across two tables, and not one of its
 column headings names a quantity a reproduction targets: a parameter table, not a results table.
 
-Nothing reachable, in either direction. The ceiling is the literature's — open access first, and
-then whether a paper prints its model's own outputs as numbers — and not an artifact of which
-thirty-one entries were seeded (`scripts/survey_candidate_papers.py`,
+The same question was then put to the **kinetic** class, whose six certificates check Reprolith
+against libRoadRunner on the same model file and therefore say nothing about the papers those
+models came from. Every one of those papers is closed — one has a PMC identifier and is still not
+open access — so that class cannot be moved onto a paper-checked footing by this route either.
+
+Nothing reachable, in any of the three directions. The ceiling is the literature's — open access
+first, and then whether a paper prints its model's own outputs as numbers — and not an artifact of
+which thirty-one entries were seeded (`scripts/survey_candidate_papers.py`,
 `datasets/manuscripts/candidate_survey.json`, read by a test that also fails if a candidate with a
 results table ever stops being named).
 

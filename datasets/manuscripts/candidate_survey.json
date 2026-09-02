@@ -1,5 +1,5 @@
 {
-  "description": "Curated-branch PK/PD models the BioModels search returns that the seeded test set does not contain, with whether each one's paper is open access and whether its tables state a quantity a reproduction targets. Identifiers and counts only.",
+  "description": "Curated-branch PK/PD models the BioModels search returns that the seeded test set does not contain, and the kinetic class's own entries, with whether each one's paper is open access and whether its tables state a quantity a reproduction targets. Identifiers and counts only.",
   "entries": [
     {
       "accession": "BIOMD0000000234",
@@ -65,6 +65,74 @@
       "open_access": false,
       "pmcid": "",
       "pubmed_id": "33205434",
+      "tables": 0
+    }
+  ],
+  "kinetic": [
+    {
+      "accession": "BIOMD0000000005",
+      "candidates": 0,
+      "doi": "",
+      "metrics": [],
+      "name": "",
+      "open_access": false,
+      "pmcid": "PMC52288",
+      "pubmed_id": "1831270",
+      "tables": 0
+    },
+    {
+      "accession": "BIOMD0000000010",
+      "candidates": 0,
+      "doi": "",
+      "metrics": [],
+      "name": "",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "10712587",
+      "tables": 0
+    },
+    {
+      "accession": "BIOMD0000000012",
+      "candidates": 0,
+      "doi": "",
+      "metrics": [],
+      "name": "",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "10659856",
+      "tables": 0
+    },
+    {
+      "accession": "BIOMD0000000021",
+      "candidates": 0,
+      "doi": "",
+      "metrics": [],
+      "name": "",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "10366496",
+      "tables": 0
+    },
+    {
+      "accession": "BIOMD0000000051",
+      "candidates": 0,
+      "doi": "",
+      "metrics": [],
+      "name": "",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "17590932",
+      "tables": 0
+    },
+    {
+      "accession": "BIOMD0000000058",
+      "candidates": 0,
+      "doi": "",
+      "metrics": [],
+      "name": "",
+      "open_access": false,
+      "pmcid": "",
+      "pubmed_id": "12779457",
       "tables": 0
     }
   ],

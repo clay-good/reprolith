@@ -7,10 +7,11 @@ output in a table, and the four entries clearing both that bar and "ships a cura
 exactly the four already certified. The honest objection to that number is that the seeded set was
 chosen by somebody, so it may be measuring the choice.
 
-This asks the same question of the entries the seeded set does *not* contain: every model in the
-curated branch that the repository's own search returns for pharmacokinetic and pharmacodynamic
-terms. For each new candidate it resolves the paper, asks whether it is open access, and — where
-it is — reads its tables with the same `propose_claims` the corpus is built on.
+This asks the same question of two sets the seeded one does not contain: every model in the curated
+branch that the repository's own search returns for pharmacokinetic and pharmacodynamic terms, and
+the six models of the **kinetic** class, whose certificates are checked against libRoadRunner
+rather than against any paper. For each it resolves the paper, asks whether it is open access,
+and — where it is — reads its tables with the same `propose_claims` the corpus is built on.
 
 Dev-only and network-bound, like the `regenerate_*_references.py` scripts. It writes
 `datasets/manuscripts/candidate_survey.json`, which is what the test reads.
@@ -103,6 +104,35 @@ def _tables_of(pmcid: str) -> dict[str, dict]:
     return tables
 
 
+def _surveyed(accession: str, name: str) -> dict:
+    """One entry's record: where its paper is, and what its tables state if they can be read."""
+    pubmed_id, doi = _paper(accession)
+    hit = _reachable(pubmed_id, doi)
+    record = {
+        "accession": accession,
+        "name": name,
+        "pubmed_id": pubmed_id,
+        "doi": doi,
+        "pmcid": hit.get("pmcid", ""),
+        "open_access": hit.get("isOpenAccess", "N") == "Y",
+        "tables": 0,
+        "candidates": 0,
+        # The metrics a column heading names. Empty means the paper prints numbers in tables and
+        # none of them is a quantity a reproduction targets — a parameter table, not a results
+        # table, which is the same signal `table_survey.json` reads.
+        "metrics": [],
+    }
+    if record["pmcid"] and record["open_access"]:
+        tables = _tables_of(record["pmcid"])
+        proposed = propose_claims(tables)["candidates"] if tables else []
+        record["tables"] = len(tables)
+        record["candidates"] = len(proposed)
+        record["metrics"] = sorted({c["metric"] for c in proposed if c["metric"]})
+    print(f"  {accession}: {record['pmcid'] or 'no PMC'} "
+          f"{'open' if record['open_access'] else 'closed'} metrics={record['metrics']}")
+    return record
+
+
 def main() -> None:
     seeded = {
         entry["accession"]
@@ -110,48 +140,38 @@ def main() -> None:
             (REPO / "datasets" / "pkpd_test_set.json").read_text(encoding="utf-8")
         )["entries"]
     }
-    records = []
-    for accession, name in sorted(_candidates(seeded).items()):
-        pubmed_id, doi = _paper(accession)
-        hit = _reachable(pubmed_id, doi)
-        record = {
-            "accession": accession,
-            "name": name,
-            "pubmed_id": pubmed_id,
-            "doi": doi,
-            "pmcid": hit.get("pmcid", ""),
-            "open_access": hit.get("isOpenAccess", "N") == "Y",
-            "tables": 0,
-            "candidates": 0,
-            # The metrics a column heading names. Empty means the paper prints numbers in tables
-            # and none of them is a quantity a reproduction targets — a parameter table, not a
-            # results table, which is the same signal `table_survey.json` reads.
-            "metrics": [],
-        }
-        if record["pmcid"] and record["open_access"]:
-            tables = _tables_of(record["pmcid"])
-            proposed = propose_claims(tables)["candidates"] if tables else []
-            record["tables"] = len(tables)
-            record["candidates"] = len(proposed)
-            record["metrics"] = sorted({c["metric"] for c in proposed if c["metric"]})
-        records.append(record)
-        print(f"  {accession}: {record['pmcid'] or 'no PMC'} "
-              f"{'open' if record['open_access'] else 'closed'} "
-              f"metrics={record['metrics']}")
+    print("curated PK/PD models the seeded set does not contain:")
+    records = [
+        _surveyed(accession, name) for accession, name in sorted(_candidates(seeded).items())
+    ]
 
-    reachable = [r for r in records if r["metrics"]]
+    # The kinetic class's own six. Their certificates check Reprolith against libRoadRunner on the
+    # same model file, which says nothing about their papers — so whether any of those papers
+    # states a result in a table is the same question, asked of a class that has never been
+    # checked against one.
+    print("the kinetic class's own entries:")
+    kinetic = [
+        _surveyed(path.stem, "")
+        for path in sorted(
+            (REPO / "datasets" / "kinetic" / "milestone" / "certificates").glob("*.json")
+        )
+    ]
+
+    reachable = [r for r in records + kinetic if r["metrics"]]
     OUT.write_text(json.dumps({
         "description": (
             "Curated-branch PK/PD models the BioModels search returns that the seeded test set "
-            "does not contain, with whether each one's paper is open access and whether its "
-            "tables state a quantity a reproduction targets. Identifiers and counts only."
+            "does not contain, and the kinetic class's own entries, with whether each one's paper "
+            "is open access and whether its tables state a quantity a reproduction targets. "
+            "Identifiers and counts only."
         ),
         "search_terms": list(_TERMS),
         "entries": records,
+        "kinetic": kinetic,
         "reachable": [r["accession"] for r in reachable],
     }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"wrote {OUT.relative_to(REPO)} — {len(records)} candidate(s), "
-          f"{len(reachable)} with a results table")
+    print(f"wrote {OUT.relative_to(REPO)} — {len(records)} candidate(s) and "
+          f"{len(kinetic)} kinetic entr(ies), {len(reachable)} with a results table")
 
 
 if __name__ == "__main__":
