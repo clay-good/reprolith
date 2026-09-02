@@ -426,6 +426,37 @@ def _output_id(output: str) -> str:
     return (match.group(1) if match else output).strip()
 
 
+#: What an exported document says about itself. Deterministic on purpose — no timestamp, no run
+#: id — because the export is byte-reproducible and a clock in it would end that.
+def _provenance_notes(document: ET.Element, bundle: ReconstructionBundle) -> None:
+    """Say what this document is, inside the document.
+
+    An exported archive left a reproducer holding a model and an experiment with nothing saying
+    where either came from: not that Reprolith wrote it, not which entry it is, not which engine
+    pin its recipe was published under. Provenance is first-class everywhere else in this
+    repository, and this is the one artifact that leaves the repository.
+
+    It states a *run*, never a verdict — and says so, because an archive that arrives with a
+    reproducibility tool's name on it is exactly the thing a reader might take as a finding.
+
+    The **engine pin stays out**, as :doc:`docs/sedml-fast-path` says it does: SED-ML names a
+    solver method, and the pinned engine and version that computed a verdict belong to the
+    certificate, which is what expires when a solver changes. The entry is named instead, which is
+    how a reader reaches that certificate and the pin on it.
+    """
+    origin = bundle.origin
+    notes = ET.SubElement(document, "notes")
+    body = ET.SubElement(notes, "p", {"xmlns": "http://www.w3.org/1999/xhtml"})
+    body.text = (
+        "Written by Reprolith from the published reconstruction of "
+        f"{bundle.entry} ({origin.value if hasattr(origin, 'value') else origin}). "
+        "This archive states a run, not a verdict: it makes no claim about biological "
+        "correctness, model appropriateness, or fitness for any clinical or therapeutic "
+        "decision. The engine and version a verdict was computed under belong to that entry's "
+        "certificate, not to this document."
+    )
+
+
 def build_bundle_sedml(
     bundle: ReconstructionBundle,
     model_sbml: str,
@@ -474,6 +505,7 @@ def build_bundle_sedml(
         "level": str(_SEDML_LEVEL),
         "version": str(_SEDML_VERSION),
     })
+    _provenance_notes(document, bundle)
     models = ET.SubElement(document, "listOfModels")
     ET.SubElement(models, "model", {
         "id": "model", "language": _model_language(root), "source": model_location,

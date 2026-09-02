@@ -326,6 +326,13 @@ fixed by a rule, or shadowed by a kinetic law's own local parameter. That needs 
 read rather than its element names, and certification already applies exactly that check to every
 override before a bundle can carry one.
 
+The document says what it is, in a `notes` block: written by Reprolith, from the published
+reconstruction of which entry, and whether that reconstruction adopted the author's own model or
+rebuilt one. It also says what it is *not* — an archive arriving with a reproducibility tool's name
+on it is exactly the thing a reader might take for a finding, so it states in the same words every
+other surface uses that it carries a run and no verdict. Nothing in it moves between two exports:
+no clock, no run id, because the archive is byte-reproducible.
+
 Two things stay outside the document on purpose. The **metric** (`cmax`, `auc`) is not written: a
 report records the trajectory, and which scalar is read off it is the certificate's statement, not
 the run's. And the **engine pin** is not written: SED-ML names a solver *method*, and the document

@@ -255,6 +255,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_manuscript_reference_values.py"],
     ),
     (
+        "the exported archive leaves without saying what it is or where it came from",
+        "export.py",
+        (
+            "    _provenance_notes(document, bundle)",
+            "    pass",
+        ),
+        ["tests/test_export.py"],
+    ),
+    (
         "the linter compares an agent's reference against a model reading another quantity",
         "linter.py",
         (

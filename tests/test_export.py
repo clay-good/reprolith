@@ -632,3 +632,32 @@ def test_an_independent_archive_library_reads_what_the_packager_wrote() -> None:
             assert (extracted / "model.xml").read_text(encoding="utf-8") == _MODEL
         finally:
             combine.cleanUp()
+
+
+def test_an_exported_document_says_what_it_is() -> None:
+    """An archive is the one artifact that leaves this repository, and it was anonymous.
+
+    A reproducer opening it held a model and an experiment with nothing saying where either came
+    from: not that Reprolith wrote it, not which entry it is, not which engine pin its recipe was
+    published under. Provenance is first-class everywhere else here.
+
+    And it says what it is *not*. An archive arriving with a reproducibility tool's name on it is
+    exactly the thing a reader might take for a finding, so the note states that it carries a run
+    and no verdict, in the same words every published surface uses.
+    """
+    from reprolith.export import build_bundle_sedml
+
+    bundle = _bundle(_step())
+    document = build_bundle_sedml(bundle, _MODEL, model_location="model.xml").sedml
+    root = ET.fromstring(document)
+    notes = [e for e in root.iter() if e.tag.rsplit("}", 1)[-1] == "notes"]
+    assert notes, "the exported document says nothing about where it came from"
+    text = "".join(notes[0].itertext())
+    assert "Reprolith" in text and bundle.entry in text
+    assert "a run, not a verdict" in text
+    # The engine pin stays out, as docs/sedml-fast-path.md says it does: it belongs to the
+    # certificate, which is what expires when a solver changes. The entry names the way to it.
+    assert bundle.engine_pin.version not in text
+    # Nothing that moves between two runs of the same export: the archive is byte-reproducible,
+    # and a clock or a run id in this note would end that.
+    assert build_bundle_sedml(bundle, _MODEL, model_location="model.xml").sedml == document
