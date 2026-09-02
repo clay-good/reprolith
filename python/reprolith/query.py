@@ -155,6 +155,14 @@ def corroboration_summary(records: dict[str, dict[str, Any]]) -> dict[str, Any]:
             ),
             # The worst published bound in the class: the agreement this class is only as good as.
             "distance_at_most": max(bounds) if bounds else None,
+            # How this class's two implementations were compared. A trajectory or an optimum is
+            # compared as a distance; an attractor set or a fixed-point set is discrete, and
+            # publishing that as "engine-independent to 0e+00" invites reading an exact match as
+            # six orders better than the curve classes rather than as a different statement. A
+            # class comparing both ways says so rather than picking one.
+            "comparison": sorted({
+                str(row.get("comparison", "normalized-distance")) for row in record.values()
+            }),
         }
     runs: dict[str, int] = {}
     independent: dict[str, int] = {}

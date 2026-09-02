@@ -15,6 +15,7 @@ extras and imports them lazily.
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 
 from .engine import ENGINE as _COPASI_ENGINE
@@ -56,6 +57,13 @@ class EngineCorroboration:
     #: strings mean the versions were not captured, which is what a record written before this
     #: existed says — and it has to keep saying that rather than borrowing today's.
     versions: tuple[str, str] = ("", "")
+    #: How the two answers were compared. A trajectory or an optimum is compared as a *distance*,
+    #: which can be small without being zero; an attractor set or a fixed-point set is discrete —
+    #: the two implementations either return the same object or they do not, and calling that a
+    #: distance of zero would invite reading it as "six orders better than the curve classes" when
+    #: it is a different kind of statement entirely. Omitted from the record at the default, so
+    #: every record written before this field existed keeps its bytes.
+    comparison: str = "normalized-distance"
     #: The tolerance the caller asked for. The verdict is decided on the *published* bound, so the
     #: criterion actually applied is :meth:`effective_criterion` — never looser than this, and up
     #: to five times tighter when this is not itself a power of ten.
@@ -69,6 +77,12 @@ class EngineCorroboration:
 
     def summary(self) -> str:
         verdict = "engine-independent" if self.stable else "engine-sensitive"
+        if self.comparison == "exact-match":
+            agreed = "agree exactly" if self.stable else "do not agree"
+            return (
+                f"{self.quantity}: {self.engines[0]} vs {self.engines[1]} {agreed} "
+                f"-> {verdict}"
+            )
         return (
             f"{self.quantity}: {self.engines[0]} vs {self.engines[1]} normalized distance "
             f"at most {self.distance_bound():.0e} against a {self.effective_criterion():.0e} "
@@ -83,12 +97,15 @@ class EngineCorroboration:
         The distance is published as a bound rather than a measurement; see
         :meth:`distance_bound`.
         """
-        return {
+        record: dict[str, object] = {
             "engines": list(self.engines),
             "engine_versions": list(self.versions),
             "distance_at_most": self.distance_bound(),
             "engine_independent": self.stable,
         }
+        if self.comparison != "normalized-distance":
+            record["comparison"] = self.comparison
+        return record
 
     def distance_bound(self) -> float:
         """The distance rounded *up* to the next power of ten — what is safe to publish.
@@ -301,4 +318,121 @@ def corroborate_objective(sbml: str, *, rel_tol: float = 1e-6) -> EngineCorrobor
     return replace(result, stable=result.distance_bound() <= rel_tol, criterion=rel_tol)
 
 
-__all__ = ["EngineCorroboration", "corroborate_curve", "corroborate_objective"]
+#: The independent Boolean-network library the logical class is corroborated against. Named here
+#: for the same reason the others are: the record is keyed by these strings.
+CANA_ENGINE = "cana"
+#: The independent SAT implementation the large logical models' fixed points are corroborated
+#: against. Reprolith's own scalable path is z3; sympy's DPLL shares no code with it.
+SYMPY_ENGINE = "sympy-sat"
+
+
+def _cana_signature(rules: Mapping[str, str]) -> tuple[tuple[int, tuple[int, ...]], str]:
+    """CANA's synchronous attractor signature for these rules, and the build that produced it.
+
+    The rule text is handed to CANA's own parser rather than to a truth table Reprolith computed:
+    a comparison in which one side is told what the model does by the other side is not a
+    comparison. The transliteration is operators only — ``!``/``&``/``|`` to ``not``/``and``/``or``
+    — because CANA evaluates the condition as Python.
+
+    The signature is the attractor **count and periods**, not the state sets: CANA reduces
+    constant nodes, so its states are not always over the same variables, while the count and
+    periods are invariant to that reduction. That is the same comparison this class's committed
+    cross-validation uses, for the same reason.
+    """
+    import cana
+    from cana.boolean_network import BooleanNetwork
+
+    lines = ["# BOOLEAN RULES"]
+    for node, rule in rules.items():
+        lines.append(
+            f"{node}*=" + rule.replace("!", " not ").replace("&", " and ").replace("|", " or ")
+        )
+    network = BooleanNetwork.from_string_boolean("\n".join(lines))
+    attractors = network.attractors()
+    signature = (len(attractors), tuple(sorted(len(cycle) for cycle in attractors)))
+    return signature, str(getattr(cana, "__version__", "unknown"))
+
+
+def corroborate_attractors(rules: Mapping[str, str]) -> EngineCorroboration:
+    """Enumerate one Boolean network's attractors under Reprolith and under CANA, and compare.
+
+    The logical class had no second registered engine, so its verdicts were reported as
+    un-corroborated — while an independent implementation of exactly this question was already
+    installed here to generate the class's committed cross-validation references. The difference
+    between those references and this is *when*: a committed reference says the two tools agreed
+    once, on the rules as they were then; corroboration re-runs both now and publishes what the
+    second one said about the model this certificate is about.
+
+    Discrete, not a distance: two attractor enumerations of the same synchronous network are the
+    same object or they are not.
+
+    Needs the ``corroborate`` extra (CANA), and is bounded by exact enumeration on both sides —
+    the large signalling models are corroborated on their fixed points instead
+    (:func:`corroborate_fixed_points`).
+    """
+    from .logical import parse_boolean_network, solver_pin
+
+    mine = parse_boolean_network(dict(rules)).attractors()
+    signature = (len(mine), tuple(sorted(len(cycle) for cycle in mine)))
+    theirs, cana_version = _cana_signature(rules)
+    pin = solver_pin()
+    return EngineCorroboration(
+        quantity=f"{len(rules)}-node synchronous attractor set",
+        engines=(pin.engine, CANA_ENGINE),
+        distance=0.0 if signature == theirs else 1.0,
+        stable=signature == theirs,
+        versions=(pin.version, cana_version),
+        comparison="exact-match",
+    )
+
+
+def corroborate_fixed_points(rules: Mapping[str, str]) -> EngineCorroboration:
+    """Enumerate one Boolean network's fixed points under Reprolith and under sympy, and compare.
+
+    This is the large-network half. Reprolith solves ``xᵢ ⟺ ruleᵢ(x)`` with z3 and enumerates the
+    solutions with blocking clauses; sympy's DPLL implementation shares no code with z3, so the two
+    agreeing on the *set* of steady states — every state, not a count — is real corroboration of
+    the answer a 60-node model's certificate rests on, where 2ⁿ enumeration is impossible for
+    either of them.
+
+    The state sets are compared rather than their sizes because both sides return states over the
+    same variables here: unlike CANA, sympy is given the rules as written and reduces nothing.
+
+    Needs the ``sat`` extra (z3, Reprolith's own path) and the ``corroborate`` extra (sympy).
+    """
+    import sympy
+
+    from .logical import parse_boolean_network, solver_pin
+
+    mine = {
+        frozenset(state.items())
+        for state in parse_boolean_network(dict(rules)).fixed_points()
+    }
+    symbols = {node: sympy.Symbol(node) for node in rules}
+    condition = sympy.And(*[
+        sympy.Equivalent(symbols[node], sympy.sympify(rule.replace("!", "~"), locals=symbols))
+        for node, rule in rules.items()
+    ])
+    theirs = set()
+    for solution in sympy.logic.inference.satisfiable(condition, all_models=True):
+        if not solution:
+            continue  # sympy yields a single falsey model when there is no solution at all
+        theirs.add(frozenset((str(sym), int(bool(value))) for sym, value in solution.items()))
+    pin = solver_pin(sat=True)
+    return EngineCorroboration(
+        quantity=f"{len(rules)}-node fixed-point set",
+        engines=(pin.engine, SYMPY_ENGINE),
+        distance=0.0 if mine == theirs else 1.0,
+        stable=mine == theirs,
+        versions=(pin.version, str(sympy.__version__)),
+        comparison="exact-match",
+    )
+
+
+__all__ = [
+    "EngineCorroboration",
+    "corroborate_attractors",
+    "corroborate_curve",
+    "corroborate_fixed_points",
+    "corroborate_objective",
+]

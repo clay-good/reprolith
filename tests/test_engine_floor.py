@@ -40,20 +40,20 @@ def _records() -> dict[str, dict]:
     return found
 
 
-def test_three_classes_carry_a_second_engine_and_three_do_not() -> None:
+def test_four_classes_carry_a_second_engine_and_two_do_not() -> None:
     """The absence is half the finding, so it is asserted rather than assumed.
 
     A test that only checked the classes with a record would keep passing if a class quietly lost
     its second engine, and the page that publishes this would keep saying nothing about it.
 
-    The three without one are the three Reprolith solves itself where no widely-installed
-    independent implementation answers the same question. That is why they are the ones left, and
-    why this list is written down rather than derived: a class acquiring or losing a second engine
-    is a change a reader should be told about, not one a test should absorb.
+    The two without one are the two whose question no installed implementation but this one
+    answers: a Gillespie ensemble and a finite-difference reaction-diffusion solve. This list is
+    written down rather than derived, because a class acquiring or losing a second engine is a
+    change a reader should be told about, not one a test should absorb.
     """
     records = _records()
-    assert set(records) == {"ode-pkpd", "kinetic", "constraint-based"}, sorted(records)
-    assert set(_SOURCES) - set(records) == {"logical", "spatial", "stochastic"}
+    assert set(records) == {"ode-pkpd", "kinetic", "constraint-based", "logical"}, sorted(records)
+    assert set(_SOURCES) - set(records) == {"spatial", "stochastic"}
 
 
 def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
@@ -90,10 +90,17 @@ def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
 #: Which two implementations each corroborated class was compared across. Named per class rather
 #: than as one pair: the constraint-based class does not run a simulator at all, and a check that
 #: demanded COPASI of it would either fail or have to be loosened into asking nothing.
+#: Which two implementations each corroborated class was compared across. Named per class rather
+#: than as one pair: the constraint-based class does not run a simulator at all, and the logical
+#: class is compared two ways — CANA enumerates the small networks' attractors, and sympy's SAT
+#: enumerates the large ones' fixed points, which is the question those certificates rest on. A
+#: check that demanded COPASI of any of them would either fail or have to be loosened into asking
+#: nothing.
 _PAIRS = {
-    "ode-pkpd": ["copasi", "roadrunner"],
-    "kinetic": ["copasi", "roadrunner"],
-    "constraint-based": ["cobrapy", "scipy-linprog"],
+    "ode-pkpd": [["copasi", "roadrunner"]],
+    "kinetic": [["copasi", "roadrunner"]],
+    "constraint-based": [["cobrapy", "scipy-linprog"]],
+    "logical": [["cana", "reprolith-logical"], ["reprolith-logical", "sympy-sat"]],
 }
 
 
@@ -101,4 +108,20 @@ def test_every_corroborated_run_names_the_two_engines_it_compared() -> None:
     """A record that does not say which engines agreed is not evidence that two of them did."""
     for model_class, record in _records().items():
         for key, row in record.items():
-            assert sorted(row["engines"]) == _PAIRS[model_class], (model_class, key)
+            assert sorted(row["engines"]) in _PAIRS[model_class], (model_class, key)
+
+
+def test_a_discrete_agreement_is_not_published_as_a_distance() -> None:
+    """An attractor set is the same object or it is not; 0e+00 is not a measurement of that.
+
+    The logical class's rows carry `comparison: exact-match`, and both published surfaces read it
+    — otherwise a discrete match prints as "engine-independent to 0e+00" and reads as the best
+    agreement on the page rather than as a different kind of statement.
+    """
+    for key, row in _records()["logical"].items():
+        assert row["comparison"] == "exact-match", key
+        assert row["distance_at_most"] == 0.0, key
+    # And the classes compared by distance say nothing of the kind.
+    for model_class in ("ode-pkpd", "kinetic", "constraint-based"):
+        for key, row in _records()[model_class].items():
+            assert "comparison" not in row, (model_class, key)

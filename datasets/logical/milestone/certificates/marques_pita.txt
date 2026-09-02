@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Two-symbol schemata example network (Marques-Pita & Rocha 2013) — reference computed by CANA 1.0.0 (Correia et al. 2018), not a count read from the paper
-Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 20f23044d091)
+Engine pin: reprolith-logical 0.0.1 / synchronous-update, exhaustive-state-enumeration (rev 7641c872354c)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

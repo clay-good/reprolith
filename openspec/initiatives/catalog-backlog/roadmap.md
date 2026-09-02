@@ -94,15 +94,20 @@ a change under `openspec/changes/`.
 
 ### 5. Multi-engine matrix and cross-engine corroboration
 
-- **Type:** capability *(landed for three of the six classes: kinetic per model and PK/PD per
-  claim at the dose it was certified at, COPASI vs libRoadRunner; and constraint-based per model,
-  Reprolith's own LP against COBRApy — compared on the **objective value**, because a linear
-  program's optimum is unique where the flux vector attaining it is not, so comparing flux
-  distributions would call two correct solvers engine-sensitive on any model with alternate
-  optima. All reported beside the certificates rather than gating them. The other three classes —
-  logical, spatial, stochastic — have no second registered engine, so nothing is reported for
-  them: an absence, not a pass. Each is a Reprolith-solved class with no widely-installed
-  independent implementation of the same question, which is why they are the ones left.)*
+- **Type:** capability *(landed for four of the six classes: kinetic per model and PK/PD per
+  claim at the dose it was certified at, COPASI vs libRoadRunner; constraint-based per model,
+  Reprolith's own LP against COBRApy; and logical per network, CANA on the six enumerable
+  attractor sets and sympy's SAT on the three 44-to-60-node models' fixed-point sets — the
+  question those certificates rest on, and one no 2ⁿ enumeration can answer on either side. What
+  is compared is chosen per class: the **objective value** for a linear program, because its
+  optimum is unique where the flux vector attaining it is not, so comparing flux distributions
+  would call two correct solvers engine-sensitive on any model with alternate optima; and the
+  attractor or fixed-point set itself for the discrete class, published as an exact match rather
+  than as a distance of zero, which on a page of curve distances reads as the best number on it.
+  All reported beside the certificates rather than gating them. The two left — spatial and
+  stochastic — have no second registered engine, so nothing is reported for them: an absence, not
+  a pass. Their questions (a finite-difference reaction-diffusion solve, a Gillespie ensemble) are
+  the ones no installed implementation but this one answers.)*
 - **Why (value):** Lifts a deferred fence. Running a reconstruction on more than one registered
   engine separates a model's behavior from a single solver's quirks, turning "engine-sensitive"
   from a hidden risk into a reported verdict — a real credibility multiplier.
@@ -112,9 +117,10 @@ a change under `openspec/changes/`.
 - **Difficulty:** Medium (engine integration and result normalization).
 - **Depends on:** MVP oracle; the BioSimulators engine registry.
 - **Done when:** ~~Verdict stability is reported across ≥2 engines for supported classes.~~ Done
-  for every class that has a second implementation to register: 80 PK/PD claims, 6 kinetic models
-  and 8 constraint-based models, all engine-independent (`tests/test_corroboration.py`,
-  `tests/test_fba_corroboration.py`).
+  for every class that has a second implementation to register: 80 PK/PD claims, 6 kinetic models,
+  8 constraint-based models and 9 logical networks, all engine-independent
+  (`tests/test_corroboration.py`, `tests/test_fba_corroboration.py`,
+  `tests/test_logical_corroboration.py`).
 
 ### 6. Seed the un-curated literature (preprint / journal feeds)
 

@@ -45,6 +45,7 @@ from reprolith import (
     run_test_set,
     search_protocol,
 )
+from reprolith.corroboration import corroborate_attractors, corroborate_fixed_points
 from reprolith.logical import require_pin_matches_path, solver_pin, solver_pin_for
 from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import prune_certificate_directory
@@ -192,6 +193,32 @@ def main() -> None:
     (milestone / "agreement_report.json").write_text(
         json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+
+    # Engine independence: every certified network re-run now by an implementation that shares no
+    # code with this one — CANA for the attractor sets, sympy's SAT for the large models' fixed
+    # points, which is the question their certificates actually rest on. Written only when those
+    # are installed: an absent record says no second engine was asked, which the corroboration
+    # surface reports as unchecked rather than as a pass.
+    corroboration = {}
+    for key, rules, _, kind, *_rest in plans:
+        try:
+            result = (
+                corroborate_attractors(rules) if kind == "attractors"
+                else corroborate_fixed_points(rules)
+            )
+        except ImportError:
+            print("cana/sympy are not installed; no corroboration written (install the "
+                  "'corroborate' extra)")
+            corroboration = {}
+            break
+        corroboration[key] = result.record()
+    if corroboration:
+        (milestone / "corroboration.json").write_text(
+            json.dumps(corroboration, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        stable = sum(1 for c in corroboration.values() if c["engine_independent"])
+        print(f"engine-independent: {stable}/{len(corroboration)}")
 
     counts = Counter(cert.overall.value for cert in certificates)
     print(f"logical milestone: {report.agreements}/{report.total} agree with ground truth")

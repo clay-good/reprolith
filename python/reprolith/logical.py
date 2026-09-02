@@ -138,7 +138,7 @@ class BooleanNetwork:
         SAT solver and every satisfying fixed point enumerated — so real signalling models (60–80
         nodes) are handled in well under a second where 2ⁿ enumeration is impossible. The scalable
         path needs the network's symbolic ``expressions`` (a network built from raw callables has
-        none) and the ``sat`` extra (sympy); without either, a too-large network still raises
+        none) and the ``sat`` extra (z3); without either, a too-large network still raises
         :class:`NetworkTooLarge` via the enumeration guard.
         """
         if len(self.nodes) > MAX_ENUMERABLE_NODES and self.expressions is not None:

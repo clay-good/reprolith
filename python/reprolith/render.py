@@ -544,11 +544,15 @@ def _corroboration_banner(corroboration: dict[str, dict[str, Any]]) -> str:
     checked = []
     for model_class, entry in sorted(summary["by_class"].items()):
         bound = entry["distance_at_most"]
-        held = (
-            f" all engine-independent to {bound:.0e}"
-            if entry["engine_independent"] == entry["checked"] and bound is not None
-            else f" {entry['engine_independent']} of {entry['checked']} engine-independent"
-        )
+        all_independent = entry["engine_independent"] == entry["checked"]
+        # See the terminal's copy of this decision: a discrete agreement has no distance, and
+        # publishing one as "to 0e+00" reads as the best number on the page.
+        if all_independent and entry.get("comparison") == ["exact-match"]:
+            held = " all agree exactly"
+        elif all_independent and bound is not None:
+            held = f" all engine-independent to {bound:.0e}"
+        else:
+            held = f" {entry['engine_independent']} of {entry['checked']} engine-independent"
         versions = entry["engine_versions"]
         built = (
             f" ({html.escape(', '.join(versions))})" if versions else " (engine builds unstated)"

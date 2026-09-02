@@ -1,0 +1,119 @@
+{
+  "budding_yeast": {
+    "comparison": "exact-match",
+    "distance_at_most": 0.0,
+    "engine_independent": true,
+    "engine_versions": [
+      "0.0.1",
+      "1.0.0"
+    ],
+    "engines": [
+      "reprolith-logical",
+      "cana"
+    ]
+  },
+  "drosophila": {
+    "comparison": "exact-match",
+    "distance_at_most": 0.0,
+    "engine_independent": true,
+    "engine_versions": [
+      "0.0.1",
+      "1.0.0"
+    ],
+    "engines": [
+      "reprolith-logical",
+      "cana"
+    ]
+  },
+  "guard_cell_aba": {
+    "comparison": "exact-match",
+    "distance_at_most": 0.0,
+    "engine_independent": true,
+    "engine_versions": [
+      "0.0.1",
+      "1.14.0"
+    ],
+    "engines": [
+      "reprolith-logical",
+      "sympy-sat"
+    ]
+  },
+  "leukemia": {
+    "comparison": "exact-match",
+    "distance_at_most": 0.0,
+    "engine_independent": true,
+    "engine_versions": [
+      "0.0.1",
+      "1.14.0"
+    ],
+    "engines": [
+      "reprolith-logical",
+      "sympy-sat"
+    ]
+  },
+  "mapk_cancer": {
+    "comparison": "exact-match",
+    "distance_at_most": 0.0,
+    "engine_independent": true,
+    "engine_versions": [
+      "0.0.1",
+      "1.14.0"
+    ],
+    "engines": [
+      "reprolith-logical",
+      "sympy-sat"
+    ]
+  },
+  "marques_pita": {
+    "comparison": "exact-match",
+    "distance_at_most": 0.0,
+    "engine_independent": true,
+    "engine_versions": [
+      "0.0.1",
+      "1.0.0"
+    ],
+    "engines": [
+      "reprolith-logical",
+      "cana"
+    ]
+  },
+  "repressilator": {
+    "comparison": "exact-match",
+    "distance_at_most": 0.0,
+    "engine_independent": true,
+    "engine_versions": [
+      "0.0.1",
+      "1.0.0"
+    ],
+    "engines": [
+      "reprolith-logical",
+      "cana"
+    ]
+  },
+  "thaliana": {
+    "comparison": "exact-match",
+    "distance_at_most": 0.0,
+    "engine_independent": true,
+    "engine_versions": [
+      "0.0.1",
+      "1.0.0"
+    ],
+    "engines": [
+      "reprolith-logical",
+      "cana"
+    ]
+  },
+  "toggle_plus_switch": {
+    "comparison": "exact-match",
+    "distance_at_most": 0.0,
+    "engine_independent": true,
+    "engine_versions": [
+      "0.0.1",
+      "1.0.0"
+    ],
+    "engines": [
+      "reprolith-logical",
+      "cana"
+    ]
+  }
+}

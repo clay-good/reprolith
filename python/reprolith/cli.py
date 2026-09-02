@@ -174,11 +174,18 @@ def _cmd_corroboration(query: ReprolithQuery, args: argparse.Namespace) -> int:
     for label in sorted(by_class):
         entry = by_class[label]
         bound = entry["distance_at_most"]
-        held = (
-            f"all engine-independent to {bound:.0e}"
-            if entry["engine_independent"] == entry["checked"] and bound is not None
-            else f"{entry['engine_independent']} of {entry['checked']} engine-independent"
-        )
+        all_independent = entry["engine_independent"] == entry["checked"]
+        # An exact-match class has no distance to quote: its two implementations returned the same
+        # attractor set or the same fixed-point set, or they did not. Printing "to 0e+00" put a
+        # discrete agreement on the curve classes' scale, where it reads as the best number on the
+        # page rather than as a different kind of statement.
+        exact = entry.get("comparison") == ["exact-match"]
+        if all_independent and exact:
+            held = "all agree exactly"
+        elif all_independent and bound is not None:
+            held = f"all engine-independent to {bound:.0e}"
+        else:
+            held = f"{entry['engine_independent']} of {entry['checked']} engine-independent"
         print(f"  {label:<18} {entry['checked']:>4} {entry['unit']}(s) on "
               f"{', '.join(entry['engines'])} — {held}")
         # Which builds produced the number. A certificate expires when its software changes and

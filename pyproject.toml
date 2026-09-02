@@ -65,7 +65,10 @@ validate = ["python-libsedml>=2.0", "python-libcombine>=0.2"]
 # classes (a different integrator on the same SBML), COBRApy for the constraint-based class
 # (a different reader and a different LP backend, compared on the objective value — the one
 # quantity two correct solvers must agree on when the optimal flux vector is not unique).
-corroborate = ["libroadrunner>=2.5", "cobra>=0.29"]
+corroborate = ["libroadrunner>=2.5", "cobra>=0.29", "cana>=1.0", "sympy>=1.12"]
+# CANA enumerates the small Boolean networks' attractors and sympy's DPLL the large ones'
+# fixed points — the question those certificates rest on, and one no 2ⁿ enumeration can
+# answer. sympy is independent of the z3 Reprolith solves them with.
 # Independent reference generators for the cross-validation ground truth (a dev-only task, run by
 # scripts/regenerate_*_references.py). COBRApy re-computes the FBA references, libRoadRunner the
 # kinetic curves, and CANA the logical (Boolean-network) attractors; the tests themselves need none
@@ -131,6 +134,14 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "z3"
+ignore_missing_imports = true
+
+# The second implementations each corroborated class is compared against, all behind lazy imports
+# in reprolith.corroboration.
+# Each is listed with and without the submodule glob: a bare `import cobra` is not matched by
+# `cobra.*`, which is how three of these went on failing after the override was added.
+[[tool.mypy.overrides]]
+module = ["cobra", "cobra.*", "cana", "cana.*", "sympy", "sympy.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

@@ -182,14 +182,18 @@ guessing — just: *does the described model produce the shown result?*
   a solver artifact that agrees with the figure. So the same runs go through a second,
   independently-implemented engine and the agreement is published beside the verdict, never gating
   it: 80 PK/PD claims at the dose each was certified at and 6 kinetic models under COPASI 4.46.300
-  against libRoadRunner 2.7.0, and 8 constraint-based models under Reprolith's own LP against
-  COBRApy 0.31.1 — all engine-independent, and the builds are the record's own, because a bound
-  measured against one of them says nothing about the next. The constraint-based pair is compared
-  on the **objective value**: a linear program's optimum is unique where the flux vector attaining
-  it is not, so comparing flux distributions would call two correct solvers engine-sensitive on any
-  model with alternate optima. Three of the six classes have **no** second
+  against libRoadRunner 2.7.0; 8 constraint-based models under Reprolith's own LP against COBRApy
+  0.31.1; and all 9 logical networks against CANA 1.0.0 and, for the 44-to-60-node models where no
+  2ⁿ enumeration is possible, sympy's SAT against the z3 Reprolith uses. All agree, and the builds
+  are the record's own, because a bound measured against one of them says nothing about the next.
+  What is compared is chosen per class rather than per convenience: the **objective value** for a
+  linear program, whose optimum is unique where the flux vector attaining it is not, so comparing
+  flux distributions would call two correct solvers engine-sensitive on any model with alternate
+  optima; and for the discrete classes the attractor set or fixed-point set itself, which two
+  enumerations either return or do not — published as an exact match rather than as a distance of
+  zero, which would read as the best number on the page. Two of the six classes have **no** second
   registered engine, so nothing was re-run for them — and `reprolith corroboration` prints those
-  three in the same list as the three, because a table of only the corroborated classes would read
+  two in the same list as the four, because a table of only the corroborated classes would read
   as a whole-repository pass. It is reachable from the terminal and over MCP, not only from the
   published page ([`docs/self-validation.md`](docs/self-validation.md)).
 

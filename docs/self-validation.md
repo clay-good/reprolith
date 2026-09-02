@@ -136,19 +136,20 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
                           as cobrapy 0.31.1, scipy-linprog 1.13.1
   kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
+  logical               9 model(s) on cana, reprolith-logical, sympy-sat — all agree exactly
+                          as cana 1.0.0, reprolith-logical 0.0.1, sympy-sat 1.14.0
   ode-pkpd             80 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
-  logical               no second engine is registered — nothing was checked, which is not a pass
   spatial               no second engine is registered — nothing was checked, which is not a pass
   stochastic            no second engine is registered — nothing was checked, which is not a pass
 
-  overall: 3 of 6 classes re-run on a second engine — 80 claim(s), 14 model(s)
+  overall: 4 of 6 classes re-run on a second engine — 80 claim(s), 23 model(s)
 ```
 
 Two things about that output are deliberate.
 
-The **unchecked classes print in the same list as the checked ones.** Three of the six have
-no second registered engine, so nothing was re-run for them. A table of the three that do would read
+The **unchecked classes print in the same list as the checked ones.** Two of the six have
+no second registered engine, so nothing was re-run for them. A table of the four that do would read
 as a whole-repository pass — the exact shape this repository keeps being caught by, a clean report
 standing in for a check nobody made. The absence is the finding, so it is as loud as the pass.
 
