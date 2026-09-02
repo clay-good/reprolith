@@ -10,7 +10,8 @@ reproduced, partially, or not — for each result, with the reason.
 That is what it is *for*, and it is worth being exact about how much of it is done today.
 
 Of the thirty-three published certificates, **four** check a reconstruction against numbers read
-from a paper — one for each model that paper deposited. Between them they carry **eighty claims**,
+from one paper's own tables — one for each model that paper deposited. (A fifth is checked against
+a published number too, and the count below says which.) Between them they carry **eighty claims**,
 every one a number the paper's own model reports: ten tissues at 500, 1000 and 1500 mg after a
 single human dose, again under twice-daily dosing, seven tissues in mice by peak and by 24-hour
 exposure, three validation arms that each follow an earlier dose, and the intravenous mouse model's
