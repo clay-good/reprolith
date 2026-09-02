@@ -3549,6 +3549,28 @@ invariant. A scope reading "clinically validated" is worse than a missing one, a
 through the badge, the registry, the human render and the query; only the load path had ever been
 tested for it.
 
+## Every file, run unedited into the tool that reads it
+
+A method worth naming, because it found three defects in one afternoon and all three were the same
+mistake. The state a curator's file is in *first* is unfinished — a proposal with no model element
+named, a template with no value filled in — and every check that meets one has to say so rather
+than filling the gap with a default.
+
+`params-propose` writes the paper's value and leaves the model element blank, which is the one
+thing it refuses to guess. Run straight into `params-check`, every row came back
+`MISMATCH: the model declares no parameter ''` — 169 of them, and a failing exit status, about a
+file nobody had finished. `claims-propose` writes a candidate from a "Tmax, h" column with its
+metric empty, because that heading names none this reader knows; the unit check turned the
+emptiness into `"cmax"` and reported the candidate as being in the wrong unit for the *peak*
+column. And a `claims-template` stub for a curve whose output the template would not guess — a
+reaction flux — was answered "the model declares no species ''", which is a statement about the
+model.
+
+All three now say what is not established, in the file that is not establishing it. The absent key
+and the empty value are kept apart where they mean different things: a claims record that omits
+`metric` means the documented default, and one that states an empty `metric` means the reader that
+wrote it found none.
+
 ## Status and what remains
 
 The engine, the blind run over the 31-entry set (7.1), the agreement report (7.2), the milestone

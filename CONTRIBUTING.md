@@ -154,6 +154,13 @@ when you add a check, a refusal, or a stability rule:
   requested, so a run that stopped at t = 5 of 100 was judged as if it had finished, at relative
   error 0.0000. Validate what came back, not only what went in.
 
+- **Run every file your tools write into the tool that reads it, unedited.** That is the state a
+  curator's file is in first, and three separate checks answered it with a confident accusation in
+  one afternoon: an unpaired proposal read as a model failing its paper (169 lines of `MISMATCH:
+  the model declares no parameter ''`), a candidate whose heading names no metric judged against
+  the peak column's unit, and a template stub for an output it deliberately would not guess
+  reported as an output the model does not have. Each was a missing field turned into a claim.
+  Write the unfinished state into the message instead.
 - **A refusal and a report ask the same question in opposite directions.** "These two units differ"
   is the safe answer when the outcome is *not compared* — an unreadable unit should stop a
   comparison. It is the wrong answer when the outcome is a line telling someone their file
