@@ -609,3 +609,26 @@ def test_an_author_writing_the_ordinary_spelling_is_not_refused() -> None:
         _UNITS, [{"parameter": "Liver", "reported": 1.51, "reported_units": "L"}]
     )
     assert refused.agrees is None and "not comparable" in refused.detail
+
+
+def test_a_row_that_names_no_model_element_is_not_a_mismatch() -> None:
+    """`params-propose` writes the paper's value and leaves the pairing to the curator.
+
+    Handed straight to the check — which is what a curator does first — every one of those rows
+    came back `MISMATCH: the model declares no parameter ''`, and an unedited proposal of the
+    metformin paper's tables produced 169 of them. That is a confident answer about a file that is
+    simply not finished, and the same shape as an unfilled template's blank value, which this has
+    always reported as not compared.
+    """
+    checks = check_parameter_values(
+        _VOLUMES_AND_INITIAL_CONDITIONS,
+        [
+            {"parameter": "", "reported": 5.5, "source_location": "Table 3, Liver row"},
+            {"parameter": "Ktp_Liver", "reported": 5.5, "source_location": "Table 3, Liver row"},
+        ],
+    )
+    unpaired, paired = checks
+    assert unpaired.agrees is None and "names no model element yet" in unpaired.detail
+    assert disagreeing_parameters(checks) == ()
+    # And the row that *is* paired is judged exactly as before.
+    assert paired.agrees is True

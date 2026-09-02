@@ -244,6 +244,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_parameter_values.py"],
     ),
     (
+        "an unpaired proposal reads as a model that does not carry its paper's values",
+        "manuscript_values.py",
+        (
+            "        if not identifier:\n            # A row from `params-propose` carries",
+            "        if False:\n            # A row from `params-propose` carries",
+        ),
+        ["tests/test_parameter_values.py"],
+    ),
+    (
         "the input check reads the parameter list again and not the volumes or initial conditions",
         "manuscript_values.py",
         (

@@ -606,6 +606,17 @@ def check_parameter_values(
     for record in parameters:
         identifier = str(record.get("parameter") or "")
         raw = record.get("reported")
+        if not identifier:
+            # A row from `params-propose` carries the paper's value and no model element yet: the
+            # pairing is the one thing that reader refuses to guess. Reported as not compared, the
+            # way an unfilled template's blank value is — an unedited proposal produced 169 lines
+            # reading `MISMATCH: the model declares no parameter ''`, which is a confident answer
+            # about a file that is simply not finished.
+            results.append(ParameterCheck(
+                "", float("nan") if raw is None else float(raw), None, None,
+                "this row names no model element yet (an unpaired proposal)",
+            ))
+            continue
         if raw is None:
             results.append(ParameterCheck(
                 identifier, math.nan, None, None,
