@@ -95,7 +95,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      # Pinned, not `@latest`. This gate went red on a commit that touched no spec, because
+      # `@latest`'s dependency tree briefly resolved to a version of `@inquirer/ansi` npm could
+      # not find — a gate whose verdict depends on what the registry serves that minute reports
+      # the registry, not this repository. Raise the pin deliberately, the way every other
+      # version here moves.
       - name: Validate specs and changes (OpenSpec, strict)
         run: |
-          npx --yes @fission-ai/openspec@latest validate --specs --strict
-          npx --yes @fission-ai/openspec@latest validate --changes --strict
+          npx --yes @fission-ai/openspec@1.11.0 validate --specs --strict
+          npx --yes @fission-ai/openspec@1.11.0 validate --changes --strict
