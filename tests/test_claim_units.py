@@ -87,6 +87,16 @@ def test_a_claim_that_states_no_unit_is_unchecked_and_never_agreement() -> None:
     assert "states no unit" in check.detail and "10^-9 mole / 10^-3 litre" in check.detail
 
 
+def test_a_claim_that_names_no_output_yet_says_so_about_the_file_not_the_model() -> None:
+    """A `claims-template` stub for a curve whose output it would not guess, or a candidate
+    straight out of the table reader, names no species. "The model declares no species ''" is a
+    statement about the model; the file is the thing that is unfinished, and it says so."""
+    (check,) = check_claim_units(
+        _model("BIOMD0000001027"), [{"claim_id": "c", "reported_units": "nmol/mL"}]
+    )
+    assert check.agrees is None and "names no model output yet" in check.detail
+
+
 def test_an_output_the_model_does_not_have_is_reported_not_raised() -> None:
     """A claim naming a species the model does not declare is a finding elsewhere; here it is a
     reason this check could not run, and it must not take the command down with it."""

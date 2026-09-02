@@ -964,8 +964,18 @@ def check_claim_units(
                 "not established, and neither is the unit that would be in",
             ))
             continue
+        species = str(record.get("species") or "")
+        if not species:
+            # A template stub for a curve whose output it would not guess, or a candidate straight
+            # out of the table reader: the file is unfinished, not wrong about the model, and
+            # "the model declares no species ''" says the second.
+            results.append(UnitCheck(
+                claim_id, stated, UNSTATED_UNIT, None,
+                "this claim names no model output yet, so there is nothing to read a unit from",
+            ))
+            continue
         try:
-            declared = claim_units(model_sbml, str(record.get("species") or ""), metric)
+            declared = claim_units(model_sbml, species, metric)
         except ValueError as unreadable:
             results.append(UnitCheck(claim_id, stated, UNSTATED_UNIT, None, str(unreadable)))
             continue
