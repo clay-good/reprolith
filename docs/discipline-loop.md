@@ -118,6 +118,18 @@ practitioner can act on.
   (`tests/test_engine_floor.py`, read off the committed records so an engine upgrade that widened
   the gap fails rather than passing quietly). The other four classes have no second registered
   engine and this is not measured for them — an absence, which the public registry now names.
+- **Stochastic mean — 5% / 15%, and the ensemble is the cost.** The number judged is the mean of an
+  ensemble Reprolith drew, so drawing the *right* model twice moves it. The class already refuses to
+  publish a verdict when the standard error of that mean is more than half the pass threshold, and
+  what that rule buys is one number for every model, because both sides of it scale with the
+  reported mean: on the boundary the pass band is exactly two standard errors wide either side, and
+  a correct ensemble lands outside it **4.6%** of the time — measured at 4.0% over 2000 drawn
+  ensembles, and about half of those ensembles abstain rather than publishing at all, since the
+  sample variance straddles the boundary. Guidance: the three committed entries sit at **3.2, 4.0
+  and 12.2** standard errors, so each is published wrongly less than once in three hundred, and the
+  binomial one has four times the headroom of a Poisson of the same mean at the same 400
+  trajectories. The trajectory counts are read out of the committed certificates, so an ensemble
+  that shrinks is caught here (`tests/test_ssa_ensemble_cost.py`).
 - **Estimation level — 10% / 25%.** A re-fit recovers parameters from noisy data: at a 20% assay
   CV, the median error is 2.4% on a rate and 8.8% on a scale, and the worse of the two misses the
   pass budget 45% of the time — with an exact optimizer and the true model. Quadrupling the data
