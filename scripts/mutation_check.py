@@ -316,6 +316,24 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_cli.py"],
     ),
     (
+        "a parameter an initialAssignment makes inert is ingested at the number in its attribute",
+        "ingest.py",
+        (
+            "        elif parameter.getId() not in assignment_targets | initial_assignment_targets:",
+            "        elif parameter.getId() not in assignment_targets:",
+        ),
+        ["tests/test_ingest.py"],
+    ),
+    (
+        "an AUC that moves with the sample grid is certified rather than abstained on",
+        "certify.py",
+        (
+            "            if not established:",
+            "            if False:",
+        ),
+        ["tests/test_auc_convergence.py"],
+    ),
+    (
         "a load-bearing assumption no claim was flagged for still certifies a clean pass",
         "certificate.py",
         (
