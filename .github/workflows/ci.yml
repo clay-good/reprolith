@@ -75,12 +75,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install with the engine and corroborate extras
+      - name: Install with the engine, fba and corroborate extras
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,engine,corroborate]"
+          pip install -e ".[dev,engine,fba,corroborate]"
+      # `fba` is here because the constraint-based class's second engine compares against
+      # Reprolith's own LP solver, which lives behind that extra: without it the comparison has
+      # only one side and its tests skip, which is the state this job exists to prevent.
       - name: Tests (cross-engine corroboration)
-        run: pytest -q tests/test_corroboration.py
+        run: pytest -q tests/test_corroboration.py tests/test_fba_corroboration.py
 
   specs:
     runs-on: ubuntu-latest

@@ -40,17 +40,20 @@ def _records() -> dict[str, dict]:
     return found
 
 
-def test_two_classes_carry_a_second_engine_and_four_do_not() -> None:
+def test_three_classes_carry_a_second_engine_and_three_do_not() -> None:
     """The absence is half the finding, so it is asserted rather than assumed.
 
     A test that only checked the classes with a record would keep passing if a class quietly lost
     its second engine, and the page that publishes this would keep saying nothing about it.
+
+    The three without one are the three Reprolith solves itself where no widely-installed
+    independent implementation answers the same question. That is why they are the ones left, and
+    why this list is written down rather than derived: a class acquiring or losing a second engine
+    is a change a reader should be told about, not one a test should absorb.
     """
     records = _records()
-    assert set(records) == {"ode-pkpd", "kinetic"}, sorted(records)
-    assert set(_SOURCES) - set(records) == {
-        "constraint-based", "logical", "spatial", "stochastic",
-    }
+    assert set(records) == {"ode-pkpd", "kinetic", "constraint-based"}, sorted(records)
+    assert set(_SOURCES) - set(records) == {"logical", "spatial", "stochastic"}
 
 
 def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
@@ -68,6 +71,10 @@ def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
     }
     assert worst["ode-pkpd"] == pytest.approx(1e-06)
     assert worst["kinetic"] == pytest.approx(1e-03)
+    # The constraint-based pair is not a curve comparison and is not judged against the curve
+    # budget: it is the relative difference between two LP optima, and the widest of the eight is
+    # 1e-10 — four orders inside even PK/PD's.
+    assert worst["constraint-based"] == pytest.approx(1e-10)
 
     shares = {name: bound / _CURVE_PASS for name, bound in worst.items()}
     assert shares["ode-pkpd"] < 1e-04       # a hundredth of a percent of the budget
@@ -80,8 +87,18 @@ def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
             assert float(row["distance_at_most"]) / _CURVE_PASS < 0.05, (model_class, key)
 
 
+#: Which two implementations each corroborated class was compared across. Named per class rather
+#: than as one pair: the constraint-based class does not run a simulator at all, and a check that
+#: demanded COPASI of it would either fail or have to be loosened into asking nothing.
+_PAIRS = {
+    "ode-pkpd": ["copasi", "roadrunner"],
+    "kinetic": ["copasi", "roadrunner"],
+    "constraint-based": ["cobrapy", "scipy-linprog"],
+}
+
+
 def test_every_corroborated_run_names_the_two_engines_it_compared() -> None:
     """A record that does not say which engines agreed is not evidence that two of them did."""
     for model_class, record in _records().items():
         for key, row in record.items():
-            assert sorted(row["engines"]) == ["copasi", "roadrunner"], (model_class, key)
+            assert sorted(row["engines"]) == _PAIRS[model_class], (model_class, key)

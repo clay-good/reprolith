@@ -39,6 +39,7 @@ from reprolith import (
     constraint_based_dossier,
     run_test_set,
 )
+from reprolith.corroboration import corroborate_objective
 from reprolith.fba import solver_pin
 from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import dossier_from_dict, prune_certificate_directory
@@ -164,6 +165,30 @@ def main() -> None:
     # re-reads under its lock, and a plain write_text truncates it to zero before writing
     # ~52 KB. A crash in that window leaves a blank catalog behind.
     write_json_atomically(milestone / "catalog.json", catalog.to_dict())
+
+    # Engine independence: the same model solved by COBRApy — a different reader and a different
+    # LP backend — and compared on the objective *value*, which is the one quantity two correct
+    # solvers must agree on when the flux vector that attains it is not unique. Written only when
+    # COBRApy is installed, and this class published nothing at all until it was: an absent record
+    # says "no second engine was asked", which the corroboration surface reports as unchecked
+    # rather than as a pass.
+    corroboration = {}
+    for identifiers, _, _, sbml in specs:
+        try:
+            result = corroborate_objective(sbml)
+        except ImportError:
+            print("cobrapy is not installed; no corroboration written (install the "
+                  "'corroborate' extra)")
+            corroboration = {}
+            break
+        corroboration[identifiers.accession] = result.record()
+    if corroboration:
+        (milestone / "corroboration.json").write_text(
+            json.dumps(corroboration, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        stable = sum(1 for c in corroboration.values() if c["engine_independent"])
+        print(f"engine-independent: {stable}/{len(corroboration)}")
 
     counts = Counter(cert.overall.value for cert in certificates)
     print(f"entries: {len(certificates)} | verdicts: {dict(counts)}")

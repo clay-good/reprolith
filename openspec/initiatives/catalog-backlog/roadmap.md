@@ -94,10 +94,15 @@ a change under `openspec/changes/`.
 
 ### 5. Multi-engine matrix and cross-engine corroboration
 
-- **Type:** capability *(landed for both ODE classes: kinetic per model, PK/PD per claim at the
-  dose it was certified at, COPASI vs libRoadRunner, reported beside the certificates rather than
-  gating them. The other four classes have no second registered engine, so nothing is reported for
-  them — an absence, not a pass.)*
+- **Type:** capability *(landed for three of the six classes: kinetic per model and PK/PD per
+  claim at the dose it was certified at, COPASI vs libRoadRunner; and constraint-based per model,
+  Reprolith's own LP against COBRApy — compared on the **objective value**, because a linear
+  program's optimum is unique where the flux vector attaining it is not, so comparing flux
+  distributions would call two correct solvers engine-sensitive on any model with alternate
+  optima. All reported beside the certificates rather than gating them. The other three classes —
+  logical, spatial, stochastic — have no second registered engine, so nothing is reported for
+  them: an absence, not a pass. Each is a Reprolith-solved class with no widely-installed
+  independent implementation of the same question, which is why they are the ones left.)*
 - **Why (value):** Lifts a deferred fence. Running a reconstruction on more than one registered
   engine separates a model's behavior from a single solver's quirks, turning "engine-sensitive"
   from a hidden risk into a reported verdict — a real credibility multiplier.
@@ -106,7 +111,10 @@ a change under `openspec/changes/`.
 - **Seed source:** N/A (applies to existing entries).
 - **Difficulty:** Medium (engine integration and result normalization).
 - **Depends on:** MVP oracle; the BioSimulators engine registry.
-- **Done when:** Verdict stability is reported across ≥2 engines for supported classes.
+- **Done when:** ~~Verdict stability is reported across ≥2 engines for supported classes.~~ Done
+  for every class that has a second implementation to register: 80 PK/PD claims, 6 kinetic models
+  and 8 constraint-based models, all engine-independent (`tests/test_corroboration.py`,
+  `tests/test_fba_corroboration.py`).
 
 ### 6. Seed the un-curated literature (preprint / journal feeds)
 

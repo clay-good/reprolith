@@ -181,12 +181,16 @@ guessing — just: *does the described model produce the shown result?*
 - **A second opinion, or an honest blank.** A model can reproduce its paper for the wrong reason —
   a solver artifact that agrees with the figure. So the same runs go through a second,
   independently-implemented engine and the agreement is published beside the verdict, never gating
-  it: 80 PK/PD claims at the dose each was certified at and 6 kinetic models, all
-  engine-independent, COPASI 4.46.300 against libRoadRunner 2.7.0 — builds the record names,
-  because a bound measured against one of them says nothing about the next. Four of the six classes have **no** second
+  it: 80 PK/PD claims at the dose each was certified at and 6 kinetic models under COPASI 4.46.300
+  against libRoadRunner 2.7.0, and 8 constraint-based models under Reprolith's own LP against
+  COBRApy 0.31.1 — all engine-independent, and the builds are the record's own, because a bound
+  measured against one of them says nothing about the next. The constraint-based pair is compared
+  on the **objective value**: a linear program's optimum is unique where the flux vector attaining
+  it is not, so comparing flux distributions would call two correct solvers engine-sensitive on any
+  model with alternate optima. Three of the six classes have **no** second
   registered engine, so nothing was re-run for them — and `reprolith corroboration` prints those
-  four in the same list as the two, because a table of only the corroborated classes would read as
-  a whole-repository pass. It is reachable from the terminal and over MCP, not only from the
+  three in the same list as the three, because a table of only the corroborated classes would read
+  as a whole-repository pass. It is reachable from the terminal and over MCP, not only from the
   published page ([`docs/self-validation.md`](docs/self-validation.md)).
 
 ## What it is *not*

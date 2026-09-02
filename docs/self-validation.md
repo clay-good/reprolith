@@ -62,8 +62,8 @@ files libSBML's own spatial API wrote — the spec's reference implementation, n
   claim, at the dose the claim was certified at**: metformin's two claims differ by a 779.9 mg
   free-base override, and checking both on the model's default arm would have compared one run to
   itself and reported stability for an arm neither claim uses. Both halves of this now reach the
-  public registry, which said nothing about corroboration either way: the two classes that have a
-  second registered engine, with what it agreed to, **and the four that do not** — for which
+  public registry, which said nothing about corroboration either way: the classes that have a
+  second registered engine, with what it agreed to, **and the ones that do not** — for which
   nothing was checked, an absence rather than a pass, since a page listing only the corroborated
   classes leaves a reader to infer the rest were checked and passed.
 - **The same contracts throughout.** All six classes flow through one catalog lifecycle, one
@@ -132,22 +132,23 @@ six classes of verdicts with nothing saying which of them a second simulator had
 $ reprolith corroboration
 CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   reported beside the verdicts, never gating them
+  constraint-based      8 model(s) on cobrapy, scipy-linprog — all engine-independent to 1e-10
+                          as cobrapy 0.31.1, scipy-linprog 1.13.1
   kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   ode-pkpd             80 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
-  constraint-based      no second engine is registered — nothing was checked, which is not a pass
   logical               no second engine is registered — nothing was checked, which is not a pass
   spatial               no second engine is registered — nothing was checked, which is not a pass
   stochastic            no second engine is registered — nothing was checked, which is not a pass
 
-  overall: 2 of 6 classes re-run on a second engine — 80 claim(s), 6 model(s)
+  overall: 3 of 6 classes re-run on a second engine — 80 claim(s), 14 model(s)
 ```
 
 Two things about that output are deliberate.
 
-The **four unchecked classes print in the same list as the two checked ones.** Four of the six have
-no second registered engine, so nothing was re-run for them. A table of the two that do would read
+The **unchecked classes print in the same list as the checked ones.** Three of the six have
+no second registered engine, so nothing was re-run for them. A table of the three that do would read
 as a whole-repository pass — the exact shape this repository keeps being caught by, a clean report
 standing in for a check nobody made. The absence is the finding, so it is as loud as the pass.
 

@@ -69,7 +69,7 @@ def test_the_published_distance_is_a_bound_the_engines_can_reproduce() -> None:
 
     def bound(distance: float) -> float:
         return EngineCorroboration(
-            species="X", engines=("copasi", "roadrunner"), distance=distance, stable=True
+            quantity="X", engines=("copasi", "roadrunner"), distance=distance, stable=True
         ).distance_bound()
 
     assert bound(2.328e-06) == bound(2.143e-06) == 1e-05  # the pair that moved 8% between runs

@@ -37,9 +37,15 @@ _MARGIN = 2.0
 
 @dataclass(frozen=True)
 class EngineCorroboration:
-    """The result of running one curve under two engines and comparing the trajectories."""
+    """The result of running one thing under two engines and comparing what they returned.
 
-    species: str
+    ``quantity`` names what was compared, because it is no longer always a curve: an ODE class
+    compares a species trajectory, and the constraint-based class compares a model's optimal
+    objective value, which is the one number two LP solvers must agree on even when their flux
+    vectors differ.
+    """
+
+    quantity: str
     engines: tuple[str, str]
     distance: float
     stable: bool
@@ -64,7 +70,7 @@ class EngineCorroboration:
     def summary(self) -> str:
         verdict = "engine-independent" if self.stable else "engine-sensitive"
         return (
-            f"{self.species}: {self.engines[0]} vs {self.engines[1]} normalized distance "
+            f"{self.quantity}: {self.engines[0]} vs {self.engines[1]} normalized distance "
             f"at most {self.distance_bound():.0e} against a {self.effective_criterion():.0e} "
             f"criterion -> {verdict}"
         )
@@ -201,7 +207,7 @@ def corroborate_curve(
 
     distance = max(measure() for _ in range(draws))
     result = EngineCorroboration(
-        species=species,
+        quantity=species,
         engines=(_COPASI_ENGINE, ROADRUNNER_ENGINE),
         distance=distance,
         stable=False,
@@ -220,4 +226,79 @@ def corroborate_curve(
     return replace(result, stable=result.distance_bound() <= rel_tol, criterion=rel_tol)
 
 
-__all__ = ["EngineCorroboration", "corroborate_curve"]
+#: What the second implementation is called in a committed record. Named here rather than at the
+#: call site for the same reason the engine constants are: the record is keyed by these strings,
+#: and a record naming a different spelling of one tool reads as a different tool.
+COBRAPY_ENGINE = "cobrapy"
+
+
+def _cobrapy_objective(sbml: str) -> tuple[float, str]:
+    """COBRApy's optimum for this model, and the build that produced it.
+
+    Imported lazily, like every other optional engine here: the core stays dependency-free and a
+    missing extra has to fail by name rather than at import time.
+    """
+    import tempfile
+
+    import cobra  # a different reader and a different LP backend, which is what makes this evidence
+
+    with tempfile.NamedTemporaryFile("w", suffix=".xml", encoding="utf-8") as handle:
+        # COBRApy reads a path, not a string. The file is this process's own and is removed on
+        # exit; nothing about the comparison depends on where it sat.
+        handle.write(sbml)
+        handle.flush()
+        model = cobra.io.read_sbml_model(handle.name)
+    value = model.slim_optimize(error_value=None)
+    if value is None:
+        raise ValueError(
+            "cobrapy found no optimum for this model, so there is no second number to compare; "
+            "that is a disagreement about whether the program is solvable rather than a distance"
+        )
+    return float(value), str(cobra.__version__)
+
+
+def corroborate_objective(sbml: str, *, rel_tol: float = 1e-6) -> EngineCorroboration:
+    """Solve one constraint-based model under two independent implementations and compare.
+
+    The constraint-based class had no second registered engine, so the corroboration surface
+    reported it as *unchecked* — an absence, correctly, and not one that had to stay. COBRApy is a
+    different implementation of the same problem (a different LP backend behind a different model
+    reader), so agreement between it and Reprolith's own solver is real corroboration of the same
+    kind the ODE classes already publish.
+
+    **What is compared is the objective value, and that is the point rather than a shortcut.** A
+    linear program's optimum is unique; the flux vector that attains it usually is not. Comparing
+    flux distributions would report disagreement wherever a model has alternate optima — which is
+    most of them — and call two correct solvers engine-sensitive. So this compares the one quantity
+    both must agree on, and the certificate's own claim is that value.
+
+    The distance is the relative difference between the two optima, which puts it on the same
+    scale as the curve comparison's normalized distance and through the same published-bound rule.
+    An infeasible model under either solver is not a disagreement about a number, so it raises —
+    ``InfeasibleFba`` from this side, and a stated error from COBRApy's — rather than being
+    reported as a distance. A published "engine-sensitive" would say the two disagreed about a
+    value, when what happened is that one of them found no value at all.
+
+    Needs the ``fba`` extra (Reprolith's own solver) and the ``corroborate`` extra (COBRApy).
+    """
+    from .fba import solve_objective, solver_pin
+    from .sbml import ingest_fbc_sbml
+
+    model = ingest_fbc_sbml(sbml)
+    mine = solve_objective(model.stoichiometry, model.objective, model.lower, model.upper)
+    theirs, cobrapy_version = _cobrapy_objective(sbml)
+    scale = max(abs(mine), abs(theirs))
+    distance = 0.0 if scale == 0.0 else abs(mine - theirs) / scale
+    pin = solver_pin()
+    result = EngineCorroboration(
+        quantity="maximal objective value",
+        engines=(pin.engine, COBRAPY_ENGINE),
+        distance=distance,
+        stable=False,
+        # Read off the two libraries that just solved these programs, after they ran.
+        versions=(pin.version, cobrapy_version),
+    )
+    return replace(result, stable=result.distance_bound() <= rel_tol, criterion=rel_tol)
+
+
+__all__ = ["EngineCorroboration", "corroborate_curve", "corroborate_objective"]
