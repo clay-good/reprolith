@@ -580,17 +580,19 @@ def render_registry(
         # verdicts, and no measurement behind either: a reader could not tell a claim that landed
         # at a tenth of its budget from one at nine tenths, which is the evidence for the word in
         # the badge. The certificate carried it all along, and the terminal rendering prints it.
-        judged = "".join(
-            "<li>{claim}: {verdict}{measured}</li>".format(
-                claim=html.escape(a.claim_id),
-                verdict=html.escape(a.verdict.value),
-                measured=(
-                    f" — {html.escape(a.discrepancy.strip())}"
-                    if (a.discrepancy or "").strip() else ""
-                ),
+        judged_lines = []
+        for assessment in cert.assessments:
+            # Bound once rather than narrowed inside the expression: `discrepancy` is optional, and
+            # a conditional that tests one expression and dereferences another is the shape a type
+            # checker is right to refuse.
+            measured = (assessment.discrepancy or "").strip()
+            judged_lines.append(
+                f"<li>{html.escape(assessment.claim_id)}: "
+                f"{html.escape(assessment.verdict.value)}"
+                + (f" — {html.escape(measured)}" if measured else "")
+                + "</li>"
             )
-            for a in cert.assessments
-        )
+        judged = "".join(judged_lines)
         judged_block = (
             f'<details class="claims"><summary>how close each claim came '
             f'({len(cert.assessments)})</summary><ul>{judged}</ul></details>'
