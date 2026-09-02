@@ -14,6 +14,7 @@ is normalized, because `<digest>` is not an argument anyone types.
 from __future__ import annotations
 
 import contextlib
+import html
 import io
 import re
 from pathlib import Path
@@ -54,11 +55,49 @@ def _shown(text: str) -> list[str]:
     return shown
 
 
+def _install_lines(text: str) -> list[str]:
+    """Every `pip install …` a surface shows, whatever it is written in.
+
+    A rendered page has no line breaks to read: the registry is one line of HTML, and the banner
+    that produces it is a Python string split across source lines with its own escapes. So the
+    install command is found wherever it appears rather than at the start of a line, and the HTML
+    around it is stripped — a check that only recognizes an instruction when it is formatted as
+    Markdown is a check on Markdown, not on what a reader is told.
+    """
+    found = []
+    for match in re.finditer(r"pip install[^<\\\n\"`]*", text):
+        command = html.unescape(match.group(0)).split("#", 1)[0].strip().rstrip("&").strip()
+        # Only the lines that install *this* package. `python -m pip install --upgrade pip` is a
+        # pip install and is not one of them, and demanding `-e` of it would be nonsense.
+        if "reprolith" in command:
+            found.append(command)
+    return found
+
+
 def _documents() -> list[Path]:
+    # The rendered registry is in the sweep for the same reason its install line is: it shows
+    # commands to a stranger who never opens this repository, and it is the one surface where a
+    # command that does not parse is discovered by that stranger rather than by a test. Its
+    # `reprolith …` lines sit on their own lines inside the page's `<code>` block, so the same
+    # reader finds them.
     return sorted(
         path for path in REPO.rglob("*.md")
         if ".venv" not in path.parts and "node_modules" not in path.parts
-    )
+    ) + [REPO / "datasets" / "registry.html"]
+
+
+def _surface_text(path: Path) -> str:
+    """A page's text as a reader sees it — markup removed where the page is markup.
+
+    A rendered page puts its closing tags on the same line as the last command in a block, so a
+    command read straight out of the HTML runs on into the rest of the document. Tags become line
+    breaks and entities become the characters they stand for, which is exactly what the reader's
+    browser does; angle-bracket placeholders survive, because in HTML they arrive escaped.
+    """
+    text = path.read_text(encoding="utf-8")
+    if path.suffix != ".html":
+        return text
+    return html.unescape(re.sub(r"<[^>]+>", "\n", text))
 
 
 def _lines(text: str) -> list[str]:
@@ -81,7 +120,7 @@ def test_every_documented_command_line_parses() -> None:
     parser = build_parser()
     checked = 0
     for path in _documents():
-        for line in _lines(path.read_text(encoding="utf-8")):
+        for line in _lines(_surface_text(path)):
             argv = line.split()[1:]
             if not argv:
                 continue
@@ -102,9 +141,16 @@ def test_the_sweep_covers_the_pages_that_show_commands() -> None:
     with_commands = {
         path.relative_to(REPO).as_posix()
         for path in _documents()
-        if _lines(path.read_text(encoding="utf-8"))
+        if _lines(_surface_text(path))
     }
-    assert {"README.md", "docs/author-check.md", "docs/figure-values.md"} <= with_commands
+    assert {
+        "README.md",
+        "docs/author-check.md",
+        "docs/figure-values.md",
+        # The published page. It carries commands and was outside every sweep in this file until
+        # the day its install line was found broken on it.
+        "datasets/registry.html",
+    } <= with_commands
 
 
 def test_no_document_promises_an_install_route_that_does_not_exist() -> None:
@@ -117,16 +163,23 @@ def test_no_document_promises_an_install_route_that_does_not_exist() -> None:
 
     Pinned rather than fixed-and-forgotten because the fix will need reverting the day the package
     *is* published, and a stale clone-first instruction is the same defect in the other direction.
+
+    The sweep read Markdown, and the *public registry page* is Python — a string in `render.py`,
+    published to strangers who arrive from a paper and never see this repository's documents, and
+    it opened with `pip install reprolith` for as long as this test has existed. A guard written
+    for the one page a stranger reads, that could not see the other page a stranger reads. So it
+    now covers every surface that ships an install line: the documents, the rendered registry, and
+    the source that renders it.
     """
     root = Path(__file__).resolve().parents[1]
     pages = [root / "README.md", root / "CONTRIBUTING.md", *sorted((root / "docs").glob("*.md"))]
+    pages += [root / "datasets" / "registry.html", root / "python" / "reprolith" / "render.py"]
     for page in pages:
-        for number, line in enumerate(page.read_text(encoding="utf-8").splitlines(), start=1):
+        for number, line in enumerate(_install_lines(page.read_text(encoding="utf-8")), start=1):
             stripped = line.strip().lstrip("$ ").strip("`")
-            if not stripped.startswith("pip install"):
-                continue
             assert "-e" in stripped or "--editable" in stripped, (
-                f"{page.name}:{number} tells a reader to `{stripped}`, which does not work: "
+                f"{page.name} (install line {number}) tells a reader to `{stripped}`, which does "
+                "not work: "
                 "reprolith is not published, and this repository installs from a checkout"
             )
 

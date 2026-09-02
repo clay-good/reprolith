@@ -438,7 +438,14 @@ _AUTHOR_BANNER = (
     "<p>Before you submit, you can see what a reproducer would find in your own archive — or in "
     "the model and simulation document as they sit in your directory. It reads your files, runs "
     "no model, reaches no verdict, and issues no certificate.</p>"
-    "<pre><code>pip install reprolith\n"
+    # A clone, not the one-line PyPI install this used to show: the package is not published, so
+    # this page — the one surface a stranger reaches from a paper rather than from the repository
+    # — opened with a command that fails. Every document here already said so and a test held them
+    # to it; the test read Markdown, and this banner is Python, which is the whole of how it
+    # survived. The test now reads this file too, so the sentence you are reading cannot name the
+    # broken command either.
+    "<pre><code>git clone https://github.com/clay-good/reprolith &amp;&amp; "
+    "pip install -e ./reprolith\n"
     "reprolith archive-check paper.omex --claims my_claims.json\n"
     "reprolith archive-check --sedml paper.sedml --model paper.xml --claims my_claims.json"
     "</code></pre>"
