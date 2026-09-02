@@ -244,6 +244,23 @@ def corroborate_curve(
     return replace(result, stable=result.distance_bound() <= rel_tol, criterion=rel_tol)
 
 
+#: The level below which a difference between two LP optima is the machine's rather than the
+#: model's, and so must not be published as if a second machine would see it.
+#:
+#: Measured, and by exactly the failure this exists to prevent: the eight committed models were
+#: measured here at raw differences of 1e-15 to 1e-13, and the same eight on CI — different scipy
+#: and COBRApy builds over a different BLAS — came out as high as 4e-11 on one of them. A decade
+#: bound taken from either machine is not reproducible on the other, which is the same finding the
+#: curve classes made about COPASI's last places, four orders wider. So the raw difference is
+#: floored here before it goes through the same margin-and-decade rule as every other bound, and
+#: every one of these eight publishes 1e-08: twenty-five times the worst difference observed on
+#: any machine, and still two orders inside the 1e-06 criterion the verdict answers to.
+#:
+#: One-directional, like the margin it sits beside: it can only loosen a published bound, never
+#: tighten one, so it cannot turn a disagreement into an agreement.
+_LP_NOISE_FLOOR = 1e-9
+
+
 #: What the second implementation is called in a committed record. Named here rather than at the
 #: call site for the same reason the engine constants are: the record is keyed by these strings,
 #: and a record naming a different spelling of one tool reads as a different tool.
@@ -291,7 +308,10 @@ def corroborate_objective(sbml: str, *, rel_tol: float = 1e-6) -> EngineCorrobor
     both must agree on, and the certificate's own claim is that value.
 
     The distance is the relative difference between the two optima, which puts it on the same
-    scale as the curve comparison's normalized distance and through the same published-bound rule.
+    scale as the curve comparison's normalized distance and through the same published-bound rule
+    — with a floor, because the last places of an LP optimum move with the BLAS underneath it and
+    a bound taken from one machine's arithmetic is not a statement about the agreement
+    (:data:`_LP_NOISE_FLOOR`).
     An infeasible model under either solver is not a disagreement about a number, so it raises —
     ``InfeasibleFba`` from this side, and a stated error from COBRApy's — rather than being
     reported as a distance. A published "engine-sensitive" would say the two disagreed about a
@@ -306,7 +326,10 @@ def corroborate_objective(sbml: str, *, rel_tol: float = 1e-6) -> EngineCorrobor
     mine = solve_objective(model.stoichiometry, model.objective, model.lower, model.upper)
     theirs, cobrapy_version = _cobrapy_objective(sbml)
     scale = max(abs(mine), abs(theirs))
-    distance = 0.0 if scale == 0.0 else abs(mine - theirs) / scale
+    measured = 0.0 if scale == 0.0 else abs(mine - theirs) / scale
+    # Floored before it is published, because below `_LP_NOISE_FLOOR` the digits belong to the
+    # machine's floating-point arithmetic and not to the two implementations' agreement.
+    distance = max(measured, _LP_NOISE_FLOOR)
     pin = solver_pin()
     result = EngineCorroboration(
         quantity="maximal objective value",

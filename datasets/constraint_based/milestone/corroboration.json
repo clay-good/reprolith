@@ -1,6 +1,6 @@
 {
   "e_coli_core": {
-    "distance_at_most": 1e-15,
+    "distance_at_most": 1e-08,
     "engine_independent": true,
     "engine_versions": [
       "1.13.1",
@@ -12,7 +12,7 @@
     ]
   },
   "iAF1260": {
-    "distance_at_most": 1e-10,
+    "distance_at_most": 1e-08,
     "engine_independent": true,
     "engine_versions": [
       "1.13.1",
@@ -24,7 +24,7 @@
     ]
   },
   "iEK1008": {
-    "distance_at_most": 1e-11,
+    "distance_at_most": 1e-08,
     "engine_independent": true,
     "engine_versions": [
       "1.13.1",
@@ -36,7 +36,7 @@
     ]
   },
   "iIT341": {
-    "distance_at_most": 1e-12,
+    "distance_at_most": 1e-08,
     "engine_independent": true,
     "engine_versions": [
       "1.13.1",
@@ -48,7 +48,7 @@
     ]
   },
   "iJO1366": {
-    "distance_at_most": 1e-13,
+    "distance_at_most": 1e-08,
     "engine_independent": true,
     "engine_versions": [
       "1.13.1",
@@ -60,7 +60,7 @@
     ]
   },
   "iLJ478": {
-    "distance_at_most": 1e-12,
+    "distance_at_most": 1e-08,
     "engine_independent": true,
     "engine_versions": [
       "1.13.1",
@@ -72,7 +72,7 @@
     ]
   },
   "iMM904": {
-    "distance_at_most": 1e-13,
+    "distance_at_most": 1e-08,
     "engine_independent": true,
     "engine_versions": [
       "1.13.1",
@@ -84,7 +84,7 @@
     ]
   },
   "iNF517": {
-    "distance_at_most": 1e-11,
+    "distance_at_most": 1e-08,
     "engine_independent": true,
     "engine_versions": [
       "1.13.1",

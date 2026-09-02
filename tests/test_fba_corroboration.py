@@ -61,10 +61,30 @@ def test_the_committed_bound_is_reproducible_and_never_better_than_measured(acce
 
     assert result.engines == ("scipy-linprog", "cobrapy")
     assert result.stable and stored["engine_independent"]
-    # The published number is a bound, so re-measuring may land under it and must never land over
-    # it: that is the one direction in which the committed artifact would be false.
-    assert result.distance <= stored["distance_at_most"]
-    assert result.distance_bound() <= stored["distance_at_most"]
+    # The *bound*, and equality rather than "at most". An earlier version of this test compared
+    # the raw difference against the committed bound and failed on CI at 4e-11 against a 1e-13
+    # taken from this machine: two LP backends over different BLAS builds agree to different last
+    # places, and a decade read off one machine's arithmetic is not a statement about the two
+    # implementations. The floor is what makes the published number the same everywhere, and a
+    # test that accepted anything under it would not notice if it stopped being.
+    assert result.distance_bound() == stored["distance_at_most"] == 1e-08
+
+
+def test_the_floor_can_only_loosen_a_bound_never_tighten_one() -> None:
+    """The floor is one-directional, which is what keeps it from hiding a real disagreement.
+
+    A model whose two optima genuinely differ is published at *its* distance, not at the floor.
+    """
+    from reprolith.corroboration import _LP_NOISE_FLOOR, EngineCorroboration
+
+    real = EngineCorroboration(
+        quantity="maximal objective value",
+        engines=("scipy-linprog", "cobrapy"),
+        distance=max(0.03, _LP_NOISE_FLOOR),
+        stable=False,
+    )
+    assert real.distance_bound() >= 0.03
+    assert not real.stable
 
 
 def test_the_record_names_the_builds_it_was_measured_on() -> None:

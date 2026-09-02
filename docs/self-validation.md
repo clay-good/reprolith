@@ -132,12 +132,12 @@ six classes of verdicts with nothing saying which of them a second simulator had
 $ reprolith corroboration
 CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   reported beside the verdicts, never gating them
-  constraint-based      8 model(s) on cobrapy, scipy-linprog — all engine-independent to 1e-10
+  constraint-based      8 model(s) on cobrapy, scipy-linprog — all engine-independent to 1e-08
                           as cobrapy 0.31.1, scipy-linprog 1.13.1
   kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   logical               9 model(s) on cana, reprolith-logical, sympy-sat — all agree exactly
-                          as cana 1.0.0, reprolith-logical 0.0.1, sympy-sat 1.14.0
+                          as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 7641c872354c), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 7641c872354c), sympy-sat 1.14.0
   ode-pkpd             80 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   spatial               no second engine is registered — nothing was checked, which is not a pass

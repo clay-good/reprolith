@@ -72,9 +72,11 @@ def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
     assert worst["ode-pkpd"] == pytest.approx(1e-06)
     assert worst["kinetic"] == pytest.approx(1e-03)
     # The constraint-based pair is not a curve comparison and is not judged against the curve
-    # budget: it is the relative difference between two LP optima, and the widest of the eight is
-    # 1e-10 — four orders inside even PK/PD's.
-    assert worst["constraint-based"] == pytest.approx(1e-10)
+    # budget: it is the relative difference between two LP optima. All eight publish 1e-08, which
+    # is the floor rather than a measurement — below it the digits are the machine's BLAS and not
+    # the two implementations' agreement, measured at up to 4e-11 apart between two machines
+    # running the same eight models. See `_LP_NOISE_FLOOR`.
+    assert worst["constraint-based"] == pytest.approx(1e-08)
 
     shares = {name: bound / _CURVE_PASS for name, bound in worst.items()}
     assert shares["ode-pkpd"] < 1e-04       # a hundredth of a percent of the budget

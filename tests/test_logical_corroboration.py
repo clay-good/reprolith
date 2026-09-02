@@ -120,7 +120,6 @@ def test_a_partial_model_is_refused_rather_than_compared() -> None:
     networks never produce one.
     """
     import sympy
-
     from reprolith.corroboration import _complete_assignment
 
     rules = {"a": "b", "b": "a", "c": "!c"}
