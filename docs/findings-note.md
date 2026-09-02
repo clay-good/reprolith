@@ -3589,7 +3589,15 @@ against libRoadRunner on the same model file and therefore say nothing about the
 models came from. Every one of those papers is closed — one has a PMC identifier and is still not
 open access — so that class cannot be moved onto a paper-checked footing by this route either.
 
-Nothing reachable, in any of the three directions. The ceiling is the literature's — open access
+The **logical** class cannot be asked at all, and that is deliberate rather than an omission. Its
+nine certificates cite their networks in prose — "budding yeast cell-cycle network, CANA's 12-node
+variant (after Li et al. 2004)" — and carry no DOI, because several of them are a *variant* of a
+paper's network rather than the paper's own, and their reference values are CANA's rather than
+anything a paper printed. Attaching an identifier to those would invite precisely the misreading
+an earlier audit here found: a value credited to a paper that reports a different number, because
+the reference network has a node the paper's does not.
+
+Nothing reachable, in any of the three directions that can be asked. The ceiling is the literature's — open access
 first, and then whether a paper prints its model's own outputs as numbers — and not an artifact of
 which thirty-one entries were seeded (`scripts/survey_candidate_papers.py`,
 `datasets/manuscripts/candidate_survey.json`, read by a test that also fails if a candidate with a
