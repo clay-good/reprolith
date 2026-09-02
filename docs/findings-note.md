@@ -3657,6 +3657,19 @@ identical 116-element footprint on a strongly-connected PBPK model, and a target
 get beyond maps to the empty set rather than to `{itself}`, because a singleton would publish
 thirty-three views of one model as thirty-three independent pieces of evidence.
 
+One thing the proposal asked for is measured and *not* built: the gaps a reconstruction must close
+before a claim can run. They are real dependencies, and on this corpus they are the model's rather
+than the claim's — the reaction network, the compartment volumes, the function definitions, the
+events and the units are needed by every claim alike, so the rule adds the same five elements to
+all thirty-three footprints of a paper. Mean pairwise overlap goes 0.251 to 0.380 while the spread
+that separates a shared-machinery pair from an independent one falls 0.955 to 0.864: a constant
+added everywhere can only push every pair together, and can never tell two claims apart. Worse,
+charged as pairwise overlap it makes one more claim's marginal value negative, so the selector
+returns a smaller set than the budget allows — three claims at a budget of four on the mouse oral
+paper, and three again at a budget of five. `tests/test_footprint_gaps.py` holds all of it,
+including the premise, so a dossier that ever records a gap only some claims need reopens the
+question rather than passing quietly.
+
 And a footprint now has to say **where it came from**, because the two kinds are not equally
 checkable and read identically once written down. A derived footprint is re-derivable: anyone with
 the model file gets the same answer. A curator-stated one is a judgment about the model that the

@@ -76,6 +76,35 @@ equations rather than the model file produced exactly that for 77 of the 80 clai
 models' dynamics are 33 reactions that `ingest_sbml` declines to carry and records as a gap. That
 is why the derivation reads the model file.
 
+## What is deliberately *not* in a footprint
+
+A claim's verdict also rests on the gaps a reconstruction has to close before it can run at all —
+which is why the proposal asked for those gaps to be part of its footprint. Measured on this
+corpus, that rule costs discrimination and buys none, for a reason the proposal could not have
+known: **every load-bearing gap these dossiers record is a property of the model, not of a claim's
+run.** The reaction network, the compartment volumes, the function definitions, the events and the
+units are needed by every claim alike, so adding them adds the same five elements to all
+thirty-three footprints.
+
+| over one paper's 33 claims | footprints as built | with the model's gaps added |
+| --- | --- | --- |
+| mean pairwise overlap | 0.251 | 0.380 |
+| spread between the most and least overlapping pair | 0.955 | 0.864 |
+
+Overlap rises by half again and the spread that separates a shared-machinery pair from an
+independent one *shrinks*, which is the whole of it: a constant added to every footprint can only
+push every pair toward each other, and it can never tell two claims apart.
+
+The consequence is worse than a wash. Charged as pairwise overlap, a dependency every claim shares
+makes one more claim's marginal value negative, so the selector returns a **smaller set than the
+budget allows** — on the mouse oral paper, three claims at a budget of four, and three again at a
+budget of five. The shrinkage is driven entirely by machinery the claims have in common rather than
+by anything about the claims.
+
+So gaps stay out, and this is a measurement rather than a preference:
+`tests/test_footprint_gaps.py` holds every number above, including the premise — if a dossier ever
+records a gap that only *some* claims need, that test fails and the question is open again.
+
 ## Where each footprint came from
 
 A derived footprint and a curator's footprint are not the same evidence, and once written down
