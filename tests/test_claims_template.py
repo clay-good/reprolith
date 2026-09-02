@@ -282,3 +282,23 @@ def test_the_accession_form_is_the_shape_a_multi_paper_claims_file_uses() -> Non
     template = claims_template(_SBML, sedml=_SIMPLE, accession="ACC1")
     assert set(template["entries"]) == {"ACC1"}
     assert template["entries"]["ACC1"]["claims"][0]["claim_id"] == "c_C"
+
+
+def test_the_stub_carries_the_unit_field_blank_and_does_not_require_it() -> None:
+    """One vocabulary across the three things that produce a claim record.
+
+    The table proposer reads the unit off the column heading, the prose proposer off the sentence,
+    and this writes the blank — all of them under the name `claims-check --model` reads. A curator
+    who never fills it in loses only the unit check; refusing their file for a check they did not
+    ask for would be the same defect this module avoids everywhere else.
+    """
+    from reprolith import claims_template, unfilled_claims
+
+    template = claims_template(_METFORMIN_MODEL, sedml=_METFORMIN_SEDML)
+    stubs = template["claims"]
+    assert stubs, "this document plots nothing; the check would pass vacuously"
+    assert all(stub["reported_units"] == "" for stub in stubs)
+    # Blank, and not one of the blanks that make a file unusable.
+    blanks = unfilled_claims(stubs)
+    assert blanks, "an unfilled template should report its blanks"
+    assert not any("reported_units" in blank for blank in blanks)

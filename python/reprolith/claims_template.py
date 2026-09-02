@@ -83,6 +83,11 @@ def _stub(claim_id: str, quantity: str, species: str) -> dict[str, Any]:
         # Never a number. See the module docstring: a guessed reference is the check passing
         # against the model's own output.
         "reported": None,
+        # The unit that number is in, under the name every other producer of a claim record uses.
+        # Blank and *not* required: the value check works without it, and `claims-check --model`
+        # is where it earns its place — a number in one unit judged against a model output in
+        # another is a verdict about arithmetic that nothing downstream can see.
+        "reported_units": "",
         "source_location": "",
         # A plot is a trajectory and a claim is a scalar, so the metric cannot be read off the
         # document — this is the default the claims file uses, not something derived.
@@ -282,6 +287,11 @@ def unfilled_claims(records: Sequence[Mapping[str, Any]]) -> tuple[str, ...]:
     A template passed to the check unfilled is the ordinary mistake, and it used to surface as a
     ``TypeError`` on ``float(None)`` from inside the loader. Each blank is named with the claim it
     is on, so the message says which line to go and write.
+
+    ``reported_units`` is deliberately not among them. The value check does not need it, so a claims
+    file without it is complete for what `archive-check` asks; it is what makes the *unit* check
+    possible, and refusing a file for a check the author did not ask for would be this module's own
+    kind of defect.
     """
     unfilled: list[str] = []
     for position, record in enumerate(records):

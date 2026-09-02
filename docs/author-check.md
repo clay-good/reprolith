@@ -116,6 +116,11 @@ Every file validates. The run completes. The number is close. That is the failur
 
 ## The parameters file
 
+`claims-template` writes `reported_units` blank on every stub, and `claims-propose` fills it in
+from the column heading when the heading names one. It is optional: without it the value check is
+unaffected, and with it `claims-check --model` can say whether the number is in the unit your model
+reads that output in.
+
 `params-check` reads a JSON file pairing each model value id with the number your paper reports
 for it. An id may name a parameter, a compartment whose `size` is a tissue volume, or a species
 whose initial amount or concentration is an initial condition. `params-template` writes it with one
