@@ -51,6 +51,14 @@ result up to a clean pass.
 - **AND** the overall verdict cannot be an unqualified `reproduced` if any counted claim is
   assumption-qualified
 
+#### Scenario: How far off each judged claim came
+
+- **WHEN** a claim was judged against a reference
+- **THEN** the certificate states the measured discrepancy for it in both of its forms, not only
+  for the claims that fell short
+- **AND** a reader can therefore tell a claim that came in at a tenth of its tolerance from one
+  that came in at nine tenths, which is the evidence for the verdict the certificate carries
+
 #### Scenario: A load-bearing assumption alone forbids a clean pass
 
 - **WHEN** every counted claim reproduced and none is individually marked assumption-qualified,

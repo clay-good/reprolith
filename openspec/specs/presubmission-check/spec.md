@@ -197,6 +197,71 @@ be able to ask whether each value a claims file states is printed in the source 
 - **AND** an unfilled claim template is reported the same way, since a value not yet written is
   not a wrong value
 
+### Requirement: A model's own values can be checked against the ones its paper reports
+
+Every certificate this engine issues checks a model's *outputs*. Nothing checked its **inputs**: a
+deposit carrying a value its own paper does not report reproduces every claim and says nothing. An
+author SHALL be able to ask whether the model they are depositing carries the values their paper
+prints, and SHALL be told what that question could not reach.
+
+#### Scenario: A value the model does not carry
+
+- **WHEN** a model is checked against values a paper reports, each paired with the model element it
+  names
+- **THEN** a value the model does not carry is reported, naming both numbers
+- **AND** agreement is judged at the precision the paper printed and no finer, since demanding
+  equality would accuse a correct deposit of a mismatch its own source cannot support
+
+#### Scenario: A value the model's own math determines
+
+- **WHEN** the paired element's value is set by an initial assignment or a rule
+- **THEN** it is reported as not compared, separately from a mismatch, because the number in its
+  declaring attribute is not what runs and agreement with it would be a confident wrong answer
+
+#### Scenario: What the paper does not report at all
+
+- **WHEN** the check completes
+- **THEN** every settable value the model declares that the supplied pairs do not cover is named,
+  grouped by what it is — a parameter, a compartment's size, a species' initial condition — since
+  a value the paper omits is one a reproducer must take from the deposit or guess
+- **AND** this is reported and never gated, because which of them belongs in a paper is the
+  author's judgment
+
+#### Scenario: A pairing the author has not made yet
+
+- **WHEN** a row states a value and names no model element
+- **THEN** it is reported as not compared, because a file that is not finished is not a model that
+  fails its paper
+
+### Requirement: A claim's number is checked in the unit it is a number of
+
+Two numbers agreeing says nothing until they are the same quantity, and a paper's litres against a
+deposit's millilitres agree at a factor of a thousand — an error no output check downstream can
+see, since the reconstruction runs the model's own number and reproduces the model's own curve. A
+claim that states the unit its value is in SHALL have that unit checked against the model and
+against the paper, and a difference SHALL abstain rather than be compared.
+
+#### Scenario: The unit a model reads an output in
+
+- **WHEN** a claim states the unit its value is in and a model is supplied
+- **THEN** the unit that model reads that output in is composed from the model's own declarations
+  and compared against it, and a difference is reported as not compared rather than as a
+  disagreement about the value
+- **AND** the answer names the factor between the two units where both are readable
+
+#### Scenario: The unit the paper's own heading states
+
+- **WHEN** a claim states a unit and cites a table that names one for the claim's metric
+- **THEN** the two are compared, so a value taken from one column and labelled with another's unit
+  is reported
+
+#### Scenario: A unit that cannot be read
+
+- **WHEN** either unit cannot be read as a unit, or the claim states none, or the row states no
+  metric
+- **THEN** it is reported as not checked, because naming another unit is an accusation and an
+  unreadable unit is not evidence of one
+
 ### Requirement: Runnable over the MCP surface
 
 An author or their agent SHALL be able to run the check through the same read-only MCP surface as
