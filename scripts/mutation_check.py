@@ -309,6 +309,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_cli.py"],
     ),
     (
+        "an archive member is decompressed however large it expands to",
+        "omex.py",
+        (
+            "    if declared > _MAX_MEMBER_BYTES:",
+            "    if False:",
+        ),
+        ["tests/test_omex.py"],
+    ),
+    (
         "the public page publishes a verdict with no measurement behind it",
         "render.py",
         (

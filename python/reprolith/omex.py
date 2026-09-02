@@ -56,6 +56,37 @@ def _format_name(format_uri: str) -> str:
     return format_uri[len(_COMBINE_SPECIFICATIONS):].split(".")[0]
 
 
+#: The most any one member of an archive may expand to. A COMBINE archive holds a model, an
+#: experiment and a manifest; the largest genome-scale SBML this repository reads is a few
+#: megabytes compressed and under a hundred uncompressed, so this is two orders of magnitude of
+#: headroom over anything real.
+#:
+#: The cap exists because a *compressed* size says nothing about a decompressed one: a kilobyte of
+#: zeroes expands to a gigabyte, and every reader here — `archive-check`, `figure-check`, the
+#: ingester — is pointed at a file somebody else produced. The MCP surface already bounds its lint
+#: inputs for the same reason, after one legal request cost 1.7 GB.
+_MAX_MEMBER_BYTES = 256 * 1024 * 1024
+
+
+def _read_member(archive: zipfile.ZipFile, name: str) -> bytes:
+    """One member's bytes, refusing a member that expands past the cap.
+
+    The size a zip header declares is written by whoever made the file, so consulting it looks
+    like trusting it. It is not: Python's reader stops at that declared size and then fails the
+    CRC, so a header that understates its member cannot smuggle bytes past this — which
+    `tests/test_omex.py` pins, because this check's trustworthiness rests on it.
+    """
+    declared = archive.getinfo(name).file_size
+    if declared > _MAX_MEMBER_BYTES:
+        raise ValueError(
+            f"this archive's {name!r} declares {declared} bytes, above the "
+            f"{_MAX_MEMBER_BYTES}-byte cap for one member: a small archive that expands to "
+            "gigabytes is how a reader is made to run out of memory, and no model this reads is "
+            "near that size"
+        )
+    return archive.read(name)
+
+
 def _read_manifest(
     archive: zipfile.ZipFile, stored: dict[str, str]
 ) -> list[tuple[str, str, bool]]:
@@ -65,7 +96,7 @@ def _read_manifest(
     manifest written as ``./manifest.xml`` and one written as ``manifest.xml`` both resolve.
     """
     try:
-        manifest = archive.read(stored["manifest.xml"])
+        manifest = _read_member(archive, stored["manifest.xml"])
     except KeyError:
         raise ValueError(
             "not a COMBINE archive: no manifest.xml at the archive root. A zip of model files "
@@ -253,7 +284,7 @@ def _locate(
                 f"the archive's manifest lists the experiment '{experiment}', "
                 "but the archive does not contain it"
             )
-        sedml_text = zf.read(stored[experiment]).decode("utf-8")
+        sedml_text = _read_member(zf, stored[experiment]).decode("utf-8")
         sources = sedml_model_sources(sedml_text)
         resolved = tuple(dict.fromkeys(_resolve(s, relative_to=experiment) for s in sources))
         if len(resolved) != 1:
@@ -303,7 +334,7 @@ def archive_documents(
             _experiment, sedml_text, model_location, _contents = _locate(
                 zf, stored, set(stored)
             )
-            return sedml_text, zf.read(stored[model_location]).decode("utf-8")
+            return sedml_text, _read_member(zf, stored[model_location]).decode("utf-8")
     except zipfile.BadZipFile as exc:
         raise ValueError(f"not a readable COMBINE archive: {exc}") from exc
     except UnicodeDecodeError as exc:
@@ -351,11 +382,11 @@ def ingest_omex(archive: str | os.PathLike[str] | bytes, *, entry: str) -> Dossi
                 for source in sedml_data_sources(sedml_text):
                     location = _resolve(source, relative_to=experiment or "")
                     if location in members:
-                        data_files[source] = zf.read(stored[location]).decode("utf-8")
+                        data_files[source] = _read_member(zf, stored[location]).decode("utf-8")
                     else:
                         missing_data.append(source)
 
-            model_text = zf.read(stored[model_location]).decode("utf-8")
+            model_text = _read_member(zf, stored[model_location]).decode("utf-8")
     except zipfile.BadZipFile as exc:
         raise ValueError(f"not a readable COMBINE archive: {exc}") from exc
     except UnicodeDecodeError as exc:

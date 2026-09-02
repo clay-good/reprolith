@@ -361,3 +361,61 @@ def test_a_reader_of_the_documents_refuses_what_ingestion_refuses() -> None:
 
     with pytest.raises(ValueError, match="no manifest.xml"):
         archive_documents(_archive({"model.xml": _SBML}))
+
+
+def test_a_member_that_expands_past_the_cap_is_refused_not_read() -> None:
+    """A compressed size says nothing about a decompressed one.
+
+    Every reader here — `archive-check`, `figure-check`, the ingester — is pointed at a file
+    somebody else produced, and a kilobyte of zeroes expands to a gigabyte. The MCP surface already
+    bounds its lint inputs for the same reason, after one entirely legal request cost 1.7 GB.
+
+    Checked at a small cap rather than by building a real bomb: the guard is a comparison, and a
+    test that spends a gigabyte to exercise it is its own denial of service.
+    """
+    import io
+    import zipfile
+
+    from reprolith import omex
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("manifest.xml", "0" * 4096)
+    buffer.seek(0)
+
+    with zipfile.ZipFile(buffer) as archive:
+        # Under the cap, it reads.
+        assert len(omex._read_member(archive, "manifest.xml")) == 4096
+
+        original = omex._MAX_MEMBER_BYTES
+        try:
+            omex._MAX_MEMBER_BYTES = 100
+            with pytest.raises(ValueError, match="above the 100-byte cap"):
+                omex._read_member(archive, "manifest.xml")
+        finally:
+            omex._MAX_MEMBER_BYTES = original
+
+
+def test_a_header_that_understates_its_member_is_caught_by_the_zip_itself() -> None:
+    """Why consulting the declared size is not trusting it.
+
+    The cap is checked against the size the archive declares, which a hostile file writes for
+    itself — so the read is bounded again afterwards. That second bound is a backstop rather than
+    the guard: Python's own reader stops at the declared size and then fails the CRC, so a header
+    that understates its member cannot smuggle bytes past the first check. Pinned because the
+    first check's trustworthiness rests on it.
+    """
+    import io
+    import zipfile
+
+    from reprolith import omex
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("manifest.xml", "0" * 4096)
+    buffer.seek(0)
+
+    with zipfile.ZipFile(buffer) as archive:
+        archive.getinfo("manifest.xml").file_size = 1  # a header that lies about a 4 KiB member
+        with pytest.raises(zipfile.BadZipFile):
+            omex._read_member(archive, "manifest.xml")
