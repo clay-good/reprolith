@@ -973,6 +973,62 @@ def check_claim_units(
     return tuple(results)
 
 
+def check_claim_units_in_tables(
+    claims: Sequence[Mapping[str, Any]], tables: Mapping[str, Mapping[str, Any]]
+) -> tuple[UnitCheck, ...]:
+    """Check each claim's stated unit against the column of the table it cites.
+
+    The third side of the triangle. :func:`check_claim_values` asks whether the paper prints that
+    number; :func:`check_claim_units` asks whether the model reads that output in that unit; this
+    asks whether the *paper* states it in that unit. A curator who reads a value out of a µmol
+    column and labels it nmol passes both of the others: the number is printed, and the model's own
+    unit is whatever it is.
+
+    The column is found by the claim's own metric — the cited table's heading that states `cmax`
+    when the claim reads a peak — and only when exactly one column states it. A table with two such
+    columns, or none, is not guessed at: which one a claim reads is the judgment this module
+    refuses to make everywhere else.
+    """
+    from .claim_candidates import _metric_for, _unit_for
+
+    results: list[UnitCheck] = []
+    for record in claims:
+        claim_id = str(record.get("claim_id") or "")
+        stated = str(record.get("reported_units") or "")
+        metric = str(record.get("metric") or "cmax")
+        label = _cited_label(str(record.get("source_location") or ""), tables)
+        if not stated or label is None:
+            continue  # nothing stated, or no supplied table to state it against
+        rows = tables[label].get("rows") or ()
+        headings = [str(cell) for cell in (rows[0] if rows else ())]
+        columns = [h for h in headings if _metric_for(h) == metric and _unit_for(h)]
+        if len(columns) != 1:
+            results.append(UnitCheck(
+                claim_id, stated, UNSTATED_UNIT, None,
+                f"{label} states no single {metric} column naming a unit, so there is nothing here "
+                "to check this claim's unit against",
+            ))
+            continue
+        printed = _unit_for(columns[0])
+        if _units_known_to_differ(stated, printed):
+            results.append(UnitCheck(
+                claim_id, stated, printed, False,
+                f"this claim is in {stated} and {label}'s {columns[0]!r} column prints {printed}",
+            ))
+        elif _units_differ(stated, printed):
+            results.append(UnitCheck(
+                claim_id, stated, printed, None,
+                f"this claim is in {stated}, which is not a unit this can read against "
+                f"{printed}, so the two were not compared",
+            ))
+        else:
+            results.append(UnitCheck(
+                claim_id, stated, printed, True,
+                f"{label}'s {columns[0]!r} column prints {printed}, which is what this claim says",
+            ))
+    return tuple(results)
+
+
 def claims_in_another_unit(checks: Sequence[UnitCheck]) -> tuple[UnitCheck, ...]:
     """The checks that came back false, and never the ones that could not be made."""
     return tuple(check for check in checks if check.agrees is False)
@@ -1003,6 +1059,7 @@ __all__ = [
     "ValueCheck",
     "UnitCheck",
     "check_claim_units",
+    "check_claim_units_in_tables",
     "check_claim_values",
     "check_parameter_values",
     "claim_units",

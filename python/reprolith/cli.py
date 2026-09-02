@@ -47,6 +47,7 @@ from .digitization import (
 from .export import build_bundle_sedml, build_omex_archive
 from .manuscript_values import (
     check_claim_units,
+    check_claim_units_in_tables,
     check_claim_values,
     check_parameter_values,
     claims_in_another_unit,
@@ -506,6 +507,11 @@ def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         return 1
 
     checks = check_claim_values(records, rows)
+    # The third side of the triangle: the paper's own column heading says what its numbers are in,
+    # and a value read out of a µmol column and labelled nmol passes both the other checks — the
+    # number is printed, and the model's unit is whatever it is.
+    printed_units = check_claim_units_in_tables(records, rows)
+    mislabelled = claims_in_another_unit(printed_units)
     # The other half of "is this claim right": a number is a number *of* something, and comparing
     # it against a model output in another unit is a verdict about arithmetic. Nothing downstream
     # can see it — the reproduction runs the model's own numbers and reproduces its own curve — so
@@ -521,6 +527,7 @@ def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         _print_json({
             "checks": [c.to_dict() for c in checks],
             "units": [c.to_dict() for c in units],
+            "units_in_tables": [c.to_dict() for c in printed_units],
         })
     else:
         print(f"CLAIMS CHECKED AGAINST {len(rows)} TABLE(S): {', '.join(sorted(rows))}")
@@ -532,6 +539,19 @@ def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             # Never folded in with the failures: a value read from a figure panel or a sentence is
             # not a defect, and an absence of evidence is not evidence of absence.
             print(f"  ({len(unchecked)} claim(s) were not checked — see the reason on each)")
+        if printed_units:
+            # A line per claim would double this report for a fact that is usually unremarkable;
+            # the count says the check ran, and each disagreement is named in full.
+            agreed = sum(1 for c in printed_units if c.agrees is True)
+            differ = sum(1 for c in printed_units if c.agrees is False)
+            # Never "N of M agree": a claim whose cited table names no unit for its metric was not
+            # compared, and folding it into the denominator reports an absence as a disagreement.
+            print(f"UNITS CHECKED AGAINST THE TABLES' OWN HEADINGS: {agreed} agree, "
+                  f"{differ} differ, {len(printed_units) - agreed - differ} not checked")
+            for printed in printed_units:
+                if printed.agrees is not True:
+                    mark = "ANOTHER UNIT" if printed.agrees is False else "not checked"
+                    print(f"  [{printed.claim_id}] {mark}: {printed.detail}")
         if units:
             print(f"UNITS CHECKED AGAINST {Path(args.model).name}")
             for unit in units:
@@ -540,7 +560,7 @@ def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     # Non-zero for a value the cited table does not print, and for a claim in a unit the model does
     # not read that output in. An unchecked claim is not a finding either way, so it must not fail
     # a pre-submission hook.
-    return 1 if unsupported_claims(checks) or claims_in_another_unit(units) else 0
+    return 1 if unsupported_claims(checks) or claims_in_another_unit(units) or mislabelled else 0
 
 
 def _model_from_archive_or_file(args: argparse.Namespace) -> tuple[str, str]:

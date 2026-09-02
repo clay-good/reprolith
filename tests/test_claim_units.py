@@ -278,3 +278,61 @@ def test_a_unit_this_cannot_read_is_not_checked_rather_than_accused() -> None:
     unreadable = check("arbitrary units")
     assert unreadable.agrees is None and "not a unit this can read" in unreadable.detail
     assert claims_in_another_unit((unreadable,)) == ()
+
+
+def test_a_claim_labelled_with_a_unit_its_own_table_does_not_print_is_caught() -> None:
+    """The third side of the triangle, and the one nothing else can see.
+
+    `check_claim_values` asks whether the paper prints that number. `check_claim_units` asks
+    whether the model reads that output in that unit. A curator who reads a value out of a µmol
+    column and labels it nmol passes both: the number is printed, and the model's unit is whatever
+    it is. Only the paper's own heading says what its numbers are in.
+    """
+    from reprolith.manuscript_values import check_claim_units_in_tables
+
+    tables = {"Table 6": {"caption": "x", "rows": [
+        ["Tissue", "Cmax, nmol/mL", "AUC24, nmol*h/mL"],
+        ["Plasma", "6.1", "51.7"],
+    ]}}
+
+    def check(units: str, metric: str = "cmax"):
+        (one,) = check_claim_units_in_tables([{
+            "claim_id": "c", "reported": 6.1, "metric": metric,
+            "reported_units": units, "source_location": "Table 6, plasma row",
+        }], tables)
+        return one
+
+    assert check("nmol/mL").agrees is True
+    assert check("nmol*h/mL", metric="auc").agrees is True
+    mislabelled = check("µmol/mL")
+    assert mislabelled.agrees is False and "prints nmol/mL" in mislabelled.detail
+    # The metric decides which column is compared: an area is not judged against a peak's heading.
+    assert check("nmol/mL", metric="auc").agrees is False
+
+    # A unit this cannot read is not a disagreement, here as everywhere else.
+    assert check("arbitrary units").agrees is None
+    # And a table with no column stating that metric is not guessed at.
+    (nothing,) = check_claim_units_in_tables([{
+        "claim_id": "c", "reported": 1.0, "metric": "final", "reported_units": "nmol/mL",
+        "source_location": "Table 6, plasma row",
+    }], tables)
+    assert nothing.agrees is None and "no single final column" in nothing.detail
+
+
+def test_every_committed_claim_is_in_the_unit_its_cited_table_prints() -> None:
+    """On the corpus, from the paper's side rather than the model's."""
+    from reprolith.manuscript_values import check_claim_units_in_tables
+
+    repo = Path(__file__).resolve().parents[1]
+    checked = 0
+    for accession, entry in _CLAIMS.items():
+        path = repo / "datasets" / "manuscripts" / f"{accession}_tables.json"
+        if not path.exists():
+            continue
+        tables = json.loads(path.read_text(encoding="utf-8"))["tables"]
+        results = check_claim_units_in_tables(entry["claims"], tables)
+        assert all(c.agrees is True for c in results), [
+            c.detail for c in results if c.agrees is not True
+        ]
+        checked += len(results)
+    assert checked == 80, checked

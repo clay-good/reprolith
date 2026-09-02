@@ -205,6 +205,13 @@ guessed would accuse correct claims. A claim citing a figure panel or a sentence
 did not supply, is reported as **not checked**, never as wrong, and never fails the command: an
 absence of evidence is not evidence of absence.
 
+It also asks a question of the table itself, whenever your claims state a unit: does the column
+your claim's metric names print that unit? A value read out of a µmol column and labelled nmol
+passes every other check here — the number *is* printed, and your model's unit is whatever it is —
+and only the paper's own heading says what its numbers are in. The column is found by the metric
+and only when exactly one column states it; a table with two, or none, is reported as not checked
+rather than guessed at.
+
 Give it `--model` and it asks a second mechanical question: **is your claim in the unit your model
 reads that output in?** A number is a number *of* something, and a claim in µg/mL against a model
 output in nmol/mL is a verdict about arithmetic — one nothing downstream can catch, because the

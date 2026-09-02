@@ -255,6 +255,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_manuscript_reference_values.py"],
     ),
     (
+        "a claim labelled with a unit its own cited table does not print reads as checked",
+        "manuscript_values.py",
+        (
+            "        if _units_known_to_differ(stated, printed):",
+            "        if False:",
+        ),
+        ["tests/test_claim_units.py"],
+    ),
+    (
         "the exported archive leaves without saying what it is or where it came from",
         "export.py",
         (

@@ -916,7 +916,12 @@ def test_claims_check_also_checks_the_unit_when_it_is_given_a_model(tmp_path, ca
 
     # Without a model the unit is not checked at all, and the command says nothing about it.
     assert run(["claims-check", "--claims", str(claims), "--tables", str(tables)]) == 0
-    assert "UNITS CHECKED" not in capsys.readouterr().out
+    printed = capsys.readouterr().out
+    # The model's units are not checked without a model. The *paper's* are, from the heading of the
+    # column each claim's metric names — and this table's one column heads a bare number, so both
+    # claims come back not checked rather than as disagreements.
+    assert "UNITS CHECKED AGAINST THE TABLES' OWN HEADINGS: 0 agree, 0 differ, 2 not checked" in printed
+    assert "UNITS CHECKED AGAINST model.xml" not in printed
 
     assert run([
         "claims-check", "--claims", str(claims), "--tables", str(tables), "--model", str(model),
