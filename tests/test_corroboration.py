@@ -210,13 +210,23 @@ def test_the_published_bound_does_not_move_between_two_measurements_of_one_run()
 
 def test_one_draw_can_be_asked_for_and_never_states_better_agreement() -> None:
     """The worst of several measurements is weaker than any single one, never stronger — so the
-    default cannot turn an engine-sensitive result into an engine-independent one."""
+    default cannot turn an engine-sensitive result into an engine-independent one.
+
+    Compared at the *bound*, which is what gets published, and at the raw distance only up to the
+    solver's own last places. `single` and `doubled` are two separate invocations, so the draw one
+    takes and the draws the other maximizes over are different calls into COPASI — and where the
+    alternation's two phases nearly coincide, which phase lands first decides the last digit. This
+    assertion demanded an exact ordering across invocations that the engine does not offer, and it
+    failed in CI on a pair 6e-07 apart in relative terms. The defect it exists to catch — a `min`
+    where the `max` belongs — is a 13% drop on this curve, which the slack below cannot hide.
+    """
     sbml = (
         Path(__file__).parent.parent / "datasets" / "worked_examples"
         / "Zake2021_metformin_human_single_PO.xml"
     ).read_text(encoding="utf-8")
     single = corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=1)
     doubled = corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=2)
-    assert doubled.distance >= single.distance
+    assert doubled.distance_bound() >= single.distance_bound()
+    assert doubled.distance >= single.distance * (1.0 - 1e-4)
     with pytest.raises(ValueError, match="at least one draw"):
         corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=0)
