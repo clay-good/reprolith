@@ -255,6 +255,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_manuscript_reference_values.py"],
     ),
     (
+        "a candidate is proposed with a unit nothing could read as one",
+        "claim_candidates.py",
+        (
+            '    return tail if tail and _canonical_composite(tail) is not None else ""',
+            "    return tail",
+        ),
+        ["tests/test_claim_candidates.py"],
+    ),
+    (
         "the dossier page counts the word 'unstated' as a stated unit",
         "render.py",
         (

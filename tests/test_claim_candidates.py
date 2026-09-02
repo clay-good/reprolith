@@ -197,7 +197,7 @@ def test_prose_finds_the_two_values_the_corpus_committed() -> None:
         "11.2 nmol/mL (1.45 mg/L) respectively."
     )
     proposed = propose_claims_from_prose(sentence)["candidates"]
-    found = {c["reported"] for c in proposed if c["unit"] == "nmol/mL"}
+    found = {c["reported"] for c in proposed if c["reported_units"] == "nmol/mL"}
     assert {6.1, 11.2} <= found
     for candidate in proposed:
         assert candidate["species"] == ""            # never guessed, as in the table reader
@@ -267,3 +267,70 @@ def test_the_survey_records_that_prose_does_not_reach_what_tables_miss() -> None
     assert with_prose <= with_table, sorted(with_prose - with_table)
     assert with_prose, "no paper states a result in prose; this check would pass vacuously"
     assert " ".join(survey["limits"]).count("figures") >= 1
+
+
+def test_a_candidate_carries_the_unit_its_column_heading_names() -> None:
+    """A results table says what its numbers are *of*, and the proposal dropped it.
+
+    A candidate without a unit is a bare number a curator has to go back to the paper for — and
+    once promoted, it reaches `claims-check --model` with nothing to check the model's own unit
+    against, which is the comparison that catches a number judged in the wrong quantity.
+
+    Taken from the heading and then *checked*: the tail is a unit only if the unit reader can read
+    it as one, so a "measured − fitted, %" column proposes none. That is right twice over — a
+    percentage difference is not one of the values, and a unit this cannot read must not be
+    published as one.
+    """
+    import json
+
+    from reprolith import propose_claims
+
+    repo = Path(__file__).resolve().parents[1]
+    committed = json.loads(
+        (repo / "datasets" / "pkpd_claims.json").read_text(encoding="utf-8")
+    )["entries"]
+
+    for accession in sorted(committed):
+        path = repo / "datasets" / "manuscripts" / f"{accession}_tables.json"
+        if not path.exists():
+            continue
+        tables = json.loads(path.read_text(encoding="utf-8"))["tables"]
+        proposed = propose_claims(tables)["candidates"]
+        assert proposed, accession
+        by_metric = {
+            (c["metric"], c["reported_units"]) for c in proposed if c["reported_units"]
+        }
+        # Every metric this paper's committed claims read is offered with the unit that paper's
+        # own heading names — the same fact `check_claim_units` checks against the model from the
+        # other side. Only the metrics it actually reads: the intravenous entry's table prints no
+        # Cmax at all, and the paper says why ("due to the IV curves' decreasing nature, only
+        # AUC24 and T1/2 values were calculated").
+        for claim in committed[accession]["claims"]:
+            metric = claim.get("metric", "cmax")
+            expected = "nmol*h/mL" if metric == "auc" else "nmol/mL"
+            assert claim["reported_units"] == expected, (accession, claim["claim_id"])
+            assert (metric, expected) in by_metric, (accession, metric, sorted(by_metric))
+
+    # A percentage column names no unit this can read, so none is proposed for it.
+    percentages = propose_claims({"Table 1": {"caption": "x", "rows": [
+        ["Tissue", "Cmax, nmol/mL", "Cmax measured-fitted, %"],
+        ["Plasma", "6.1", "-6"],
+    ]}})["candidates"]
+    assert {c["reported_units"] for c in percentages} == {"nmol/mL", ""}
+
+
+def test_a_heading_that_separates_its_unit_with_a_period_still_states_its_metric() -> None:
+    """One paper, four tables, two punctuation marks.
+
+    Every table of the metformin paper writes `Cmax, nmol/mL` except its Table 1, which writes
+    `Cmax. nmol/mL` — and that table is the mouse oral-dose model's, one of the four entries this
+    repository certifies. The first token came out `cmax.`, which is in no table of metrics, so
+    every candidate proposed from it carried no metric at all while the unit beside it read
+    cleanly. A curator would have had to supply by hand the one thing the heading states.
+    """
+    from reprolith.claim_candidates import _metric_for
+
+    assert _metric_for("Cmax, nmol/mL") == _metric_for("Cmax. nmol/mL") == "cmax"
+    assert _metric_for("AUC24. nmol*h/mL") == "auc"
+    # Still not a metric: a percentage column is a difference between two numbers, not one of them.
+    assert _metric_for("Cmax measured -fitted. %") == ""

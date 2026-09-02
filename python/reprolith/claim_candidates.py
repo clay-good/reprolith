@@ -90,8 +90,29 @@ def _metric_for(heading: str) -> str:
     """The metric a column heading states, or ``""`` when it states none."""
     if "%" in heading:
         return ""  # a difference between two numbers, not one of them
-    first = re.split(r"[,\s]", heading.strip(), maxsplit=1)[0].casefold()
+    # Split on the period too. This paper's own Table 1 separates the heading from its unit with
+    # one — `Cmax. nmol/mL` where every other table of the same paper writes `Cmax, nmol/mL` — and
+    # the first token came out `cmax.`, which is in no table of metrics. Every candidate from that
+    # table was proposed with no metric at all, for one of the four entries this repository
+    # certifies, while the unit beside it read cleanly.
+    first = re.split(r"[,.\s]", heading.strip(), maxsplit=1)[0].casefold()
     return _METRICS.get(first, "")
+
+
+def _unit_for(heading: str) -> str:
+    """The unit a column heading names, or ``""`` when it names none this can read.
+
+    A results table says what its numbers are *of* in the heading — ``Cmax, nmol/mL`` beside
+    ``AUC24, nmol*h/mL`` — and a candidate without it is a bare number a curator has to go back to
+    the paper for. The tail after the last separator is taken and then *checked*: it is a unit only
+    if the unit reader can read it as one, so ``Cmax measured-fitted, %`` proposes nothing, which
+    is right twice over — a percentage difference is not one of the values, and a unit this cannot
+    read must not be published as one.
+    """
+    from .manuscript_values import _canonical_composite
+
+    tail = re.split(r"[,.]", heading.strip())[-1].strip()
+    return tail if tail and _canonical_composite(tail) is not None else ""
 
 
 def propose_claims(
@@ -172,6 +193,12 @@ def propose_claims(
                         f"{label}, {where}" if where else label
                     ) + (f" (reported as {cell})" if spread else ""),
                     "metric": _metric_for(heading) or row_metric,
+                    # The unit the heading names, under the key the checks read. A candidate that
+                    # reaches `claims-check --model` with it is checked against the unit the model
+                    # reads that output in; without it the check has nothing to compare, and a
+                    # number in one unit judged against a model in another is a verdict about
+                    # arithmetic.
+                    "reported_units": _unit_for(heading),
                     "parameter_overrides": {},
                 }
                 if spread:
@@ -309,7 +336,10 @@ def propose_claims_from_prose(
                 # wrong element.
                 "species": "",
                 "reported": value,
-                "unit": unit,
+                # One vocabulary with the table reader and with `check_claim_units`: two producers
+                # of the same record calling the paper's unit two different names is a seam a
+                # curator falls into once and never sees.
+                "reported_units": unit,
                 "source_location": sentence if len(sentence) <= 300 else sentence[:297] + "…",
                 "metric": _prose_metric(sentence),
                 "attribution": attribution,

@@ -163,7 +163,11 @@ reprolith claims-propose --tables my_tables.json --out candidates.json
 ```
 
 Every number a table prints on its own in a cell becomes a candidate, with the row and column that
-name it as its source location, and a `metric` where the column heading states one (`Cmax`, `AUC`).
+name it as its source location, a `metric` where the column heading states one (`Cmax`, `AUC`), and
+`reported_units` where the heading names a unit the checker can read (`Cmax, nmol/mL` yields
+`nmol/mL`; a "measured − fitted, %" column yields none, since a percentage difference is not one of
+the values). That unit is what lets a promoted candidate reach `claims-check --model`, which is
+where a number in one unit judged against a model in another is caught.
 Delete the ones your model is not asked to reproduce — a table carries measured values, fitted
 values, percentage differences and doses side by side — and name the model output each survivor
 reads.
