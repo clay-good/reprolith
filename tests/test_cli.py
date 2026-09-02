@@ -267,6 +267,36 @@ def test_dossier_unknown_accession_exits_nonzero(tmp_path, capsys):
     assert "no dossier" in capsys.readouterr().err
 
 
+def test_the_help_groups_every_command_it_has_exactly_once() -> None:
+    """A twenty-command help is a wall, and half of these commands read no repository at all.
+
+    The top-level description used to say this surface was "the same read-only surface agents reach
+    over MCP", which stopped being true as the author-facing checks were added — a reader could not
+    tell from the help which kind of command they were looking at. The grouping that fixes it is
+    written by hand, so the partition is checked here: every subcommand in exactly one group, and
+    no group naming a command that does not exist.
+    """
+    import argparse
+
+    from reprolith.cli import build_parser
+
+    parser = build_parser()
+    subcommands = set(next(
+        a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
+    ).choices)
+    epilog = parser.epilog or ""
+    grouped: list[str] = []
+    for line in epilog.splitlines():
+        if ":" not in line:
+            continue
+        names = [n.strip().split(" ")[0] for n in line.split(":", 1)[1].split(",")]
+        grouped.extend(n for n in names if n in subcommands)
+    assert sorted(grouped) == sorted(subcommands), (
+        sorted(set(subcommands) - set(grouped)), sorted(set(grouped) - set(subcommands))
+    )
+    assert len(grouped) == len(set(grouped)), "a command is listed in two groups"
+
+
 def test_version_names_the_revision_a_verdict_would_be_judged_under(capsys):
     """A release number answers "which version"; a certificate turns on the judge revision.
 

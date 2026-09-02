@@ -1252,8 +1252,27 @@ def _version_text() -> str:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="reprolith",
-        description="Read Reprolith's catalog, certificates, and gap reports from the terminal — "
-        "the same read-only surface agents reach over MCP.",
+        # The old description said this was "the same read-only surface agents reach over MCP",
+        # which stopped being true as the author-facing checks were added: ten of these commands
+        # read no repository state at all, and `docs/mcp-server.md` explains one by one why the
+        # server does not expose them. A reader could not tell from the help which kind of command
+        # they were looking at.
+        description=(
+            "Reprolith from the terminal. Two kinds of command: the ones that read this "
+            "repository's catalog, certificates and gap reports (the same read-only surface "
+            "agents reach over MCP), and the ones that read files of your own before any of this "
+            "has seen them."
+        ),
+        epilog=(
+            "reading this repository: catalog, backlog, self-validation, status, certificate, "
+            "verdict, gaps, presubmission, certificates-for, dossier, bundle\n"
+            "checking your own files: archive-check, claims-template, claims-propose, "
+            "claims-check, params-template, params-check, figure-template, figure-check\n"
+            "writing: export — the one command that creates a file\n\n"
+            "reprolith --version prints this copy's version and the judge revision each class "
+            "publishes under."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--data-dir", default=None,
