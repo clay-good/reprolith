@@ -1304,3 +1304,22 @@ def test_a_reference_kind_this_server_does_not_know_is_refused_by_name() -> None
     assert _reference_kind({"reference_kind": "digitized-figure"}) is ReferenceKind.DIGITIZED_FIGURE
     with pytest.raises(ValueError, match="is not a reference kind"):
         _reference_kind({"reference_kind": "eyeballed"})
+
+
+def test_the_version_tool_names_the_revision_a_verdict_would_be_judged_under() -> None:
+    """An agent gates its workflow on a lint verdict, and the verdict carries no revision.
+
+    A certificate names the code that produced it; a lint result names its method, its discrepancy
+    and its tolerance, and nothing about the code. Recording "the linter said reproduced" without
+    that digest records a claim nobody can reproduce later, which is the one thing this repository
+    is built not to publish.
+    """
+    from reprolith.pins import class_revisions
+
+    query, _digest = _fixture()
+    payload, is_error = _call(query, "version", {})
+    assert not is_error
+    assert payload["judge_revisions"] == class_revisions()
+    assert payload["version"]
+    # And it describes the code rather than the state, so it needs nothing from the repository.
+    assert set(payload) == {"version", "judge_revisions"}

@@ -111,6 +111,16 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
+        "name": "version",
+        "description": (
+            "This server's package version and the judge revision each model class publishes "
+            "under — the digest over the code that computes a verdict, which every certificate "
+            "names and which expires when that code changes. An agent recording a lint verdict "
+            "records what produced it with this."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
         "name": "self_validation",
         "description": (
             "Reprolith's blind self-validation track record — per model class and overall, how "
@@ -763,6 +773,13 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return query.certificates_for(**_identifier_kwargs(arguments))
     if name == "backlog_health":
         return query.backlog_health()
+    if name == "version":
+        from . import __version__
+        from .pins import class_revisions
+
+        # Read-only and repository-independent: it describes the code, not the state, which is why
+        # it needs no query and answers the same on a server pointed anywhere.
+        return {"version": __version__, "judge_revisions": class_revisions()}
     if name == "self_validation":
         return query.self_validation()
     if name == "dossier":

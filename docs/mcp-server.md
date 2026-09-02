@@ -58,6 +58,7 @@ call, `[]` or `null` reads as a fact about the paper rather than about the call.
 | `certificates_for` | `title`/`doi`/… | Digests of every certificate for a paper, newest first |
 | `backlog_health` | — | Backlog depth by state, class, and difficulty, and the labelled mix |
 | `self_validation` | — | The blind track record per class: matched / abstained / other, aggregate only |
+| `version` | — | This server's package version and each class's judge revision — the digest over the code that computes a verdict. A lint verdict carries no revision of its own, so an agent recording one records what produced it with this |
 | `dossier` | `accession` | The ingested dossier — extracted model structure |
 | `bundle` | `accession` | The reconstruction bundle — model, recipe, assumptions |
 | `lint` | `sbml`, `species`, `reference`, `duration`, `steps`, `reference_kind` (optional), `reference_units` (optional) | A deterministic per-claim verdict for an ODE model curve (needs the engine extra). With `reference_units`, a reference in a different quantity from the one the model reads that species in **abstains** rather than being compared — a distance between µg/mL and nmol/mL is arithmetic, and this is the surface an agent gates on immediately |
