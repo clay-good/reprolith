@@ -112,6 +112,7 @@ from .export import (
     declarations_without_identifiers,
     packages_no_time_course_describes,
     reactions_without_rate_laws,
+    sedml_declarations_without_identifiers,
     what_a_package_means,
 )
 from .fba import (
@@ -580,6 +581,7 @@ __all__ = [
     "packages_no_time_course_describes",
     "reactions_without_rate_laws",
     "declarations_without_identifiers",
+    "sedml_declarations_without_identifiers",
     "PARTIAL_NOTE",
     "PaperIdentity",
     "Parameter",

@@ -503,6 +503,7 @@ def archive_report(
         declarations_without_identifiers,
         packages_no_time_course_describes,
         reactions_without_rate_laws,
+        sedml_declarations_without_identifiers,
         what_a_package_means,
     )
     from .manuscript import manuscript_mismatches
@@ -663,6 +664,31 @@ def archive_report(
             })
 
     if experiment is not None and model is not None and sedml is not None:
+        # The document's own version of the model's question, and it fails more quietly: a task
+        # with no id is not skipped *with a reason*, it is unreachable — every other element refers
+        # to a task by id — so the adoptable-run count drops to zero and nothing says which task
+        # went missing. Reported before the count, so the count is never the only thing said.
+        unnamed_sedml = sedml_declarations_without_identifiers(sedml)
+        found["declarations_without_identifiers"] += [
+            f"{experiment}: {name}" for name in unnamed_sedml
+        ]
+        if unnamed_sedml:
+            listed = ", ".join(unnamed_sedml[:5]) + (
+                " and others" if len(unnamed_sedml) > 5 else ""
+            )
+            actions.append({
+                "priority": _ARCHIVE_UNNAMED_PRIORITY, "kind": "unnamed", "claim_id": None,
+                "quantity": None, "source_location": experiment,
+                "issue": f"{len(unnamed_sedml)} elements of your experiment state no identifier "
+                         f"({listed}); everything in a SED-ML document refers to everything else "
+                         "by id, so an element without one cannot be referred to and is simply "
+                         "not read — the adoptable-run count below drops without a line anywhere "
+                         "saying which run went missing",
+                "fix": "give every model, simulation, task, data generator and output in your "
+                       "document an id; an element with none is not read at all, and the only "
+                       "sign of it is a number that got smaller",
+            })
+
         # Re-read from the archive rather than from the dossier: the dossier keeps what the
         # document *claimed*, and this asks whether the run behind those claims is adoptable.
         recipes = parse_sedml_recipes(sedml)

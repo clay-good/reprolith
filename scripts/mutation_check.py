@@ -576,6 +576,12 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_population_end_to_end.py"],
     ),
     (
+        "an unreadable SED-ML task shrinks the adoptable-run count and says nothing",
+        "presubmission.py",
+        ("        if unnamed_sedml:", "        if False:"),
+        ["tests/test_archive_check.py"],
+    ),
+    (
         "the archive check passes a model that names none of its own quantities",
         "presubmission.py",
         # Anchored on the line below it too: a bare `if unnamed:` matches a second site inside

@@ -225,11 +225,16 @@ def declarations_without_identifiers(model_sbml: str) -> tuple[str, ...]:
 
 
 def _declarations_without_identifiers(root: ET.Element) -> tuple[str, ...]:
+    return _declarations_missing(root, _MUST_NAME)
+
+
+def _declarations_missing(root: ET.Element, required_by_kind: Mapping[str, str]) -> tuple[str, ...]:
+    """Elements of the named kinds that do not carry the attribute that names them."""
     unnamed: list[str] = []
     seen: dict[str, int] = {}
     for element in root.iter():
         kind = _localname(element.tag)
-        required = _MUST_NAME.get(kind)
+        required = required_by_kind.get(kind)
         if required is None:
             continue
         seen[kind] = seen.get(kind, 0) + 1
@@ -244,6 +249,46 @@ def _declarations_without_identifiers(root: ET.Element) -> tuple[str, ...]:
         described = f"{kind} #{seen[kind]}"
         unnamed.append(f"{described} ({called!r})" if called else described)
     return tuple(unnamed)
+
+
+
+#: The SED-ML elements that must name themselves, and what names them. A document's tasks, its
+#: simulations, its data generators and its outputs are all referred to *by id* from elsewhere in
+#: the same document, so one that states none is unreachable rather than merely untidy.
+_SEDML_MUST_NAME = {
+    "model": "id",
+    "uniformTimeCourse": "id",
+    "steadyState": "id",
+    "oneStep": "id",
+    "task": "id",
+    "repeatedTask": "id",
+    "dataGenerator": "id",
+    "plot2D": "id",
+    "plot3D": "id",
+    "report": "id",
+}
+
+
+def sedml_declarations_without_identifiers(sedml: str) -> tuple[str, ...]:
+    """The SED-ML elements that do not name themselves, in document order.
+
+    The same shape as :func:`declarations_without_identifiers`, one format over, and it produces a
+    quieter failure. A task with no ``id`` is not reported by anything: the reader skips it — every
+    other element refers to a task by id, so a task without one cannot be referred to — and the
+    author's archive check goes from "1 run a reproducer can adopt verbatim" to "0", with no line
+    anywhere saying which task went missing or why. Measured on a document with one task, whose id
+    attribute was the only thing changed.
+
+    That zero is the shape this repository keeps being caught by: a number standing in for a check
+    nobody made. Raises ``ValueError`` if the text is not parseable XML.
+    """
+    try:
+        root = ET.fromstring(sedml)
+    except ET.ParseError as broken:
+        raise ValueError(f"the experiment is not parseable XML: {broken}") from broken
+    if _localname(root.tag) != "sedML":
+        raise ValueError(f"the root element is <{_localname(root.tag)}>, not <sedML>")
+    return _declarations_missing(root, _SEDML_MUST_NAME)
 
 
 def what_a_package_means(package: str) -> str:

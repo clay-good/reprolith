@@ -613,9 +613,48 @@ def test_an_unnamed_element_ingestion_tolerates_is_reported_from_the_readable_pa
     assert report["fix_list"][0]["kind"] == "unnamed"
 
 
+def test_a_task_with_no_id_is_named_rather_than_shrinking_a_count() -> None:
+    """The document's version of the same question, and it fails more quietly than the model's.
+
+    Everything in a SED-ML document refers to everything else by id, so a task without one cannot
+    be referred to and is not read at all. Measured by changing that one attribute and nothing
+    else: "runs a reproducer can adopt verbatim" went from 1 to 0, with no line anywhere saying
+    which run went missing — a number standing in for a check nobody made, which is the shape this
+    repository keeps being caught by. The count still drops; now something says why.
+    """
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import build_experiment_sedml
+
+    sedml = build_experiment_sedml(_MINIMAL_SBML, duration=1.0, steps=10)
+    manifest = f"""<?xml version="1.0" encoding="UTF-8"?>
+<omexManifest xmlns="{_SPEC}omex-manifest">
+  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>
+  <content location="./model.xml" format="{_SPEC}sbml.level-3.version-2"/>
+  <content location="./experiment.sedml" format="{_SPEC}sed-ml" master="true"/>
+</omexManifest>
+"""
+    intact = archive_report(
+        _archive_with({"model.xml": _MINIMAL_SBML, "experiment.sedml": sedml}, manifest)
+    )
+    assert intact["found"]["adoptable_recipes"] == 1
+    assert intact["found"]["declarations_without_identifiers"] == []
+
+    nameless = archive_report(
+        _archive_with(
+            {"model.xml": _MINIMAL_SBML, "experiment.sedml": sedml.replace("<task id=", "<task xid=", 1)},
+            manifest,
+        )
+    )
+    assert nameless["found"]["adoptable_recipes"] == 0
+    assert nameless["found"]["declarations_without_identifiers"] == ["experiment.sedml: task #1"]
+    assert nameless["fix_list"][0]["kind"] == "unnamed"
+    assert nameless["fix_list"][0]["source_location"] == "experiment.sedml"
+
+
 def test_the_committed_archive_names_every_quantity_it_declares() -> None:
     """And the check does not fire on a correct archive, which is the half that makes it usable."""
     pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     report = archive_report(_ARCHIVE.read_bytes())
+    # Both members: the model and the SED-ML document are checked into the same list.
     assert report["found"]["declarations_without_identifiers"] == []
     assert not any(item["kind"] == "unnamed" for item in report["fix_list"])
