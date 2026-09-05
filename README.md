@@ -191,9 +191,16 @@ guessing — just: *does the described model produce the shown result?*
   flux distributions would call two correct solvers engine-sensitive on any model with alternate
   optima; and for the discrete classes the attractor set or fixed-point set itself, which two
   enumerations either return or do not — published as an exact match rather than as a distance of
-  zero, which would read as the best number on the page. Two of the six classes have **no** second
-  registered engine, so nothing was re-run for them — and `reprolith corroboration` prints those
-  two in the same list as the four, because a table of only the corroborated classes would read
+  zero, which would read as the best number on the page. The stochastic class's 3 networks joined
+  them under libRoadRunner's Gillespie integrator, and they are the reason this paragraph cannot
+  end at "all agree": two ensembles of one model agree only up to Monte Carlo error, so what is
+  compared there is the difference of the two means over their combined standard error — 1.9, 1.6
+  and 1.0 against a criterion of three — and each is published with the bias it could *not* have
+  seen, 6.5%, 5.2% and 1.8% of the mean. The first of those is wider than the 5% that class's own
+  verdict passes at, so on that model the second opinion is weaker than the verdict it stands
+  beside, and the record says so. One of the six classes has **no** second
+  registered engine, so nothing was re-run for it — and `reprolith corroboration` prints it
+  in the same list as the five, because a table of only the corroborated classes would read
   as a whole-repository pass. It is reachable from the terminal and over MCP, not only from the
   published page ([`docs/self-validation.md`](docs/self-validation.md)).
 

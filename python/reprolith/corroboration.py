@@ -15,12 +15,13 @@ extras and imports them lazily.
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 
 from .engine import ENGINE as _COPASI_ENGINE
 from .engine import (
     ROADRUNNER_ENGINE,
+    EngineUnavailable,
     engine_version,
     final_state_with_roadrunner,
     roadrunner_version,
@@ -69,15 +70,36 @@ class EngineCorroboration:
     #: criterion actually applied is :meth:`effective_criterion` — never looser than this, and up
     #: to five times tighter when this is not itself a power of ten.
     criterion: float = 0.02
+    #: For a comparison between two *sampled* answers: the smallest true discrepancy this
+    #: comparison could have seen, as a fraction of the quantity compared. Two Gillespie ensembles
+    #: agree only up to Monte Carlo error, so "they agreed" on its own is a claim whose strength is
+    #: whatever the ensembles happened to be — a hundred trajectories agree with almost anything.
+    #: This is that strength as a number. ``None`` for a comparison where it does not apply.
+    resolution: float | None = None
 
     def effective_criterion(self) -> float:
         """The largest decade at or below :attr:`criterion` — what the verdict was really held to."""
+        # A Monte Carlo criterion is a count of standard errors, not a tolerance: flooring 3.0 to
+        # the decade would hold two ensembles to one standard error, which correct ensembles miss
+        # about a third of the time. It is applied as given.
+        if self.comparison == "monte-carlo-agreement":
+            return self.criterion
         if not math.isfinite(self.criterion) or self.criterion <= 0.0:
             return self.criterion
         return 10.0 ** math.floor(math.log10(self.criterion))
 
     def summary(self) -> str:
         verdict = "engine-independent" if self.stable else "engine-sensitive"
+        if self.comparison == "monte-carlo-agreement":
+            resolution = (
+                "" if self.resolution is None
+                else f", resolving a bias above {self.resolution:.1%} of the mean"
+            )
+            return (
+                f"{self.quantity}: {self.engines[0]} vs {self.engines[1]} ensemble means differ by "
+                f"at most {self.distance_bound():.1f} combined standard errors against a "
+                f"{self.effective_criterion():.1f} criterion{resolution} -> {verdict}"
+            )
         if self.comparison == "exact-match":
             agreed = "agree exactly" if self.stable else "do not agree"
             return (
@@ -106,6 +128,16 @@ class EngineCorroboration:
         }
         if self.comparison != "normalized-distance":
             record["comparison"] = self.comparison
+        if self.resolution is not None:
+            # Published beside the agreement rather than derivable from it: a reader who sees only
+            # "the two ensembles agreed" cannot tell a comparison that would have caught a 2%
+            # bias from one that would have missed a 40% one.
+            #
+            # Rounded *up* to a tenth of a percent, and for the same reason the distance is
+            # rounded up: it is estimated from two finite samples, so its trailing digits move
+            # between draws, and the direction that stays honest is the one that never understates
+            # the blind spot.
+            record["resolves_bias_above"] = math.ceil(self.resolution * 1000.0) / 1000.0
         return record
 
     def distance_bound(self) -> float:
@@ -123,6 +155,12 @@ class EngineCorroboration:
         """
         if not math.isfinite(self.distance) or self.distance <= 0.0:
             return self.distance
+        if self.comparison == "monte-carlo-agreement":
+            # A count of standard errors, not a distance between two deterministic answers: its
+            # own re-draw noise is order one, not order 1e-11, so the decade rounding below would
+            # publish 1.2 standard errors as 10. Rounded up to a tenth, which still never states
+            # better agreement than was measured.
+            return math.ceil(self.distance * 10.0) / 10.0
         # One significant figure was not coarse enough: the distance also moves between machines
         # (a committed 4e-07 bound was exceeded on CI at 4.55e-07, with different engine builds),
         # so the published granularity is the decade. It still says what the number is for —
@@ -265,6 +303,152 @@ _LP_NOISE_FLOOR = 1e-9
 #: call site for the same reason the engine constants are: the record is keyed by these strings,
 #: and a record naming a different spelling of one tool reads as a different tool.
 COBRAPY_ENGINE = "cobrapy"
+
+
+
+#: The independent stochastic simulator the SSA class is corroborated against. libRoadRunner's
+#: Gillespie integrator shares no code with this package's sampler.
+ROADRUNNER_SSA_ENGINE = "roadrunner-gillespie"
+
+
+def corroborate_ensemble_mean(
+    species: Sequence[str],
+    reactions: Sequence[object],
+    initial: Sequence[int],
+    *,
+    observed: int,
+    duration: float,
+    trajectories: int,
+    seed: int,
+    sigmas: float = 3.0,
+) -> EngineCorroboration:
+    """Run one reaction network under two Gillespie samplers and compare their ensemble means.
+
+    The stochastic class's second engine, and it reports something different in kind from the
+    other three. A trajectory or an optimum is a deterministic answer, so two engines that agree
+    agree to their last digits; two *ensembles* agree only up to Monte Carlo error, and a
+    comparison that ignored that would call two correct samplers engine-sensitive as often as its
+    tolerance was tight. So what is compared is the standardized difference of the two means —
+    ``|m₁ − m₂|`` over the combined standard error — against a criterion in standard errors.
+
+    That statistic passes easily when both ensembles are small, which is exactly when it means
+    least, so the result also carries :attr:`~EngineCorroboration.resolution`: the smallest true
+    discrepancy this comparison could have detected, as a fraction of the mean. An agreement that
+    could not have seen a 40% bias is published saying so.
+
+    **Scoped to reactions that are at most first-order in each reactant**, and a higher-order one
+    is refused by name. Reprolith's propensity for ``2A → B`` is the stochastic mass action
+    ``k·n(n−1)/2``; libRoadRunner's Gillespie takes the SBML rate law as the propensity verbatim,
+    so it runs ``k·n²``. Measured on ``2A → B`` from four molecules, the two produce means of 0.64
+    and 0.80 — a real 24% gap that is a difference of modelling convention, not of solver, and
+    reporting it as engine sensitivity would blame the wrong thing.
+
+    Needs the ``engine`` extra (python-libsbml) and the ``corroborate`` extra (libRoadRunner).
+    """
+    from .sbml import build_stochastic_sbml
+    from .stochastic import Reaction, ensemble_final_counts, solver_pin, species_mean_variance
+
+    typed: list[Reaction] = [r for r in reactions if isinstance(r, Reaction)]
+    if len(typed) != len(reactions):
+        raise TypeError("every reaction must be a reprolith.stochastic.Reaction")
+    higher_order = [
+        f"reaction {index} consumes {stoich} of {species[position]!r}"
+        for index, reaction in enumerate(typed)
+        for position, stoich in reaction.reactants
+        if stoich > 1
+    ]
+    if higher_order:
+        raise ValueError(
+            "cross-engine corroboration of an ensemble mean is scoped to reactions that are at "
+            "most first-order in each reactant, and " + "; ".join(higher_order) + ". Above first "
+            "order the two samplers do not model the same system — this one runs the stochastic "
+            "mass action k·n(n-1)/2 and libRoadRunner's Gillespie runs the rate law verbatim as "
+            "k·n^2 — so their disagreement would be published as engine sensitivity when it is a "
+            "difference of convention."
+        )
+
+    mine = ensemble_final_counts(
+        len(species), typed, initial, duration=duration, trajectories=trajectories, seed=seed
+    )
+    my_mean, my_variance = species_mean_variance(mine, species=observed)
+    theirs, roadrunner_build = _roadrunner_ensemble(
+        build_stochastic_sbml(species, typed, initial),
+        species[observed],
+        duration=duration,
+        trajectories=trajectories,
+        seed=seed,
+    )
+    their_mean = math.fsum(theirs) / len(theirs)
+    their_variance = math.fsum((v - their_mean) ** 2 for v in theirs) / len(theirs)
+
+    combined_error = math.sqrt((my_variance + their_variance) / trajectories)
+    if combined_error == 0.0:
+        # Both ensembles are a single value repeated: the network is deterministic over this
+        # window. There is no sampling error to standardize by, and the two either match or do
+        # not — reported as the exact comparison it is rather than as a division by zero.
+        return EngineCorroboration(
+            quantity="ensemble mean copy number",
+            engines=(_reprolith_build(solver_pin()), ROADRUNNER_SSA_ENGINE),
+            distance=0.0 if my_mean == their_mean else float("inf"),
+            stable=my_mean == their_mean,
+            versions=(_reprolith_build(solver_pin()), roadrunner_build),
+            comparison="exact-match",
+            criterion=sigmas,
+        )
+
+    pin = solver_pin()
+    standardized = abs(my_mean - their_mean) / combined_error
+    # What a pass here is worth: a true bias smaller than this many standard errors would have
+    # been indistinguishable from sampling noise. Expressed against the mean because that is the
+    # scale every stochastic verdict is judged on.
+    resolution = (
+        None if my_mean == 0.0 else sigmas * combined_error / abs(my_mean)
+    )
+    result = EngineCorroboration(
+        quantity="ensemble mean copy number",
+        engines=(pin.engine, ROADRUNNER_SSA_ENGINE),
+        distance=standardized,
+        stable=False,
+        versions=(_reprolith_build(pin), roadrunner_build),
+        comparison="monte-carlo-agreement",
+        criterion=sigmas,
+        resolution=resolution,
+    )
+    return replace(result, stable=result.distance_bound() <= sigmas)
+
+
+def _roadrunner_ensemble(
+    sbml: str,
+    species: str,
+    *,
+    duration: float,
+    trajectories: int,
+    seed: int,
+) -> tuple[list[float], str]:
+    """``trajectories`` final counts of ``species`` from libRoadRunner's Gillespie, and its build.
+
+    One seeded RoadRunner instance driven in sequence, so the ensemble is a deterministic function
+    of ``seed`` on this side too — the same reproducible-sampling contract the SSA keeps, without
+    which a re-run of a milestone would publish a different agreement every time.
+    """
+    try:
+        import roadrunner
+    except ImportError as exc:  # pragma: no cover - exercised by the extra being absent
+        raise EngineUnavailable(
+            "cross-engine corroboration of an ensemble needs the 'corroborate' extra "
+            "(libRoadRunner); install it to reproduce this comparison"
+        ) from exc
+
+    runner = roadrunner.RoadRunner(sbml)
+    runner.integrator = "gillespie"
+    runner.integrator.seed = seed
+    runner.integrator.variable_step_size = False
+    finals: list[float] = []
+    for _ in range(trajectories):
+        runner.reset()
+        result = runner.simulate(0.0, duration, 2, ["time", species])
+        finals.append(float(result[-1][1]))
+    return finals, roadrunner_version()
 
 
 def _cobrapy_objective(sbml: str) -> tuple[float, str]:

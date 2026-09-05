@@ -13,6 +13,12 @@ divided by that budget is the share of a verdict's tolerance that is spent on no
 choice of solver — and a reader entitled to ask "how much of this tolerance is absorbing solver
 noise?" can now be answered with a number instead of an assurance.
 
+One class does not fit that sentence and is measured separately below. Two Gillespie ensembles of
+the same model agree only up to Monte Carlo error, so the stochastic class publishes a count of
+combined standard errors rather than a distance — dividing it by the curve budget would produce a
+number about nothing. What it spends is the *resolution*: the smallest bias the comparison could
+have seen, which on one of its three networks is wider than that class's own pass budget.
+
 Read off the committed records, so it is a guard and not a paragraph: an engine upgrade that made
 the two disagree more would move these numbers and fail here.
 """
@@ -40,20 +46,24 @@ def _records() -> dict[str, dict]:
     return found
 
 
-def test_four_classes_carry_a_second_engine_and_two_do_not() -> None:
+def test_five_classes_carry_a_second_engine_and_one_does_not() -> None:
     """The absence is half the finding, so it is asserted rather than assumed.
 
     A test that only checked the classes with a record would keep passing if a class quietly lost
     its second engine, and the page that publishes this would keep saying nothing about it.
 
-    The two without one are the two whose question no installed implementation but this one
-    answers: a Gillespie ensemble and a finite-difference reaction-diffusion solve. This list is
-    written down rather than derived, because a class acquiring or losing a second engine is a
-    change a reader should be told about, not one a test should absorb.
+    This list is written down rather than derived, because a class acquiring or losing a second
+    engine is a change a reader should be told about, not one a test should absorb — and it earned
+    that the hard way. It used to name two classes without one, on the stated grounds that no
+    installed implementation but this one answers their questions. That was true of a
+    finite-difference reaction-diffusion solve and false of a Gillespie ensemble: libRoadRunner
+    ships one, and it was already installed here as the ODE classes' second engine.
     """
     records = _records()
-    assert set(records) == {"ode-pkpd", "kinetic", "constraint-based", "logical"}, sorted(records)
-    assert set(_SOURCES) - set(records) == {"spatial", "stochastic"}
+    assert set(records) == {
+        "ode-pkpd", "kinetic", "constraint-based", "logical", "stochastic",
+    }, sorted(records)
+    assert set(_SOURCES) - set(records) == {"spatial"}
 
 
 def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
@@ -86,7 +96,40 @@ def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
     for model_class, record in _records().items():
         for key, row in record.items():
             assert row["engine_independent"] is True, (model_class, key)
+            if row.get("comparison") == "monte-carlo-agreement":
+                # Not a curve distance and not comparable to one. Dividing a count of standard
+                # errors by the curve budget gives 19, which would read as this class spending
+                # nineteen times its whole tolerance on the solver — a number about nothing. What
+                # this class spends is measured below, in the units it is actually in.
+                continue
             assert float(row["distance_at_most"]) / _CURVE_PASS < 0.05, (model_class, key)
+
+
+#: The scalar pass budget the stochastic class judges a reported mean against.
+_SCALAR_PASS = 0.05
+
+
+def test_the_ensemble_corroboration_is_weaker_than_the_verdict_it_stands_beside() -> None:
+    """The one class where "the second engine agreed" is not a comfortable statement.
+
+    Every class above agrees three to eight orders inside its budget, so a pass there needs no
+    caveat. Two Gillespie ensembles cannot do that: they agree only up to Monte Carlo error, and
+    what a pass is worth is the size of the bias it could have seen. On the Poisson-mean-10
+    network three combined standard errors is 6.5% of the mean — *wider* than the 5% the same
+    class's own scalar verdict passes at, so engine sensitivity is ruled out there only above a
+    discrepancy larger than the one the verdict itself would catch.
+
+    Asserted rather than written down, because the fix is not a tighter tolerance — it is more
+    trajectories, and this is the number that would show them arriving.
+    """
+    record = _records()["stochastic"]
+    resolutions = {key: float(row["resolves_bias_above"]) for key, row in record.items()}
+    assert resolutions["immigration_death_10"] > _SCALAR_PASS
+    assert resolutions["reversible_isomerization"] < _SCALAR_PASS
+    for key, row in record.items():
+        # The comparison is a count of standard errors against a criterion of three, so a row that
+        # passes is at most three — and a row published at, say, 2.9 is one re-seed from flipping.
+        assert 0.0 < float(row["distance_at_most"]) <= 3.0, key
 
 
 #: Which two implementations each corroborated class was compared across. Named per class rather
@@ -103,6 +146,7 @@ _PAIRS = {
     "kinetic": [["copasi", "roadrunner"]],
     "constraint-based": [["cobrapy", "scipy-linprog"]],
     "logical": [["cana", "reprolith-logical"], ["reprolith-logical", "sympy-sat"]],
+    "stochastic": [["reprolith-ssa", "roadrunner-gillespie"]],
 }
 
 
@@ -123,6 +167,11 @@ def test_a_discrete_agreement_is_not_published_as_a_distance() -> None:
     for key, row in _records()["logical"].items():
         assert row["comparison"] == "exact-match", key
         assert row["distance_at_most"] == 0.0, key
+    # And the stochastic class's rows say a third thing, for a third reason: a count of standard
+    # errors printed as `2e+00` beside the kinetic class's 1e-03 reads as a catastrophe.
+    for key, row in _records()["stochastic"].items():
+        assert row["comparison"] == "monte-carlo-agreement", key
+
     # And the classes compared by distance say nothing of the kind.
     for model_class in ("ode-pkpd", "kinetic", "constraint-based"):
         for key, row in _records()[model_class].items():

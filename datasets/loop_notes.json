@@ -142,9 +142,16 @@
         "engine-algorithm-sensitivity"
       ],
       "basis": "measured",
-      "note": "The only catalogued mode with a measurement behind it rather than a requirement. Every kinetic model in the committed corpus was run under two independently-implemented engines (COPASI and libRoadRunner/CVODE), and the published distance bounds run from 1e-06 to 1e-03 \u2014 two to five orders of magnitude below the 0.10 curve tolerance, and at least an order below the 2% the corroboration check itself enforces. So no committed verdict is engine-sensitive and the mode has never been attributed. What the measurement establishes is the opposite of a failure: the category exists so that a distance which does cross has somewhere honest to land, and the committed bounds are re-checked against a live run so genuine drift toward the tolerance fails loudly.",
+      "note": "The only catalogued mode with a measurement behind it rather than a requirement. Every kinetic model in the committed corpus was run under two independently-implemented engines (COPASI and libRoadRunner/CVODE), and the published distance bounds run from 1e-06 to 1e-03 \u2014 two to five orders of magnitude below the 0.10 curve tolerance, and at least an order below the 2% the corroboration check itself enforces. So no committed verdict is engine-sensitive and the mode has never been attributed. What the measurement establishes is the opposite of a failure: the category exists so that a distance which does cross has somewhere honest to land, and the committed bounds are re-checked against a live run so genuine drift toward the tolerance fails loudly. The stochastic class has since acquired a second engine (libRoadRunner's Gillespie integrator) and its measurement does not read the same way, which is why it is recorded here rather than folded into the sentence above. Two ensembles of one model agree only up to Monte Carlo error, so the comparison is a count of combined standard errors \u2014 1.9, 1.6 and 1.0 against a criterion of three \u2014 and the number that gives those meaning is the bias each could not have seen: 6.5%, 5.2% and 1.8% of the mean. The first is wider than the 5% pass budget the same class's scalar verdict uses, so for that model engine sensitivity is not ruled out to anything like the margin the deterministic classes establish; it is ruled out above 6.5%. The mode still has never been attributed, and this is the one class where that statement rests on a comparison no stronger than the verdict beside it.",
       "evidence": [
         "python/reprolith/corroboration.py",
+        {
+          "path": "datasets/stochastic/milestone/corroboration.json",
+          "quotes": [
+            "\"comparison\": \"monte-carlo-agreement\"",
+            "\"resolves_bias_above\": 0.065"
+          ]
+        },
         {
           "path": "datasets/kinetic/milestone/corroboration.json",
           "quotes": [

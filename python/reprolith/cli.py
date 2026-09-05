@@ -68,7 +68,7 @@ from .presubmission import (
     render_pair_human,
     render_presubmission_human,
 )
-from .query import ReprolithQuery
+from .query import ReprolithQuery, corroboration_held
 from .render import render_bundle_human, render_dossier_human, render_human
 
 # render_human derives its text from the certificate content and never reads the run block, so a
@@ -173,19 +173,9 @@ def _cmd_corroboration(query: ReprolithQuery, args: argparse.Namespace) -> int:
     print("  reported beside the verdicts, never gating them")
     for label in sorted(by_class):
         entry = by_class[label]
-        bound = entry["distance_at_most"]
-        all_independent = entry["engine_independent"] == entry["checked"]
-        # An exact-match class has no distance to quote: its two implementations returned the same
-        # attractor set or the same fixed-point set, or they did not. Printing "to 0e+00" put a
-        # discrete agreement on the curve classes' scale, where it reads as the best number on the
-        # page rather than as a different kind of statement.
-        exact = entry.get("comparison") == ["exact-match"]
-        if all_independent and exact:
-            held = "all agree exactly"
-        elif all_independent and bound is not None:
-            held = f"all engine-independent to {bound:.0e}"
-        else:
-            held = f"{entry['engine_independent']} of {entry['checked']} engine-independent"
+        # How the class's agreement reads is decided in one place, because the three surfaces that
+        # print it had three copies of it — see `corroboration_held`.
+        held = corroboration_held(entry)
         print(f"  {label:<18} {entry['checked']:>4} {entry['unit']}(s) on "
               f"{', '.join(entry['engines'])} — {held}")
         # Which builds produced the number. A certificate expires when its software changes and

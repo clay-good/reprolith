@@ -124,15 +124,29 @@ practitioner can act on.
   agree with CANA and with an independent SAT solver *exactly*, which is the only agreement an
   attractor set or a fixed-point set admits.
 
-  The two left, spatial and stochastic, have no second registered engine and this is not measured
-  for them — an absence, which the public registry names. It is an absence of *corroboration*, and
-  worth separating from a second question it is easy to read it as: both are certified against
-  something outside this engine already. Their references are closed-form mathematics, so each of
-  those certificates' published discrepancy is a distance from an independent standard — not the
-  same thing as re-running a certified result under a second simulator, and not nothing either.
-  What neither has is a *second engine of its own kind* to re-run under, and what such a
-  comparison would report is different in kind again: two Gillespie ensembles agree only up to
-  Monte Carlo error, and two finite-difference solvers only up to their discretizations
+  The stochastic class has one now, and it is the entry that shows why this table needs the
+  `basis` field. This paragraph used to say that class had no second registered engine and that
+  what such a comparison *would* report is different in kind — "two Gillespie ensembles agree only
+  up to Monte Carlo error." The second half was right and the first was never checked:
+  libRoadRunner ships a Gillespie integrator and was already pinned here. Measured, the three
+  certified networks agree at **1.9, 1.6 and 1.0 combined standard errors** against a criterion of
+  three — and the number that makes those mean anything is the one beside them, the bias each
+  comparison could *not* have seen: **6.5%, 5.2% and 1.8%** of the mean. The first is wider than
+  the 5% the class's own scalar verdict passes at, so on that model the corroboration is weaker
+  than the verdict it stands beside, and it says so rather than reading as a confirmation. That is
+  the whole difference between this and the other four classes: their agreements are three to
+  eight orders below the budget, and a pass there needs no caveat. Guidance: an ensemble
+  corroboration is worth what its trajectory count buys, and 400 trajectories at a Poisson mean of
+  10 buys less than the verdict needs (`tests/test_stochastic_corroboration.py`).
+
+  The one left, spatial, has no second registered engine and this is not measured for it — an
+  absence, which the public registry names. It is an absence of *corroboration*, and worth
+  separating from a second question it is easy to read it as: it is certified against something
+  outside this engine already. Its references are closed-form mathematics, so each of those
+  certificates' published discrepancy is a distance from an independent standard — not the same
+  thing as re-running a certified result under a second simulator, and not nothing either. What it
+  has no *second engine of its own kind* for is a finite-difference reaction-diffusion solve, and
+  two such solvers would agree only up to their discretizations
   (`tests/test_reference_provenance.py` counts which certificate is checked against what).
 - **Stochastic mean — 5% / 15%, and the ensemble is the cost.** The number judged is the mean of an
   ensemble Reprolith drew, so drawing the *right* model twice moves it. The class already refuses to

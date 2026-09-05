@@ -575,6 +575,39 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ("        if expected != got:", "        if False:"),
         ["tests/test_population_end_to_end.py"],
     ),
+    (
+        "the ensemble corroboration compares two samplers that model different systems",
+        "corroboration.py",
+        ("    if higher_order:", "    if False:"),
+        ["tests/test_stochastic_corroboration.py"],
+    ),
+    (
+        "a count of standard errors is published on the curve classes' distance scale",
+        "corroboration.py",
+        (
+            "            return math.ceil(self.distance * 10.0) / 10.0",
+            "            pass",
+        ),
+        ["tests/test_stochastic_corroboration.py"],
+    ),
+    (
+        "the network handed to the second engine runs at a different rate than this one",
+        "sbml.py",
+        (
+            "        parameter.setValue(reaction.rate / stoichiometric_factor)",
+            "        parameter.setValue(reaction.rate)",
+        ),
+        ["tests/test_stochastic_corroboration.py"],
+    ),
+    (
+        "an ensemble agreement is read out on the deterministic classes' scale",
+        "query.py",
+        (
+            '        return f"all engine-independent within {float(bound):.1f} combined standard errors{seen}"',
+            '        return f"all engine-independent to {float(bound):.0e}"',
+        ),
+        ["tests/test_stochastic_corroboration.py"],
+    ),
 ]
 
 

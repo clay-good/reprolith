@@ -140,18 +140,35 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
                           as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 7641c872354c), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 7641c872354c), sympy-sat 1.14.0
   ode-pkpd             80 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
+  stochastic            3 model(s) on reprolith-ssa, roadrunner-gillespie — all engine-independent within 1.9 combined standard errors, resolving a bias above 6.5% of the mean
+                          as reprolith-ssa gillespie-direct-method (rev b4d8d2ffc52b), roadrunner-gillespie 2.7.0
   spatial               no second engine is registered — nothing was checked, which is not a pass
-  stochastic            no second engine is registered — nothing was checked, which is not a pass
 
-  overall: 4 of 6 classes re-run on a second engine — 80 claim(s), 23 model(s)
+  overall: 5 of 6 classes re-run on a second engine — 80 claim(s), 26 model(s)
 ```
 
-Two things about that output are deliberate.
+Three things about that output are deliberate.
 
-The **unchecked classes print in the same list as the checked ones.** Two of the six have
-no second registered engine, so nothing was re-run for them. A table of the four that do would read
+The **unchecked class prints in the same list as the checked ones.** One of the six has
+no second registered engine, so nothing was re-run for it. A table of the five that do would read
 as a whole-repository pass — the exact shape this repository keeps being caught by, a clean report
 standing in for a check nobody made. The absence is the finding, so it is as loud as the pass.
+
+And **the stochastic line does not say "to 1.9"**, because it is not a distance. Two engines that
+solve an ODE or a linear program agree to their last digits; two Gillespie *ensembles* of the same
+model agree only up to Monte Carlo error, so what is compared there is the difference of the two
+means over their combined standard error — a count, whose criterion is three. Rounded to a decade
+and printed on the other classes' scale it would read as `2e+00`, four orders worse than the
+kinetic class rather than as a pass. The wording is chosen by the *comparison*, in one shared
+function, because the terminal, the agent surface and the public page had three copies of that
+decision and a third comparison kind would have reached some of them and not others.
+
+That line also carries **what the agreement could not have seen**. Two ensembles agree at any
+criterion if they are small enough, so a bare "they agreed" is a claim whose strength is whatever
+the ensembles happened to be. Three standard errors of the Poisson-mean-10 network's 400
+trajectories is 6.5% of its mean — *wider than the 5% that class's own scalar verdict passes at*,
+so this corroboration is weaker than the verdict it stands beside and the record says so. The
+reversible-isomerization entry, whose equilibrium spread is much tighter, resolves 1.8%.
 
 And the **two counts are never added up.** The classes do not count the same thing: PK/PD re-runs
 each *claim* at the dose it was certified at, and the kinetic class re-runs each *model*'s curve

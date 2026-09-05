@@ -19,6 +19,7 @@ surface"). The transport binding (the actual MCP tool definitions) wraps this re
 from __future__ import annotations
 
 import time
+from collections.abc import Mapping
 from typing import Any
 
 from .agreement import summarize_report
@@ -107,9 +108,11 @@ def corroboration_summary(records: dict[str, dict[str, Any]]) -> dict[str, Any]:
     a second simulator had ever confirmed.
 
     ``by_class`` carries only the classes that were checked. ``unchecked`` names the rest, and is
-    the half that earns this: four classes have no second registered engine, so nothing was
-    re-run for them, and a summary listing only the corroborated classes would leave every reader
-    to infer the others had been checked and passed.
+    the half that earns this: a class with no second registered engine had nothing re-run, and a
+    summary listing only the corroborated classes would leave every reader to infer the others had
+    been checked and passed. How many classes that is is deliberately not written down here — it
+    has changed four times, and a docstring stating a count is a claim that goes stale silently
+    while the code stays right. The surfaces read it off the records.
 
     Counts are never blended across classes, because the classes do not count the same thing.
     PK/PD re-runs each *claim* at the dose it was certified at; the kinetic class re-runs each
@@ -164,6 +167,17 @@ def corroboration_summary(records: dict[str, dict[str, Any]]) -> dict[str, Any]:
                 str(row.get("comparison", "normalized-distance")) for row in record.values()
             }),
         }
+        # The weakest resolution in the class, where the comparison is between two *sampled*
+        # answers. Two ensembles agree at any tolerance if they are small enough, so the count of
+        # agreements is not the whole statement — this is the size of the bias that would have
+        # survived it, and it belongs everywhere the count goes.
+        resolutions = [
+            float(row["resolves_bias_above"])
+            for row in record.values()
+            if row.get("resolves_bias_above") is not None
+        ]
+        if resolutions:
+            by_class[model_class]["resolves_bias_above"] = max(resolutions)
     runs: dict[str, int] = {}
     independent: dict[str, int] = {}
     for entry in by_class.values():
@@ -180,6 +194,39 @@ def corroboration_summary(records: dict[str, dict[str, Any]]) -> dict[str, Any]:
             "engine_independent": independent,
         },
     }
+
+
+
+def corroboration_held(entry: Mapping[str, Any]) -> str:
+    """One phrase for what a class's cross-engine record actually holds.
+
+    Shared by the terminal, the agent surface and the public page, because the three had been
+    three copies of the same decision and a fourth comparison kind would have been added to some
+    of them. The decision is that the *kind* of comparison chooses the wording: a distance for two
+    deterministic answers, an exact match for two discrete sets, and a count of standard errors
+    for two ensembles — printing a 1.9-standard-error agreement as "to 2e+00" would put it on the
+    curve classes' scale, where it reads as a catastrophic disagreement rather than a pass.
+    """
+    checked = int(entry["checked"])
+    independent = int(entry["engine_independent"])
+    if independent != checked:
+        return f"{independent} of {checked} engine-independent"
+    comparison = entry.get("comparison")
+    if comparison == ["exact-match"]:
+        return "all agree exactly"
+    bound = entry.get("distance_at_most")
+    if comparison == ["monte-carlo-agreement"]:
+        if bound is None:
+            return "all engine-independent"
+        resolution = entry.get("resolves_bias_above")
+        seen = (
+            "" if resolution is None
+            else f", resolving a bias above {float(resolution):.1%} of the mean"
+        )
+        return f"all engine-independent within {float(bound):.1f} combined standard errors{seen}"
+    if bound is None:
+        return "all engine-independent"
+    return f"all engine-independent to {float(bound):.0e}"
 
 
 class ReprolithQuery:

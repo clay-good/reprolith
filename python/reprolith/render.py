@@ -525,11 +525,12 @@ def _corroboration_banner(corroboration: dict[str, dict[str, Any]]) -> str:
     """What a second independent engine said, per class — including where none was asked.
 
     Cross-engine corroboration is the check that separates a model's behaviour from one solver's
-    quirks. Both halves are rendered, and the second is the one that earns this: two classes have
-    a second registered engine, four do not, and for those nothing was checked. A page that
-    listed only the corroborated classes would leave a reader to infer that the others had been
-    checked and passed, which is the shape this repository keeps being caught by — a clean report
-    standing in for a check nobody made.
+    quirks. Both halves are rendered, and the second is the one that earns this: a class with no
+    second registered engine had nothing checked, and a page listing only the corroborated classes
+    would leave a reader to infer that the others had been checked and passed — the shape this
+    repository keeps being caught by, a clean report standing in for a check nobody made. The
+    split is counted from the records rather than stated here, because a count written into a
+    docstring goes stale the next time a class acquires an engine.
 
     ``corroboration`` is the per-class committed record for **every** published class, and the
     split, the counts and the units are all computed by
@@ -538,21 +539,14 @@ def _corroboration_banner(corroboration: dict[str, dict[str, Any]]) -> str:
     cannot disagree about which classes a second engine has confirmed — which they could when
     this banner was the only reader of these files.
     """
-    from .query import corroboration_summary
+    from .query import corroboration_held, corroboration_summary
 
     summary = corroboration_summary(corroboration)
     checked = []
     for model_class, entry in sorted(summary["by_class"].items()):
-        bound = entry["distance_at_most"]
-        all_independent = entry["engine_independent"] == entry["checked"]
-        # See the terminal's copy of this decision: a discrete agreement has no distance, and
-        # publishing one as "to 0e+00" reads as the best number on the page.
-        if all_independent and entry.get("comparison") == ["exact-match"]:
-            held = " all agree exactly"
-        elif all_independent and bound is not None:
-            held = f" all engine-independent to {bound:.0e}"
-        else:
-            held = f" {entry['engine_independent']} of {entry['checked']} engine-independent"
+        # One decision, shared with the terminal and the agent surface: how an agreement reads
+        # depends on what kind of comparison produced it (`query.corroboration_held`).
+        held = f" {corroboration_held(entry)}"
         versions = entry["engine_versions"]
         built = (
             f" ({html.escape(', '.join(versions))})" if versions else " (engine builds unstated)"

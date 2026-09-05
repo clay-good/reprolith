@@ -15,7 +15,7 @@ imported lazily, so the core package stays dependency-free.
 from __future__ import annotations
 
 import operator
-from collections.abc import Callable, Container, Mapping
+from collections.abc import Callable, Container, Mapping, Sequence
 from math import factorial
 from typing import Any
 
@@ -1347,6 +1347,109 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
     )
 
 
+
+def build_stochastic_sbml(
+    species: Sequence[str],
+    reactions: Sequence[Reaction],
+    initial: Sequence[int],
+    *,
+    model_id: str = "stochastic_network",
+) -> str:
+    """Write a discrete reaction network as SBML another simulator can run.
+
+    The inverse of :func:`ingest_stochastic_sbml`, and it exists for one reason: Reprolith's SSA
+    takes its networks as Python :class:`~reprolith.stochastic.Reaction` objects, so until now
+    there was no way to put the *same* network in front of a second engine. Round-tripping through
+    this writer and that reader returns the network unchanged, which is what makes a cross-engine
+    comparison a statement about the two samplers rather than about two hand-written encodings of
+    one model.
+
+    The one conversion is the rate constant, and it is exactly the one the reader undoes. A
+    :class:`~reprolith.stochastic.Reaction` carries the **stochastic** constant — its propensity is
+    ``rate·∏(nᵢ choose sᵢ)`` — while an SBML mass-action law states the **deterministic** one,
+    ``k·∏Aᵢ^sᵢ``. The two differ by ``∏sᵢ!``, so a dimerization written verbatim would reach the
+    second engine at twice the rate it runs at here, and the two would be compared as if that
+    were a solver disagreement.
+
+    Species are emitted as molecule counts (``hasOnlySubstanceUnits``, ``substanceUnits="item"``,
+    a unit compartment), which is the only reading under which a second engine's propensities are
+    this SSA's propensities. Needs the ``engine`` extra (python-libsbml).
+    """
+    libsbml = _libsbml()
+    if len(species) != len(initial):
+        raise ValueError(
+            f"{len(species)} species names against {len(initial)} initial counts; a network "
+            "written with the two out of step states one species' count against another's name"
+        )
+    if len(set(species)) != len(species):
+        raise ValueError(f"species names must be unique, and {list(species)} are not")
+    negative = [name for name, count in zip(species, initial) if count < 0]
+    if negative:
+        raise ValueError(f"initial molecule counts must be non-negative; {negative} are not")
+
+    document = libsbml.SBMLDocument(3, 2)
+    model = document.createModel()
+    model.setId(model_id)
+    # Stated on the model as well as on each species: the reader resolves a species that omits the
+    # attribute to this one, so the file stays readable as counts either way.
+    model.setSubstanceUnits("item")
+
+    compartment = model.createCompartment()
+    compartment.setId("cell")
+    compartment.setConstant(True)
+    compartment.setSize(1.0)
+    compartment.setSpatialDimensions(3)
+
+    for name, count in zip(species, initial):
+        spec = model.createSpecies()
+        spec.setId(name)
+        spec.setCompartment("cell")
+        spec.setInitialAmount(float(count))
+        spec.setHasOnlySubstanceUnits(True)
+        spec.setSubstanceUnits("item")
+        spec.setBoundaryCondition(False)
+        spec.setConstant(False)
+
+    for index, reaction in enumerate(reactions):
+        for position, _ in (*reaction.reactants, *reaction.products):
+            if not 0 <= position < len(species):
+                raise ValueError(
+                    f"reaction {index} names species index {position}, and the network declares "
+                    f"{len(species)}"
+                )
+        rxn = model.createReaction()
+        rxn.setId(f"r{index}")
+        rxn.setReversible(False)
+        for position, stoich in reaction.reactants:
+            ref = rxn.createReactant()
+            ref.setSpecies(species[position])
+            ref.setStoichiometry(float(stoich))
+            ref.setConstant(True)
+        for position, stoich in reaction.products:
+            ref = rxn.createProduct()
+            ref.setSpecies(species[position])
+            ref.setStoichiometry(float(stoich))
+            ref.setConstant(True)
+
+        stoichiometric_factor = 1
+        for _, stoich in reaction.reactants:
+            stoichiometric_factor *= factorial(stoich)
+        law = rxn.createKineticLaw()
+        parameter = law.createLocalParameter()
+        parameter.setId("k")
+        parameter.setValue(reaction.rate / stoichiometric_factor)
+        terms = ["k"] + [
+            species[position] if stoich == 1 else f"{species[position]}^{stoich}"
+            for position, stoich in reaction.reactants
+        ]
+        law.setMath(libsbml.parseL3Formula(" * ".join(terms)))
+
+    errors = _fatal_errors(document, libsbml)
+    if errors:
+        raise ValueError("the built network is not valid SBML: " + "; ".join(errors))
+    return str(libsbml.writeSBMLToString(document))
+
+
 def ingest_stochastic_sbml(sbml: str) -> tuple[list[str], list[Reaction], list[int]]:
     """Parse an SBML reaction network into the species, reactions, and initial counts the SSA runs.
 
@@ -1530,6 +1633,7 @@ def _refuse_unreadable_document(document: Any) -> None:
 
 __all__ = [
     "build_model_sbml",
+    "build_stochastic_sbml",
     "compare_sbml_to_dossier",
     "ingest_fbc_sbml",
     "ingest_qual_sbml",

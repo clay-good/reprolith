@@ -7,6 +7,9 @@ networks whose stationary/equilibrium mean is known in closed form, certifies ea
 `run_test_set` machinery. The ground truth is analytical (Poisson and binomial means), so it needs
 no external tool and no network; the pinned seed makes every certificate byte-reproducible.
 
+It also re-runs each network under libRoadRunner's Gillespie integrator and writes
+`corroboration.json` beside the certificates. That half *does* need the corroborate extra.
+
 Run from the repo root:  python scripts/run_stochastic_milestone.py
 """
 
@@ -31,6 +34,7 @@ from reprolith import (
     render_human,
     run_test_set,
 )
+from reprolith.corroboration import corroborate_ensemble_mean
 from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import prune_certificate_directory
 from reprolith.stochastic import solver_pin
@@ -103,6 +107,23 @@ def main() -> None:
 
     certificates, report = run_test_set(catalog.entries, engine_pin=pin, certified=certified, advance=True)
 
+    # The same networks under a second, independently-implemented Gillespie sampler
+    # (libRoadRunner's), at the sampling protocol each was certified under. Reported beside the
+    # certificates, never gating them — and reported as a count of standard errors rather than as
+    # a distance, because two ensembles of the same model agree only up to Monte Carlo error.
+    corroboration = {
+        key: corroborate_ensemble_mean(
+            [f"S{i}" for i in range(_SYSTEMS[key]["n_species"])],
+            _SYSTEMS[key]["reactions"],
+            _SYSTEMS[key]["initial"],
+            observed=_SYSTEMS[key]["species"],
+            duration=_SYSTEMS[key]["duration"],
+            trajectories=_SYSTEMS[key]["trajectories"],
+            seed=_SYSTEMS[key]["seed"],
+        ).record()
+        for key in sorted(_SYSTEMS)
+    }
+
     milestone = STO / "milestone"
     (milestone / "certificates").mkdir(parents=True, exist_ok=True)
     prune_certificate_directory(milestone / "certificates", certified)
@@ -116,6 +137,9 @@ def main() -> None:
     # re-reads under its lock, and a plain write_text truncates it to zero before writing
     # ~52 KB. A crash in that window leaves a blank catalog behind.
     write_json_atomically(milestone / "catalog.json", catalog.to_dict())
+    (milestone / "corroboration.json").write_text(
+        json.dumps(corroboration, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     (milestone / "agreement_report.json").write_text(
         json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -124,6 +148,8 @@ def main() -> None:
     print(f"stochastic milestone: {report.agreements}/{report.total} agree with ground truth")
     print(f"verdicts: {dict(counts)}")
     print(f"digests: {[certificate_digest(c) for c in certificates]}")
+    agreed = sum(1 for row in corroboration.values() if row["engine_independent"])
+    print(f"corroboration: {agreed}/{len(corroboration)} engine-independent vs libRoadRunner")
 
 
 if __name__ == "__main__":

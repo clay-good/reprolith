@@ -47,6 +47,7 @@ from .corroboration import (
     EngineCorroboration,
     corroborate_attractors,
     corroborate_curve,
+    corroborate_ensemble_mean,
     corroborate_fixed_points,
     corroborate_objective,
 )
@@ -287,6 +288,7 @@ from .run import (
 )
 from .sbml import (
     build_model_sbml,
+    build_stochastic_sbml,
     compare_sbml_to_dossier,
     ingest_fbc_sbml,
     ingest_qual_sbml,
@@ -473,6 +475,7 @@ __all__ = [
     "corroborate_attractors",
     "corroborate_fixed_points",
     "corroborate_objective",
+    "corroborate_ensemble_mean",
     "EnginePin",
     "EngineUnavailable",
     "ensemble_final_counts",
@@ -524,6 +527,7 @@ __all__ = [
     "ingest_sbml",
     "ingest_spatial_sbml",
     "ingest_stochastic_sbml",
+    "build_stochastic_sbml",
     "interpolation_cost",
     "jaccard",
     "judge_attractor_set",

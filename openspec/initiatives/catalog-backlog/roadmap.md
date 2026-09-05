@@ -94,7 +94,7 @@ a change under `openspec/changes/`.
 
 ### 5. Multi-engine matrix and cross-engine corroboration
 
-- **Type:** capability *(landed for four of the six classes: kinetic per model and PK/PD per
+- **Type:** capability *(landed for five of the six classes: kinetic per model and PK/PD per
   claim at the dose it was certified at, COPASI vs libRoadRunner; constraint-based per model,
   Reprolith's own LP against COBRApy; and logical per network, CANA on the six enumerable
   attractor sets and sympy's SAT on the three 44-to-60-node models' fixed-point sets — the
@@ -104,10 +104,26 @@ a change under `openspec/changes/`.
   would call two correct solvers engine-sensitive on any model with alternate optima; and the
   attractor or fixed-point set itself for the discrete class, published as an exact match rather
   than as a distance of zero, which on a page of curve distances reads as the best number on it.
-  All reported beside the certificates rather than gating them. The two left — spatial and
-  stochastic — have no second registered engine, so nothing is reported for them: an absence, not
-  a pass. Their questions (a finite-difference reaction-diffusion solve, a Gillespie ensemble) are
-  the ones no installed implementation but this one answers.)*
+  All reported beside the certificates rather than gating them. **And the stochastic class now has
+  one too** (2026-09-05), which is a correction as much as an addition: this entry said its
+  question — a Gillespie ensemble — was one no installed implementation but this one answers, and
+  that was never checked. libRoadRunner ships a Gillespie integrator, it was already pinned here as
+  the ODE classes' second engine, and it runs all three certified networks in four seconds. What it
+  reports is different in kind from the other three classes and is published that way: two
+  ensembles of the same model agree only up to Monte Carlo error, so the comparison is the
+  difference of the two means over their **combined standard error**, against a criterion of three,
+  and it would be a lie on the curve classes' scale (1.9 standard errors rounds to `2e+00`). Each
+  agreement also carries the bias it could *not* have seen, because two small ensembles agree with
+  almost anything: 6.5% of the mean on the Poisson-mean-10 network — wider than the 5% that class's
+  own scalar verdict passes at — and 1.8% on the reversible isomerization. It is scoped to
+  reactions at most first-order in each reactant and refuses the rest by name: Reprolith runs the
+  stochastic mass action k·n(n−1)/2 where libRoadRunner's Gillespie takes the SBML rate law
+  verbatim as k·n², a measured 24% gap on `2A → B` from four molecules that is a difference of
+  convention and would have been published as engine sensitivity. Putting the same network in
+  front of both needed a writer — `build_stochastic_sbml`, the exact inverse of the class's
+  ingester, round-tripped in the tests — since until now the SSA's networks existed only as Python
+  objects. The one left, **spatial**, has no second registered engine, so nothing is reported for
+  it: an absence, not a pass.)*
 - **Why (value):** Lifts a deferred fence. Running a reconstruction on more than one registered
   engine separates a model's behavior from a single solver's quirks, turning "engine-sensitive"
   from a hidden risk into a reported verdict — a real credibility multiplier.
@@ -118,9 +134,9 @@ a change under `openspec/changes/`.
 - **Depends on:** MVP oracle; the BioSimulators engine registry.
 - **Done when:** ~~Verdict stability is reported across ≥2 engines for supported classes.~~ Done
   for every class that has a second implementation to register: 80 PK/PD claims, 6 kinetic models,
-  8 constraint-based models and 9 logical networks, all engine-independent
+  8 constraint-based models, 9 logical networks and 3 stochastic networks, all engine-independent
   (`tests/test_corroboration.py`, `tests/test_fba_corroboration.py`,
-  `tests/test_logical_corroboration.py`).
+  `tests/test_logical_corroboration.py`, `tests/test_stochastic_corroboration.py`).
 
 ### 6. Seed the un-curated literature (preprint / journal feeds)
 

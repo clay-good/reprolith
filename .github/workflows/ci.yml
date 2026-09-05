@@ -86,7 +86,7 @@ jobs:
       - name: Tests (cross-engine corroboration)
         run: |
           pytest -q tests/test_corroboration.py tests/test_fba_corroboration.py \
-            tests/test_logical_corroboration.py
+            tests/test_logical_corroboration.py tests/test_stochastic_corroboration.py
 
   specs:
     runs-on: ubuntu-latest

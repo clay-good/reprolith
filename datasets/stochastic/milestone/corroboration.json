@@ -1,0 +1,44 @@
+{
+  "immigration_death_10": {
+    "comparison": "monte-carlo-agreement",
+    "distance_at_most": 1.9,
+    "engine_independent": true,
+    "engine_versions": [
+      "gillespie-direct-method (rev b4d8d2ffc52b)",
+      "2.7.0"
+    ],
+    "engines": [
+      "reprolith-ssa",
+      "roadrunner-gillespie"
+    ],
+    "resolves_bias_above": 0.065
+  },
+  "immigration_death_4": {
+    "comparison": "monte-carlo-agreement",
+    "distance_at_most": 1.6,
+    "engine_independent": true,
+    "engine_versions": [
+      "gillespie-direct-method (rev b4d8d2ffc52b)",
+      "2.7.0"
+    ],
+    "engines": [
+      "reprolith-ssa",
+      "roadrunner-gillespie"
+    ],
+    "resolves_bias_above": 0.052
+  },
+  "reversible_isomerization": {
+    "comparison": "monte-carlo-agreement",
+    "distance_at_most": 1.0,
+    "engine_independent": true,
+    "engine_versions": [
+      "gillespie-direct-method (rev b4d8d2ffc52b)",
+      "2.7.0"
+    ],
+    "engines": [
+      "reprolith-ssa",
+      "roadrunner-gillespie"
+    ],
+    "resolves_bias_above": 0.018
+  }
+}
