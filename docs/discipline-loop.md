@@ -142,15 +142,25 @@ practitioner can act on.
   not a given: they were measured under libRoadRunner 2.7.0 and CI reproduces every standard error
   and every resolution to the last digit under 2.10.0.
 
-  The one left, spatial, has no second registered engine and this is not measured for it — an
-  absence, which the public registry names. It is an absence of *corroboration*, and worth
-  separating from a second question it is easy to read it as: it is certified against something
-  outside this engine already. Its references are closed-form mathematics, so each of those
-  certificates' published discrepancy is a distance from an independent standard — not the same
-  thing as re-running a certified result under a second simulator, and not nothing either. What it
-  has no *second engine of its own kind* for is a finite-difference reaction-diffusion solve, and
-  two such solvers would agree only up to their discretizations
-  (`tests/test_reference_provenance.py` counts which certificate is checked against what).
+  The spatial class has one too now, and it makes the same correction twice: this paragraph also
+  said no installed implementation but this one answers *its* question, and scipy — installed here
+  since the constraint-based class needed a linear program — integrates a method-of-lines diffusion
+  system under LSODA. All six classes are corroborated. Measured, the three certified profiles
+  agree to **1e-03**, the same 1% of the curve budget the kinetic class spends.
+
+  That number needs its own guard against being read as a distance from the truth, and this is the
+  entry where the distinction is sharpest. LSODA integrates the *semi-discrete* system essentially
+  exactly, so what is measured is what the fixed-step explicit stepper costs in time
+  discretization — first order in `dt`, confirmed by halving it. Against the continuum solution the
+  explicit scheme does **better**: 2.0e-05 from the closed-form Gaussian, six times closer than the
+  two engines are to each other, because central differencing and forward Euler have truncation
+  errors of opposite sign that cancel exactly at a diffusion number of 1/6 and nearly so at the 0.2
+  these run at. Guidance: a cross-engine distance says two discretizations differ; only the
+  certificate's own discrepancy says how near the answer the profile is, and on this class those
+  two numbers point opposite ways. What the pair does not separate at all is the spatial
+  discretization — both sides take second-order central differences with a mirrored boundary — and
+  that limit is asserted rather than only written down
+  (`tests/test_spatial_corroboration.py`, `tests/test_reference_provenance.py`).
 - **Stochastic mean — 5% / 15%, and the ensemble is the cost.** The number judged is the mean of an
   ensemble Reprolith drew, so drawing the *right* model twice moves it. The class already refuses to
   publish a verdict when the standard error of that mean is more than half the pass threshold, and

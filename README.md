@@ -198,9 +198,15 @@ guessing — just: *does the described model produce the shown result?*
   and 1.0 against a criterion of three — and each is published with the bias it could *not* have
   seen, 6.5%, 5.2% and 1.8% of the mean. The first of those is wider than the 5% that class's own
   verdict passes at, so on that model the second opinion is weaker than the verdict it stands
-  beside, and the record says so. One of the six classes has **no** second
-  registered engine, so nothing was re-run for it — and `reprolith corroboration` prints it
-  in the same list as the five, because a table of only the corroborated classes would read
+  beside, and the record says so. The spatial class's 3 profiles complete the set under scipy's
+  LSODA, and their 1e-03 is the other number that must not be misread: it is what this class's
+  explicit stepper costs against an exact integration of the same semi-discrete system, and against
+  the continuum solution the same profiles sit 2.0e-05 away — *closer* than the two engines are to
+  each other, because the scheme's time and space errors have opposite signs. **All six classes are
+  corroborated**, which for most of this project's life two were not, on the recorded grounds that
+  no installed implementation answered their questions. Neither half was ever checked and neither
+  held. `reprolith corroboration` still prints an unchecked class in the same list as the checked
+  ones, because a class can lose an engine and a table of only the corroborated ones would read
   as a whole-repository pass. It is reachable from the terminal and over MCP, not only from the
   published page ([`docs/self-validation.md`](docs/self-validation.md)).
 

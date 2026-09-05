@@ -46,24 +46,24 @@ def _records() -> dict[str, dict]:
     return found
 
 
-def test_five_classes_carry_a_second_engine_and_one_does_not() -> None:
-    """The absence is half the finding, so it is asserted rather than assumed.
+def test_every_class_carries_a_second_engine() -> None:
+    """All six now do, and this list is written down rather than derived.
 
-    A test that only checked the classes with a record would keep passing if a class quietly lost
-    its second engine, and the page that publishes this would keep saying nothing about it.
+    A class acquiring or losing a second engine is a change a reader should be told about, not one
+    a test should absorb — and this assertion earned that the hard way. It named two classes
+    without one, on the stated grounds that no installed implementation but this one answers their
+    questions. Neither half held: libRoadRunner ships a Gillespie integrator, and scipy's LSODA
+    integrates a method-of-lines diffusion system. Both were already installed here.
 
-    This list is written down rather than derived, because a class acquiring or losing a second
-    engine is a change a reader should be told about, not one a test should absorb — and it earned
-    that the hard way. It used to name two classes without one, on the stated grounds that no
-    installed implementation but this one answers their questions. That was true of a
-    finite-difference reaction-diffusion solve and false of a Gillespie ensemble: libRoadRunner
-    ships one, and it was already installed here as the ODE classes' second engine.
+    It keeps the shape that reports an absence, because a class *can* lose one — an engine dropped
+    from the extras, a record that stops being regenerated — and the day that happens this has to
+    say so rather than silently checking five.
     """
     records = _records()
+    assert set(records) == set(_SOURCES), sorted(set(_SOURCES) - set(records))
     assert set(records) == {
-        "ode-pkpd", "kinetic", "constraint-based", "logical", "stochastic",
+        "ode-pkpd", "kinetic", "constraint-based", "logical", "stochastic", "spatial",
     }, sorted(records)
-    assert set(_SOURCES) - set(records) == {"spatial"}
 
 
 def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
@@ -87,6 +87,10 @@ def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
     # the two implementations' agreement, measured at up to 4e-11 apart between two machines
     # running the same eight models. See `_LP_NOISE_FLOOR`.
     assert worst["constraint-based"] == pytest.approx(1e-08)
+    # The spatial pair *is* a curve comparison and is judged against this budget: 1e-03, the same
+    # 1% the kinetic class spends. It is not a distance from the truth — see
+    # `test_the_gap_is_not_a_distance_from_the_truth_and_the_numbers_say_which_way`.
+    assert worst["spatial"] == pytest.approx(1e-03)
 
     shares = {name: bound / _CURVE_PASS for name, bound in worst.items()}
     assert shares["ode-pkpd"] < 1e-04       # a hundredth of a percent of the budget
@@ -147,6 +151,7 @@ _PAIRS = {
     "constraint-based": [["cobrapy", "scipy-linprog"]],
     "logical": [["cana", "reprolith-logical"], ["reprolith-logical", "sympy-sat"]],
     "stochastic": [["reprolith-ssa", "roadrunner-gillespie"]],
+    "spatial": [["reprolith-fd", "scipy-lsoda"]],
 }
 
 

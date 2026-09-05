@@ -27,13 +27,16 @@ def test_every_published_class_appears_even_with_no_second_engine() -> None:
     """A class with no record is present and empty, never missing.
 
     Returning only the classes that have a file would let any reader publish "all corroborated" by
-    iterating what happens to be there. Four of the six classes have no second registered engine;
-    they have to be as reachable as the two that do, because an absence is not a pass.
+    iterating what happens to be there. Every class carries a record today, so what this holds is
+    the *iteration*: the reader is keyed on the published classes rather than on the files that
+    happen to exist, which is what makes a class losing its record show up as an empty row instead
+    of as one fewer line. The absence rendering itself is exercised below on a constructed record,
+    because a repository where nothing is missing cannot exercise it and the day a class does lose
+    an engine is the wrong time to find out the path rotted.
     """
     records = milestone_corroboration_records()
     assert set(records) == set(milestone_certificate_dirs())
-    assert any(records.values()), "no class has a committed record; this would pass vacuously"
-    assert not all(records.values()), "every class has one; the absence path is untested here"
+    assert all(records.values()), sorted(k for k, v in records.items() if not v)
 
 
 def test_an_empty_committed_record_is_an_absence_and_not_a_vacuous_pass() -> None:
@@ -134,19 +137,36 @@ def test_the_committed_records_name_the_builds_they_were_measured_on() -> None:
             assert len(versions) == len(row["engines"])
 
 
-def test_the_terminal_names_the_classes_nothing_was_checked_for(capsys) -> None:
-    """The four unchecked classes print in the same list as the two checked ones. A table of only
-    the corroborated classes reads as a whole-repository pass."""
+def test_the_terminal_names_every_published_class(capsys) -> None:
+    """Every class prints, with the builds its numbers came out of."""
     assert run(["corroboration"]) == 0
     out = capsys.readouterr().out
     records = milestone_corroboration_records()
-    for model_class, record in records.items():
+    for model_class in records:
         assert model_class in out
-        if not record:
-            assert "nothing was checked" in out
-    assert "not a pass" in out
     for entry in corroboration_summary(records)["by_class"].values():
         assert ", ".join(entry["engine_versions"]) in out
+
+
+def test_a_class_that_loses_its_second_engine_prints_as_an_absence() -> None:
+    """The path no committed record reaches any more, held on a constructed one.
+
+    Every class carries a record today, so nothing in the repository exercises this — and the
+    wording is the whole point of it: a table of only the corroborated classes reads as a
+    whole-repository pass. Dropping one class's rows must produce a line saying nothing was
+    checked, in the same list as the passes, on both surfaces.
+    """
+    from reprolith.render import _corroboration_banner
+
+    records = dict(milestone_corroboration_records())
+    records["spatial"] = {}
+    summary = corroboration_summary(records)
+    assert summary["unchecked"] == ["spatial"]
+    assert "spatial" not in summary["by_class"]
+    banner = _corroboration_banner(records)
+    assert "spatial" in banner
+    assert "nothing was checked" in banner
+    assert "an absence, not a pass" in banner
 
 
 def test_the_registry_page_and_the_queried_surface_read_one_computation(capsys) -> None:
@@ -159,7 +179,6 @@ def test_the_registry_page_and_the_queried_surface_read_one_computation(capsys) 
     summary = corroboration_summary(records)
     for model_class, entry in summary["by_class"].items():
         assert f"{model_class}: {entry['checked']} {entry['unit']}(s) re-run" in banner
-    assert ", ".join(summary["unchecked"]) in banner
 
     assert run(["corroboration", "--json"]) == 0
     assert json.loads(capsys.readouterr().out) == summary
@@ -176,7 +195,7 @@ def test_the_committed_registry_page_states_what_the_terminal_states(capsys) -> 
         assert f"{model_class}: {entry['checked']} {entry['unit']}(s) re-run" in page
         assert ", ".join(entry["engine_versions"]) in page
         assert f"{model_class:<18} {entry['checked']:>4} {entry['unit']}(s)" in out
-    assert ", ".join(summary["unchecked"]) in page
+    assert not summary["unchecked"], summary["unchecked"]
 
 
 def test_the_mcp_tool_and_the_command_are_the_same_answer() -> None:

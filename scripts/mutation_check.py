@@ -600,6 +600,21 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_stochastic_corroboration.py"],
     ),
     (
+        "the spatial reference is integrated over a window the certificate does not run",
+        "corroboration.py",
+        ("    duration = dt * steps", "    duration = dt * steps * 2"),
+        ["tests/test_spatial_corroboration.py"],
+    ),
+    (
+        "the spatial reference drops the decay term the class solves",
+        "corroboration.py",
+        (
+            "        lambda _t, u: operator.dot(u) - decay * u,",
+            "        lambda _t, u: operator.dot(u),",
+        ),
+        ["tests/test_spatial_corroboration.py"],
+    ),
+    (
         "an ensemble agreement is read out on the deterministic classes' scale",
         "query.py",
         (

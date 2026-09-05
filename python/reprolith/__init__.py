@@ -50,6 +50,7 @@ from .corroboration import (
     corroborate_ensemble_mean,
     corroborate_fixed_points,
     corroborate_objective,
+    corroborate_profile,
 )
 from .determinism import certificate_digest, same_modulo_run_metadata
 from .digitization import (
@@ -476,6 +477,7 @@ __all__ = [
     "corroborate_fixed_points",
     "corroborate_objective",
     "corroborate_ensemble_mean",
+    "corroborate_profile",
     "EnginePin",
     "EngineUnavailable",
     "ensemble_final_counts",

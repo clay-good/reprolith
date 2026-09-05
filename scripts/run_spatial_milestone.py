@@ -7,6 +7,9 @@ certifies each *blind* through `certify_spatial` — the verdict path never sees
 agreement on the same `run_test_set` machinery. The ground truth is analytical, so it needs no
 external tool and no network, and the pinned discretization makes every certificate byte-reproducible.
 
+It also re-solves each profile under scipy's LSODA by method of lines and writes
+`corroboration.json` beside the certificates. That half needs scipy (the fba or corroborate extra).
+
 Run from the repo root:  python scripts/run_spatial_milestone.py
 """
 
@@ -31,6 +34,7 @@ from reprolith import (
     render_human,
     run_test_set,
 )
+from reprolith.corroboration import corroborate_profile
 from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import prune_certificate_directory
 from reprolith.spatial import solver_pin
@@ -100,6 +104,19 @@ def main() -> None:
 
     certificates, report = run_test_set(catalog.entries, engine_pin=pin, certified=certified, advance=True)
 
+    # The same three profiles re-solved under scipy's LSODA by method of lines — an adaptive
+    # implicit integrator against this class's fixed-step explicit one. Reported beside the
+    # certificates, never gating them. What it separates is the time integration; both sides use
+    # the same second-order stencil, which `corroborate_profile` says up front.
+    corroboration = {}
+    for key in sorted(_SYSTEMS):
+        s = _SYSTEMS[key]
+        dt = _DIFFUSION_NUMBER * _DX * _DX / s["D"]
+        corroboration[key] = corroborate_profile(
+            gaussian_profile(_CENTERS, mass=s["mass"], variance=s["var0"]),
+            diffusivity=s["D"], dx=_DX, dt=dt, steps=s["steps"],
+        ).record()
+
     milestone = SPA / "milestone"
     (milestone / "certificates").mkdir(parents=True, exist_ok=True)
     prune_certificate_directory(milestone / "certificates", certified)
@@ -113,6 +130,9 @@ def main() -> None:
     # re-reads under its lock, and a plain write_text truncates it to zero before writing
     # ~52 KB. A crash in that window leaves a blank catalog behind.
     write_json_atomically(milestone / "catalog.json", catalog.to_dict())
+    (milestone / "corroboration.json").write_text(
+        json.dumps(corroboration, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     (milestone / "agreement_report.json").write_text(
         json.dumps(report.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -121,6 +141,8 @@ def main() -> None:
     print(f"spatial milestone: {report.agreements}/{report.total} agree with ground truth")
     print(f"verdicts: {dict(counts)}")
     print(f"digests: {[certificate_digest(c) for c in certificates]}")
+    agreed = sum(1 for row in corroboration.values() if row["engine_independent"])
+    print(f"corroboration: {agreed}/{len(corroboration)} engine-independent vs scipy's LSODA")
 
 
 if __name__ == "__main__":

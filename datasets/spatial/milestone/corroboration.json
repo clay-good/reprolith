@@ -1,0 +1,38 @@
+{
+  "diffusion_D1": {
+    "distance_at_most": 0.001,
+    "engine_independent": true,
+    "engine_versions": [
+      "explicit-forward-euler-finite-difference (rev 15f00d5fb8fc)",
+      "1.13.1"
+    ],
+    "engines": [
+      "reprolith-fd",
+      "scipy-lsoda"
+    ]
+  },
+  "diffusion_D2": {
+    "distance_at_most": 0.001,
+    "engine_independent": true,
+    "engine_versions": [
+      "explicit-forward-euler-finite-difference (rev 15f00d5fb8fc)",
+      "1.13.1"
+    ],
+    "engines": [
+      "reprolith-fd",
+      "scipy-lsoda"
+    ]
+  },
+  "diffusion_Dhalf": {
+    "distance_at_most": 0.001,
+    "engine_independent": true,
+    "engine_versions": [
+      "explicit-forward-euler-finite-difference (rev 15f00d5fb8fc)",
+      "1.13.1"
+    ],
+    "engines": [
+      "reprolith-fd",
+      "scipy-lsoda"
+    ]
+  }
+}

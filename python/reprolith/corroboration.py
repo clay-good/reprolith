@@ -451,6 +451,122 @@ def _roadrunner_ensemble(
     return finals, roadrunner_version()
 
 
+
+#: The independent time integrator the spatial class is corroborated against: scipy's wrapper
+#: around ODEPACK's LSODA, an adaptive implicit/explicit stiff solver that shares no code with this
+#: package's fixed-step explicit stepper.
+SCIPY_ODE_ENGINE = "scipy-lsoda"
+
+
+def corroborate_profile(
+    profile: Sequence[float],
+    *,
+    diffusivity: float,
+    dx: float,
+    dt: float,
+    steps: int,
+    decay: float = 0.0,
+    rel_tol: float = 0.02,
+) -> EngineCorroboration:
+    """Re-solve a 1-D diffusion profile under scipy's stiff ODE integrator and compare the two.
+
+    The spatial class's second engine, and the last of the six to get one. It is worth being exact
+    about what it separates, because "a second engine" claims more than this does.
+
+    Reprolith advances ``∂C/∂t = D ∂²C/∂x² − k·C`` with a fixed-step explicit forward-Euler
+    stepper. This re-solves the *same* semi-discrete system with method of lines under LSODA —
+    adaptive order, adaptive step, implicit where the problem is stiff, and Fortran code this
+    package shares nothing with. So what the comparison isolates is the **time integration** and
+    its implementation: a profile the two agree on is the differential equation's, not an artifact
+    of stepping it explicitly at this ``dt``. Measured on the three certified systems, they differ
+    by about 1.2e-04 — forward-Euler's own O(dt) error, and 1% of the curve pass budget.
+
+    That number is not a distance from the truth, and it would be quoted as one. LSODA integrates
+    the *semi-discrete* system essentially exactly, and against the continuum solution the explicit
+    scheme does better than it does against LSODA: 2.0e-05 from the closed-form Gaussian, six times
+    closer than the two engines are to each other. Central differencing and forward Euler have
+    truncation errors of opposite sign, and at a diffusion number of 1/6 they cancel exactly — the
+    certified systems run at 0.2. So this is a statement that two discretizations differ, and the
+    certificate's own discrepancy is the one that says how near the profile is to the answer.
+
+    What it does **not** separate is the spatial discretization. Both use second-order central
+    differences on the same grid with the boundary cell mirrored for zero flux; that is the scheme
+    the class certifies under, and two independent implementations of one scheme agree about the
+    scheme's error. A spectral or higher-order reference would separate that too, and this does
+    not pretend to. The operator is built here rather than imported from
+    :mod:`reprolith.spatial`, so the two implementations of it are at least independent.
+
+    Needs the ``fba`` or ``corroborate`` extra (scipy).
+    """
+    from .spatial import diffuse_1d, solver_pin
+
+    try:
+        import numpy
+        from scipy.integrate import solve_ivp
+        from scipy.sparse import diags
+    except ImportError as exc:  # pragma: no cover - exercised by the extra being absent
+        raise EngineUnavailable(
+            "corroborating a spatial profile needs scipy (the 'fba' or 'corroborate' extra)"
+        ) from exc
+
+    n = len(profile)
+    if n < 2:
+        raise ValueError("need at least two grid points")
+    # Reprolith's own solve first, so its stability refusals (an unstable diffusion number, a step
+    # too small to advance the profile) are raised before anything is integrated. A comparison
+    # against a configuration this class would not run is a number about nothing.
+    mine = diffuse_1d(
+        profile, diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, decay=decay
+    )
+
+    # The zero-flux Laplacian, written independently of `diffuse_1d`: interior rows are the usual
+    # (1, -2, 1), and the two boundary rows carry -1 because the mirrored ghost cell equals the
+    # boundary cell, which is the same condition expressed as a matrix instead of as a branch.
+    main = numpy.full(n, -2.0)
+    main[0] = main[-1] = -1.0
+    off = numpy.ones(n - 1)
+    operator = diags([off, main, off], [-1, 0, 1], format="csc") * (diffusivity / (dx * dx))
+    duration = dt * steps
+    solution = solve_ivp(
+        lambda _t, u: operator.dot(u) - decay * u,
+        (0.0, duration),
+        numpy.asarray(profile, dtype=float),
+        method="LSODA",
+        # Ten orders below the distances being compared, so the reference's own truncation is not
+        # part of the number. Checked: BDF at the same tolerances agrees with LSODA to 1e-08 on
+        # the certified systems, three orders below what is published.
+        rtol=1e-10,
+        atol=1e-12,
+        t_eval=[duration],
+        # The operator is tridiagonal; without saying so, LSODA forms a dense 201x201 Jacobian by
+        # finite differences and the solve takes twenty seconds instead of one.
+        lband=1,
+        uband=1,
+    )
+    if not solution.success:
+        raise EngineUnavailable(
+            f"the second engine did not integrate this profile: {solution.message}; a failed "
+            "reference is not a disagreement about a value and is not published as one"
+        )
+
+    pin = solver_pin()
+    result = EngineCorroboration(
+        quantity="diffused concentration profile",
+        engines=(pin.engine, SCIPY_ODE_ENGINE),
+        distance=normalized_curve_distance(mine, [float(v) for v in solution.y[:, -1]]),
+        stable=False,
+        versions=(_reprolith_build(pin), _scipy_version()),
+    )
+    return replace(result, stable=result.distance_bound() <= rel_tol, criterion=rel_tol)
+
+
+def _scipy_version() -> str:
+    """The installed scipy build, read off the running library rather than asserted."""
+    import scipy
+
+    return str(scipy.__version__)
+
+
 def _cobrapy_objective(sbml: str) -> tuple[float, str]:
     """COBRApy's optimum for this model, and the build that produced it.
 

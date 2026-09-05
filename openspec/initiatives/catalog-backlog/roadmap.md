@@ -94,7 +94,7 @@ a change under `openspec/changes/`.
 
 ### 5. Multi-engine matrix and cross-engine corroboration
 
-- **Type:** capability *(landed for five of the six classes: kinetic per model and PK/PD per
+- **Type:** capability *(landed for all six classes: kinetic per model and PK/PD per
   claim at the dose it was certified at, COPASI vs libRoadRunner; constraint-based per model,
   Reprolith's own LP against COBRApy; and logical per network, CANA on the six enumerable
   attractor sets and sympy's SAT on the three 44-to-60-node models' fixed-point sets — the
@@ -122,8 +122,17 @@ a change under `openspec/changes/`.
   convention and would have been published as engine sensitivity. Putting the same network in
   front of both needed a writer — `build_stochastic_sbml`, the exact inverse of the class's
   ingester, round-tripped in the tests — since until now the SSA's networks existed only as Python
-  objects. The one left, **spatial**, has no second registered engine, so nothing is reported for
-  it: an absence, not a pass.)*
+  objects. **And the spatial class closed the matrix the same day**, by the same correction: scipy's
+  LSODA — installed here since the constraint-based class needed a linear program — integrates the
+  method-of-lines diffusion system this class steps explicitly, and the three certified profiles
+  agree to 1e-03, the 1% of the curve budget the kinetic class spends. All six classes are
+  corroborated. That number is scoped hard, because it invites being read as a distance from the
+  truth: LSODA integrates the *semi-discrete* system essentially exactly, so what is measured is
+  the explicit stepper's time-discretization cost, and against the continuum solution the explicit
+  scheme does better — 2.0e-05 from the closed-form Gaussian, since central differencing and
+  forward Euler have opposite-signed truncation errors that cancel at a diffusion number of 1/6.
+  The pair does not separate the spatial discretization at all; both take second-order central
+  differences with a mirrored boundary, and that is stated rather than glossed.)*
 - **Why (value):** Lifts a deferred fence. Running a reconstruction on more than one registered
   engine separates a model's behavior from a single solver's quirks, turning "engine-sensitive"
   from a hidden risk into a reported verdict — a real credibility multiplier.
@@ -134,9 +143,11 @@ a change under `openspec/changes/`.
 - **Depends on:** MVP oracle; the BioSimulators engine registry.
 - **Done when:** ~~Verdict stability is reported across ≥2 engines for supported classes.~~ Done
   for every class that has a second implementation to register: 80 PK/PD claims, 6 kinetic models,
-  8 constraint-based models, 9 logical networks and 3 stochastic networks, all engine-independent
+  8 constraint-based models, 9 logical networks, 3 stochastic networks and 3 spatial profiles, all
+  engine-independent — every class this repository publishes
   (`tests/test_corroboration.py`, `tests/test_fba_corroboration.py`,
-  `tests/test_logical_corroboration.py`, `tests/test_stochastic_corroboration.py`).
+  `tests/test_logical_corroboration.py`, `tests/test_stochastic_corroboration.py`,
+  `tests/test_spatial_corroboration.py`).
 
 ### 6. Seed the un-curated literature (preprint / journal feeds)
 

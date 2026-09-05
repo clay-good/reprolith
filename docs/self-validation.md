@@ -140,19 +140,25 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
                           as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 7641c872354c), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 7641c872354c), sympy-sat 1.14.0
   ode-pkpd             80 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
+  spatial               3 model(s) on reprolith-fd, scipy-lsoda — all engine-independent to 1e-03
+                          as reprolith-fd explicit-forward-euler-finite-difference (rev 15f00d5fb8fc), scipy-lsoda 1.13.1
   stochastic            3 model(s) on reprolith-ssa, roadrunner-gillespie — all engine-independent within 1.9 combined standard errors, resolving a bias above 6.5% of the mean
                           as reprolith-ssa gillespie-direct-method (rev b4d8d2ffc52b), roadrunner-gillespie 2.7.0
-  spatial               no second engine is registered — nothing was checked, which is not a pass
 
-  overall: 5 of 6 classes re-run on a second engine — 80 claim(s), 26 model(s)
+  overall: 6 of 6 classes re-run on a second engine — 80 claim(s), 29 model(s)
 ```
 
 Three things about that output are deliberate.
 
-The **unchecked class prints in the same list as the checked ones.** One of the six has
-no second registered engine, so nothing was re-run for it. A table of the five that do would read
-as a whole-repository pass — the exact shape this repository keeps being caught by, a clean report
-standing in for a check nobody made. The absence is the finding, so it is as loud as the pass.
+**Every class is listed, including any with nothing to report.** All six carry a second engine
+today; for most of this project's life two did not, and the reason they now do is worth keeping
+rather than deleting with the line that said it. The record claimed no installed implementation
+but this one answered their questions — a Gillespie ensemble and a finite-difference
+reaction-diffusion solve. Neither half was ever checked, and neither held: libRoadRunner ships a
+Gillespie integrator, and scipy's LSODA integrates a method-of-lines diffusion system, and both
+were already installed here. The shape that prints an absence in the same list as the passes is
+kept, because a class can lose an engine and a table of only the corroborated ones would read as
+a whole-repository pass.
 
 And **the stochastic line does not say "to 1.9"**, because it is not a distance. Two engines that
 solve an ODE or a linear program agree to their last digits; two Gillespie *ensembles* of the same
@@ -169,6 +175,17 @@ the ensembles happened to be. Three standard errors of the Poisson-mean-10 netwo
 trajectories is 6.5% of its mean — *wider than the 5% that class's own scalar verdict passes at*,
 so this corroboration is weaker than the verdict it stands beside and the record says so. The
 reversible-isomerization entry, whose equilibrium spread is much tighter, resolves 1.8%.
+
+The **spatial line's 1e-03 is not a distance from the truth**, and it is the number most likely to
+be quoted as one. scipy integrates the *semi-discrete* system essentially exactly, so what the two
+engines differ by is what this class's fixed-step explicit stepper costs in time discretization —
+first order in `dt`, and confirmed to halve when `dt` does. Against the continuum solution the
+explicit scheme does *better* than that: 2.0e-05 from the closed-form Gaussian, six times closer
+than the two engines are to each other, because central differencing and forward Euler have
+truncation errors of opposite sign that cancel exactly at a diffusion number of 1/6 and nearly so
+at the 0.2 these run at. And this pair does not separate the spatial discretization at all: both
+sides take second-order central differences with the boundary cell mirrored. That is the scheme
+the class certifies under, and two implementations of one scheme agree about the scheme's error.
 
 And the **two counts are never added up.** The classes do not count the same thing: PK/PD re-runs
 each *claim* at the dose it was certified at, and the kinetic class re-runs each *model*'s curve
