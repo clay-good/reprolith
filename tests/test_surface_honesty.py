@@ -227,7 +227,11 @@ def test_ready_to_submit_is_withheld_when_a_claim_could_not_be_evaluated() -> No
     )
     report = presubmission_report(cert)
     assert report["ready_to_submit"] is False
-    assert "every claim reproduces cleanly" not in report["readiness"]
+    # The claim, not the wording: this assertion used to name the exact sentence the *ready* branch
+    # carried, and the sentence it falls through to said "every claim reproduces, but not cleanly"
+    # — the same falsehood, one word shorter, and it passed.
+    assert "every claim reproduces" not in report["readiness"]
+    assert "could not be evaluated" in report["readiness"]
     assert report["fix_list"][0]["claim_id"] == "c2"
 
 

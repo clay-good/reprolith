@@ -205,7 +205,8 @@ def test_an_estimation_reproduction_never_reads_as_a_clean_simulation_pass() -> 
 
     report = presubmission_report(cert)
     assert report["ready_to_submit"] is False
-    assert "every claim reproduces cleanly" not in report["readiness"]
+    assert "every claim reproduces" not in report["readiness"]
+    assert "re-fitting it from your data" in report["readiness"]
     assert [i["kind"] for i in report["fix_list"]] == ["level"]
 
 
@@ -572,3 +573,81 @@ def test_no_fix_is_the_finding_restated() -> None:
     assert note["fix"] == (
         "state it in your paper or your model file, so a reproducer need not infer it"
     )
+
+
+def test_the_readiness_line_names_every_reason_the_clean_pass_was_withheld() -> None:
+    """One sentence covered four causes, and pointed at the wrong one in every case but its own.
+
+    "Every claim reproduces, but not cleanly" is *false* where a claim could not be evaluated —
+    the overall rule drops abstentions before deciding, so `reproduced` does not mean every claim
+    was judged — and it points at the results where the only finding is a gap in the artifact. On
+    the shipped mouse certificate all fourteen claims reproduce, the worst by 0.27%, and what is
+    missing is a unit in the model file; that author was told their results were not clean.
+    """
+    from reprolith import (
+        ClaimAssessment,
+        EnginePin,
+        OverallVerdict,
+        PaperIdentity,
+        ReproductionLevel,
+        Verdict,
+        build_certificate,
+        presubmission_report,
+    )
+
+    def cert(**kwargs: object):
+        return build_certificate(
+            paper=PaperIdentity(title="p", doi="10.0/p"),
+            engine_pin=EnginePin(engine="e", version="1"),
+            **kwargs,  # type: ignore[arg-type]
+        )
+
+    clean = ClaimAssessment(claim_id="c1", quantity="peak", source_location="Table 1",
+                            verdict=Verdict.REPRODUCED)
+    cases = {
+        "could not be evaluated": cert(assessments=[
+            clean,
+            ClaimAssessment(claim_id="c2", quantity="exposure", source_location="Table 1",
+                            verdict=Verdict.NOT_EVALUABLE, root_cause="no reference value"),
+        ]),
+        "re-fitting it from your data": cert(assessments=[
+            ClaimAssessment(claim_id="c1", quantity="clearance", source_location="Table 2",
+                            verdict=Verdict.REPRODUCED, level=ReproductionLevel.ESTIMATION,
+                            protocol="least squares, Nelder-Mead"),
+        ]),
+        "leaves something a reproducer needs unstated": cert(
+            assessments=[clean],
+            gap_report=["unit not stated by the artifact: units — 11 of 34 values state no unit"],
+        ),
+    }
+    for expected, built in cases.items():
+        assert built.overall is OverallVerdict.REPRODUCED, expected
+        readiness = presubmission_report(built)["readiness"]
+        assert expected in readiness, (expected, readiness)
+        # And nothing it did not find: naming one cause tells the author the others are fine.
+        for other in cases:
+            if other != expected:
+                assert other not in readiness, (expected, other, readiness)
+
+    # Several at once are all named, in the order the fix list ranks them.
+    both = cert(
+        assessments=[
+            clean,
+            ClaimAssessment(claim_id="c2", quantity="exposure", source_location="Table 1",
+                            verdict=Verdict.NOT_EVALUABLE, root_cause="no reference value"),
+        ],
+        gap_report=["unit not stated by the artifact: units"],
+    )
+    readiness = presubmission_report(both)["readiness"]
+    assert readiness.index("could not be evaluated") < readiness.index("leaves something")
+
+    # The fourth reason the readiness flag tests never reaches this sentence, and the reason it
+    # does not is worth failing on if it changes: `derive_overall` downgrades an
+    # assumption-qualified claim, so that certificate is never an overall `reproduced` at all and
+    # is answered by the `partially-reproduced` line instead.
+    qualified = cert(assessments=[
+        ClaimAssessment(claim_id="c1", quantity="peak", source_location="Table 1",
+                        verdict=Verdict.REPRODUCED, assumption_qualified=True),
+    ])
+    assert qualified.overall is OverallVerdict.PARTIALLY_REPRODUCED
+    assert presubmission_report(qualified)["ready_to_submit"] is False

@@ -58,12 +58,49 @@ _READINESS = {
     ),
 }
 
-# Every claim reproduced, but something else withholds a clean pass — a recorded gap, or a claim
-# reproduced at estimation level rather than by simulation. The verdict alone would read as ready.
-_REPRODUCED_BUT_NOT_READY = (
-    "Not yet ready: every claim reproduces, but not cleanly — see the fix list for what a "
-    "reproducer would still have to supply or re-derive."
+#: The four reachable reasons an overall ``reproduced`` is still not ready, in the order the fix
+#: list ranks them. Named individually rather than rolled into one sentence, because the sentence
+#: they replace was wrong in both directions. It said "every claim reproduces, but not cleanly",
+#: and:
+#:
+#: * with a claim nobody could evaluate that is **false** — the overall rule drops abstentions
+#:   before deciding, so `reproduced` does not mean every claim was judged. This is the same
+#:   contradiction an earlier pass fixed on the *ready* branch, in the sentence that branch falls
+#:   through to. Its test asserted the exact words "every claim reproduces cleanly" were absent,
+#:   which this string satisfies while saying the same thing;
+#: * with only a gap recorded it points at the wrong thing. On the shipped mouse certificate all
+#:   fourteen claims reproduce, the worst by 0.27%, and what is missing is a unit in the model
+#:   file. "Not cleanly" sends that author to re-examine their results.
+_NOT_READY_REASONS: tuple[tuple[str, str], ...] = (
+    ("not_evaluable", "a claim could not be evaluated at all"),
+    ("qualified", "a claim reproduces only under a value a reproducer had to assume"),
+    ("estimation", "a claim was reproduced by re-fitting it from your data, not by running your "
+                   "model as described"),
+    ("gaps", "your artifact leaves something a reproducer needs unstated"),
 )
+
+
+def _withheld_reasons(cert: Certificate, estimation: list[str]) -> list[str]:
+    """Every reason this certificate is not a clean pass, in the order the fix list ranks them.
+
+    The readiness flag and the readiness sentence are both computed from this one list, so the
+    report cannot come to say it is not ready for a reason it does not print — which is how the
+    sentence it replaced survived: the flag looked at four conditions and the sentence described
+    one of them.
+
+    ``qualified`` is currently unreachable *through this function's caller*, because
+    ``derive_overall`` downgrades an assumption-qualified claim to `partially-reproduced` and the
+    sentence is only reached under an overall `reproduced`. It stays because the readiness flag has
+    always tested it, and the point of one list is that the two cannot disagree about what a clean
+    pass is.
+    """
+    present = {
+        "not_evaluable": any(a.verdict is Verdict.NOT_EVALUABLE for a in cert.assessments),
+        "qualified": any(a.assumption_qualified for a in cert.assessments),
+        "estimation": bool(estimation),
+        "gaps": bool(cert.gap_report),
+    }
+    return [text for key, text in _NOT_READY_REASONS if present[key]]
 
 
 def _claim_issue_and_fix(assessment: Any) -> tuple[str, str]:
@@ -151,13 +188,8 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
     # overall rule drops abstentions before deciding, by design, so `reproduced` does not imply
     # every claim was judged — this report has to look for itself.
     estimation = estimation_claims(cert)
-    ready = (
-        cert.overall is OverallVerdict.REPRODUCED
-        and not any(a.assumption_qualified for a in cert.assessments)
-        and not any(a.verdict is Verdict.NOT_EVALUABLE for a in cert.assessments)
-        and not cert.gap_report
-        and not estimation
-    )
+    withheld = _withheld_reasons(cert, estimation)
+    ready = cert.overall is OverallVerdict.REPRODUCED and not withheld
 
     actions: list[dict[str, Any]] = []
     # A claim that reproduced *only* under a value Reprolith supplied is a reason the clean pass
@@ -301,7 +333,8 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
         "overall": cert.overall.value,
         "ready_to_submit": ready,
         "readiness": _READINESS[cert.overall] if ready or cert.overall is not OverallVerdict.REPRODUCED
-        else _REPRODUCED_BUT_NOT_READY,
+        else "Not yet ready: " + "; ".join(withheld) + " — see the fix list for what a "
+             "reproducer would still have to supply or re-derive.",
         "per_claim": [a.to_dict() for a in cert.assessments],
         # What this check did *not* look at, when a budget chose against it. An author reading
         # "three claims, all clean" about a fourteen-claim paper is reading a true sentence as an
