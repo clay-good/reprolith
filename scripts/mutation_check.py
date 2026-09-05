@@ -576,6 +576,12 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_population_end_to_end.py"],
     ),
     (
+        "the model writer accepts a name SBML drops, and emits a species with no id",
+        "sbml.py",
+        ("    if unusable:", "    if False:"),
+        ["tests/test_sbml.py"],
+    ),
+    (
         "the network writer accepts a species name SBML cannot hold",
         "sbml.py",
         ("    invalid = [name for name in species if not _SBML_ID.match(name)]",

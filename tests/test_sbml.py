@@ -70,6 +70,51 @@ def test_missing_initial_condition_blocks_the_build() -> None:
         build_model_sbml(no_ic)
 
 
+@pytest.mark.parametrize(
+    "state,parameter",
+    [("C max", "k"), ("A", "k rate"), ("1x", "k"), ("A", "half-life")],
+)
+def test_a_name_sbml_cannot_hold_blocks_the_build(state: str, parameter: str) -> None:
+    """libSBML rejects an invalid identifier by returning a code, not by raising.
+
+    Ignored, a state variable called "C max" was emitted as a `<species>` with no `id` and a
+    `<rateRule>` with no `variable` — a document libSBML itself reports as free of fatal errors,
+    describing a different model from the dossier. This writer feeds `build_omex_archive`, so that
+    document is what an author receives. A bad *parameter* name did fail, but only incidentally,
+    when the rate law referencing it would not parse, under a message about MathML that never
+    named the parameter.
+
+    Refused rather than sanitized: these names appear inside the dossier's own expressions, so
+    renaming one here would leave every expression referring to a symbol the model no longer
+    declares.
+    """
+    dossier = Dossier(
+        entry="10.1/x",
+        state_variables=(state,),
+        equations=(
+            Equation(target=state, expression=f"0 - {parameter}", source_location="Eq 1"),
+        ),
+        parameters=(Parameter(name=parameter, value=0.5, unit="1/h", source_location="T1"),),
+        initial_conditions=(
+            Parameter(name=state, value=100.0, unit="mg", source_location="Methods"),
+        ),
+    )
+    with pytest.raises(ValueError, match="not usable as SBML identifiers"):
+        build_model_sbml(dossier)
+
+
+def test_the_models_own_id_is_still_sanitised_rather_than_refused() -> None:
+    """A DOI is not an identifier and no expression refers to it, so it is cleaned, not rejected.
+
+    The refusal above must not swallow this: every dossier in the corpus is keyed by a DOI with
+    slashes and dots in it, and refusing those would block the whole corpus from being built.
+    """
+    sbml = build_model_sbml(_ONE_COMPARTMENT)
+    assert "10.1/onecomp" not in sbml
+    # `_sid` prefixes what would otherwise start with a digit, so "10.1/onecomp" becomes this.
+    assert 'id="m_10_1_onecomp"' in sbml
+
+
 def test_unparseable_expression_is_rejected() -> None:
     bad = Dossier(
         entry="10.1/x",

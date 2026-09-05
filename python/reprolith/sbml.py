@@ -115,6 +115,29 @@ def build_model_sbml(dossier: Dossier, *, level: int = 3, version: int = 2) -> s
             "cannot build: equations for variables the dossier does not declare: "
             f"{undeclared}"
         )
+    # Every declared symbol becomes an SBML identifier, and libSBML rejects an invalid one by
+    # *returning a code* rather than by raising. Ignored, a state variable called "C max" was
+    # emitted as a species with no `id` and a rate rule with no `variable`: a document libSBML
+    # itself reports as free of fatal errors, describing a different model from the dossier —
+    # and this writer feeds `build_omex_archive`, so that document is what an author receives.
+    # A bad *parameter* name did fail, but only incidentally, when the rate law referencing it
+    # would not parse, and under a message about MathML that never named the parameter.
+    #
+    # Refused rather than sanitized: these names appear inside the dossier's own equation
+    # expressions, so renaming one here would leave every expression referring to a symbol the
+    # model no longer declares. The model's own id *is* sanitized (`_sid`), because nothing
+    # refers to it.
+    unusable = sorted(
+        name for name in declared | {c.name for c in dossier.compartments}
+        if not _SBML_ID.match(name)
+    )
+    if unusable:
+        raise ValueError(
+            f"cannot build: these names are not usable as SBML identifiers: {unusable}; an "
+            "identifier starts with a letter or underscore and continues with letters, digits or "
+            "underscores. Renaming them here would break the expressions that refer to them, so "
+            "the dossier has to carry names the format can hold"
+        )
 
     document = libsbml.SBMLDocument(level, version)
     model = document.createModel()

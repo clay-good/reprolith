@@ -587,7 +587,7 @@
     "prior_administrations": []
   },
   "BIOMD0000001028:Cmax-muscle-500mg": {
-    "distance_at_most": 1e-06,
+    "distance_at_most": 1e-07,
     "engine_independent": true,
     "engine_versions": [
       "4.46.300 (Source)",
