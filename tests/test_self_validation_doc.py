@@ -173,3 +173,35 @@ def test_every_class_row_names_a_milestone_directory_that_exists() -> None:
     assert linked, "the page links no milestone directories; this check would pass vacuously"
     for relative in sorted(linked):
         assert (_ROOT / relative).is_dir(), relative
+
+
+def test_the_pages_corroboration_transcript_is_what_the_command_prints() -> None:
+    """The page shows a `reprolith corroboration` run. Nothing checked that it still prints that.
+
+    It is a transcript, not a paraphrase, and it names engine builds down to the revision of the
+    code that produced each number — which is the point of publishing them and also the reason
+    they go stale. Those revisions move whenever the class's own code moves, and this page has
+    already carried one that was a commit behind for part of a day with the whole suite green.
+
+    The comparison is exact and it is safe to make exact: every field the command prints comes out
+    of the committed records, not out of the machine running it, so this holds identically on a
+    bare interpreter with no engine installed.
+    """
+    import io
+    from contextlib import redirect_stdout
+
+    from reprolith.cli import run
+
+    buffer = io.StringIO()
+    with redirect_stdout(buffer):
+        assert run(["corroboration"]) == 0
+    printed = buffer.getvalue().strip("\n")
+
+    marker = "$ reprolith corroboration\n"
+    assert marker in _PAGE, "the page no longer shows the command this checks"
+    shown = _PAGE.split(marker, 1)[1].split("```", 1)[0].strip("\n")
+    assert shown == printed, (
+        "docs/self-validation.md shows a `reprolith corroboration` transcript that the command no "
+        "longer prints; re-run it and paste the output"
+    )
+
