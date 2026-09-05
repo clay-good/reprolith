@@ -426,8 +426,11 @@ when you do not have one yet.
 What Reprolith's *own extraction* would not carry is listed separately and never as a fix, because
 some of it the archive omits and some of it the archive states perfectly well.
 
-Every command reads except `export`, which writes the archive named by `--out` — and says so when
-that replaced a file that was already there. It packages the
+A command here writes only where you point it, and every one that writes says when it replaced a
+file that was already there — which used to be true of `export` alone, and is the reverse of where
+it matters most: filling a template in is your work, twenty points read off a figure or a reported
+value looked up per row, and the command that destroys it is the same one that wrote it. `export`
+is the one whose whole job is to create a file. It packages the
 published bundle for that accession — the window, the sample count, the output each claim reads,
 and the values that claim sets — and refuses a `--model` the bundle was not built from, since an
 archive built from another model packages a run the certificate never judged.

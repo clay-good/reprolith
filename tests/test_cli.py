@@ -1622,7 +1622,7 @@ def test_figure_template_says_when_it_replaced_a_filled_in_file(tmp_path, capsys
     run(["figure-template", "--sedml", str(sedml), "--out-dir", str(out)])
     capsys.readouterr()
     assert run(["figure-template", "--sedml", str(sedml), "--out-dir", str(out)]) == 0
-    assert "(replaced)" in capsys.readouterr().out
+    assert "replacing what was there" in capsys.readouterr().out
 
 
 def test_figure_template_from_a_document_that_is_not_one_is_a_message(tmp_path, capsys):
@@ -1786,3 +1786,73 @@ def test_params_check_warns_when_the_model_names_none_of_its_own_quantities(tmp_
     run(argv)
     assert "state no identifier" not in capsys.readouterr().out
 
+
+
+def _second_write_argv(tmp_path: Path, repo: Path, model: Path) -> dict[str, list[str]]:
+    """One invocation per writing command, each pointed at a path a caller might already own.
+
+    Built here rather than inline so the sweep below can assert it covers *every* writing command
+    the parser offers: a seventh writer added without a line here fails that assertion rather than
+    quietly shipping the silence this test exists to catch.
+    """
+    from reprolith.export import build_experiment_sedml
+
+    sbml = tmp_path / "sweep.xml"
+    sbml.write_text(_EXPORT_MODEL, encoding="utf-8")
+    sedml = tmp_path / "sweep.sedml"
+    sedml.write_text(
+        build_experiment_sedml(_EXPORT_MODEL, duration=24.0, steps=240), encoding="utf-8"
+    )
+    tables = tmp_path / "sweep-tables.json"
+    tables.write_text(json.dumps({"tables": {"Table 1": {"rows": [
+        ["Tissue", "Dose, mg", "Cmax, nmol/mL"],
+        ["Plasma", "500", "6.1"],
+    ]}}}), encoding="utf-8")
+    return {
+        "claims-template": ["claims-template", "--model", str(sbml), "--sedml", str(sedml)],
+        "params-template": ["params-template", "--model", str(sbml)],
+        "figure-template": ["figure-template", "--sedml", str(sedml)],
+        "claims-propose": ["claims-propose", "--tables", str(tables)],
+        "params-propose": ["params-propose", "--tables", str(tables)],
+        "export": ["--data-dir", str(repo), "export", "ACC1", "--model", str(model)],
+    }
+
+
+def test_every_command_that_writes_says_when_it_replaced_a_file(tmp_path, capsys):
+    """The rule `export` and `figure-template --out-dir` already followed, on all six.
+
+    The other four replaced a file the caller had already filled in and printed `wrote <path>` —
+    the same success line as the first time. That is the worst place in this surface for silence:
+    filling a template in is hand work (twenty points read off a figure, a reported value looked
+    up per row), the command that destroys it is the same command that created it, and re-running
+    it is the ordinary thing to do when a model changes.
+    """
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    repo, _ = _write_repo(tmp_path)
+    model = _write_exportable_bundle(repo)
+    argv_for = _second_write_argv(tmp_path, repo, model)
+
+    # Every writing command is here: the set is read off the parser, not listed by hand.
+    import argparse
+
+    from reprolith.cli import build_parser
+
+    subparsers = next(
+        a for a in build_parser()._actions if isinstance(a, argparse._SubParsersAction)
+    ).choices
+    writing = {
+        name for name, parser in subparsers.items()
+        if any(action.dest in ("out", "out_dir") for action in parser._actions)
+    }
+    assert set(argv_for) == writing, sorted(writing ^ set(argv_for))
+
+    for name, argv in sorted(argv_for.items()):
+        out = tmp_path / f"{name}-out.json"
+        assert run([*argv, "--out", str(out)]) == 0, name
+        first = capsys.readouterr().out
+        assert "replacing" not in first, f"{name} claimed a replacement on a path that was empty"
+
+        # What the caller did between the two runs is the whole point: the file on disk is theirs.
+        out.write_bytes(out.read_bytes() + b"\n")
+        assert run([*argv, "--out", str(out)]) == 0, name
+        assert "replacing what was there" in capsys.readouterr().out, name

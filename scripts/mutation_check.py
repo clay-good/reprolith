@@ -45,6 +45,15 @@ REPO = Path(__file__).resolve().parents[1]
 #: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
+        "a template replaces work the author filled in by hand and prints a plain success line",
+        "cli.py",
+        (
+            '    return ", replacing what was there" if replaced else ""',
+            '    return ""',
+        ),
+        ["tests/test_cli.py"],
+    ),
+    (
         "a budgeted certificate takes the clean pass while claims went unattempted",
         "certificate.py",
         (

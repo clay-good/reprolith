@@ -36,7 +36,7 @@ cannot become a divergent second implementation of Reprolith's contracts.
 - **AND** an unknown certificate digest or unknown paper is reported as such with a non-zero exit
   status, not a fabricated result
 
-#### Scenario: The one command that writes a file
+#### Scenario: Exporting a reconstruction
 
 - **WHEN** a reconstruction is exported from the terminal
 - **THEN** the only file written is the archive at the path the caller named, built from the
@@ -45,6 +45,16 @@ cannot become a divergent second implementation of Reprolith's contracts.
   from, since an archive built from another model packages a run the certificate never judged
 - **AND** a recipe step the archive cannot state is reported to the terminal, never dropped
   silently
+
+#### Scenario: Replacing a file the caller had already filled in
+
+- **WHEN** any command that writes is pointed at a path that already holds a file
+- **THEN** the success line says that a file was replaced, and says nothing of the kind when the
+  path was empty
+- **AND** this holds for every writing command rather than for the export alone: the templates are
+  filled in by hand — points read off a figure, a reported value looked up per row — the command
+  that destroys that work is the same one that created it, and re-running it after the model
+  changes is the ordinary thing to do
 
 #### Scenario: Checking an archive against the author's own paper
 

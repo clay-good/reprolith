@@ -85,6 +85,24 @@ def _print_json(data: Any) -> None:
     print(json.dumps(data, indent=2, sort_keys=True))
 
 
+def _wrote(path: Path, content: str | bytes) -> str:
+    """Write ``content`` to ``path``; return what the success line should say about what was there.
+
+    Whether the path already held something is read *before* the write, because afterwards it
+    holds this text either way. Every command here that writes says it, and the templates are why:
+    filling one in is hand work — twenty points read off a figure, a reported value looked up per
+    row — and re-running the command that wrote it is the ordinary way to lose that. Silently
+    replacing it and printing ``wrote <path>`` is the same success line as having written it the
+    first time.
+    """
+    replaced = path.exists()
+    if isinstance(content, bytes):
+        path.write_bytes(content)
+    else:
+        path.write_text(content, encoding="utf-8")
+    return ", replacing what was there" if replaced else ""
+
+
 def _identifier_kwargs(args: argparse.Namespace) -> dict[str, str]:
     """Resolve the positional identifier under the chosen ``--by`` key."""
     key = args.by.replace("-", "_")
@@ -473,12 +491,8 @@ def _cmd_export(query: ReprolithQuery, args: argparse.Namespace) -> int:
         return 1
 
     out = Path(args.out)
-    # Whether the path already held something is read before writing, because afterwards it is
-    # this archive either way — and the one command that writes should say when it replaced a file
-    # rather than leave the person to notice later.
-    replaced = out.exists()
     try:
-        out.write_bytes(archive)
+        replaced = _wrote(out, archive)
     except OSError as unwritable:
         # A directory, a path whose parent does not exist, a read-only location: ordinary mistakes
         # for the only command here that writes, and a traceback is not an answer to any of them.
@@ -488,12 +502,12 @@ def _cmd_export(query: ReprolithQuery, args: argparse.Namespace) -> int:
         _print_json({
             "archive": str(out),
             "bytes": len(archive),
-            "replaced_existing_file": replaced,
+            "replaced_existing_file": bool(replaced),
             "expressed": list(experiment.expressed),
             "unexpressed": list(experiment.unexpressed),
         })
         return 0
-    print(f"wrote {out} ({len(archive)} bytes)" + (", replacing what was there" if replaced else ""))
+    print(f"wrote {out} ({len(archive)} bytes){replaced}")
     print(f"claims expressed: {', '.join(experiment.expressed)}")
     for line in experiment.unexpressed:
         # Printed, never swallowed: an archive short of a claim reads as a reconstruction that
@@ -817,7 +831,7 @@ def _cmd_params_template(query: ReprolithQuery, args: argparse.Namespace) -> int
         print(rendered, end="")
         return 0
     try:
-        Path(args.out).write_text(rendered, encoding="utf-8")
+        replaced = _wrote(Path(args.out), rendered)
     except OSError as unwritable:
         print(f"cannot write the template: {unwritable}", file=sys.stderr)
         return 1
@@ -825,7 +839,7 @@ def _cmd_params_template(query: ReprolithQuery, args: argparse.Namespace) -> int
     kinds: dict[str, int] = {}
     for row in body["parameters"]:
         kinds[row["kind"]] = kinds.get(row["kind"], 0) + 1
-    print(f"wrote {args.out}")
+    print(f"wrote {args.out}{replaced}")
     print(f"  {len(body['parameters'])} row(s) to fill in: "
           + ", ".join(f"{count} {_PLURAL[kind]}" for kind, count in sorted(kinds.items())))
     inert = sum(len(names) for names in body["model_determines"].values())
@@ -877,12 +891,12 @@ def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(rendered, end="")
         return 0
     try:
-        Path(args.out).write_text(rendered, encoding="utf-8")
+        replaced = _wrote(Path(args.out), rendered)
     except OSError as unwritable:
         print(f"cannot write the candidates: {unwritable}", file=sys.stderr)
         return 1
     body = proposed["entries"][args.accession] if args.accession is not None else proposed
-    print(f"wrote {args.out}")
+    print(f"wrote {args.out}{replaced}")
     print(f"  {len(body['candidates'])} candidate(s) from {', '.join(body['tables_read'])}")
     for note in body["notes"]:
         print(f"  note: {note}")
@@ -904,12 +918,12 @@ def _cmd_params_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(rendered, end="")
         return 0
     try:
-        Path(args.out).write_text(rendered, encoding="utf-8")
+        replaced = _wrote(Path(args.out), rendered)
     except OSError as unwritable:
         print(f"cannot write the candidates: {unwritable}", file=sys.stderr)
         return 1
     body = proposed["entries"][args.accession] if args.accession is not None else proposed
-    print(f"wrote {args.out}")
+    print(f"wrote {args.out}{replaced}")
     print(f"  {len(body['parameters'])} candidate value(s); name the model element each one is, "
           "which `reprolith params-template` lists")
     return 0
@@ -938,11 +952,9 @@ def _write_every_panel(document: str, out_dir: Path) -> int:
     for panel in panels:
         template = figure_template(document, panel=panel.plot_id)
         path = out_dir / f"{panel.plot_id}.json"
-        # A replaced file is said, not silently overwritten: a curator who has already filled one
-        # in would otherwise lose the reading and see a success line.
-        replaced = " (replaced)" if path.exists() else ""
+        rendered = json.dumps(template, indent=2, sort_keys=True) + "\n"
         try:
-            path.write_text(json.dumps(template, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            replaced = _wrote(path, rendered)
         except OSError as unwritable:
             print(f"cannot write the templates: {unwritable}", file=sys.stderr)
             return 1
@@ -998,11 +1010,11 @@ def _cmd_figure_template(query: ReprolithQuery, args: argparse.Namespace) -> int
         print(rendered, end="")
         return 0
     try:
-        Path(args.out).write_text(rendered, encoding="utf-8")
+        replaced = _wrote(Path(args.out), rendered)
     except OSError as unwritable:
         print(f"cannot write the template: {unwritable}", file=sys.stderr)
         return 1
-    print(f"wrote {args.out}")
+    print(f"wrote {args.out}{replaced}")
     print(f"  {len(template['series'])} curve(s) to read off your figure")
     for note in template["notes"]:
         print(f"  note: {note}")
@@ -1334,12 +1346,12 @@ def _cmd_claims_template(query: ReprolithQuery, args: argparse.Namespace) -> int
         print(rendered, end="")
         return 0
     try:
-        Path(args.out).write_text(rendered, encoding="utf-8")
+        replaced = _wrote(Path(args.out), rendered)
     except OSError as unwritable:
         print(f"cannot write the template: {unwritable}", file=sys.stderr)
         return 1
     body = template["entries"][args.accession] if args.accession is not None else template
-    print(f"wrote {args.out}")
+    print(f"wrote {args.out}{replaced}")
     print(f"  {len(body['claims'])} claim(s) to fill in, from the curves your document plots")
     for withheld in body.get("withheld", ()):
         print(f"  withheld: {withheld}")
@@ -1461,7 +1473,11 @@ def build_parser() -> argparse.ArgumentParser:
             "checking your own files: archive-check, claims-template, claims-propose, "
             "claims-check, params-template, params-propose, params-check, figure-template, "
             "figure-check\n"
-            "writing: export — the one command that creates a file\n\n"
+            "writing: export — the one command whose whole job is to create a file\n\n"
+            "Each of the template and propose commands writes one too when you give it --out "
+            "(figure-template --out-dir writes one per panel), and every command here that "
+            "writes says when it replaced a file that was already there — filling a template in "
+            "is your work, and re-running the command that wrote it is how it gets lost.\n\n"
             "reprolith --version prints this copy's version and the judge revision each class "
             "publishes under."
         ),
@@ -1754,7 +1770,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser(
         "export",
-        help="write a reconstruction as a runnable COMBINE archive (the one command that writes)",
+        help="write a reconstruction as a runnable COMBINE archive (the one command whose whole "
+             "job is to write one)",
     )
     p.add_argument("accession", help="the entry accession")
     p.add_argument("--model", required=True, help="the SBML file the reconstruction was built from")
