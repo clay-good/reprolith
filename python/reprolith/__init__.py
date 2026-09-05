@@ -308,6 +308,7 @@ from .sedml import (
     sedml_curve_targets,
     sedml_data_sources,
     sedml_model_sources,
+    unreadable_data_descriptions,
 )
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
 from .selection import (
@@ -605,6 +606,7 @@ __all__ = [
     "panel_faults",
     "read_digitized_figure",
     "read_sedml_data",
+    "unreadable_data_descriptions",
     "reaction_essentiality",
     "RecipeStep",
     "ReconstructionBundle",

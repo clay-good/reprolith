@@ -658,3 +658,61 @@ def test_the_committed_archive_names_every_quantity_it_declares() -> None:
     # Both members: the model and the SED-ML document are checked into the same list.
     assert report["found"]["declarations_without_identifiers"] == []
     assert not any(item["kind"] == "unnamed" for item in report["fix_list"])
+
+
+def test_a_data_series_that_could_not_be_read_is_told_apart_from_one_that_was_never_published() -> None:
+    """The silent skip whose only symptom was indistinguishable from having no data at all.
+
+    A `dataDescription` in a format this does not parse, or naming a source the archive does not
+    contain, or whose `dataSource` selects an `indexSet` or more than one slice, is dropped by the
+    reader — and the claim that cites it is then a claim with no reference values, which is exactly
+    what the report says about a paper that published none. An author shipping their measurements
+    in a NuML file was told nothing whatsoever about it.
+
+    The reasons come out of the reader's own walk rather than a second copy of it, so a condition
+    added there cannot go unreported here.
+    """
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import build_experiment_sedml
+
+    sedml = build_experiment_sedml(_MINIMAL_SBML, duration=1.0, steps=10)
+    # One series the archive does not contain, in a format that is read, and one in a format that
+    # is not — the two reasons an author is most likely to hit.
+    described = sedml.replace(
+        "</sedML>",
+        """  <listOfDataDescriptions>
+    <dataDescription id="observed" source="observed.csv" format="urn:sedml:format:csv"/>
+    <dataDescription id="raw" source="raw.numl" format="urn:sedml:format:numl"/>
+  </listOfDataDescriptions>
+</sedML>""",
+    )
+    manifest = f"""<?xml version="1.0" encoding="UTF-8"?>
+<omexManifest xmlns="{_SPEC}omex-manifest">
+  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>
+  <content location="./model.xml" format="{_SPEC}sbml.level-3.version-2"/>
+  <content location="./experiment.sedml" format="{_SPEC}sed-ml" master="true"/>
+</omexManifest>
+"""
+    report = archive_report(
+        _archive_with({"model.xml": _MINIMAL_SBML, "experiment.sedml": described}, manifest)
+    )
+    reasons = report["found"]["unreadable_data_descriptions"]
+    assert len(reasons) == 2, reasons
+    assert any("not in the archive" in reason for reason in reasons)
+    assert any("numl" in reason.lower() for reason in reasons)
+    assert report["ready_to_submit"] is False
+    data_items = [item for item in report["fix_list"] if item["kind"] == "data"]
+    assert len(data_items) == 2
+    # Above "states no targetable claim", because it is a cause of one.
+    assert data_items[0]["priority"] < next(
+        item["priority"] for item in report["fix_list"] if item["kind"] == "claims"
+    )
+
+
+def test_the_committed_archive_reads_every_series_it_describes() -> None:
+    """And the check is silent on an archive that is right, which is what makes it usable."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    report = archive_report(_ARCHIVE.read_bytes())
+    assert report["found"]["unreadable_data_descriptions"] == []
+    assert not any(item["kind"] == "data" for item in report["fix_list"])
+

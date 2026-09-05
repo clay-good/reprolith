@@ -259,3 +259,69 @@ def test_a_byte_order_mark_does_not_hide_the_first_column() -> None:
     assert read_sedml_data(document, {"observed.csv": "\ufeff" + _CSV}) == {
         "observedC": (0.0, 1.0, 2.0)
     }
+
+
+_UNREADABLE_DOC = """<?xml version="1.0" encoding="UTF-8"?>
+<sedML xmlns="http://sed-ml.org/sed-ml/level1/version4" level="1" version="4">
+  <listOfDataDescriptions>
+    <dataDescription id="d_numl" source="obs.numl" format="urn:sedml:format:numl"/>
+    <dataDescription id="d_absent" source="missing.csv" format="urn:sedml:format:csv"/>
+    <dataDescription id="d_csv" source="obs.csv" format="urn:sedml:format:csv">
+      <listOfDataSources>
+        <dataSource id="s_good">
+          <listOfSlices><slice reference="c" value="conc"/></listOfSlices>
+        </dataSource>
+        <dataSource id="s_index" indexSet="rows"/>
+        <dataSource>
+          <listOfSlices><slice value="conc"/></listOfSlices>
+        </dataSource>
+        <dataSource id="s_no_column">
+          <listOfSlices><slice value="absent"/></listOfSlices>
+        </dataSource>
+        <dataSource id="s_two_slices">
+          <listOfSlices><slice value="conc"/><slice value="time"/></listOfSlices>
+        </dataSource>
+      </listOfDataSources>
+    </dataDescription>
+  </listOfDataDescriptions>
+</sedML>
+"""
+
+
+def test_every_reason_a_series_goes_unread_is_reported_and_named() -> None:
+    """Six ways to lose the author's own measurements, each previously a bare `continue`.
+
+    The symptom of any of them is a claim with no reference values, which is indistinguishable
+    from a paper that published none — so an author shipping a NuML file, or naming a source their
+    archive does not contain, was told nothing at all. Each reason names the description or the
+    source it is about, because "some data could not be read" is not actionable.
+    """
+    from reprolith import read_sedml_data, unreadable_data_descriptions
+
+    files = {"obs.csv": "time,conc\n0,1\n1,2\n"}
+    reasons = unreadable_data_descriptions(_UNREADABLE_DOC, files)
+    assert len(reasons) == 5, reasons
+    joined = "\n".join(reasons)
+    for expected in ("d_numl", "d_absent", "s_no_column", "s_two_slices"):
+        assert expected in joined, expected
+    assert "states no id" in joined
+    # And *not* the indexSet source. It is skipped by the reader for a good reason — an indexSet
+    # names row labels — but that is normal in a conformant document, so reporting it would raise
+    # a false alarm on every archive that ships one, this file's own correct fixture included.
+    assert "s_index" not in joined
+
+    # And the one readable source is still read: a diagnostic that reported everything as broken
+    # would be as useless as one that reported nothing.
+    assert read_sedml_data(_UNREADABLE_DOC, files) == {"s_good": (1.0, 2.0)}
+
+
+def test_a_document_whose_series_all_read_reports_no_reason() -> None:
+    """The half that makes it a check rather than a nuisance."""
+    from reprolith import read_sedml_data, unreadable_data_descriptions
+
+    files = {"observed.csv": _CSV}
+    # The document this file already uses throughout: one series that reads, and a `rowIndex`
+    # source that selects an indexSet, which a conformant document is expected to have.
+    assert unreadable_data_descriptions(_document(), files) == ()
+    assert read_sedml_data(_document(), files) == {"observedC": (0.0, 4.2, 6.1)}
+

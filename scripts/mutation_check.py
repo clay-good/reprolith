@@ -576,6 +576,18 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_population_end_to_end.py"],
     ),
     (
+        "a data series the reader dropped is never mentioned to the author",
+        "presubmission.py",
+        ("        for message in unread:", "        for message in ():"),
+        ["tests/test_archive_check.py"],
+    ),
+    (
+        "the data reader drops a source without recording why",
+        "sedml.py",
+        ("    return tuple(_read_data(sedml, files)[1])", "    return ()"),
+        ["tests/test_sedml_data.py"],
+    ),
+    (
         "a curve bound is published from digits that move between draws and machines",
         "corroboration.py",
         (

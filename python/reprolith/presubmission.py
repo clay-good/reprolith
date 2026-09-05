@@ -407,6 +407,10 @@ _ARCHIVE_MISMATCH_PRIORITY = 1
 #: Shares the top tier with an experiment/model mismatch, because they fail the same way: the run
 #: completes, produces a plausible number, and nothing says it was not the published one.
 _ARCHIVE_MANUSCRIPT_PRIORITY = 1
+#: Above "states no targetable claim", because it is a *cause* of one: a data source that could
+#: not be read leaves its claim with no reference values, and the two findings are otherwise
+#: indistinguishable to the author.
+_ARCHIVE_UNREAD_DATA_PRIORITY = 1
 _ARCHIVE_NO_CLAIM_PRIORITY = 2
 _ARCHIVE_UNADOPTABLE_PRIORITY = 3
 _ARCHIVE_GAP_PRIORITY = 4
@@ -508,7 +512,7 @@ def archive_report(
     )
     from .manuscript import manuscript_mismatches
     from .omex import _normalize, archive_mismatches, ingest_omex
-    from .sedml import parse_sedml_recipes
+    from .sedml import parse_sedml_recipes, unreadable_data_descriptions
 
     found: dict[str, Any] = {
         "readable": True,
@@ -687,6 +691,35 @@ def archive_report(
                 "fix": "give every model, simulation, task, data generator and output in your "
                        "document an id; an element with none is not read at all, and the only "
                        "sign of it is a number that got smaller",
+            })
+
+        # The author's own recorded values, and every reason one of them was not read. Each of
+        # these used to be a silent skip whose only symptom was a claim with no reference data —
+        # which is the same thing the report says about a paper that published no values at all.
+        import zipfile as _zipfile
+        from io import BytesIO as _BytesIO
+
+        handle = _BytesIO(archive) if isinstance(archive, bytes) else archive
+        with _zipfile.ZipFile(handle) as zf:
+            members = {
+                _normalize(name): zf.read(name).decode("utf-8", errors="replace")
+                for name in zf.namelist()
+                if name.lower().endswith((".csv", ".tsv", ".txt", ".numl", ".xml"))
+            }
+        # Keyed the way the document writes its `source`, which is how the reader resolves it.
+        unread = unreadable_data_descriptions(
+            sedml, {name: text for name, text in members.items()}
+        )
+        found["unreadable_data_descriptions"] = list(unread)
+        for message in unread:
+            actions.append({
+                "priority": _ARCHIVE_UNREAD_DATA_PRIORITY, "kind": "data", "claim_id": None,
+                "quantity": None, "source_location": experiment,
+                "issue": f"one of your recorded data series cannot be read — {message}",
+                "fix": "a data source that cannot be resolved leaves the claim that cites it with "
+                       "no reference values, and nothing downstream can tell that apart from a "
+                       "paper that published none; ship the series as CSV, name a source the "
+                       "archive contains, and select one column with one slice",
             })
 
         # Re-read from the archive rather than from the dossier: the dossier keeps what the

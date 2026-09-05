@@ -417,40 +417,100 @@ def read_sedml_data(sedml: str, files: Mapping[str, str]) -> dict[str, tuple[flo
 
     * the description must declare a CSV format (NuML is an XML container this does not parse);
     * the data source must select exactly one column, through a single ``slice`` whose ``value``
-      names a column of the file's header row (an ``indexSet`` names row labels, not values, and a
-      source with no slice selects the whole table rather than a series);
+      names a column of the file's header row (an ``indexSet`` names row labels, not values — a
+      normal part of a conformant document rather than a fault — and a source with no slice
+      selects the whole table rather than a series);
     * that column must be numeric all the way down, with a name that identifies it uniquely.
+
+    Every one of those conditions used to be a silent ``continue``. What each of them drops is the
+    *paper's own recorded values*, and the only symptom downstream is a claim with no reference
+    data — which reads as "this paper states no values" rather than "your data file was there and
+    could not be read". :func:`unreadable_data_descriptions` reports the same decisions as
+    sentences, out of this same walk so the two cannot drift apart.
 
     Raises ``ValueError`` if the text is not parseable SED-ML.
     """
+    return _read_data(sedml, files)[0]
+
+
+def unreadable_data_descriptions(sedml: str, files: Mapping[str, str]) -> tuple[str, ...]:
+    """Why each of this document's data sources was *not* read, one sentence each.
+
+    The other half of :func:`read_sedml_data`, and the half an author needs. A data source that
+    cannot be resolved is absent from the values that function returns, and nothing downstream can
+    tell that absence from a paper that reported no values at all — so an author who ships their
+    measurements in a NuML file, or names a source their archive does not contain, is told nothing
+    about it and sees only that their claims have no reference data.
+
+    Both come out of one walk over the document, so a condition added to the reader cannot go
+    unreported here. Raises ``ValueError`` if the text is not parseable SED-ML.
+    """
+    return tuple(_read_data(sedml, files)[1])
+
+
+def _read_data(
+    sedml: str, files: Mapping[str, str]
+) -> tuple[dict[str, tuple[float, ...]], list[str]]:
+    """The values each data source selects, and a sentence for every one that was skipped."""
     try:
         root = ET.fromstring(sedml)
     except ET.ParseError as exc:
         raise ValueError(f"not parseable SED-ML: {exc}") from exc
 
     values: dict[str, tuple[float, ...]] = {}
+    skipped: list[str] = []
     for description in root.iter():
         if _localname(description.tag) != "dataDescription":
             continue
-        if description.get("format", "") not in _CSV_FORMATS:
+        # Named by its own id where it has one, and by its source otherwise, because that is what
+        # an author recognizes in their own directory.
+        named = description.get("id") or description.get("source") or "(unnamed dataDescription)"
+        stated = description.get("format", "")
+        if stated not in _CSV_FORMATS:
+            skipped.append(
+                f"{named}: its format is {stated or 'unstated'}, and only "
+                f"{_CSV_FORMATS[0]} is read — a NuML container is XML this does not parse"
+            )
             continue
         text = files.get(description.get("source", ""))
         if text is None:
+            skipped.append(
+                f"{named}: it names the source {description.get('source', '')!r}, which is not "
+                "in the archive"
+            )
             continue
         columns = _csv_columns(text)
         for source in description.iter():
             if _localname(source.tag) != "dataSource":
                 continue
             source_id = source.get("id")
-            if not source_id or source.get("indexSet"):
+            if not source_id:
+                skipped.append(f"{named}: one of its data sources states no id")
+                continue
+            if source.get("indexSet"):
+                # Not reported, and this is the one skip here that is not a fault: SED-ML uses an
+                # `indexSet` source to name the *index* column of a table, so a conformant document
+                # with observations in it normally has one. Listing it as data that could not be
+                # read raises a false alarm on every such document — which the correct fixture in
+                # `tests/test_sedml_data.py` demonstrated the moment this reported it.
                 continue
             slices = [c for c in source.iter() if _localname(c.tag) == "slice"]
             if len(slices) != 1:
+                skipped.append(
+                    f"{source_id}: it states {len(slices)} slices, and one column is selected by "
+                    "exactly one — no slice selects the whole table rather than a series"
+                )
                 continue
-            column = columns.get(slices[0].get("value", ""))
-            if column is not None:
-                values[source_id] = column
-    return values
+            wanted = slices[0].get("value", "")
+            column = columns.get(wanted)
+            if column is None:
+                skipped.append(
+                    f"{source_id}: it selects the column {wanted!r}, which its file's header does "
+                    "not name uniquely, or which is not numeric all the way down"
+                )
+                continue
+            values[source_id] = column
+    return values, skipped
 
 
 def sedml_model_sources(sedml: str) -> tuple[str, ...]:
@@ -704,6 +764,7 @@ __all__ = [
     "enumerate_sedml_panels",
     "parse_sedml_recipes",
     "read_sedml_data",
+    "unreadable_data_descriptions",
     "sedml_data_sources",
     "sedml_model_sources",
 ]
