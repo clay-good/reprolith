@@ -281,9 +281,16 @@ reprolith figure-check \              # is this digitization of your figure usab
 ```
 
 `archive-check` is the author-facing counterpart: point it at a COMBINE archive and it says what a
-reproducer would find — whether every reaction states a rate law, whether the experiment and the
-model agree, whether the document states any published result, whether the run can be adopted
-verbatim — and exits non-zero when it cannot. It runs no model and issues no certificate, and it
+reproducer would find — whether the model and the document name their own quantities at all,
+whether every reaction states a rate law, whether the author's own recorded data can be read,
+whether the experiment and the model agree, whether the document states any published result,
+whether the run can be adopted verbatim — and exits non-zero when it cannot.
+The first and third of those exist because their failures are *silent*. An element with no
+identifier makes libRoadRunner run a model nobody wrote while COPASI refuses the file outright, and
+libSBML calls it an error rather than a fatal one and hands the document back regardless. A data
+series that cannot be read leaves the claim citing it with no reference values, which is exactly
+what this report says about a paper that published none. Both were things Reprolith itself could
+produce and nothing said so. It runs no model and issues no certificate, and it
 says so rather than borrowing a certificate's words.
 Give it `--claims` — the results your paper reports — and it also answers the question the archive
 cannot answer about itself: does the experiment *run* them? On the metformin paper's own archive
