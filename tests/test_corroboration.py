@@ -18,6 +18,8 @@ pytest.importorskip("roadrunner", reason="the optional 'corroborate' extra (libR
 from reprolith import corroborate_curve, roadrunner_pin, simulate_with_roadrunner  # noqa: E402
 from reprolith.corroboration import _CURVE_NOISE_FLOOR  # noqa: E402
 
+_KINETIC = Path(__file__).parent.parent / "datasets" / "kinetic"
+
 _KIN = Path(__file__).parent.parent / "datasets" / "kinetic"
 _MODELS = {m["id"]: m for m in json.loads((_KIN / "cross_validation.json").read_text(encoding="utf-8"))["models"]}
 _SBML = (_KIN / "BIOMD0000000010.xml").read_text(encoding="utf-8")
@@ -255,3 +257,40 @@ def test_the_draws_are_aggregated_by_the_worst_never_the_best(monkeypatch) -> No
 
     with pytest.raises(ValueError, match="at least one draw"):
         corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480, draws=0)
+
+
+def test_no_kinetic_bound_sits_close_enough_to_a_boundary_for_the_alternation_to_cross() -> None:
+    """The residual risk the noise floor does not cover, measured instead of hoped about.
+
+    The floor makes every distance *below* 1e-07 publish one number. Above it the decade rounding
+    still has boundaries, and COPASI's within-process alternation still moves a distance by about
+    13% — so a bound whose lifted distance sits within 13% of the decade below it could publish two
+    different numbers on two runs, which is the defect this whole mechanism exists to prevent.
+
+    Measured across the six kinetic models, the smallest headroom is **42.9%** — a factor of three
+    over the observed alternation — and the rest run from 60% to 84%. So nothing in this class is
+    near a boundary today, and the guard is that it stays that way: an engine upgrade that moved a
+    distance toward one would fail here rather than start oscillating a committed file.
+
+    Twenty-five percent is the threshold: comfortably under every measurement and comfortably over
+    the alternation, so it fires on a real drift rather than on the next decimal place.
+    """
+    import math
+
+    from reprolith.corroboration import _MARGIN
+
+    models = json.loads(
+        (_KINETIC / "cross_validation.json").read_text(encoding="utf-8")
+    )["models"]
+    headroom = {}
+    for spec in models:
+        result = corroborate_curve(
+            (_KINETIC / f"{spec['id']}.xml").read_text(encoding="utf-8"),
+            spec["species"], duration=spec["duration"], steps=spec["steps"],
+        )
+        lifted = result.distance * _MARGIN
+        below = 10.0 ** math.floor(math.log10(lifted))
+        headroom[spec["id"]] = (lifted - below) / lifted
+    assert headroom, "no kinetic model was measured; this would pass vacuously"
+    assert min(headroom.values()) > 0.25, sorted(headroom.items(), key=lambda kv: kv[1])
+

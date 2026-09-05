@@ -118,7 +118,12 @@ practitioner can act on.
   one process, and three measurements of one claim on CI published two different decades with
   every draw already worst-of-two. Sixteen claims previously published 1e-07 and one 1e-08; a
   committed artifact that changes when it is regenerated is worth less than a decade of
-  resolution, and the floor can only loosen a bound, never tighten one. The kinetic
+  resolution, and the floor can only loosen a bound, never tighten one. Above the floor the
+  decade rounding still has boundaries, and that residual risk is measured rather than
+  assumed away: across the six kinetic models the smallest headroom between a lifted
+  distance and the decade below it is **42.9%**, three times the alternation, with the rest
+  from 60% to 84%. It is a guard, so an engine upgrade that moved one toward a boundary
+  fails rather than starting to oscillate a committed file. The kinetic
   class's six models agree to 1e-03, one percent of it. So a numeric verdict is a statement about
   the model and not about COPASI, and none of the tolerance is absorbing solver disagreement
   (`tests/test_engine_floor.py`, read off the committed records so an engine upgrade that widened
