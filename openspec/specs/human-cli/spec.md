@@ -121,6 +121,15 @@ reachable here, since the join runs long after the curator has finished.
 - **THEN** the report says the claim ids were not checked, rather than reporting the file clean
 - **AND** no model is run and no claim is judged, and the report says so
 
+#### Scenario: A refusal names the file the caller passed
+
+- **WHEN** a check refuses the file of the author's own it was given — unreadable, holding several
+  papers, or holding no records at all
+- **THEN** the message names that file by what the caller asked for, and points at the command that
+  writes one, rather than at the file a shared reader was first written for
+- **AND** two commands reading the same kind of file refuse an unusable one in the same words, so
+  which command the author reached for does not decide what the fault appears to be
+
 ### Requirement: Scope statement inescapable in terminal output
 
 A verdict read from the terminal SHALL carry the same honest scoping as one read anywhere else.

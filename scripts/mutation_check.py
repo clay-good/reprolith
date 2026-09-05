@@ -45,6 +45,15 @@ REPO = Path(__file__).resolve().parents[1]
 #: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
+        "the parameters check words its refusals for the other file, and names the wrong command",
+        "cli.py",
+        (
+            '_claim_records(Path(args.parameters), args.accession, holds="parameters")',
+            "_claim_records(Path(args.parameters), args.accession)",
+        ),
+        ["tests/test_cli.py"],
+    ),
+    (
         "a template replaces work the author filled in by hand and prints a plain success line",
         "cli.py",
         (

@@ -1856,3 +1856,79 @@ def test_every_command_that_writes_says_when_it_replaced_a_file(tmp_path, capsys
         out.write_bytes(out.read_bytes() + b"\n")
         assert run([*argv, "--out", str(out)]) == 0, name
         assert "replacing what was there" in capsys.readouterr().out, name
+
+
+def _two_paper_file(tmp_path: Path, key: str) -> Path:
+    """A file in the shape this repository's own multi-paper files use, under one record key."""
+    path = tmp_path / f"two-{key}.json"
+    path.write_text(json.dumps({"entries": {
+        "ACC1": {key: []}, "ACC2": {key: []},
+    }}), encoding="utf-8")
+    return path
+
+
+def _model_naming_one_parameter(tmp_path: Path) -> Path:
+    model = tmp_path / "named.xml"
+    model.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1">'
+        '<model id="m"><listOfParameters><parameter id="CL" value="1.0"/></listOfParameters>'
+        "</model></sbml>",
+        encoding="utf-8",
+    )
+    return model
+
+
+def test_params_check_refusals_name_the_parameters_file_it_was_given(tmp_path, capsys):
+    """It reads the claims reader, and every refusal was worded for a claims file.
+
+    An author who ran `params-check --parameters` was told their file held no *claims* and pointed
+    at `claims-propose` — the command that writes the other one. `params-template` and
+    `params-propose` write this file, and a refusal that names neither sends them somewhere that
+    cannot help. The reading is unchanged: all three record keys still compose into both checks.
+    """
+    model = _model_naming_one_parameter(tmp_path)
+    empty = tmp_path / "empty-object.json"
+    empty.write_text("{}", encoding="utf-8")
+
+    assert run(["params-check", "--model", str(model), "--parameters", str(empty)]) == 1
+    said = capsys.readouterr().err
+    assert "this file holds no parameters" in said
+    assert "params-template and params-propose write" in said
+    assert "claims" not in said.split("(or", 1)[0], said
+
+    # And the multi-paper refusal, which reads as the wrong file entirely rather than a missing flag.
+    two = _two_paper_file(tmp_path, "parameters")
+    assert run(["params-check", "--model", str(model), "--parameters", str(two)]) == 1
+    said = capsys.readouterr().err
+    assert "this parameters file holds several papers" in said
+
+    assert run(["params-check", "--model", str(model), "--parameters", str(two),
+                "--accession", "ACC9"]) == 1
+    assert "no parameters for 'ACC9'" in capsys.readouterr().err
+
+
+def test_claims_check_refusals_still_name_the_claims_file(tmp_path, capsys):
+    """The wording that was already right, pinned: one reader now words two files, not one."""
+    tables = tmp_path / "tables.json"
+    tables.write_text(json.dumps({"tables": {"Table 1": {"rows": [["Tissue"], ["Plasma"]]}}}),
+                      encoding="utf-8")
+    two = _two_paper_file(tmp_path, "claims")
+    assert run(["claims-check", "--claims", str(two), "--tables", str(tables)]) == 1
+    assert "this claims file holds several papers" in capsys.readouterr().err
+
+
+def test_both_proposers_call_an_unusable_tables_file_the_same_thing(tmp_path, capsys):
+    """`claims-propose` kept its own copy of the check the shared reader exists to be.
+
+    They had drifted: one prefixed the refusal and the other did not, so the same unusable file
+    read as two different faults depending on which command the author reached for.
+    """
+    empty = tmp_path / "no-tables.json"
+    empty.write_text("{}", encoding="utf-8")
+
+    assert run(["claims-propose", "--tables", str(empty)]) == 1
+    from_claims = capsys.readouterr().err
+    assert run(["params-propose", "--tables", str(empty)]) == 1
+    assert capsys.readouterr().err == from_claims
+    assert "cannot read the tables: the tables file holds no tables" in from_claims

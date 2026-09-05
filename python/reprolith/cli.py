@@ -516,12 +516,31 @@ def _cmd_export(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
-def _claim_records(path: Path, accession: str | None) -> list[dict[str, Any]]:
-    """The claims file's raw records, before they become :class:`Claim` objects.
+#: What a refusal should call the file it was handed, per check, and which key that check's own
+#: writer fills. The *reading* is the same either way — all three keys are accepted, because a
+#: candidates file composes into both checks — but the wording is not: `params-check --parameters`
+#: told an author their file held no **claims** and pointed them at `claims-propose`, which writes
+#: the other file. The two checks read one function; only one of them was ever worded for.
+_FILE_HOLDS: dict[str, str] = {
+    "claims": "a 'claims' list (or 'candidates', as claims-propose writes, or 'parameters')",
+    "parameters": (
+        "a 'parameters' list, as params-template and params-propose write "
+        "(or 'claims', or 'candidates')"
+    ),
+}
+
+
+def _claim_records(
+    path: Path, accession: str | None, *, holds: str = "claims"
+) -> list[dict[str, Any]]:
+    """The file's raw records, before they become :class:`Claim` objects.
 
     The value check reads records rather than claims: an unfilled one has no ``reported`` and
     would be refused on the way to a ``Claim``, and "this template is not filled in yet" is
     something the check should report rather than fail on.
+
+    ``holds`` names the file the *caller* asked for — "claims" or "parameters" — so that a refusal
+    names the file the author passed rather than the one this reader was first written for.
     """
     data = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(data, dict) and "entries" in data:
@@ -529,27 +548,27 @@ def _claim_records(path: Path, accession: str | None) -> list[dict[str, Any]]:
         if accession is None:
             if len(entries) != 1:
                 raise ValueError(
-                    "this claims file holds several papers; name one with --accession "
+                    f"this {holds} file holds several papers; name one with --accession "
                     f"({', '.join(sorted(entries))})"
                 )
             accession = next(iter(entries))
         if accession not in entries:
             raise ValueError(
-                f"no claims for {accession!r} in this file ({', '.join(sorted(entries))})"
+                f"no {holds} for {accession!r} in this file ({', '.join(sorted(entries))})"
             )
-        records = _records_of(entries[accession])
+        records = _records_of(entries[accession], holds)
     elif isinstance(data, dict):
-        records = _records_of(data)
+        records = _records_of(data, holds)
     else:
         records = data
     return list(records)
 
 
-def _records_of(holder: dict[str, Any]) -> list[dict[str, Any]]:
-    """The claim records in an object, under either key a Reprolith file uses.
+def _records_of(holder: dict[str, Any], holds: str = "claims") -> list[dict[str, Any]]:
+    """The records in an object, under any key a Reprolith file uses.
 
     ``claims-propose`` writes them under ``candidates``, deliberately: a number a table prints is
-    not yet a claim. Both keys are read here so the two commands compose without a rename, and an
+    not yet a claim. Every key is read here so the commands compose without a rename, and an
     unedited candidates file reaching a check that needs real claims is refused for the reason
     that actually applies — no model output named — rather than for the key it is stored under.
     """
@@ -557,8 +576,8 @@ def _records_of(holder: dict[str, Any]) -> list[dict[str, Any]]:
         if key in holder:
             return list(holder[key])
     raise ValueError(
-        "this file holds no claims: expected a 'claims' list (or 'candidates', as "
-        f"claims-propose writes, or 'parameters'), and it has {', '.join(sorted(holder)) or 'nothing'}"
+        f"this file holds no {holds}: expected {_FILE_HOLDS[holds]}, and it has "
+        f"{', '.join(sorted(holder)) or 'nothing'}"
     )
 
 
@@ -714,7 +733,7 @@ def _cmd_params_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(_model_problem(args, unusable), file=sys.stderr)
         return 1
     try:
-        records = _claim_records(Path(args.parameters), args.accession)
+        records = _claim_records(Path(args.parameters), args.accession, holds="parameters")
     except OSError as unreadable:
         print(f"cannot read the parameters: {unreadable}", file=sys.stderr)
         return 1
@@ -868,21 +887,14 @@ def _tables_file(path: Path) -> dict[str, Any]:
 
 def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Propose candidate claims from the tables the paper prints."""
+    # Through the shared reader, like `params-propose`: this command kept its own copy of the
+    # same check, and the two had already drifted — one prefixed the refusal with "cannot read the
+    # tables" and the other did not, so the same unusable file read as two different faults
+    # depending on which proposer the author reached for.
     try:
-        loaded = json.loads(Path(args.tables).read_text(encoding="utf-8"))
-    except OSError as unreadable:
-        print(f"cannot read the tables: {unreadable}", file=sys.stderr)
-        return 1
-    except (UnicodeDecodeError, ValueError) as unusable:
+        tables = _tables_file(Path(args.tables))
+    except (OSError, UnicodeDecodeError, ValueError) as unusable:
         print(f"cannot read the tables: {unusable}", file=sys.stderr)
-        return 1
-    tables = loaded.get("tables", loaded) if isinstance(loaded, dict) else {}
-    if not isinstance(tables, dict) or not tables:
-        print(
-            "the tables file holds no tables: expected {'Table 6': {'rows': [[...]]}}, or the "
-            "shape datasets/manuscripts/ uses, which nests that under 'tables'",
-            file=sys.stderr,
-        )
         return 1
 
     proposed = propose_claims(tables, accession=args.accession)
