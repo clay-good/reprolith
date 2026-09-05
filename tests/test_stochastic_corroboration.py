@@ -210,6 +210,22 @@ def test_the_network_the_second_engine_runs_is_the_one_this_one_runs(
     ]
 
 
+@pytest.mark.parametrize("name", ["A B", "1x", "a-b", ""])
+def test_the_writer_refuses_a_species_name_sbml_cannot_hold(name: str) -> None:
+    """libSBML rejects a bad identifier by returning a code, not by raising, and the code was
+    ignored.
+
+    So a species called "A B" was written with no id, its rate law's formula failed to parse, and
+    `setMath(None)` left the reaction with no math. The document came out structurally valid and
+    described nothing — and the first complaint was the *reader's*, three modules away, saying
+    "the kinetic law has no rate expression", about a law the writer had never written. One of
+    these four took a different path again (a fatal-error refusal quoting MathML), so the same
+    mistake had two unrelated symptoms and neither named the species.
+    """
+    with pytest.raises(ValueError, match="not usable as SBML identifiers"):
+        build_stochastic_sbml([name], [Reaction(1.0, ((0, 1),), ())], [5])
+
+
 def test_the_writer_refuses_a_network_whose_names_and_counts_are_out_of_step() -> None:
     """One fewer count than species does not mean the last species starts at zero.
 

@@ -17,6 +17,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING
 
 from .engine import ENGINE as _COPASI_ENGINE
 from .engine import (
@@ -30,6 +31,9 @@ from .engine import (
 )
 from .model import EnginePin
 from .oracle import normalized_curve_distance
+
+if TYPE_CHECKING:  # a core module, imported lazily below so this one stays import-light
+    from .stochastic import Reaction
 
 #: How far a raw distance is lifted before it is rounded up to a decade. Two: the measured
 #: cross-run spread on the model that exposed the problem was about 12%, and a factor of two keeps
@@ -313,7 +317,7 @@ ROADRUNNER_SSA_ENGINE = "roadrunner-gillespie"
 
 def corroborate_ensemble_mean(
     species: Sequence[str],
-    reactions: Sequence[object],
+    reactions: Sequence[Reaction],
     initial: Sequence[int],
     *,
     observed: int,
@@ -346,14 +350,11 @@ def corroborate_ensemble_mean(
     Needs the ``engine`` extra (python-libsbml) and the ``corroborate`` extra (libRoadRunner).
     """
     from .sbml import build_stochastic_sbml
-    from .stochastic import Reaction, ensemble_final_counts, solver_pin, species_mean_variance
+    from .stochastic import ensemble_final_counts, solver_pin, species_mean_variance
 
-    typed: list[Reaction] = [r for r in reactions if isinstance(r, Reaction)]
-    if len(typed) != len(reactions):
-        raise TypeError("every reaction must be a reprolith.stochastic.Reaction")
     higher_order = [
         f"reaction {index} consumes {stoich} of {species[position]!r}"
-        for index, reaction in enumerate(typed)
+        for index, reaction in enumerate(reactions)
         for position, stoich in reaction.reactants
         if stoich > 1
     ]
@@ -368,11 +369,11 @@ def corroborate_ensemble_mean(
         )
 
     mine = ensemble_final_counts(
-        len(species), typed, initial, duration=duration, trajectories=trajectories, seed=seed
+        len(species), reactions, initial, duration=duration, trajectories=trajectories, seed=seed
     )
     my_mean, my_variance = species_mean_variance(mine, species=observed)
     theirs, roadrunner_build = _roadrunner_ensemble(
-        build_stochastic_sbml(species, typed, initial),
+        build_stochastic_sbml(species, reactions, initial),
         species[observed],
         duration=duration,
         trajectories=trajectories,

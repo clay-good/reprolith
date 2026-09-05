@@ -576,6 +576,13 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_population_end_to_end.py"],
     ),
     (
+        "the network writer accepts a species name SBML cannot hold",
+        "sbml.py",
+        ("    invalid = [name for name in species if not _SBML_ID.match(name)]",
+         "    invalid = []"),
+        ["tests/test_stochastic_corroboration.py"],
+    ),
+    (
         "the degenerate ensemble branch names a build string as an engine",
         "corroboration.py",
         (

@@ -15,6 +15,7 @@ imported lazily, so the core package stays dependency-free.
 from __future__ import annotations
 
 import operator
+import re
 from collections.abc import Callable, Container, Mapping, Sequence
 from math import factorial
 from typing import Any
@@ -1348,6 +1349,11 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
 
 
 
+#: The SBML identifier grammar (SId). Written out because libSBML enforces it by returning
+#: an error code from its setters, which is easy to ignore and was.
+_SBML_ID = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
 def build_stochastic_sbml(
     species: Sequence[str],
     reactions: Sequence[Reaction],
@@ -1383,6 +1389,20 @@ def build_stochastic_sbml(
         )
     if len(set(species)) != len(species):
         raise ValueError(f"species names must be unique, and {list(species)} are not")
+    # SBML identifiers are `[A-Za-z_][A-Za-z0-9_]*`, and libSBML's setters *reject* anything else
+    # by returning a code rather than by raising — so a species called "A B" was written with no
+    # id at all, its rate law's formula failed to parse, and `setMath(None)` left the reaction with
+    # no math. The document came out structurally valid and meaningless, and the first complaint
+    # anyone saw was the *reader*, three modules away, reporting "the kinetic law has no rate
+    # expression to verify as mass action" — about a law the writer never wrote. Refused here,
+    # where the name is known and the message can say so.
+    invalid = [name for name in species if not _SBML_ID.match(name)]
+    if invalid:
+        raise ValueError(
+            f"these species names are not usable as SBML identifiers: {invalid}; an identifier "
+            "starts with a letter or underscore and continues with letters, digits or "
+            "underscores, and libSBML drops anything else silently rather than refusing it"
+        )
     negative = [name for name, count in zip(species, initial) if count < 0]
     if negative:
         raise ValueError(f"initial molecule counts must be non-negative; {negative} are not")
