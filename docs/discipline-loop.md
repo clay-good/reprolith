@@ -112,7 +112,13 @@ practitioner can act on.
   Cross-engine corroboration re-runs a certified result under a second independent simulator and
   publishes the normalized distance between the two curves, which is the *same statistic*
   `judge_curve` compares against the pass budget. PK/PD's eighty claims, each re-run at the dose it
-  was certified at, agree to 1e-06 — a hundredth of a percent of the 0.10 curve budget. The kinetic
+  was certified at, agree to 1e-06 — a hundredth of a percent of the 0.10 curve budget, and for
+  this class that number is now a **floor** rather than a measurement: below 1e-07 the raw
+  distance is the two engines' last places, it moves 13% between consecutive COPASI calls in
+  one process, and three measurements of one claim on CI published two different decades with
+  every draw already worst-of-two. Sixteen claims previously published 1e-07 and one 1e-08; a
+  committed artifact that changes when it is regenerated is worth less than a decade of
+  resolution, and the floor can only loosen a bound, never tighten one. The kinetic
   class's six models agree to 1e-03, one percent of it. So a numeric verdict is a statement about
   the model and not about COPASI, and none of the tolerance is absorbing solver disagreement
   (`tests/test_engine_floor.py`, read off the committed records so an engine upgrade that widened

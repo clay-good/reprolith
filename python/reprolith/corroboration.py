@@ -265,7 +265,10 @@ def corroborate_curve(
             )
         return normalized_curve_distance(copasi, roadrunner)
 
-    distance = max(measure() for _ in range(draws))
+    # Floored before it is published, for the reason `_CURVE_NOISE_FLOOR` states: below it
+    # the digits are the two engines' last places rather than their agreement, and they
+    # move between draws and between machines.
+    distance = max(max(measure() for _ in range(draws)), _CURVE_NOISE_FLOOR)
     result = EngineCorroboration(
         quantity=species,
         engines=(_COPASI_ENGINE, ROADRUNNER_ENGINE),
@@ -298,6 +301,27 @@ def corroborate_curve(
 #: every one of these eight publishes 1e-08: twenty-five times the worst difference observed on
 #: any machine, and still two orders inside the 1e-06 criterion the verdict answers to.
 #:
+#: Below this, a curve distance between COPASI and libRoadRunner is not a measurement of their
+#: agreement — it is their last places. Two facts, both recorded here before this floor existed:
+#: COPASI is not bit-identical across repeated calls in one process, and on the metformin muscle
+#: curve that alternation moves the distance by 13%, 4.89e-08 against 5.53e-08; and a bound of
+#: 4e-07 committed on one machine was exceeded on CI at 4.55e-07 under different engine builds.
+#:
+#: Taking the worst of two draws was supposed to settle it, on the reasoning that the alternation
+#: is period-two so two draws see both phases. That held on this machine and did not hold on CI,
+#: where three measurements of one claim published 1e-07 twice and 1e-06 once with every draw
+#: already worst-of-two — so period-two is a property of one COPASI build, not of the comparison.
+#: A gate that is intermittently red costs more than a decade of resolution.
+#:
+#: 1e-07 is chosen so that everything below it publishes **1e-06**, which is already this class's
+#: worst committed bound: the floor cannot make any published number better, only some of them
+#: looser, and it covers the entire range the observed distances live in. It is not on a rounding
+#: boundary itself — the margin lifts it to 2e-07, comfortably inside its decade.
+#:
+#: One-directional, like the margin and like the LP floor below it.
+_CURVE_NOISE_FLOOR = 1e-7
+
+
 #: One-directional, like the margin it sits beside: it can only loosen a published bound, never
 #: tighten one, so it cannot turn a disagreement into an agreement.
 _LP_NOISE_FLOOR = 1e-9

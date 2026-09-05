@@ -576,6 +576,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_population_end_to_end.py"],
     ),
     (
+        "a curve bound is published from digits that move between draws and machines",
+        "corroboration.py",
+        (
+            "    distance = max(max(measure() for _ in range(draws)), _CURVE_NOISE_FLOOR)",
+            "    distance = max(measure() for _ in range(draws))",
+        ),
+        ["tests/test_corroboration.py"],
+    ),
+    (
         "an unreadable SED-ML task shrinks the adoptable-run count and says nothing",
         "presubmission.py",
         ("        if unnamed_sedml:", "        if False:"),

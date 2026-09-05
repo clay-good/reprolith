@@ -16,6 +16,7 @@ pytest.importorskip("COPASI", reason="the optional 'engine' extra (python-copasi
 pytest.importorskip("roadrunner", reason="the optional 'corroborate' extra (libRoadRunner) is not installed")
 
 from reprolith import corroborate_curve, roadrunner_pin, simulate_with_roadrunner  # noqa: E402
+from reprolith.corroboration import _CURVE_NOISE_FLOOR  # noqa: E402
 
 _KIN = Path(__file__).parent.parent / "datasets" / "kinetic"
 _MODELS = {m["id"]: m for m in json.loads((_KIN / "cross_validation.json").read_text(encoding="utf-8"))["models"]}
@@ -201,11 +202,20 @@ def test_the_published_bound_does_not_move_between_two_measurements_of_one_run()
         Path(__file__).parent.parent / "datasets" / "worked_examples"
         / "Zake2021_metformin_human_single_PO.xml"
     ).read_text(encoding="utf-8")
-    bounds = {
-        corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480).distance_bound()
-        for _ in range(3)
-    }
+    results = [corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480) for _ in range(3)]
+    bounds = {result.distance_bound() for result in results}
     assert len(bounds) == 1, f"the published bound moved between runs: {sorted(bounds)}"
+    assert bounds == {1e-06}
+
+    # And *why* it no longer moves, asserted directly rather than left to three draws agreeing.
+    # Worst-of-two was the first attempt and it is not enough: it assumes the alternation is
+    # period-two, which held on the machine it was written on and did not hold on CI, where three
+    # measurements of this claim published two different decades with every draw already
+    # worst-of-two. The floor is what makes it deterministic, and this is the assertion that fails
+    # without it on any machine — the raw distance here is around 5e-08, well under it.
+    assert all(result.distance == _CURVE_NOISE_FLOOR for result in results), [
+        result.distance for result in results
+    ]
 
 
 def test_the_draws_are_aggregated_by_the_worst_never_the_best(monkeypatch) -> None:
