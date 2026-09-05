@@ -176,6 +176,76 @@ def _reactions_without_rate_laws(root: ET.Element) -> tuple[str, ...]:
     return tuple(without)
 
 
+
+#: What each kind of element is required to name, and the attribute that names it. A rule points
+#: at its target through `variable`; everything else identifies itself through `id`.
+_MUST_NAME = {
+    "species": "id",
+    "parameter": "id",
+    "compartment": "id",
+    "reaction": "id",
+    "rateRule": "variable",
+    "assignmentRule": "variable",
+    "initialAssignment": "symbol",
+}
+
+
+def declarations_without_identifiers(model_sbml: str) -> tuple[str, ...]:
+    """The elements in this model that do not say what they are, in document order.
+
+    A species that states no ``id``, or a rate rule that states no ``variable``, is not a small
+    formatting slip: the model no longer says which quantity it means. libSBML reports both as
+    *errors* and still hands the document back as a model, so any reader that gates on **fatal**
+    severity — which is the right gate for real-world SBML, since the curated corpus is full of
+    non-fatal complaints — passes it straight through.
+
+    What the two engines then do, measured on one model with an unnamed species and an unnamed
+    rate rule beside a named pair:
+
+    * **COPASI** refuses the import outright, throwing with libSBML's raw error code and a line
+      number. An author is told a line, not what is wrong with their model.
+    * **libRoadRunner** *runs it to completion*, having invented a binding for both anonymous
+      elements: the unnamed species started at 5 and finished at 10 under the unnamed rate rule,
+      alongside the correct decay of the named one. A complete, plausible trajectory of a model
+      nobody wrote, with nothing printed.
+
+    So one reproducer gets a refusal quoting a line number and the next gets a curve — and neither
+    is told the model does not name its own quantities. That is why this is a check.
+
+    Reprolith itself emitted such a file until its writers began refusing the names that cause it,
+    which is the strongest evidence available that ordinary tooling produces them: libSBML's
+    setters reject an invalid identifier by returning a code rather than raising, and the code is
+    easy to ignore.
+
+    Each entry names the element by kind and by whatever else it carries — a ``name``, or its
+    position among its siblings — because by construction it has no id to name it with. Raises
+    ``ValueError`` if the text is not parseable SBML.
+    """
+    return _declarations_without_identifiers(_model_root(model_sbml))
+
+
+def _declarations_without_identifiers(root: ET.Element) -> tuple[str, ...]:
+    unnamed: list[str] = []
+    seen: dict[str, int] = {}
+    for element in root.iter():
+        kind = _localname(element.tag)
+        required = _MUST_NAME.get(kind)
+        if required is None:
+            continue
+        seen[kind] = seen.get(kind, 0) + 1
+        # An attribute present but empty names nothing either, and `get` returning "" is falsy for
+        # exactly the right reason — SBML has no zero-length identifier.
+        if element.get(required):
+            continue
+        # It has no id, so it is named by the only two things left: what it calls itself, and
+        # where it sits. The ordinal is per kind and one-based, which is how a reader counts down
+        # a listOf to find it.
+        called = element.get("name")
+        described = f"{kind} #{seen[kind]}"
+        unnamed.append(f"{described} ({called!r})" if called else described)
+    return tuple(unnamed)
+
+
 def what_a_package_means(package: str) -> str:
     """How a model carrying this package is actually run, in a phrase."""
     return _NOT_A_TIME_COURSE[package]

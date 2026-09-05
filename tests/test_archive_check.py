@@ -514,3 +514,108 @@ def test_an_archive_of_reports_is_told_the_route_its_results_actually_have() -> 
     (item,) = [i for i in report["fix_list"] if i["kind"] == "claims"]
     assert "1 report data set(s) are an export format" in item["issue"]
     assert "archive-check --claims" in item["fix"]
+
+
+#: The same model with two elements that name nothing: a species with no `id`, and a rate rule
+#: with no `variable`. libSBML reports both as errors and still returns the model.
+_UNNAMED_SBML = _MINIMAL_SBML.replace(
+    """      <species id="X" compartment="c" initialAmount="1" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>""",
+    """      <species id="X" compartment="c" initialAmount="1" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>
+      <species compartment="c" initialAmount="5" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>""",
+).replace(
+    "    </listOfRules>",
+    """      <rateRule>
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><cn>1</cn></math>
+      </rateRule>
+    </listOfRules>""",
+)
+
+
+def test_a_model_that_does_not_name_its_own_quantities_leads_the_fix_list() -> None:
+    """The finding that outranks everything, because below it nothing else is worth reading.
+
+    libSBML calls an unnamed species an *error*, not a fatal one, and still hands the document
+    back as a model — so a reader that refuses only fatal documents (which is the right gate for
+    real SBML, full of non-fatal complaints) accepts it. The two engines then disagree about what
+    the author shipped: COPASI refuses the import with a raw libSBML code and a line number, and
+    libRoadRunner runs the file to completion having invented a binding for each anonymous
+    element. Measured: the unnamed species went from 5 to 10 under the unnamed rate rule, beside
+    the correct decay of the named one, with nothing printed.
+
+    Reprolith emitted such a file itself until its writers began refusing the names that cause it,
+    which is why this is a check an author gets rather than a note.
+    """
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import build_experiment_sedml
+
+    sedml = build_experiment_sedml(_MINIMAL_SBML, duration=1.0, steps=10)
+    manifest = f"""<?xml version="1.0" encoding="UTF-8"?>
+<omexManifest xmlns="{_SPEC}omex-manifest">
+  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>
+  <content location="./model.xml" format="{_SPEC}sbml.level-3.version-2"/>
+  <content location="./experiment.sedml" format="{_SPEC}sed-ml" master="true"/>
+</omexManifest>
+"""
+    report = archive_report(
+        _archive_with({"model.xml": _UNNAMED_SBML, "experiment.sedml": sedml}, manifest)
+    )
+    # Ingestion itself fails on this model, and *that* is the finding worth pinning: it failed
+    # with "parameter name is required" — this package's own dataclass complaining, naming neither
+    # the species nor the file. The report now leads with the author's actual fault and carries
+    # the refusal as the symptom.
+    assert report["found"]["readable"] is False
+    assert report["found"]["declarations_without_identifiers"] == [
+        "model.xml: species #2", "model.xml: rateRule #2",
+    ]
+    assert report["ready_to_submit"] is False
+    assert report["fix_list"][0]["kind"] == "unnamed"
+    assert "parameter name is required" in report["fix_list"][0]["issue"]
+    assert "symptom" in report["fix_list"][0]["issue"]
+    rendered = render_archive_human(
+        _archive_with({"model.xml": _UNNAMED_SBML, "experiment.sedml": sedml}, manifest)
+    )
+    assert "species #2" in rendered
+    # The author is told what each engine does, because the two behaviours are the reason a
+    # missing identifier is not something a reproducer can work around.
+    assert "COPASI" in rendered and "libRoadRunner" in rendered
+
+
+def test_an_unnamed_element_ingestion_tolerates_is_reported_from_the_readable_path() -> None:
+    """Both paths reach this finding, and both are needed.
+
+    An unnamed *species* or *parameter* stops ingestion, so the report is assembled on the
+    could-not-be-read path. An unnamed *compartment* does not — the archive ingests cleanly, the
+    claims are counted, the experiment is compared — and without a check the author is told the
+    archive is ready while their model declares a compartment nothing can refer to.
+    """
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    from reprolith import build_experiment_sedml
+
+    model = _MINIMAL_SBML.replace(
+        '<compartment id="c" size="1" constant="true"/>',
+        '<compartment id="c" size="1" constant="true"/><compartment size="2" constant="true"/>',
+    )
+    sedml = build_experiment_sedml(_MINIMAL_SBML, duration=1.0, steps=10)
+    manifest = f"""<?xml version="1.0" encoding="UTF-8"?>
+<omexManifest xmlns="{_SPEC}omex-manifest">
+  <content location="./manifest.xml" format="{_SPEC}omex-manifest"/>
+  <content location="./model.xml" format="{_SPEC}sbml.level-3.version-2"/>
+  <content location="./experiment.sedml" format="{_SPEC}sed-ml" master="true"/>
+</omexManifest>
+"""
+    report = archive_report(_archive_with({"model.xml": model, "experiment.sedml": sedml}, manifest))
+    assert report["found"]["readable"] is True
+    assert report["found"]["declarations_without_identifiers"] == ["compartment #2"]
+    assert report["ready_to_submit"] is False
+    assert report["fix_list"][0]["kind"] == "unnamed"
+
+
+def test_the_committed_archive_names_every_quantity_it_declares() -> None:
+    """And the check does not fire on a correct archive, which is the half that makes it usable."""
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    report = archive_report(_ARCHIVE.read_bytes())
+    assert report["found"]["declarations_without_identifiers"] == []
+    assert not any(item["kind"] == "unnamed" for item in report["fix_list"])

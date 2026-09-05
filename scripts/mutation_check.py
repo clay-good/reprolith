@@ -576,6 +576,24 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_population_end_to_end.py"],
     ),
     (
+        "the archive check passes a model that names none of its own quantities",
+        "presubmission.py",
+        # Anchored on the line below it too: a bare `if unnamed:` matches a second site inside
+        # `_unnamed_declarations_in`, and a guard that can silently move to a different branch
+        # tests whatever it lands on rather than what it names.
+        (
+            '        if unnamed:\n            listed = ", ".join(unnamed[:5])',
+            '        if False:\n            listed = ", ".join(unnamed[:5])',
+        ),
+        ["tests/test_archive_check.py"],
+    ),
+    (
+        "an unreadable archive repeats a dataclass's complaint instead of the author's fault",
+        "presubmission.py",
+        ("        if unnamed_by_member:", "        if False:"),
+        ["tests/test_archive_check.py"],
+    ),
+    (
         "the model writer accepts a name SBML drops, and emits a species with no id",
         "sbml.py",
         ("    if unusable:", "    if False:"),

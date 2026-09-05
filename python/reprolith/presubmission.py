@@ -398,6 +398,10 @@ def render_presubmission_human(cert: Certificate) -> str:
 #: Above everything else: a reaction that states no rate is not a defect in what a reproducer
 #: checks, it is a defect in whether there is a run to check at all — and the two engines here
 #: disagree about which, one refusing the file and one integrating it with that flux at zero.
+#: Above the rate-law check, and above everything: a model that does not name its own quantities
+#: is not a model with a problem in it. One engine refuses the file and the other runs a different
+#: model to completion, so nothing below this is worth an author's attention until it is fixed.
+_ARCHIVE_UNNAMED_PRIORITY = -1
 _ARCHIVE_NO_RATE_LAW_PRIORITY = 0
 _ARCHIVE_MISMATCH_PRIORITY = 1
 #: Shares the top tier with an experiment/model mismatch, because they fail the same way: the run
@@ -414,6 +418,51 @@ _ARCHIVE_NOTE = (
     "This check reads the archive only. It runs no model, reaches no verdict, and issues no "
     "certificate; it says nothing about biological correctness or clinical use."
 )
+
+
+
+#: What an author does about an element that names no quantity. One sentence, shared by the two
+#: places this is reported from — the archive that could not be read and the one that could.
+_UNNAMED_FIX = (
+    "give every species, parameter, compartment and reaction an id, and every rule the variable "
+    "it sets; an element that names no quantity is not a detail your reproducer can work around, "
+    "and one of the two engines will publish a curve for it anyway — COPASI refuses the import "
+    "with a libSBML error code and a line number, while libRoadRunner runs the file to completion "
+    "having invented a binding for each anonymous element, and prints nothing"
+)
+
+
+def _unnamed_declarations_in(
+    archive: str | os.PathLike[str] | bytes,
+) -> dict[str, tuple[str, ...]]:
+    """Every archive member that parses as SBML and does not name what it declares.
+
+    Used on the path where the archive could *not* be ingested, so it cannot ask the manifest
+    which member is the model — it tries them all and keeps the ones that parse. A member that is
+    not SBML, and an archive that is not even a zip, contribute nothing rather than raising: this
+    runs while reporting one failure and must not become a second.
+    """
+    import zipfile
+    from io import BytesIO
+
+    from .export import declarations_without_identifiers
+
+    found: dict[str, tuple[str, ...]] = {}
+    try:
+        handle = BytesIO(archive) if isinstance(archive, bytes) else archive
+        with zipfile.ZipFile(handle) as zf:
+            for name in zf.namelist():
+                if not name.lower().endswith((".xml", ".sbml")):
+                    continue
+                try:
+                    unnamed = declarations_without_identifiers(zf.read(name).decode("utf-8"))
+                except (ValueError, UnicodeDecodeError):
+                    continue
+                if unnamed:
+                    found[name] = unnamed
+    except (zipfile.BadZipFile, OSError, KeyError):
+        return {}
+    return found
 
 
 def archive_report(
@@ -451,6 +500,7 @@ def archive_report(
     than letting a clean fix list read as an archive that runs the paper's results.
     """
     from .export import (
+        declarations_without_identifiers,
         packages_no_time_course_describes,
         reactions_without_rate_laws,
         what_a_package_means,
@@ -481,20 +531,44 @@ def archive_report(
         dossier = ingest_omex(archive, entry="submitted")
     except ValueError as refused:
         found["readable"] = False
+        # Before repeating the refusal, ask whether the model names its own quantities — because
+        # if it does not, ingestion's message is about Reprolith and not about the author's file.
+        # Measured on a model with one unnamed species: the archive came back refused with
+        # "parameter name is required", which is this package's dataclass complaining, and names
+        # neither the species nor the file it is in. The real fault is one an author can act on
+        # and no engine reports (see `declarations_without_identifiers`), so it is said first and
+        # the original refusal is carried as the symptom it is.
+        unnamed_by_member = _unnamed_declarations_in(archive)
+        found["declarations_without_identifiers"] = [
+            f"{member}: {name}" for member, names in unnamed_by_member.items() for name in names
+        ]
+        if unnamed_by_member:
+            member, names = next(iter(unnamed_by_member.items()))
+            listed = ", ".join(names[:5]) + (" and others" if len(names) > 5 else "")
+            issue = (
+                f"{len(names)} elements of {member} state no identifier ({listed}), so the model "
+                f"does not say which quantities it means; reading it failed with {str(refused)!r}, "
+                "which is a symptom of that rather than a separate problem"
+            )
+            fix = _UNNAMED_FIX
+        else:
+            issue, member, fix = str(refused), None, (
+                "repair the archive so its manifest and its members agree"
+            )
         return {
             "ready_to_submit": False,
             "readiness": (
-                "this archive cannot be read, so nothing in it can be reproduced: " + str(refused)
+                "this archive cannot be read, so nothing in it can be reproduced: " + issue
             ),
             "found": found,
             "fix_list": [{
                 "priority": 0,
-                "kind": "archive",
+                "kind": "unnamed" if unnamed_by_member else "archive",
                 "claim_id": None,
                 "quantity": None,
-                "source_location": None,
-                "issue": str(refused),
-                "fix": "repair the archive so its manifest and its members agree",
+                "source_location": member,
+                "issue": issue,
+                "fix": fix,
             }],
             "note": _ARCHIVE_NOTE,
         }
@@ -542,6 +616,26 @@ def archive_report(
                 if experiment is not None
                 else None
             )
+        # Before anything about *what* the model says: whether it says which quantities it means.
+        # Not gated on the model class — every class's elements need identifiers, and a
+        # constraint-based model with an unnamed reaction is as broken as a kinetic one.
+        unnamed = declarations_without_identifiers(sbml)
+        found["declarations_without_identifiers"] = list(unnamed)
+        if unnamed:
+            listed = ", ".join(unnamed[:5]) + (" and others" if len(unnamed) > 5 else "")
+            actions.append({
+                "priority": _ARCHIVE_UNNAMED_PRIORITY, "kind": "unnamed", "claim_id": None,
+                "quantity": None, "source_location": model,
+                "issue": f"{len(unnamed)} elements of your model state no identifier ({listed}); "
+                         "libSBML reports these as errors and still returns the model, so a "
+                         "reader that refuses only fatal documents accepts it — and the two "
+                         "engines then disagree about what you shipped: COPASI refuses the import "
+                         "with a libSBML error code and a line number, while libRoadRunner runs "
+                         "the file to completion having invented a binding for each anonymous "
+                         "element, and prints nothing",
+                "fix": _UNNAMED_FIX,
+            })
+
         not_a_time_course = packages_no_time_course_describes(sbml)
         found["not_a_time_course"] = [
             {"package": package, "means": what_a_package_means(package)}
