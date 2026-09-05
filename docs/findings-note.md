@@ -456,6 +456,18 @@ cannot evaluate this claim". It looks for itself now. An abstained estimation cl
 filed at simulation level, so the never-green estimation badge and the estimation fix list did not
 see it.
 
+That fix moved the readiness **flag** and not the sentence the flag then falls through to, which
+said "every claim reproduces, but not cleanly" — the same false statement about the same
+certificate, one word shorter, and the test guarding it asserted the absence of the exact earlier
+wording. The sentence was wrong in the other direction too, on the only certificate in this corpus
+that reaches it: the mouse peroral entry is the one clean pass here — fourteen claims, all
+`reproduced`, worst error 0.27%, no assumption — and its gap report holds one item, eleven of
+thirty-four values stating no unit in the model file. Its author was told their results were not
+clean when what was missing was a unit. The sentence is now built from the causes present and from
+the same list the flag is computed from, so a report cannot say it is not ready for a reason it
+does not print — which is exactly how this survived, the flag reading four conditions and the
+sentence describing one.
+
 ## What the terminal was allowed to leave out
 
 The read surfaces keep paying. Three qualifications the code deliberately computes were reaching
