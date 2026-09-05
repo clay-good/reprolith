@@ -48,7 +48,13 @@ def test_params_check_shape(capsys) -> None:
         "params-check", "--model", _MODEL, "--parameters", _PARAMETERS,
         "--accession", _ACCESSION, "--json",
     ])
-    assert set(payload) == {"checks", "compared", "not_reported_by_the_paper"}
+    assert set(payload) == {
+        "checks", "compared", "not_reported_by_the_paper",
+        # Present even when empty: an author reading the JSON needs to be able to tell "your model
+        # names everything" from "this version did not look".
+        "declarations_without_identifiers",
+    }
+    assert payload["declarations_without_identifiers"] == []
     assert {"parameter", "reported", "carried", "agrees", "detail", "units"} == set(
         payload["checks"][0]
     )

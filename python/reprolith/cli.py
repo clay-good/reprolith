@@ -45,7 +45,11 @@ from .digitization import (
     value_unit_notes,
     window_faults,
 )
-from .export import build_bundle_sedml, build_omex_archive
+from .export import (
+    build_bundle_sedml,
+    build_omex_archive,
+    declarations_without_identifiers,
+)
 from .manuscript_values import (
     check_claim_units,
     check_claim_units_in_tables,
@@ -716,17 +720,32 @@ def _cmd_params_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     # initial condition is a species, and neither is a parameter.
     unstated = quantities_the_paper_does_not_state(model, records)
     compared = compared_parameters(checks)
+    # An element with no `id` is not in the model's declared quantities — the reader has nothing to
+    # key it by — so a pairing naming it comes back as "the model does not declare it", which is
+    # about the pairing and not about the file. `archive-check` reports this; this command reads a
+    # model file directly and did not, so the same broken deposit got two different explanations
+    # depending on which command the author reached for.
+    unnamed = declarations_without_identifiers(model)
     if args.json:
         _print_json({
             "checks": [c.to_dict() for c in checks],
             "compared": len(compared),
             "not_reported_by_the_paper": {k: list(v) for k, v in unstated.items()},
+            "declarations_without_identifiers": list(unnamed),
         })
     else:
         # "41 PARAMETER(S) CHECKED" over 41 rows that were every one of them skipped is the
         # report this project keeps being caught by: a clean headline standing in for a check
         # nobody made. The header counts what was actually put beside a model value.
         print(f"{len(compared)} OF {len(checks)} PARAMETER(S) COMPARED AGAINST {shown}")
+        if unnamed:
+            listed = ", ".join(unnamed[:5]) + (" and others" if len(unnamed) > 5 else "")
+            print(
+                f"  WARNING: {len(unnamed)} element(s) of this model state no identifier "
+                f"({listed}); they are not among its declared quantities, so a pairing naming one "
+                "reads below as a value the model does not declare. Run archive-check for what "
+                "that costs a reproducer."
+            )
         for check in checks:
             mark = {True: "ok", False: "MISMATCH", None: "not compared"}[check.agrees]
             # The unit rides on every answer: two numbers agreeing says nothing until they are in

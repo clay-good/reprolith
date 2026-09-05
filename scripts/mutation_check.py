@@ -90,8 +90,8 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         "the corroboration draws report the best measurement instead of the worst",
         "corroboration.py",
         (
-            "    distance = max(measure() for _ in range(draws))",
-            "    distance = min(measure() for _ in range(draws))",
+            "    distance = max(max(measure() for _ in range(draws)), _CURVE_NOISE_FLOOR)",
+            "    distance = max(min(measure() for _ in range(draws)), _CURVE_NOISE_FLOOR)",
         ),
         ["tests/test_corroboration.py"],
     ),
@@ -574,6 +574,12 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         "oracle.py",
         ("        if expected != got:", "        if False:"),
         ["tests/test_population_end_to_end.py"],
+    ),
+    (
+        "params-check blames the pairing for a model that names nothing",
+        "cli.py",
+        ("        if unnamed:", "        if False:"),
+        ["tests/test_cli.py"],
     ),
     (
         "a data series the reader dropped is never mentioned to the author",

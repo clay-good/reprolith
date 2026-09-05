@@ -1721,3 +1721,68 @@ def test_figure_check_says_a_two_point_reading_cannot_be_measured_at_all(tmp_pat
     assert run(["figure-check", "--series", str(two), "--json"]) == 0
     cost = json.loads(capsys.readouterr().out)["series"][0]["interpolation"]
     assert cost["measurable"] is False and cost["budget_share"] is None
+
+
+#: A one-species model that reads cleanly: the baseline the identifier warning must stay silent on.
+_MINIMAL_MODEL = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m">
+    <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="X" compartment="c" initialAmount="1" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters><parameter id="k" value="0.1" constant="true"/></listOfParameters>
+    <listOfRules>
+      <rateRule variable="X">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply><minus/><apply><times/><ci>k</ci><ci>X</ci></apply></apply>
+        </math>
+      </rateRule>
+    </listOfRules>
+  </model>
+</sbml>
+"""
+
+
+def test_params_check_warns_when_the_model_names_none_of_its_own_quantities(tmp_path, capsys) -> None:
+    """The same deposit got two different explanations depending on which command was reached for.
+
+    An element with no `id` is not among the model's declared quantities — the reader has nothing
+    to key it by — so a pairing that names it comes back as "the model does not declare it", which
+    is a statement about the pairing and not about the file. `archive-check` says what is really
+    wrong; this command reads a model file directly and said nothing, so the author was told their
+    pairing was bad when their model was.
+    """
+    pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
+    import json as _json
+
+    model = _MINIMAL_MODEL.replace(
+        '<parameter id="k" value="0.1" constant="true"/>',
+        '<parameter id="k" value="0.1" constant="true"/><parameter value="9" constant="true"/>',
+    )
+    model_path = tmp_path / "m.xml"
+    model_path.write_text(model, encoding="utf-8")
+    parameters = tmp_path / "p.json"
+    parameters.write_text(
+        _json.dumps({
+            "accession": "e",
+            "parameters": [
+                {"parameter": "k", "reported": 0.1, "unit": "1/h", "source_location": "T1"}
+            ],
+        }),
+        encoding="utf-8",
+    )
+    argv = ["params-check", "--model", str(model_path), "--parameters", str(parameters),
+            "--accession", "e"]
+    run(argv)
+    warned = capsys.readouterr().out
+    assert "state no identifier" in warned
+    assert "parameter #2" in warned
+
+    # And silent on the same model with the anonymous parameter removed, which is what makes it a
+    # warning rather than a banner.
+    model_path.write_text(_MINIMAL_MODEL, encoding="utf-8")
+    run(argv)
+    assert "state no identifier" not in capsys.readouterr().out
+
