@@ -117,3 +117,34 @@ def test_the_front_page_does_not_claim_the_extraction_it_has_not_built() -> None
     flowing = " ".join(_README.split())
     assert "measured to reach no paper the tables miss" in flowing
     assert "at scale* is the piece that is not built" in _README
+
+
+def test_the_clean_passs_headline_numbers_are_that_certificates_numbers() -> None:
+    """The one entry the front page holds up as a clean pass, described from the certificate.
+
+    It said "seven tissues, worst error 0.17%". The certificate carries fourteen claims — the same
+    seven tissues by peak *and* by 24-hour exposure, which the paragraph above it says correctly —
+    and 0.17% is the worst of the seven Cmax claims alone. Every AUC claim is worse, up to 0.37%.
+    A headline that quotes the better half of the evidence is the shape of overstatement this
+    repository exists to catch, so both numbers are read off the certificate here.
+    """
+    import json
+
+    (path,) = [
+        p for p in _ROOT.glob("datasets/milestone/certificates/*.json")
+        if "peroral" in json.loads(p.read_text(encoding="utf-8"))["paper"]["title"]
+        and "mice" in json.loads(p.read_text(encoding="utf-8"))["paper"]["title"]
+    ]
+    certificate = json.loads(path.read_text(encoding="utf-8"))
+    assert certificate["overall"] == "reproduced"
+
+    errors = [
+        float(a["discrepancy"].split("relative error")[1].split()[0])
+        for a in certificate["assessments"]
+        if "relative error" in (a["discrepancy"] or "")
+    ]
+    assert len(errors) == len(certificate["assessments"]) == 14
+    worst = max(errors)
+    assert f"{worst * 100:.2f}%" == "0.37%"
+    assert "Fourteen claims" in _README and "worst error 0.37%" in _README
+    assert not any(a["assumption_qualified"] for a in certificate["assessments"])

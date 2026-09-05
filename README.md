@@ -18,7 +18,8 @@ exposure, three validation arms that each follow an earlier dose, and the intrav
 three exposures.
 
 The mouse entry is the first in this class to come back **`reproduced`** — a clean, unqualified
-pass. Seven tissues, worst error 0.17%, and no assumption: that paper dosed its mice with metformin
+pass. Fourteen claims — seven tissues by peak and again by 24-hour exposure — worst error 0.37%,
+and no assumption: that paper dosed its mice with metformin
 rather than the hydrochloride salt, so nothing had to be converted. It is also the first agreement
 the blind self-validation run has recorded for this class, which stood at 0 of 31 this morning.
 
