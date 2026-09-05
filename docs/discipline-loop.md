@@ -137,7 +137,10 @@ practitioner can act on.
   the whole difference between this and the other four classes: their agreements are three to
   eight orders below the budget, and a pass there needs no caveat. Guidance: an ensemble
   corroboration is worth what its trajectory count buys, and 400 trajectories at a Poisson mean of
-  10 buys less than the verdict needs (`tests/test_stochastic_corroboration.py`).
+  10 buys less than the verdict needs (`tests/test_stochastic_corroboration.py`). The published
+  numbers survive a change of machine *and* of engine build, which for a Monte Carlo statistic is
+  not a given: they were measured under libRoadRunner 2.7.0 and CI reproduces every standard error
+  and every resolution to the last digit under 2.10.0.
 
   The one left, spatial, has no second registered engine and this is not measured for it — an
   absence, which the public registry names. It is an absence of *corroboration*, and worth

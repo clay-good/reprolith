@@ -62,6 +62,16 @@ def test_each_certified_network_agrees_with_libroadrunners_gillespie(key: str) -
 
     Read off the file rather than recomputed into it: a change to the sampler that moved these
     ensembles apart would otherwise regenerate a passing record instead of failing.
+
+    Every field but the engine builds, and that exclusion is the record's own rule rather than a
+    convenience — a committed record must keep naming the build it was measured on, not borrow the
+    one installed today, or a stale bound reads as a fresh one. The builds are checked on their
+    own below.
+
+    What survives the exclusion is worth stating: these numbers were measured under libRoadRunner
+    2.7.0 and CI runs 2.10.0, and the published standard errors and resolutions are identical to
+    the last digit across both. A Monte Carlo statistic that moved between machines would be
+    unpublishable, and this one does not.
     """
     species, reactions, initial, observed, duration, trajectories, seed = _SYSTEMS[key]
     result = corroborate_ensemble_mean(
@@ -69,7 +79,17 @@ def test_each_certified_network_agrees_with_libroadrunners_gillespie(key: str) -
         duration=duration, trajectories=trajectories, seed=seed,
     )
     assert result.stable, result.summary()
-    assert result.record() == _committed()[key]
+    measured = {k: v for k, v in result.record().items() if k != "engine_versions"}
+    committed = {k: v for k, v in _committed()[key].items() if k != "engine_versions"}
+    assert measured == committed
+
+
+def test_the_record_names_the_builds_it_was_measured_on() -> None:
+    """A corroboration bound carries a certificate's weight, and one naming no software could not
+    be told from a current one. Reprolith's own side names the revision of the code that ran."""
+    for key, row in _committed().items():
+        assert all(version for version in row["engine_versions"]), key
+        assert "rev " in row["engine_versions"][0], key
 
 
 def test_the_comparison_is_standard_errors_and_not_a_distance() -> None:
