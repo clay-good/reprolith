@@ -386,12 +386,17 @@ def corroborate_ensemble_mean(
         # Both ensembles are a single value repeated: the network is deterministic over this
         # window. There is no sampling error to standardize by, and the two either match or do
         # not — reported as the exact comparison it is rather than as a division by zero.
+        degenerate = solver_pin()
         return EngineCorroboration(
             quantity="ensemble mean copy number",
-            engines=(_reprolith_build(solver_pin()), ROADRUNNER_SSA_ENGINE),
+            # `engines` is the identifier the whole surface is keyed on — the registry line, the
+            # terminal column, the per-class pair check. The build string belongs in `versions`,
+            # and putting it here named an engine called
+            # "gillespie-direct-method (rev b4d8d2ffc52b)".
+            engines=(degenerate.engine, ROADRUNNER_SSA_ENGINE),
             distance=0.0 if my_mean == their_mean else float("inf"),
             stable=my_mean == their_mean,
-            versions=(_reprolith_build(solver_pin()), roadrunner_build),
+            versions=(_reprolith_build(degenerate), roadrunner_build),
             comparison="exact-match",
             criterion=sigmas,
         )
@@ -637,7 +642,15 @@ def corroborate_objective(sbml: str, *, rel_tol: float = 1e-6) -> EngineCorrobor
         distance=distance,
         stable=False,
         # Read off the two libraries that just solved these programs, after they ran.
-        versions=(pin.version, cobrapy_version),
+        #
+        # `_reprolith_build`, not `pin.version`, and this was the one front-end of five that did
+        # not use it. Here the pin's version *is* a third party's — scipy is the LP solver — so it
+        # moves when scipy does and the usual "0.0.1 never moves" argument does not apply. What it
+        # still cannot see is Reprolith's own side: the objective, the bounds and the sense are
+        # this package's code, and a change to any of them left a record byte-identical to one
+        # written before it. The pin's algorithm string carries scipy's method *and* that
+        # revision, which is what the other four publish.
+        versions=(_reprolith_build(pin), cobrapy_version),
     )
     return replace(result, stable=result.distance_bound() <= rel_tol, criterion=rel_tol)
 

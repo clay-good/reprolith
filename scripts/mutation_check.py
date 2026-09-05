@@ -576,6 +576,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_population_end_to_end.py"],
     ),
     (
+        "the degenerate ensemble branch names a build string as an engine",
+        "corroboration.py",
+        (
+            "            engines=(degenerate.engine, ROADRUNNER_SSA_ENGINE),",
+            "            engines=(_reprolith_build(degenerate), ROADRUNNER_SSA_ENGINE),",
+        ),
+        ["tests/test_stochastic_corroboration.py"],
+    ),
+    (
         "the ensemble corroboration compares two samplers that model different systems",
         "corroboration.py",
         ("    if higher_order:", "    if False:"),
@@ -598,6 +607,15 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
             "        parameter.setValue(reaction.rate)",
         ),
         ["tests/test_stochastic_corroboration.py"],
+    ),
+    (
+        "the LP corroboration names scipy's build but not the code that formed the program",
+        "corroboration.py",
+        (
+            "        versions=(_reprolith_build(pin), cobrapy_version),",
+            "        versions=(pin.version, cobrapy_version),",
+        ),
+        ["tests/test_corroboration_contract.py"],
     ),
     (
         "the spatial reference is integrated over a window the certificate does not run",

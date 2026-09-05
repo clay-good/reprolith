@@ -128,6 +128,27 @@ def test_a_pass_carries_the_bias_it_could_not_have_seen() -> None:
     )
 
 
+def test_a_deterministic_network_reports_engine_names_and_not_build_strings() -> None:
+    """The branch no committed record reaches, and where the drift was.
+
+    A network with nothing left to do has zero variance on both sides, so there is no sampling
+    error to standardize by and the comparison falls back to an exact match. That branch built the
+    `engines` pair out of the *build* string, so a record from it would have named an engine called
+    "gillespie-direct-method (rev ...)" — and `engines` is the key the registry line, the terminal
+    column and the per-class pair check are all read from. Held here because no milestone reaches
+    it; see `tests/test_corroboration_contract.py` for the invariant across all six front-ends.
+    """
+    # An empty network from an empty state: both samplers return the initial count, every time.
+    result = corroborate_ensemble_mean(
+        ["A"], [], [7], observed=0, duration=5.0, trajectories=20, seed=1,
+    )
+    assert result.comparison == "exact-match"
+    assert result.stable, result.summary()
+    assert result.engines == ("reprolith-ssa", "roadrunner-gillespie")
+    assert "rev " in result.versions[0], result.versions
+    assert "rev " not in result.engines[0]
+
+
 def test_a_higher_order_reaction_is_refused_rather_than_compared() -> None:
     """The two samplers do not model the same system above first order.
 
