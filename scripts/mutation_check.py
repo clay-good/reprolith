@@ -45,6 +45,15 @@ REPO = Path(__file__).resolve().parents[1]
 #: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
+        "the not-ready sentence describes one cause while the flag was set by four",
+        "presubmission.py",
+        (
+            '    return [text for key, text in _NOT_READY_REASONS if present[key]]',
+            '    return [text for key, text in _NOT_READY_REASONS if present["gaps"]]',
+        ),
+        ["tests/test_presubmission.py", "tests/test_surface_honesty.py"],
+    ),
+    (
         "the parameters check words its refusals for the other file, and names the wrong command",
         "cli.py",
         (
