@@ -281,7 +281,7 @@ milestone certificates, so any of the six classes' verdicts is reachable, not ju
 
 ```bash
 reprolith catalog                    # browse the catalog (blind public view)
-reprolith backlog                    # backlog depth by state, class, difficulty
+reprolith backlog                    # backlog depth, and the one thing most of it waits on
 reprolith certificate <digest>       # the full certificate, human-readable
 reprolith verdict <digest>           # the scope-qualified verdict, never a bare boolean
 reprolith gaps <digest>              # the "what was missing" report

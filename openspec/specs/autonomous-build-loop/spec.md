@@ -39,6 +39,13 @@ class drew — and no expert decision closes one. `Assumption.author_can_close` 
 distinction for the author-facing fix list, and it carries it here. Three questions are genuinely
 open to a reviewer; the rest wait on this engine and say so.
 
+*Goal-directed work selection* gained its evidence at the same time, though the selecting is
+still the agent's. `backlog_health` now reports `blocked_on`: what each blocked entry is waiting
+on, counted and ranked by how many entries the capability would release. On the shipped catalog
+that turns "27 blocked, 0 claimable" — a depth, and a dead end — into "27 blocked, all on one
+missing input", which is the sentence the requirement below asks an agent to be able to write
+about why it chose one unit over the alternatives.
+
 What is still agent-carried, not code-carried, is the *decision* half: `VerificationQueue.decide`
 and `reverify_dependents` are live APIs, but nothing on disk records an expert decision, so every
 item reads as pending and the report says so rather than implying the queue is being worked.

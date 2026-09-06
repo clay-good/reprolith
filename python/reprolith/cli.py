@@ -141,6 +141,14 @@ def _cmd_backlog(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"\n{heading}:")
         for name in sorted(counts):
             print(f"  {name:<18} {counts[name]}")
+    blocked_on = health["blocked_on"]
+    if blocked_on:
+        # "27 blocked" is a depth; this is the decision. All 27 waiting on one missing input is
+        # one capability away from being work, and the state counts cannot say that.
+        print("\nBlocked on (most entries released first):")
+        for item in blocked_on:
+            entries = "entry" if item["entries"] == 1 else "entries"
+            print(f"  {item['entries']} {entries}: {item['missing']}")
     return 0
 
 

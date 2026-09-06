@@ -629,9 +629,19 @@ class Catalog:
 
         ``claimable`` is reported alongside ``total`` because they answer different questions and
         the shipped catalog makes the difference stark: 31 entries, of which 0 can be handed to a
-        requester (30 are blocked on a missing manuscript claim, 1 is certified). A "backlog" of
+        requester (27 are blocked on a missing manuscript claim, 4 are certified). A "backlog" of
         31 reads as work available when there is none, so the number a seeder actually needs is
         published next to it. ``at`` is the time leases are judged against.
+
+        ``blocked_on`` is what turns that zero into a decision. ``by_state`` says 27 entries are
+        blocked and stops there; it does not say that all 27 are blocked on one and the same
+        missing input, which is the difference between twenty-seven problems and one. Each entry
+        contributes the missing inputs of its most recent move into ``blocked`` — the reason it is
+        in the state it is now, not every reason it has ever been in it — counted and ranked by
+        how many entries the capability would release. An agent choosing the next unit of work
+        under the autonomous-build-loop spec is asked to state why it chose that unit over the
+        alternatives, and this is the evidence for that sentence. The sentence in the paragraph
+        above used to be hand-counted here and had already gone stale by three.
         """
         labelled = sum(1 for e in self._entries if e.ground_truth is not None)
         # An entry with no accession is claimable here and unofferable at every surface that hands
@@ -650,7 +660,35 @@ class Catalog:
             "by_difficulty": dict(Counter(e.difficulty or "unassessed" for e in self._entries)),
             "labelled": labelled,
             "unlabelled": len(self._entries) - labelled,
+            "blocked_on": self._blocked_on(),
         }
+
+    def _blocked_on(self) -> list[dict[str, Any]]:
+        """What each currently-blocked entry is waiting on, counted and ranked."""
+        reasons: Counter[str] = Counter()
+        accessions: dict[str, list[str]] = {}
+        for entry in self._entries:
+            if entry.state is not LifecycleState.BLOCKED:
+                continue
+            latest = next(
+                (t for t in reversed(entry.history) if t.to_state is LifecycleState.BLOCKED),
+                None,
+            )
+            # A blocked entry whose history does not say why is itself worth reporting rather
+            # than dropping: it is still work nobody can pick up.
+            missing = latest.missing_inputs if latest is not None else ()
+            for item in missing or ("(the entry is blocked and its history states no reason)",):
+                reasons[item] += 1
+                if entry.identifiers.accession:
+                    accessions.setdefault(item, []).append(entry.identifiers.accession)
+        return [
+            {
+                "missing": reason,
+                "entries": count,
+                "accessions": sorted(accessions.get(reason, ())),
+            }
+            for reason, count in sorted(reasons.items(), key=lambda kv: (-kv[1], kv[0]))
+        ]
 
     def priority_signals(self, entry: CatalogEntry) -> dict[str, Any]:
         """The signals that place an entry in the queue — so its rank is never a black box.
