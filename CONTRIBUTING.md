@@ -16,8 +16,16 @@ results. It gets better in two ways, and **both need people who know the science
    Reprolith chose, why, the alternatives, and the papers that would have to be re-certified if
    you corrected it. Add `--json` for the same object an agent gets over MCP.
 
-   **You still open the issue by hand** using the template — nothing wires the queue to GitHub —
-   but every field the template asks for is in that output, so it is a copy, not a hunt.
+   **You still open the issue by hand** — nothing wires the queue to GitHub — but you no longer
+   fill it in by hand: `reprolith verification-issue <item-id>` prints the title, the labels, and
+   a body with every field the template asks for.
+
+   ```bash
+   reprolith verification-issue verify:time-unit-of-the-Zake2021-deposits
+   ```
+
+   Asking it for one of the engine's own limits is refused rather than filed, since no answer of
+   yours closes one.
 2. **Grow and correct the catalog.** Propose a paper to reproduce, add a ground-truth
    reproducibility label, or fix a mis-extraction — as a pull request.
 

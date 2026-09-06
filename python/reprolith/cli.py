@@ -430,6 +430,35 @@ def _cmd_verification_queue(query: ReprolithQuery, args: argparse.Namespace) -> 
     return 0
 
 
+def _cmd_verification_issue(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """One queue item as the issue a person opens, filled rather than transcribed.
+
+    The template says in its own description that these are opened by hand, and every field in it
+    had to be copied out of a certificate by eye. Printing the body — and the labels the
+    `github-collaboration` spec asks for, which the template file leaves empty — turns that into
+    `gh issue create --title ... --label ... --body-file -`.
+    """
+    issue = query.verification_issue(args.item_id)
+    if issue is None:
+        print(f"unknown queue item: {args.item_id}", file=sys.stderr)
+        print("run `reprolith verification-queue` for the ids", file=sys.stderr)
+        return 1
+    if issue["existing_decisions"]:
+        print(
+            f"note: {issue['existing_decisions']} expert decision(s) already recorded for this "
+            "item",
+            file=sys.stderr,
+        )
+    if args.json:
+        _print_json(issue)
+        return 0
+    print(f"title:  {issue['title']}")
+    print(f"labels: {', '.join(issue['labels'])}")
+    print()
+    print(issue["body"], end="")
+    return 0
+
+
 def _cmd_presubmission(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """The author-facing report for a certified paper, rendered like every other command's."""
     if args.json:
@@ -1580,7 +1609,8 @@ def build_parser() -> argparse.ArgumentParser:
         ),
         epilog=(
             "reading this repository: catalog, backlog, self-validation, corroboration, status, "
-            "certificate, verdict, gaps, presubmission, verification-queue, certificates-for, "
+            "certificate, verdict, gaps, presubmission, verification-queue, verification-issue, "
+            "certificates-for, "
             "dossier, bundle, select-claims\n"
             "checking your own files: archive-check, claims-template, claims-propose, "
             "claims-check, params-template, params-propose, params-check, figure-template, "
@@ -1676,6 +1706,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_json(p)
     p.set_defaults(func=_cmd_verification_queue)
+
+    p = sub.add_parser(
+        "verification-issue",
+        help="the filled GitHub issue for one queue item — title, labels, body",
+    )
+    p.add_argument("item_id", help="a queue item id from `reprolith verification-queue`")
+    add_json(p)
+    p.set_defaults(func=_cmd_verification_issue)
 
     p = sub.add_parser("certificates-for", help="every certificate digest issued for a paper")
     add_identifier(p)

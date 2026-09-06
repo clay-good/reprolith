@@ -111,6 +111,27 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
+        "name": "verification_issue",
+        "description": (
+            "One verification-queue item as the GitHub issue to open: title, the three labels "
+            "the collaboration spec asks for (model class, impact rank, pending-verification "
+            "status), and a body carrying the question, the estimate and its basis, the "
+            "alternatives, and the papers that rest on it. Refuses an item that is a limit of "
+            "this engine rather than a question a paper could answer — no expert decision closes "
+            "one. It files nothing; it returns the issue for a human to open."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "item_id": {
+                    "type": "string",
+                    "description": "an item id from verification_queue",
+                }
+            },
+            "required": ["item_id"],
+        },
+    },
+    {
         "name": "certificates_for",
         "description": "Digests of every certificate issued for a paper, newest first.",
         "inputSchema": _IDENTIFIER,
@@ -866,6 +887,8 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return query.presubmission(arguments["digest"])
     if name == "verification_queue":
         return query.verification_queue()
+    if name == "verification_issue":
+        return query.verification_issue(arguments["item_id"])
     if name == "certificates_for":
         return query.certificates_for(**_identifier_kwargs(arguments))
     if name == "backlog_health":
@@ -1487,9 +1510,20 @@ def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[R
     load_certificates(ledger, directory / "certificates")
     agreement_reports: dict[str, dict[str, Any]] = {}
     corroboration: dict[str, dict[str, Any]] = {}
+    model_classes: dict[str, str] = {}
     if aggregate:
         # Idempotent by digest, so re-loading data_dir's own certificates here is harmless.
-        for certs_dir in milestone_certificate_dirs().values():
+        for label, certs_dir in milestone_certificate_dirs().items():
+            # The class comes from the directory the certificate was published under — the same
+            # source the registry page labels its cards from — because nothing in a certificate
+            # says which pathway produced it. Read from a throwaway ledger so the label covers
+            # everything the directory holds: keying on what this pass *added* to the shared
+            # ledger left the four PK/PD certificates unlabelled, since `data_dir` is that class's
+            # own directory and had already loaded them.
+            found = CertificateLedger()
+            load_certificates(found, certs_dir)
+            for digest, _ in found.items():
+                model_classes[digest] = label
             load_certificates(ledger, certs_dir)
         agreement_reports = milestone_agreement_reports()
         corroboration = milestone_corroboration_records()
@@ -1503,6 +1537,7 @@ def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[R
         agreement_reports=agreement_reports,
         corroboration=corroboration,
         decisions=repository_decisions(),
+        model_classes=model_classes,
     )
     return query, catalog
 

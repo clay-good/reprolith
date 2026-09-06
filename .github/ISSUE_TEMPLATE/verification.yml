@@ -1,11 +1,13 @@
 name: Verification request
 description: >-
   A load-bearing value Reprolith is not confident about. Confirm, correct, or reject it.
-  (Opened by hand today — nothing files these automatically. Run `reprolith verification-queue`
-  for the list: every field below is in its output, under "awaiting expert review". The items
-  under the other heading are limits of Reprolith's own engine and are not questions for you.)
+  (Opened by hand — nothing files these automatically. You do not have to fill this in by hand
+  though: `reprolith verification-issue <item-id>` prints the whole thing, title and labels
+  included, from the item in `reprolith verification-queue`. The items under that command's
+  second heading are limits of Reprolith's own engine and are not questions for you — asking for
+  one is refused rather than filed.)
 title: "[verify] <short description of the value in question>"
-labels: []
+labels: ["verification", "status:pending-verification"]
 body:
   - type: markdown
     attributes:
@@ -33,7 +35,11 @@ body:
     id: source_context
     attributes:
       label: Source context
-      description: Where in the paper this comes from (section, equation, table, or figure).
+      description: >-
+        What the value rests on. For an assumption Reprolith records a *basis* — a reason — and
+        not a place: only a claim carries a section, equation, table or figure. The generated
+        body says so and gives the basis plus the assumption id to grep the certificates for, so
+        do not invent a location to fill this.
     validations:
       required: true
   - type: textarea
@@ -41,6 +47,7 @@ body:
     attributes:
       label: Reprolith's best estimate and reasoning
       description: The current best guess, the alternatives considered, and the basis for it.
+      placeholder: "Reprolith chose X, because ...; alternatives considered: ..."
     validations:
       required: true
   - type: textarea

@@ -33,7 +33,7 @@ from .presubmission import presubmission_report
 from .render import claim_counts, gap_items
 from .selection import claim_selection_report
 from .supersession import CertificateLedger
-from .verification import queue_report
+from .verification import issue_for_item, queue_report
 
 
 def _label_basis(report: dict[str, Any]) -> str:
@@ -247,6 +247,7 @@ class ReprolithQuery:
         agreement_reports: dict[str, dict[str, Any]] | None = None,
         corroboration: dict[str, dict[str, Any]] | None = None,
         decisions: Sequence[RecordedDecision] = (),
+        model_classes: Mapping[str, str] | None = None,
     ) -> None:
         self._catalog = catalog
         self._ledger = ledger
@@ -269,6 +270,15 @@ class ReprolithQuery:
         # loaded record, the way they already do for certificates. Empty when none are loaded,
         # which the queue reports as "nobody has decided anything" rather than hiding.
         self._decisions = tuple(decisions)
+        # Which model class each certificate belongs to, keyed by digest. The class is a property
+        # of the entry, not of the certificate — nothing in a certificate says which pathway
+        # produced it — so the registry page has always labelled its cards from outside the
+        # certificate while the two queried surfaces could not answer the question at all. Same
+        # source as the page (`milestone_certificate_dirs`), so the browser and the terminal
+        # cannot disagree about which class a verdict came from. Empty for a repository loaded
+        # from an arbitrary `--data-dir`, where the directory carries no class; the views say
+        # `None` there rather than guessing from the paper.
+        self._model_classes = dict(model_classes or {})
 
     # --- catalog / status (blind: no ground-truth label leaves the catalog) --------
 
@@ -405,6 +415,10 @@ class ReprolithQuery:
 
     # --- certificates / verdicts (scope always travels) ----------------------------
 
+    def model_class_of(self, digest: str) -> str | None:
+        """The model class a certificate was published under, or ``None`` if not known here."""
+        return self._model_classes.get(digest)
+
     def certificate_object(self, digest: str) -> Certificate | None:
         """The stored :class:`~reprolith.model.Certificate` for a digest, or ``None``.
 
@@ -491,6 +505,33 @@ class ReprolithQuery:
         report = queue_report(pairs, self._decisions)
         report["standing_certificates"] = len(pairs)
         return report
+
+    def verification_issue(self, item_id: str) -> dict[str, Any] | None:
+        """One queue item as the GitHub issue to open, or ``None`` if there is no such item.
+
+        Assembled here rather than in either surface so the terminal and the agent get the same
+        object — the parity this repository holds every read command to. Raises ``ValueError`` for
+        an item no expert can close: an issue asking a stranger to decide a limit of this engine
+        is a request for a judgment that cannot help (see :func:`reprolith.issue_for_item`).
+        """
+        report = self.verification_queue()
+        items = {
+            item["id"]: item
+            for group in ("pending", "engine_limits", "decided")
+            for item in report.get(group, [])
+        }
+        item = items.get(item_id)
+        if item is None:
+            return None
+        classes = sorted(
+            {name for digest in item["depends_on"] if (name := self.model_class_of(digest))}
+        )
+        issue = issue_for_item(item, model_classes=classes)
+        # Not a refusal — a second opinion is legitimate and disagreement is retained by design —
+        # but an opener who does not know the item was answered would be asking for work already
+        # done.
+        issue["existing_decisions"] = len(item.get("decisions", []))
+        return issue
 
     def certificates_for(
         self,
@@ -614,6 +655,7 @@ class ReprolithQuery:
         view = cert.content()
         view["verdict"] = self._verdict_view(cert)
         view["gaps"] = gap_items(cert)
+        view["model_class"] = self.model_class_of(certificate_digest(cert))
         view["superseded_by"] = self.superseded_by(certificate_digest(cert))
         return view
 

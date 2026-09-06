@@ -4301,3 +4301,43 @@ by a failure mode the surface has already had:
 
 The diagnosis distinguishes one agent failing three times from three agents failing once each.
 They are different problems, and only one of them is likely to be the entry's fault.
+
+
+## The template asked an opener for a field the engine does not have
+
+Two things turned up while making the verification issue something a person does not transcribe.
+
+**The read surface could not say which class a certificate belongs to.** The registry page has
+always labelled every card with it, and neither the terminal nor the agent surface could answer the
+question at all — the class is a property of the *entry*, and nothing in a certificate says which
+pathway produced it. So the browsable page and the two queried views were one step from disagreeing
+about something the page states thirty-three times. `model_class_of` reads it from the directory a
+certificate was published under, which is the same source the page labels its cards from, so they
+cannot drift. Getting there needed one correction: keying the label on what each pass *added* to
+the shared ledger left the four PK/PD certificates unlabelled, because `--data-dir` is that class's
+own directory and had already loaded them.
+
+**And the issue template required a source location Reprolith does not record.** "Where in the
+paper this comes from (section, equation, table, or figure)", marked required. A *claim* carries
+that; an *assumption* carries a basis, which is a reason and not a place. Every field of that
+template was being filled by hand out of a certificate, so the person filling it had one required
+box with nothing to put in it — and the plausible thing to put there is the source location of a
+claim the assumption qualifies, which points at a different object. The generated body says the
+field cannot be answered and gives what does exist: the basis, and the assumption id to grep the
+certificates for. The template now says the same thing, so a hand-opened issue is not invited to
+invent one either.
+
+This is the same shape as an author told to state the thing that is wrong, and as a queue item
+listed under "awaiting expert review" that no expert can close: a form asking for something the
+respondent cannot supply, where the cost of the omission is paid in a plausible-looking answer
+rather than in a blank.
+
+**And the repository caught me putting it on one surface only.** I had reasoned that generating an
+issue body is a formatting concern and CLI-only was defensible. `test_surface_parity` disagreed:
+every command that reads this repository is paired with the MCP tool that answers it, or is named
+in the file as reading files of the caller's own instead. There is no third category, which is the
+point — an agent and a person asking the same question of the same repository get the same object.
+So the assembly moved onto the query, both surfaces call it, and the pairing table gained a row.
+The table could not express the pairing at first: a derived item id is the hash of its own
+question, so unlike a digest or an accession it cannot be written into a fixture and has to be read
+off the queue the test just built.

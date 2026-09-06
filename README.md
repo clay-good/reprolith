@@ -291,6 +291,7 @@ reprolith dossier <accession>        # what was extracted from the paper, and fr
 reprolith bundle <accession>         # the reconstruction the certificate was issued against
 reprolith certificates-for <id>      # every certificate digest for one paper, newest first
 reprolith verification-queue         # what every standing certificate rests on, awaiting review
+reprolith verification-issue <id>    # one of those as the filled GitHub issue to open
 reprolith self-validation            # the blind track record, per class and overall
 reprolith corroboration              # what a second engine said — and where none was asked
 reprolith select-claims <accession> \ # which claims to reproduce on a budget you can afford
@@ -697,8 +698,15 @@ goes back to pending, rather than attributing an answer to somebody for a questi
 read. The repository records no decision today, and the queue says so from the file rather than
 from a sentence that could outlive it.
 
-Questions are still raised as issues **by hand**, from the verification template; wiring the queue
-to GitHub automatically is unbuilt. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Questions are still raised as issues **by hand** — wiring the queue to GitHub automatically is
+unbuilt — but nobody fills one in by hand any more: `reprolith verification-issue <item-id>` prints
+the title, the body with every field the template asks for, and the three labels the
+`github-collaboration` spec names, which the template file itself left empty. It refuses one of the
+engine's own limits rather than filing it, since no expert answer closes one. And it answers the
+template's *source context* field by saying what Reprolith does not have: a section, equation,
+table or figure is recorded for a **claim**, not for an assumption, whose basis is a reason rather
+than a place — so the body gives the basis and the assumption id to grep for instead of a plausible
+location. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licensing
 

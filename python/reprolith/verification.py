@@ -423,6 +423,11 @@ def queue_report(
         # CONTRIBUTING.md tells an expert to copy it into the record they merge. Deriving it and
         # then not showing it would leave the one field of that record un-obtainable.
         view["question_fingerprint"] = fingerprints[item.id]
+        # Which half this item belongs to, on the item rather than only in which list it landed
+        # in. An item handed around on its own — to the issue generator, to an agent — could not
+        # otherwise tell a question for an expert from a limit of this engine, which is the one
+        # distinction this report exists to make.
+        view["author_can_close"] = item.id in answerable
         answers = live.get(item.id, ())
         # A stale record is shown on the item it was filed against, because an expert looking at
         # a question that reads as untouched should see that somebody answered an earlier wording
@@ -525,6 +530,109 @@ def _decisions_note(
     return "; ".join(parts)
 
 
+#: The label every verification issue carries, so the whole set is one search.
+ISSUE_LABEL = "verification"
+
+
+def issue_for_item(item: dict[str, Any], *, model_classes: Sequence[str] = ()) -> dict[str, Any]:
+    """The GitHub issue for one queue item: title, labels, and a filled body.
+
+    The ``github-collaboration`` spec asks that an escalated item surface as a structured issue
+    carrying the question, the source context, Reprolith's estimate and reasoning, and what
+    depends on it — "labelled with its model class, its impact rank, and a pending-verification
+    status". Nothing filed one, and nothing filled one either: the template's own description says
+    it is opened by hand, and every field had to be transcribed out of a certificate by eye. The
+    queue put the values in one place; this puts them in the shape the template asks for, so
+    opening an issue is ``gh issue create --title ... --body-file -`` rather than a transcription.
+    Nothing here touches the network — it prints, and a person or a command files it.
+
+    ``item`` is a view from :func:`queue_report`'s ``pending`` list. An **engine-limit** item is
+    refused by name: no expert decision closes one, so filing it asks a stranger for a judgment
+    that cannot help, which is the overstatement the queue's two headings exist to prevent.
+
+    ``model_classes`` labels the issue by pathway. It is a property of the entry rather than of
+    the certificate, so it is passed in (:meth:`ReprolithQuery.model_class_of`) rather than read
+    off the item; an item spanning classes gets a label for each, and an unknown one gets none
+    rather than a guess.
+
+    **Source context** is where this stops short, deliberately. The template asks for the section,
+    equation, table or figure the value comes from, and Reprolith does not carry one *for an
+    assumption* — a claim records its ``source_location``, an assumption records its basis, which
+    is a reason and not a location. The body says that in so many words and gives what does exist:
+    the basis, and the assumption ids to grep the certificates for. Filling it with a plausible
+    location would be the field's worst possible failure.
+    """
+    if not item.get("author_can_close", True):
+        raise ValueError(
+            f"verification item {item['id']!r} is a limit of this engine, not a question a paper "
+            "could answer — no expert decision closes it, so filing it as an issue asks a "
+            "stranger for a judgment that cannot help. It is listed under the queue's second "
+            "heading for exactly this reason"
+        )
+    labels = [ISSUE_LABEL, f"impact:{item['impact']}", "status:pending-verification"]
+    labels += [f"class:{name}" for name in sorted(set(model_classes))]
+    papers = item.get("depends_on_papers", [])
+    rests = "\n".join(
+        f"- {paper['title']}" + (f" ({paper['doi']})" if paper.get("doi") else "")
+        for paper in papers
+    ) or "- (no paper named on the dependent certificates)"
+    alternatives = "\n".join(f"- {alt}" for alt in item["alternatives"]) or "- (none recorded)"
+    dependents = "certificate" if item["impact"] == 1 else "certificates"
+    cited = (
+        "The certificates name this item as `" + item["id"] + "`."
+        if item.get("linked")
+        else (
+            "No certificate names this id — it is derived from the question itself. Grep the "
+            "assumption id instead: " + ", ".join(item.get("assumption_ids", ()))
+        )
+    )
+    body = f"""### The specific question
+
+{item['question']}
+
+### Reprolith's best estimate and reasoning
+
+**{item['best_estimate']}**
+
+{item['basis']}
+
+Alternatives considered:
+
+{alternatives}
+
+### Source context
+
+Reprolith records no section, equation, table or figure for an assumption: a *claim* carries a
+source location, an assumption carries the basis above, which is a reason rather than a place.
+{cited}
+
+### What depends on this
+
+{item['impact']} standing {dependents}:
+
+{rests}
+
+### How to answer
+
+Confirm, correct (with the right value and a source), or reject (with why) in a comment. To make
+your decision the record, add it to `datasets/verification_decisions.json` in a pull request that
+references this issue, with this fingerprint so it stays attached to the question as you read it:
+
+```
+{item['question_fingerprint']}
+```
+
+Answering does not re-issue anything: the certificates above keep resting on the value as
+unreviewed until they are re-run and superseded.
+"""
+    return {
+        "title": f"[verify] {item['question']}",
+        "labels": labels,
+        "body": body,
+        "item_id": item["id"],
+    }
+
+
 def reverify_dependents(
     item: VerificationItem,
     ledger: CertificateLedger,
@@ -581,10 +689,12 @@ def certificates_needing_review(ledger: CertificateLedger, current_pin: EnginePi
 
 
 __all__ = [
+    "ISSUE_LABEL",
     "VerificationDecision",
     "VerificationItem",
     "VerificationQueue",
     "certificates_needing_review",
+    "issue_for_item",
     "question_fingerprint",
     "queue_from_certificates",
     "queue_report",

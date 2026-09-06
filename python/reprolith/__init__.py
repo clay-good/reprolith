@@ -369,10 +369,12 @@ from .stochastic import (
 )
 from .supersession import CertificateLedger, describe_changes
 from .verification import (
+    ISSUE_LABEL,
     VerificationDecision,
     VerificationItem,
     VerificationQueue,
     certificates_needing_review,
+    issue_for_item,
     question_fingerprint,
     queue_from_certificates,
     queue_report,
@@ -635,6 +637,8 @@ __all__ = [
     "required_subjects",
     "Resolution",
     "resample_series",
+    "ISSUE_LABEL",
+    "issue_for_item",
     "question_fingerprint",
     "queue_from_certificates",
     "queue_report",

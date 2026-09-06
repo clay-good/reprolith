@@ -14,12 +14,29 @@ No code in this repository touches the GitHub API. The gates are real — CI run
 `pytest`, and `openspec validate` on every push, and every contribution goes through a pull
 request — but the *issue* half of this capability is carried by people, not machinery:
 
-- *Verification-queue items are GitHub issues.* Still opened by hand, and the issue templates say
-  so in their own text. What changed on 2026-09-06 is what a person opening one has to write:
-  `queue_from_certificates` now derives the items, so the question, Reprolith's estimate, its
-  basis, the alternatives, and the papers that rest on it are all in
-  `reprolith verification-queue` rather than being transcribed out of certificates by eye.
-  Nothing files the issue, and nothing reconciles a queue item with an issue's state.
+- *Verification-queue items are GitHub issues.* Still opened by hand, and the issue template says
+  so in its own text. What a person opening one has to write, though, is now nothing:
+  `reprolith verification-issue <item-id>` prints the whole issue — the title, the body with every
+  field the template asks for, and the three labels the requirement names (model class, impact
+  rank, pending-verification status), which the template file itself left empty. It refuses an
+  engine-limit item by name, because no expert decision closes one and filing it asks a stranger
+  for a judgment that cannot help. It touches no network: it prints, and a person or
+  `gh issue create --body-file -` files it. It is on both surfaces (MCP: `verification_issue`),
+  because a command that reads this repository and exists on only one of them is how the two
+  drift. **Nothing files the issue, and nothing reconciles a
+  queue item with an issue's state** — those two halves are still uncarried.
+
+  One field is answered by saying it cannot be: the template requires the section, equation, table
+  or figure a value comes from, and Reprolith records that for a *claim* and not for an
+  *assumption*, whose basis is a reason rather than a place. The generated body says so and gives
+  the basis and the assumption id to grep for, rather than filling a required field with a
+  plausible location.
+- *An expert's decision is the record.* Carried since 2026-09-06:
+  `datasets/verification_decisions.json` holds the decision, its author, its rationale and where it
+  was made, joined to the derived queue by `queue_report`, so an answered item stops asking on
+  every surface. What it deliberately does **not** do is lift the dependent certificates'
+  qualification — that is a re-issue, not an answer — and the record is captured by a pull request
+  rather than read out of the issue by any machinery.
 - *An agent can query collaboration state over MCP.* This is carried now. The `verification_queue`
   tool returns what is pending human validation, split into what an expert can decide and what
   only this engine's development can close, ranked by how many standing certificates rest on it.
