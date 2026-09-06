@@ -132,13 +132,46 @@ def test_the_dossier_records_the_domain_as_stated_because_it_is() -> None:
     assert [p.name for p in dossier.parameters] == ["D_U"]
 
 
-def test_zero_flux_is_the_one_boundary_condition_this_solver_imposes() -> None:
-    ingest_spatial_sbml(_model(boundary=(libsbml.SPATIAL_BOUNDARYKIND_NEUMANN, 0.0)))
+def test_a_stated_boundary_is_carried_rather_than_refused() -> None:
+    """This used to refuse a Dirichlet file, and the reason it gave went stale twice: first "this
+    solver's boundaries are Neumann and nothing else", then "a claim carries no field naming one".
+    Both are fixed, so the file's own wall reaches the run and there is nothing left to refuse."""
+    zero_flux = ingest_spatial_sbml(
+        _model(boundary=(libsbml.SPATIAL_BOUNDARYKIND_NEUMANN, 0.0))
+    )
+    assert zero_flux.boundary == "no-flux"
 
-    with pytest.raises(ValueError, match="not zero flux"):
-        ingest_spatial_sbml(_model(boundary=(libsbml.SPATIAL_BOUNDARYKIND_DIRICHLET, 0.0)))
-    with pytest.raises(ValueError, match="not zero flux"):
+    held = ingest_spatial_sbml(_model(boundary=(libsbml.SPATIAL_BOUNDARYKIND_DIRICHLET, 2.5)))
+    assert held.boundary == "dirichlet"
+    assert held.boundary_value == pytest.approx(2.5)
+
+
+def test_a_file_stating_no_boundary_says_so_rather_than_claiming_one() -> None:
+    """The distinction the whole boundary assumption turns on: a model that states nothing is run
+    under this engine's choice and qualified for it, and a model that states its wall is not."""
+    assert ingest_spatial_sbml(_model()).boundary is None
+
+
+def test_a_prescribed_non_zero_flux_is_still_refused() -> None:
+    """A term this scheme does not have. Refused by name rather than run as if the flux were
+    zero, which is the substitution this ingester exists to prevent."""
+    with pytest.raises(ValueError, match="non-zero flux"):
         ingest_spatial_sbml(_model(boundary=(libsbml.SPATIAL_BOUNDARYKIND_NEUMANN, 2.5)))
+
+
+def test_a_fixed_value_wall_with_no_value_is_refused() -> None:
+    document = libsbml.readSBMLFromString(_model())
+    model = document.getModel()
+    parameter = model.createParameter()
+    parameter.setId("wall")
+    parameter.setConstant(True)
+    plugin = parameter.getPlugin("spatial")
+    condition = plugin.createBoundaryCondition()
+    condition.setVariable("U")
+    condition.setType(libsbml.SPATIAL_BOUNDARYKIND_DIRICHLET)
+    condition.setCoordinateBoundary("Xmin")
+    with pytest.raises(ValueError, match="without a value"):
+        ingest_spatial_sbml(libsbml.writeSBMLToString(document))
 
 
 def test_a_drift_term_is_refused_rather_than_dropped() -> None:

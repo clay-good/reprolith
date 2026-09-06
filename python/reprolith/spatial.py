@@ -252,6 +252,14 @@ def _left_checked(values: Sequence[float], checked: tuple[float, float, float]) 
 #: distance moves with a choice the paper did not make" can only ever be asserted.
 BOUNDARIES = ("no-flux", "dirichlet", "periodic")
 
+#: How each wall is named on a certificate, where "no-flux" alone would not tell a reader which
+#: mathematical condition was imposed.
+_WALL_NAMES = {
+    "no-flux": "zero-flux (Neumann) boundaries",
+    "dirichlet": "Dirichlet (fixed-value) boundaries",
+    "periodic": "periodic boundaries",
+}
+
 
 def _neighbours(
     current: list[float], i: int, n: int, boundary: str, value: float
@@ -654,12 +662,41 @@ class SpatialClaim:
     steps: int
     decay: float = 0.0
     tolerance: Tolerance | None = None
-    # Defaults to True, as `StochasticClaim` does, and for the same reason: this class imposes a
-    # boundary condition the paper did not choose, so every verdict rests on a value Reprolith
+    #: The wall this claim's source states, when it states one. ``None`` means it does not, which
+    #: is the case every published certificate here was produced under: the run then uses
+    #: ``no-flux`` and carries the load-bearing assumption saying so. A claim that *names* its
+    #: boundary is a different situation — the wall is then the model's, not Reprolith's — and
+    #: :func:`certify_spatial` neither assumes nor qualifies it. This field is what
+    #: ``ingest_spatial_sbml`` needed before it could stop refusing a file that states a Dirichlet
+    #: wall: the refusal was never that the solver could not run one, but that nothing carried the
+    #: statement through to the run.
+    boundary: str | None = None
+    #: The value a Dirichlet wall is held at; ignored for the others. Absorbing at the default.
+    boundary_value: float = 0.0
+    # Defaults to True, as `StochasticClaim` does, and for the same reason: a claim that states no
+    # boundary is run under one Reprolith chose, so its verdict rests on a value Reprolith
     # supplied. Off by default it was never set by any caller, and the shipped milestone published
-    # `reproduced` with no assumption block for a run whose walls are Reprolith's own.
+    # `reproduced` with no assumption block for a run whose walls are Reprolith's own. A claim that
+    # states its boundary sets this False for itself — nothing was assumed.
     assumption_qualified: bool = True
     shortfall: Attribution | None = field(default=None)
+
+    def __post_init__(self) -> None:
+        if self.boundary is not None and self.boundary not in BOUNDARIES:
+            raise ValueError(
+                f"claim {self.claim_id!r} names boundary {self.boundary!r}; this solver runs "
+                f"{', '.join(BOUNDARIES)}"
+            )
+
+    @property
+    def wall(self) -> str:
+        """The boundary this claim is actually run under — its own, or this engine's default."""
+        return self.boundary or "no-flux"
+
+    @property
+    def wall_is_reprolith_s(self) -> bool:
+        """Whether the wall was Reprolith's choice rather than something the source stated."""
+        return self.boundary is None
 
 
 def boundary_sensitivity(claim: SpatialClaim) -> dict[str, Any] | None:
@@ -690,17 +727,18 @@ def boundary_sensitivity(claim: SpatialClaim) -> dict[str, Any] | None:
             profile = diffuse_1d(
                 claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
                 steps=claim.steps, decay=claim.decay, boundary=boundary,
+                boundary_value=claim.boundary_value,
             )
         except UnstableDiscretization:
             return None
         return normalized_curve_distance(claim.reference, profile)
 
-    judged = distance("no-flux")
+    judged = distance(claim.wall)
     if judged is None or not claim.reference:
         return None
     alternatives: dict[str, float] = {}
     for name in BOUNDARIES:
-        if name == "no-flux":
+        if name == claim.wall:
             continue
         moved = distance(name)
         if moved is not None:  # pragma: no branch - the discretization is the same for all walls
@@ -802,6 +840,7 @@ def certify_spatial(
             predicted = diffuse_1d(
                 claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
                 steps=claim.steps, decay=claim.decay,
+                boundary=claim.wall, boundary_value=claim.boundary_value,
             )
         except UnstableDiscretization as unstable:
             # An unstable discretization genuinely cannot be run — but raising discarded the whole
@@ -846,7 +885,8 @@ def certify_spatial(
                     f"1-D finite difference: D={claim.diffusivity!r}, dx={claim.dx!r}, "
                     f"dt={claim.dt!r}, {claim.steps} steps"
                     + (f", decay={claim.decay!r}" if claim.decay else "")
-                    + ", zero-flux (Neumann) boundaries"
+                    + f", {_WALL_NAMES[claim.wall]}"
+                    + ("" if claim.wall_is_reprolith_s else " stated by the source")
                     # What that wall costs *this* claim. It belongs here rather than in the
                     # assumption's basis: the assumption is one fact about this engine, and
                     # putting a per-claim number in its wording gave three claims three different
@@ -862,7 +902,10 @@ def certify_spatial(
         # *assessment*, not the claim — the judge abstains internally on a non-finite profile
         # without raising, so gating on the claim's own flag minted an assumption for a claim that
         # came back `not-evaluable` and pushed the certificate to `partially-reproduced` anyway.
-        if assessments[-1].assumption_qualified:
+        # A claim that names its own boundary rests on nothing Reprolith supplied for it, so it
+        # gets no boundary assumption — and, having stated it, can reach a clean pass. The
+        # `assumption_qualified` flag is the claim's own and covers everything else it may rest on.
+        if assessments[-1].assumption_qualified and claim.wall_is_reprolith_s:
             qualified.append(claim)
     # The counterpart of the stochastic class's `ssa-sampling-*` block. The boundary is named in
     # each assessment's protocol, but a protocol line does not downgrade a verdict and does not
@@ -1011,6 +1054,14 @@ class SpatialModel:
     #: is the morphogen-gradient case: diffusion against linear decay. A species the file gives no
     #: decay reaction has none, which is what ``decay_of`` returns.
     decay: tuple[tuple[str, float], ...] = ()
+    #: The boundary the file states, in this solver's vocabulary, or ``None`` where it states
+    #: none. Reading it is what let ``ingest_spatial_sbml`` stop refusing a Dirichlet file: the
+    #: refusal was never that the solver could not run one, but that nothing carried the file's
+    #: statement through to the run. A claim built from this model passes it on
+    #: (:attr:`SpatialClaim.boundary`), so the wall the model asks for is the wall it gets.
+    boundary: str | None = None
+    #: The value a stated Dirichlet wall is held at.
+    boundary_value: float = 0.0
 
     def diffusivity_of(self, species: str) -> float:
         return dict(self.diffusivities)[species]

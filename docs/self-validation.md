@@ -24,12 +24,13 @@ judged distance by 2e-10 to 2e-06 against a 1e-01 threshold, the ensembles carry
 of 1.53%, 1.26% and 0.42% against 5% — so the qualification says how much it is worth, not only
 that it exists.
 
-That missing field is also why `ingest_spatial_sbml` refuses any wall but zero-flux. The solver
-runs a Dirichlet or periodic wall, so the reason is not that it cannot: a file in the SBML L3
-`spatial` package can state a Dirichlet wall, and nothing would carry that statement through to the
-run, so the model would be evolved under zero-flux walls it did not ask for with nothing to say a
-boundary had been substituted. A refusal names it instead, and giving a claim that field is what
-would lift it. (No published spatial model is in this corpus, so that reader is checked against
+`ingest_spatial_sbml` no longer refuses a file that states a Dirichlet wall. It refused one twice
+for reasons that each stopped being true — "this solver's boundaries are Neumann and nothing else",
+then "a claim carries no field naming one" — and both are fixed: the solver runs the wall and a
+claim carries it, so what the file states reaches the run. What is still refused is a *prescribed
+non-zero flux*, which is a term this scheme does not have, and a file asking for two different walls
+at once, which one uniform boundary cannot express. A model that states its wall is also not
+qualified for a choice Reprolith did not make: it can reach a clean pass. (No published spatial model is in this corpus, so that reader is checked against
 files libSBML's own spatial API wrote — the spec's reference implementation, not the field.)
 
 ## What makes each row honest
@@ -139,7 +140,7 @@ $ reprolith corroboration
 CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   reported beside the verdicts, never gating them
   constraint-based      8 model(s) on cobrapy, scipy-linprog — all engine-independent to 1e-08
-                          as cobrapy 0.31.1, scipy-linprog highs (reprolith-fba rev 5fdbb63fa5cd)
+                          as cobrapy 0.31.1, scipy-linprog highs (reprolith-fba rev c7778379864b)
   kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   logical               9 model(s) on cana, reprolith-logical, sympy-sat — all agree exactly
@@ -147,7 +148,7 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   ode-pkpd            170 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   spatial               3 model(s) on reprolith-fd, scipy-lsoda — all engine-independent to 1e-03
-                          as reprolith-fd explicit-forward-euler-finite-difference (rev 28ff89552731), scipy-lsoda 1.13.1
+                          as reprolith-fd explicit-forward-euler-finite-difference (rev b8a03e0d5355), scipy-lsoda 1.13.1
   stochastic            3 model(s) on reprolith-ssa, roadrunner-gillespie — all engine-independent within 1.9 combined standard errors, resolving a bias above 6.5% of the mean
                           as reprolith-ssa gillespie-direct-method (rev 0698cfc5d629), roadrunner-gillespie 2.7.0
 

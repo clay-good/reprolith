@@ -315,9 +315,12 @@ a change under `openspec/changes/`.
   the pinned libSBML reads it, which was never checked before the claim was written down.
   `ingest_spatial_sbml` now reads the intersection that this solver runs (Cartesian geometry in one
   or two components with a stated extent, one isotropic diffusion coefficient per spatial species,
-  a uniform initial concentration) and refuses the rest by name, zero-flux Neumann boundaries
-  included, since running a Dirichlet model under Neumann walls is a different model with no sign
-  that it happened. What *is* blocked is narrower and still true: no published spatial model is in
+  a uniform initial concentration) and refuses the rest by name. It refused a stated **Dirichlet**
+  wall too, for a reason that went stale twice — first that this solver had no other wall, then that
+  a claim had no field to carry one — and neither is true now: the file's wall reaches the run
+  (2026-09-06), and a claim that states its boundary is not qualified for a choice Reprolith did not
+  make, so it can reach a clean pass. A prescribed non-zero flux is still refused, being a term this
+  scheme does not have, as is a file asking for two different walls at once. What *is* blocked is narrower and still true: no published spatial model is in
   this corpus and none can be fetched here, so the reader is validated against files libSBML's own
   spatial API wrote, not against one from the field. **The single boundary condition is gone
   (2026-09-06):** `diffuse_1d` runs zero-flux, Dirichlet (absorbing or held at a value) and

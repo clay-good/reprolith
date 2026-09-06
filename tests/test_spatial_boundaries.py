@@ -298,3 +298,66 @@ def test_a_symmetric_profile_centred_in_the_box_makes_wrapping_and_mirroring_ide
     assert max(abs(a - b) for a, b in zip(run("no-flux"), run("periodic"))) < 1e-12
     # And the absorbing wall is genuinely different, so this is not three names for one run.
     assert max(abs(a - b) for a, b in zip(run("no-flux"), run("dirichlet"))) > 1e-3
+
+
+def test_a_claim_that_states_its_own_wall_is_not_qualified_for_this_engine_s_choice() -> None:
+    """The honesty consequence of the claim carrying a boundary. Every spatial certificate is
+    downgraded because the wall the run used was Reprolith's choice; a claim that *names* its wall
+    rests on nothing Reprolith supplied for it, so it gets no boundary assumption and can reach a
+    clean pass. Publishing the qualification anyway would overstate the uncertainty, which is the
+    same defect as understating it, pointed the other way.
+    """
+    from reprolith import OverallVerdict
+    from reprolith.model import PaperIdentity
+    from reprolith.spatial import (
+        SpatialClaim,
+        certify_spatial,
+        gaussian_profile,
+        solver_pin,
+    )
+
+    length, points = 20.0, 201
+    dx = 2 * length / (points - 1)
+    centers = [-length + i * dx for i in range(points)]
+    diffusivity, steps = 1.0, 400
+    dt = 0.2 * dx * dx / diffusivity
+    initial = tuple(gaussian_profile(centers, mass=10.0, variance=1.0))
+    reference = tuple(
+        gaussian_profile(centers, mass=10.0, variance=1.0 + 2 * diffusivity * steps * dt)
+    )
+
+    def claim(claim_id: str, **extra) -> SpatialClaim:
+        return SpatialClaim(
+            claim_id=claim_id, quantity="profile", initial=initial, reference=reference,
+            source_location="closed-form", diffusivity=diffusivity, dx=dx, dt=dt, steps=steps,
+            **extra,
+        )
+
+    assumed = certify_spatial(
+        paper=PaperIdentity(title="wall assumed", doi=""), engine_pin=solver_pin(),
+        claims=[claim("assumed")],
+    )
+    assert [a.id for a in assumed.assumptions] == ["spatial-boundary-assumed"]
+    assert assumed.overall is OverallVerdict.PARTIALLY_REPRODUCED
+
+    stated = certify_spatial(
+        paper=PaperIdentity(title="wall stated", doi=""), engine_pin=solver_pin(),
+        claims=[claim("stated", boundary="no-flux", assumption_qualified=False)],
+    )
+    assert stated.assumptions == ()
+    assert stated.overall is OverallVerdict.REPRODUCED, (
+        "a claim that states its wall rests on nothing this engine chose for it"
+    )
+    # And the protocol says whose wall it was, either way.
+    assert "stated by the source" in stated.assessments[0].protocol
+    assert "stated by the source" not in assumed.assessments[0].protocol
+
+
+def test_a_claim_naming_a_wall_this_solver_does_not_run_is_refused() -> None:
+    from reprolith.spatial import SpatialClaim
+
+    with pytest.raises(ValueError, match="this solver runs"):
+        SpatialClaim(
+            claim_id="x", quantity="q", initial=(0.0, 1.0), reference=(0.0, 1.0),
+            source_location="s", diffusivity=1.0, dx=1.0, dt=0.1, steps=1, boundary="absorbing",
+        )

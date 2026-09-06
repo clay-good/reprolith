@@ -1196,6 +1196,9 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
         extent.append(float(high - low))
 
     diffusivities: dict[str, float] = {}
+    #: Every boundary condition the file states, so a file asking for two different walls is
+    #: refused rather than run under whichever was read last.
+    boundaries: list[tuple[str, float]] = []
     for i in range(model.getNumParameters()):
         parameter = model.getParameter(i)
         parameter_plugin = parameter.getPlugin("spatial")
@@ -1223,24 +1226,45 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
         if parameter_plugin.isSetBoundaryCondition():
             condition = parameter_plugin.getBoundaryCondition()
             kind = condition.getType()
-            # Zero-flux is what a run of this model would get. Not because the solver has no
-            # other wall — `diffuse_1d` takes Dirichlet and periodic — but because a claim carries
-            # no field naming one, so nothing conveys what this file states through to the run. A
-            # Dirichlet wall, or a flux that is not zero, would run here without complaint under a
-            # boundary the file did not ask for.
-            zero_flux = (
-                kind == libsbml.SPATIAL_BOUNDARYKIND_NEUMANN
-                and parameter.isSetValue()
-                and parameter.getValue() == 0.0
-            )
-            if not zero_flux:
+            # The two walls this solver runs *and* can carry through to a run: zero-flux Neumann,
+            # and a Dirichlet value. The refusal below was once "this solver's boundaries are
+            # Neumann and nothing else", which stopped being true, and then "a claim carries no
+            # field naming one", which stopped being true too — a `SpatialClaim` takes a boundary
+            # now, so what the file states reaches the run instead of being silently replaced.
+            # What is still refused is a Neumann condition with a *non-zero* flux, which this
+            # scheme does not step at all.
+            if kind == libsbml.SPATIAL_BOUNDARYKIND_NEUMANN:
+                if not (parameter.isSetValue() and parameter.getValue() == 0.0):
+                    raise ValueError(
+                        f"parameter {parameter.getId()!r} states a Neumann boundary on "
+                        f"{condition.getVariable()!r} with a non-zero flux; this solver steps a "
+                        "zero-flux wall and a fixed-value wall, and a prescribed non-zero flux "
+                        "across the boundary is a term it does not have"
+                    )
+                boundary, boundary_value = "no-flux", 0.0
+            elif kind == libsbml.SPATIAL_BOUNDARYKIND_DIRICHLET:
+                if not parameter.isSetValue():
+                    raise ValueError(
+                        f"parameter {parameter.getId()!r} states a fixed-value boundary on "
+                        f"{condition.getVariable()!r} without a value; the wall has to be held at "
+                        "something for the run to mean anything"
+                    )
+                boundary, boundary_value = "dirichlet", float(parameter.getValue())
+            else:
                 raise ValueError(
                     f"parameter {parameter.getId()!r} states a boundary condition on "
-                    f"{condition.getVariable()!r} that is not zero flux; this solver runs such a "
-                    "wall, but a claim carries no field naming one, so nothing would carry this "
-                    "file's boundary through to the run — the model would be evolved under "
-                    "zero-flux walls it did not ask for, with no sign that it happened"
+                    f"{condition.getVariable()!r} of a kind this solver does not run; it steps a "
+                    "zero-flux wall, a fixed-value wall, and nothing else"
                 )
+            if boundaries and boundaries[-1] != (boundary, boundary_value):
+                # One wall for the whole domain: this solver applies the same condition at both
+                # ends, so a file asking for two different ones cannot be run as written, and
+                # running it under either would be the substitution this refusal prevents.
+                raise ValueError(
+                    "this file states more than one kind of boundary condition; this solver "
+                    "applies one wall to the whole domain, so it cannot run them as written"
+                )
+            boundaries.append((boundary, boundary_value))
             continue
         if not parameter_plugin.isSetDiffusionCoefficient():
             continue
@@ -1375,6 +1399,8 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
         initial=tuple(sorted(initial.items())),
         extent=tuple(extent),
         decay=tuple(sorted(decay.items())),
+        boundary=boundaries[0][0] if boundaries else None,
+        boundary_value=boundaries[0][1] if boundaries else 0.0,
     )
 
 

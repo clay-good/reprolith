@@ -4593,3 +4593,27 @@ The edit landed in `sbml.py`, which is a judge module for the constraint-based c
 certificates, three worked-example renders, the registry and a transcript were regenerated for a
 change that moved no number. That is the pin doing its job — it hashes the file, so a comment moves
 it, and the safe direction of error is a needless re-run.
+
+
+## The field the last fix named, and what it does to a verdict
+
+The previous entry ended by saying the accurate reason for a refusal "names the work that would
+lift it" — a `SpatialClaim` with no field for a boundary. That field exists now, and the ingester
+stops refusing a file that states a Dirichlet wall: the model's wall reaches the run instead of
+being silently replaced by this engine's.
+
+The interesting part is not the plumbing. Every spatial certificate is downgraded because the wall
+the run used was **Reprolith's choice**, and a claim that names its own wall rests on nothing
+Reprolith supplied for it. So it carries no boundary assumption and can reach a clean
+`reproduced` — publishing the qualification anyway would overstate the uncertainty, which is the
+same defect as understating it with the sign flipped, and this repository has spent more effort on
+the understating direction than on this one.
+
+What is still refused is narrower and true: a prescribed **non-zero flux**, which is a term this
+scheme does not step at all, and a file asking for two different walls at once, which one uniform
+boundary cannot express. Both are refused by name rather than run as if the file had said something
+else.
+
+Three reasons in one day for one refusal — "the solver has no other wall", "the claim cannot carry
+one", and now "the flux term does not exist" — with only the last one still standing. A refusal is
+a claim about the engine, and it goes stale exactly as any other claim does.

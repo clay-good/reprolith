@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "highs (reprolith-fba rev 5fdbb63fa5cd)",
+    "algorithm": "highs (reprolith-fba rev c7778379864b)",
     "engine": "scipy-linprog",
     "version": "1.13.1"
   },
