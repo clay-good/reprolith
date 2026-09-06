@@ -509,3 +509,37 @@ def test_the_half_life_column_is_not_a_terminal_slope_of_this_run() -> None:
     assert not [
         c for entry in _CLAIMS.values() for c in entry["claims"] if c["metric"] == "thalf"
     ], "a half-life claim exists; settle what the paper's T1/2 column is fitted over first"
+
+
+def test_the_time_unit_assumption_states_counts_its_own_certificates_hold() -> None:
+    """The evidence sentence a reader checks the reading against, checked against the run.
+
+    It said "Tmax, T1/2 and the whole AUC24 column reproduce over a run of 24 model time units" —
+    written in the morning, when no Tmax claim existed and no half-life had been measured. By the
+    evening a terminal slope of that run gave one number for four tissues the paper prints four
+    for, so T1/2 was not evidence for anything, and it was still being cited as evidence in four
+    certificates' assumption blocks and a loop note.
+
+    Prose in a JSON file drifts exactly like prose in a README, and this repository has already
+    learned that once about its own agreement counts.
+    """
+    repo = Path(__file__).resolve().parents[1]
+    certificates = [
+        json.loads(path.read_text(encoding="utf-8"))
+        for path in (repo / "datasets/milestone/certificates").glob("*.json")
+    ]
+    bases = {
+        a["basis"]
+        for c in certificates for a in c.get("assumptions", ())
+        if a["id"] == "time-unit-of-the-deposit"
+    }
+    assert len(bases) == 1, bases
+    (basis,) = bases
+
+    peaks = [
+        a for c in certificates for a in c["assessments"] if a["claim_id"].startswith("Tmax")
+    ]
+    reproduced = sum(1 for a in peaks if a["verdict"] == "reproduced")
+    assert f"{reproduced} of the {len(peaks)} Tmax claims" in basis, (reproduced, len(peaks))
+    # And it does not cite the column that turned out to be no evidence at all.
+    assert "T1/2 column is not evidence" in basis

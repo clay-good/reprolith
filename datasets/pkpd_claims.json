@@ -1195,7 +1195,7 @@
           "id": "time-unit-of-the-deposit",
           "description": "the deposited model declares its time unit as 3600*10^2 seconds \u2014 one hundred hours \u2014 where its paper's tables are in hours",
           "chosen": "read the declared time unit as an error and take the model's time to be hours",
-          "basis": "the dynamics settle it: Tmax, T1/2 and the whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would be 2400 hours. Every quantity with a time dimension rests on this reading \u2014 an area, which carries the clock as a factor, and a time to peak, which is the clock \u2014 and no peak height does",
+          "basis": "the dynamics settle it: 26 of the 30 Tmax claims and the whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would be 2400 hours \u2014 and the other four times to peak are unjudged for the sampling grid rather than disagreeing. Every quantity with a time dimension rests on this reading \u2014 an area, which carries the clock as a factor, and a time to peak, which is the clock \u2014 and no peak height does. The T1/2 column is not evidence either way: a terminal slope of this run gives one number for four tissues the paper prints four for, so whatever it is fitted over is not stated",
           "load_bearing": true,
           "alternatives": [
             "the declared 3600*10^2 seconds, under which every area and every time to peak is a hundred times the paper's"
@@ -1225,7 +1225,7 @@
           "id": "time-unit-of-the-deposit",
           "description": "the deposited model declares its time unit as 3600*10^2 seconds \u2014 one hundred hours \u2014 where its paper's tables are in hours",
           "chosen": "read the declared time unit as an error and take the model's time to be hours",
-          "basis": "the dynamics settle it: Tmax, T1/2 and the whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would be 2400 hours. Every quantity with a time dimension rests on this reading \u2014 an area, which carries the clock as a factor, and a time to peak, which is the clock \u2014 and no peak height does",
+          "basis": "the dynamics settle it: 26 of the 30 Tmax claims and the whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would be 2400 hours \u2014 and the other four times to peak are unjudged for the sampling grid rather than disagreeing. Every quantity with a time dimension rests on this reading \u2014 an area, which carries the clock as a factor, and a time to peak, which is the clock \u2014 and no peak height does. The T1/2 column is not evidence either way: a terminal slope of this run gives one number for four tissues the paper prints four for, so whatever it is fitted over is not stated",
           "load_bearing": true,
           "alternatives": [
             "the declared 3600*10^2 seconds, under which every area and every time to peak is a hundred times the paper's"
@@ -2260,7 +2260,7 @@
           "id": "time-unit-of-the-deposit",
           "description": "the deposited model declares its time unit as 3600*10^2 seconds \u2014 one hundred hours \u2014 where its paper's tables are in hours",
           "chosen": "read the declared time unit as an error and take the model's time to be hours",
-          "basis": "the dynamics settle it: Tmax, T1/2 and the whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would be 2400 hours. Every quantity with a time dimension rests on this reading \u2014 an area, which carries the clock as a factor, and a time to peak, which is the clock \u2014 and no peak height does",
+          "basis": "the dynamics settle it: 26 of the 30 Tmax claims and the whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would be 2400 hours \u2014 and the other four times to peak are unjudged for the sampling grid rather than disagreeing. Every quantity with a time dimension rests on this reading \u2014 an area, which carries the clock as a factor, and a time to peak, which is the clock \u2014 and no peak height does. The T1/2 column is not evidence either way: a terminal slope of this run gives one number for four tissues the paper prints four for, so whatever it is fitted over is not stated",
           "load_bearing": true,
           "alternatives": [
             "the declared 3600*10^2 seconds, under which every area and every time to peak is a hundred times the paper's"
@@ -2315,7 +2315,7 @@
           "id": "time-unit-of-the-deposit",
           "description": "the deposited model declares its time unit as 3600*10^2 seconds \u2014 one hundred hours \u2014 where its paper's tables are in hours",
           "chosen": "read the declared time unit as an error and take the model's time to be hours",
-          "basis": "the dynamics settle it: Tmax, T1/2 and the whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would be 2400 hours. Every quantity with a time dimension rests on this reading \u2014 an area, which carries the clock as a factor, and a time to peak, which is the clock \u2014 and no peak height does",
+          "basis": "the dynamics settle it: 26 of the 30 Tmax claims and the whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would be 2400 hours \u2014 and the other four times to peak are unjudged for the sampling grid rather than disagreeing. Every quantity with a time dimension rests on this reading \u2014 an area, which carries the clock as a factor, and a time to peak, which is the clock \u2014 and no peak height does. The T1/2 column is not evidence either way: a terminal slope of this run gives one number for four tissues the paper prints four for, so whatever it is fitted over is not stated",
           "load_bearing": true,
           "alternatives": [
             "the declared 3600*10^2 seconds, under which every area and every time to peak is a hundred times the paper's"

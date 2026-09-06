@@ -24,11 +24,16 @@ three exposures.
 **Not one of the four is a clean pass, and the reason is a unit.** All four of this paper's
 deposited models declare their time unit as 3600·10² seconds — one hundred hours. An area read off
 such a model is, by the model's own units, in nmol·(100 h)/mL, where every table the paper prints
-says nmol·h/mL. The dynamics say the declaration is the error and not the tables: Tmax, T½ and the
-whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would
-be 2400 hours. But that is a reading *Reprolith* made about the file, so every claim resting on it
-is qualified and no certificate here calls itself unqualified. Nothing but an area has a time
-dimension, which is why eighty peak claims never touched it — and why this repository shipped seven
+says nmol·h/mL. A **time to peak** is the same statement with nothing else in it: read entirely in
+the model's clock, it comes out in units of a hundred hours against a column headed `Tmax, h`. The
+dynamics say the declaration is the error and not the tables: twenty-six of the thirty times to
+peak and the whole AUC24 column reproduce over a run of 24 model time units, which under the
+declared unit would be 2400 hours, and the other four times to peak are unjudged for the sampling
+grid rather than disagreeing.
+But that is a reading *Reprolith* made about the file, so every claim resting on it
+is qualified and no certificate here calls itself unqualified. Only a quantity carrying a time
+dimension reaches it — an area and a time to peak — which is why seventy peak claims never touched
+it, and why this repository shipped seven
 AUC claims and a front page announcing a clean pass before the check that finds it was ever pointed
 at more than one entry. It is pointed at every one now
 ([`tests/test_claim_units.py`](tests/test_claim_units.py)).
