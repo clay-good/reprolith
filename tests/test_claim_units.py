@@ -451,3 +451,59 @@ def test_every_committed_claim_is_in_the_unit_its_own_model_reads() -> None:
     # A time to peak is the finding at its plainest: no substance unit is composed into it at all,
     # so what disagrees is the model's clock against the paper's hours and nothing else.
     assert (peaks, timed) == (70, 100), (peaks, timed)
+
+
+def test_the_half_life_column_is_not_a_terminal_slope_of_this_run() -> None:
+    """Why the last unclaimed column of this table stays unclaimed.
+
+    A terminal half-life is ln(2) over the slope of ln(C) on the run's final log-linear stretch,
+    and this run has one: over its last quarter, plasma, liver, muscle and brain all decay at the
+    same rate, to within 0.03 h, with R-squared indistinguishable from 1. That is the *system's*
+    terminal phase — by then the slowest compartment governs everything downstream of it.
+
+    The paper prints 3.7, 2.5, 5.5 and 3.8 for those four tissues. Whatever its T1/2 column is, it
+    is not this, and the table does not say what it is. So a `thalf` metric fitted the obvious way
+    would publish a beautiful fit to the wrong quantity — the failure mode that is hardest to see,
+    because the fit's own diagnostics say it is perfect.
+
+    The measurement is here so that the refusal is evidence rather than an opinion, and so that
+    building the metric later starts from it.
+    """
+    import math
+
+    from reprolith.engine import simulate
+
+    repo = Path(__file__).resolve().parents[1]
+    model = (
+        repo / "datasets/worked_examples/Zake2021_metformin_human_single_PO.xml"
+    ).read_text(encoding="utf-8")
+    tables = json.loads(
+        (repo / "datasets/manuscripts/BIOMD0000001028_tables.json").read_text(encoding="utf-8")
+    )["tables"]["Table 6"]
+    header, *rows = tables["rows"]
+    printed = {r[0]: float(r[header.index("T1/2, h")]) for r in rows if r[1] == "500"}
+
+    fitted = {}
+    for tissue, species in (
+        ("Plasma", "mPlasmaVenous"), ("Liver", "mLiver"), ("Muscle", "mMuscle"),
+        ("Brain", "mBrain"),
+    ):
+        times, values = simulate(model, species, duration=24.0, steps=480)
+        xs, ys = times[-120:], [math.log(v) for v in values[-120:]]
+        mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+        slope = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sum((x - mx) ** 2 for x in xs)
+        residual = sum(
+            (y - (my + slope * (x - mx))) ** 2 for x, y in zip(xs, ys)
+        ) / sum((y - my) ** 2 for y in ys)
+        assert residual < 1e-6, (tissue, residual)  # the fit is not the uncertainty
+        fitted[tissue] = -math.log(2) / slope
+
+    # One number for four tissues: the run's terminal phase is the system's, not each tissue's.
+    assert max(fitted.values()) - min(fitted.values()) < 0.05, fitted
+    # And the paper's column is four different numbers spanning three hours.
+    spread = max(printed[t] for t in fitted) - min(printed[t] for t in fitted)
+    assert spread > 2.5, {t: printed[t] for t in fitted}
+    # So the column is not claimed, and this fails if it is.
+    assert not [
+        c for entry in _CLAIMS.values() for c in entry["claims"] if c["metric"] == "thalf"
+    ], "a half-life claim exists; settle what the paper's T1/2 column is fitted over first"

@@ -3993,3 +3993,32 @@ harder to see because 46% looks like a finding where 92% looks like a bug.
 
 Recorded rather than skipped, because the next curator to open that table will ask. The peak
 *heights* in it are claimed and they reproduce; it is only the timing that has no stated origin.
+
+
+## The last unclaimed column, and a perfect fit to the wrong quantity
+
+Tables 1 and 6 print a **T½** beside every other number, and it is the obvious next capability: the
+one PK metric that needs a fit rather than a read, and the second column after Tmax that bears on
+the model's time axis. It is measured out instead.
+
+A terminal half-life is ln(2) over the slope of ln(C) on a run's final log-linear stretch, and this
+run has one. Over its last quarter, plasma, liver, muscle and brain decay at the **same** rate — 
+4.128, 4.127, 4.118 and 4.128 hours — with the residual under 1e-6 of the variance. That is not
+four tissue half-lives; it is the *system's* terminal phase, the slowest compartment governing
+everything downstream of it once the fast ones have emptied.
+
+The paper prints **3.7, 2.5, 5.5 and 3.8** for those four tissues. Whatever its column is fitted
+over, it is not this, and the table does not say what it is. Red blood cells, whose 22.4 h the run
+never reaches equilibrium with inside 24 hours, come out anywhere from 19.6 to 25.4 depending on
+how many points the fit takes.
+
+So a `thalf` metric written the obvious way would have published errors from 11% to 65% while its
+own diagnostics reported a perfect fit — the failure mode hardest to catch, because everything the
+method can say about itself says it succeeded. The number would have been wrong about *which
+quantity it is*, and no goodness-of-fit can see that.
+
+Measured and committed rather than built (`test_the_half_life_column_is_not_a_terminal_slope_of_
+this_run`), which also means that building it later starts from the measurement instead of from the
+assumption. With this, every column this paper prints is either claimed or measured out with a
+stated reason: Cmax and AUC24 across four tables, Tmax for the single-dose one, and refusals for
+Table 7's Tmax, both T½ columns, and the Intestine and Kidney rows.

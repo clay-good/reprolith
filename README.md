@@ -61,7 +61,14 @@ than 0.2% and to 92% off over the whole run — and its Tmax is not. Over that s
 peaks a flat **11.95 h** later than the column prints, at every tissue and every dose, which is one
 dosing interval to within the sample spacing: the paper is timing from a different dose. Which one
 is a judgement about the paper, and claiming the column anyway would manufacture thirty failures
-out of an unresolved convention. Its peak *heights* are claimed, and they reproduce. And
+out of an unresolved convention. Its peak *heights* are claimed, and they reproduce. **The T½ column of both tables**, for a
+reason that is harder to see: this run does have a terminal phase, and over its last quarter
+plasma, liver, muscle and brain decay at the *same* rate to within 0.03 h with a fit
+indistinguishable from perfect — the system's slowest compartment governing everything downstream.
+The paper prints 3.7, 2.5, 5.5 and 3.8 for those four. Whatever its column is fitted over, it is
+not that, and the table does not say. A half-life metric written the obvious way would publish a
+beautiful fit to the wrong quantity, which is the failure that is hardest to catch because the
+fit's own diagnostics call it perfect. And
 anything not committed: every reference value is quoted from the article in
 [`datasets/manuscripts/`](datasets/manuscripts/) and checked against it by a test, because for most
 of this repository's life nothing did — one of the first two was recorded as 6.2, a number the
