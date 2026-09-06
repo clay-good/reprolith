@@ -358,6 +358,15 @@ def _cmd_verification_queue(query: ReprolithQuery, args: argparse.Namespace) -> 
             print(f"    alternative: {alt}")
         # What a merged decision has to quote to be checkable against the question it answered.
         print(f"    question fingerprint: {item['question_fingerprint']}")
+        if "decisions_do_not_close" in item:
+            # Shown where it was recorded, under the heading it does not leave: an expert's
+            # opinion on a limit of this engine is a real record and settles nothing.
+            print(f"    recorded, but does not close it: {item['decisions_do_not_close']}")
+            for decision in item["decisions"]:
+                print(
+                    f"      {decision['kind']}ed by {decision['expert']} on "
+                    f"{decision['decided_on']}"
+                )
         for record in item.get("stale_decisions", []):
             # Shown on a question that otherwise reads as untouched: somebody answered an earlier
             # wording of it, and without this line the next expert repeats their work.

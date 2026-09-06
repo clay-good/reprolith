@@ -355,3 +355,38 @@ def test_the_queue_publishes_the_fingerprint_a_decision_has_to_quote() -> None:
     assumption = _assumption(verification_item="verify:named")
     report = queue_report(_pairs(_cert(assumption)))
     assert report["pending"][0]["question_fingerprint"] == question_fingerprint(assumption)
+
+
+def test_a_decision_on_an_engine_limit_does_not_move_it_out_of_its_own_heading() -> None:
+    """Caught re-auditing the diff that added decisions, and it is the shape this repository
+    keeps finding: two halves of one feature disagreeing. The report says in so many words that
+    no expert decision closes an engine limit, and `issue_for_item` refuses to file one as a
+    question — while a recorded decision silently moved it under "decided", publishing an expert
+    as having settled exactly what the other two surfaces say they cannot.
+    """
+    assumption = _assumption(verification_item="verify:limit", author_can_close=False)
+    report = queue_report(_pairs(_cert(assumption)), [_decision("verify:limit", assumption)])
+    assert [item["id"] for item in report["decided"]] == []
+    assert [item["id"] for item in report["engine_limits"]] == ["verify:limit"]
+    limit = report["engine_limits"][0]
+    # Not hidden either: the decision is a real record and is shown where it was made.
+    assert [d["expert"] for d in limit["decisions"]] == ["A. Curator"]
+    assert "does not close it" in limit["decisions_do_not_close"]
+    assert "no decision closes" in report["decisions_note"]
+
+
+def test_the_terminal_shows_such_a_decision_under_the_engine_limit(tmp_path, capsys, monkeypatch) -> None:
+    from reprolith import mcp_server
+    from reprolith.cli import run
+
+    assumption = _assumption(verification_item="verify:limit", author_can_close=False)
+    repo = _write_repo(tmp_path, assumption)
+    monkeypatch.setattr(
+        mcp_server, "repository_decisions", lambda: (_decision("verify:limit", assumption),)
+    )
+    assert run(["--data-dir", str(repo), "verification-queue"]) == 0
+    out = capsys.readouterr().out
+    assert "NOT WAITING ON ANYONE" in out
+    assert "DECIDED" not in out
+    assert "does not close it" in out
+    assert "confirmed by A. Curator" in out

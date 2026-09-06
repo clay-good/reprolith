@@ -433,8 +433,22 @@ def queue_report(
         # a question that reads as untouched should see that somebody answered an earlier wording
         # of it — otherwise the work is silently repeated.
         view["stale_decisions"] = stale_by_item.get(item.id, [])
+        if item.id not in answerable:
+            # An engine limit never leaves its own heading, decided or not. This report says in so
+            # many words that no expert decision closes one, and `issue_for_item` refuses to file
+            # one as a question — so letting a recorded decision move it under "decided" would
+            # publish an expert as having settled exactly what the two other surfaces say they
+            # cannot. The decision is shown on the item instead of being either honored or hidden.
+            if answers:
+                view["decisions"] = [decision.to_dict() for decision in answers]
+                view["decisions_do_not_close"] = (
+                    "a decision is recorded against this item, and it does not close it: what "
+                    "this value waits on is this engine, not a person"
+                )
+            engine_limits.append(view)
+            continue
         if not answers:
-            (pending if item.id in answerable else engine_limits).append(view)
+            pending.append(view)
             continue
         view["decisions"] = [decision.to_dict() for decision in answers]
         # Retained, never resolved: two experts who disagree are two records and a flag, because
@@ -488,7 +502,13 @@ def queue_report(
         "stale_decisions": stale,
         "orphaned_decisions": orphaned,
         "decisions": [decision.to_dict() for decision in decisions],
-        "decisions_note": _decisions_note(decided, decisions, stale, orphaned),
+        "decisions_note": _decisions_note(
+            decided,
+            decisions,
+            stale,
+            orphaned,
+            sum(len(item.get("decisions", ())) for item in engine_limits),
+        ),
     }
 
 
@@ -497,6 +517,7 @@ def _decisions_note(
     decisions: Sequence[RecordedDecision],
     stale: Sequence[dict[str, Any]],
     orphaned: Sequence[dict[str, Any]],
+    on_limits: int = 0,
 ) -> str:
     """What the committed decision record actually says, derived rather than asserted.
 
@@ -514,6 +535,11 @@ def _decisions_note(
     parts = [
         f"{len(decisions)} expert decision(s) recorded; {len(decided)} item(s) decided",
     ]
+    if on_limits:
+        parts.append(
+            f"{on_limits} name(s) a limit of this engine, which no decision closes — the item "
+            "stays under its own heading"
+        )
     if stale:
         parts.append(
             f"{len(stale)} answer(s) a question that has since been reworded and are shown "

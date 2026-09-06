@@ -4393,3 +4393,23 @@ called, so deleting the guard inside `release_lease` broke nothing. Its reachabl
 release on an entry already handed back, which would backdate an explanation onto somebody else's
 attempt and make the diagnosis report a wall that claimant never described. That is what the test
 exercises now.
+
+
+## Re-auditing the same day's diff: two halves of one feature disagreeing
+
+The rule this repository keeps relearning held again. The morning's change made expert decisions
+committed data; re-reading it in the afternoon found that a decision naming an **engine limit**
+moved that item out of "not waiting on anyone" and into "decided".
+
+Every other surface says the opposite. The report's own heading says these rest on a choice this
+engine had to make and that no expert decision closes one. `issue_for_item` refuses to file one as
+a question, in as many words, because asking a stranger for that judgment cannot help. And the
+queue was, in the same object, publishing an expert as having settled exactly that.
+
+The fix is neither to honor it nor to hide it: the item stays under its own heading, the decision
+is shown where it was recorded, and it carries a line saying it does not close the item — because
+what the value waits on is this engine, not a person. The summary sentence counts them separately
+for the same reason.
+
+Two halves of one feature disagreeing, found by reading the diff again rather than by any check —
+which is the fourth time this session's methods list has been right about where to look.
