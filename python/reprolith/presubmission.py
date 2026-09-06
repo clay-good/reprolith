@@ -40,6 +40,11 @@ _CLAIM_PRIORITY = {
 _LEVEL_PRIORITY = 4
 _ASSUMPTION_PRIORITY = 5
 _NOTE_PRIORITY = 6
+#: Below every one of them: a shortfall attributed to Reprolith's own method is not the author's
+#: to fix, and an impact ordering that puts it first is ordering by *Reprolith's* impact rather
+#: than by theirs. Reported, never dropped — an author reading a list of eight items should still
+#: learn that four claims went unjudged — but last, and worded as not theirs.
+_METHOD_PRIORITY = 7
 
 _READINESS = {
     OverallVerdict.REPRODUCED: (
@@ -118,6 +123,18 @@ def _claim_issue_and_fix(assessment: Any) -> tuple[str, str]:
     "always a hypothesis, never a proven cause" — and this surface never passed it on.
     """
     if assessment.verdict is Verdict.NOT_EVALUABLE:
+        if (assessment.fault_hypothesis or "") == Fault.METHOD.value:
+            # Reprolith's own limit, and the fix list is the wrong place to hand an author the
+            # convergence numbers of a run they did not choose. Said plainly, and ranked below
+            # everything that is theirs — the same call `Assumption.author_can_close` already
+            # makes one field over, for the six certificates that told an author to state a
+            # boundary condition this engine is the only thing that imposes.
+            return (
+                "Reprolith withheld a verdict on this claim, for a limit of its own",
+                "nothing here is yours to fix: "
+                + (assessment.root_cause or "no verdict was established")
+                + ". Re-running it more finely is Reprolith's to do, not yours",
+            )
         issue = "a reproducer cannot evaluate this claim"
         fix = assessment.root_cause or "supply evaluable output or digitizable reference data"
         return issue, fix
@@ -210,7 +227,11 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
         issue, fix = _claim_issue_and_fix(a)
         actions.append(
             {
-                "priority": _CLAIM_PRIORITY[a.verdict],
+                "priority": (
+                    _METHOD_PRIORITY
+                    if (a.fault_hypothesis or "") == Fault.METHOD.value
+                    else _CLAIM_PRIORITY[a.verdict]
+                ),
                 "kind": "claim",
                 "claim_id": a.claim_id,
                 "quantity": a.quantity,
@@ -265,7 +286,10 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
                 # close now says so instead of asking them to try.
                 "why": asm.basis,
                 "fix": (
-                    f"state {asm.description} explicitly so it need not be assumed"
+                    (
+                        asm.closed_by
+                        or f"state {asm.description} explicitly so it need not be assumed"
+                    )
                     if asm.author_can_close
                     else (
                         "nothing in the paper can clear this one — it is a limit of Reprolith's "

@@ -874,6 +874,12 @@ def certify_model(
                         ),
                         reference_kind=claim.reference_kind,
                     ),
+                    # Whose limit this is. The grid is Reprolith's choice, not the paper's, and
+                    # the author-facing fix list ranks and words a shortfall by this field: without
+                    # it, a verdict withheld over *this tool's* sampling resolution was the first
+                    # thing a submitting author was told to fix, with the run's own convergence
+                    # numbers handed to them as the instruction.
+                    fault_hypothesis=Fault.METHOD.value,
                     protocol=_run_protocol(
                         duration=claim_duration,
                         steps=steps,

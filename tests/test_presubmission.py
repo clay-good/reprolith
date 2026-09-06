@@ -651,3 +651,95 @@ def test_the_readiness_line_names_every_reason_the_clean_pass_was_withheld() -> 
     ])
     assert qualified.overall is OverallVerdict.PARTIALLY_REPRODUCED
     assert presubmission_report(qualified)["ready_to_submit"] is False
+
+
+def test_a_shortfall_of_reprolith_s_own_is_not_the_author_s_first_job() -> None:
+    """The fix list's priority 1 was a run this author did not choose and cannot change.
+
+    A verdict withheld because the sampling grid, not the model, decides which side of a tolerance
+    line a number falls on is Reprolith's limit. It was ranked above every claim the author could
+    actually fix, and the "fix" handed to them was the run's own convergence numbers — the finding,
+    restated, with nothing to do about it, which is the shape `_claim_issue_and_fix` already refuses
+    for the other branch.
+    """
+    from reprolith import (
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+        presubmission_report,
+    )
+    from reprolith.oracle import Fault
+
+    cert = build_certificate(
+        paper=PaperIdentity(title="p", doi="10.0/p"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[
+            ClaimAssessment(
+                claim_id="grid", quantity="time to peak", source_location="Table 6",
+                verdict=Verdict.NOT_EVALUABLE, fault_hypothesis=Fault.METHOD.value,
+                root_cause="the TMAX moves 1.4% between 480 and 960 samples",
+            ),
+            ClaimAssessment(
+                claim_id="theirs", quantity="peak", source_location="Table 6",
+                verdict=Verdict.NOT_EVALUABLE, root_cause="no reference value was published",
+            ),
+        ],
+    )
+    report = presubmission_report(cert)
+    order = [item["claim_id"] for item in report["fix_list"]]
+    assert order == ["theirs", "grid"], order
+
+    grid = next(i for i in report["fix_list"] if i["claim_id"] == "grid")
+    assert "for a limit of its own" in grid["issue"]
+    assert "nothing here is yours to fix" in grid["fix"]
+    # And it is still reported: an author reading the list learns the claim went unjudged.
+    assert "1.4% between 480 and 960 samples" in grid["fix"]
+
+    theirs = next(i for i in report["fix_list"] if i["claim_id"] == "theirs")
+    assert "a reproducer cannot evaluate this claim" == theirs["issue"]
+
+
+def test_an_assumption_the_author_closes_by_correcting_says_so() -> None:
+    """"State it explicitly" is the fix for an omission, and some assumptions are an error.
+
+    The metformin deposits declare a time unit of one hundred hours. Told to "state that your model
+    declares its time unit as 3600*10^2 seconds explicitly so it need not be assumed", the author
+    is being asked to write down the thing that is wrong.
+    """
+    from reprolith import (
+        Assumption,
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Verdict,
+        build_certificate,
+        presubmission_report,
+    )
+    from reprolith.persistence import certificate_from_content
+
+    def built(**extra: object):
+        return build_certificate(
+            paper=PaperIdentity(title="p", doi="10.0/p"),
+            engine_pin=EnginePin(engine="e", version="1"),
+            assessments=[ClaimAssessment(claim_id="c", quantity="q", source_location="Table 1",
+                                         verdict=Verdict.REPRODUCED)],
+            assumptions=[Assumption(
+                id="a", description="the model declares its time unit as a hundred hours",
+                chosen="read it as an hour", basis="the dynamics", load_bearing=True,
+                **extra,  # type: ignore[arg-type]
+            )],
+        )
+
+    omission = presubmission_report(built())["fix_list"][0]["fix"]
+    assert omission.startswith("state ") and "need not be assumed" in omission
+
+    correction = built(closed_by="correct the model's `time` unitDefinition")
+    assert presubmission_report(correction)["fix_list"][0]["fix"] == (
+        "correct the model's `time` unitDefinition"
+    )
+    # It survives being written down, and an assumption without one is written as it always was.
+    reloaded = certificate_from_content(json.loads(json.dumps(correction.content())))
+    assert reloaded.assumptions[0].closed_by == "correct the model's `time` unitDefinition"
+    assert "closed_by" not in built().assumptions[0].to_dict()

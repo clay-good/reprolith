@@ -88,6 +88,7 @@ def _assumption_from(record: dict[str, Any]) -> Assumption:
         attributed_to=record["attributed_to"],
         verification_item=record.get("verification_item"),
         author_can_close=record.get("author_can_close", True),
+        closed_by=str(record.get("closed_by", "")),
     )
 
 

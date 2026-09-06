@@ -1,6 +1,6 @@
 REPRODUCTION CERTIFICATE — Zake2021 - PBPK model of metformin in humans, single PO dose
   doi=10.1371/journal.pone.0249594
-Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev e0515a40b654)
+Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev c0df2dc86c69)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=89, partial=0, failed=0, not-evaluable=4
@@ -286,8 +286,8 @@ CLAIMS
 ASSUMPTIONS (supplied by Reprolith, not the paper)
   [dose-salt-form] the stated oral doses are metformin HCl; the model's dose input is free base -> each dose x 129.16/165.62 (779.9 mg free base for 1000 mg, 292.45 for 375, 194.96 for 250, 389.93 for 500, 584.89 for 750) [load-bearing]
       basis: model default 389.92 mg equals 500 mg HCl expressed as free base; clinical doses are the HCl salt (attributed to reprolith)
-  [time-unit-of-the-deposit] Every one of this paper's four deposited models declares its time unit as 3600*10^2 seconds — one hundred hours. An AUC read off such a model is, by the model's own units, in nmol*(100 h)/mL, while the paper's table prints nmol*h/mL. The dynamics settle it: Tmax, T1/2 and the AUC24 column all reproduce against a run of 24 model time units, which is 24 hours and not 2400. So the declared unit is read as an error in the deposit and the model's time is taken to be hours. Nothing but an AUC has a time dimension, so no Cmax claim rests on this. -> the model's time unit is one hour, not the 3600*10^2 seconds it declares [load-bearing] [unverified — pending review: verify:time-unit-of-the-Zake2021-deposits]
-      basis: the paper's own Tmax and T1/2 columns, and its AUC24 column, all reproduce over a 24 model-time-unit run; under the declared unit that run is 2400 hours (attributed to reprolith)
+  [time-unit-of-the-deposit] the deposited model declares its time unit as 3600*10^2 seconds — one hundred hours — where its paper's tables are in hours -> read the declared time unit as an error and take the model's time to be hours [load-bearing] [unverified — pending review: verify:time-unit-of-the-Zake2021-deposits]
+      basis: the dynamics settle it: Tmax, T1/2 and the whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would be 2400 hours. Every quantity with a time dimension rests on this reading — an area, which carries the clock as a factor, and a time to peak, which is the clock — and no peak height does (attributed to reprolith)
 
 WHAT WAS MISSING
   [Cmax-1000mg] plasma Cmax after 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
@@ -344,7 +344,7 @@ WHAT WAS MISSING
   [AUC24-heart-1500mg] Heart AUC over 24 h after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [AUC24-liver-1500mg] Liver AUC over 24 h after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-500mg] plasma Tmax after 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
-  [Tmax-1000mg] plasma Tmax after 1000 mg single oral dose: the TMAX moves 1.4% between 480 and 960 samples — and it landed 0.3% from the nearest verdict boundary, so which side of the line it fell on is the grid's answer rather than the model's; at this resolution the number is a property of the grid, so no verdict is established
+  [Tmax-1000mg] plasma Tmax after 1000 mg single oral dose: the TMAX moves 1.4% between 480 and 960 samples — and it landed 0.3% from the nearest verdict boundary, so which side of the line it fell on is the grid's answer rather than the model's; at this resolution the number is a property of the grid, so no verdict is established; fault hypothesis: method
   [Tmax-red-blood-cells-500mg] Red blood cells Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-adipose-500mg] Adipose Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-brain-500mg] Brain Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
@@ -353,7 +353,7 @@ WHAT WAS MISSING
   [Tmax-lungs-500mg] Lungs Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-stomach-500mg] Stomach Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-heart-500mg] Heart Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
-  [Tmax-liver-500mg] Liver Tmax after a 500 mg single oral dose: the TMAX moves 1.7% between 480 and 960 samples — and it landed 1.4% from the nearest verdict boundary, so which side of the line it fell on is the grid's answer rather than the model's; at this resolution the number is a property of the grid, so no verdict is established
+  [Tmax-liver-500mg] Liver Tmax after a 500 mg single oral dose: the TMAX moves 1.7% between 480 and 960 samples — and it landed 1.4% from the nearest verdict boundary, so which side of the line it fell on is the grid's answer rather than the model's; at this resolution the number is a property of the grid, so no verdict is established; fault hypothesis: method
   [Tmax-red-blood-cells-1000mg] Red blood cells Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-adipose-1000mg] Adipose Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-brain-1000mg] Brain Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
@@ -362,7 +362,7 @@ WHAT WAS MISSING
   [Tmax-lungs-1000mg] Lungs Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-stomach-1000mg] Stomach Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-heart-1000mg] Heart Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
-  [Tmax-liver-1000mg] Liver Tmax after a 1000 mg single oral dose: the TMAX moves 1.8% between 480 and 960 samples — and it landed 1.4% from the nearest verdict boundary, so which side of the line it fell on is the grid's answer rather than the model's; at this resolution the number is a property of the grid, so no verdict is established
+  [Tmax-liver-1000mg] Liver Tmax after a 1000 mg single oral dose: the TMAX moves 1.8% between 480 and 960 samples — and it landed 1.4% from the nearest verdict boundary, so which side of the line it fell on is the grid's answer rather than the model's; at this resolution the number is a property of the grid, so no verdict is established; fault hypothesis: method
   [Tmax-plasma-1500mg] Plasma Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-red-blood-cells-1500mg] Red blood cells Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-adipose-1500mg] Adipose Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
@@ -372,9 +372,9 @@ WHAT WAS MISSING
   [Tmax-lungs-1500mg] Lungs Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-stomach-1500mg] Stomach Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [Tmax-heart-1500mg] Heart Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
-  [Tmax-liver-1500mg] Liver Tmax after a 1500 mg single oral dose: the TMAX moves 1.9% between 480 and 960 samples — and it landed 1.2% from the nearest verdict boundary, so which side of the line it fell on is the grid's answer rather than the model's; at this resolution the number is a property of the grid, so no verdict is established
+  [Tmax-liver-1500mg] Liver Tmax after a 1500 mg single oral dose: the TMAX moves 1.9% between 480 and 960 samples — and it landed 1.2% from the nearest verdict boundary, so which side of the line it fell on is the grid's answer rather than the model's; at this resolution the number is a property of the grid, so no verdict is established; fault hypothesis: method
   the stated oral doses are metformin HCl; the model's dose input is free base — Reprolith assumed each dose x 129.16/165.62 (779.9 mg free base for 1000 mg, 292.45 for 375, 194.96 for 250, 389.93 for 500, 584.89 for 750) (model default 389.92 mg equals 500 mg HCl expressed as free base; clinical doses are the HCl salt)
-  Every one of this paper's four deposited models declares its time unit as 3600*10^2 seconds — one hundred hours. An AUC read off such a model is, by the model's own units, in nmol*(100 h)/mL, while the paper's table prints nmol*h/mL. The dynamics settle it: Tmax, T1/2 and the AUC24 column all reproduce against a run of 24 model time units, which is 24 hours and not 2400. So the declared unit is read as an error in the deposit and the model's time is taken to be hours. Nothing but an AUC has a time dimension, so no Cmax claim rests on this. — Reprolith assumed the model's time unit is one hour, not the 3600*10^2 seconds it declares (the paper's own Tmax and T1/2 columns, and its AUC24 column, all reproduce over a 24 model-time-unit run; under the declared unit that run is 2400 hours) — awaiting expert confirmation (verify:time-unit-of-the-Zake2021-deposits)
+  the deposited model declares its time unit as 3600*10^2 seconds — one hundred hours — where its paper's tables are in hours — Reprolith assumed read the declared time unit as an error and take the model's time to be hours (the dynamics settle it: Tmax, T1/2 and the whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would be 2400 hours. Every quantity with a time dimension rests on this reading — an area, which carries the clock as a factor, and a time to peak, which is the clock — and no peak height does) — awaiting expert confirmation (verify:time-unit-of-the-Zake2021-deposits)
   unit not stated by the artifact: units — 13 of 37 extracted values state no unit in the artifact (Intestine_Coefficient, Kidney_Coefficient, Ktp_Adipose, Ktp_Brain, Ktp_Heart, …); their magnitudes are recorded, their units are not
 
 SCOPE

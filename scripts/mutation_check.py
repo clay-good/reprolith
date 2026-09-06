@@ -45,6 +45,21 @@ REPO = Path(__file__).resolve().parents[1]
 #: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
+        "a limit of Reprolith's own run heads the author's fix list as their most urgent job",
+        "presubmission.py",
+        (
+            '        if (assessment.fault_hypothesis or "") == Fault.METHOD.value:',
+            "        if False:",
+        ),
+        ["tests/test_presubmission.py"],
+    ),
+    (
+        "an assumption the author closes by correcting is answered with 'state it explicitly'",
+        "presubmission.py",
+        ("                        asm.closed_by\n", '                        "" or\n'),
+        ["tests/test_presubmission.py"],
+    ),
+    (
         "a verdict the run's own sampling could flip is published as if the model decided it",
         "certify.py",
         (

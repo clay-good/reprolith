@@ -51,6 +51,23 @@ an author knows what to fix first rather than reading an unordered list.
   that do not
 - **AND** a fully reproduced certificate produces an empty fix list
 
+#### Scenario: A shortfall of Reprolith's own is ranked and worded as its own
+
+- **WHEN** an item exists because of a limit of Reprolith's method rather than of the work being
+  judged — a verdict withheld because this tool's sampling grid, not the model, decided which side
+  of a tolerance line a number fell on, or an assumption no wording in any paper can discharge
+- **THEN** it is reported, never dropped: the author still learns the claim went unjudged
+- **AND** it is ranked below every item that is theirs, and says plainly that nothing in it is
+  theirs to fix — an impact ordering that puts Reprolith's own limits first is ordering by
+  Reprolith's impact rather than by the author's
+
+#### Scenario: An assumption is closed by the act that closes it
+
+- **WHEN** an assumption exists because the artifact states something *wrongly* rather than because
+  it states nothing
+- **THEN** the fix names the correction to make, not "state it explicitly": an author told to state
+  the thing that is wrong is being asked to write down the defect
+
 #### Scenario: Ready-to-submit is honest
 
 - **WHEN** the report states whether the model is ready to submit

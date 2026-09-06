@@ -84,6 +84,13 @@ class Assumption:
     #: instruction their author could not follow. Omitted from ``to_dict`` at the default, so a
     #: certificate whose assumptions are all author-closable is unchanged.
     author_can_close: bool = True
+    #: The instruction that closes this assumption, when "state it explicitly" is the wrong one.
+    #: Most assumptions are the paper's *omission* and stating the value discharges them. Some are
+    #: an *error*: the metformin deposits declare a time unit of one hundred hours, and an author
+    #: told to "state that your model declares its time unit as 3600*10^2 seconds explicitly so it
+    #: need not be assumed" is being asked to write down the thing that is wrong. Omitted from
+    #: ``to_dict`` at the default, so an assumption that reads correctly without one is unchanged.
+    closed_by: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -96,6 +103,7 @@ class Assumption:
             "attributed_to": self.attributed_to,
             "verification_item": self.verification_item,
             **({} if self.author_can_close else {"author_can_close": False}),
+            **({"closed_by": self.closed_by} if self.closed_by else {}),
         }
 
 

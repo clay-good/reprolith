@@ -4,7 +4,7 @@
       "assumption_qualified": false,
       "claim_id": "AUC24-plasma",
       "discrepancy": null,
-      "fault_hypothesis": null,
+      "fault_hypothesis": "method",
       "implicated": null,
       "level": "simulation",
       "method": null,
@@ -55,19 +55,20 @@
   "assumptions": [
     {
       "alternatives": [
-        "the declared 3600*10^2 seconds, under which every AUC is 100x the paper's"
+        "the declared 3600*10^2 seconds, under which every area and every time to peak is a hundred times the paper's"
       ],
       "attributed_to": "reprolith",
-      "basis": "the paper's own Tmax and T1/2 columns, and its AUC24 column, all reproduce over a 24 model-time-unit run; under the declared unit that run is 2400 hours",
-      "chosen": "the model's time unit is one hour, not the 3600*10^2 seconds it declares",
-      "description": "Every one of this paper's four deposited models declares its time unit as 3600*10^2 seconds \u2014 one hundred hours. An AUC read off such a model is, by the model's own units, in nmol*(100 h)/mL, while the paper's table prints nmol*h/mL. The dynamics settle it: Tmax, T1/2 and the AUC24 column all reproduce against a run of 24 model time units, which is 24 hours and not 2400. So the declared unit is read as an error in the deposit and the model's time is taken to be hours. Nothing but an AUC has a time dimension, so no Cmax claim rests on this.",
+      "basis": "the dynamics settle it: Tmax, T1/2 and the whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would be 2400 hours. Every quantity with a time dimension rests on this reading \u2014 an area, which carries the clock as a factor, and a time to peak, which is the clock \u2014 and no peak height does",
+      "chosen": "read the declared time unit as an error and take the model's time to be hours",
+      "closed_by": "correct the model's `time` unitDefinition \u2014 it needs multiplier=3600 scale=0 for an hour, and declares multiplier=3600 scale=2, which SBML reads as one hundred of them. Nothing in the paper's text can clear this; the file is what states it",
+      "description": "the deposited model declares its time unit as 3600*10^2 seconds \u2014 one hundred hours \u2014 where its paper's tables are in hours",
       "id": "time-unit-of-the-deposit",
       "load_bearing": true,
       "verification_item": "verify:time-unit-of-the-Zake2021-deposits"
     }
   ],
   "engine_pin": {
-    "algorithm": "deterministic-lsoda (judge rev e0515a40b654)",
+    "algorithm": "deterministic-lsoda (judge rev c0df2dc86c69)",
     "engine": "copasi",
     "version": "4.46.300 (Source)"
   },

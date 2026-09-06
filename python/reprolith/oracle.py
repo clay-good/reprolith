@@ -116,10 +116,18 @@ class Fault(str, Enum):
 
     Always a hypothesis, never a proven cause (spec: "Distinguishing paper fault from
     reconstruction fault").
+
+    ``METHOD`` is the third answer, and the only one that is not a hypothesis about the work being
+    judged: it names a shortfall in *Reprolith's own* run. A verdict withheld because the sampling
+    grid, not the model, decides which side of a tolerance line a number falls on is the engine's
+    limit — the author can write nothing in their paper that closes it, and an author-facing fix
+    list that ranks it above the things they can fix is telling them their work is at fault for a
+    resolution this tool chose.
     """
 
     MANUSCRIPT = "manuscript"
     RECONSTRUCTION = "reconstruction"
+    METHOD = "method"
 
 
 # The documented class-default thresholds, listed here rather than derived from the table below

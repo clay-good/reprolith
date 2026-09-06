@@ -3936,3 +3936,37 @@ This is the shape the 15th pass named and this one repeated: a check verified in
 did not matter. The guard was written against the question "is this number settled?" when the
 question it exists to answer is "is this *verdict* settled?", and until this column was claimed no
 number had landed close enough to a line for the difference to show.
+
+## Reading the fix list as the author being judged, again
+
+The four Tmax abstentions went straight to the top of `presubmission`'s **FIX BEFORE YOU SUBMIT**
+list, and what the author was handed as the fix was this:
+
+> the TMAX moves 1.4% between 480 and 960 samples — and it landed 0.3% from the nearest verdict
+> boundary, so which side of the line it fell on is the grid's answer rather than the model's
+
+That is a statement about *Reprolith's* run. The grid is this tool's choice; nothing an author can
+write in their paper changes it, and it was ranked above every claim they could actually fix. It is
+the same defect an earlier pass fixed for assumptions — six certificates telling an author to state
+a boundary condition only this engine imposes — sitting one field over, on abstentions, unfixed.
+
+`Fault` grows a third value for it. `MANUSCRIPT` and `RECONSTRUCTION` are both hypotheses about the
+work being judged; `METHOD` names a shortfall in the judging. It travels on the assessment, so the
+fix list can rank such an item last and word it as not theirs while still reporting it — an author
+reading eight items should still learn that four claims went unjudged.
+
+The second line was worse, and it was self-inflicted the same morning:
+
+> fix: state the deposited model declares its time unit as 3600*10^2 seconds — one hundred hours —
+> where its paper's tables are in hours explicitly so it need not be assumed
+
+The fix template assumes every assumption is an **omission**, which stating the value discharges.
+Some are an **error**. Told to state the thing that is wrong, the author is being asked to write
+down the defect. An assumption can now carry the act that closes it, and this one says:
+
+> correct the model's `time` unitDefinition — it needs multiplier=3600 scale=0 for an hour, and
+> declares multiplier=3600 scale=2, which SBML reads as one hundred of them. Nothing in the paper's
+> text can clear this; the file is what states it
+
+Both are the same method that found the first two: read the finished artifact as the person it is
+addressed to. Neither was visible from the code.
