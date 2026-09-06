@@ -240,7 +240,17 @@ def _left_checked(values: Sequence[float], checked: tuple[float, float, float]) 
     return min(finite) < lo or max(finite) > hi
 
 
-#: The boundary conditions this solver implements, and what each does at the edge of the domain.
+#: The boundary conditions :func:`diffuse_1d` takes, and what each does at the edge of the domain.
+#:
+#: **Only that one function.** The module's other steppers — :func:`react_diffuse_1d`,
+#: :func:`react_diffuse_2species` and :func:`diffuse_2d` — still mirror their edges
+#: unconditionally, and :func:`morphogen_gradient` deliberately holds a source at one end against a
+#: zero-flux far wall, which is the model rather than a limitation. Naming this "the boundary
+#: conditions *this solver* implements" would claim for four functions what one of them does; the
+#: reason it was added is that pure diffusion is what a certified claim runs through
+#: (:func:`certify_spatial`), so it is where the choice had to stop being unmeasurable. Extending
+#: the others is real work with no consumer today — periodic walls are the conventional choice for
+#: a Turing simulation, so it is worth doing when something judges one.
 #:
 #: ``no-flux`` mirrors the edge point, so nothing leaves the domain and mass is conserved. It was
 #: the only one for as long as this class has existed, which made it an unconditional assumption on
