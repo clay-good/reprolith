@@ -45,6 +45,12 @@ REPO = Path(__file__).resolve().parents[1]
 #: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
+        "a window the run does not reach reads as an area of zero or a traceback",
+        "certify.py",
+        ("    if len(kept) < 2:", "    if False:"),
+        ["tests/test_certify.py"],
+    ),
+    (
         "a limit of Reprolith's own run heads the author's fix list as their most urgent job",
         "presubmission.py",
         (

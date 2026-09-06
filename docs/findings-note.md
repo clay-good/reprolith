@@ -4022,3 +4022,22 @@ this_run`), which also means that building it later starts from the measurement 
 assumption. With this, every column this paper prints is either claimed or measured out with a
 stated reason: Cmax and AUC24 across four tables, Tmax for the single-dose one, and refusals for
 Table 7's Tmax, both T½ columns, and the Intestine and Kidney rows.
+
+## Re-auditing the same day's diff, which is where the next defect always is
+
+The windowed area landed this morning with a docstring saying "a window that names no sample at all
+is refused where it is stated, not silently answered with zero". The code did neither. An area over
+such a window summed to a clean **0.0** — against a paper's 84.2 that is a total failure attributed
+to the model, when what is wrong is that the claim's window and its run do not overlap — and a peak
+over the same window raised `max() arg is an empty sequence`, a traceback where a verdict belongs.
+
+Both were reachable the moment a curator wrote a window a hair off the run's end, and the sentence
+promising otherwise was written in the same commit as the code that did not do it. That is the
+shape this repository keeps finding in its own work and has recorded twice before: a comment
+claiming a check the code does not make.
+
+A window is the claim's own statement about which part of the run its paper reports, so a window
+the run does not reach is a claim that does not fit its entry — the same kind of mistake as naming
+a species the model does not declare, and refused the same way, naming the window, the run's span
+and how many samples fell in it. One sample is refused too: an area over it is zero and a peak over
+it is that sample, and neither is a reading.

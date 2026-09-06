@@ -711,3 +711,27 @@ def test_a_windowed_claim_carries_its_window_into_the_recipe_and_back() -> None:
     # And a step with no window writes exactly what it wrote before the field existed.
     plain = RecipeStep(claim_id="c", protocol="p", output="[mX]", time_span="0-24.0", steps=480)
     assert "window" not in plain.to_dict()
+
+
+def test_a_window_the_run_does_not_reach_is_refused_rather_than_answered() -> None:
+    """Both answers available without this are worse than the error, and it had both.
+
+    An area over a window holding none of the run's samples summed to a clean `0.0` — which against
+    a paper's 84.2 publishes a total failure attributed to the model, when what is wrong is that
+    the claim's window and its run do not overlap. A peak over the same window raised
+    `max() arg is an empty sequence`: a traceback in place of a verdict. The docstring said it was
+    refused while the code did neither, which is the shape this repository keeps finding in its own
+    work — a comment claiming a check the code does not make.
+    """
+    from reprolith.certify import _metric
+
+    times = tuple(float(i) for i in range(5))
+    values = (0.0, 1.0, 2.0, 3.0, 4.0)
+    for metric in ("auc", "tmax"):
+        with pytest.raises(ValueError, match="do not agree"):
+            _metric(times, values, metric, (100.0, 200.0))
+    # One sample is no interval either: an area over it is zero and a peak over it is that sample.
+    with pytest.raises(ValueError, match="holds 1 of this run's samples"):
+        _metric(times, values, "auc", (3.9, 4.1))
+    # Two is the least that reads anything, and still reads it.
+    assert _metric(times, values, "auc", (3.0, 4.0)) == pytest.approx(3.5)

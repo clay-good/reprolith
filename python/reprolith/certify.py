@@ -261,13 +261,28 @@ def _window_of(
 
     Sliced by sample rather than interpolated at the bounds: the run is on a uniform grid the
     claim's own protocol states, so a window that lands between samples would otherwise be judged
-    on a partial trapezoid nobody chose. A window that names no sample at all is refused where it
-    is stated, not silently answered with zero.
+    on a partial trapezoid nobody chose.
+
+    A window that holds fewer than two of the run's samples is **refused**, because both answers
+    available without one are worse than an error. This sentence used to say it was refused while
+    the code did neither: an area over an empty window summed to a clean ``0.0``, which against a
+    paper's 84.2 publishes a total failure attributed to the model when what is wrong is that the
+    claim's window and its run do not overlap; and a peak over one raised
+    ``max() arg is an empty sequence``, a traceback in place of a verdict. A window is the claim's
+    own statement about which part of the run its paper reports, so a window the run does not
+    reach is a claim that does not fit its entry — the same kind of mistake as naming a species
+    the model does not declare, and refused the same way.
     """
     if window is None:
         return times, values
     start, end = window
     kept = [i for i, t in enumerate(times) if start <= t <= end]
+    if len(kept) < 2:
+        raise ValueError(
+            f"the window [{start!r}, {end!r}] holds {len(kept)} of this run's samples, over "
+            f"[{times[0]!r}, {times[-1]!r}] at {len(times)} of them: there is no interval here to "
+            "read a value over, so the claim's window and the run it is judged on do not agree"
+        )
     return [times[i] for i in kept], [values[i] for i in kept]
 
 

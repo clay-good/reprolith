@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from reprolith import check_claim_units, claim_units, claims_in_another_unit
 
 _DATASETS = Path(__file__).parent.parent / "datasets"
@@ -471,6 +472,7 @@ def test_the_half_life_column_is_not_a_terminal_slope_of_this_run() -> None:
     """
     import math
 
+    pytest.importorskip("COPASI", reason="the optional 'engine' extra is not installed")
     from reprolith.engine import simulate
 
     repo = Path(__file__).resolve().parents[1]
