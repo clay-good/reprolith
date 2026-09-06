@@ -48,6 +48,11 @@ _PAIRS = {
 #: holds no path to those files, and `docs/mcp-server.md` says so one by one — so they have no
 #: tool to be in parity with, and listing them here is what keeps that an explicit decision.
 _NO_TOOL = {
+    # `issue-reconcile` is the one entry here that reads this repository too: it compares the
+    # derived queue against a file of GitHub issues. The server has no GitHub credentials and no
+    # issue list, so a tool for it would have to be handed the same file the terminal is given,
+    # and the fetch that produces that file is a person's or a workflow's `gh` call either way.
+    "issue-reconcile",
     "export", "archive-check", "claims-template", "claims-propose", "claims-check",
     "params-template", "params-propose", "params-check", "figure-template", "figure-check",
 }

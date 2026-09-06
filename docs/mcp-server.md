@@ -166,7 +166,8 @@ returns.
 
 ### What the CLI has that the server does not
 
-Eight commands work on a **file**, not on repository state, and have no MCP tool:
+Eleven commands need a **file** the server has no path to, and have no MCP tool. Ten of them
+work on that file alone; `issue-reconcile` is the exception and says so in its own row.
 
 | Command | Why it is not a tool |
 | --- | --- |
@@ -179,8 +180,10 @@ Eight commands work on a **file**, not on repository state, and have no MCP tool
 | `reprolith params-template` | It writes the parameters file `params-check` reads out of the author's own model, and exists to be filled in by hand before it is used — a file on disk, for a model the server does not hold. |
 | `reprolith figure-template` | It writes the digitization file out of the author's own simulation document, for a figure only they can read. Like `claims-template`, its output exists to be filled in by hand before it is used again, which is a file on disk and not a JSON-RPC result. |
 | `reprolith figure-check` | It reads a plot digitizer's output for one of the author's own figures — a file that exists on their machine before any of this reaches a repository, and which pairs each curve to a claim by the curator's own judgment. There is no repository state that could supply it, and the reading it checks is a measurement of a picture the server has never seen. |
+| `reprolith issue-reconcile` | The only one here that reads repository state too: it compares the derived verification queue against the GitHub issues filed from it. The server holds no GitHub credentials and no issue list, so a tool for it would have to be handed the same JSON the terminal is given — and the `gh issue list` that produces it is a person's or a workflow's call either way. What an agent *can* read over MCP is the queue side, through `verification_queue`. |
 | `reprolith archive-check` | Same shape: the archive is a file the server has no path to. It also needs libSBML to read the model, and the inline lint tools are dependency-free by contract — a tool that worked only where an optional extra happened to be installed would answer differently on two servers reading the same state, which is the one thing this surface exists to prevent. |
 
-This is an absence, not a divergence: neither command reads or writes anything the query surface
-covers, so nothing either surface reports about a paper can disagree. `tests/test_cli.py` pins the
-set, so adding an eleventh without deciding this question fails.
+This is an absence, not a divergence: none of them reports anything about a paper that the query
+surface also reports, so the two cannot disagree. `issue-reconcile` reads the queue the server
+already serves and adds only the issues' side of it, which the server cannot see at all.
+`tests/test_cli.py` pins the set, so adding a twelfth without deciding this question fails.

@@ -690,6 +690,10 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     named = {
         "export", "archive-check", "claims-template", "claims-check", "claims-propose",
         "params-check", "params-template", "params-propose", "figure-check", "figure-template",
+        # `issue-reconcile` reads this repository *and* a file: the GitHub issues, which the MCP
+        # server has no credentials to fetch and no path to. It is here rather than on the query
+        # surface for that reason, written up in docs/mcp-server.md like the rest.
+        "issue-reconcile",
     }
     file_based = {name for name in subcommands if name in named}
     assert file_based == named
@@ -1933,3 +1937,55 @@ def test_both_proposers_call_an_unusable_tables_file_the_same_thing(tmp_path, ca
     assert run(["params-propose", "--tables", str(empty)]) == 1
     assert capsys.readouterr().err == from_claims
     assert "cannot read the tables: the tables file holds no tables" in from_claims
+
+
+def test_issue_reconcile_reports_an_unfiled_item_and_the_command_that_writes_it(tmp_path, capsys):
+    """The fixture certificate carries one load-bearing assumption and no issue has been filed for
+    it, which is the state every repository starts in."""
+    repo, _ = _write_repo(tmp_path)
+    issues = tmp_path / "issues.json"
+    issues.write_text("[]", encoding="utf-8")
+    assert run(["--data-dir", str(repo), "issue-reconcile", str(issues)]) == 0
+    out = capsys.readouterr().out
+    assert "1 pending item(s) have no issue at all" in out
+    assert "reprolith verification-issue verify:" in out
+
+
+def test_issue_reconcile_names_a_closed_issue_whose_question_is_still_pending(tmp_path, capsys):
+    from reprolith.mcp_server import load_repository
+
+    repo, _ = _write_repo(tmp_path)
+    query, _catalog = load_repository(repo)
+    item = query.verification_queue()["pending"][0]
+    written = query.verification_issue(item["id"])
+    issues = tmp_path / "issues.json"
+    issues.write_text(
+        json.dumps([{
+            "number": 3, "title": written["title"], "state": "CLOSED",
+            "labels": [{"name": name} for name in written["labels"]],
+            "body": written["body"],
+        }]),
+        encoding="utf-8",
+    )
+    assert run(["--data-dir", str(repo), "issue-reconcile", str(issues)]) == 0
+    out = capsys.readouterr().out
+    assert "#3 [CLOSED]" in out
+    assert "closed while its question is still pending" in out
+    # It compares; it does not act. Nothing in the output offers to reopen anything.
+    assert "nothing here closes, reopens or relabels anything" in out
+
+
+def test_issue_reconcile_of_a_missing_file_is_a_message(tmp_path, capsys):
+    repo, _ = _write_repo(tmp_path)
+    assert run(["--data-dir", str(repo), "issue-reconcile", str(tmp_path / "nope.json")]) == 1
+    assert "cannot read the issues" in capsys.readouterr().err
+
+
+def test_issue_reconcile_of_something_that_is_not_a_list_is_a_message(tmp_path, capsys):
+    """`gh issue view --json ...` prints one object; running it where `issue list` was meant is an
+    ordinary mistake, and every issue in it would otherwise read as unrecognized."""
+    repo, _ = _write_repo(tmp_path)
+    issues = tmp_path / "issues.json"
+    issues.write_text('{"number": 1}', encoding="utf-8")
+    assert run(["--data-dir", str(repo), "issue-reconcile", str(issues)]) == 1
+    assert "must be the JSON array" in capsys.readouterr().err

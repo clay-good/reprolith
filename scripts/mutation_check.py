@@ -1055,6 +1055,39 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          "                            if True"),
         ["tests/test_loop_status.py"],
     ),
+    # --- reconciling the queue with its issues, 2026-09-06 -------------------------------------
+    (
+        "a relabelled issue disappears from the report by having drifted",
+        "verification.py",
+        ("if ISSUE_LABEL not in labels and fingerprint not in known:",
+         "if ISSUE_LABEL not in labels:"),
+        ["tests/test_issue_reconciliation.py"],
+    ),
+    (
+        "an issue is matched on a certificate digest somebody quoted rather than on its question",
+        "verification.py",
+        ("        fingerprint = next(\n            (candidate for candidate in candidates if candidate in known),\n            candidates[0] if candidates else None,\n        )",
+         "        fingerprint = candidates[0] if candidates else None"),
+        ["tests/test_issue_reconciliation.py"],
+    ),
+    (
+        "a fetch that left out the field the match depends on reads as every issue having drifted",
+        "verification.py",
+        ('for field in ("number", "state", "body"):', "for field in ():"),
+        ["tests/test_issue_reconciliation.py"],
+    ),
+    (
+        "two open issues asking one question are reported as two issues in sync",
+        "verification.py",
+        ('        if len(numbers) > 1 and record["state"] == "OPEN":', "        if False:"),
+        ["tests/test_issue_reconciliation.py"],
+    ),
+    (
+        "an issue closed while its question is still pending reads as in sync",
+        "verification.py",
+        ('            if state != "OPEN":', "            if False:"),
+        ["tests/test_issue_reconciliation.py"],
+    ),
 ]
 
 

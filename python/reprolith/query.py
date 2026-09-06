@@ -34,7 +34,7 @@ from .presubmission import presubmission_report
 from .render import claim_counts, gap_items, plural
 from .selection import claim_selection_report
 from .supersession import CertificateLedger
-from .verification import issue_for_item, queue_report
+from .verification import issue_for_item, queue_report, reconcile_issues
 
 
 def _label_basis(report: dict[str, Any]) -> str:
@@ -617,15 +617,34 @@ class ReprolithQuery:
         item = items.get(item_id)
         if item is None:
             return None
-        classes = sorted(
-            {name for digest in item["depends_on"] if (name := self.model_class_of(digest))}
-        )
-        issue = issue_for_item(item, model_classes=classes)
+        issue = issue_for_item(item, model_classes=self._classes_for(item))
         # Not a refusal — a second opinion is legitimate and disagreement is retained by design —
         # but an opener who does not know the item was answered would be asking for work already
         # done.
         issue["existing_decisions"] = len(item.get("decisions", []))
         return issue
+
+    def issue_reconciliation(self, issues: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+        """Where the filed GitHub issues and this repository's queue disagree.
+
+        ``issues`` are what ``gh issue list --json number,title,state,labels,body`` prints. The
+        fetch is the caller's — nothing here touches the network — and the comparison is
+        :func:`reprolith.reconcile_issues`; this half supplies the queue and the labels each
+        pending item would be filed under today, which are a property of the catalog entry rather
+        than of the certificate and so can only be computed here.
+        """
+        report = self.verification_queue()
+        expected = {
+            str(item["id"]): issue_for_item(item, model_classes=self._classes_for(item))["labels"]
+            for item in report.get("pending", ())
+        }
+        return reconcile_issues(report, issues, expected_labels=expected)
+
+    def _classes_for(self, item: Mapping[str, Any]) -> list[str]:
+        """The model classes an item's dependent certificates belong to, for its issue labels."""
+        return sorted(
+            {name for digest in item["depends_on"] if (name := self.model_class_of(digest))}
+        )
 
     def certificates_for(
         self,

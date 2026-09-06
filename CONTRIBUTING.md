@@ -26,6 +26,18 @@ results. It gets better in two ways, and **both need people who know the science
 
    Asking it for one of the engine's own limits is refused rather than filed, since no answer of
    yours closes one.
+
+   **`reprolith issue-reconcile` keeps the two sides honest.** Fetch the issues and compare them
+   against the queue — it names an issue that was closed while its question is still pending, one
+   still asking a question no standing certificate rests on any more, one that lost a label, two
+   asking the same question, and any pending item nobody has filed at all. It changes nothing on
+   either side: which one is wrong is your call.
+
+   ```bash
+   gh issue list --label verification --state all \
+     --json number,title,state,labels,body > issues.json
+   reprolith issue-reconcile issues.json
+   ```
 2. **Grow and correct the catalog.** Propose a paper to reproduce, add a ground-truth
    reproducibility label, or fix a mis-extraction — as a pull request.
 

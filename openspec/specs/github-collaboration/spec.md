@@ -23,14 +23,30 @@ request — but the *issue* half of this capability is carried by people, not ma
   for a judgment that cannot help. It touches no network: it prints, and a person or
   `gh issue create --body-file -` files it. It is on both surfaces (MCP: `verification_issue`),
   because a command that reads this repository and exists on only one of them is how the two
-  drift. **Nothing files the issue, and nothing reconciles a
-  queue item with an issue's state** — those two halves are still uncarried.
+  drift. **Nothing files the issue** — that half is still uncarried.
 
   One field is answered by saying it cannot be: the template requires the section, equation, table
   or figure a value comes from, and Reprolith records that for a *claim* and not for an
   *assumption*, whose basis is a reason rather than a place. The generated body says so and gives
   the basis and the assumption id to grep for, rather than filling a required field with a
   plausible location.
+- *Queue and issue stay in sync.* Carried since 2026-09-06: `reprolith issue-reconcile <issues>`
+  reads what `gh issue list --json number,title,state,labels,body` prints and reports where the
+  two sides disagree. Before it, the drift was invisible in both directions and each direction
+  had its own cause: the queue is *derived* from the standing certificates on every call, so an
+  item disappears the moment its certificates are superseded and its issue keeps asking a
+  question nothing rests on; and an issue can be closed, relabelled, or never opened at all with
+  nothing in this repository able to see it. It matches on the question fingerprint the generated
+  body carries rather than on the title or the item id, for the reason the decision record does:
+  a reworded question is a different question, and an issue still asking the old one has diverged
+  rather than stayed attached. Two properties are what make it worth running rather than
+  believing. It **reconciles and does not resolve** — nothing here closes an issue, reopens one,
+  or edits the queue, because a divergence is a question about which side is wrong and both sides
+  are somebody's record. And it is keyed on the label *or* the fingerprint, since keying on the
+  label alone would let a relabelled issue — the drift it exists to report — disappear from the
+  report by having drifted. It is the one command on the terminal that reads this repository and
+  has no MCP tool: the server holds no GitHub credentials and no issue list, so the tool would
+  have to be handed the same file, and `docs/mcp-server.md` says so in its own row.
 - *An expert's decision is the record.* Carried since 2026-09-06:
   `datasets/verification_decisions.json` holds the decision, its author, its rationale and where it
   was made, joined to the derived queue by `queue_report`, so an answered item stops asking on
@@ -44,7 +60,7 @@ request — but the *issue* half of this capability is carried by people, not ma
   landed — the sentence is here rather than deleted because the gap it describes was real, and a
   spec that quietly drops what it once admitted is worth less than one that says when it closed.
 
-The remaining gap cannot produce a wrong certificate — an unescalated uncertainty still travels
+The remaining gap — nothing files an issue — cannot produce a wrong certificate — an unescalated uncertainty still travels
 as a load-bearing assumption, which downgrades the verdict on its own — but a reader should not
 take the issue-filing requirement below as implemented machinery.
 

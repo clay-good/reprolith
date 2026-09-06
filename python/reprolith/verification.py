@@ -13,7 +13,8 @@ judgments are preserved, never silently resolved to one.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+import re
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -659,6 +660,227 @@ unreviewed until they are re-run and superseded.
     }
 
 
+#: A question fingerprint as :func:`issue_for_item` writes it into the issue body: the only
+#: identifier on a filed issue that cannot come to sit under a different question, since it *is*
+#: the digest of the question. A title can be edited and an item id can be an author's name for it.
+_FINGERPRINT = re.compile(r"\b[0-9a-f]{64}\b")
+
+
+def reconcile_issues(
+    report: Mapping[str, Any],
+    issues: Sequence[Mapping[str, Any]],
+    *,
+    expected_labels: Mapping[str, Sequence[str]],
+) -> dict[str, Any]:
+    """Where the filed issues and the derived queue disagree (spec: github-collaboration).
+
+    The ``github-collaboration`` spec asks that "the queue state and the issue state are
+    reconciled so neither silently diverges from the other", and its own carrier section said
+    plainly that nothing did it. The two sides drift in both directions and neither can see it:
+    the queue is derived from the standing certificates on every call, so an item vanishes the
+    moment its certificates are superseded and its issue keeps asking; and an issue can be closed,
+    relabelled, or never opened at all without anything in the repository noticing.
+
+    ``report`` is :func:`queue_report`'s output. ``issues`` are the issues as ``gh issue list
+    --json number,title,state,labels,body`` emits them — this touches no network, so the fetch is
+    a command a person or a workflow runs and this is the comparison. ``expected_labels`` maps a
+    pending item's id to the labels :func:`issue_for_item` would file it under; an item missing
+    from it has its labels left uncompared rather than guessed at.
+
+    **It reconciles and does not resolve.** Nothing here closes an issue, reopens one, or edits
+    the queue: both sides are somebody's record — a maintainer's on GitHub, the certificates' here
+    — and a divergence is a question about which one is wrong, not a fact about which one loses.
+
+    Issues are matched by the question fingerprint the body carries, not by title or item id.
+    Reprolith's own decision record is joined that way for the same reason: a question that has
+    been reworded is a different question, and an issue still asking the old one has diverged
+    rather than stayed attached.
+    """
+    groups = {
+        name: {
+            str(item["question_fingerprint"]): item
+            for item in report.get(name, ())
+            if item.get("question_fingerprint")
+        }
+        for name in ("pending", "engine_limits", "decided")
+    }
+    known = {
+        fingerprint: (name, item)
+        for name, items in groups.items()
+        for fingerprint, item in items.items()
+    }
+    records: list[dict[str, Any]] = []
+    ignored = 0
+    filed: set[str] = set()
+    for raw in issues:
+        number, state, labels, body = _issue_fields(raw)
+        # Every 64-hex token in the body, not the first one: a certificate digest is the same
+        # shape and an issue that quotes one — in a comment, in a maintainer's edit — would
+        # otherwise be matched on it and read as asking a question nothing rests on. The first
+        # token that *is* a live question wins; with none, the first token is reported as the
+        # unmatched one rather than the issue reading as having no fingerprint at all.
+        candidates = _FINGERPRINT.findall(body)
+        fingerprint = next(
+            (candidate for candidate in candidates if candidate in known),
+            candidates[0] if candidates else None,
+        )
+        # An issue is this queue's if it carries the label *or* asks one of its questions. Keying
+        # on the label alone would let a relabelled issue — exactly the drift this reports —
+        # disappear from the report by having drifted.
+        if ISSUE_LABEL not in labels and fingerprint not in known:
+            ignored += 1
+            continue
+        if fingerprint is not None:
+            filed.add(fingerprint)
+        matched = known.get(fingerprint) if fingerprint else None
+        record: dict[str, Any] = {
+            "number": number,
+            "title": str(raw.get("title", "")),
+            "state": state,
+            "labels": labels,
+            "item_id": matched[1]["id"] if matched else None,
+            "group": matched[0] if matched else None,
+            "divergences": [],
+        }
+        if matched is None:
+            record["status"] = "unrecognized" if fingerprint is None else "no-longer-asked"
+            if state == "OPEN":
+                record["divergences"].append(
+                    "asks a question no standing certificate rests on any more, and is open: "
+                    "either its certificates were superseded or the question was reworded, and "
+                    "in both cases the issue is asking for work that no longer lands"
+                    if fingerprint is not None
+                    else "carries the verification label and no question fingerprint, so nothing "
+                    "can attach it to an item; it was not written by `reprolith "
+                    "verification-issue`"
+                )
+            records.append(record)
+            continue
+        group, item = matched
+        if group == "engine_limits":
+            record["status"] = "engine-limit"
+            if state == "OPEN":
+                record["divergences"].append(
+                    "asks about a limit of this engine, which no expert decision closes — "
+                    "`verification-issue` refuses to write one, so this was filed by hand or "
+                    "before the item became one"
+                )
+        elif group == "decided":
+            record["status"] = "decided"
+            if state == "OPEN":
+                record["divergences"].append(
+                    f"{len(item.get('decisions', ()))} expert decision(s) are recorded against "
+                    "this item and the issue is still open. Closing it does not lift the "
+                    "dependent certificates' qualification — that is a re-issue, not an answer"
+                )
+        else:
+            record["status"] = "pending"
+            if state != "OPEN":
+                record["divergences"].append(
+                    "is closed while its question is still pending: the certificates resting on "
+                    "the value are standing and unreviewed, so the queue still asks it"
+                )
+            expected = list(expected_labels.get(str(item["id"]), ()))
+            if expected:
+                record["expected_labels"] = expected
+                missing = [label for label in expected if label not in labels]
+                if missing:
+                    record["divergences"].append(
+                        "is missing the label(s) the item carries today: " + ", ".join(missing)
+                    )
+        records.append(record)
+    # Two open issues asking one question is drift in its own right: an expert answers one of
+    # them, the other keeps asking, and the decision record attaches to a question rather than to
+    # an issue — so nothing downstream would notice which one was answered. Only open issues
+    # count; a closed duplicate is the normal shape of a question that was filed twice and tidied.
+    open_by_item: dict[str, list[Any]] = {}
+    for record in records:
+        if record["item_id"] and record["state"] == "OPEN":
+            open_by_item.setdefault(str(record["item_id"]), []).append(record["number"])
+    for record in records:
+        numbers = open_by_item.get(str(record["item_id"]), ())
+        if len(numbers) > 1 and record["state"] == "OPEN":
+            others = [number for number in numbers if number != record["number"]]
+            record["divergences"].append(
+                "asks the same question as #" + ", #".join(str(n) for n in others)
+                + ": an expert answering one of them leaves the other still asking, and a "
+                "decision is recorded against the question rather than against an issue"
+            )
+    unfiled = [
+        {
+            "id": item["id"],
+            "question": item["question"],
+            "impact": item["impact"],
+            "question_fingerprint": fingerprint,
+        }
+        for fingerprint, item in groups["pending"].items()
+        if fingerprint not in filed
+    ]
+    divergent = [record for record in records if record["divergences"]]
+    return {
+        "issues": records,
+        "divergent": divergent,
+        "divergent_count": len(divergent),
+        "in_sync": len(records) - len(divergent),
+        "unfiled": unfiled,
+        "unfiled_count": len(unfiled),
+        "ignored_issues": ignored,
+        "note": _reconciliation_note(records, divergent, unfiled, ignored),
+    }
+
+
+def _issue_fields(raw: Mapping[str, Any]) -> tuple[Any, str, list[str], str]:
+    """One issue's four fields, refusing a shape that would reconcile against nothing.
+
+    A missing body is the dangerous one: it carries the fingerprint, so an issue read without it
+    matches no item and is reported as unrecognized — a fetch that forgot `--json body` would
+    otherwise read as every issue having drifted.
+    """
+    if not isinstance(raw, Mapping):
+        raise ValueError(f"an issue must be an object, not {type(raw).__name__}")
+    for field in ("number", "state", "body"):
+        if field not in raw:
+            raise ValueError(
+                f"issue {raw.get('number', '(unnumbered)')} has no {field!r}; fetch with "
+                "`gh issue list --json number,title,state,labels,body` — a field left out reads "
+                "as a divergence rather than as a missing field"
+            )
+    labels: list[str] = []
+    for label in raw.get("labels", ()):
+        if isinstance(label, Mapping):
+            labels.append(str(label.get("name", "")))
+        else:
+            labels.append(str(label))
+    return raw["number"], str(raw["state"]).upper(), labels, str(raw["body"])
+
+
+def _reconciliation_note(
+    records: Sequence[Mapping[str, Any]],
+    divergent: Sequence[Mapping[str, Any]],
+    unfiled: Sequence[Mapping[str, Any]],
+    ignored: int,
+) -> str:
+    """What the comparison found, derived from it rather than asserted."""
+    if not records and not unfiled:
+        return (
+            "no verification issue was given and the queue has nothing pending, so there is "
+            "nothing to reconcile"
+        )
+    parts = [f"{len(records)} verification issue(s) read"]
+    if ignored:
+        parts.append(f"{ignored} unrelated issue(s) ignored")
+    parts.append(
+        f"{len(divergent)} diverge from the queue" if divergent else "none diverge from the queue"
+    )
+    if unfiled:
+        parts.append(f"{len(unfiled)} pending item(s) have no issue at all")
+    parts.append(
+        "nothing here closes, reopens or relabels anything: a divergence is a question about "
+        "which side is wrong"
+    )
+    return "; ".join(parts)
+
+
 def reverify_dependents(
     item: VerificationItem,
     ledger: CertificateLedger,
@@ -737,5 +959,6 @@ __all__ = [
     "question_fingerprint",
     "queue_from_certificates",
     "queue_report",
+    "reconcile_issues",
     "reverify_dependents",
 ]

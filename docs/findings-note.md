@@ -4738,3 +4738,44 @@ Two premises I wrote and had to correct by measuring:
   abstention a reader would actually get named the wrong cause: "there is no edge to follow", for a
   front that formed perfectly well and hit a wall. The two are named apart now, which is worth more
   than the guard was.
+
+
+## Both halves of a two-sided record, and neither could see the other
+
+`reprolith verification-issue` has written the GitHub issue for a queue item since the morning of
+2026-09-06, and from the moment a person filed one, the two sides of that record drifted with
+nothing able to look at both. The drift is not symmetric, which is why it stayed invisible:
+
+- The queue is **derived** from the standing certificates on every call and stored nowhere — the
+  property that keeps it from going stale. Its consequence is that an item vanishes the instant its
+  certificates are superseded, and the issue filed from it goes on asking a question no published
+  result rests on any more.
+- The issue is **somebody else's record**. It can be closed without an answer, relabelled, filed
+  twice, or never opened at all, and no file in this repository changes when any of that happens.
+
+`reprolith issue-reconcile <issues.json>` reads what `gh issue list --json
+number,title,state,labels,body` prints and reports where the two disagree: an issue closed while
+its question is still pending, one still asking a question nothing rests on, one that lost the
+label its item carries today, two asking the same question, an issue filed for a limit of this
+engine that no expert answer closes, and any pending item nobody has filed at all. It touches no
+network — the fetch is a `gh` call a person or a workflow makes.
+
+Three decisions in it are the ones worth writing down.
+
+**It matches on the question fingerprint, not on the title or the item id.** Those are both
+editable, and an author-named item id (`verify:time-unit-of-the-Zake2021-deposits`) can keep its
+name while its wording, basis and alternatives all change — the same reason the decision record
+carries a fingerprint. An issue asking the old wording has diverged; it has not stayed attached.
+
+**It is keyed on the label *or* the fingerprint.** Keying on the label alone would let a relabelled
+issue — one of the drifts this exists to report — disappear from the report by having drifted. That
+is the recurring shape in this repository's own findings: a check whose population is defined by
+the thing it is checking for.
+
+**It reconciles and does not resolve.** Nothing closes an issue, reopens one, or edits the queue. A
+divergence is a question about which side is wrong, and both sides are somebody's record.
+
+One defect the work found in itself: the first version matched the first 64-hex token in the body,
+and a certificate digest is the same shape. An issue quoting one above the question — a maintainer's
+edit, a comment — would have been matched on the digest and reported as asking a question nothing
+rests on. It takes every token now and prefers the one that is a live question.

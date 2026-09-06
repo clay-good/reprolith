@@ -507,6 +507,53 @@ def _cmd_verification_issue(query: ReprolithQuery, args: argparse.Namespace) -> 
     return 0
 
 
+def _cmd_issue_reconcile(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Compare the filed GitHub issues against the derived queue, and change neither.
+
+    `verification-issue` writes an issue; nothing until now could tell you what happened to it.
+    The `github-collaboration` spec asks for both halves and its carrier section named this one as
+    missing. The fetch stays outside — `gh issue list --label verification --state all --json
+    number,title,state,labels,body > issues.json` — because this package touches no network, and
+    a reconciliation that quietly filed or closed something would be resolving a disagreement it
+    exists to report.
+    """
+    try:
+        issues = json.loads(Path(args.issues).read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, ValueError) as unreadable:
+        print(f"cannot read the issues: {unreadable}", file=sys.stderr)
+        return 1
+    if not isinstance(issues, list):
+        print(
+            "the issues file must be the JSON array `gh issue list --json ...` prints, not "
+            f"{type(issues).__name__}",
+            file=sys.stderr,
+        )
+        return 1
+    try:
+        report = query.issue_reconciliation(issues)
+    except ValueError as unusable:
+        print(f"cannot read the issues: {unusable}", file=sys.stderr)
+        return 1
+    if args.json:
+        _print_json(report)
+        return 0
+    print(report["note"])
+    for record in report["divergent"]:
+        print()
+        title = record["title"] or "(untitled)"
+        print(f"#{record['number']} [{record['state']}] {title}")
+        if record["item_id"]:
+            print(f"  item: {record['item_id']}")
+        for divergence in record["divergences"]:
+            print(f"  - {divergence}")
+    for item in report["unfiled"]:
+        print()
+        print(f"(no issue) {item['question']}")
+        print(f"  item: {item['id']}  impact: {item['impact']}")
+        print(f"  write it with: reprolith verification-issue {item['id']}")
+    return 0
+
+
 def _cmd_presubmission(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """The author-facing report for a certified paper, rendered like every other command's."""
     if args.json:
@@ -1661,10 +1708,14 @@ def build_parser() -> argparse.ArgumentParser:
             "certificate, verdict, gaps, presubmission, verification-queue, verification-issue, "
             "certificates-for, "
             "dossier, bundle, select-claims\n"
-            "checking your own files: archive-check, claims-template, claims-propose, "
+            "checking your own files: issue-reconcile, archive-check, claims-template, "
+            "claims-propose, "
             "claims-check, params-template, params-propose, params-check, figure-template, "
             "figure-check\n"
             "writing: export — the one command whose whole job is to create a file\n\n"
+            "issue-reconcile is in the second group because it needs a file the MCP server has no\n"
+            "path to — the GitHub issues — but it reads this repository's verification queue too,\n"
+            "and reports where the two disagree without changing either.\n\n"
             "Each of the template and propose commands writes one too when you give it --out "
             "(figure-template --out-dir writes one per panel), and every command here that "
             "writes says when it replaced a file that was already there — filling a template in "
@@ -1770,6 +1821,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("item_id", help="a queue item id from `reprolith verification-queue`")
     add_json(p)
     p.set_defaults(func=_cmd_verification_issue)
+
+    p = sub.add_parser(
+        "issue-reconcile",
+        help="where the filed verification issues and this repository's queue disagree",
+    )
+    p.add_argument(
+        "issues",
+        help="the issues as JSON: `gh issue list --label verification --state all "
+             "--json number,title,state,labels,body`",
+    )
+    add_json(p)
+    p.set_defaults(func=_cmd_issue_reconcile)
 
     p = sub.add_parser("certificates-for", help="every certificate digest issued for a paper")
     add_identifier(p)
