@@ -62,7 +62,7 @@ def _pairs(*certs):
 
 def test_every_load_bearing_assumption_gets_an_item() -> None:
     cert = _cert(_assumption(id="one"), _assumption(id="two", description="other"))
-    queue, _ = queue_from_certificates(_pairs(cert))
+    queue, _, _ = queue_from_certificates(_pairs(cert))
     assert len(queue) == 2
 
 
@@ -70,7 +70,7 @@ def test_an_assumption_that_is_not_load_bearing_is_not_queued() -> None:
     # The queue is for values that plausibly change an outcome. Filling it with the rest would
     # bury the two that matter under the thirty that do not.
     cert = _cert(_assumption(id="minor", load_bearing=False))
-    queue, _ = queue_from_certificates(_pairs(cert))
+    queue, _, _ = queue_from_certificates(_pairs(cert))
     assert len(queue) == 0
 
 
@@ -87,7 +87,7 @@ def test_no_committed_certificate_cites_an_item_the_queue_cannot_open() -> None:
             for assumption in cert.assumptions:
                 if assumption.verification_item:
                     cited.add(assumption.verification_item)
-            queue, _ = queue_from_certificates(_pairs(cert))
+            queue, _, _ = queue_from_certificates(_pairs(cert))
             queue_ids.update(item.id for item in queue.pending())
     assert cited, "no committed certificate names a verification item; this test guards nothing"
     assert cited <= queue_ids, sorted(cited - queue_ids)
@@ -180,7 +180,7 @@ def test_depends_on_names_digests_the_ledger_can_re_issue() -> None:
     cert = _cert(_assumption())
     ledger = CertificateLedger()
     digest = ledger.issue(cert)
-    queue, _ = queue_from_certificates([(digest, cert)])
+    queue, _, _ = queue_from_certificates([(digest, cert)])
     (item,) = queue.pending()
     assert item.depends_on == (digest,)
     assert ledger.get(item.depends_on[0]) is cert
@@ -253,6 +253,7 @@ def test_the_committed_registry_page_carries_the_queue() -> None:
     # that disagreed with `reprolith verification-queue` about the count fails here.
     assert f"{report['pending_count']} load-bearing values" in page
     assert f"{report['standing_certificates']} standing certificates" in page
+    assert f"{report['engine_limits_count']} more load-bearing values" in page
 
 
 def test_a_page_with_nothing_load_bearing_shows_no_banner() -> None:
@@ -261,3 +262,74 @@ def test_a_page_with_nothing_load_bearing_shows_no_banner() -> None:
 
     page = render_registry([("ode-pkpd", _cert())])
     assert "Awaiting expert review" not in page
+
+
+# --- who can actually answer it -----------------------------------------------------------
+
+
+def test_an_engine_limit_is_not_listed_as_awaiting_expert_review() -> None:
+    """Six of this repository's eight load-bearing assumptions are Reprolith's own limits.
+
+    The spatial solver implements one boundary condition; the stochastic class judges an ensemble
+    it drew itself. No expert confirming anything closes either, and the first version of this
+    report ranked them beside the two questions an expert *can* settle — so five of seven items
+    read as waiting on a person.
+    """
+    expert = _cert(_assumption(id="dose", description="which salt"), title="one")
+    ours = _cert(
+        _assumption(id="boundary", description="this solver has one boundary", author_can_close=False),
+        title="two",
+    )
+    report = queue_report(_pairs(expert, ours))
+    assert [i["assumption_ids"] for i in report["pending"]] == [["dose"]]
+    assert [i["assumption_ids"] for i in report["engine_limits"]] == [["boundary"]]
+
+
+def test_one_closable_dependent_makes_the_whole_question_answerable() -> None:
+    """Merged items can mix, and a question one author could close is a live question."""
+    a = _cert(_assumption(author_can_close=False), title="one")
+    b = _cert(_assumption(author_can_close=True), title="two")
+    report = queue_report(_pairs(a, b))
+    assert report["pending_count"] == 1
+    assert report["engine_limits_count"] == 0
+    assert report["pending"][0]["impact"] == 2
+
+
+def test_the_committed_repository_splits_the_way_its_certificates_say() -> None:
+    query, _ = load_repository("datasets/milestone", aggregate=True)
+    report = query.verification_queue()
+    # Counted off the certificates rather than written here, so a new class whose assumption is an
+    # engine limit lands on the right side of the split without this number being edited.
+    limits = {
+        assumption.id
+        for _, cert in query.ledger.items()
+        for assumption in cert.assumptions
+        if assumption.load_bearing and not assumption.author_can_close
+    }
+    listed = {aid for item in report["engine_limits"] for aid in item["assumption_ids"]}
+    assert listed == limits
+    assert report["pending_count"] >= 1  # and the expert-answerable half is not empty
+
+
+# --- the gap report and the queue must not disagree ----------------------------------------
+
+
+def test_the_gap_report_says_awaiting_review_for_every_answerable_assumption() -> None:
+    """It used to depend on whether somebody had written an id into the file.
+
+    Four metformin certificates name `verify:time-unit-of-the-Zake2021-deposits`, and the
+    salt-form assumption beside them — equally queued, equally answerable — said nothing. Two
+    published surfaces disagreeing about whether the same kind of value is under review.
+    """
+    from reprolith.render import gap_items
+
+    named = _cert(_assumption(id="a", verification_item="verify:by-hand"))
+    plain = _cert(_assumption(id="b", description="unnamed"), title="two")
+    limit = _cert(_assumption(id="c", description="ours", author_can_close=False), title="three")
+    def needs(cert):
+        return " ".join(i["needs"] for i in gap_items(cert) if i["claim_id"] is None)
+
+    assert "awaiting expert confirmation (verify:by-hand)" in needs(named)
+    assert "awaiting expert confirmation" in needs(plain)
+    # And an engine limit is not awaiting anyone, so it does not say it is.
+    assert "awaiting expert confirmation" not in needs(limit)

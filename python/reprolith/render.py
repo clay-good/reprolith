@@ -181,9 +181,21 @@ def gap_items(cert: Certificate) -> list[dict[str, Any]]:
         # why the pass was withheld has to name it too.
         if not asm.load_bearing and not asm.verification_item:
             continue
+        # Every load-bearing assumption an author or a reviewer could settle is queued for one
+        # (`reprolith.verification.queue_from_certificates`), so which of them says so must not
+        # depend on whether somebody remembered to write an id into the file. It did: the four
+        # metformin certificates name `verify:time-unit-of-the-Zake2021-deposits` and the salt-form
+        # assumption beside them, equally queued and equally answerable, said nothing. The id is
+        # printed only where the certificate itself carries one — a derived id is a hash this line
+        # would be the only place anyone met it, and the queue is where you look it up.
+        awaits = asm.verification_item is not None or (asm.load_bearing and asm.author_can_close)
         pending = (
-            f" — awaiting expert confirmation ({asm.verification_item})"
-            if asm.verification_item
+            (
+                f" — awaiting expert confirmation ({asm.verification_item})"
+                if asm.verification_item
+                else " — awaiting expert confirmation"
+            )
+            if awaits
             else ""
         )
         items.append(
@@ -574,13 +586,20 @@ def _corroboration_banner(corroboration: dict[str, dict[str, Any]]) -> str:
 
 
 def _verification_banner(rows: list[tuple[str, Certificate]]) -> str:
-    """What the whole published set rests on that nobody has confirmed yet.
+    """What the whole published set rests on, split by whether anybody can answer it.
 
     Each card already names the load-bearing assumptions behind its own certificate, and that is
     the per-paper honesty payload. It is not the page-level one. A reader who wants to know what
     *this registry* is resting on had to open thirty-three cards and merge the answers by eye — and
     would still not learn that one of those questions carries four of the certificates, which is
     the only number that says which one to look at first.
+
+    Two sections, not one, and the second is what earns this. Six of the eight load-bearing
+    assumptions on this repository's certificates are *this engine's* limits rather than anything
+    a paper left out — the spatial solver's single boundary condition, the ensemble the stochastic
+    class drew — and no expert confirming anything closes one. Under a single "awaiting expert
+    review" heading they read as five of seven questions waiting on a person, which is the shape
+    of overstatement the rest of this page exists to avoid.
 
     Derived by :func:`reprolith.verification.queue_report`, the same function the terminal's
     `reprolith verification-queue` and the agent surface's `verification_queue` tool answer from,
@@ -598,34 +617,49 @@ def _verification_banner(rows: list[tuple[str, Certificate]]) -> str:
         if content_hash(cert.content()) not in superseded
     ]
     report = queue_report(pairs)
-    if not report["pending"]:
+    if not report["pending"] and not report["engine_limits"]:
         return ""
-    items = []
-    for item in report["pending"]:
-        dependents = "certificate" if item["impact"] == 1 else "certificates"
-        alternatives = (
-            " Alternatives considered: "
-            + html.escape("; ".join(item["alternatives"]))
-            + "."
-            if item["alternatives"]
-            else ""
+
+    def _items(entries: list[dict[str, Any]]) -> str:
+        out = []
+        for item in entries:
+            dependents = "certificate" if item["impact"] == 1 else "certificates"
+            alternatives = (
+                " Alternatives considered: "
+                + html.escape("; ".join(item["alternatives"]))
+                + "."
+                if item["alternatives"]
+                else ""
+            )
+            out.append(
+                f"<li><strong>{item['impact']} {dependents}</strong> — "
+                f"{html.escape(item['question'])}. Reprolith chose "
+                f"{html.escape(item['best_estimate'])}, because "
+                f"{html.escape(item['basis'])}.{alternatives}</li>"
+            )
+        return "".join(out)
+
+    sections = []
+    if report["pending"]:
+        sections.append(
+            '<section class="track-record"><h2>Awaiting expert review</h2>'
+            f'<p class="tr-note">{report["pending_count"]} load-bearing values that '
+            f'{len(pairs)} standing certificates on this page rest on, and that no expert has '
+            "confirmed. Each is a value Reprolith supplied because the paper did not state it; "
+            "each already withholds a clean pass from every certificate resting on it. Most "
+            "consequential first — the ranking is the number of published results that would "
+            "have to be re-issued if the value turned out to be wrong.</p>"
+            f"<ul class=\"tr-note\">{_items(report['pending'])}</ul></section>"
         )
-        items.append(
-            f"<li><strong>{item['impact']} {dependents}</strong> — "
-            f"{html.escape(item['question'])}. Reprolith chose "
-            f"{html.escape(item['best_estimate'])}, because "
-            f"{html.escape(item['basis'])}.{alternatives}</li>"
+    if report["engine_limits"]:
+        sections.append(
+            '<section class="track-record"><h2>Resting on this engine, not on anyone\'s '
+            "judgment</h2>"
+            f'<p class="tr-note">{report["engine_limits_count"]} more load-bearing values '
+            f'withhold a clean pass here, and {html.escape(report["engine_limits_note"])}.</p>'
+            f"<ul class=\"tr-note\">{_items(report['engine_limits'])}</ul></section>"
         )
-    return (
-        '<section class="track-record"><h2>Awaiting expert review</h2>'
-        f'<p class="tr-note">{report["pending_count"]} load-bearing values that '
-        f'{len(pairs)} standing certificates on this page rest on, and that no expert has '
-        "confirmed. Each is a value Reprolith supplied because the paper did not state it; each "
-        "already withholds a clean pass from every certificate resting on it. Most consequential "
-        "first — the ranking is the number of published results that would have to be re-issued "
-        "if the value turned out to be wrong.</p>"
-        f"<ul class=\"tr-note\">{''.join(items)}</ul></section>"
-    )
+    return "".join(sections)
 
 
 def render_registry(

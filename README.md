@@ -644,15 +644,22 @@ assumption off every *standing* certificate — a superseded one is not a live d
 opens one item per distinct question: what was assumed, what Reprolith chose, on what basis,
 against what alternatives, and which certificates would have to be re-issued if you corrected it.
 That last number is the ranking, so the value four published results rest on is the first thing
-you see and not the twentieth. It exists because a certificate could cite a queue item nobody had
+you see and not the twentieth.
+
+It prints in two parts, and the second is the one worth reading first. Six of the eight
+load-bearing assumptions on today's certificates are **this engine's** limits rather than
+anything a paper left out — the spatial solver implements one boundary condition, the stochastic
+class judges an ensemble it drew itself — and no expert confirming anything closes one. They
+withhold a clean pass exactly as the others do; what they wait on is this engine, not a person,
+and they say so under their own heading. Three questions are actually open to you. It exists because a certificate could cite a queue item nobody had
 built: four metformin certificates named `verify:time-unit-of-the-Zake2021-deposits`, and until
 this landed, following that citation found nothing. The queue is *derived* from the certificates
 on every call rather than stored beside them, so it cannot drift from what it describes, and a
 question asked by three claims about one solver limitation is one item with three dependents
 rather than three items you answer three times.
 
-The published [registry page](datasets/registry.html) carries the same list, beside the blind
-track record and the cross-engine corroboration, derived by the same function — so what a browser
+The published [registry page](datasets/registry.html) carries the same two lists, beside the
+blind track record and the cross-engine corroboration, derived by the same function — so what a browser
 sees the whole set resting on and what `reprolith verification-queue` prints cannot disagree. Each
 card already named its own certificate's assumptions; what the page had no way to say was that one
 of those questions carries four of the certificates, which is the only number that says which to

@@ -336,15 +336,8 @@ def _cmd_verification_queue(query: ReprolithQuery, args: argparse.Namespace) -> 
     if args.json:
         _print_json(report)
         return 0
-    items = report["pending"]
-    if not items:
-        print("(nothing queued — no standing certificate rests on a load-bearing assumption)")
-        return 0
-    print(
-        f"AWAITING EXPERT REVIEW — {report['pending_count']} across "
-        f"{report['standing_certificates']} standing certificates"
-    )
-    for item in items:
+
+    def _show(item: dict[str, Any]) -> None:
         dependents = "certificate" if item["impact"] == 1 else "certificates"
         print(f"  {item['id']}  ({item['impact']} {dependents})")
         print(f"    question: {item['question']}")
@@ -360,8 +353,26 @@ def _cmd_verification_queue(query: ReprolithQuery, args: argparse.Namespace) -> 
                 "    (id derived from the question; no certificate names it — grep the "
                 f"assumption id: {', '.join(item['assumption_ids'])})"
             )
-    print(f"  ranked by: {report['ranked_by']}")
-    print(f"  decisions: {report['decisions_note']}")
+
+    if not report["pending"] and not report["engine_limits"]:
+        print("(nothing queued — no standing certificate rests on a load-bearing assumption)")
+        return 0
+    if report["pending"]:
+        print(
+            f"AWAITING EXPERT REVIEW — {report['pending_count']} across "
+            f"{report['standing_certificates']} standing certificates"
+        )
+        for item in report["pending"]:
+            _show(item)
+        print(f"  ranked by: {report['ranked_by']}")
+        print(f"  decisions: {report['decisions_note']}")
+    if report["engine_limits"]:
+        # Printed under their own heading rather than mixed in. Ranked together they read as
+        # questions waiting on a person, and on this repository that would be five of seven.
+        print(f"NOT WAITING ON ANYONE — {report['engine_limits_count']} this engine's own limits")
+        print(f"  {report['engine_limits_note']}")
+        for item in report["engine_limits"]:
+            _show(item)
     return 0
 
 

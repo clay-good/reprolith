@@ -180,7 +180,7 @@ def _question(assumption: Assumption) -> tuple[str, str, str, tuple[str, ...]]:
 
 def queue_from_certificates(
     pairs: Sequence[tuple[str, Certificate]],
-) -> tuple[VerificationQueue, dict[str, tuple[str, ...]]]:
+) -> tuple[VerificationQueue, dict[str, tuple[str, ...]], frozenset[str]]:
     """Open a queue item for every load-bearing assumption on the given certificates.
 
     This is the escalation step the ``autonomous-build-loop`` spec requires and nothing performed:
@@ -212,6 +212,7 @@ def queue_from_certificates(
     assumptions: dict[str, Assumption] = {}
     dependents: dict[str, set[str]] = {}
     assumption_ids: dict[str, set[str]] = {}
+    answerable: set[str] = set()
     for digest, cert in pairs:
         for assumption in cert.assumptions:
             if not assumption.load_bearing:
@@ -230,6 +231,8 @@ def queue_from_certificates(
             assumptions.setdefault(item_id, assumption)
             dependents.setdefault(item_id, set()).add(digest)
             assumption_ids.setdefault(item_id, set()).add(assumption.id)
+            if assumption.author_can_close:
+                answerable.add(item_id)
 
     queue = VerificationQueue()
     for item_id in sorted(dependents):
@@ -244,11 +247,28 @@ def queue_from_certificates(
                 alternatives=tuple(assumption.alternatives),
             )
         )
-    return queue, {k: tuple(sorted(v)) for k, v in assumption_ids.items()}
+    return (
+        queue,
+        {k: tuple(sorted(v)) for k, v in assumption_ids.items()},
+        frozenset(answerable),
+    )
 
 
 def queue_report(pairs: Sequence[tuple[str, Certificate]]) -> dict[str, Any]:
-    """The queue as a read: pending items, impact-ordered, and what each one is resting under.
+    """The queue as a read, split by whether anybody can actually answer the item.
+
+    The first version of this report put every load-bearing assumption under one heading and
+    ranked them together, and on the committed repository that read badly: six of the eight are
+    Reprolith's *own* limits rather than anything a paper left out. The spatial solver implements
+    one boundary condition; the stochastic class judges an ensemble it drew itself. No expert
+    confirming anything changes either, so listing them as awaiting expert review invited a reader
+    to think five of the seven questions were waiting on a person when they are waiting on this
+    engine. ``Assumption.author_can_close`` already carried the distinction — it was written for
+    the author-facing fix list, which had the same problem first — and it carries it here.
+
+    So ``pending`` is what an expert can decide, and ``engine_limits`` is what only this engine's
+    development can close. An item merged from several assumptions counts as answerable if *any*
+    of them is: one closable dependent makes the question a live one.
 
     ``margin`` is ``None`` on every item and stays that way. The queue ranks equal-impact items by
     how close the dependent verdict sits to its tolerance, and the only numbers on a certificate
@@ -262,24 +282,33 @@ def queue_report(pairs: Sequence[tuple[str, Certificate]]) -> dict[str, Any]:
     was derived from the question — the difference between a citation a reader can search for and
     one this function computed.
     """
-    queue, assumption_ids = queue_from_certificates(pairs)
+    queue, assumption_ids, answerable = queue_from_certificates(pairs)
     linked = {
         assumption.verification_item
         for _, cert in pairs
         for assumption in cert.assumptions
         if assumption.verification_item
     }
-    items = []
+    pending: list[dict[str, Any]] = []
+    engine_limits: list[dict[str, Any]] = []
     for item in queue.pending():
         view = item.to_dict()
         view["linked"] = item.id in linked
         # A derived id appears in no certificate, so it is not what a reader greps for. The
         # assumption ids are, and there is more than one wherever a question spans claims.
         view["assumption_ids"] = list(assumption_ids[item.id])
-        items.append(view)
+        (pending if item.id in answerable else engine_limits).append(view)
     return {
-        "pending": items,
-        "pending_count": len(items),
+        "pending": pending,
+        "pending_count": len(pending),
+        "engine_limits": engine_limits,
+        "engine_limits_count": len(engine_limits),
+        "engine_limits_note": (
+            "these rest on a choice this engine had to make rather than on anything the paper "
+            "left unsaid — the spatial solver's single boundary condition, the ensemble the "
+            "stochastic class drew — so no expert decision closes one. They withhold a clean pass "
+            "exactly as the others do; what they wait on is this engine, not a person"
+        ),
         "ranked_by": (
             "impact — the number of standing certificates resting on the value. Margin is not "
             "ranked on: a certificate states its discrepancy and tolerance as prose, and a "

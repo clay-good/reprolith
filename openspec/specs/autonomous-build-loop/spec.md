@@ -32,6 +32,13 @@ assumption's own id, so one solver limitation asked by three claims is one item 
 dependents. The queue is derived from the ledger on every call, never stored, so it cannot drift
 from the certificates it describes.
 
+It reports in two parts, because escalating everything and then ranking it together overstated
+what escalation buys: six of the eight load-bearing assumptions on today's certificates are this
+engine's own limits — the spatial solver's single boundary condition, the ensemble the stochastic
+class drew — and no expert decision closes one. `Assumption.author_can_close` already carried that
+distinction for the author-facing fix list, and it carries it here. Three questions are genuinely
+open to a reviewer; the rest wait on this engine and say so.
+
 What is still agent-carried, not code-carried, is the *decision* half: `VerificationQueue.decide`
 and `reverify_dependents` are live APIs, but nothing on disk records an expert decision, so every
 item reads as pending and the report says so rather than implying the queue is being worked.
