@@ -4341,3 +4341,31 @@ So the assembly moved onto the query, both surfaces call it, and the pairing tab
 The table could not express the pairing at first: a derived item id is the hash of its own
 question, so unlike a digest or an accession it cannot be written into a fixture and has to be read
 off the queue the test just built.
+
+
+## The loop could not answer its own stop condition, and a test of it shrugged
+
+`autonomous-build-loop` says the loop stops when "the publishable backlog is exhausted, or further
+progress is gated entirely on open escalations". Every part of that had become machine-readable
+separately — `backlog_health` counts what is claimable and what each blocked entry waits on,
+parking is derived from the attempt record, the verification queue splits escalations into what an
+expert can decide and what only this engine can — and nothing put them together. Deciding to stop
+meant calling three reads and merging them by eye, which is how "the backlog is exhausted" becomes
+an assertion instead of an answer. I did exactly that by hand twice this session before building
+`loop-status`, which is the evidence the view was missing rather than a hunch that it might be nice.
+
+The reason has to be *which* reason. Everything blocked on one input, everything parked after
+repeated fruitless claims, entries carrying no accession, and a genuinely empty backlog all report
+zero claimable, and what would lift each is entirely different — a report collapsing them tells a
+loop nothing about what to do next.
+
+The thing it refuses to say is "what it accomplished", which the requirement also asks for. That is
+the git history; a field here summarizing a run would invent a record this package does not keep.
+It counts what stands and says so in the payload.
+
+**And the first test of the standing count was vacuous.** "Standing counts only what still stands"
+was checked against the committed corpus, where no certificate has ever been superseded — so both
+sides of the assertion computed the same number and it passed with the filter deleted. Mutation
+testing caught it; a fixture that actually supersedes something replaced it. The lesson is the one
+this repository keeps relearning: a check read off a corpus that has never contained the condition
+is a check of nothing, and it looks exactly like a passing test.

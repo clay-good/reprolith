@@ -79,6 +79,20 @@ state machine's only other way out of `queued`, and an unreachable entry would b
 wedge; and both `claim_work`'s refusal and `backlog_health` name what was parked and why, since a
 pool that quietly shrinks is the dead end this surface has had to talk its way out of once already.
 
+*Defined stopping points* gained its evidence on 2026-09-06 too. The stop condition the spec
+states — "the publishable backlog is exhausted, or further progress is gated entirely on open
+escalations" — had become machine-readable in pieces and was assembled by nobody, so an agent
+deciding to stop called three reads and merged them by eye, which made "the backlog is exhausted"
+an assertion rather than an answer. `reprolith loop-status` (MCP: `loop_status`) answers it:
+`stop_reason` is `None` exactly when a requester would be handed something, and otherwise names
+which of four situations holds — everything blocked on one input, everything parked, entries that
+carry no accession, or a backlog genuinely empty — since what would lift each is entirely
+different. It carries the parks with their diagnoses and the escalations split into what an expert
+can decide and what only this engine can, which is what a loop needs to know whether a gate is one
+it could lift itself. What it does **not** report is the spec's "what it accomplished": that is the
+git history, and a field summarizing a run would invent a record this package does not keep, so it
+counts what stands and says so.
+
 What remains agent-carried cannot produce a wrong certificate — an unescalated uncertainty still
 travels as a load-bearing assumption, which downgrades the verdict on its own — but the
 requirements below are stated as goals, and a reader should not take the agent-carried ones as

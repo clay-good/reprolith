@@ -28,6 +28,7 @@ from test_cli import _write_repo  # the same repository the CLI tests build
 _PAIRS = {
     "catalog": ("list_catalog", {}),
     "backlog": ("backlog_health", {}),
+    "loop-status": ("loop_status", {}),
     "self-validation": ("self_validation", {}),
     "corroboration": ("corroboration", {}),
     "select-claims": ("select_claims", {"accession": "ACC1", "budget": 2}),

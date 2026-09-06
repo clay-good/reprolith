@@ -132,6 +132,17 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "loop_status",
+        "description": (
+            "Whether there is gated, publishable work — and if not, exactly why not. Assembles "
+            "the stop condition the autonomous-build-loop spec states: what is claimable, what "
+            "each blocked entry waits on, what repeated fruitless claims have parked, and what is "
+            "escalated (split into what an expert can decide and what only this engine can). "
+            "Reports what stands, not what any one run produced."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
         "name": "certificates_for",
         "description": "Digests of every certificate issued for a paper, newest first.",
         "inputSchema": _IDENTIFIER,
@@ -887,6 +898,8 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return query.presubmission(arguments["digest"])
     if name == "verification_queue":
         return query.verification_queue()
+    if name == "loop_status":
+        return query.loop_status()
     if name == "verification_issue":
         return query.verification_issue(arguments["item_id"])
     if name == "certificates_for":

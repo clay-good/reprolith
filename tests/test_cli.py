@@ -702,6 +702,7 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     on_the_query_surface = set(subcommands) - file_based
     assert on_the_query_surface == {
         "backlog", "bundle", "catalog", "certificate", "certificates-for", "corroboration",
+        "loop-status",
         "dossier", "gaps", "presubmission", "select-claims", "self-validation", "status",
         "verdict", "verification-queue", "verification-issue",
     }

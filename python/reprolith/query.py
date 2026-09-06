@@ -19,6 +19,7 @@ surface"). The transport binding (the actual MCP tool definitions) wraps this re
 from __future__ import annotations
 
 import time
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -353,6 +354,88 @@ class ReprolithQuery:
         would hand out on the very next request, permanently, since leases persist.
         """
         return self._catalog.backlog_health(time.time() if at is None else at)
+
+    def loop_status(self, at: float | None = None) -> dict[str, Any]:
+        """Whether there is gated, publishable work — and if not, exactly why not.
+
+        The ``autonomous-build-loop`` spec says the loop stops when "the goal is met, the
+        publishable backlog is exhausted, or further progress is gated entirely on open
+        escalations", with a summary of what it parked and what it escalated. Every part of that
+        condition became machine-readable in pieces — ``backlog_health`` counts what is claimable
+        and what each blocked entry waits on, parking is derived from the attempt record, and the
+        verification queue splits escalations into what an expert can decide and what only this
+        engine can — and nothing put them together. An agent deciding to stop had to call three
+        reads and merge them by eye, which means "the backlog is exhausted" was an assertion rather
+        than an answer.
+
+        ``stop_reason`` is ``None`` exactly when a requester would be handed something. Otherwise
+        it names the cause in the order that matters: everything blocked on one input is a
+        different situation from everything parked, and both are different from a backlog that is
+        genuinely empty.
+
+        What this deliberately does **not** report is the spec's "what it accomplished". That is
+        the git history, not engine state, and a field here summarizing a *run* would be inventing
+        a record this package does not keep — so ``standing`` counts what is published and says
+        so, rather than implying anything was published just now.
+        """
+        health = self.backlog_health(at)
+        queue = self.verification_queue()
+        parked = health.get("parked", [])
+        claimable = int(health["claimable"])
+        blocked_on = health["blocked_on"]
+        stop_reason: str | None = None
+        if claimable == 0:
+            if blocked_on:
+                releases = blocked_on[0]
+                stop_reason = (
+                    f"no claimable work: {health['by_state'].get('blocked', 0)} entries are "
+                    f"blocked, {releases['entries']} of them on one input — {releases['missing']}"
+                )
+            elif parked:
+                stop_reason = (
+                    f"no claimable work: {len(parked)} entries are parked after repeated claims "
+                    "that moved them nowhere, and nothing else is queued"
+                )
+            elif health.get("claimable_without_accession"):
+                stop_reason = (
+                    f"no claimable work: {health['claimable_without_accession']} queued entries "
+                    "carry no accession, and an entry without one cannot be finished or released"
+                )
+            else:
+                stop_reason = "no claimable work: the backlog holds nothing in a workable state"
+        return {
+            "publishable_work": claimable > 0,
+            "stop_reason": stop_reason,
+            "claimable": claimable,
+            "claimable_without_accession": health.get("claimable_without_accession", 0),
+            "blocked_on": blocked_on,
+            "parked": parked,
+            "escalated": {
+                # Split the way the queue splits it, because the two are not the same kind of
+                # wait: one is a question for a person, the other is work for this engine, and a
+                # loop deciding whether it is gated "entirely on open escalations" needs to know
+                # which of its own gates it could lift itself.
+                "awaiting_expert": queue["pending_count"],
+                "engine_limits": queue["engine_limits_count"],
+                "decided": queue.get("decided_count", 0),
+            },
+            "standing": {
+                "certificates": queue["standing_certificates"],
+                "by_class": dict(
+                    sorted(
+                        Counter(
+                            self.model_class_of(digest) or "unknown"
+                            for digest, _ in self._ledger.items()
+                            if self.superseded_by(digest) is None
+                        ).items()
+                    )
+                ),
+            },
+            "standing_note": (
+                "what this repository has published, not what any one run produced — the record "
+                "of a run is its git history, which this package does not keep"
+            ),
+        }
 
     def self_validation(self) -> dict[str, Any]:
         """Reprolith's blind self-validation track record, per model class and overall.

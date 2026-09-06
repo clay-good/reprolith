@@ -290,6 +290,7 @@ reprolith status <accession>         # a paper's lifecycle status and history
 reprolith dossier <accession>        # what was extracted from the paper, and from where
 reprolith bundle <accession>         # the reconstruction the certificate was issued against
 reprolith certificates-for <id>      # every certificate digest for one paper, newest first
+reprolith loop-status                # is there publishable work — and if not, what is holding it
 reprolith verification-queue         # what every standing certificate rests on, awaiting review
 reprolith verification-issue <id>    # one of those as the filled GitHub issue to open
 reprolith self-validation            # the blind track record, per class and overall

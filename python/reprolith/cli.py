@@ -430,6 +430,36 @@ def _cmd_verification_queue(query: ReprolithQuery, args: argparse.Namespace) -> 
     return 0
 
 
+def _cmd_loop_status(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """The stop condition, in one read: is there work, and if not, what is holding it."""
+    status = query.loop_status()
+    if args.json:
+        _print_json(status)
+        return 0
+    if status["publishable_work"]:
+        print(f"WORK AVAILABLE — {status['claimable']} claimable entries")
+    else:
+        print("NO PUBLISHABLE WORK")
+        print(f"  {status['stop_reason']}")
+    if status["claimable_without_accession"]:
+        print(
+            f"  {status['claimable_without_accession']} queued entries carry no accession and "
+            "cannot be finished or released"
+        )
+    for park in status["parked"]:
+        print(f"  parked: {park['accession']} — {park['diagnosis']}")
+    escalated = status["escalated"]
+    print(
+        f"escalated: {escalated['awaiting_expert']} awaiting an expert, "
+        f"{escalated['engine_limits']} limits of this engine, {escalated['decided']} answered"
+    )
+    standing = status["standing"]
+    by_class = ", ".join(f"{name} {count}" for name, count in standing["by_class"].items())
+    print(f"standing: {standing['certificates']} certificates ({by_class})")
+    print(f"  {status['standing_note']}")
+    return 0
+
+
 def _cmd_verification_issue(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """One queue item as the issue a person opens, filled rather than transcribed.
 
@@ -1608,7 +1638,8 @@ def build_parser() -> argparse.ArgumentParser:
             "has seen them."
         ),
         epilog=(
-            "reading this repository: catalog, backlog, self-validation, corroboration, status, "
+            "reading this repository: catalog, backlog, loop-status, self-validation, "
+            "corroboration, status, "
             "certificate, verdict, gaps, presubmission, verification-queue, verification-issue, "
             "certificates-for, "
             "dossier, bundle, select-claims\n"
@@ -1706,6 +1737,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_json(p)
     p.set_defaults(func=_cmd_verification_queue)
+
+    p = sub.add_parser(
+        "loop-status",
+        help="is there publishable work, and if not, exactly what is holding it",
+    )
+    add_json(p)
+    p.set_defaults(func=_cmd_loop_status)
 
     p = sub.add_parser(
         "verification-issue",
