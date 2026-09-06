@@ -22,8 +22,8 @@ from reprolith import (
     RecordedDecision,
     Verdict,
     build_certificate,
-    queue_report,
     question_fingerprint,
+    queue_report,
     recertification_due,
 )
 from reprolith.determinism import certificate_digest
