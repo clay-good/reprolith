@@ -209,15 +209,44 @@ def test_the_published_bound_does_not_move_between_two_measurements_of_one_run()
     assert len(bounds) == 1, f"the published bound moved between runs: {sorted(bounds)}"
     assert bounds == {1e-06}
 
-    # And *why* it no longer moves, asserted directly rather than left to three draws agreeing.
-    # Worst-of-two was the first attempt and it is not enough: it assumes the alternation is
-    # period-two, which held on the machine it was written on and did not hold on CI, where three
-    # measurements of this claim published two different decades with every draw already
-    # worst-of-two. The floor is what makes it deterministic, and this is the assertion that fails
-    # without it on any machine — the raw distance here is around 5e-08, well under it.
-    assert all(result.distance == _CURVE_NOISE_FLOOR for result in results), [
+    # What the floor guarantees, which is all this can assert about a real engine: no published
+    # distance is below it, so no pair of draws can straddle the decade boundary underneath it.
+    #
+    # It used to assert the stronger thing — that every draw comes out *exactly* the floor, "the
+    # raw distance here is around 5e-08, well under it". That is true of the machine it was
+    # written on and is not a property of the code: on CI this model's muscle curve measured
+    # 1.37e-07, legitimately above the floor, and the assertion failed while the bound it exists
+    # to stabilise was 1e-06 on all three draws, as asserted above. A test that fails when nothing
+    # is wrong reports noise, and this file already carries that lesson twice over one function
+    # down. The rule itself is checked exactly, and without an engine, in
+    # `test_the_floor_is_what_the_published_distance_can_never_fall_below`.
+    assert all(result.distance >= _CURVE_NOISE_FLOOR for result in results), [
         result.distance for result in results
     ]
+
+
+def test_the_floor_is_what_the_published_distance_can_never_fall_below(monkeypatch) -> None:
+    """The floor's rule, asserted on the rule rather than on what one engine happens to measure.
+
+    Patched the way its sibling patches the aggregation, and for the same reason: whether a real
+    model's raw distance lands above or below the floor is a property of the machine, and a test
+    that turns on it reports the machine.
+    """
+    from reprolith import corroboration as module
+
+    sbml = (
+        Path(__file__).parent.parent / "datasets" / "worked_examples"
+        / "Zake2021_metformin_human_single_PO.xml"
+    ).read_text(encoding="utf-8")
+
+    monkeypatch.setattr(module, "normalized_curve_distance", lambda a, b: 1e-12)
+    lifted = corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480)
+    assert lifted.distance == _CURVE_NOISE_FLOOR
+
+    # And a distance genuinely above the floor is published as measured, never pulled down to it.
+    monkeypatch.setattr(module, "normalized_curve_distance", lambda a, b: 3.5e-07)
+    measured = corroborate_curve(sbml, "mMuscle", duration=24.0, steps=480)
+    assert measured.distance == 3.5e-07
 
 
 def test_the_draws_are_aggregated_by_the_worst_never_the_best(monkeypatch) -> None:

@@ -4041,3 +4041,22 @@ the run does not reach is a claim that does not fit its entry — the same kind 
 a species the model does not declare, and refused the same way, naming the window, the run's span
 and how many samples fell in it. One sample is refused too: an area over it is zero and a peak over
 it is that sample, and neither is a reading.
+
+## A test that fails when nothing is wrong
+
+The cross-engine job went red on a run that changed no code it exercises. The test asserts that
+three measurements of one curve each publish a distance *exactly* equal to the noise floor, on the
+strength of a comment reading "the raw distance here is around 5e-08, well under it". On CI that
+model's muscle curve measured **1.37e-07** — legitimately above the floor — and the assertion
+failed while the thing the floor exists to stabilise, the published bound, was 1e-06 on all three
+draws exactly as the test's own first assertion requires.
+
+Whether a real model's raw distance lands above or below the floor is a property of the machine.
+The file already carries that lesson twice, one function below, where a version of the neighbouring
+test compared two invocations and failed in CI twice for the same reason — "nothing about the code
+was wrong either time, which is the definition of a test that reports noise".
+
+So the real-engine test now asserts what the floor actually guarantees, that no published distance
+falls below it, and the floor's rule is checked exactly and without an engine by patching the
+distance function the way its sibling patches the aggregation: a distance under the floor comes out
+at the floor, and one above it is published as measured rather than pulled down.
