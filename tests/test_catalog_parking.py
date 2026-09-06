@@ -442,3 +442,66 @@ def test_a_coherent_attempt_record_still_loads() -> None:
     # And that second claim is the only one the retry bound can still see, because the three
     # transitions in between are exactly the progress that clears the run.
     assert len(reloaded.find(Identifiers(title="", accession="A1")).attempts_without_progress()) == 1
+
+
+def test_the_bound_survives_a_server_restart(tmp_path) -> None:
+    """The path that actually matters: a long-running server saving to disk, restarted, still
+    refusing the entry. Everything above exercises `to_dict`/`from_dict` and the in-process
+    functions; this drives the effectful tools through `handle_request` with the real save
+    callback and then re-reads the directory the way a fresh server does.
+    """
+    from reprolith.mcp_server import handle_request, load_repository
+
+    catalog = _catalog("A1")
+    (tmp_path / "catalog.json").write_text(json.dumps(catalog.to_dict()), encoding="utf-8")
+    for sub in ("certificates", "dossiers", "bundles"):
+        (tmp_path / sub).mkdir()
+
+    query, live = load_repository(tmp_path)
+    clock = [0.0]
+
+    def save() -> None:
+        (tmp_path / "catalog.json").write_text(
+            json.dumps(live.to_dict(), indent=2, sort_keys=True), encoding="utf-8"
+        )
+
+    def call(name: str, arguments: dict) -> dict:
+        response = handle_request(
+            query,
+            {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+             "params": {"name": name, "arguments": arguments}},
+            catalog=live,
+            on_change=save,
+            now=lambda: clock[0],
+        )
+        return json.loads(response["result"]["content"][0]["text"])
+
+    for i in range(PARK_AFTER_ATTEMPTS):
+        clock[0] = i * 10000.0
+        assert call("claim_work", {"requester": f"a{i}", "lease_seconds": 60})["claimed"]
+        assert call(
+            "release_work",
+            {"accession": "A1", "requester": f"a{i}", "reason": "the deposit ships no rate laws"},
+        )["released"]
+
+    # A fresh server, reading only what is on disk.
+    restarted_query, restarted = load_repository(tmp_path)
+    entry = restarted.find(Identifiers(title="", accession="A1"))
+    assert len(entry.attempts) == PARK_AFTER_ATTEMPTS
+    assert entry.is_parked(), "the bound has to outlive the process that counted toward it"
+
+    clock[0] = 99999.0
+    refusal = json.loads(
+        handle_request(
+            restarted_query,
+            {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+             "params": {"name": "claim_work", "arguments": {"requester": "b"}}},
+            catalog=restarted,
+            on_change=lambda: None,
+            now=lambda: clock[0],
+        )["result"]["content"][0]["text"]
+    )
+    assert refusal["claimed"] is False
+    assert "parked" in refusal["reason"]
+    assert refusal["parked"][0]["diagnosis"]
+    assert "the deposit ships no rate laws" in refusal["parked"][0]["diagnosis"]
