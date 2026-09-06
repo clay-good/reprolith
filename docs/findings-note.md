@@ -4642,3 +4642,39 @@ Fixing the first also found a real defect. Setting the assessment's `assumption_
 assumption's existence in two places let them disagree: a claim that stated its wall produced a
 certificate carrying **no assumptions** and still reporting `partially-reproduced` — a qualification
 nothing on it named. One expression governs both now, because they are one fact.
+
+
+## The class could measure a decay length and could not certify one
+
+The spatial class had exactly one claim type: a whole reported concentration profile. A paper
+almost never prints one as numbers, so reaching a profile claim needs a curator's figure
+digitization — the route this corpus is blocked on and has been measured out of.
+
+Meanwhile the module has run morphogen gradients and fitted their decay lengths since the class
+landed, validated against `λ = √(D/k)` in its own tests, and none of that was reachable by a
+certificate. A decay length is the reportable quantity of a developmental-biology gradient paper
+and it is a **scalar in the text** — reachable by the table and prose extraction that already
+works. The gap was a claim type joining machinery that already existed to a judge that already
+existed.
+
+`GradientClaim` closes it. Three things it does that are the class's existing discipline applied to
+a new shape:
+
+- **Everything the number turns on is recorded**, including the fitting window. That window is a
+  judgement — too near the source the profile is not yet exponential, too near the far wall the
+  zero-flux condition flattens it — so it belongs to the claim, is stated on the certificate, and a
+  badly chosen one produces a stated miss rather than a quiet one.
+- **It carries no boundary assumption.** A fixed source at one end against a zero-flux far field is
+  what a morphogen gradient *is*, not a wall this engine chose in the absence of one. Qualifying it
+  would overstate the uncertainty.
+- **The continuum length sits beside the judged one.** `√(D/k)` is what the equation says; the
+  certificate judges what the discretized run produced, and a reader comparing them sees the
+  discretization's cost without running anything.
+
+Two of the tests were written against a premise that turned out to be wrong, which is worth
+recording because both premises sounded right. The far tail of a real gradient does **not** stop
+decaying — the zero-flux wall flattens it without reversing it — so a window there yields an honest
+miss, not an abstention; the abstention needs a genuinely rising profile. And one mutation I wrote
+to check the qualification was *equivalent code*: it added gradients to the qualified list after the
+assumption tuple had already been built, so it could not fail. A mutation that cannot change
+behaviour measures nothing, which is the third time today that lesson has come round.

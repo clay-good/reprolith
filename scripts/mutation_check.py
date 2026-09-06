@@ -926,6 +926,33 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          "            if False:"),
         ["tests/test_spatial_ingest.py"],
     ),
+    (
+        "a decay length is qualified for a boundary that is the model rather than a choice",
+        "spatial.py",
+        ("        attribution=claim.shortfall or undetermined_shortfall(claim.quantity),\n    )\n    return replace(\n        assessment,",
+         "        attribution=claim.shortfall or undetermined_shortfall(claim.quantity),\n        assumption_qualified=True,\n    )\n    return replace(\n        assessment,"),
+        ["tests/test_spatial_gradient_claim.py"],
+    ),
+    (
+        "a window no exponential can be fitted over publishes a slope as a length",
+        "spatial.py",
+        ("    except ValueError as unfittable:\n        return not_evaluable(",
+         "    except ValueError as unfittable:\n        raise unfittable from None\n    if False:\n        return not_evaluable("),
+        ["tests/test_spatial_gradient_claim.py"],
+    ),
+    (
+        "a certificate is published for a paper this class judged nothing of",
+        "spatial.py",
+        ("    if not assessments:\n        raise ValueError(", "    if False:\n        raise ValueError("),
+        ["tests/test_spatial_gradient_claim.py"],
+    ),
+    (
+        "the fitting window a decay length depends on is left off the certificate",
+        "spatial.py",
+        ('f"[{claim.fit_from}, {claim.fit_to}); Dirichlet source at x=0 and a zero-flux far "',
+         'f"[a window); Dirichlet source at x=0 and a zero-flux far "'),
+        ["tests/test_spatial_gradient_claim.py"],
+    ),
     # --- the collaboration surface, 2026-09-06 -------------------------------------------------
     # Twelve guards from one day's work. Every one was hand-mutated when it was written and none
     # was in this list, which is the gap this file exists to close: a guard proved once by hand is

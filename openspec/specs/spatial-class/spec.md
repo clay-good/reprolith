@@ -72,7 +72,18 @@ A spatial dossier SHALL capture the elements that determine the spatial dynamics
 
 ### Requirement: Standard spatial reproduction targets
 
-The oracle for this class SHALL evaluate the spatial results papers report, using the curve oracle.
+The oracle for this class SHALL evaluate the spatial results papers report, using the curve oracle
+for reported profiles and the scalar comparison for the length scales papers state as numbers.
+
+#### Scenario: Decay-length reproduction
+
+- **WHEN** a claim is a reported decay length of a morphogen gradient
+- **THEN** the oracle runs the gradient to steady state, fits the length over the grid window the
+  claim states, and compares it to the reported value with the shared scalar comparison
+- **AND** the certificate records every input the number turns on — the source, the diffusivity,
+  the degradation rate, the discretization, and the fitting window — since each moves the result
+- **AND** the run carries no boundary assumption: a fixed source at one end and a zero-flux far
+  field are the gradient model itself rather than a wall this engine chose in the absence of one
 
 #### Scenario: Concentration-profile reproduction
 

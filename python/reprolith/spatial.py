@@ -21,7 +21,7 @@ from typing import Any
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Gap, GapKind, Parameter
-from .model import Assumption, Certificate, EnginePin, PaperIdentity
+from .model import Assumption, Certificate, ClaimAssessment, EnginePin, PaperIdentity
 from .oracle import (
     Attribution,
     ComparisonMethod,
@@ -29,6 +29,7 @@ from .oracle import (
     Tolerance,
     default_tolerance,
     judge_curve,
+    judge_scalar,
     normalized_curve_distance,
     not_evaluable,
     undetermined_shortfall,
@@ -709,6 +710,64 @@ class SpatialClaim:
         return self.boundary is None
 
 
+@dataclass(frozen=True)
+class GradientClaim:
+    """A published **decay length**: the length scale of a morphogen gradient, as a paper prints it.
+
+    The class's other claim is a whole reported profile, which a paper almost never prints as
+    numbers — reaching one needs a curator's figure digitization, the route this corpus is blocked
+    on. A decay length is a *scalar in the text*, so it is reachable by the same table and prose
+    extraction that already works, and it is the reportable quantity of developmental-biology
+    gradient papers: ``C(x) = C₀·e^{−x/λ}`` with ``λ = √(D/k)``.
+
+    Everything here is the run, for the same reason a profile claim records its discretization:
+    every plausible alternative grid, source strength or fitting window gives a different length,
+    so without them the number on the certificate cannot be re-derived from it. ``fit_from`` and
+    ``fit_to`` are the grid-index window the exponential is fitted over — away from the source,
+    where the profile has not yet become exponential, and away from the far wall, where the
+    zero-flux condition bends it back up. That window is a judgement, so it is the claim's and
+    is recorded, not the engine's.
+    """
+
+    claim_id: str
+    quantity: str
+    reported: float
+    source_location: str
+    source: float
+    diffusivity: float
+    decay: float
+    dx: float
+    points: int
+    dt: float
+    steps: int
+    fit_from: int
+    fit_to: int
+    tolerance: Tolerance | None = None
+    shortfall: Attribution | None = field(default=None)
+
+    def __post_init__(self) -> None:
+        if self.decay <= 0.0:
+            raise ValueError(
+                f"claim {self.claim_id!r} states a decay of {self.decay!r}: without degradation "
+                "there is no length scale, and the profile does not decay exponentially at all"
+            )
+        if not 0 <= self.fit_from < self.fit_to <= self.points:
+            raise ValueError(
+                f"claim {self.claim_id!r} fits over [{self.fit_from}, {self.fit_to}) of "
+                f"{self.points} points, which is not a window inside the grid"
+            )
+
+    @property
+    def analytical_length(self) -> float:
+        """``√(D/k)`` — the length scale the continuum solution has, for the protocol line.
+
+        Recorded beside the measured one because the two answer different questions: this is what
+        the *equation* says, and the certificate judges what the *discretized run* produced. A
+        reader comparing them sees the discretization's own cost without running anything.
+        """
+        return math.sqrt(self.diffusivity / self.decay)
+
+
 def boundary_sensitivity(claim: SpatialClaim) -> dict[str, Any] | None:
     """What the wall costs this claim, in the statistic the verdict is actually drawn from.
 
@@ -789,11 +848,61 @@ def solver_pin() -> EnginePin:
     )
 
 
+def _judge_gradient(claim: GradientClaim) -> ClaimAssessment:
+    """Run a morphogen gradient to steady state and judge the decay length it produces.
+
+    Abstains rather than raises where the run cannot decide the claim, as every other path in this
+    class does: an unstable discretization, and a fitted window that does not actually decay — a
+    least-squares slope through a flat or rising profile returns a number, and publishing it as a
+    length would be a verdict about a fit nobody could make.
+    """
+    try:
+        profile = morphogen_gradient(
+            source=claim.source, diffusivity=claim.diffusivity, decay=claim.decay,
+            dx=claim.dx, points=claim.points, dt=claim.dt, steps=claim.steps,
+        )
+    except UnstableDiscretization as unstable:
+        return not_evaluable(
+            claim_id=claim.claim_id, quantity=claim.quantity,
+            source_location=claim.source_location, reason=str(unstable),
+            reference_kind=ReferenceKind.NUMERIC,
+        )
+    try:
+        measured = gradient_decay_length(
+            profile, dx=claim.dx, start=claim.fit_from, end=claim.fit_to
+        )
+    except ValueError as unfittable:
+        return not_evaluable(
+            claim_id=claim.claim_id, quantity=claim.quantity,
+            source_location=claim.source_location,
+            reason=f"no decay length could be fitted over this window: {unfittable}",
+            reference_kind=ReferenceKind.NUMERIC,
+        )
+    assessment = judge_scalar(
+        claim_id=claim.claim_id, quantity=claim.quantity,
+        source_location=claim.source_location, reported=claim.reported, predicted=measured,
+        tolerance=claim.tolerance,
+        attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
+    )
+    return replace(
+        assessment,
+        protocol=(
+            f"1-D morphogen gradient to steady state: source={claim.source!r}, "
+            f"D={claim.diffusivity!r}, k={claim.decay!r}, dx={claim.dx!r}, dt={claim.dt!r}, "
+            f"{claim.steps} steps over {claim.points} points; decay length fitted over grid "
+            f"[{claim.fit_from}, {claim.fit_to}); Dirichlet source at x=0 and a zero-flux far "
+            f"wall, which is the model rather than a choice; the continuum length is "
+            f"{claim.analytical_length:.6g}"
+        ),
+    )
+
+
 def certify_spatial(
     *,
     paper: PaperIdentity,
     engine_pin: EnginePin,
-    claims: Iterable[SpatialClaim],
+    claims: Iterable[SpatialClaim] = (),
+    gradients: Iterable[GradientClaim] = (),
     assumptions: Iterable[Assumption] = (),
 ) -> Certificate:
     """Run each spatial claim's diffusion to its stated time, judge the profile, build the certificate.
@@ -960,6 +1069,16 @@ def certify_spatial(
         )
         for claim in qualified
     )
+    # A gradient claim carries no boundary assumption: its walls are the *model* — a fixed source
+    # at one end and a zero-flux far field are what a morphogen gradient is, not a choice this
+    # engine made in the absence of one. Qualifying it would overstate the uncertainty, which is
+    # the same defect as understating it.
+    assessments.extend(_judge_gradient(gradient) for gradient in gradients)
+    if not assessments:
+        raise ValueError(
+            "a spatial certificate needs at least one claim: certifying a paper this class judged "
+            "nothing of would publish a verdict about no evidence"
+        )
     return build_certificate(
         paper=paper, engine_pin=engine_pin,
         assessments=assessments, assumptions=(*assumptions, *boundary),
