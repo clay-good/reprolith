@@ -11,7 +11,7 @@
       "protocol": "duration=24.0, steps=960, read=[mPlasmaVenous] auc",
       "quantity": "Plasma AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
       "reference_kind": "numeric",
-      "root_cause": "the AUC moves 22.2% between 960 and 1920 samples, wider than the 5.0% that separates a pass from a failure here; at this resolution the number is a property of the grid, so no verdict is established",
+      "root_cause": "the AUC moves 22.2% between 960 and 1920 samples \u2014 wider than the 5.0% that separates a pass from a failure here; at this resolution the number is a property of the grid, so no verdict is established",
       "source_location": "Table 2, Plasma row, Fitted (the paper simulates 91.4 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
       "tolerance": null,
       "tolerance_source": null,
@@ -67,7 +67,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "deterministic-lsoda (judge rev a17d6cc5fac8)",
+    "algorithm": "deterministic-lsoda (judge rev e0515a40b654)",
     "engine": "copasi",
     "version": "4.46.300 (Source)"
   },

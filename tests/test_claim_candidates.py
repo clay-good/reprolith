@@ -51,7 +51,9 @@ def test_a_metric_is_proposed_only_where_the_column_states_one() -> None:
     by_heading = {c["quantity"].split(" (")[0]: c["metric"] for c in proposed}
     assert by_heading["Cmax, nmol/mL"] == "cmax"
     assert by_heading["AUC24, nmol*h/mL"] == "auc"
-    assert by_heading["Tmax, h"] == ""  # a time, not a way of reading a trajectory
+    # A time to peak *is* a way of reading a trajectory, and became one when the oracle learned
+    # to compute it — the one column of a PK table that bears on the model's time axis.
+    assert by_heading["Tmax, h"] == "tmax"
     # A percentage difference is a comparison between two numbers, not one of them.
     assert by_heading["Cmax measured- fitted, %"] == ""
 
@@ -152,7 +154,7 @@ def test_a_quantity_named_down_the_side_still_states_its_metric() -> None:
     by_value = {c["reported"]: c for c in propose_claims(_SIDEWAYS)["candidates"]}
     assert by_value[10.2]["metric"] == "auc"
     assert by_value[0.44]["metric"] == "cmax"
-    assert by_value[3.8]["metric"] == ""  # Tmax is a time, not a way of reading a trajectory
+    assert by_value[3.8]["metric"] == "tmax"
     # And the label that says what the number is travels in the source location.
     assert "Parameter AUC" in by_value[10.2]["source_location"]
 
@@ -307,7 +309,7 @@ def test_a_candidate_carries_the_unit_its_column_heading_names() -> None:
         # AUC24 and T1/2 values were calculated").
         for claim in committed[accession]["claims"]:
             metric = claim.get("metric", "cmax")
-            expected = "nmol*h/mL" if metric == "auc" else "nmol/mL"
+            expected = {"auc": "nmol*h/mL", "tmax": "h"}.get(metric, "nmol/mL")
             assert claim["reported_units"] == expected, (accession, claim["claim_id"])
             assert (metric, expected) in by_metric, (accession, metric, sorted(by_metric))
 

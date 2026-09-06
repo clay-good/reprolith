@@ -3673,7 +3673,7 @@ One thing the proposal asked for is measured and *not* built: the gaps a reconst
 before a claim can run. They are real dependencies, and on this corpus they are the model's rather
 than the claim's — the reaction network, the compartment volumes, the function definitions, the
 events and the units are needed by every claim alike, so the rule adds the same five elements to
-all sixty-three footprints of a paper. Mean pairwise overlap goes 0.261 to 0.393 while the spread
+all ninety-three footprints of a paper. Mean pairwise overlap goes 0.265 to 0.399 while the spread
 that separates a shared-machinery pair from an independent one falls 0.955 to 0.864: a constant
 added everywhere can only push every pair together, and can never tell two claims apart. Worse,
 charged as pairwise overlap it makes one more claim's marginal value negative, so the selector
@@ -3897,3 +3897,42 @@ the 500→1000 mg ratio is 1.835 for every tissue except muscle, which is 1.892,
 344.8 — the number the model gives. It looks like a second printing error in the same table. It
 passes at 3.20%, so it is published as a pass; a second finding is not something to argue into
 existence from one ratio.
+
+## The column that bears on the clock, and a guard that asked the wrong question
+
+Tables 6 and 7 print a **Tmax** beside every Cmax, and it is the one column in the paper that bears
+on the model's time axis at all. With the time-unit finding standing on a chain of inferences —
+Tmax, T½ and the AUC24 column all reproduce over a 24-model-time-unit run, so the declared hundred
+hours must be an error — a certified Tmax claim is the plainest possible form of that argument.
+It is also the plainest form of the disagreement: a time to peak composes **no** substance unit, so
+what `claims-check --model` reports for it is the model's own clock against the paper's hours and
+nothing else. `this claim is in h and the model reads that output in 3600*10^2 second, which is 100
+times as large`.
+
+Thirty claims land. Twenty-nine reproduce and one does not — and what the odd one out turned up is
+worth more than the thirty.
+
+**A time to peak is grid-dependent in a way that is easy to see and easy to miss.** The answer can
+only be one of the sample times, so it moves by up to one spacing however smooth the model is. On
+this run — 24 hours at 480 samples — the spacing is 0.05 h, which is **2.5% of a reported Tmax of
+2.0**: half the width that separates a pass from a failure, spent before the model is consulted.
+Every Tmax in Table 6 lands within one spacing of the printed value, so what reads as an error of
+2.5% is the grid agreeing exactly.
+
+The AUC convergence guard already existed for exactly this, and it did not fire. It asks whether
+the metric's own sampling uncertainty is wider than the tolerance *width* — 5% here — and 1.37% is
+not. But the width is not what decides a verdict; a **line** is. Plasma's Tmax at 1000 mg measured
+5.26% against a 5% pass line, so the verdict was decided by 0.26% while the run's own sampling
+moves the number by 1.37%. Which side of the line it fell on was the grid's answer.
+
+So the guard now takes a second reason to abstain — the distance from the measured error to the
+nearest verdict boundary — and requires both, which means it can only ever add abstentions.
+**Measured over the committed corpus before it was adopted**, as a threshold must be: of a hundred
+grid-dependent claims it changes four, every one a time to peak within a sample spacing of the pass
+line, and no area at all. The existing intravenous AUC abstention keeps its own reason, and the two
+are told apart in the certificate's own words.
+
+This is the shape the 15th pass named and this one repeated: a check verified in the direction that
+did not matter. The guard was written against the question "is this number settled?" when the
+question it exists to answer is "is this *verdict* settled?", and until this column was claimed no
+number had landed close enough to a line for the difference to show.

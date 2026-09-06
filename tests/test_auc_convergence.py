@@ -24,7 +24,7 @@ pytest.importorskip("libsbml", reason="the optional 'engine' extra is not instal
 pytest.importorskip("COPASI", reason="the optional 'engine' extra is not installed")
 
 from reprolith import Claim, PaperIdentity, Verdict, certify_model  # noqa: E402
-from reprolith.certify import _auc_is_established  # noqa: E402
+from reprolith.certify import _metric_is_established  # noqa: E402
 from reprolith.engine import engine_pin  # noqa: E402
 
 _WORKED = Path(__file__).parent.parent / "datasets" / "worked_examples"
@@ -33,8 +33,8 @@ _HUMAN = (_WORKED / "Zake2021_metformin_human_single_PO.xml").read_text(encoding
 
 def test_a_smooth_oral_profile_has_an_established_auc() -> None:
     """The case that must keep working: an ordinary PK curve converges immediately."""
-    established, change = _auc_is_established(
-        _HUMAN, "mPlasmaVenous", duration=24.0, steps=480, within=0.05
+    established, change = _metric_is_established(
+        _HUMAN, "mPlasmaVenous", metric="auc", duration=24.0, steps=480, within=0.05
     )
     assert established
     assert change < 1e-4, change
@@ -79,8 +79,8 @@ def test_an_unconverged_auc_abstains_rather_than_reporting_a_verdict() -> None:
   </model>
 </sbml>
 """
-    established, change = _auc_is_established(
-        spike, "C", duration=24.0, steps=48, within=0.05
+    established, change = _metric_is_established(
+        spike, "C", metric="auc", duration=24.0, steps=48, within=0.05
     )
     assert not established and change > 0.05
 
@@ -129,3 +129,64 @@ def test_a_curve_claim_has_no_free_grid_to_converge_over() -> None:
             claim_id="c", quantity="q", source_location="Figure 1",
             reference=(1.0, 2.0, 3.0), predicted=(1.0, 2.0, 3.0, 4.0),
         )
+
+
+def test_a_time_to_peak_is_guarded_against_the_grid_that_produced_it() -> None:
+    """The guard was written for areas and the reason it gives covers times just as squarely.
+
+    A time to peak can only ever be one of the sample times, so refining the grid moves it by up
+    to one spacing however smooth the model is. On this paper's 24-hour run at 480 samples that
+    spacing is 0.05 h — 2.5% of a reported Tmax of 2.0, half the pass budget, spent before the
+    model is consulted.
+    """
+    established, change = _metric_is_established(
+        _HUMAN, "mPlasmaVenous", metric="tmax", duration=24.0, steps=480, within=0.05
+    )
+    assert established and change < 0.05, change
+
+
+def test_a_verdict_the_grid_could_flip_is_not_established() -> None:
+    """The half this originally left out: the width is not what decides a verdict, a line is.
+
+    Comparing the run's own uncertainty to the whole tolerance *width* asks whether the number is
+    roughly settled. What decides a verdict is whether that uncertainty could carry it across a
+    line — and a claim measured at 5.26% against a 5% pass line is decided by 0.26% while its own
+    sampling moves it by 1.37%. Both reasons are required, so this only ever adds abstentions.
+    """
+    settled, change = _metric_is_established(
+        _HUMAN, "mPlasmaVenous", metric="tmax", duration=24.0, steps=480, within=0.05,
+        nearest_boundary=0.0026,
+    )
+    assert not settled and change > 0.0026, change
+    # The same run, the same uncertainty, a claim that landed nowhere near a line: judged.
+    settled, _ = _metric_is_established(
+        _HUMAN, "mPlasmaVenous", metric="tmax", duration=24.0, steps=480, within=0.05,
+        nearest_boundary=0.04,
+    )
+    assert settled
+
+
+def test_the_corpus_abstains_exactly_where_the_grid_decides_the_verdict() -> None:
+    """Measured over the committed corpus before the rule was adopted, and pinned here.
+
+    Of the grid-dependent claims this repository publishes, the added reason changes four — every
+    one a time to peak within one sample spacing of the pass line — and no area at all. A guard
+    that is too strict is a real cost, and this is the measurement that says how much it costs.
+    """
+    import json
+
+    abstained = {
+        (path.stem, a["claim_id"]): a["root_cause"]
+        for path in (Path(__file__).parent.parent / "datasets/milestone/certificates").glob(
+            "*.json"
+        )
+        for a in json.loads(path.read_text(encoding="utf-8"))["assessments"]
+        if a["verdict"] == "not-evaluable"
+    }
+    by_reason: dict[str, set[str]] = {"width": set(), "boundary": set()}
+    for (_, claim_id), cause in abstained.items():
+        by_reason["boundary" if "verdict boundary" in cause else "width"].add(claim_id)
+    assert by_reason["width"] == {"AUC24-plasma"}, by_reason["width"]
+    assert by_reason["boundary"] == {
+        "Tmax-1000mg", "Tmax-liver-500mg", "Tmax-liver-1000mg", "Tmax-liver-1500mg",
+    }, by_reason["boundary"]

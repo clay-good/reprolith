@@ -292,6 +292,11 @@ def _metric(
     times, values = _window_of(times, values, window)
     if metric == "cmax":
         return max(values)
+    if metric == "tmax":
+        # The *time* of the peak, which is a column PK tables print beside its height and the only
+        # one that bears on the model's time axis at all. It can only ever be a sample time, so it
+        # is guarded against the grid the way an area is.
+        return times[max(range(len(values)), key=lambda i: values[i])]
     if metric == "final":
         return values[-1]
     if metric == "auc":
@@ -299,7 +304,7 @@ def _metric(
             (values[i] + values[i + 1]) / 2.0 * (times[i + 1] - times[i])
             for i in range(len(values) - 1)
         )
-    raise ValueError(f"unknown metric {metric!r} (use cmax, auc, or final)")
+    raise ValueError(f"unknown metric {metric!r} (use cmax, tmax, auc, or final)")
 
 
 def _run_protocol(
@@ -652,17 +657,28 @@ def _run_schedule(
     return times, values
 
 
-def _auc_is_established(
+#: The metrics whose value is a property of the sampling grid as well as of the model, and which
+#: are therefore measured against themselves at twice the resolution before a verdict is published.
+#: A peak *height* and an end value are not here: both are a sample of the trajectory, and refining
+#: the grid moves them only as far as the trajectory itself moves. An **area** is a trapezoidal sum
+#: over the samples, and a peak's **time** can only ever be one of the sample times — refining the
+#: grid moves it by up to one spacing whatever the model does.
+_GRID_DEPENDENT_METRICS = frozenset({"auc", "tmax"})
+
+
+def _metric_is_established(
     model: str,
     species: str,
     *,
+    metric: str,
     duration: float,
     steps: int,
     within: float,
+    nearest_boundary: float | None = None,
     schedule: Sequence[tuple[float, tuple[tuple[str, float], ...]]] = (),
     window: tuple[float, float] | None = None,
 ) -> tuple[bool, float]:
-    """``(established, relative change)`` for an AUC read off a uniform grid at ``steps``.
+    """``(established, relative change)`` for a grid-dependent metric read at ``steps``.
 
     An AUC is a trapezoidal sum over the sample points, so unlike a peak or an end value it is a
     property of the *grid* as well as of the model. On a smooth PK profile that costs nothing —
@@ -671,11 +687,28 @@ def _auc_is_established(
     406, 280, 218, 188 and 174 as the sample count doubles from 240 to 7680, still moving 7.9% at
     the last step. A verdict computed on the first of those numbers is a verdict about the grid.
 
+    A **time to peak** is grid-dependent in a way that is easier to see and easier to miss: the
+    answer can only be one of the sample times, so it moves by up to one spacing however smooth the
+    model is. On this paper's 24-hour run at 480 samples the spacing is 0.05 h, which is 2.5% of a
+    reported Tmax of 2.0 — half the width that separates a pass from a failure, spent before the
+    model is consulted. Every Tmax in that table lands within one spacing of the printed value, so
+    what looks like an error of 2.5% is the grid agreeing exactly.
+
     So the number is measured against itself at twice the resolution, and compared to the *pass*
     tolerance the claim will be judged against. When its own sampling uncertainty is wider than
     the width that separates a pass from a failure, the comparison cannot tell them apart, and
     :func:`certify_model` abstains rather than publishing whichever side of the line it landed on.
     This can only turn a judgment into an abstention, never the reverse.
+
+    ``nearest_boundary`` is the second half of that question and the one this originally left out.
+    Comparing the uncertainty to the whole tolerance *width* asks whether the number is roughly
+    settled; what decides the verdict is whether the uncertainty could carry it across a **line**.
+    A claim measured at 5.26% against a 5% pass line is decided by 0.26%, and this run's own
+    sampling moves it by 1.37% — so which side it fell on is the grid's answer, not the model's.
+    Passing the distance to the nearest line makes that a second, independent reason to abstain;
+    both are required, so this only ever adds abstentions. Measured over the committed corpus
+    before it was adopted: of a hundred grid-dependent claims it changes four, every one a Tmax
+    within one sample spacing of the pass line, and no AUC at all.
     """
     if schedule:
         # The claim's own run, not the model's default one. Checking the unscheduled model would
@@ -693,15 +726,18 @@ def _auc_is_established(
     # Over the claim's own window, not the whole run: convergence is a property of the integral
     # being published, and the guard would otherwise clear an area nobody computes while saying
     # nothing about the one the verdict rests on.
-    coarse = _metric(coarse_times, coarse_values, "auc", window)
-    fine = _metric(fine_times, fine_values, "auc", window)
+    coarse = _metric(coarse_times, coarse_values, metric, window)
+    fine = _metric(fine_times, fine_values, metric, window)
     scale = max(abs(coarse), abs(fine))
     if not math.isfinite(coarse) or not math.isfinite(fine) or scale == 0.0:
-        # Non-finite output is the existing abstention's business, and an AUC of exactly zero has
-        # no relative change to measure; neither is this check's to rule on.
+        # Non-finite output is the existing abstention's business, and a metric of exactly zero
+        # has no relative change to measure; neither is this check's to rule on.
         return True, 0.0
     change = abs(fine - coarse) / scale
-    return change <= within, change
+    settled = change <= within
+    if nearest_boundary is not None:
+        settled = settled and change <= nearest_boundary
+    return settled, change
 
 
 def plan_under_budget(
@@ -794,18 +830,27 @@ def certify_model(
             times, values = simulate(model, claim.species, duration=duration, steps=steps)
             claim_duration, claim_overrides = duration, claim.parameter_overrides
         predicted = _metric(times, values, claim.metric, claim.window)
-        if claim.metric == "auc":
+        if claim.metric in _GRID_DEPENDENT_METRICS:
             # The width the claim will actually be judged against: its own tolerance when it
             # states one, else the documented class default for this comparison.
-            pass_width = (
-                claim.tolerance
-                or default_tolerance(
-                    ComparisonMethod.SCALAR_RELATIVE_ERROR, claim.reference_kind
-                )
-            ).reproduced_within
-            established, change = _auc_is_established(
-                model, claim.species, duration=claim_duration, steps=steps,
-                within=pass_width, schedule=claim.schedule, window=claim.window,
+            claim_tolerance = claim.tolerance or default_tolerance(
+                ComparisonMethod.SCALAR_RELATIVE_ERROR, claim.reference_kind
+            )
+            pass_width = claim_tolerance.reproduced_within
+            # How close this claim actually landed to a line, so the guard can ask whether the
+            # grid's own uncertainty is what put it on the side it is on.
+            error = (
+                abs(predicted - claim.reported) / abs(claim.reported)
+                if claim.reported else float("inf")
+            )
+            nearest = min(
+                abs(error - claim_tolerance.reproduced_within),
+                abs(error - claim_tolerance.partial_within),
+            )
+            established, change = _metric_is_established(
+                model, claim.species, metric=claim.metric, duration=claim_duration, steps=steps,
+                within=pass_width, nearest_boundary=nearest,
+                schedule=claim.schedule, window=claim.window,
             )
             if not established:
                 assessments.append(replace(
@@ -814,10 +859,18 @@ def certify_model(
                         quantity=claim.quantity,
                         source_location=claim.cited_source,
                         reason=(
-                            f"the AUC moves {change:.1%} between {steps} and {steps * 2} samples, "
-                            f"wider than the {pass_width:.1%} that separates a pass from a "
-                            "failure here; at this resolution the number is a property of the "
-                            "grid, so no verdict is established"
+                            f"the {claim.metric.upper()} moves {change:.1%} between {steps} and "
+                            f"{steps * 2} samples — "
+                            + (
+                                f"wider than the {pass_width:.1%} that separates a pass from a "
+                                "failure here"
+                                if change > pass_width
+                                else f"and it landed {nearest:.1%} from the nearest verdict "
+                                     "boundary, so which side of the line it fell on is the "
+                                     "grid's answer rather than the model's"
+                            )
+                            + "; at this resolution the number is a property of the grid, so no "
+                            "verdict is established"
                         ),
                         reference_kind=claim.reference_kind,
                     ),

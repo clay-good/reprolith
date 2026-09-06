@@ -63,7 +63,7 @@ def test_adding_the_gaps_raises_overlap_without_telling_two_claims_apart() -> No
     dossier = _dossier()
     gaps = _load_bearing_gaps(dossier)
     footprints = [c.footprint for c in dossier.claims if c.targetable and c.footprint]
-    assert len(footprints) == 63
+    assert len(footprints) == 93
 
     base = [jaccard(a, b) for a, b in itertools.combinations(footprints, 2)]
     with_gaps = [jaccard(a | gaps, b | gaps) for a, b in itertools.combinations(footprints, 2)]
@@ -71,8 +71,8 @@ def test_adding_the_gaps_raises_overlap_without_telling_two_claims_apart() -> No
     # Mean overlap rises by half again, and the spread that separates a shared-machinery pair from
     # an independent one *shrinks* — the added set is identical for every claim, so it can only
     # push every pair toward each other.
-    assert round(statistics.mean(base), 3) == 0.261
-    assert round(statistics.mean(with_gaps), 3) == 0.393
+    assert round(statistics.mean(base), 3) == 0.265
+    assert round(statistics.mean(with_gaps), 3) == 0.399
     assert round(max(base) - min(base), 3) == 0.955
     assert round(max(with_gaps) - min(with_gaps), 3) == 0.864
 
@@ -99,5 +99,5 @@ def test_the_guide_states_the_numbers_this_rejection_rests_on() -> None:
     page = (
         Path(__file__).resolve().parent.parent / "docs" / "claim-selection.md"
     ).read_text(encoding="utf-8")
-    for number in ("0.261", "0.393", "0.955", "0.864"):
+    for number in ("0.265", "0.399", "0.955", "0.864"):
         assert number in page, f"docs/claim-selection.md no longer states {number}"

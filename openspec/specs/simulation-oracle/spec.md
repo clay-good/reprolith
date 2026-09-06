@@ -51,6 +51,17 @@ auditable and contestable.
   an area both move with the sample count, and two claims that differ only by dose are otherwise
   indistinguishable on the certificate
 
+#### Scenario: A verdict the sampling grid could decide is not stated
+
+- **WHEN** a claim reads a metric whose value depends on the sampling grid as well as on the model
+  — an area, which is a sum over the samples, or a time to peak, which can only be one of them
+- **THEN** the metric is measured against itself at twice the resolution, and no verdict is stated
+  when that uncertainty is wider than the width separating a pass from a failure
+- **AND** no verdict is stated when the measured error landed nearer to a verdict boundary than
+  that uncertainty, because which side of the line it fell on is then the grid's answer rather than
+  the model's
+- **AND** both reasons only ever withhold a verdict, and the abstention says which one applies
+
 #### Scenario: An area is taken over the interval its paper reports
 
 - **WHEN** a claim reports an area under a curve over part of the run rather than all of it — a

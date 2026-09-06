@@ -29,17 +29,28 @@ def _model(accession: str) -> str:
     return (_DATASETS / _CLAIMS[accession]["model_file"]).read_text(encoding="utf-8")
 
 
+#: The metrics a run reports in the model's own clock rather than in its output's unit. Everything
+#: this repository's deposits get wrong about units is in this set, and nothing outside it is
+#: affected — an area carries the clock as a factor and a time to peak *is* the clock.
+_TIMED_METRICS = frozenset({"auc", "tmax"})
+
+
 def test_every_committed_concentration_claim_is_in_the_unit_the_model_reads() -> None:
-    """Seventy of the eighty committed claims read a peak concentration, and all seventy agree.
+    """Every committed claim with no time dimension reads a concentration, and all of them agree.
 
     That is the whole corpus's numeric comparison resting on something that was written only in
     prose until now — each claim's `source_location` said "the paper simulates 6.1 nmol/mL" and
     nothing read it.
+
+    Scoped by the *dimension* rather than by naming one metric: this excluded `auc` by name, and
+    when `tmax` arrived — read entirely in the model's clock and in no substance unit at all — it
+    fell into the concentration half and reported thirty claims in hours against a model reading
+    nanomoles per millilitre.
     """
     checked = 0
     for accession, entry in _CLAIMS.items():
-        peaks = [c for c in entry["claims"] if c.get("metric", "cmax") != "auc"]
-        checks = check_claim_units(_model(accession), peaks)
+        untimed = [c for c in entry["claims"] if c.get("metric", "cmax") not in _TIMED_METRICS]
+        checks = check_claim_units(_model(accession), untimed)
         assert claims_in_another_unit(checks) == (), "; ".join(
             c.detail for c in claims_in_another_unit(checks)
         )
@@ -345,7 +356,7 @@ def test_every_committed_claim_is_in_the_unit_its_cited_table_prints() -> None:
             c.detail for c in results if c.agrees is not True
         ]
         checked += len(results)
-    assert checked == 140, checked
+    assert checked == 170, checked
 
 
 def test_a_count_based_class_is_passed_over_rather_than_accused() -> None:
@@ -422,19 +433,21 @@ def test_every_committed_claim_is_in_the_unit_its_own_model_reads() -> None:
     from reprolith.manuscript_values import check_claim_units
 
     repo = Path(__file__).resolve().parents[1]
-    peaks = areas = 0
+    peaks = timed = 0
     for entry in _CLAIMS.values():
         model = (repo / "datasets" / entry["model_file"]).read_text(encoding="utf-8")
         assumptions = {a["id"] for a in entry.get("assumptions", ())}
         by_id = {c["claim_id"]: c for c in entry["claims"]}
         for check in check_claim_units(model, entry["claims"]):
             metric = by_id[check.claim_id]["metric"]
-            if metric == "auc":
+            if metric in _TIMED_METRICS:
                 assert check.agrees is False and "100 times as large" in check.detail, check
                 assert "time-unit-of-the-deposit" in assumptions, check.claim_id
                 assert by_id[check.claim_id]["assumption_qualified"] is True, check.claim_id
-                areas += 1
+                timed += 1
             else:
                 assert check.agrees is True, check
                 peaks += 1
-    assert (peaks, areas) == (70, 70), (peaks, areas)
+    # A time to peak is the finding at its plainest: no substance unit is composed into it at all,
+    # so what disagrees is the model's clock against the paper's hours and nothing else.
+    assert (peaks, timed) == (70, 100), (peaks, timed)

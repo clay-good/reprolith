@@ -858,6 +858,18 @@ def model_time_unit(model_sbml: str) -> str:
     return _resolve_unit(model.get("timeUnits") or "", definitions, level)
 
 
+def _declared_output(model: Any, species: str) -> Any:
+    """The species or parameter ``species`` names, or ``ValueError`` naming what is missing."""
+    for container_name in ("listOfSpecies", "listOfParameters"):
+        for container in model:
+            if _localname(container.tag) != container_name:
+                continue
+            for child in container:
+                if child.get("id") == species:
+                    return child
+    raise ValueError(f"the model declares no species or parameter {species!r}")
+
+
 def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
     """The unit a claim's value is read in, composed from the model's own declarations.
 
@@ -870,7 +882,10 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
 
     An ``auc`` carries the run's time as well, which is why the metric is a term: the same output
     read two ways is two different quantities, and the paper's table says so in its own column
-    headers.
+    headers. A ``tmax`` is the extreme case — it is read entirely in the run's clock and not in the
+    output's unit at all, since what it reports is *when* the peak is and not how high. Composed
+    from the output's own unit it came out as a concentration, which made a claim printed in hours
+    read as a disagreement about substance.
 
     This describes how a **time course** is read — the ODE path, where the engine asks for
     concentration data. A class whose engine reports copy numbers reads the same species as an
@@ -882,6 +897,12 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
     parseable SBML or declares no such output.
     """
     model, definitions, level = _model_and_definitions(model_sbml)
+    if metric == "tmax":
+        # The run's own clock, whatever output the peak is read off. The output still has to exist
+        # — a claim naming a species the model does not declare is wrong about the model whichever
+        # metric it reads — so this is resolved after the lookup below rather than instead of it.
+        _declared_output(model, species)
+        return _resolve_unit(model.get("timeUnits") or "", definitions, level)
     element = next(
         (
             child

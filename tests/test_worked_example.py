@@ -168,6 +168,17 @@ def test_the_published_bundle_can_re_run_the_claims_it_describes() -> None:
     }
     assert set(reported) == {s.claim_id for s in bundle.recipe}
 
+    # The claims this entry's certificate does not judge are not re-checked against a tolerance
+    # here either: four of its Tmax claims abstain because the run's own sampling could move them
+    # across the pass line, and asserting they land inside that line is asserting the thing the
+    # certificate declined to say.
+    certificate = json.loads(
+        (root / "milestone" / "certificates" / "BIOMD0000001028.json").read_text(encoding="utf-8")
+    )
+    abstained = {
+        a["claim_id"] for a in certificate["assessments"] if a["verdict"] == "not-evaluable"
+    }
+
     for step in bundle.recipe:
         duration = float(step.time_span.split("-")[-1])
         if step.schedule:
@@ -182,8 +193,14 @@ def test_the_published_bundle_can_re_run_the_claims_it_describes() -> None:
                 if step.parameter_overrides else sbml
             )
             times, values = simulate(model, step.output, duration=duration, steps=step.steps)
-        got = _metric(times, values, step.metric)
+        # Over the step's own window, when it states one: this entry has none, but reading the
+        # field is what keeps the re-run faithful to what was certified rather than to what a
+        # neighbouring recipe would have run.
+        got = _metric(times, values, step.metric, step.window)
+        if step.claim_id in abstained:
+            continue
         assert got == pytest.approx(reported[step.claim_id], rel=0.05), step.claim_id
+    assert abstained, "no claim of this entry abstains; that branch would go unexercised"
 
     # And the two steps are no longer the same run: the dose the 1000 mg claim sets is in the recipe.
     doses = {s.claim_id: dict(s.parameter_overrides) for s in bundle.recipe}

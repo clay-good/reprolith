@@ -273,10 +273,11 @@ def test_the_auc_guard_measures_the_scheduled_run_not_the_default_one() -> None:
     The same "checked the wrong run" shape the cross-engine path had, one function over: for a
     scheduled claim `model` is the *unmodified* SBML, because the doses live in the segments.
     """
-    from reprolith.certify import _auc_is_established
+    from reprolith.certify import _metric_is_established
 
-    scheduled, _ = _auc_is_established(
-        _MODEL, "mPlasmaVenous", duration=24.0, steps=240, within=0.05, schedule=_arm(375, 250)
+    scheduled, _ = _metric_is_established(
+        _MODEL, "mPlasmaVenous", metric="auc", duration=24.0, steps=240, within=0.05,
+        schedule=_arm(375, 250),
     )
     assert scheduled  # a smooth oral profile converges either way; what matters is which ran
 

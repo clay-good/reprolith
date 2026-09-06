@@ -12,7 +12,7 @@ and this never pretends otherwise.
 
 ```
 $ reprolith select-claims BIOMD0000001028 --budget 3
-SELECTED 3 OF 63 TARGETABLE CLAIMS
+SELECTED 3 OF 93 TARGETABLE CLAIMS
   AUC24-1000mg
   AUC24-red-blood-cells-1000mg
   AUC24-stomach-1000mg
@@ -84,11 +84,11 @@ corpus, that rule costs discrimination and buys none, for a reason the proposal 
 known: **every load-bearing gap these dossiers record is a property of the model, not of a claim's
 run.** The reaction network, the compartment volumes, the function definitions, the events and the
 units are needed by every claim alike, so adding them adds the same five elements to all
-sixty-three footprints.
+ninety-three footprints.
 
-| over one paper's 63 claims | footprints as built | with the model's gaps added |
+| over one paper's 93 claims | footprints as built | with the model's gaps added |
 | --- | --- | --- |
-| mean pairwise overlap | 0.261 | 0.393 |
+| mean pairwise overlap | 0.265 | 0.399 |
 | spread between the most and least overlapping pair | 0.955 | 0.864 |
 
 Overlap rises by half again and the spread that separates a shared-machinery pair from an

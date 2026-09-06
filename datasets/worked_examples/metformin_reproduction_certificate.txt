@@ -1,10 +1,10 @@
 REPRODUCTION CERTIFICATE — Zake2021 - PBPK model of metformin in humans, single PO dose
   doi=10.1371/journal.pone.0249594
-Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev a17d6cc5fac8)
+Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev e0515a40b654)
 
 OVERALL: partially-reproduced
-  claims by verdict: reproduced=63, partial=0, failed=0, not-evaluable=0
-  assumption-qualified claims: Cmax-1000mg, Cmax-250mg-Chung, Cmax-750mg-Wen, Cmax-500mg-El-Messaoudi, Cmax-red-blood-cells-1000mg, Cmax-adipose-1000mg, Cmax-brain-1000mg, Cmax-remainder-1000mg, Cmax-muscle-1000mg, Cmax-lungs-1000mg, Cmax-stomach-1000mg, Cmax-heart-1000mg, Cmax-liver-1000mg, Cmax-plasma-1500mg, Cmax-red-blood-cells-1500mg, Cmax-adipose-1500mg, Cmax-brain-1500mg, Cmax-remainder-1500mg, Cmax-muscle-1500mg, Cmax-lungs-1500mg, Cmax-stomach-1500mg, Cmax-heart-1500mg, Cmax-liver-1500mg, AUC24-500mg, AUC24-1000mg, AUC24-red-blood-cells-500mg, AUC24-adipose-500mg, AUC24-brain-500mg, AUC24-remainder-500mg, AUC24-muscle-500mg, AUC24-lungs-500mg, AUC24-stomach-500mg, AUC24-heart-500mg, AUC24-liver-500mg, AUC24-red-blood-cells-1000mg, AUC24-adipose-1000mg, AUC24-brain-1000mg, AUC24-remainder-1000mg, AUC24-muscle-1000mg, AUC24-lungs-1000mg, AUC24-stomach-1000mg, AUC24-heart-1000mg, AUC24-liver-1000mg, AUC24-plasma-1500mg, AUC24-red-blood-cells-1500mg, AUC24-adipose-1500mg, AUC24-brain-1500mg, AUC24-remainder-1500mg, AUC24-muscle-1500mg, AUC24-lungs-1500mg, AUC24-stomach-1500mg, AUC24-heart-1500mg, AUC24-liver-1500mg
+  claims by verdict: reproduced=89, partial=0, failed=0, not-evaluable=4
+  assumption-qualified claims: Cmax-1000mg, Cmax-250mg-Chung, Cmax-750mg-Wen, Cmax-500mg-El-Messaoudi, Cmax-red-blood-cells-1000mg, Cmax-adipose-1000mg, Cmax-brain-1000mg, Cmax-remainder-1000mg, Cmax-muscle-1000mg, Cmax-lungs-1000mg, Cmax-stomach-1000mg, Cmax-heart-1000mg, Cmax-liver-1000mg, Cmax-plasma-1500mg, Cmax-red-blood-cells-1500mg, Cmax-adipose-1500mg, Cmax-brain-1500mg, Cmax-remainder-1500mg, Cmax-muscle-1500mg, Cmax-lungs-1500mg, Cmax-stomach-1500mg, Cmax-heart-1500mg, Cmax-liver-1500mg, AUC24-500mg, AUC24-1000mg, AUC24-red-blood-cells-500mg, AUC24-adipose-500mg, AUC24-brain-500mg, AUC24-remainder-500mg, AUC24-muscle-500mg, AUC24-lungs-500mg, AUC24-stomach-500mg, AUC24-heart-500mg, AUC24-liver-500mg, AUC24-red-blood-cells-1000mg, AUC24-adipose-1000mg, AUC24-brain-1000mg, AUC24-remainder-1000mg, AUC24-muscle-1000mg, AUC24-lungs-1000mg, AUC24-stomach-1000mg, AUC24-heart-1000mg, AUC24-liver-1000mg, AUC24-plasma-1500mg, AUC24-red-blood-cells-1500mg, AUC24-adipose-1500mg, AUC24-brain-1500mg, AUC24-remainder-1500mg, AUC24-muscle-1500mg, AUC24-lungs-1500mg, AUC24-stomach-1500mg, AUC24-heart-1500mg, AUC24-liver-1500mg, Tmax-500mg, Tmax-red-blood-cells-500mg, Tmax-adipose-500mg, Tmax-brain-500mg, Tmax-remainder-500mg, Tmax-muscle-500mg, Tmax-lungs-500mg, Tmax-stomach-500mg, Tmax-heart-500mg, Tmax-red-blood-cells-1000mg, Tmax-adipose-1000mg, Tmax-brain-1000mg, Tmax-remainder-1000mg, Tmax-muscle-1000mg, Tmax-lungs-1000mg, Tmax-stomach-1000mg, Tmax-heart-1000mg, Tmax-plasma-1500mg, Tmax-red-blood-cells-1500mg, Tmax-adipose-1500mg, Tmax-brain-1500mg, Tmax-remainder-1500mg, Tmax-muscle-1500mg, Tmax-lungs-1500mg, Tmax-stomach-1500mg, Tmax-heart-1500mg
 
 CLAIMS
   [Cmax-500mg] plasma Cmax after 500 mg single oral dose: reproduced (source Table 6, plasma row, 500 mg single PO dose (the paper simulates 6.1 nmol/mL) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
@@ -196,6 +196,92 @@ CLAIMS
   [AUC24-liver-1500mg] Liver AUC over 24 h after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Liver row, 1500 mg single PO dose (the paper simulates 910.9 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0001
       protocol: duration=24.0, steps=480, read=[mLiver] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79
+  [Tmax-500mg] plasma Tmax after 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, plasma row, 500 mg single PO dose (the paper simulates a peak at 2.0 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0250
+      protocol: duration=24.0, steps=480, read=[mPlasmaVenous] tmax
+  [Tmax-1000mg] plasma Tmax after 1000 mg single oral dose: not-evaluable (source Table 6, plasma row, 1000 mg single PO dose (the paper simulates a peak at 1.9 h))
+      protocol: duration=24.0, steps=480, read=[mPlasmaVenous] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9
+  [Tmax-red-blood-cells-500mg] Red blood cells Tmax after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Red blood cells row, 500 mg single PO dose (the paper simulates a peak at 11.1 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0045
+      protocol: duration=24.0, steps=480, read=[mRBC] tmax
+  [Tmax-adipose-500mg] Adipose Tmax after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Adipose row, 500 mg single PO dose (the paper simulates a peak at 2.8 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0179
+      protocol: duration=24.0, steps=480, read=[mAdipose] tmax
+  [Tmax-brain-500mg] Brain Tmax after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Brain row, 500 mg single PO dose (the paper simulates a peak at 2.0 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0250
+      protocol: duration=24.0, steps=480, read=[mBrain] tmax
+  [Tmax-remainder-500mg] Remainder Tmax after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Remainder row, 500 mg single PO dose (the paper simulates a peak at 2.2 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0000
+      protocol: duration=24.0, steps=480, read=[mRemainder] tmax
+  [Tmax-muscle-500mg] Muscle Tmax after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Muscle row, 500 mg single PO dose (the paper simulates a peak at 4.1 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0122
+      protocol: duration=24.0, steps=480, read=[mMuscle] tmax
+  [Tmax-lungs-500mg] Lungs Tmax after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Lungs row, 500 mg single PO dose (the paper simulates a peak at 1.9 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0263
+      protocol: duration=24.0, steps=480, read=[mLung] tmax
+  [Tmax-stomach-500mg] Stomach Tmax after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Stomach row, 500 mg single PO dose (the paper simulates a peak at 2.1 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0000
+      protocol: duration=24.0, steps=480, read=[mStomach] tmax
+  [Tmax-heart-500mg] Heart Tmax after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Heart row, 500 mg single PO dose (the paper simulates a peak at 2.0 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0000
+      protocol: duration=24.0, steps=480, read=[mHeart] tmax
+  [Tmax-liver-500mg] Liver Tmax after a 500 mg single oral dose: not-evaluable (source Table 6, Liver row, 500 mg single PO dose (the paper simulates a peak at 1.4 h))
+      protocol: duration=24.0, steps=480, read=[mLiver] tmax
+  [Tmax-red-blood-cells-1000mg] Red blood cells Tmax after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Red blood cells row, 1000 mg single PO dose (the paper simulates a peak at 11.0 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0045
+      protocol: duration=24.0, steps=480, read=[mRBC] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9
+  [Tmax-adipose-1000mg] Adipose Tmax after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Adipose row, 1000 mg single PO dose (the paper simulates a peak at 2.7 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0185
+      protocol: duration=24.0, steps=480, read=[mAdipose] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9
+  [Tmax-brain-1000mg] Brain Tmax after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Brain row, 1000 mg single PO dose (the paper simulates a peak at 1.9 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0263
+      protocol: duration=24.0, steps=480, read=[mBrain] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9
+  [Tmax-remainder-1000mg] Remainder Tmax after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Remainder row, 1000 mg single PO dose (the paper simulates a peak at 2.1 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0000
+      protocol: duration=24.0, steps=480, read=[mRemainder] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9
+  [Tmax-muscle-1000mg] Muscle Tmax after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Muscle row, 1000 mg single PO dose (the paper simulates a peak at 4.0 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0000
+      protocol: duration=24.0, steps=480, read=[mMuscle] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9
+  [Tmax-lungs-1000mg] Lungs Tmax after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Lungs row, 1000 mg single PO dose (the paper simulates a peak at 1.8 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0278
+      protocol: duration=24.0, steps=480, read=[mLung] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9
+  [Tmax-stomach-1000mg] Stomach Tmax after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Stomach row, 1000 mg single PO dose (the paper simulates a peak at 2.0 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0000
+      protocol: duration=24.0, steps=480, read=[mStomach] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9
+  [Tmax-heart-1000mg] Heart Tmax after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Heart row, 1000 mg single PO dose (the paper simulates a peak at 1.9 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0000
+      protocol: duration=24.0, steps=480, read=[mHeart] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9
+  [Tmax-liver-1000mg] Liver Tmax after a 1000 mg single oral dose: not-evaluable (source Table 6, Liver row, 1000 mg single PO dose (the paper simulates a peak at 1.4 h))
+      protocol: duration=24.0, steps=480, read=[mLiver] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=779.9
+  [Tmax-plasma-1500mg] Plasma Tmax after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Plasma row, 1500 mg single PO dose (the paper simulates a peak at 1.8 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0278
+      protocol: duration=24.0, steps=480, read=[mPlasmaVenous] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79
+  [Tmax-red-blood-cells-1500mg] Red blood cells Tmax after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Red blood cells row, 1500 mg single PO dose (the paper simulates a peak at 11.0 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0045
+      protocol: duration=24.0, steps=480, read=[mRBC] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79
+  [Tmax-adipose-1500mg] Adipose Tmax after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Adipose row, 1500 mg single PO dose (the paper simulates a peak at 2.7 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0185
+      protocol: duration=24.0, steps=480, read=[mAdipose] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79
+  [Tmax-brain-1500mg] Brain Tmax after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Brain row, 1500 mg single PO dose (the paper simulates a peak at 1.8 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0000
+      protocol: duration=24.0, steps=480, read=[mBrain] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79
+  [Tmax-remainder-1500mg] Remainder Tmax after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Remainder row, 1500 mg single PO dose (the paper simulates a peak at 2.0 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0000
+      protocol: duration=24.0, steps=480, read=[mRemainder] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79
+  [Tmax-muscle-1500mg] Muscle Tmax after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Muscle row, 1500 mg single PO dose (the paper simulates a peak at 3.9 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0128
+      protocol: duration=24.0, steps=480, read=[mMuscle] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79
+  [Tmax-lungs-1500mg] Lungs Tmax after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Lungs row, 1500 mg single PO dose (the paper simulates a peak at 1.8 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0278
+      protocol: duration=24.0, steps=480, read=[mLung] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79
+  [Tmax-stomach-1500mg] Stomach Tmax after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Stomach row, 1500 mg single PO dose (the paper simulates a peak at 1.9 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0263
+      protocol: duration=24.0, steps=480, read=[mStomach] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79
+  [Tmax-heart-1500mg] Heart Tmax after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Heart row, 1500 mg single PO dose (the paper simulates a peak at 1.8 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0278
+      protocol: duration=24.0, steps=480, read=[mHeart] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79
+  [Tmax-liver-1500mg] Liver Tmax after a 1500 mg single oral dose: not-evaluable (source Table 6, Liver row, 1500 mg single PO dose (the paper simulates a peak at 1.3 h))
+      protocol: duration=24.0, steps=480, read=[mLiver] tmax, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79
 
 ASSUMPTIONS (supplied by Reprolith, not the paper)
   [dose-salt-form] the stated oral doses are metformin HCl; the model's dose input is free base -> each dose x 129.16/165.62 (779.9 mg free base for 1000 mg, 292.45 for 375, 194.96 for 250, 389.93 for 500, 584.89 for 750) [load-bearing]
@@ -257,6 +343,36 @@ WHAT WAS MISSING
   [AUC24-stomach-1500mg] Stomach AUC over 24 h after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [AUC24-heart-1500mg] Heart AUC over 24 h after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
   [AUC24-liver-1500mg] Liver AUC over 24 h after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-500mg] plasma Tmax after 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-1000mg] plasma Tmax after 1000 mg single oral dose: the TMAX moves 1.4% between 480 and 960 samples — and it landed 0.3% from the nearest verdict boundary, so which side of the line it fell on is the grid's answer rather than the model's; at this resolution the number is a property of the grid, so no verdict is established
+  [Tmax-red-blood-cells-500mg] Red blood cells Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-adipose-500mg] Adipose Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-brain-500mg] Brain Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-remainder-500mg] Remainder Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-muscle-500mg] Muscle Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-lungs-500mg] Lungs Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-stomach-500mg] Stomach Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-heart-500mg] Heart Tmax after a 500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-liver-500mg] Liver Tmax after a 500 mg single oral dose: the TMAX moves 1.7% between 480 and 960 samples — and it landed 1.4% from the nearest verdict boundary, so which side of the line it fell on is the grid's answer rather than the model's; at this resolution the number is a property of the grid, so no verdict is established
+  [Tmax-red-blood-cells-1000mg] Red blood cells Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-adipose-1000mg] Adipose Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-brain-1000mg] Brain Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-remainder-1000mg] Remainder Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-muscle-1000mg] Muscle Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-lungs-1000mg] Lungs Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-stomach-1000mg] Stomach Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-heart-1000mg] Heart Tmax after a 1000 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-liver-1000mg] Liver Tmax after a 1000 mg single oral dose: the TMAX moves 1.8% between 480 and 960 samples — and it landed 1.4% from the nearest verdict boundary, so which side of the line it fell on is the grid's answer rather than the model's; at this resolution the number is a property of the grid, so no verdict is established
+  [Tmax-plasma-1500mg] Plasma Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-red-blood-cells-1500mg] Red blood cells Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-adipose-1500mg] Adipose Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-brain-1500mg] Brain Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-remainder-1500mg] Remainder Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-muscle-1500mg] Muscle Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-lungs-1500mg] Lungs Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-stomach-1500mg] Stomach Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-heart-1500mg] Heart Tmax after a 1500 mg single oral dose: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [Tmax-liver-1500mg] Liver Tmax after a 1500 mg single oral dose: the TMAX moves 1.9% between 480 and 960 samples — and it landed 1.2% from the nearest verdict boundary, so which side of the line it fell on is the grid's answer rather than the model's; at this resolution the number is a property of the grid, so no verdict is established
   the stated oral doses are metformin HCl; the model's dose input is free base — Reprolith assumed each dose x 129.16/165.62 (779.9 mg free base for 1000 mg, 292.45 for 375, 194.96 for 250, 389.93 for 500, 584.89 for 750) (model default 389.92 mg equals 500 mg HCl expressed as free base; clinical doses are the HCl salt)
   Every one of this paper's four deposited models declares its time unit as 3600*10^2 seconds — one hundred hours. An AUC read off such a model is, by the model's own units, in nmol*(100 h)/mL, while the paper's table prints nmol*h/mL. The dynamics settle it: Tmax, T1/2 and the AUC24 column all reproduce against a run of 24 model time units, which is 24 hours and not 2400. So the declared unit is read as an error in the deposit and the model's time is taken to be hours. Nothing but an AUC has a time dimension, so no Cmax claim rests on this. — Reprolith assumed the model's time unit is one hour, not the 3600*10^2 seconds it declares (the paper's own Tmax and T1/2 columns, and its AUC24 column, all reproduce over a 24 model-time-unit run; under the declared unit that run is 2400 hours) — awaiting expert confirmation (verify:time-unit-of-the-Zake2021-deposits)
   unit not stated by the artifact: units — 13 of 37 extracted values state no unit in the artifact (Intestine_Coefficient, Kidney_Coefficient, Ktp_Adipose, Ktp_Brain, Ktp_Heart, …); their magnitudes are recorded, their units are not

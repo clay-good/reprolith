@@ -45,6 +45,24 @@ REPO = Path(__file__).resolve().parents[1]
 #: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
+        "a verdict the run's own sampling could flip is published as if the model decided it",
+        "certify.py",
+        (
+            "        settled = settled and change <= nearest_boundary",
+            "        settled = settled",
+        ),
+        ["tests/test_auc_convergence.py"],
+    ),
+    (
+        "a time to peak is read in the output's unit rather than in the model's clock",
+        "manuscript_values.py",
+        (
+            '    if metric == "tmax":',
+            "    if False:",
+        ),
+        ["tests/test_claim_units.py"],
+    ),
+    (
         "an area the paper took over one dosing day is judged over the whole run",
         "certify.py",
         (

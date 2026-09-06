@@ -61,7 +61,7 @@ _WITH_SPREAD = re.compile(
 #: Column headings whose wording states how a number comes off a time course. Matched on the
 #: heading's first word only: "Cmax, nmol/mL" names a peak, and "Cmax measured-fitted, %" is a
 #: comparison between two numbers rather than one of them.
-_METRICS = {"cmax": "cmax", "auc": "auc", "auc24": "auc"}
+_METRICS = {"cmax": "cmax", "auc": "auc", "auc24": "auc", "tmax": "tmax"}
 
 #: Column headings that are the row's *conditions* rather than a result — a dose, a time point.
 #: Proposed as a candidate's conditions, never as its value.
@@ -277,7 +277,7 @@ def _prose_metric(sentence: str) -> str:
             ("cmax", "cmax"), ("maximum", "cmax"), ("peak", "cmax"),
             ("auc", "auc"), ("area under", "auc"),
             ("t1/2", ""), ("half-life", ""), ("half life", ""),
-            ("tmax", ""), ("time of maximal", ""),
+            ("tmax", "tmax"), ("time of maximal", "tmax"), ("time to peak", "tmax"),
             ("clearance", ""), ("volume of distribution", ""),
         )
         if phrase in lowered
