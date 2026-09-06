@@ -64,6 +64,15 @@ what that requester can handle.
 - **THEN** the lease is released and the entry becomes claimable again
 - **AND** the abandoned attempt's partial artifacts are preserved and linked
 
+#### Scenario: Repeated fruitless claims take an entry out of the offered pool
+
+- **WHEN** an entry has been claimed several times in a row without a single lifecycle transition
+  between the claims
+- **THEN** it stops being offered as the next work item, and the refusal that results names it
+  with a diagnosis: how many claims, in what state, and by whom
+- **AND** it remains claimable on explicit request, and returns to the offered pool as soon as any
+  transition is recorded, so nothing has to remember to un-park it
+
 #### Scenario: Prioritization is explainable
 
 - **WHEN** an entry is offered as the next work item

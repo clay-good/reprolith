@@ -379,7 +379,9 @@ EFFECTFUL_TOOLS: list[dict[str, Any]] = [
         "name": "claim_work",
         "description": (
             "EFFECTFUL: claim the next best unit of work, leased to the requester so concurrent "
-            "requesters do not collide. Returns the leased entry, or that there is no eligible work."
+            "requesters do not collide. Returns the leased entry, or that there is no eligible "
+            "work — naming any entry parked after repeated claims that moved it nowhere, with "
+            "the diagnosis and how many attempts it took."
         ),
         "inputSchema": {
             "type": "object",
@@ -387,6 +389,14 @@ EFFECTFUL_TOOLS: list[dict[str, Any]] = [
                 "requester": {"type": "string"},
                 "model_class": {"type": "string", "description": "optional filter"},
                 "lease_seconds": {"type": "number", "description": "default 3600"},
+                "include_parked": {
+                    "type": "boolean",
+                    "description": (
+                        "default false. Offer entries parked after repeated fruitless claims. "
+                        "Take one deliberately, having read its diagnosis — the default pool is "
+                        "bounded so a unit that defeats everyone is not handed out forever"
+                    ),
+                },
             },
             "required": ["requester"],
         },
@@ -491,8 +501,14 @@ def claim_work(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dic
     # queue and stopping there let a single accession-less entry — which nothing in this surface
     # can ever repair, since submit_paper does not merge identifiers into an existing entry —
     # withhold every workable entry behind it, for good.
+    # An agent that has read a park's diagnosis and wants to try anyway asks for it deliberately;
+    # nothing is ever handed one unasked. Default False, so the ordinary "give me work" call is
+    # bounded — which is the whole point of parking.
+    include_parked = bool(arguments.get("include_parked", False))
     unaddressable = 0
-    for candidate in catalog.claimable(at, model_class=model_class):
+    for candidate in catalog.claimable(
+        at, model_class=model_class, include_parked=include_parked
+    ):
         if candidate.identifiers.accession:
             entry = candidate
             break
@@ -503,10 +519,31 @@ def claim_work(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dic
         # missing input. The agent asking for work is the one that could build the capability that
         # releases them, and the read surface already computes exactly that list — so the refusal
         # carries it rather than making the caller think to ask a second tool why.
+        # A pool that quietly got smaller is the dead end this refusal already had to be taught to
+        # talk its way out of once. A parked entry is still queued, so a caller comparing this
+        # against `by_state` sees a disagreement with nothing to explain it unless the parks are
+        # named here, with what would be needed to take one.
+        parked = [
+            {
+                "accession": stalled.identifiers.accession,
+                "attempts_without_progress": len(stalled.attempts_without_progress()),
+                "diagnosis": stalled.parking_diagnosis(),
+            }
+            for stalled in catalog.parked(at, model_class=model_class)
+        ]
         return {
             "claimed": False,
             "reason": (
-                "no eligible work"
+                (
+                    "no eligible work"
+                    if not parked
+                    else (
+                        f"no eligible work: {len(parked)} claimable "
+                        f"{'entry is' if len(parked) == 1 else 'entries are'} parked after "
+                        "repeated claims that moved them nowhere — pass include_parked to take "
+                        "one anyway"
+                    )
+                )
                 if unaddressable == 0
                 else (
                     f"no eligible work: {unaddressable} claimable "
@@ -517,6 +554,7 @@ def claim_work(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dic
                 )
             ),
             "skipped_without_accession": unaddressable,
+            "parked": parked,
             "blocked_on": catalog.backlog_health(at)["blocked_on"],
         }
     entry.lease(
@@ -532,6 +570,11 @@ def claim_work(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dic
         # Named even when zero: a claimant that is handed the third-ranked entry is owed the
         # reason the first two were passed over.
         "skipped_without_accession": unaddressable,
+        # A caller that asked for parked entries is owed the fact that it got one, with the
+        # record that parked it — otherwise include_parked hands back an entry indistinguishable
+        # from a fresh one and the bound buys nothing.
+        "parked": entry.is_parked(),
+        "parking_diagnosis": entry.parking_diagnosis(),
     }
 
 

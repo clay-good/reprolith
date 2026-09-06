@@ -46,19 +46,43 @@ that turns "27 blocked, 0 claimable" — a depth, and a dead end — into "27 bl
 missing input", which is the sentence the requirement below asks an agent to be able to write
 about why it chose one unit over the alternatives.
 
-What is still agent-carried, not code-carried, is the *decision* half: `VerificationQueue.decide`
-and `reverify_dependents` are live APIs, but nothing on disk records an expert decision, so every
-item reads as pending and the report says so rather than implying the queue is being worked.
+The *decision* half became code-carried on 2026-09-06 as well. `VerificationQueue.decide` and
+`reverify_dependents` were live APIs that could not be reached from outside one Python process,
+because the queue is derived on every call and stored nowhere — so a decision made against it
+evaporated with the interpreter. Decisions are committed data now
+(`datasets/verification_decisions.json`, read by `reprolith.decisions.load_decisions`), joined to
+the derived queue by `queue_report`, so an item somebody has answered stops asking on all three
+surfaces at once. Three properties keep the record from overstating itself: a decision never lifts
+a certificate's qualification (that requires re-issuing the dependents, and it is mechanically
+evident — a re-issued dependent's assumption is no longer load-bearing, so its item would not be
+derived at all); competing judgments are retained with a `disputed` flag rather than resolved; and
+every record carries the fingerprint of the question as it was answered, so a decision under an
+author-named id whose wording later changed is reported as stale and its item returns to pending.
+This repository records no decision yet, and the report says so **from the file** rather than from
+a constant that could outlive it.
 
-One requirement is **not** carried by anything, and the requirement text below describes the
-intent rather than the behavior:
+What is still agent-carried is the step after: a merged correction triggers no re-certification on
+its own. `reverify_dependents` implements it and a person has to call it.
 
-- *Repeated failure is parked.* There is no attempt counter anywhere; a failed unit is not
-  retried because the agent moves on, not because anything bounds it.
+*Repeated failure is parked* became code-carried on 2026-09-06. Before it there was no attempt
+counter anywhere, and the gap was worse than an absent number: `release_lease` records nothing and
+an abandoned claim ends by lease expiry, which is only the clock passing, so a claim that achieved
+nothing left no trace of any kind. The entry was offered again the instant its lease lapsed — and
+since the pool is ranked by readiness first, an *easy* entry that defeats everyone who takes it sat
+at the head of the queue in front of every agent that asked for work, forever. `CatalogEntry.lease`
+now records the claim (`Attempt`), `attempts_without_progress` reads the trailing run of claims
+during which no transition was recorded, and `Catalog.claimable` leaves such an entry out after
+three. Parking is *derived* rather than latched, so any transition — including one into `blocked` —
+clears it with nothing having to lower a flag; the entry is out of the automatically-offered pool
+and not out of reach (`include_parked`), because no surface performs the quarantine that is the
+state machine's only other way out of `queued`, and an unreachable entry would be a permanent
+wedge; and both `claim_work`'s refusal and `backlog_health` name what was parked and why, since a
+pool that quietly shrinks is the dead end this surface has had to talk its way out of once already.
 
-Neither the parking gap nor the undecided queue can produce a wrong certificate — an unescalated uncertainty still travels as a
-load-bearing assumption, which downgrades the verdict on its own — but the requirements are
-stated here as goals, and a reader should not take them as implemented machinery.
+What remains agent-carried cannot produce a wrong certificate — an unescalated uncertainty still
+travels as a load-bearing assumption, which downgrades the verdict on its own — but the
+requirements below are stated as goals, and a reader should not take the agent-carried ones as
+implemented machinery.
 
 ## Requirements
 

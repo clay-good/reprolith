@@ -222,6 +222,55 @@ class Transition:
 
 
 @dataclass(frozen=True)
+class Attempt:
+    """One recorded claim of an entry as work: who took it, when, and where it stood.
+
+    A lifecycle :class:`Transition` records progress. This records the *try*, which is the thing
+    that was invisible: an entry can be claimed, worked on fruitlessly, and released — or simply
+    abandoned until its lease expires — leaving no trace at all, because ``release_lease`` writes
+    nothing and an expiry is only time passing. Nothing counted those, so nothing could park an
+    entry that keeps defeating whoever picks it up, and the queue ranks by readiness and then
+    submission order, which puts a permanently-failing *easy* entry at the head of the pool for
+    every agent that asks for work, forever.
+
+    ``progress_marker`` is how many transitions the entry had already recorded when it was
+    claimed. Comparing it against the entry's history now is what separates "tried three times and
+    got somewhere" from "tried three times and moved nothing" without storing a judgment: the
+    count is a fact, and being parked is derived from it rather than latched, so an entry unparks
+    itself the moment it makes progress.
+    """
+
+    requester: str
+    at: float
+    state: LifecycleState
+    progress_marker: int
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "requester": self.requester,
+            "at": self.at,
+            "state": self.state.value,
+            "progress_marker": self.progress_marker,
+        }
+
+    @classmethod
+    def from_dict(cls, record: dict[str, Any]) -> Attempt:
+        return cls(
+            requester=str(record["requester"]),
+            at=float(record["at"]),
+            state=LifecycleState(record["state"]),
+            progress_marker=int(record["progress_marker"]),
+        )
+
+
+#: How many claims that moved an entry nowhere park it. Three rather than one, because a lease
+#: expiring is an ordinary event — an agent is interrupted, a process dies — and parking on the
+#: first of those would withdraw work over an accident. Three consecutive claims with no
+#: transition between them is no longer an accident.
+PARK_AFTER_ATTEMPTS = 3
+
+
+@dataclass(frozen=True)
 class BlindEntry:
     """The view of an entry the verdict path is allowed to see.
 
@@ -269,6 +318,7 @@ class CatalogEntry:
         self.leased_to: str | None = None
         self.lease_expires: float | None = None
         self.sources: list[str] = []
+        self._attempts: list[Attempt] = []
 
     @property
     def state(self) -> LifecycleState:
@@ -278,16 +328,81 @@ class CatalogEntry:
         """Whether this entry can be claimed as work at time ``at`` (a numeric timestamp).
 
         Claimable means queued and not held by a live lease — a lease that has expired (or was
-        never set) frees the entry again.
+        never set) frees the entry again. Being *parked* is deliberately not part of this answer:
+        parking bounds the pool an agent is offered automatically (:meth:`Catalog.claimable`), and
+        an entry that stopped being reachable at all would be a wedge, since no surface performs
+        the quarantine that is the state machine's only other way out of ``queued``.
         """
         return self._state is LifecycleState.QUEUED and (
             self.lease_expires is None or at >= self.lease_expires
         )
 
+    @property
+    def attempts(self) -> tuple[Attempt, ...]:
+        """Every recorded claim of this entry as work, oldest first."""
+        return tuple(self._attempts)
+
+    def attempts_without_progress(self) -> tuple[Attempt, ...]:
+        """The trailing run of claims during which the entry's state never moved.
+
+        Derived from the attempt's own ``progress_marker`` against the history as it stands, so a
+        transition — of any kind, including one into ``blocked`` — clears the run without anything
+        having to reset a counter. That is the point: being parked is a reading of the record, not
+        a flag somebody has to remember to lower.
+        """
+        marker = len(self._history)
+        stalled: list[Attempt] = []
+        for attempt in reversed(self._attempts):
+            if attempt.progress_marker != marker:
+                break
+            stalled.append(attempt)
+        return tuple(reversed(stalled))
+
+    def is_parked(self, *, after: int = PARK_AFTER_ATTEMPTS) -> bool:
+        """Whether repeated fruitless claims have taken this entry out of the pool."""
+        return len(self.attempts_without_progress()) >= after
+
+    def parking_diagnosis(self, *, after: int = PARK_AFTER_ATTEMPTS) -> str | None:
+        """Why this entry is parked, in the terms the spec asks a parked unit to carry.
+
+        ``None`` when it is not parked. Names the claimants rather than only counting them: the
+        same agent failing three times and three different agents failing once each are different
+        problems, and only one of them is likely to be the entry's fault.
+        """
+        stalled = self.attempts_without_progress()
+        if len(stalled) < after:
+            return None
+        who = sorted({attempt.requester for attempt in stalled})
+        claimants = (
+            f"{who[0]} took it every time"
+            if len(who) == 1
+            else f"{len(who)} different claimants took it ({', '.join(who)})"
+        )
+        return (
+            f"claimed {len(stalled)} times in {self._state.value} without a single lifecycle "
+            f"transition between them — {claimants}. It is out of the pool handed out "
+            "automatically, not out of reach: a caller that has read this and wants to try anyway "
+            "claims it with include_parked, and the park clears itself the moment any transition "
+            "is recorded, so nothing has to remember to lower a flag"
+        )
+
     def lease(self, requester: str, *, at: float, seconds: float) -> None:
-        """Lease this entry to ``requester`` until ``at + seconds``."""
+        """Lease this entry to ``requester`` until ``at + seconds``, recording the attempt.
+
+        The attempt is recorded here rather than at release because release is the half that does
+        not always happen: an abandoned claim ends by expiry, and an expiry is only the clock
+        passing. Recording the claim is the only point both endings share.
+        """
         self.leased_to = requester
         self.lease_expires = at + seconds
+        self._attempts.append(
+            Attempt(
+                requester=requester,
+                at=at,
+                state=self._state,
+                progress_marker=len(self._history),
+            )
+        )
 
     def release_lease(self) -> None:
         """Release any lease, returning the entry to the claimable pool."""
@@ -362,6 +477,7 @@ class CatalogEntry:
             "leased_to": self.leased_to,
             "lease_expires": self.lease_expires,
             "sources": list(self.sources),
+            "attempts": [a.to_dict() for a in self._attempts],
         }
 
     @classmethod
@@ -383,6 +499,9 @@ class CatalogEntry:
         entry.leased_to = record.get("leased_to")
         entry.lease_expires = record.get("lease_expires")
         entry.sources = list(record.get("sources", []))
+        # Absent on every catalog written before attempts existed, which loads as an entry that
+        # has never been claimed — the truth about those files, since nothing recorded a claim.
+        entry._attempts = [Attempt.from_dict(a) for a in record.get("attempts", [])]
         return entry
 
 
@@ -597,8 +716,23 @@ class Catalog:
         """Return the entry this paper resolves to, or ``None`` — a read-only lookup."""
         return self._match(identifiers)
 
-    def claimable(self, at: float, *, model_class: ModelClass | None = None) -> list[CatalogEntry]:
+    def claimable(
+        self,
+        at: float,
+        *,
+        model_class: ModelClass | None = None,
+        include_parked: bool = False,
+    ) -> list[CatalogEntry]:
         """The entries claimable as work at time ``at``, in priority order.
+
+        Parked entries are left out unless ``include_parked``. A park is the bound on retrying
+        that the ``autonomous-build-loop`` spec asks for and nothing carried: an abandoned claim
+        ends by lease expiry, ``release_lease`` records nothing, and an expiry is only the clock
+        passing — so an entry that defeats everyone who takes it was offered again immediately,
+        and because the ranking below puts readiness first, an *easy* one of those sits at the
+        head of the pool in front of every agent that asks for work. ``include_parked`` is how a
+        caller takes one anyway: having read the diagnosis and decided to try, which is a
+        different act from being handed it unasked.
 
         Ranking is explainable and stable: by readiness — a lower-difficulty entry, which ships a
         runnable model with no gaps to close, yields a certificate at lower cost, so it surfaces
@@ -614,11 +748,25 @@ class Catalog:
         pool = [
             entry
             for entry in self._entries
-            if entry.is_claimable(at) and (model_class is None or entry.model_class is model_class)
+            if entry.is_claimable(at)
+            and (model_class is None or entry.model_class is model_class)
+            and (include_parked or not entry.is_parked())
         ]
         # Stable sort: low difficulty (high readiness) first; ties keep insertion order.
         pool.sort(key=lambda entry: _difficulty_rank(entry.difficulty))
         return pool
+
+    def parked(self, at: float, *, model_class: ModelClass | None = None) -> list[CatalogEntry]:
+        """The entries repeated fruitless claims have taken out of the automatic pool.
+
+        Reported rather than merely withheld: a pool that quietly shrinks is the dead end this
+        surface keeps having to fix. Each entry carries its own ``parking_diagnosis``.
+        """
+        return [
+            entry
+            for entry in self.claimable(at, model_class=model_class, include_parked=True)
+            if entry.is_parked()
+        ]
 
     def backlog_health(self, at: float = 0.0) -> dict[str, Any]:
         """Report the state of the backlog so the never-runs-out guarantee is observable.
@@ -642,6 +790,12 @@ class Catalog:
         under the autonomous-build-loop spec is asked to state why it chose that unit over the
         alternatives, and this is the evidence for that sentence. The sentence in the paragraph
         above used to be hand-counted here and had already gone stale by three.
+
+        ``parked`` is the same courtesy for the other way the pool shrinks. A parked entry is
+        still queued and still counted in ``by_state``, so without this line the two numbers
+        disagree with nothing to explain them, and a pool that quietly gets smaller is exactly the
+        dead end ``claim_work`` had to be taught to talk its way out of once already. Each parked
+        entry carries the diagnosis the spec asks a parked unit to be parked *with*.
         """
         labelled = sum(1 for e in self._entries if e.ground_truth is not None)
         # An entry with no accession is claimable here and unofferable at every surface that hands
@@ -661,6 +815,15 @@ class Catalog:
             "labelled": labelled,
             "unlabelled": len(self._entries) - labelled,
             "blocked_on": self._blocked_on(),
+            "parked": [
+                {
+                    "accession": entry.identifiers.accession,
+                    "title": entry.identifiers.title,
+                    "attempts_without_progress": len(entry.attempts_without_progress()),
+                    "diagnosis": entry.parking_diagnosis(),
+                }
+                for entry in self.parked(at)
+            ],
         }
 
     def _blocked_on(self) -> list[dict[str, Any]]:

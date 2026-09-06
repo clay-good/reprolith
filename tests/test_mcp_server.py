@@ -366,7 +366,7 @@ def test_claim_work_tool_leases_the_next_item() -> None:
     assert second["claimed"] and second["entry"]["identifiers"]["accession"] != first["entry"]["identifiers"]["accession"]
     # No eligible work left while both are leased.
     assert claim("agent-3") == {"claimed": False, "reason": "no eligible work", "skipped_without_accession": 0,
-                "blocked_on": []}
+                "parked": [], "blocked_on": []}
 
 
 def test_claim_work_refused_on_read_only_server() -> None:
@@ -633,7 +633,7 @@ def test_recording_a_result_takes_the_entry_out_of_the_queue() -> None:
     # No longer claimable, by anyone, even once the lease would have expired.
     again, _ = _effectful(query, catalog, "claim_work", {"requester": "agent-2"}, at=1e9)
     assert again == {"claimed": False, "reason": "no eligible work", "skipped_without_accession": 0,
-                "blocked_on": []}
+                "parked": [], "blocked_on": []}
     # The pathway is recorded, not inferred, and names who recorded it.
     history = query.status(accession="ACC-A")["history"]
     assert [t["to_state"] for t in history][-1] == "certified"
@@ -1046,7 +1046,7 @@ def test_an_effectful_call_applies_to_the_current_catalog_not_a_startup_snapshot
     )
     claimed = json.loads(resp["result"]["content"][0]["text"])
     assert claimed == {"claimed": False, "reason": "no eligible work", "skipped_without_accession": 0,
-                "blocked_on": []}
+                "parked": [], "blocked_on": []}
     assert catalog.find(Identifiers(title="", accession="ACC-A")).leased_to == "agent-elsewhere"
 
 

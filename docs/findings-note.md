@@ -4264,3 +4264,40 @@ than the record supports:
 The sentence that started this is the finding in miniature: it was a constant, true of the
 repository and false of the software the moment a decision was recorded. It is derived from the
 file now, so it cannot outlive the state it describes.
+
+
+## Nothing counted the tries, and the queue offered the worst entry first
+
+The `autonomous-build-loop` spec's own status section named one requirement as carried by nothing:
+*repeated failure is parked, not retried forever* — "there is no attempt counter anywhere". Read
+against the code, the gap was worse than an absent number. `release_lease` writes no history, and
+an abandoned claim does not go through it at all: it ends when the lease expires, which is only the
+clock passing. So a claim that achieved nothing left **no trace of any kind**, and the entry was
+back in the pool the instant its lease lapsed.
+
+The ranking is what turns that from a nuisance into a trap. `Catalog.claimable` sorts by readiness
+first — lower difficulty, on the sound reasoning that a runnable model with no gaps yields a
+certificate at lower cost. An *easy* entry that nevertheless defeats everyone who picks it up
+therefore sits at the head of the queue in front of every agent that ever asks for work, and each
+one spends its slice on the same wall.
+
+The bound is three claims with no lifecycle transition between them, and every part of it is shaped
+by a failure mode the surface has already had:
+
+- **Recorded at the claim, not the release**, because release is the half that does not always
+  happen.
+- **Derived, not latched.** `attempts_without_progress` reads the trailing run against the history
+  as it stands, so any transition clears it — including one into `blocked`, which is a real finding
+  about the entry rather than a failure to move it. A stored `parked` flag would have needed
+  somebody to remember to lower it.
+- **Out of the offered pool, not out of reach.** No surface performs quarantine, which is the state
+  machine's only other way out of `queued`, so an entry that stopped being claimable at all would
+  have been a permanent wedge — the exact shape of defect this catalog keeps finding. `include_parked`
+  is the deliberate route; being handed one unasked is the thing being prevented.
+- **Named, not merely withheld.** `claim_work`'s refusal and `backlog_health` both carry the parks
+  and their diagnoses. A parked entry is still `queued`, so without that line the two numbers
+  disagree with nothing to explain them — and "no eligible work" in front of a backlog is the dead
+  end this refusal was already taught to talk its way out of once.
+
+The diagnosis distinguishes one agent failing three times from three agents failing once each.
+They are different problems, and only one of them is likely to be the entry's fault.
