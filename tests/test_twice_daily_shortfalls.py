@@ -176,3 +176,53 @@ def test_the_certificate_publishes_both_causes() -> None:
     faults = {a["root_cause"]: a["fault_hypothesis"] for a in failed}
     assert faults["apparent-manuscript-error"] == "manuscript"
     assert faults["artifact-runs-less-of-the-protocol-than-the-paper-states"] == "reconstruction"
+
+
+def test_the_tmax_column_of_this_table_is_over_a_window_it_does_not_state() -> None:
+    """Why thirty claims that were there for the taking are deliberately not taken.
+
+    This table's AUC24 settled its own window without ambiguity — 84.3 over the run's second day
+    against a printed 84.2, 77.8 over the first — and thirty AUC claims came from it. Its Tmax
+    column, over that same window, does not: the model peaks 11.95 h later than the column prints,
+    at every tissue and every dose, which is one dosing interval to within the sample spacing. Both
+    numbers are "the peak after a dose" and they are different doses.
+
+    Claiming it anyway would add thirty failures at 46% that are an unresolved convention rather
+    than a result. So the measurement is here and the claims are not, and this test fails if
+    someone adds them without settling what the column's origin is.
+    """
+    from reprolith.certify import _apply_overrides, _metric
+
+    tables = json.loads(
+        (_ROOT / "datasets/manuscripts/BIOMD0000001029_tables.json").read_text(encoding="utf-8")
+    )["tables"]["Table 7"]
+    header, *rows = tables["rows"]
+    printed = {(r[0], r[1]): float(r[header.index("Tmax, h")]) for r in rows}
+
+    claims = json.loads((_ROOT / "datasets/pkpd_claims.json").read_text(encoding="utf-8"))
+    entry = claims["entries"]["BIOMD0000001029"]
+    assert not [c for c in entry["claims"] if c["metric"] == "tmax"], (
+        "this table's Tmax column is claimed; settle which dose its origin is first — see the "
+        "offset measured below"
+    )
+
+    label = {"mPlasmaVenous": "Plasma", "mBrain": "Brain", "mLiver": "Liver"}
+    doses = {None: "500", 779.9: "1000", 1169.79: "1500"}
+    offsets = []
+    for claim in entry["claims"]:
+        if claim["metric"] != "cmax" or claim["species"] not in label:
+            continue
+        overrides = claim.get("parameter_overrides") or {}
+        model = (
+            _apply_overrides(_MODEL, tuple(overrides.items())) if overrides else _MODEL
+        )
+        times, values = simulate(model, claim["species"], duration=48.0, steps=960)
+        peak = _metric(times, values, "tmax", (24.0, 48.0))
+        offsets.append(peak - printed[
+            (label[claim["species"]], doses[overrides.get("Metformin_Dose_in_Lumen_in_mg")])
+        ])
+
+    assert offsets, "no tissue matched; this check would pass vacuously"
+    # Flat, and one dosing interval to within the 0.05 h sample spacing — not noise, a convention.
+    assert max(offsets) - min(offsets) < 0.5, offsets
+    assert all(abs(offset - 12.0) < 0.1 for offset in offsets), offsets

@@ -3970,3 +3970,26 @@ down the defect. An assumption can now carry the act that closes it, and this on
 
 Both are the same method that found the first two: read the finished artifact as the person it is
 addressed to. Neither was visible from the code.
+
+
+## One table, two columns, two windows — and only one of them says which
+
+Table 7's AUC24 settled its own window without ambiguity: 84.3 over the run's second day against a
+printed 84.2, 77.8 over the first, 162.1 over both. Ten tissues at three doses all agree, so the
+column means the final dosing day and nothing else.
+
+Its **Tmax** column, over that same window, does not. The model's peak lands at 37.85 h where the
+paper prints 25.9, and the gap is not noise: it is **11.95 h at every one of the thirty rows**, to
+within the 0.05 h sample spacing — one dosing interval. Both numbers are "the peak after a dose";
+they are the peaks after *different* doses. The model's window contains doses at 24 and 36 hours,
+the profile is still accumulating, so its maximum falls after the second; the paper is timing from
+the first, or from a steady state its own eight administrations reach and this deposit's four do
+not.
+
+Which of those it is is a judgement about the paper, so the column is **not claimed**. Claiming it
+would have added thirty failures at 46% that are an unresolved convention rather than a result —
+the same "arithmetic, not science" the whole-run AUC would have published, one column over and
+harder to see because 46% looks like a finding where 92% looks like a bug.
+
+Recorded rather than skipped, because the next curator to open that table will ask. The peak
+*heights* in it are claimed and they reproduce; it is only the timing that has no stated origin.

@@ -53,8 +53,15 @@ A time to peak can only ever be one of the sample times — on this run the spac
 the pass budget at a reported 2.0 h, spent before the model is consulted. Each publishes what was measured, what it
 implicates, and that a fault is a hypothesis. That is the output this project exists to produce.
 
-Two things are deliberately not claimed. The paper's Intestine and Kidney rows: the model splits
-each across three compartments, and which one the row means is a judgement about the paper. And
+Three things are deliberately not claimed. The paper's Intestine and Kidney rows: the model splits
+each across three compartments, and which one the row means is a judgement about the paper. **The
+twice-daily table's Tmax column**, for the same kind of reason and a sharper one: that table's
+AUC24 is unambiguously over the run's final dosing day — its ten tissues reproduce there to better
+than 0.2% and to 92% off over the whole run — and its Tmax is not. Over that same window the model
+peaks a flat **11.95 h** later than the column prints, at every tissue and every dose, which is one
+dosing interval to within the sample spacing: the paper is timing from a different dose. Which one
+is a judgement about the paper, and claiming the column anyway would manufacture thirty failures
+out of an unresolved convention. Its peak *heights* are claimed, and they reproduce. And
 anything not committed: every reference value is quoted from the article in
 [`datasets/manuscripts/`](datasets/manuscripts/) and checked against it by a test, because for most
 of this repository's life nothing did — one of the first two was recorded as 6.2, a number the
