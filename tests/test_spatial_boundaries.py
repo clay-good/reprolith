@@ -340,9 +340,12 @@ def test_a_claim_that_states_its_own_wall_is_not_qualified_for_this_engine_s_cho
     assert [a.id for a in assumed.assumptions] == ["spatial-boundary-assumed"]
     assert assumed.overall is OverallVerdict.PARTIALLY_REPRODUCED
 
+    # `assumption_qualified` is left at its default True, so the *only* thing that can drop the
+    # boundary assumption is the claim having stated its wall. Setting it False as well made the
+    # test pass with the wall check deleted — the guard was never reached.
     stated = certify_spatial(
         paper=PaperIdentity(title="wall stated", doi=""), engine_pin=solver_pin(),
-        claims=[claim("stated", boundary="no-flux", assumption_qualified=False)],
+        claims=[claim("stated", boundary="no-flux")],
     )
     assert stated.assumptions == ()
     assert stated.overall is OverallVerdict.REPRODUCED, (
@@ -351,6 +354,60 @@ def test_a_claim_that_states_its_own_wall_is_not_qualified_for_this_engine_s_cho
     # And the protocol says whose wall it was, either way.
     assert "stated by the source" in stated.assessments[0].protocol
     assert "stated by the source" not in assumed.assessments[0].protocol
+
+
+def test_the_wall_a_claim_states_is_the_wall_it_is_run_under() -> None:
+    """A stated boundary that is *not* the default, so dropping it from the run changes the
+    numbers. Stating "no-flux" proves nothing: it is what the run would have used anyway, and a
+    test written that way passed with the wall thrown away."""
+    from reprolith.model import PaperIdentity
+    from reprolith.spatial import (
+        SpatialClaim,
+        certify_spatial,
+        diffuse_1d,
+        gaussian_profile,
+        solver_pin,
+    )
+
+    # A narrow box run long enough that an absorbing wall removes most of what a mirror keeps.
+    # Chosen against the *judged* statistic, not a raw difference: at a wider box the two profiles
+    # differ by 1e-3 in concentration and by 0.056 in normalized curve distance, which is inside
+    # the 0.1 pass threshold — so a run under the wrong wall still reproduced, and this test passed
+    # with the stated boundary thrown away.
+    length, points = 1.5, 61
+    dx = 2 * length / (points - 1)
+    centers = [-length + i * dx for i in range(points)]
+    diffusivity, steps = 1.0, 1200
+    dt = 0.2 * dx * dx / diffusivity
+    initial = tuple(gaussian_profile(centers, mass=10.0, variance=0.3))
+    absorbed = tuple(
+        diffuse_1d(
+            initial, diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, boundary="dirichlet"
+        )
+    )
+    mirrored = tuple(
+        diffuse_1d(initial, diffusivity=diffusivity, dx=dx, dt=dt, steps=steps)
+    )
+    from reprolith.oracle import normalized_curve_distance
+
+    assert normalized_curve_distance(absorbed, mirrored) > 0.5, (
+        "the wrong wall has to miss by more than the pass threshold, or this measures nothing"
+    )
+
+    # Judged against what the *absorbing* wall produces: only a run that honours the stated wall
+    # reproduces it.
+    cert = certify_spatial(
+        paper=PaperIdentity(title="stated dirichlet", doi=""), engine_pin=solver_pin(),
+        claims=[SpatialClaim(
+            claim_id="held", quantity="profile", initial=initial, reference=absorbed,
+            source_location="stated", diffusivity=diffusivity, dx=dx, dt=dt, steps=steps,
+            boundary="dirichlet",
+        )],
+    )
+    assert cert.assessments[0].verdict.value == "reproduced"
+    assert "Dirichlet (fixed-value) boundaries stated by the source" in (
+        cert.assessments[0].protocol
+    )
 
 
 def test_a_claim_naming_a_wall_this_solver_does_not_run_is_refused() -> None:

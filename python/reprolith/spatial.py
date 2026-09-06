@@ -871,7 +871,12 @@ def certify_spatial(
                     # none, so the only outcomes it could publish were a pass and a traceback —
                     # and the class's agreement rate was guaranteed rather than measured.
                     attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
-                    assumption_qualified=claim.assumption_qualified,
+                    # One expression governs the flag and the assumption below, because they are
+                    # one fact. This flag defaults True in this class *because* the wall is
+                    # Reprolith's, so a claim that states its own wall must not carry it: it left
+                    # a certificate with no assumptions reading `partially-reproduced` for a
+                    # qualification nothing on it named.
+                    assumption_qualified=_rests_on_our_wall(claim),
                 ),
                 # The discretization is the run (spec: spatial-class — "the spatial step, time
                 # step, and diffusivity are recorded as part of the claim's protocol"). Every
@@ -903,9 +908,8 @@ def certify_spatial(
         # without raising, so gating on the claim's own flag minted an assumption for a claim that
         # came back `not-evaluable` and pushed the certificate to `partially-reproduced` anyway.
         # A claim that names its own boundary rests on nothing Reprolith supplied for it, so it
-        # gets no boundary assumption — and, having stated it, can reach a clean pass. The
-        # `assumption_qualified` flag is the claim's own and covers everything else it may rest on.
-        if assessments[-1].assumption_qualified and claim.wall_is_reprolith_s:
+        # gets no boundary assumption — and, having stated it, can reach a clean pass.
+        if assessments[-1].assumption_qualified:
             qualified.append(claim)
     # The counterpart of the stochastic class's `ssa-sampling-*` block. The boundary is named in
     # each assessment's protocol, but a protocol line does not downgrade a verdict and does not
@@ -959,6 +963,18 @@ _BOUNDARY_BASIS = (
     "solver implements moves the judged distance, against the threshold it is judged at. An "
     "unbounded domain is not among those alternatives and is not measured"
 )
+
+
+def _rests_on_our_wall(claim: SpatialClaim) -> bool:
+    """Whether this claim's verdict rests on a boundary Reprolith chose for it.
+
+    ``SpatialClaim.assumption_qualified`` defaults True in this class for exactly one reason — the
+    wall was this engine's — so a claim that states its own wall has nothing left for the flag to
+    mean. Read here rather than in two places, because the flag and the assumption below are one
+    fact: setting them apart left a certificate carrying no assumptions and still reporting
+    `partially-reproduced`, a qualification nothing on it named.
+    """
+    return claim.assumption_qualified and claim.wall_is_reprolith_s
 
 
 def _boundary_cost(claim: SpatialClaim) -> str:

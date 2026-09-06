@@ -415,3 +415,24 @@ def test_a_domain_that_is_not_a_domain_is_refused() -> None:
 def test_something_that_is_not_sbml_is_refused() -> None:
     with pytest.raises(ValueError):
         ingest_spatial_sbml("not sbml at all")
+
+
+def test_a_file_asking_for_two_different_walls_is_refused() -> None:
+    """This solver applies one condition to the whole domain, so a file stating a zero-flux wall
+    at one end and a held value at the other cannot be run as written — and running it under
+    either is the substitution the ingester exists to refuse."""
+    document = libsbml.readSBMLFromString(
+        _model(boundary=(libsbml.SPATIAL_BOUNDARYKIND_NEUMANN, 0.0))
+    )
+    model = document.getModel()
+    other = model.createParameter()
+    other.setId("far_wall")
+    other.setConstant(True)
+    other.setValue(2.5)
+    plugin = other.getPlugin("spatial")
+    condition = plugin.createBoundaryCondition()
+    condition.setVariable("U")
+    condition.setType(libsbml.SPATIAL_BOUNDARYKIND_DIRICHLET)
+    condition.setCoordinateBoundary("Xmax")
+    with pytest.raises(ValueError, match="more than one kind of boundary"):
+        ingest_spatial_sbml(libsbml.writeSBMLToString(document))

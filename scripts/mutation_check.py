@@ -899,6 +899,33 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          "    return None"),
         ["tests/test_stochastic.py"],
     ),
+    (
+        "a claim that states its own wall is still qualified for a choice nobody made for it",
+        "spatial.py",
+        ("    return claim.assumption_qualified and claim.wall_is_reprolith_s",
+         "    return claim.assumption_qualified"),
+        ["tests/test_spatial_boundaries.py"],
+    ),
+    (
+        "the wall a claim states is dropped and the run uses this engine's default instead",
+        "spatial.py",
+        ("                boundary=claim.wall, boundary_value=claim.boundary_value,", ""),
+        ["tests/test_spatial_boundaries.py"],
+    ),
+    (
+        "a stated Dirichlet wall is read from the file and its held value thrown away",
+        "sbml.py",
+        ('                boundary, boundary_value = "dirichlet", float(parameter.getValue())',
+         '                boundary, boundary_value = "dirichlet", 0.0'),
+        ["tests/test_spatial_ingest.py"],
+    ),
+    (
+        "a file asking for two different walls is run under whichever was read last",
+        "sbml.py",
+        ("            if boundaries and boundaries[-1] != (boundary, boundary_value):",
+         "            if False:"),
+        ["tests/test_spatial_ingest.py"],
+    ),
     # --- the collaboration surface, 2026-09-06 -------------------------------------------------
     # Twelve guards from one day's work. Every one was hand-mutated when it was written and none
     # was in this list, which is the gap this file exists to close: a guard proved once by hand is

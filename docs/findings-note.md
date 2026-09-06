@@ -4617,3 +4617,28 @@ else.
 Three reasons in one day for one refusal — "the solver has no other wall", "the claim cannot carry
 one", and now "the flux term does not exist" — with only the last one still standing. A refusal is
 a claim about the engine, and it goes stale exactly as any other claim does.
+
+
+## Three guards added, three tests that did not reach them
+
+Adding the boundary-field guards to `mutation_check.py` found three of the four unheld, and every
+one was the same mistake: the test exercised the feature without reaching the case that makes the
+guard load-bearing.
+
+- The claim that *states* its wall also set `assumption_qualified=False`, so the first half of the
+  condition was already false and deleting the second half changed nothing.
+- The stated wall in the run test was `no-flux` — the default — so throwing the stated wall away
+  produced the same numbers.
+- Nothing tested a file asking for two different walls at once.
+
+The second is the one worth keeping. Rewritten with a stated *Dirichlet* wall, it still passed with
+the boundary discarded, because the two profiles differed by 1e-3 in concentration and by 0.056 in
+the **normalized curve distance the verdict is actually drawn from** — inside a 0.1 pass threshold.
+A wrong wall reproduced. The fixture is chosen against the judged statistic now (0.55, comfortably
+outside), which is the same units lesson as the boundary measurement itself, arriving from the
+other direction: a difference that looks large in concentration can be nothing to the verdict.
+
+Fixing the first also found a real defect. Setting the assessment's `assumption_qualified` and the
+assumption's existence in two places let them disagree: a claim that stated its wall produced a
+certificate carrying **no assumptions** and still reporting `partially-reproduced` — a qualification
+nothing on it named. One expression governs both now, because they are one fact.
