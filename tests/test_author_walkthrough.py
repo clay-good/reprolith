@@ -137,11 +137,20 @@ def test_the_claims_and_the_parameters_check_clean_against_the_paper(capsys) -> 
     assert "NOT FOUND" not in capsys.readouterr().out
 
     # With the model, each claim's stated unit is checked against the unit the model reads that
-    # output in — every committed claim of this entry reads a peak, and every one agrees.
+    # output in. Every peak agrees; every AUC does not, and that disagreement is the deposit's,
+    # recorded rather than argued away. The model declares its time unit as 3600*10^2 seconds —
+    # one hundred hours — so an area read off it is, by the model's own units, a hundred times
+    # the nmol*h/mL its paper's table prints. The dynamics say the declaration is the error, and
+    # the entry's `time-unit-of-the-deposit` assumption is what carries that reading. The check
+    # still reports it, because the reading is Reprolith's and not the file's.
     assert run(["claims-check", "--claims", str(_CLAIMS), "--tables", str(_TABLES),
-                "--accession", _ACCESSION, "--model", str(_MODEL)]) == 0
+                "--accession", _ACCESSION, "--model", str(_MODEL)]) == 1
     printed = capsys.readouterr().out
-    assert "UNITS CHECKED AGAINST" in printed and "ANOTHER UNIT" not in printed
+    assert "UNITS CHECKED AGAINST" in printed
+    peaks = [line for line in printed.splitlines() if "[Cmax" in line]
+    assert peaks and not any("ANOTHER UNIT" in line for line in peaks)
+    areas = [line for line in printed.splitlines() if "[AUC" in line and "unit" in line.lower()]
+    assert areas and all("100 times as large" in line for line in areas), areas
 
     assert run(["params-check", "--model", str(_MODEL), "--parameters", str(_PARAMETERS),
                 "--accession", _ACCESSION]) == 0

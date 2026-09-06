@@ -45,7 +45,7 @@ def _split() -> tuple[int, int, int]:
 
 def test_the_page_states_the_counts_the_committed_report_holds() -> None:
     matched, abstained, other = _split()
-    assert (matched, abstained, other) == (1, 27, 3), "regenerate the milestone, then this page"
+    assert (matched, abstained, other) == (0, 27, 4), "regenerate the milestone, then this page"
     assert f"{abstained} honest abstentions" in _PAGE
     assert f"{other} verdicts stricter than the label" in _PAGE
     assert f"abstained on {abstained} of {matched + abstained + other} entries" in _PAGE
@@ -68,31 +68,32 @@ def test_the_page_does_not_claim_a_clean_sheet_it_no_longer_has() -> None:
     # The README states the same split in one line, and two places holding one number is how this
     # drifted in the first place.
     assert f"({abstained} abstentions" in _README
-    assert "three verdicts stricter than their label" in _README and other == 3
+    assert "four verdicts stricter than their label" in _README and other == 4
 
 
 def test_the_loop_record_states_the_same_split_as_the_report() -> None:
     """A third page summarizing one run in prose, drifted the same way and for the same reason.
 
     It said "What the 31 disagreements say", "30 abstentions", and "1 more-careful verdict". There
-    are thirty disagreements, twenty-seven abstentions, and three careful verdicts — the three
-    human-dosed metformin models, each qualified by the same salt-form assumption. The fourth,
-    the mouse model, needed no conversion and is the one entry that matches its label.
+    are thirty-one disagreements now, twenty-seven abstentions, and four careful verdicts — every
+    model this paper deposited. The mouse oral-dose entry needed no salt conversion and was, for a
+    day, the one entry matching its label; its AUC claims rest on the deposit's declared time unit,
+    so it is qualified too and the class is back to nothing matching.
     """
     matched, abstained, other = _split()
     assert f"## What the {abstained + other} disagreements say" in _LOOP
     assert f"**{abstained} abstentions**" in _LOOP
     assert f"**{other} more-careful verdicts**" in _LOOP
-    assert matched == 1
+    assert matched == 0
 
 
 def test_the_milestone_readme_states_the_same_split_as_the_report_beside_it() -> None:
     """The fourth page summarizing one run, and the one that sits in the directory it describes.
 
     It said one certified reproduction and thirty abstentions, headlined "Why 0/31 is the honest
-    result", and named a single more-careful verdict. There are four certificates — one clean
-    `reproduced` and three `partially-reproduced` — twenty-seven abstentions, and raw agreement of
-    1/31. Its own `agreement_report.json` is in the same directory.
+    result", and named a single more-careful verdict. There are four certificates, every one
+    `partially-reproduced`, twenty-seven abstentions, and raw agreement of 0/31. Its own
+    `agreement_report.json` is in the same directory.
     """
     matched, abstained, other = _split()
     total = matched + abstained + other
@@ -100,7 +101,9 @@ def test_the_milestone_readme_states_the_same_split_as_the_report_beside_it() ->
     assert f"**{abstained} abstentions.**" in _MILESTONE
     assert f"| `blocked` | {abstained} |" in _MILESTONE
     assert f"| `partially-reproduced` | {other} |" in _MILESTONE
-    assert f"| `reproduced` | {matched} |" in _MILESTONE
+    # No row for a verdict no entry carries: a table listing `reproduced` | 0 reads as a category
+    # the run has, and the run has none. It comes back with the entry that earns it.
+    assert ("| `reproduced` |" in _MILESTONE) is (matched > 0)
     # And the count of published certificates the page promises a reader they will find.
     certificates = list((_ROOT / "datasets" / "milestone" / "certificates").glob("*.json"))
     assert len(certificates) == matched + other == 4

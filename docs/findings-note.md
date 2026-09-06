@@ -3673,7 +3673,7 @@ One thing the proposal asked for is measured and *not* built: the gaps a reconst
 before a claim can run. They are real dependencies, and on this corpus they are the model's rather
 than the claim's — the reaction network, the compartment volumes, the function definitions, the
 events and the units are needed by every claim alike, so the rule adds the same five elements to
-all thirty-three footprints of a paper. Mean pairwise overlap goes 0.251 to 0.380 while the spread
+all sixty-three footprints of a paper. Mean pairwise overlap goes 0.261 to 0.393 while the spread
 that separates a shared-machinery pair from an independent one falls 0.955 to 0.864: a constant
 added everywhere can only push every pair together, and can never tell two claims apart. Worse,
 charged as pairwise overlap it makes one more claim's marginal value negative, so the selector
@@ -3809,3 +3809,53 @@ engine-independent one. Two of eighty PK/PD bounds loosened by a decade; the kin
 not move at all. No verdict moved either way — every one of these is three to five orders inside
 the criterion. What moved is a committed number, which is the thing the method exists to keep
 still.
+
+## The corpus published forty AUC claims in the wrong unit and its own check would have said so
+
+Table 6 of the metformin paper prints an AUC24 beside every Cmax it reports, for ten tissues at
+three doses. Thirty of those numbers were sitting in `datasets/manuscripts/` — already committed,
+already quoted from the article, already read for the Cmax column beside them — and no claim
+targeted them. Adding them was mechanical: one AUC claim per Cmax claim from the same table row.
+All thirty reproduce, twenty-nine of them to better than 0.2% and the worst (500 mg plasma, 42.2
+printed against 41.447 run) at **1.78%**, every one converging exactly between 480 and 960 samples.
+The corpus goes from 80 manuscript-checked claims to 110.
+
+**What they turned up is worth more than the thirty.** `claims-check --model` compares each
+claim's stated unit against the unit the model reads that output in, and the first AUC claim to
+reach it disagreed. All four of this paper's deposited models declare
+
+```xml
+<unitDefinition id="time"><listOfUnits>
+  <unit exponent="1" kind="second" multiplier="3600" scale="2"/>
+</listOfUnits></unitDefinition>
+```
+
+— 3600 × 10², or **one hundred hours**. An area read off such a model is, by the model's own
+units, in nmol·(100 h)/mL, where every table this paper prints says nmol·h/mL: a factor of a
+hundred.
+
+The dynamics settle which is wrong, and they are unambiguous. Tmax (2.0 h), T½ (3.7 h) and the
+whole AUC24 column reproduce over a run of **24 model time units** — 24 hours. Under the declared
+unit that run is 2400 hours, and an AUC over it would not be within 2% of the paper's. So the
+declaration is an error in the deposit and the model's time is hours.
+
+That reading is Reprolith's, not the file's, so it is recorded as a load-bearing assumption
+(`time-unit-of-the-deposit`) on every entry carrying an AUC claim, and every AUC claim is
+`assumption_qualified`. The consequence is the honesty invariant doing exactly what it is for: the
+mouse oral-dose entry, which had been this class's first and only clean `reproduced` and was
+announced as such on the front page, is `partially-reproduced`. Blind agreement for the class goes
+back from 1/31 to **0/31**. Nothing about the numbers changed — 102 of 110 claims reproduce — and
+no certificate now calls itself unqualified.
+
+**The mechanism defect is the part to keep.** The check that finds this was built, committed, and
+run against exactly one entry, in the author walkthrough — an entry whose every claim was a peak.
+A peak has no time dimension, so eighty committed claims went past a working check without touching
+the one thing it had to say. The seven AUC claims already in the corpus, on the mouse entry, had
+never been shown it at all.
+
+It runs against every committed entry now
+(`test_every_committed_claim_is_in_the_unit_its_own_model_reads`), pinned to the split that is
+explained: every peak agrees, every area is off by the deposit's factor of a hundred, and each
+entry carrying an area carries the assumption that says which reading was taken. Which is the same
+shape as the 18th pass's finding and the 21st's: a check that guards one path is not a check on the
+corpus, and a defect shape has to be swept across every reader before it can be called absent.

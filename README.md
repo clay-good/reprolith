@@ -11,19 +11,27 @@ That is what it is *for*, and it is worth being exact about how much of it is do
 
 Of the thirty-three published certificates, **four** check a reconstruction against numbers read
 from one paper's own tables — one for each model that paper deposited. (A fifth is checked against
-a published number too, and the count below says which.) Between them they carry **eighty claims**,
+a published number too, and the count below says which.) Between them they carry **one hundred and
+ten claims**,
 every one a number the paper's own model reports: ten tissues at 500, 1000 and 1500 mg after a
-single human dose, again under twice-daily dosing, seven tissues in mice by peak and by 24-hour
-exposure, three validation arms that each follow an earlier dose, and the intravenous mouse model's
+single human dose, each by peak and by 24-hour exposure, those same ten tissues by peak again under
+twice-daily dosing, seven tissues in mice by peak and by 24-hour exposure,
+three validation arms that each follow an earlier dose, and the intravenous mouse model's
 three exposures.
 
-The mouse entry is the first in this class to come back **`reproduced`** — a clean, unqualified
-pass. Fourteen claims — seven tissues by peak and again by 24-hour exposure — worst error 0.37%,
-and no assumption: that paper dosed its mice with metformin
-rather than the hydrochloride salt, so nothing had to be converted. It is also the first agreement
-the blind self-validation run has recorded for this class, which stood at 0 of 31 this morning.
+**Not one of the four is a clean pass, and the reason is a unit.** All four of this paper's
+deposited models declare their time unit as 3600·10² seconds — one hundred hours. An area read off
+such a model is, by the model's own units, in nmol·(100 h)/mL, where every table the paper prints
+says nmol·h/mL. The dynamics say the declaration is the error and not the tables: Tmax, T½ and the
+whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would
+be 2400 hours. But that is a reading *Reprolith* made about the file, so every claim resting on it
+is qualified and no certificate here calls itself unqualified. Nothing but an area has a time
+dimension, which is why eighty peak claims never touched it — and why this repository shipped seven
+AUC claims and a front page announcing a clean pass before the check that finds it was ever pointed
+at more than one entry. It is pointed at every one now
+([`tests/test_claim_units.py`](tests/test_claim_units.py)).
 
-**Seventy-two reproduce, seven do not, and one cannot be evaluated — each with its reason.** Three because the
+**One hundred and two reproduce, seven do not, and one cannot be evaluated — each with its reason.** Three because the
 deposited model runs four of the eight administrations its own name states — which matters only for
 a tissue slow enough to still be accumulating, so the cause is recorded per claim rather than as a
 verdict on the model. Three because one cell of the paper's table contradicts the rest of its own
@@ -501,7 +509,7 @@ With the extra installed the full loop runs end to end: a dossier compiles to SB
 scope-flagged certificate. The blind PK/PD self-validation set lives in
 [`datasets/pkpd_test_set.json`](datasets/pkpd_test_set.json), labelled from BioModels'
 curation status — which is also the accession prefix, so read that run as evidence of abstention
-discipline (27 abstentions, and three verdicts stricter than their label — a withheld pass, never
+discipline (27 abstentions, and four verdicts stricter than their label — a withheld pass, never
 a false one) rather than of blind classification skill; the dataset and
 [docs/self-validation.md](docs/self-validation.md) both spell out why.
 

@@ -20,23 +20,22 @@ this file fails rather than shipping a quietly one-engine verdict.
 ## The result in one line
 
 **Every one of the 31 entries yielded a verdict, and none of them is a false pass** — four
-certified reproductions, and twenty-seven honest abstentions recorded as `blocked` in the agreement
+certified reproductions, none of them unqualified, and twenty-seven honest abstentions recorded as `blocked` in the agreement
 report rather than published as certificates. Only the certified entries have files under
 `certificates/`, so `reprolith certificates-for` returns nothing for the other twenty-seven.
 
 | Outcome | Count | What it means |
 |---|---|---|
-| `reproduced` | 1 | Metformin in mice, intravenous (BIOMD0000001027) — a clean, unqualified pass over fourteen claims. That paper dosed its mice with metformin rather than the hydrochloride salt, so nothing had to be converted and no assumption was needed. |
-| `partially-reproduced` | 3 | The three orally-dosed models (BIOMD0000001028, `…029`, `…039`) — claims extracted and verified, reproduced, but each with a load-bearing salt-form assumption flagged. |
+| `partially-reproduced` | 4 | Every model this paper deposited — claims extracted and verified, and 102 of the 110 reproduced, but not one certificate is unqualified. The three orally-dosed human models each carry a load-bearing salt-form assumption; every entry carrying an AUC claim also carries the deposit's declared time unit, which is one hundred hours where the paper's tables print hours, so an area read off the model is qualified by which reading Reprolith took. The mouse oral-dose entry was this class's one clean pass until that was found. |
 | `blocked` | 27 | Reprolith **abstained** — Reprolith holds no extracted claims for these papers, so there was nothing to reproduce and no model was run. Not a failure to reproduce; a recorded missing input. |
 
-Raw agreement with the ground-truth labels is 1/31 — and that number is the honest one, not a bad
+Raw agreement with the ground-truth labels is 0/31 — and that number is the honest one, not a bad
 one. Read on.
 
-## Why 1/31 is the honest result, not a failure
+## Why 0/31 is the honest result, not a failure
 
 The agreement metric does an exact match of Reprolith's verdict against the BioModels label. Two
-things account for the thirty that do not match, and neither is a false pass:
+things account for the thirty-one that do not match, and neither is a false pass:
 
 1. **27 abstentions.** For 27 entries no claims were extracted from the manuscript, so Reprolith
    returned `blocked` rather than guess. A `blocked` never matches a `reproduced` or

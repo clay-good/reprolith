@@ -35,7 +35,7 @@
       "basis": "observed",
       "stage": "ingest",
       "resolution": "explained",
-      "note": "27 of the thirty-one PK/PD entries disagree with their BioModels label because Reprolith returned blocked, not because it judged the paper wrong. Reprolith holds no extracted claims for these papers, so the run reports run.NO_CLAIMS_REASON and abstains without fetching or opening anything; a blocked verdict can never equal a reproduced or not-reproduced label, which is what holds the raw agreement to 1 of 31 \u2014 the one entry that matches is the mouse intravenous model, whose claims needed no salt conversion and so carry no assumption to qualify them. The reason text used to say the claims had not been extracted 'from the shipped model artifact', which named an inspection that never happened \u2014 no artifact is read on this path at all. Explained rather than fixed: the responsible stage is ingestion, and the missing input is each paper's targetable claims read from its manuscript, which is not automated.",
+      "note": "27 of the thirty-one PK/PD entries disagree with their BioModels label because Reprolith returned blocked, not because it judged the paper wrong. Reprolith holds no extracted claims for these papers, so the run reports run.NO_CLAIMS_REASON and abstains without fetching or opening anything; a blocked verdict can never equal a reproduced or not-reproduced label, which is what holds the raw agreement to 0 of 31 \u2014 the four entries that are judged all come back stricter than their label, each for an assumption recorded in its own note. The reason text used to say the claims had not been extracted 'from the shipped model artifact', which named an inspection that never happened \u2014 no artifact is read on this path at all. Explained rather than fixed: the responsible stage is ingestion, and the missing input is each paper's targetable claims read from its manuscript, which is not automated.",
       "evidence": [
         {
           "path": "python/reprolith/run.py",
@@ -58,7 +58,7 @@
       "basis": "observed",
       "stage": "oracle",
       "resolution": "explained",
-      "note": "Two certified PK/PD entries disagree upward: their labels are a binary reproduced, and Reprolith published partially-reproduced for each. The human single-dose entry's thirty-three claims all reproduce (its two plasma ones at relative error 0.0055 and 0.0045), and the twice-daily entry reproduces twenty-four of thirty \u2014 but every claim at a dose the model does not default to rests on a load-bearing salt-form assumption Reprolith had to make itself, and an assumption-qualified assessment cannot carry a clean reproduced overall. Explained, not fixed: the downgrade is the honesty invariant working, and a binary label has no way to express it. The mouse oral-dose entry is the counter-example that shows the rule is about the assumption and not about the class \u2014 its mice were dosed with metformin rather than the hydrochloride salt, nothing has to be converted, and it certifies as a clean reproduced.",
+      "note": "Two certified PK/PD entries disagree upward: their labels are a binary reproduced, and Reprolith published partially-reproduced for each. The human single-dose entry's thirty-three claims all reproduce (its two plasma ones at relative error 0.0055 and 0.0045), and the twice-daily entry reproduces twenty-four of thirty \u2014 but every claim at a dose the model does not default to rests on a load-bearing salt-form assumption Reprolith had to make itself, and an assumption-qualified assessment cannot carry a clean reproduced overall. Explained, not fixed: the downgrade is the honesty invariant working, and a binary label has no way to express it. The mouse oral-dose entry is the counter-example that shows the rule is about the assumption and not about the class \u2014 its mice were dosed with metformin rather than the hydrochloride salt, so nothing has to be converted and no claim of its carries this assumption. It is not a clean reproduced either, for a different assumption recorded separately: see pkpd-metformin-auc-rests-on-the-deposits-time-unit.",
       "evidence": [
         {
           "path": "datasets/milestone/certificates/BIOMD0000001028.json",
@@ -506,6 +506,34 @@
         },
         "datasets/manuscripts/BIOMD0000001039_tables.json",
         "docs/findings-note.md"
+      ]
+    },
+    {
+      "id": "pkpd-metformin-auc-rests-on-the-deposits-time-unit",
+      "kind": "disagreement",
+      "subjects": [
+        "BIOMD0000001027"
+      ],
+      "basis": "observed",
+      "stage": "ingest",
+      "resolution": "explained",
+      "note": "The mouse oral-dose entry disagrees upward: its label is a binary reproduced and Reprolith publishes partially-reproduced. All fourteen claims reproduce \u2014 the seven peaks needing no assumption at all \u2014 but the seven areas rest on a load-bearing reading of the deposit. All four of this paper's models declare their time unit as 3600*10^2 seconds, one hundred hours, so an area read off one is by its own units in nmol*(100 h)/mL where the paper's table prints nmol*h/mL. The dynamics settle which is wrong: Tmax, T1/2 and the whole AUC24 column reproduce over a run of 24 model time units, which under the declared unit would be 2400 hours. So the declaration is read as an error in the deposit \u2014 a reading Reprolith made, not one the file states, and therefore load-bearing. Explained, not fixed: the downgrade is the honesty invariant working, and a binary label cannot express it. Nothing but an area has a time dimension, which is why eighty Cmax claims never reached this and the corpus published seven AUC claims for a year with the mismatch unrecorded \u2014 the unit check that finds it was only ever run against one entry, and now runs against every one.",
+      "evidence": [
+        {
+          "path": "datasets/milestone/certificates/BIOMD0000001027.json",
+          "quotes": [
+            "\"id\": \"time-unit-of-the-deposit\"",
+            "\"load_bearing\": true",
+            "\"overall\": \"partially-reproduced\""
+          ]
+        },
+        {
+          "path": "datasets/worked_examples/Zake2021_Metformin_Mice_PO.xml",
+          "quotes": [
+            "kind=\"second\" multiplier=\"3600\" scale=\"2\""
+          ]
+        },
+        "tests/test_claim_units.py"
       ]
     }
   ]

@@ -345,7 +345,7 @@ def test_every_committed_claim_is_in_the_unit_its_cited_table_prints() -> None:
             c.detail for c in results if c.agrees is not True
         ]
         checked += len(results)
-    assert checked == 80, checked
+    assert checked == 110, checked
 
 
 def test_a_count_based_class_is_passed_over_rather_than_accused() -> None:
@@ -403,3 +403,38 @@ def test_a_row_that_states_no_metric_is_not_judged_against_a_column_it_never_nam
         [{"claim_id": "time", "species": "mPlasmaVenous", "metric": "", "reported_units": "h"}],
     )
     assert unstated.agrees is None and "states no metric" in unstated.detail
+
+
+def test_every_committed_claim_is_in_the_unit_its_own_model_reads() -> None:
+    """The same question from the *model's* side, over every entry rather than one.
+
+    This is the check that was already built and never pointed at the corpus. It ran in the
+    author walkthrough against one entry, whose claims were all peaks — and a peak has no time
+    dimension, so eighty committed claims went past it without touching the one thing it would
+    have found. All four of this paper's deposits declare their time unit as 3600*10^2 seconds,
+    one hundred hours; an area read off one is by its own units a hundred times the nmol*h/mL
+    its table prints, and the corpus published seven such claims with nothing recording it.
+
+    So the disagreement is expected here, and what is pinned is that it is exactly the one that is
+    explained: every peak agrees, every area is off by the deposit's factor of a hundred, and each
+    entry carrying an area carries the assumption that says which reading was taken.
+    """
+    from reprolith.manuscript_values import check_claim_units
+
+    repo = Path(__file__).resolve().parents[1]
+    peaks = areas = 0
+    for entry in _CLAIMS.values():
+        model = (repo / "datasets" / entry["model_file"]).read_text(encoding="utf-8")
+        assumptions = {a["id"] for a in entry.get("assumptions", ())}
+        by_id = {c["claim_id"]: c for c in entry["claims"]}
+        for check in check_claim_units(model, entry["claims"]):
+            metric = by_id[check.claim_id]["metric"]
+            if metric == "auc":
+                assert check.agrees is False and "100 times as large" in check.detail, check
+                assert "time-unit-of-the-deposit" in assumptions, check.claim_id
+                assert by_id[check.claim_id]["assumption_qualified"] is True, check.claim_id
+                areas += 1
+            else:
+                assert check.agrees is True, check
+                peaks += 1
+    assert (peaks, areas) == (70, 40), (peaks, areas)

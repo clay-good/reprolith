@@ -12,20 +12,20 @@ and this never pretends otherwise.
 
 ```
 $ reprolith select-claims BIOMD0000001028 --budget 3
-SELECTED 3 OF 33 TARGETABLE CLAIMS
-  Cmax-1000mg
-  Cmax-red-blood-cells-1000mg
-  Cmax-stomach-1000mg
+SELECTED 3 OF 63 TARGETABLE CLAIMS
+  AUC24-1000mg
+  AUC24-red-blood-cells-1000mg
+  AUC24-stomach-1000mg
   independent evidential value: 2.733 (gross 3 less 0.2666 overlap)
   spends 3 of a 3 budget
   witnesses 54 distinct model element(s)
-  ranking one at a time would have taken: Cmax-1000mg, Cmax-250mg-Chung, Cmax-500mg
-  and scored 0 over 46 distinct model element(s)
+  ranking one at a time would have taken: AUC24-1000mg, AUC24-500mg, AUC24-adipose-1000mg
+  and scored 1.673 over 49 distinct model element(s)
 ```
 
-The baseline line is the point. Reading down a ranking one claim at a time takes plasma at three
-doses — three views of one fit, scoring **0** once their overlap is charged, and witnessing 46
-model elements. Choosing as a *set* takes three different tissues, scores 2.733, and witnesses 54.
+The baseline line is the point. Reading down a ranking one claim at a time takes plasma twice over
+and one more tissue, scoring **1.673** once their overlap is charged and witnessing 49 model
+elements. Choosing as a *set* takes three different tissues, scores 2.733, and witnesses 54.
 Same budget, same candidates, same objective.
 
 The greedy ranking is reported beside the answer on purpose. A selection is a decision about what
@@ -51,7 +51,7 @@ Two decisions in that walk were measured rather than chosen, and both are in
 
 **The transitive closure is the obvious answer and it is useless.** A PBPK model is strongly
 connected — plasma feeds every tissue and every tissue feeds plasma — so the closure from any
-species is the whole model. All 80 of this corpus's claims came back with an identical 116-element
+species is the whole model. All of this corpus's claims came back with an identical 116-element
 footprint. Identical footprints overlap completely, so a selection over them reports that
 reproducing any one claim makes every other worthless: a statement about the walk, not about the
 paper. Mean pairwise overlap across one paper's ten tissues at three doses:
@@ -84,11 +84,11 @@ corpus, that rule costs discrimination and buys none, for a reason the proposal 
 known: **every load-bearing gap these dossiers record is a property of the model, not of a claim's
 run.** The reaction network, the compartment volumes, the function definitions, the events and the
 units are needed by every claim alike, so adding them adds the same five elements to all
-thirty-three footprints.
+sixty-three footprints.
 
-| over one paper's 33 claims | footprints as built | with the model's gaps added |
+| over one paper's 63 claims | footprints as built | with the model's gaps added |
 | --- | --- | --- |
-| mean pairwise overlap | 0.251 | 0.380 |
+| mean pairwise overlap | 0.261 | 0.393 |
 | spread between the most and least overlapping pair | 0.955 | 0.864 |
 
 Overlap rises by half again and the spread that separates a shared-machinery pair from an

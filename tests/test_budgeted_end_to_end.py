@@ -91,13 +91,25 @@ def test_a_budget_of_three_certifies_three_of_fourteen_and_names_the_eleven() ->
     assert not attempted & unattempted
 
 
-def test_the_corpus_one_clean_pass_stops_being_one_under_a_budget() -> None:
+def test_a_budget_qualifies_this_certificate_for_a_reason_of_its_own() -> None:
+    """A budgeted run is qualified by the claims it did not attempt, whatever the full run says.
+
+    This used to read the published certificate as an unqualified `reproduced` and watch a budget
+    take it away. It is qualified in the full run now — its seven AUC claims rest on the deposit's
+    declared time unit — so the contrast the test was built on is gone, and what remains is the
+    part that was always the point: eleven claims chosen against is a reason on its own, and the
+    render has to say which eleven.
+    """
     _, _, cert = _budgeted_certificate()
     published = json.loads(
         (_DATASETS / "milestone" / "certificates" / f"{_ENTRY}.json").read_text("utf-8")
     )
-    assert published["overall"] == OverallVerdict.REPRODUCED.value  # all fourteen, unqualified
+    assert published["overall"] == OverallVerdict.PARTIALLY_REPRODUCED.value
     assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED  # three of fourteen, qualified
+    assert [a["claim_id"] for a in published["assessments"] if a["assumption_qualified"]], (
+        "no claim of the published certificate is qualified, so a budget is not the only reason "
+        "left and this test's premise needs re-reading"
+    )
 
     text = render_human(cert, _RUN)
     assert "claims: 14 in the paper, 3 attempted, 11 left unattempted under a budget" in text

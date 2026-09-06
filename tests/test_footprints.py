@@ -160,7 +160,7 @@ def test_the_corpus_wide_origin_count_the_documents_publish_is_the_one_measured(
             totals[origin] += count
 
     assert len(dossiers) == 4, "the documents say four dossiers exist"
-    assert totals == {"derived-from-model": 80, "curator-stated": 0}
+    assert totals == {"derived-from-model": 110, "curator-stated": 0}
     for page in ("claim-selection.md", "findings-note.md"):
         text = (repo / "docs" / page).read_text(encoding="utf-8")
         assert "**80 of 80**" in text, f"docs/{page} no longer states the measured count"

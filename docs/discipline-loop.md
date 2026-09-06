@@ -27,11 +27,11 @@ Nineteen of the twenty catalogued failure modes are `spec`; the twentieth (engin
 `measured`, and what the measurement showed was its absence. That is the point of keeping the field:
 a category that exists because a spec demands it must not read as loop experience it does not have.
 
-## What the 30 disagreements say
+## What the 31 disagreements say
 
-Only the PK/PD run disagrees with its labels at all; the other five classes agree everywhere. One
-of its thirty-one entries matches — the mouse model, which needed no salt conversion and so carries
-no assumption to qualify it.
+Only the PK/PD run disagrees with its labels at all; the other five classes agree everywhere. None
+of its thirty-one entries matches: twenty-seven abstain, and the four that are judged all come back
+stricter than their label.
 
 - **27 abstentions**, all one note, traced to **ingestion**: Reprolith holds no extracted claims
   for these papers, so there was nothing to reproduce and no model was run — the run abstains, and a
@@ -39,10 +39,14 @@ no assumption to qualify it.
   no machine-checkable claim" until a regression audit noticed the code had been corrected and its
   two explanatory documents had not: nothing is fetched or opened on that path.) Recorded as *explained*, not fixed — closing them needs each paper's claims
   read from the manuscript (tasks 2.1–2.3), not a tolerance or oracle change.
-- **3 more-careful verdicts** — the three human-dosed metformin models — traced to the **oracle**:
-  every claim matched well inside tolerance, but each model's claims rest on a load-bearing
-  salt-form assumption, so the overall verdict is `partially-reproduced` against a binary
-  `reproduced` label. Recorded as *explained* — the down-grade is the honesty invariant working.
+- **4 more-careful verdicts** — every metformin model this paper deposited — traced in two notes.
+  Three to the **oracle**: the human-dosed models' claims matched well inside tolerance, but rest
+  on a load-bearing salt-form assumption, so the overall verdict is `partially-reproduced` against
+  a binary `reproduced` label. The fourth, and part of the other three, to **ingestion**: all four
+  deposits declare their time unit as one hundred hours, so every AUC claim rests on Reprolith
+  reading that declaration as an error — which took the mouse oral-dose entry, briefly this class's
+  only agreement, back to `partially-reproduced`. Both recorded as *explained* — the down-grade is
+  the honesty invariant working.
   Every one runs in the **stricter** direction: a withheld pass, never a false one, which is the
   distinction `reprolith self-validation` prints beside the count.
 

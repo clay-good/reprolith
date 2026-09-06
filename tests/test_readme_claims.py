@@ -94,9 +94,9 @@ def test_the_front_pages_reproduction_split_is_the_certificates_split() -> None:
                 reproduced += 1
             else:
                 missed += 1
-    assert (reproduced, missed) == (72, 8), (reproduced, missed)
-    assert "Seventy-two reproduce, seven do not, and one cannot be evaluated" in _README
-    assert "**eighty claims**" in _README and reproduced + missed == 80
+    assert (reproduced, missed) == (102, 8), (reproduced, missed)
+    assert "One hundred and two reproduce, seven do not, and one cannot be evaluated" in _README
+    assert "**one hundred and\nten claims**" in _README and reproduced + missed == 110
 
 
 def test_the_front_page_does_not_claim_the_extraction_it_has_not_built() -> None:
@@ -119,32 +119,26 @@ def test_the_front_page_does_not_claim_the_extraction_it_has_not_built() -> None
     assert "at scale* is the piece that is not built" in _README
 
 
-def test_the_clean_passs_headline_numbers_are_that_certificates_numbers() -> None:
-    """The one entry the front page holds up as a clean pass, described from the certificate.
+def test_the_front_page_claims_no_clean_pass_while_no_certificate_is_one() -> None:
+    """This page held up one entry as a clean, unqualified pass twice, and was wrong both times.
 
-    It said "seven tissues, worst error 0.17%". The certificate carries fourteen claims — the same
-    seven tissues by peak *and* by 24-hour exposure, which the paragraph above it says correctly —
-    and 0.17% is the worst of the seven Cmax claims alone. Every AUC claim is worse, up to 0.37%.
-    A headline that quotes the better half of the evidence is the shape of overstatement this
-    repository exists to catch, so both numbers are read off the certificate here.
+    First by quoting the better half of its evidence — "seven tissues, worst error 0.17%" over a
+    certificate carrying fourteen claims whose worst is 0.37%. Then more fundamentally: its seven
+    AUC claims rest on reading the deposit's declared time unit as an error, which is a reading
+    Reprolith made, so the entry is `partially-reproduced` like the other three.
+
+    The sentence is checkable, so it is checked: while no committed PK/PD certificate is an
+    unqualified `reproduced`, the front page must not say one is.
     """
     import json
 
-    (path,) = [
-        p for p in _ROOT.glob("datasets/milestone/certificates/*.json")
-        if "peroral" in json.loads(p.read_text(encoding="utf-8"))["paper"]["title"]
-        and "mice" in json.loads(p.read_text(encoding="utf-8"))["paper"]["title"]
-    ]
-    certificate = json.loads(path.read_text(encoding="utf-8"))
-    assert certificate["overall"] == "reproduced"
-
-    errors = [
-        float(a["discrepancy"].split("relative error")[1].split()[0])
-        for a in certificate["assessments"]
-        if "relative error" in (a["discrepancy"] or "")
-    ]
-    assert len(errors) == len(certificate["assessments"]) == 14
-    worst = max(errors)
-    assert f"{worst * 100:.2f}%" == "0.37%"
-    assert "Fourteen claims" in _README and "worst error 0.37%" in _README
-    assert not any(a["assumption_qualified"] for a in certificate["assessments"])
+    overalls = {
+        json.loads(p.read_text(encoding="utf-8"))["overall"]
+        for p in _ROOT.glob("datasets/milestone/certificates/*.json")
+    }
+    assert overalls, "no PK/PD certificates found; this check would pass vacuously"
+    if "reproduced" in overalls:
+        return  # a clean pass exists again; the page is free to say so, and should.
+    for overstatement in ("clean, unqualified pass", "first in this class to come back"):
+        assert overstatement not in _README, overstatement
+    assert "Not one of the four is a clean pass" in _README

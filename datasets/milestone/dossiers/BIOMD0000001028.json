@@ -1044,6 +1044,864 @@
       "reference_kind": "numeric",
       "source_location": "Table 6, Liver row, 1500 mg single PO dose (the paper simulates 196.9 nmol/mL)",
       "targetable": true
+    },
+    {
+      "conditions": "auc of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-500mg",
+      "quantity": "plasma AUC over 24 h after 500 mg single oral dose",
+      "reference_data": [
+        42.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, plasma row, 500 mg single PO dose (the paper simulates 42.2 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-1000mg",
+      "quantity": "plasma AUC over 24 h after 1000 mg single oral dose",
+      "reference_data": [
+        76.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, plasma row, 1000 mg single PO dose (the paper simulates 76.1 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mRBC",
+      "footprint": [
+        "ModelValue_1",
+        "PlasmaVenous",
+        "RBC",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mPlasmaVenous",
+        "mRBC"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-red-blood-cells-500mg",
+      "quantity": "Red blood cells AUC over 24 h after a 500 mg single oral dose",
+      "reference_data": [
+        19.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Red blood cells row, 500 mg single PO dose (the paper simulates 19.3 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-adipose-500mg",
+      "quantity": "Adipose AUC over 24 h after a 500 mg single oral dose",
+      "reference_data": [
+        30.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Adipose row, 500 mg single PO dose (the paper simulates 30.2 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-brain-500mg",
+      "quantity": "Brain AUC over 24 h after a 500 mg single oral dose",
+      "reference_data": [
+        33.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Brain row, 500 mg single PO dose (the paper simulates 33.2 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mRemainder",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Remainder",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QRemainder",
+        "Remainder",
+        "_12_1__PlasmaArterial____Remainder",
+        "_12_2__Remainder____PlasmaVenous",
+        "mPlasmaArterial",
+        "mRemainder"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-remainder-500mg",
+      "quantity": "Remainder AUC over 24 h after a 500 mg single oral dose",
+      "reference_data": [
+        33.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Remainder row, 500 mg single PO dose (the paper simulates 33.1 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-muscle-500mg",
+      "quantity": "Muscle AUC over 24 h after a 500 mg single oral dose",
+      "reference_data": [
+        168.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Muscle row, 500 mg single PO dose (the paper simulates 168.4 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLung",
+      "footprint": [
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Lung",
+        "Lung",
+        "ModelValue_1",
+        "PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_07_2__Lung____PlasmaArterial",
+        "mLung",
+        "mPlasmaVenous"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-lungs-500mg",
+      "quantity": "Lungs AUC over 24 h after a 500 mg single oral dose",
+      "reference_data": [
+        124.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Lungs row, 500 mg single PO dose (the paper simulates 124.3 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-stomach-500mg",
+      "quantity": "Stomach AUC over 24 h after a 500 mg single oral dose",
+      "reference_data": [
+        132.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Stomach row, 500 mg single PO dose (the paper simulates 132.6 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-heart-500mg",
+      "quantity": "Heart AUC over 24 h after a 500 mg single oral dose",
+      "reference_data": [
+        103.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Heart row, 500 mg single PO dose (the paper simulates 103.6 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-liver-500mg",
+      "quantity": "Liver AUC over 24 h after a 500 mg single oral dose",
+      "reference_data": [
+        346.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Liver row, 500 mg single PO dose (the paper simulates 346.6 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mRBC",
+      "footprint": [
+        "ModelValue_1",
+        "PlasmaVenous",
+        "RBC",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mPlasmaVenous",
+        "mRBC"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-red-blood-cells-1000mg",
+      "quantity": "Red blood cells AUC over 24 h after a 1000 mg single oral dose",
+      "reference_data": [
+        35.5
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Red blood cells row, 1000 mg single PO dose (the paper simulates 35.5 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-adipose-1000mg",
+      "quantity": "Adipose AUC over 24 h after a 1000 mg single oral dose",
+      "reference_data": [
+        55.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Adipose row, 1000 mg single PO dose (the paper simulates 55.4 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-brain-1000mg",
+      "quantity": "Brain AUC over 24 h after a 1000 mg single oral dose",
+      "reference_data": [
+        60.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Brain row, 1000 mg single PO dose (the paper simulates 60.9 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mRemainder",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Remainder",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QRemainder",
+        "Remainder",
+        "_12_1__PlasmaArterial____Remainder",
+        "_12_2__Remainder____PlasmaVenous",
+        "mPlasmaArterial",
+        "mRemainder"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-remainder-1000mg",
+      "quantity": "Remainder AUC over 24 h after a 1000 mg single oral dose",
+      "reference_data": [
+        60.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Remainder row, 1000 mg single PO dose (the paper simulates 60.8 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-muscle-1000mg",
+      "quantity": "Muscle AUC over 24 h after a 1000 mg single oral dose",
+      "reference_data": [
+        309.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Muscle row, 1000 mg single PO dose (the paper simulates 309.3 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLung",
+      "footprint": [
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Lung",
+        "Lung",
+        "ModelValue_1",
+        "PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_07_2__Lung____PlasmaArterial",
+        "mLung",
+        "mPlasmaVenous"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-lungs-1000mg",
+      "quantity": "Lungs AUC over 24 h after a 1000 mg single oral dose",
+      "reference_data": [
+        228.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Lungs row, 1000 mg single PO dose (the paper simulates 228.4 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-stomach-1000mg",
+      "quantity": "Stomach AUC over 24 h after a 1000 mg single oral dose",
+      "reference_data": [
+        243.5
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Stomach row, 1000 mg single PO dose (the paper simulates 243.5 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-heart-1000mg",
+      "quantity": "Heart AUC over 24 h after a 1000 mg single oral dose",
+      "reference_data": [
+        190.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Heart row, 1000 mg single PO dose (the paper simulates 190.2 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-liver-1000mg",
+      "quantity": "Liver AUC over 24 h after a 1000 mg single oral dose",
+      "reference_data": [
+        636.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Liver row, 1000 mg single PO dose (the paper simulates 636.4 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-plasma-1500mg",
+      "quantity": "Plasma AUC over 24 h after a 1500 mg single oral dose",
+      "reference_data": [
+        109.0
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Plasma row, 1500 mg single PO dose (the paper simulates 109.0 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mRBC",
+      "footprint": [
+        "ModelValue_1",
+        "PlasmaVenous",
+        "RBC",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mPlasmaVenous",
+        "mRBC"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-red-blood-cells-1500mg",
+      "quantity": "Red blood cells AUC over 24 h after a 1500 mg single oral dose",
+      "reference_data": [
+        50.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Red blood cells row, 1500 mg single PO dose (the paper simulates 50.9 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-adipose-1500mg",
+      "quantity": "Adipose AUC over 24 h after a 1500 mg single oral dose",
+      "reference_data": [
+        79.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Adipose row, 1500 mg single PO dose (the paper simulates 79.4 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-brain-1500mg",
+      "quantity": "Brain AUC over 24 h after a 1500 mg single oral dose",
+      "reference_data": [
+        87.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Brain row, 1500 mg single PO dose (the paper simulates 87.2 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mRemainder",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Remainder",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QRemainder",
+        "Remainder",
+        "_12_1__PlasmaArterial____Remainder",
+        "_12_2__Remainder____PlasmaVenous",
+        "mPlasmaArterial",
+        "mRemainder"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-remainder-1500mg",
+      "quantity": "Remainder AUC over 24 h after a 1500 mg single oral dose",
+      "reference_data": [
+        87.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Remainder row, 1500 mg single PO dose (the paper simulates 87.1 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-muscle-1500mg",
+      "quantity": "Muscle AUC over 24 h after a 1500 mg single oral dose",
+      "reference_data": [
+        442.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Muscle row, 1500 mg single PO dose (the paper simulates 442.9 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLung",
+      "footprint": [
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Lung",
+        "Lung",
+        "ModelValue_1",
+        "PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_07_2__Lung____PlasmaArterial",
+        "mLung",
+        "mPlasmaVenous"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-lungs-1500mg",
+      "quantity": "Lungs AUC over 24 h after a 1500 mg single oral dose",
+      "reference_data": [
+        327.0
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Lungs row, 1500 mg single PO dose (the paper simulates 327.0 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-stomach-1500mg",
+      "quantity": "Stomach AUC over 24 h after a 1500 mg single oral dose",
+      "reference_data": [
+        348.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Stomach row, 1500 mg single PO dose (the paper simulates 348.6 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-heart-1500mg",
+      "quantity": "Heart AUC over 24 h after a 1500 mg single oral dose",
+      "reference_data": [
+        272.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Heart row, 1500 mg single PO dose (the paper simulates 272.4 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-liver-1500mg",
+      "quantity": "Liver AUC over 24 h after a 1500 mg single oral dose",
+      "reference_data": [
+        910.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 6, Liver row, 1500 mg single PO dose (the paper simulates 910.9 nmol*h/mL over 24 h)",
+      "targetable": true
     }
   ],
   "entry": "BIOMD0000001028",

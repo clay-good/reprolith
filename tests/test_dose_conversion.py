@@ -79,8 +79,14 @@ def test_the_assumption_states_the_values_the_claims_actually_run() -> None:
                 for token in assumption["chosen"].replace("(", " ").replace(")", " ").split()
                 if token.replace(".", "", 1).isdigit() and "." in token
             }
-            named = quoted & running
-            assert named, (assumption["id"], sorted(quoted), sorted(running))
-            # And nothing it names is a dose no claim runs at.
+            # Nothing it names is a dose no claim runs at — true of every assumption, including
+            # one that is not about doses at all.
             stale = {v for v in quoted if 100.0 < v < 2000.0} - running
             assert not stale, ("the assumption names doses no claim runs at", sorted(stale))
+            # And an assumption that *does* present the conversion has to name a dose that ran.
+            # Scoped to those: the entries also carry an assumption about the deposit's declared
+            # time unit, which states no dose and has no arithmetic for a reader to check.
+            if any(100.0 < v < 2000.0 for v in quoted):
+                assert quoted & running, (
+                    assumption["id"], sorted(quoted), sorted(running)
+                )

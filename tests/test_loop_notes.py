@@ -155,8 +155,11 @@ def test_abstentions_are_disagreements_that_still_owe_an_explanation() -> None:
     """A blocked verdict never matches a label, so it needs a note like any other disagreement.
 
     Counted as "every PK/PD entry that did not match its label", which is what a disagreement is,
-    rather than as the literal 31 — the mouse oral-dose entry became the class's first agreement
-    and the count moved. The other five classes disagree nowhere.
+    rather than as the literal 31 — the count has moved in both directions. The mouse oral-dose
+    entry became the class's first agreement, and then stopped being one when its seven AUC claims
+    were found to rest on a load-bearing reading of the deposit's declared time unit. The class is
+    back at 0 of 31, which is a real state and not a vacuous one: every entry then owes a note, and
+    this is the check that says so. The other five classes disagree nowhere.
     """
     import json
     from pathlib import Path
@@ -169,7 +172,8 @@ def test_abstentions_are_disagreements_that_still_owe_an_explanation() -> None:
         )
     )
     assert len(subjects) == report["total"] - report["agreements"]
-    assert report["agreements"] >= 1, "no PK/PD entry agrees; this check would pass vacuously"
+    # Not vacuous from either end: there are entries, and each disagreeing one is covered above.
+    assert report["total"] >= 1 and subjects, (report["total"], len(subjects))
 
 
 def test_a_citation_of_source_must_find_the_words_in_code_that_runs(tmp_path) -> None:
