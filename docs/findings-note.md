@@ -4678,3 +4678,24 @@ miss, not an abstention; the abstention needs a genuinely rising profile. And on
 to check the qualification was *equivalent code*: it added gradients to the qualified list after the
 assumption tuple had already been built, so it could not fail. A mutation that cannot change
 behaviour measures nothing, which is the third time today that lesson has come round.
+
+
+## A gate that reported its result and did not gate on it
+
+Worth recording against myself. The shell chain used all day was
+
+    ... pytest > log; echo "FULL:$?"; ... pytest > log; echo "CORE:$?"; git commit ... && git push
+
+and `echo` always succeeds, so `$?` was consumed into a *message* and the commit ran whatever the
+suites returned. It went unnoticed for as long as the suites passed. The one time they did not —
+both hit their 580s `timeout` at once, having been set racing against each other for the same
+cores — a commit was pushed on the strength of two lines of text saying `124`.
+
+The change was documentation and CI passed it independently, so nothing wrong reached `main`. The
+defect is the process, and it is the shape this repository names most often: a check that reports
+rather than enforces. The engine refuses to publish a verdict its evidence does not support, and
+the loop publishing that engine was running on a status line.
+
+Fixed by putting the exit status in the condition rather than in a string, and by not running two
+full suites at once — the timeout that exposed it was contention, not a failure, which is its own
+small lesson about what a wall-clock budget measures.
