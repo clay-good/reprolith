@@ -4429,3 +4429,10 @@ thing — with what would lift each entirely different, which is the whole argum
 existing. The if/elif chain reported the blocked entries and said nothing about the parked ones.
 It composes every cause now. Writing the reason a feature is needed and then implementing the
 thing it warns against, in the same file, is worth recording plainly.
+
+A fourth followed from fixing the third. The pluralization that made `stop_reason` read as English
+was written in the query and never swept to the line the terminal prints *directly above it*, so
+one said "1 entry blocked" and the other "1 claimable entries". A formatting helper one surface has
+and the other does not is a drift waiting to happen, and this one had already happened within the
+hour — so it lives in `render`, where both formatters reach it. The same pass removed a "standing:
+0 certificates ()" whose parenthesis had nothing to hold.

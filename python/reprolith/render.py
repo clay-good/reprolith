@@ -25,6 +25,17 @@ from .model import Certificate, RunMetadata
 from .oracle import ReferenceKind
 
 
+def plural(count: int, singular: str, plural_form: str) -> str:
+    """``1 entry`` / ``2 entries``.
+
+    Lives here, where both formatters can reach it, because the first version of this existed in
+    one of them only: the stop reason read "1 entry blocked" while the line the terminal printed
+    directly above it read "1 claimable entries". A helper one surface has and the other does not
+    is a drift waiting to happen, and this one had already happened.
+    """
+    return f"{count} {singular if count == 1 else plural_form}"
+
+
 def claim_counts(cert: Certificate) -> dict[str, int]:
     """The number of claims at each verdict, every verdict present (zero if unused)."""
     counts = {v.value: 0 for v in Verdict}
@@ -1035,5 +1046,6 @@ __all__ = [
     "render_dossier_human",
     "render_human",
     "render_machine",
+    "plural",
     "render_registry",
 ]

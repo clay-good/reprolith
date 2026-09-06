@@ -73,7 +73,7 @@ from .presubmission import (
     render_presubmission_human,
 )
 from .query import ReprolithQuery, corroboration_held
-from .render import render_bundle_human, render_dossier_human, render_human
+from .render import plural, render_bundle_human, render_dossier_human, render_human
 
 # render_human derives its text from the certificate content and never reads the run block, so a
 # placeholder is correct here: run metadata is deliberately excluded from stored content (it is not
@@ -446,14 +446,17 @@ def _cmd_loop_status(query: ReprolithQuery, args: argparse.Namespace) -> int:
         _print_json(status)
         return 0
     if status["publishable_work"]:
-        print(f"WORK AVAILABLE — {status['claimable']} claimable entries")
+        print(f"WORK AVAILABLE — {plural(status['claimable'], 'claimable entry', 'claimable entries')}")
     else:
         print("NO PUBLISHABLE WORK")
         print(f"  {status['stop_reason']}")
     if status["claimable_without_accession"]:
         print(
-            f"  {status['claimable_without_accession']} queued entries carry no accession and "
-            "cannot be finished or released"
+            "  "
+            + plural(
+                status["claimable_without_accession"], "queued entry carries", "queued entries carry"
+            )
+            + " no accession and cannot be finished or released"
         )
     for park in status["parked"]:
         print(f"  parked: {park['accession']} — {park['diagnosis']}")
@@ -464,7 +467,13 @@ def _cmd_loop_status(query: ReprolithQuery, args: argparse.Namespace) -> int:
     )
     standing = status["standing"]
     by_class = ", ".join(f"{name} {count}" for name, count in standing["by_class"].items())
-    print(f"standing: {standing['certificates']} certificates ({by_class})")
+    # The parenthesis only earns its place when there is a breakdown to put in it; an empty "()"
+    # after a zero is the same kind of noise as "1 entries".
+    print(
+        "standing: "
+        + plural(standing["certificates"], "certificate", "certificates")
+        + (f" ({by_class})" if by_class else "")
+    )
     print(f"  {status['standing_note']}")
     return 0
 

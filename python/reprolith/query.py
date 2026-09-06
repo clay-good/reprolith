@@ -31,15 +31,10 @@ from .enums import LifecycleState, ModelClass, ReproductionLevel, Verdict
 from .model import Certificate
 from .persistence import dossier_from_dict
 from .presubmission import presubmission_report
-from .render import claim_counts, gap_items
+from .render import claim_counts, gap_items, plural
 from .selection import claim_selection_report
 from .supersession import CertificateLedger
 from .verification import issue_for_item, queue_report
-
-
-def _plural(count: int, singular: str, plural: str) -> str:
-    """``1 entry`` / ``2 entries`` — a stop reason is read by people, and "1 entries" is noise."""
-    return f"{count} {singular if count == 1 else plural}"
 
 
 def _label_basis(report: dict[str, Any]) -> str:
@@ -401,19 +396,19 @@ class ReprolithQuery:
                 releases = blocked_on[0]
                 shared = int(releases["entries"])
                 causes.append(
-                    f"{_plural(blocked, 'entry', 'entries')} blocked, "
+                    f"{plural(blocked, 'entry', 'entries')} blocked, "
                     + ("all on one input" if shared == blocked else f"{shared} of them on one input")
                     + f" — {releases['missing']}"
                 )
             if parked:
                 causes.append(
-                    f"{_plural(len(parked), 'entry', 'entries')} parked after repeated claims "
+                    f"{plural(len(parked), 'entry', 'entries')} parked after repeated claims "
                     "that achieved nothing"
                 )
             without = int(health.get("claimable_without_accession", 0))
             if without:
                 causes.append(
-                    f"{_plural(without, 'queued entry', 'queued entries')} carrying no "
+                    f"{plural(without, 'queued entry', 'queued entries')} carrying no "
                     "accession, which cannot be finished or released"
                 )
             stop_reason = "no claimable work: " + (

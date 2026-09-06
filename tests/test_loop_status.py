@@ -250,3 +250,29 @@ def test_the_terminal_prints_the_reason_and_the_json_is_the_tool_object(capsys) 
     printed = json.loads(capsys.readouterr().out)
     query, _ = load_repository(default_data_dir(), aggregate=True)
     assert printed["stop_reason"] == query.loop_status()["stop_reason"]
+
+
+def test_the_terminal_counts_read_as_english_too(tmp_path, capsys) -> None:
+    """The `stop_reason` pluralization fix was made in the query and not swept to the line the
+    terminal prints directly above it, so one read "1 entry blocked" and the other "1 claimable
+    entries". A helper one surface has and the other does not is a drift that had already
+    happened."""
+    import json as _json
+
+    from reprolith.cli import run
+
+    catalog = Catalog()
+    _entry(catalog, "A1")
+    catalog.add(Identifiers(title="no accession here"), ModelClass.ODE_PKPD)
+    (tmp_path / "catalog.json").write_text(_json.dumps(catalog.to_dict()), encoding="utf-8")
+    for sub in ("certificates", "dossiers", "bundles"):
+        (tmp_path / sub).mkdir()
+
+    assert run(["--data-dir", str(tmp_path), "loop-status"]) == 0
+    out = capsys.readouterr().out
+    assert "1 claimable entry" in out
+    assert "1 claimable entries" not in out
+    assert "1 queued entry carries no accession" in out
+    # An empty breakdown after a zero is the same kind of noise.
+    assert "standing: 0 certificates\n" in out
+    assert "()" not in out
