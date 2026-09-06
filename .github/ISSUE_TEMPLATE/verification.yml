@@ -1,8 +1,9 @@
 name: Verification request
 description: >-
   A load-bearing value Reprolith is not confident about. Confirm, correct, or reject it.
-  (Opened by hand today — Reprolith records these values in its certificates' gap reports and
-  assumption lists, but nothing files them as issues automatically yet.)
+  (Opened by hand today — nothing files these automatically. Run `reprolith verification-queue`
+  for the list: every field below is in its output, under "awaiting expert review". The items
+  under the other heading are limits of Reprolith's own engine and are not questions for you.)
 title: "[verify] <short description of the value in question>"
 labels: []
 body:

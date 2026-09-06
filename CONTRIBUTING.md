@@ -6,11 +6,18 @@ results. It gets better in two ways, and **both need people who know the science
 1. **Validate its judgment.** When Reprolith is not confident about a load-bearing value — a
    shaky extraction, an assumption it had to make, a verdict near its tolerance — it records its
    best estimate and marks the result as resting on it. Confirming, correcting, or rejecting those
-   values is the single most valuable thing an expert can do here. **Today you open that
-   verification issue by hand** using the template: Reprolith's queue exists as a library
-   (`reprolith.VerificationQueue`) but nothing wires it to GitHub yet, so nothing is filed
-   automatically. Every certificate's gap report and assumption list is where to look for what
-   needs checking — `reprolith gaps <digest>` prints it.
+   values is the single most valuable thing an expert can do here.
+
+   **`reprolith verification-queue` is the list.** One command, every standing certificate, ranked
+   by how many published results rest on each value — and split, because most of them are not
+   waiting on you: four of the seven on today's repository are limits of Reprolith's own engine
+   that no wording in any paper clears, and they say so under their own heading. The three under
+   *awaiting expert review* are the ones your judgment settles. Each carries the question, what
+   Reprolith chose, why, the alternatives, and the papers that would have to be re-certified if
+   you corrected it. Add `--json` for the same object an agent gets over MCP.
+
+   **You still open the issue by hand** using the template — nothing wires the queue to GitHub —
+   but every field the template asks for is in that output, so it is a copy, not a hunt.
 2. **Grow and correct the catalog.** Propose a paper to reproduce, add a ground-truth
    reproducibility label, or fix a mis-extraction — as a pull request.
 
@@ -20,7 +27,8 @@ depends on it. If you know the modeling, you can decide.
 
 ## How the collaboration works
 
-- **Verification issues** are Reprolith's questions to you. Answer in the issue: confirm,
+- **Verification issues** are Reprolith's questions to you, and `reprolith verification-queue` is
+  where they come from. Answer in the issue: confirm,
   correct (with the right value and a source), or reject (with why). Your decision, your name,
   and your rationale become the record. Re-verification of what depended on a corrected value is
   the intent (`reprolith.reverify_dependents` implements it), but it is not automated yet — a

@@ -1581,7 +1581,10 @@ def build_parser() -> argparse.ArgumentParser:
     add_json(p)
     p.set_defaults(func=_cmd_catalog)
 
-    p = sub.add_parser("backlog", help="backlog depth by state, class, and difficulty")
+    p = sub.add_parser(
+        "backlog",
+        help="backlog depth by state, class and difficulty, and what the blocked entries wait on",
+    )
     add_json(p)
     p.set_defaults(func=_cmd_backlog)
 
