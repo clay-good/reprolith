@@ -45,6 +45,13 @@ REPO = Path(__file__).resolve().parents[1]
 #: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
+        "the certificate a person reads cannot tell this engine's limit from the paper's omission",
+        "render.py",
+        ('            ours = asm.get("author_can_close", True) is False',
+         "            ours = False"),
+        ["tests/test_verification_escalation.py"],
+    ),
+    (
         "the documented gap-closing route cannot say a gap is this engine's limit",
         "reconstruction.py",
         ("        author_can_close=author_can_close,\n    )", "    )"),

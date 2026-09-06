@@ -4213,3 +4213,21 @@ limits as questions for an expert — one heading above, corrected the same morn
 
 Both halves now say how much of the corpus they reach: three values under 4 of 33, and four engine
 limits under 6 of 33. The terminal headings say it too, since they carried the identical pairing.
+
+
+## The same two corrections, on the artifact people actually read
+
+The gap report was corrected twice today — to say a value is under review whenever it is, rather
+than only where somebody had typed an id, and to distinguish a value the paper left out from a
+limit of this engine. `render_human`, the certificate a person opens, carried neither. Its
+assumption lines showed `[unverified — pending review: <id>]` on the four metformin certificates
+and nothing at all beside the salt-form assumption next to them, equally queued; and nothing on any
+of them said which questions are answerable.
+
+Three lines now, one per case: pending with an id the certificate names, pending without one, and
+`[this engine's limit — no expert decision closes it]` — which also removes the pending marker,
+because an item nobody can decide is not pending review.
+
+That makes four surfaces derived from one pair of fields — the certificate, the gap report, the
+author fix list and the verification queue — and it took four separate commits to get them to
+agree, each found by reading one more artifact as its reader rather than by any check.

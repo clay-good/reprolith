@@ -11,7 +11,7 @@ CLAIMS
       protocol: SSA ensemble: 1600 trajectories to t=40, seed 11, read=species[0]
 
 ASSUMPTIONS (supplied by Reprolith, not the paper)
-  [ssa-sampling-immigration_death_4-mean] the mean judged here is the average of an ensemble Reprolith sampled, not a number the paper's own run produced -> SSA ensemble: 1600 trajectories to t=40, seed 11, read=species[0] [load-bearing]
+  [ssa-sampling-immigration_death_4-mean] the mean judged here is the average of an ensemble Reprolith sampled, not a number the paper's own run produced -> SSA ensemble: 1600 trajectories to t=40, seed 11, read=species[0] [load-bearing] [this engine's limit — no expert decision closes it]
       basis: a finite ensemble's mean differs from the model's true mean by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible (attributed to reprolith)
 
 WHAT WAS MISSING

@@ -421,9 +421,24 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
         lines.append("ASSUMPTIONS (supplied by Reprolith, not the paper)")
         for asm in content["assumptions"]:
             flag = " [load-bearing]" if asm.get("load_bearing") else ""
+            # Two corrections, both of which the sibling gap report already carries and this, the
+            # certificate a person actually reads, did not. The pending marker appeared only when
+            # somebody had written an id into the file, so the four metformin certificates showed
+            # it and the equally-queued salt-form assumption beside them did not; and nothing here
+            # distinguished a value the paper left out from a limit of this engine, which is the
+            # difference between a question somebody can answer and one nobody can.
             pending = asm.get("verification_item")
-            unverified = f" [unverified — pending review: {pending}]" if pending else ""
-            lines.append(f"  [{asm['id']}] {asm['description']} -> {asm['chosen']}{flag}{unverified}")
+            # `author_can_close` is omitted from the record at its default, so absent means True.
+            ours = asm.get("author_can_close", True) is False
+            if ours:
+                marker = " [this engine's limit — no expert decision closes it]"
+            elif pending:
+                marker = f" [unverified — pending review: {pending}]"
+            elif asm.get("load_bearing"):
+                marker = " [unverified — pending review]"
+            else:
+                marker = ""
+            lines.append(f"  [{asm['id']}] {asm['description']} -> {asm['chosen']}{flag}{marker}")
             lines.append(f"      basis: {asm['basis']} (attributed to {asm['attributed_to']})")
         lines.append("")
 

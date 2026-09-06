@@ -11,7 +11,7 @@ CLAIMS
       protocol: 1-D finite difference: D=0.5, dx=0.2, dt=0.016000000000000004, 1200 steps, zero-flux (Neumann) boundaries
 
 ASSUMPTIONS (supplied by Reprolith, not the paper)
-  [spatial-boundary-diffusion_Dhalf-profile] the profile judged here was evolved under zero-flux (Neumann) boundaries, the only boundary this engine implements; Reprolith did not check what boundary the source specifies -> zero-flux (Neumann) boundaries [load-bearing]
+  [spatial-boundary-diffusion_Dhalf-profile] the profile judged here was evolved under zero-flux (Neumann) boundaries, the only boundary this engine implements; Reprolith did not check what boundary the source specifies -> zero-flux (Neumann) boundaries [load-bearing] [this engine's limit — no expert decision closes it]
       basis: this solver has exactly one boundary condition and a claim carries no field to state another, so on a domain narrow enough for the walls to matter the distance moves with a choice the paper did not make (attributed to reprolith)
 
 WHAT WAS MISSING

@@ -397,3 +397,30 @@ def test_the_count_of_values_is_not_read_against_the_size_of_the_repository() ->
     report = queue_report(_pairs(with_one, limit, *clean))
     assert report["certificates_affected"] == 1
     assert report["engine_limits_certificates_affected"] == 1
+
+
+def test_the_certificate_a_person_reads_marks_them_the_same_way() -> None:
+    """The gap report was corrected for this; the certificate render was not.
+
+    Its pending marker appeared only where somebody had written an id into the file, and nothing
+    on it distinguished a value the paper left out from a limit of this engine — the difference
+    between a question somebody can answer and one nobody can.
+    """
+    from reprolith import RunMetadata, render_human
+
+    run = RunMetadata(created_at="t", actor="a", tool_version="v")
+
+    def _lines(cert):
+        return "\n".join(
+            line for line in render_human(cert, run).splitlines() if "[load-bearing]" in line
+        )
+
+    named = _lines(_cert(_assumption(verification_item="verify:by-hand")))
+    assert "[unverified — pending review: verify:by-hand]" in named
+
+    plain = _lines(_cert(_assumption(description="unnamed")))
+    assert "[unverified — pending review]" in plain
+
+    ours = _lines(_cert(_assumption(description="ours", author_can_close=False)))
+    assert "[this engine's limit — no expert decision closes it]" in ours
+    assert "pending review" not in ours
