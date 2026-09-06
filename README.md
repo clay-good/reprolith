@@ -637,9 +637,19 @@ concentration profile over space, so a pure-Python finite-difference solver feed
 oracle, self-validated non-circularly against the exact analytical diffusion solution (a Gaussian
 whose variance grows by 2·D·t) with a 3/3 [milestone blind run](datasets/spatial/milestone/). Every
 spatial certificate reads *partially* reproduced even where the profile matches the closed form
-exactly: this solver imposes a zero-flux boundary the paper never stated, so the verdict rests on a
-choice Reprolith made and says so — the same qualification the stochastic class carries for its
-ensemble.
+exactly: a claim carries no field naming a boundary, so the wall the run used is a choice Reprolith
+made rather than anything a paper could state, and the verdict rests on it — the same qualification
+the stochastic class carries for its ensemble.
+
+**What that choice costs is measured, not asserted.** The solver runs three walls — zero-flux,
+Dirichlet (absorbing or held at a value), and periodic, each checked against the exact decay of an
+eigenmode satisfying it and against what it does to mass — so each certificate can report how far
+re-running its own discretization under the alternatives moves the judged distance. On these three
+profiles that is 2e-10 to 2e-06 against a pass threshold of 1e-01. The stochastic certificates say
+the same kind of thing about their ensembles: a standard error of 1.53%, 1.26% and 0.42% of the
+reported value against a 5% threshold, where the abstention line is half the threshold. Both
+qualifications stand — they are still this engine's choices — but a reader can now see what each
+one is worth instead of being told only that it matters.
 
 All six classes are measured blind against independently-established ground truth on the same
 machinery — [docs/self-validation.md](docs/self-validation.md) is the one-look evidence summary.
