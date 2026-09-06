@@ -676,10 +676,23 @@ def reverify_dependents(
 
     For each dependent certificate (by digest in ``item.depends_on``) still in the ledger,
     ``recertify`` produces its replacement — the caller decides how, based on the expert's
-    decision: re-run with a corrected value, or re-issue with the unverified qualification lifted
-    once confirmed. The replacement should link to the one it supersedes (``supersedes``); it is
-    issued into the ledger, and the superseded certificate remains retrievable. Returns the
-    replacements, so nothing is settled by a stale certificate after the value beneath it changed.
+    decision. The replacement should link to the one it supersedes (``supersedes``); it is issued
+    into the ledger, and the superseded certificate remains retrievable. Returns the replacements,
+    so nothing is settled by a stale certificate after the value beneath it changed.
+
+    **A confirmation does not lift the verdict's qualification, and this line used to say it
+    did.** :func:`~reprolith.certificate.derive_overall` withholds a clean pass whenever any
+    assumption is ``load_bearing``, and confirming one does not stop it being load-bearing: the
+    paper still did not state the value, Reprolith still chose it, and it still plausibly changes
+    the outcome. That is the honesty rule working, not a gap — an expert agreeing with a guess does
+    not turn the guess into something the paper said. All twelve queued assumptions on this
+    repository's certificates are load-bearing, so on today's corpus no confirmation could lift any
+    verdict at all, and the sentence promised an outcome the surrounding code refuses to produce.
+
+    What a confirmation *does* change is that the value is no longer unreviewed, which is reported
+    by the queue and by the certificate's own assumption line (``render_human`` prints
+    ``[unverified — pending review: <id>]``) rather than by the overall verdict. A **correction**
+    is the case that moves numbers, and there ``recertify`` genuinely re-runs.
     """
     decisions = queue.decisions_for(item.id)
     if not decisions:

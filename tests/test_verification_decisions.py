@@ -390,3 +390,63 @@ def test_the_terminal_shows_such_a_decision_under_the_engine_limit(tmp_path, cap
     assert "DECIDED" not in out
     assert "does not close it" in out
     assert "confirmed by A. Curator" in out
+
+
+def test_confirming_a_load_bearing_value_does_not_earn_a_clean_pass() -> None:
+    """An honesty invariant, pinned so nobody later "fixes" the queue by making a confirmation
+    upgrade the verdict — which the autonomous-build-loop spec calls an automatic gate failure.
+
+    `derive_overall` withholds a clean pass whenever any assumption is load-bearing, and confirming
+    one does not stop it being load-bearing: the paper still did not state the value, Reprolith
+    still chose it, and it still plausibly changes the outcome. An expert agreeing with a guess
+    does not turn the guess into something the paper said. `reverify_dependents` used to promise
+    the opposite in its own docstring.
+    """
+    from reprolith import OverallVerdict, derive_overall
+
+    assumption = _assumption(verification_item="verify:named")
+    # The claim is deliberately *not* assumption-qualified, so the load-bearing assumption is the
+    # only thing that can withhold the clean pass. Qualifying the claim as well would have made
+    # this pass with the load-bearing rule deleted — which it did, until mutation testing said so.
+    unqualified = ClaimAssessment(
+        claim_id="c1", quantity="AUC", verdict=Verdict.REPRODUCED, source_location="T1"
+    )
+    assert derive_overall([unqualified], []) is OverallVerdict.REPRODUCED, (
+        "without an assumption this claim set is a clean pass, so each rule below is what moves it"
+    )
+    # Two independent rules withhold it, and each is pinned alone — asserting them together let
+    # either one cover for the other's deletion, which is what mutation testing found first.
+    load_bearing_only = _assumption(verification_item=None)
+    assert load_bearing_only.load_bearing and not load_bearing_only.verification_item
+    assert (
+        derive_overall([unqualified], [load_bearing_only]) is OverallVerdict.PARTIALLY_REPRODUCED
+    ), "a load-bearing assumption alone withholds the clean pass"
+    queued_only = _assumption(load_bearing=False, verification_item="verify:named")
+    assert not queued_only.load_bearing and queued_only.verification_item
+    assert (
+        derive_overall([unqualified], [queued_only]) is OverallVerdict.PARTIALLY_REPRODUCED
+    ), "an assumption still awaiting an expert alone withholds it too"
+    assert derive_overall([unqualified], [assumption]) is OverallVerdict.PARTIALLY_REPRODUCED
+    cert = _cert(assumption)
+    assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+    # And with a decision recorded, the stored certificate is untouched — a decision is an answer,
+    # not a re-certification.
+    report = queue_report(_pairs(cert), [_decision("verify:named", assumption)])
+    assert report["decided"][0]["dependents_reissued"] is False
+    assert cert.overall is OverallVerdict.PARTIALLY_REPRODUCED
+
+
+def test_every_queued_assumption_on_this_repository_is_load_bearing() -> None:
+    """The measurement behind the paragraph above: on today's corpus no confirmation could lift
+    any verdict, so a docstring promising that outcome described nothing that could happen."""
+    from reprolith.mcp_server import default_data_dir, load_repository
+
+    query, _ = load_repository(default_data_dir(), aggregate=True)
+    queued = [
+        assumption
+        for _, cert in query.ledger.items()
+        for assumption in cert.assumptions
+        if assumption.load_bearing or assumption.verification_item
+    ]
+    assert queued, "no queued assumption on the corpus; this measurement guards nothing"
+    assert all(assumption.load_bearing for assumption in queued)

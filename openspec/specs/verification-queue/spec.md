@@ -46,6 +46,15 @@ unverified status SHALL travel with every result that depends on it.
 - **THEN** the dependent results are re-evaluated and their qualification is lifted or updated
   accordingly
 
+#### Scenario: Confirming a value Reprolith chose does not earn a clean pass
+
+- **WHEN** the confirmed value is one Reprolith supplied because the paper did not state it — a
+  load-bearing assumption
+- **THEN** the dependent certificates still report short of an unqualified full reproduction, and
+  what the confirmation updates is that the value is no longer unreviewed, not the verdict
+- **AND** an expert agreeing with an estimate never turns that estimate into something the paper
+  said, so "upgrades the result" is never a route to the clean word
+
 ### Requirement: Human decisions are recorded, attributed, and propagated
 
 Every expert action SHALL be captured with its author and rationale, and its consequences SHALL

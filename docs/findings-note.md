@@ -4443,3 +4443,35 @@ compares an attempt's `progress_marker` against the history as it stands, so a m
 of that history can never match — the attempt is invisible to the count for ever and the entry
 simply never parks. Silently, and permanently, which is the same shape as the lease expiry that is
 not a time, one check above it in the same function.
+
+
+## A docstring promising the one thing the honesty rules exist to refuse
+
+`reverify_dependents` told its reader that a caller could "re-issue with the unverified
+qualification lifted once confirmed". `derive_overall`, three modules away, withholds a clean pass
+whenever any assumption is `load_bearing` — and confirming one does not stop it being load-bearing.
+The paper still did not state the value, Reprolith still chose it, and it still plausibly changes
+the outcome. An expert agreeing with a guess does not turn the guess into something the paper said.
+
+The measurement makes it concrete rather than theoretical: **all twelve queued assumptions on this
+repository's certificates are load-bearing**, so on today's corpus no confirmation could lift any
+verdict at all. The sentence described an outcome nothing in the code would produce, in the one
+function an implementer would read before wiring a decision to a re-certification — which is the
+worst possible place for it, because the reader would have built toward it.
+
+What a confirmation actually changes is that the value is no longer *unreviewed*, and that is
+reported by the queue and by the certificate's own assumption line rather than by the overall
+verdict. A **correction** is the case that moves numbers.
+
+The fix is a corrected docstring, a spec scenario stating the distinction, and a test pinning it —
+because the tempting future "fix" here is to make confirmation upgrade the verdict, which the
+build-loop spec classes as an automatic gate failure: weakening assumption-qualification is never a
+permitted change.
+
+Writing that test took three attempts, and each failure was the same mistake in a different place.
+The first qualified the claim as well as supplying the assumption, so the claim's own flag held the
+verdict down and deleting the load-bearing rule changed nothing. The second unqualified the claim
+but used an assumption that was *both* load-bearing and queued for review, so the two rules covered
+for each other — deleting either one still left the other. Only asserting each rule against an
+assumption carrying that property alone pins both. A test of an invariant guarded by several
+independent rules has to isolate each of them, or it measures whichever one happens to survive.
