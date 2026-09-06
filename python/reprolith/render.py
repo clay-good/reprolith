@@ -798,6 +798,7 @@ def render_registry(
 
     style = (
         "body{font-family:system-ui,sans-serif;margin:2rem;color:#222}"
+        ".intro{max-width:60em;color:#333}"
         "h1{margin-bottom:.25rem}.disclaimer{color:#555;max-width:48rem}"
         ".filters{margin:1rem 0}.filter{display:inline-block;margin-right:1rem}"
         ".filter button{margin:.1rem;padding:.2rem .5rem;cursor:pointer}"
@@ -841,6 +842,15 @@ def render_registry(
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
         f"<title>{html.escape(title)}</title><style>{style}</style></head><body>"
         f"<h1>{html.escape(title)}</h1>"
+        # What the page is, before what it disclaims. A first-time visitor met a legal-sounding
+        # sentence and nothing saying how many records it covers or of what — and that sentence
+        # begins "This certificate", which on a page of many reads as being about one the reader
+        # has not opened. It is `Scope().human` verbatim and must stay that way (rewording the
+        # scope statement is refused, not only emptying it), so the page introduces it instead.
+        f'<p class="intro">{len(rows)} reproduction certificate(s) across '
+        f'{len(classes)} model class(es). Each records, per claim, whether re-running the '
+        "paper's own model regenerates the result the paper published — and what Reprolith had "
+        "to assume to get there. Every one of them is published under this scope statement:</p>"
         f'<p class="disclaimer">{html.escape(scope_human)}</p>'
         f"{_track_record_banner(self_validation) if self_validation else ''}"
         f"{_corroboration_banner(corroboration) if corroboration is not None else ''}"

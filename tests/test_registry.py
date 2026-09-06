@@ -212,3 +212,41 @@ def test_the_registry_tells_an_author_what_they_can_run() -> None:
         a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
     ).choices
     assert set(shown) <= set(subcommands), f"the registry shows commands that do not exist: {shown}"
+
+
+def test_the_page_says_what_it_is_before_what_it_disclaims() -> None:
+    """A visitor met a legal-sounding sentence and nothing saying how many records it covers.
+
+    And that sentence begins "This certificate", which is right on one certificate and wrong at
+    the top of a page of many — it reads as being about one the reader has not opened. The scope
+    statement is `Scope().human` verbatim and must stay that way, so the page introduces it.
+    """
+    from reprolith import (
+        ClaimAssessment,
+        EnginePin,
+        PaperIdentity,
+        Scope,
+        Verdict,
+        build_certificate,
+        render_registry,
+    )
+
+    def _one(title: str):
+        return build_certificate(
+            paper=PaperIdentity(title=title),
+            engine_pin=EnginePin(engine="copasi", version="4.46"),
+            assessments=[ClaimAssessment(
+                claim_id="c1", quantity="Cmax", verdict=Verdict.REPRODUCED,
+                source_location="Table 1",
+            )],
+        )
+
+    page = render_registry([("ode-pkpd", _one("one")), ("logical", _one("two"))])
+    assert "2 reproduction certificate(s) across 2 model class(es)" in page
+    assert "published under this scope statement" in page
+    # Verbatim, and after the introduction rather than instead of it.
+    import html as _html
+
+    escaped = _html.escape(Scope().human)
+    assert escaped in page
+    assert page.index("published under this scope statement") < page.index(escaped)
