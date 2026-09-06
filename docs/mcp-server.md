@@ -55,6 +55,7 @@ call, `[]` or `null` reads as a fact about the paper rather than about the call.
 | `verdict` | `digest` | The scope-qualified verdict (overall + per-claim + counts, with the assumptions that withheld a clean pass) |
 | `gaps` | `digest` | The structured "what was missing" report |
 | `presubmission` | `digest` | Author-facing pre-submission check: readiness + prioritized fix list |
+| `verification_queue` | — | The load-bearing values every standing certificate rests on, most consequential first: the question, Reprolith's estimate, its basis, the alternatives, and the certificates that would have to be re-issued if an expert corrected it. Derived from the ledger on every call, so a superseded certificate is not a live dependency |
 | `certificates_for` | `title`/`doi`/… | Digests of every certificate for a paper, newest first |
 | `backlog_health` | — | Backlog depth by state, class, and difficulty, and the labelled mix |
 | `self_validation` | — | The blind track record per class: matched / abstained / other, aggregate only |

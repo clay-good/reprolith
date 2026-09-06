@@ -290,6 +290,7 @@ reprolith status <accession>         # a paper's lifecycle status and history
 reprolith dossier <accession>        # what was extracted from the paper, and from where
 reprolith bundle <accession>         # the reconstruction the certificate was issued against
 reprolith certificates-for <id>      # every certificate digest for one paper, newest first
+reprolith verification-queue         # what every standing certificate rests on, awaiting review
 reprolith self-validation            # the blind track record, per class and overall
 reprolith corroboration              # what a second engine said — and where none was asked
 reprolith select-claims <accession> \ # which claims to reproduce on a budget you can afford
@@ -636,8 +637,27 @@ machinery — [docs/self-validation.md](docs/self-validation.md) is the one-look
 Reprolith gets better when people who know the science validate its judgment. When it isn't sure
 about a load-bearing value it records the value, marks the result as resting on it, and reports it
 in the certificate's gap report — confirming or correcting one is the most valuable thing you can
-do here. Those questions are raised as issues **by hand** today, from the verification template;
-wiring the queue to GitHub automatically is unbuilt. See [CONTRIBUTING.md](CONTRIBUTING.md).
+do here.
+
+`reprolith verification-queue` is where those questions collect. It reads every load-bearing
+assumption off every *standing* certificate — a superseded one is not a live dependency — and
+opens one item per distinct question: what was assumed, what Reprolith chose, on what basis,
+against what alternatives, and which certificates would have to be re-issued if you corrected it.
+That last number is the ranking, so the value four published results rest on is the first thing
+you see and not the twentieth. It exists because a certificate could cite a queue item nobody had
+built: four metformin certificates named `verify:time-unit-of-the-Zake2021-deposits`, and until
+this landed, following that citation found nothing. The queue is *derived* from the certificates
+on every call rather than stored beside them, so it cannot drift from what it describes, and a
+question asked by three claims about one solver limitation is one item with three dependents
+rather than three items you answer three times.
+
+Opening an item changes no verdict, which is what makes escalating every load-bearing assumption
+safe: such an assumption already withholds a clean pass, so the queue adds a reader's route to
+the question and nothing else. Recording a decision and re-issuing what rests on it is a live
+API (`VerificationQueue.decide`, `reverify_dependents`); nothing on disk carries a decision yet,
+and the queue says so rather than reading as though every item is merely unanswered. Questions
+are still raised as issues **by hand**, from the verification template; wiring the queue to
+GitHub automatically is unbuilt. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licensing
 

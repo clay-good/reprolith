@@ -32,6 +32,7 @@ from .presubmission import presubmission_report
 from .render import claim_counts, gap_items
 from .selection import claim_selection_report
 from .supersession import CertificateLedger
+from .verification import queue_report
 
 
 def _label_basis(report: dict[str, Any]) -> str:
@@ -460,6 +461,28 @@ class ReprolithQuery:
             return None
         report = presubmission_report(cert)
         report["superseded_by"] = self.superseded_by(digest)
+        return report
+
+    def verification_queue(self) -> dict[str, Any]:
+        """The load-bearing uncertainties this repository's standing certificates rest on.
+
+        The escalation surface the ``autonomous-build-loop`` spec describes and nothing carried:
+        the loop commits a load-bearing value, the certificate says so, and until now there was no
+        way to ask *what the whole repository is resting on* — only to read one certificate at a
+        time and hope to notice. Four certificates cited an item id that pointed at nothing.
+
+        Superseded certificates are excluded. A retracted result is not a live dependency, so
+        counting it would rank a question by work that has already been replaced — and since the
+        queue is derived from the ledger on every call rather than stored, a correction published
+        after start-up drops out of the count with nothing having to remember it.
+        """
+        pairs = [
+            (digest, cert)
+            for digest, cert in self._ledger.items()
+            if self.superseded_by(digest) is None
+        ]
+        report = queue_report(pairs)
+        report["standing_certificates"] = len(pairs)
         return report
 
     def certificates_for(

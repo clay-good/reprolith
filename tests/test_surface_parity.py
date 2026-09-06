@@ -33,6 +33,7 @@ _PAIRS = {
     "verdict": ("verdict", {"digest": "{digest}"}),
     "gaps": ("gaps", {"digest": "{digest}"}),
     "presubmission": ("presubmission", {"digest": "{digest}"}),
+    "verification-queue": ("verification_queue", {}),
     "dossier": ("dossier", {"accession": "ACC1"}),
     "bundle": ("bundle", {"accession": "ACC1"}),
     "status": ("status", {"accession": "ACC1"}),

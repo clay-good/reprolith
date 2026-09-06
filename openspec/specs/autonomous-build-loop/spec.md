@@ -19,17 +19,30 @@ enforced: the acceptance gates (CI runs `ruff`, `mypy`, `pytest`, and `openspec 
 --specs --strict` on every push) and the honesty invariants (derived in
 `reprolith.certificate.derive_overall`, re-derived again when a stored certificate is loaded).
 
-Two are **not** carried by anything yet, and the requirement text below describes the intent
-rather than the behavior:
+A third is carried by code as of 2026-09-06: *load-bearing uncertainty is escalated*.
+`reprolith.queue_from_certificates` opens a verification-queue item for every load-bearing
+assumption on every standing certificate, and `reprolith verification-queue` (MCP:
+`verification_queue`) is the read. Before it, the queue's shapes existed and nothing built an
+item — four published certificates cited `verify:time-unit-of-the-Zake2021-deposits` and a reader
+following that citation found nothing. Two properties are worth stating here because they are
+what make the escalation total rather than selective: it changes no verdict (a load-bearing
+assumption already withholds a clean pass through `derive_overall`, so opening its item adds a
+route to the question and nothing else), and items are keyed by the *question* rather than by the
+assumption's own id, so one solver limitation asked by three claims is one item with three
+dependents. The queue is derived from the ledger on every call, never stored, so it cannot drift
+from the certificates it describes.
 
-- *Load-bearing uncertainty is escalated.* The verification queue's shapes exist
-  (`reprolith.VerificationQueue`), and a certificate resting on a queued item is correctly
-  qualified — but no code path opens an item, so escalation is done by the agent in prose, in
-  the gap report and the assumptions list.
+What is still agent-carried, not code-carried, is the *decision* half: `VerificationQueue.decide`
+and `reverify_dependents` are live APIs, but nothing on disk records an expert decision, so every
+item reads as pending and the report says so rather than implying the queue is being worked.
+
+One requirement is **not** carried by anything, and the requirement text below describes the
+intent rather than the behavior:
+
 - *Repeated failure is parked.* There is no attempt counter anywhere; a failed unit is not
   retried because the agent moves on, not because anything bounds it.
 
-Neither gap can produce a wrong certificate — an unescalated uncertainty still travels as a
+Neither the parking gap nor the undecided queue can produce a wrong certificate — an unescalated uncertainty still travels as a
 load-bearing assumption, which downgrades the verdict on its own — but the requirements are
 stated here as goals, and a reader should not take them as implemented machinery.
 

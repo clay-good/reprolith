@@ -703,7 +703,7 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     assert on_the_query_surface == {
         "backlog", "bundle", "catalog", "certificate", "certificates-for", "corroboration",
         "dossier", "gaps", "presubmission", "select-claims", "self-validation", "status",
-        "verdict",
+        "verdict", "verification-queue",
     }
 
 

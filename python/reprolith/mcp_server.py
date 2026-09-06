@@ -101,6 +101,15 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "inputSchema": _ONE_DIGEST,
     },
     {
+        "name": "verification_queue",
+        "description": (
+            "The load-bearing values every standing certificate rests on, most consequential "
+            "first: the question, Reprolith's best estimate, its basis, the alternatives, and "
+            "which certificates would have to be re-issued if an expert corrected it."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
         "name": "certificates_for",
         "description": "Digests of every certificate issued for a paper, newest first.",
         "inputSchema": _IDENTIFIER,
@@ -805,6 +814,8 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return query.gaps(arguments["digest"])
     if name == "presubmission":
         return query.presubmission(arguments["digest"])
+    if name == "verification_queue":
+        return query.verification_queue()
     if name == "certificates_for":
         return query.certificates_for(**_identifier_kwargs(arguments))
     if name == "backlog_health":

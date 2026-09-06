@@ -372,6 +372,8 @@ from .verification import (
     VerificationItem,
     VerificationQueue,
     certificates_needing_review,
+    queue_from_certificates,
+    queue_report,
     reverify_dependents,
 )
 
@@ -628,6 +630,8 @@ __all__ = [
     "required_subjects",
     "Resolution",
     "resample_series",
+    "queue_from_certificates",
+    "queue_report",
     "reverify_dependents",
     "revise",
     "roadrunner_pin",

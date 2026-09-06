@@ -330,6 +330,41 @@ def _cmd_gaps(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_verification_queue(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """What the repository's standing certificates are resting on, most consequential first."""
+    report = query.verification_queue()
+    if args.json:
+        _print_json(report)
+        return 0
+    items = report["pending"]
+    if not items:
+        print("(nothing queued — no standing certificate rests on a load-bearing assumption)")
+        return 0
+    print(
+        f"AWAITING EXPERT REVIEW — {report['pending_count']} across "
+        f"{report['standing_certificates']} standing certificates"
+    )
+    for item in items:
+        dependents = "certificate" if item["impact"] == 1 else "certificates"
+        print(f"  {item['id']}  ({item['impact']} {dependents})")
+        print(f"    question: {item['question']}")
+        print(f"    reprolith's estimate: {item['best_estimate']}")
+        print(f"    basis: {item['basis']}")
+        for alt in item["alternatives"]:
+            print(f"    alternative: {alt}")
+        if not item["linked"]:
+            # The difference between an id a reader can grep the certificates for and one this
+            # command computed from the question. Printing them alike would suggest the
+            # certificate names it, and it does not.
+            print(
+                "    (id derived from the question; no certificate names it — grep the "
+                f"assumption id: {', '.join(item['assumption_ids'])})"
+            )
+    print(f"  ranked by: {report['ranked_by']}")
+    print(f"  decisions: {report['decisions_note']}")
+    return 0
+
+
 def _cmd_presubmission(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """The author-facing report for a certified paper, rendered like every other command's."""
     if args.json:
@@ -1480,8 +1515,8 @@ def build_parser() -> argparse.ArgumentParser:
         ),
         epilog=(
             "reading this repository: catalog, backlog, self-validation, corroboration, status, "
-            "certificate, verdict, gaps, presubmission, certificates-for, dossier, bundle, "
-            "select-claims\n"
+            "certificate, verdict, gaps, presubmission, verification-queue, certificates-for, "
+            "dossier, bundle, select-claims\n"
             "checking your own files: archive-check, claims-template, claims-propose, "
             "claims-check, params-template, params-propose, params-check, figure-template, "
             "figure-check\n"
@@ -1566,6 +1601,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("digest", help="the certificate's content digest")
     add_json(p)
     p.set_defaults(func=_cmd_presubmission)
+
+    p = sub.add_parser(
+        "verification-queue",
+        help="load-bearing values awaiting expert review, across every standing certificate",
+    )
+    add_json(p)
+    p.set_defaults(func=_cmd_verification_queue)
 
     p = sub.add_parser("certificates-for", help="every certificate digest issued for a paper")
     add_identifier(p)
