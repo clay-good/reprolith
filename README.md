@@ -664,7 +664,7 @@ standing certificates, not under all of them.
 
 It prints in two parts, and the second is the one worth reading first. Six of the eight
 load-bearing assumptions on today's certificates are **this engine's** limits rather than
-anything a paper left out — the spatial solver implements one boundary condition, the stochastic
+anything a paper left out — the wall the spatial solver ran under, the stochastic
 class judges an ensemble it drew itself — and no expert confirming anything closes one. They
 withhold a clean pass exactly as the others do; what they wait on is this engine, not a person,
 and they say so under their own heading. Three questions are actually open to you. It exists because a certificate could cite a queue item nobody had

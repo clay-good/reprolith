@@ -325,8 +325,8 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
                 "source_location": None,
                 "issue": issue,
                 # `basis` is why Reprolith had to assume it — and for some assumptions it is also
-                # the reason the author cannot discharge the item at all: the spatial engine
-                # implements one boundary condition and the stochastic class samples an ensemble,
+                # the reason the author cannot discharge the item at all: a spatial claim has no
+                # field naming a boundary and the stochastic class samples an ensemble,
                 # so six of the thirty published certificates carried an instruction no wording in
                 # any paper could satisfy. The sibling `gaps` report prints the basis; this one,
                 # the surface that exists to be acted on, dropped it. An item the author cannot

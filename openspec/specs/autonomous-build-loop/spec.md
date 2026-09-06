@@ -34,7 +34,7 @@ from the certificates it describes.
 
 It reports in two parts, because escalating everything and then ranking it together overstated
 what escalation buys: six of the eight load-bearing assumptions on today's certificates are this
-engine's own limits — the spatial solver's single boundary condition, the ensemble the stochastic
+engine's own limits — the wall the spatial solver ran under, the ensemble the stochastic
 class drew — and no expert decision closes one. `Assumption.author_can_close` already carried that
 distinction for the author-facing fix list, and it carries it here. Three questions are genuinely
 open to a reviewer; the rest wait on this engine and say so.

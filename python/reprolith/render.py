@@ -626,7 +626,7 @@ def _verification_banner(
 
     Two sections, not one, and the second is what earns this. Six of the eight load-bearing
     assumptions on this repository's certificates are *this engine's* limits rather than anything
-    a paper left out — the spatial solver's single boundary condition, the ensemble the stochastic
+    a paper left out — the wall the spatial solver ran under, the ensemble the stochastic
     class drew — and no expert confirming anything closes one. Under a single "awaiting expert
     review" heading they read as five of seven questions waiting on a person, which is the shape
     of overstatement the rest of this page exists to avoid.

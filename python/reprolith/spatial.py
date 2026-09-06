@@ -847,6 +847,12 @@ def certify_spatial(
                     f"dt={claim.dt!r}, {claim.steps} steps"
                     + (f", decay={claim.decay!r}" if claim.decay else "")
                     + ", zero-flux (Neumann) boundaries"
+                    # What that wall costs *this* claim. It belongs here rather than in the
+                    # assumption's basis: the assumption is one fact about this engine, and
+                    # putting a per-claim number in its wording gave three claims three different
+                    # questions, so one solver limitation stopped merging into one queue item and
+                    # its impact fell from three dependents to one.
+                    + _boundary_cost(claim)
                 ),
             )
         )
@@ -875,7 +881,7 @@ def certify_spatial(
                 "Reprolith did not check what boundary the source specifies"
             ),
             chosen="zero-flux (Neumann) boundaries",
-            basis=_boundary_basis(claim),
+            basis=_BOUNDARY_BASIS,
             load_bearing=True,
             alternatives=(
                 "Dirichlet (fixed value)",
@@ -897,28 +903,37 @@ def certify_spatial(
     )
 
 
-def _boundary_basis(claim: SpatialClaim) -> str:
-    """The boundary assumption's basis, carrying the measured cost of the choice where there is one.
+#: The boundary assumption's basis. Identical for every claim on purpose: it states one fact about
+#: this engine, and an item in the verification queue is keyed by its question — so a per-claim
+#: number here gives three claims three different questions, and one solver limitation stops
+#: merging into one item with three dependents. Its impact then reads as 1 instead of 3, which
+#: understates precisely what the queue exists to rank. The measurement lives on each claim's
+#: protocol line, where the rest of that run's facts already are.
+_BOUNDARY_BASIS = (
+    "a claim carries no field naming a boundary, so this run's wall is this engine's choice rather "
+    "than anything a paper could state. What the choice costs is no longer a caveat: each claim's "
+    "protocol line reports how far re-running the same discretization under the alternatives this "
+    "solver implements moves the judged distance, against the threshold it is judged at. An "
+    "unbounded domain is not among those alternatives and is not measured"
+)
 
-    This used to end "so on a domain narrow enough for the walls to matter the distance moves with
-    a choice the paper did not make" — true, conditional, and leaving the reader to guess whether
-    the condition holds for the run in front of them. It holds or it does not, and the solver can
-    now be asked.
+
+def _boundary_cost(claim: SpatialClaim) -> str:
+    """The protocol line's measured boundary cost for one claim, or a clause saying there is none.
+
+    This used to be the assumption's basis and ended "so on a domain narrow enough for the walls to
+    matter the distance moves with a choice the paper did not make" — true, conditional, and
+    leaving the reader to guess whether the condition holds for the run in front of them. It holds
+    or it does not, and the solver can now be asked.
     """
     measured = boundary_sensitivity(claim)
-    if measured is None:  # pragma: no cover - an unstable claim never reaches an assumption
-        return (
-            "a claim carries no field naming a boundary, so this run's wall is this engine's "
-            "choice; its cost could not be measured because the discretization does not run"
-        )
+    if measured is None:  # pragma: no cover - a judged claim ran, so its alternatives run too
+        return " (the boundary's cost was not measurable for this run)"
     return (
-        "a claim carries no field naming a boundary, so this run's wall is this engine's choice. "
-        f"Re-running the same protocol under the alternatives it implements moves the judged "
-        f"distance from {measured['judged_distance']:.3e} to at most "
-        f"{measured['worst_distance']:.3e} ({measured['worst_alternative']}), a change of "
-        f"{measured['moved_by']:.3e} against a pass threshold of {measured['pass_within']:.3e} — "
-        "so what the choice costs this claim is measured rather than left as a caveat. An "
-        "unbounded domain is not among the alternatives this solver runs and is not measured"
+        f" (that wall costs this claim {measured['moved_by']:.3e}: the judged distance moves from "
+        f"{measured['judged_distance']:.3e} to {measured['worst_distance']:.3e} under "
+        f"{measured['worst_alternative']}, against a pass threshold of "
+        f"{measured['pass_within']:.3e})"
     )
 
 

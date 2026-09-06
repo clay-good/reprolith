@@ -55,9 +55,9 @@ def close_gap(
 
     ``author_can_close`` is the caller's judgment too, and it is the one this function could not
     express. Most gaps are the paper's omission and stating the value discharges them, which is
-    the default. Some are *this engine's* limits — the spatial solver implements one boundary
-    condition, the stochastic class judges an ensemble it drew — and no wording in any paper
-    clears those. Two surfaces now read the flag: the author-facing fix list, which otherwise
+    the default. Some are *this engine's* limits — a spatial claim carries no field naming a
+    boundary, so the wall is this solver's choice; the stochastic class judges an ensemble it
+    drew — and no wording in any paper clears those. Two surfaces now read the flag: the author-facing fix list, which otherwise
     prints an instruction nobody can follow, and `reprolith verification-queue`, which otherwise
     ranks the engine's own backlog as questions waiting on an expert. Both of the class front-ends
     that produce such an assumption build it directly and set the flag; a caller taking this

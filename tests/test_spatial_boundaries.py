@@ -167,3 +167,59 @@ def test_an_unknown_boundary_is_refused_by_name() -> None:
     with pytest.raises(ValueError, match="unknown boundary"):
         diffuse_1d([0.0] * len(x), diffusivity=_D, dx=dx, dt=1e-4, steps=1, boundary="absorbing")
     assert set(BOUNDARIES) == {"no-flux", "dirichlet", "periodic"}
+
+
+# --- where the measurement is allowed to live -------------------------------------------------
+
+
+def test_the_measured_cost_is_on_the_claim_and_the_question_stays_one_question() -> None:
+    """A verification-queue item is keyed by its question, so a per-claim number in the boundary
+    assumption's *basis* gives three claims three different questions: one solver limitation stops
+    merging into one item with three dependents and its impact reads as 1 instead of 3 —
+    understating exactly what the queue ranks by. The number belongs on the claim's protocol line,
+    where the rest of that run's facts already are.
+    """
+    from reprolith import certificate_digest, queue_report
+    from reprolith.model import PaperIdentity
+    from reprolith.spatial import SpatialClaim, certify_spatial, gaussian_profile, solver_pin
+
+    L, N = 20.0, 201
+    dx = 2 * L / (N - 1)
+    centers = [-L + i * dx for i in range(N)]
+
+    def claim(claim_id: str, D: float, var0: float, steps: int) -> SpatialClaim:
+        dt = 0.2 * dx * dx / D
+        return SpatialClaim(
+            claim_id=claim_id,
+            quantity="diffused concentration profile",
+            initial=tuple(gaussian_profile(centers, mass=10.0, variance=var0)),
+            reference=tuple(
+                gaussian_profile(centers, mass=10.0, variance=var0 + 2 * D * steps * dt)
+            ),
+            source_location="closed-form",
+            diffusivity=D,
+            dx=dx,
+            dt=dt,
+            steps=steps,
+        )
+
+    cert = certify_spatial(
+        paper=PaperIdentity(title="three profiles", doi=""),
+        engine_pin=solver_pin(),
+        claims=[claim("a", 1.0, 1.0, 200), claim("b", 2.0, 1.5, 160)],
+    )
+    boundary = [a for a in cert.assumptions if a.id.startswith("spatial-boundary-")]
+    assert len(boundary) == 2, "one assumption per judged claim"
+    assert len({a.basis for a in boundary}) == 1, "and one question between them"
+
+    report = queue_report([(certificate_digest(cert), cert)])
+    items = [i for i in report["engine_limits"] if "boundary" in i["question"]]
+    assert len(items) == 1, "two claims, one solver limitation, one item"
+    assert items[0]["impact"] == 1, "one certificate carries it"
+
+    # The measurement is still published, per claim, where the discretization is.
+    protocols = [a.protocol for a in cert.assessments]
+    assert all("zero-flux (Neumann) boundaries" in p for p in protocols)
+    assert all("that wall costs this claim" in p for p in protocols)
+    # Two different claims, two different measured costs — which is why it cannot be in the basis.
+    assert protocols[0] != protocols[1]
