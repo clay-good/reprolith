@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import IO, Any
 
 from .catalog import AmbiguousMerge, Catalog, CatalogEntry, Identifiers, IllegalTransition
+from .decisions import RecordedDecision, load_decisions
 from .enums import LifecycleState, ModelClass
 from .model import Certificate
 from .oracle import ReferenceKind
@@ -1288,6 +1289,28 @@ def repository_data_root() -> Path:
     return Path(__file__).resolve().parents[2] / "datasets"
 
 
+def repository_decisions() -> tuple[RecordedDecision, ...]:
+    """The expert decisions this checkout records, or none when the datasets are not reachable.
+
+    Read from ``datasets/verification_decisions.json`` and handed to
+    :class:`~reprolith.query.ReprolithQuery`, so the CLI and the agent surface answer the
+    verification queue from the same record. An installed copy of the package outside a source
+    checkout carries no datasets at all — the condition :func:`default_data_dir` names — and gets
+    an empty record; a file that is present but malformed raises, because a decision file nobody
+    can parse must not read as a repository where nobody has decided anything.
+
+    Read from the checkout rather than from ``--data-dir``, unlike the certificates. A decision is
+    keyed by the item id and the fingerprint of the question — both content-derived — so the same
+    question asked by another checkout's certificates is the same question, and one that is not
+    there is reported as orphaned rather than silently applied. There is nothing repository-local
+    about the answer to "what time unit does this deposit mean".
+    """
+    file = repository_data_root() / "verification_decisions.json"
+    if not file.is_file():
+        return ()
+    return load_decisions(file)
+
+
 def default_data_dir() -> Path:
     """The persisted repository state both surfaces read by default (the PK/PD milestone run).
 
@@ -1436,6 +1459,7 @@ def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[R
         bundles,
         agreement_reports=agreement_reports,
         corroboration=corroboration,
+        decisions=repository_decisions(),
     )
     return query, catalog
 

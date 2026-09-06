@@ -52,6 +52,7 @@ from .corroboration import (
     corroborate_objective,
     corroborate_profile,
 )
+from .decisions import RecordedDecision, decisions_document, load_decisions
 from .determinism import certificate_digest, same_modulo_run_metadata
 from .digitization import (
     AmbiguousPanel,
@@ -372,6 +373,7 @@ from .verification import (
     VerificationItem,
     VerificationQueue,
     certificates_needing_review,
+    question_fingerprint,
     queue_from_certificates,
     queue_report,
     reverify_dependents,
@@ -416,6 +418,7 @@ __all__ = [
     "ClaimSelection",
     "UnattemptedClaim",
     "certificate_digest",
+    "decisions_document",
     "certificate_from_content",
     "CertificateLedger",
     "certificates_needing_review",
@@ -556,6 +559,7 @@ __all__ = [
     "lint_stochastic",
     "LintResult",
     "load_claims_dataset",
+    "load_decisions",
     "load_loop_notes",
     "load_test_set",
     "logical_dossier",
@@ -612,6 +616,7 @@ __all__ = [
     "reaction_essentiality",
     "RecipeStep",
     "ReconstructionBundle",
+    "RecordedDecision",
     "ReferenceKind",
     "refit_parameters",
     "relative_error",
@@ -630,6 +635,7 @@ __all__ = [
     "required_subjects",
     "Resolution",
     "resample_series",
+    "question_fingerprint",
     "queue_from_certificates",
     "queue_report",
     "reverify_dependents",

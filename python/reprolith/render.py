@@ -15,9 +15,10 @@ the claim it blocks.
 from __future__ import annotations
 
 import html
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
+from .decisions import RecordedDecision
 from .enums import ReproductionLevel, Verdict
 from .ingest import UNSTATED_UNIT
 from .model import Certificate, RunMetadata
@@ -600,7 +601,10 @@ def _corroboration_banner(corroboration: dict[str, dict[str, Any]]) -> str:
     )
 
 
-def _verification_banner(rows: list[tuple[str, Certificate]]) -> str:
+def _verification_banner(
+    rows: list[tuple[str, Certificate]],
+    decisions: Sequence[RecordedDecision] = (),
+) -> str:
     """What the whole published set rests on, split by whether anybody can answer it.
 
     Each card already names the load-bearing assumptions behind its own certificate, and that is
@@ -631,8 +635,8 @@ def _verification_banner(rows: list[tuple[str, Certificate]]) -> str:
         for _, cert in rows
         if content_hash(cert.content()) not in superseded
     ]
-    report = queue_report(pairs)
-    if not report["pending"] and not report["engine_limits"]:
+    report = queue_report(pairs, decisions)
+    if not report["pending"] and not report["engine_limits"] and not report["decided"]:
         return ""
 
     def _items(entries: list[dict[str, Any]]) -> str:
@@ -663,6 +667,35 @@ def _verification_banner(rows: list[tuple[str, Certificate]]) -> str:
             )
         return "".join(out)
 
+    def _answered(entries: list[dict[str, Any]]) -> str:
+        out = []
+        for item in entries:
+            answers = "".join(
+                f"<li>{html.escape(decision['kind'])}ed by "
+                f"{html.escape(decision['expert'])} on "
+                f"{html.escape(decision['decided_on'])}"
+                + (
+                    f", corrected to {html.escape(decision['corrected_value'])}"
+                    if decision["corrected_value"]
+                    else ""
+                )
+                + f" — {html.escape(decision['rationale'])} "
+                f"({html.escape(decision['source'])})</li>"
+                for decision in item["decisions"]
+            )
+            disputed = (
+                " Experts disagree here; both judgments stand."
+                if item["disputed"]
+                else ""
+            )
+            out.append(
+                f"<li><strong>{item['impact']} "
+                + ("certificate" if item["impact"] == 1 else "certificates")
+                + f"</strong> — {html.escape(item['question'])}."
+                f"{disputed}<ul>{answers}</ul></li>"
+            )
+        return "".join(out)
+
     sections = []
     if report["pending"]:
         sections.append(
@@ -685,6 +718,19 @@ def _verification_banner(rows: list[tuple[str, Certificate]]) -> str:
             f'certificates, and {html.escape(report["engine_limits_note"])}.</p>'
             f"<ul class=\"tr-note\">{_items(report['engine_limits'])}</ul></section>"
         )
+    if report["decided"]:
+        # Answered, and still qualified. Publishing the answer without that second half would let
+        # a reader take a confirmation for a re-certification, which is the one misreading this
+        # section can cause.
+        sections.append(
+            '<section class="track-record"><h2>Answered by an expert</h2>'
+            f'<p class="tr-note">{report["decided_count"]} value(s) an expert has confirmed, '
+            "corrected or rejected. The certificates resting on them still carry the value as an "
+            "unreviewed load-bearing assumption and still withhold a clean pass: a decision is an "
+            "answer, not a re-certification, and lifting it means re-issuing every dependent "
+            "certificate under a new pin.</p>"
+            f"<ul class=\"tr-note\">{_answered(report['decided'])}</ul></section>"
+        )
     return "".join(sections)
 
 
@@ -694,6 +740,7 @@ def render_registry(
     title: str = "Reprolith reproduction registry",
     self_validation: dict[str, Any] | None = None,
     corroboration: dict[str, dict[str, Any]] | None = None,
+    decisions: Sequence[RecordedDecision] = (),
 ) -> str:
     """A self-contained, browsable HTML registry of certificates (spec: certificate-publication).
 
@@ -869,7 +916,7 @@ def render_registry(
         f'<p class="disclaimer">{html.escape(scope_human)}</p>'
         f"{_track_record_banner(self_validation) if self_validation else ''}"
         f"{_corroboration_banner(corroboration) if corroboration is not None else ''}"
-        f"{_verification_banner(rows)}"
+        f"{_verification_banner(rows, decisions)}"
         f"{_AUTHOR_BANNER}"
         '<div class="filters">'
         f"{buttons('class', classes)}{buttons('verdict', verdicts)}</div>"

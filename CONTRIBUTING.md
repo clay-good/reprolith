@@ -30,9 +30,34 @@ depends on it. If you know the modeling, you can decide.
 - **Verification issues** are Reprolith's questions to you, and `reprolith verification-queue` is
   where they come from. Answer in the issue: confirm,
   correct (with the right value and a source), or reject (with why). Your decision, your name,
-  and your rationale become the record. Re-verification of what depended on a corrected value is
-  the intent (`reprolith.reverify_dependents` implements it), but it is not automated yet — a
-  merged correction triggers nothing on its own today.
+  and your rationale become the record — literally: a merged decision is a record in
+  [`datasets/verification_decisions.json`](datasets/verification_decisions.json), and the queue
+  stops asking the question on every surface at once. Add it in the same pull request that
+  resolves the issue:
+
+  ```json
+  {
+    "item_id": "verify:time-unit-of-the-Zake2021-deposits",
+    "question_fingerprint": "<the item's fingerprint from `reprolith verification-queue --json`>",
+    "kind": "confirm",
+    "expert": "Your Name",
+    "rationale": "why, in a sentence someone else can check",
+    "decided_on": "2026-09-06",
+    "source": "https://github.com/.../issues/12",
+    "corrected_value": null
+  }
+  ```
+
+  The fingerprint is what keeps your name off a question you never read: it pins the wording,
+  the basis and the alternatives as they stood when you answered, and if any of them change your
+  decision is reported as *stale* and the item goes back to pending instead of reading as settled.
+  A `correct` must supply `corrected_value`; a `confirm` or `reject` must not.
+
+  **Your decision does not re-issue anything.** The certificates resting on the value were
+  computed while it was unreviewed and keep saying so until they are re-run and superseded
+  (`reprolith.reverify_dependents` does that); a merged decision triggers nothing on its own
+  today. That is why a decided item still appears in the queue, under its own heading, with the
+  qualification spelled out.
 - **Pull requests** are how any change to the data or code lands. Reference the issue a PR
   resolves. The same automated gates run on every PR, whether it comes from a human or from
   Reprolith's own build loop — nobody gets a lower bar.

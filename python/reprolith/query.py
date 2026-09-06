@@ -19,11 +19,12 @@ surface"). The transport binding (the actual MCP tool definitions) wraps this re
 from __future__ import annotations
 
 import time
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .agreement import summarize_report
 from .catalog import Catalog, CatalogEntry, Identifiers
+from .decisions import RecordedDecision
 from .determinism import certificate_digest
 from .enums import LifecycleState, ModelClass, ReproductionLevel, Verdict
 from .model import Certificate
@@ -245,6 +246,7 @@ class ReprolithQuery:
         bundles: dict[str, dict[str, Any]] | None = None,
         agreement_reports: dict[str, dict[str, Any]] | None = None,
         corroboration: dict[str, dict[str, Any]] | None = None,
+        decisions: Sequence[RecordedDecision] = (),
     ) -> None:
         self._catalog = catalog
         self._ledger = ledger
@@ -262,6 +264,11 @@ class ReprolithQuery:
         # the unchecked classes are as reachable here as the checked ones. Empty when none
         # are loaded.
         self._corroboration = corroboration or {}
+        # The expert decisions this repository records (datasets/verification_decisions.json).
+        # Read here rather than by the verification queue itself so both surfaces answer from one
+        # loaded record, the way they already do for certificates. Empty when none are loaded,
+        # which the queue reports as "nobody has decided anything" rather than hiding.
+        self._decisions = tuple(decisions)
 
     # --- catalog / status (blind: no ground-truth label leaves the catalog) --------
 
@@ -481,7 +488,7 @@ class ReprolithQuery:
             for digest, cert in self._ledger.items()
             if self.superseded_by(digest) is None
         ]
-        report = queue_report(pairs)
+        report = queue_report(pairs, self._decisions)
         report["standing_certificates"] = len(pairs)
         return report
 

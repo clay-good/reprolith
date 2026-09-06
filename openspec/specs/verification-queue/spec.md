@@ -59,6 +59,21 @@ flow through automatically.
 - **AND** a correction triggers re-verification of every dependent entry, with superseded
   certificates linked to their replacements
 
+#### Scenario: A decision outlives the session that recorded it
+
+- **WHEN** an expert's decision is merged into the repository
+- **THEN** every surface reading the queue reports that item as decided rather than pending,
+  carrying the deciding expert, the date, the rationale, and where the decision was made
+- **AND** the certificates resting on the value keep their qualification until they are re-issued,
+  so a decision is never presented as a re-certification
+
+#### Scenario: A decision on a question that has since changed
+
+- **WHEN** a recorded decision names an item whose question has been reworded, re-based, or given
+  different alternatives since it was answered
+- **THEN** the decision is reported as stale and its item returns to pending, rather than
+  attributing an answer to an expert for a question they never read
+
 #### Scenario: Disagreement is preserved, not overwritten
 
 - **WHEN** experts disagree on a queued value

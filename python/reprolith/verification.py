@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from .canonical import content_hash
+from .decisions import RecordedDecision
 
 if TYPE_CHECKING:  # avoid a runtime import cycle; only needed for type hints
     from .model import Assumption, Certificate, EnginePin
@@ -158,7 +159,20 @@ def _item_id(assumption: Assumption) -> str:
     """
     if assumption.verification_item:
         return assumption.verification_item
-    body = content_hash(
+    return f"verify:{question_fingerprint(assumption)[:12]}"
+
+
+def question_fingerprint(assumption: Assumption) -> str:
+    """The digest of the four fields that *are* the question an expert answers.
+
+    A derived item id is the first twelve hex of this, so for those the id already carries the
+    question and nothing can slip underneath it. An item a certificate *names* has an author's id,
+    and its wording, basis and alternatives can all change with the id unchanged — which is
+    exactly the case where a stored decision would come to sit under a question its expert never
+    read. :mod:`reprolith.decisions` records this with every decision so that drift is detected
+    rather than published.
+    """
+    return content_hash(
         {
             "description": assumption.description,
             "chosen": assumption.chosen,
@@ -166,7 +180,6 @@ def _item_id(assumption: Assumption) -> str:
             "alternatives": list(assumption.alternatives),
         }
     )
-    return f"verify:{body[:12]}"
 
 
 def _question(assumption: Assumption) -> tuple[str, str, str, tuple[str, ...]]:
@@ -263,7 +276,72 @@ def queue_from_certificates(
     )
 
 
-def queue_report(pairs: Sequence[tuple[str, Certificate]]) -> dict[str, Any]:
+def _item_fingerprints(pairs: Sequence[tuple[str, Certificate]]) -> dict[str, str]:
+    """Each queued item's current question fingerprint, keyed by item id.
+
+    ``queue_from_certificates`` already refuses a repository where one id carries two different
+    questions, so the first assumption reaching an id settles it.
+    """
+    fingerprints: dict[str, str] = {}
+    for _, cert in pairs:
+        for assumption in cert.assumptions:
+            if not assumption.load_bearing and not assumption.verification_item:
+                continue
+            fingerprints.setdefault(_item_id(assumption), question_fingerprint(assumption))
+    return fingerprints
+
+
+def _join_decisions(
+    fingerprints: dict[str, str],
+    decisions: Sequence[RecordedDecision],
+) -> tuple[dict[str, list[RecordedDecision]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Split recorded decisions into the live ones, the stale ones, and the orphaned ones.
+
+    *Live* is a decision whose item is still derived from a standing certificate **and** whose
+    recorded question fingerprint still matches the question being asked. *Stale* is the second
+    condition failing: the id survived a rewording, so the decision is filed against a question
+    its expert never read, and its item goes back to pending rather than reading as answered.
+    *Orphaned* is the first failing: nothing standing rests on that question any more — the usual
+    cause is the certificate having been superseded, which is the decision doing its job rather
+    than a defect, so it is reported and not raised.
+    """
+    live: dict[str, list[RecordedDecision]] = {}
+    stale: list[dict[str, Any]] = []
+    orphaned: list[dict[str, Any]] = []
+    for decision in decisions:
+        current = fingerprints.get(decision.item_id)
+        if current is None:
+            orphaned.append(
+                {
+                    **decision.to_dict(),
+                    "detail": (
+                        "no standing certificate rests on this item; it was superseded or the "
+                        "assumption behind it is no longer load-bearing, so the decision settles "
+                        "nothing that is still published"
+                    ),
+                }
+            )
+        elif current != decision.question_fingerprint:
+            stale.append(
+                {
+                    **decision.to_dict(),
+                    "current_question_fingerprint": current,
+                    "detail": (
+                        "the question under this id has changed since the decision was recorded, "
+                        "so the decision answers wording this expert never read; the item is "
+                        "pending again until it is decided as it now reads"
+                    ),
+                }
+            )
+        else:
+            live.setdefault(decision.item_id, []).append(decision)
+    return live, stale, orphaned
+
+
+def queue_report(
+    pairs: Sequence[tuple[str, Certificate]],
+    decisions: Sequence[RecordedDecision] = (),
+) -> dict[str, Any]:
     """The queue as a read, split by whether anybody can actually answer the item.
 
     The first version of this report put every load-bearing assumption under one heading and
@@ -287,6 +365,14 @@ def queue_report(pairs: Sequence[tuple[str, Certificate]]) -> dict[str, Any]:
     would be least visible. So the ranking is by impact, and the field says so rather than
     carrying a number nobody measured.
 
+    ``decisions`` are the expert answers this repository has recorded
+    (:func:`reprolith.decisions.load_decisions`). An item carrying a live one moves out of
+    ``pending`` into ``decided`` — it is no longer awaiting anybody — while keeping every
+    qualification it had, because a decision is an answer and not a re-certification. A decision
+    whose question has been reworded under the same id is *stale* and leaves its item pending; one
+    naming an item nothing standing rests on is *orphaned*. Both are reported rather than dropped:
+    an answer that quietly stopped counting is worse than one that says why.
+
     ``linked`` says whether the certificates naming this item did so themselves or whether the id
     was derived from the question — the difference between a citation a reader can search for and
     one this function computed. ``depends_on_papers`` is the same dependents as ``depends_on``,
@@ -295,6 +381,8 @@ def queue_report(pairs: Sequence[tuple[str, Certificate]]) -> dict[str, Any]:
     :func:`reverify_dependents` and the wrong one for a person.
     """
     queue, assumption_ids, answerable = queue_from_certificates(pairs)
+    fingerprints = _item_fingerprints(pairs)
+    live, stale, orphaned = _join_decisions(fingerprints, decisions)
     # A dependent is a 64-character digest, which is the right identifier for
     # `reverify_dependents` and the wrong one for a person deciding whether they know enough
     # to answer. The papers behind those digests are what an expert recognizes, and the whole
@@ -311,6 +399,10 @@ def queue_report(pairs: Sequence[tuple[str, Certificate]]) -> dict[str, Any]:
     }
     pending: list[dict[str, Any]] = []
     engine_limits: list[dict[str, Any]] = []
+    decided: list[dict[str, Any]] = []
+    stale_by_item: dict[str, list[dict[str, Any]]] = {}
+    for record in stale:
+        stale_by_item.setdefault(str(record["item_id"]), []).append(record)
     for item in queue.pending():
         view = item.to_dict()
         view["linked"] = item.id in linked
@@ -327,7 +419,40 @@ def queue_report(pairs: Sequence[tuple[str, Certificate]]) -> dict[str, Any]:
             if paper is not None and paper not in seen:
                 seen.append(paper)
         view["depends_on_papers"] = seen
-        (pending if item.id in answerable else engine_limits).append(view)
+        # Published because it is what a decision has to quote to be verifiable, and
+        # CONTRIBUTING.md tells an expert to copy it into the record they merge. Deriving it and
+        # then not showing it would leave the one field of that record un-obtainable.
+        view["question_fingerprint"] = fingerprints[item.id]
+        answers = live.get(item.id, ())
+        # A stale record is shown on the item it was filed against, because an expert looking at
+        # a question that reads as untouched should see that somebody answered an earlier wording
+        # of it — otherwise the work is silently repeated.
+        view["stale_decisions"] = stale_by_item.get(item.id, [])
+        if not answers:
+            (pending if item.id in answerable else engine_limits).append(view)
+            continue
+        view["decisions"] = [decision.to_dict() for decision in answers]
+        # Retained, never resolved: two experts who disagree are two records and a flag, because
+        # picking one would be resolving the disagreement silently (spec: verification-queue,
+        # "Disagreement is preserved, not overwritten").
+        view["disputed"] = len({decision.kind for decision in answers}) > 1
+        # Mechanical, not asserted. Were the dependents re-issued against this decision, the
+        # assumption behind the item would no longer be load-bearing and no item would be derived
+        # here at all — so an item appearing in this report is one whose certificates still stand
+        # exactly as they were computed, qualification included.
+        view["dependents_reissued"] = False
+        view["qualification"] = (
+            "the certificates resting on this value still carry it as an unreviewed load-bearing "
+            "assumption and still withhold a clean pass; a decision does not re-issue them, "
+            "reverify_dependents does"
+        )
+        kinds = {decision.kind for decision in answers}
+        if kinds == {"reject"}:
+            view["action_required"] = (
+                "the estimate was rejected and a rejection supplies no replacement, so the "
+                "dependents cannot be re-issued — the value has to be corrected first"
+            )
+        decided.append(view)
     return {
         "pending": pending,
         "pending_count": len(pending),
@@ -353,13 +478,51 @@ def queue_report(pairs: Sequence[tuple[str, Certificate]]) -> dict[str, Any]:
             "ranked on: a certificate states its discrepancy and tolerance as prose, and a "
             "number parsed back out of prose is a guess, not a measurement"
         ),
-        "decisions": [],
-        "decisions_note": (
-            "no expert decision is stored in this repository, so every item here is pending. A "
-            "decision is recorded against a live queue (VerificationQueue.decide) and acted on "
-            "through reverify_dependents; nothing on disk carries one yet"
-        ),
+        "decided": decided,
+        "decided_count": len(decided),
+        "stale_decisions": stale,
+        "orphaned_decisions": orphaned,
+        "decisions": [decision.to_dict() for decision in decisions],
+        "decisions_note": _decisions_note(decided, decisions, stale, orphaned),
     }
+
+
+def _decisions_note(
+    decided: Sequence[dict[str, Any]],
+    decisions: Sequence[RecordedDecision],
+    stale: Sequence[dict[str, Any]],
+    orphaned: Sequence[dict[str, Any]],
+) -> str:
+    """What the committed decision record actually says, derived rather than asserted.
+
+    This sentence used to be a constant reading "nothing on disk carries one yet", which was true
+    of the repository and false of the software the moment a decision was recorded — the shape of
+    claim this project keeps finding in its own output. It is computed from the file now, so it
+    cannot outlive the state it describes.
+    """
+    if not decisions:
+        return (
+            "no expert decision is recorded in this repository, so every item here is pending. A "
+            "decision lands as a record in datasets/verification_decisions.json and is acted on "
+            "through reverify_dependents"
+        )
+    parts = [
+        f"{len(decisions)} expert decision(s) recorded; {len(decided)} item(s) decided",
+    ]
+    if stale:
+        parts.append(
+            f"{len(stale)} answer(s) a question that has since been reworded and are shown "
+            "beside the item, which is pending again"
+        )
+    if orphaned:
+        parts.append(
+            f"{len(orphaned)} name(s) an item no standing certificate rests on any more"
+        )
+    parts.append(
+        "no decision re-issues a certificate: the dependents of a decided item still carry the "
+        "value as unreviewed until reverify_dependents replaces them"
+    )
+    return "; ".join(parts)
 
 
 def reverify_dependents(
@@ -422,6 +585,7 @@ __all__ = [
     "VerificationItem",
     "VerificationQueue",
     "certificates_needing_review",
+    "question_fingerprint",
     "queue_from_certificates",
     "queue_report",
     "reverify_dependents",

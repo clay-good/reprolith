@@ -673,11 +673,32 @@ look at first.
 
 Opening an item changes no verdict, which is what makes escalating every load-bearing assumption
 safe: such an assumption already withholds a clean pass, so the queue adds a reader's route to
-the question and nothing else. Recording a decision and re-issuing what rests on it is a live
-API (`VerificationQueue.decide`, `reverify_dependents`); nothing on disk carries a decision yet,
-and the queue says so rather than reading as though every item is merely unanswered. Questions
-are still raised as issues **by hand**, from the verification template; wiring the queue to
-GitHub automatically is unbuilt. See [CONTRIBUTING.md](CONTRIBUTING.md).
+the question and nothing else.
+
+**An answer now outlives the process that recorded it.** `VerificationQueue.decide` and
+`reverify_dependents` were both built and neither could be reached from outside one Python
+run — the queue is derived on every call and stored nowhere, so a decision made against it
+evaporated with the interpreter, and the queue printed a hard-coded sentence saying none was
+stored. Decisions are committed data now
+([`datasets/verification_decisions.json`](datasets/verification_decisions.json)), read by the same
+function all three surfaces answer from, so an item somebody has answered stops asking on the
+terminal, over MCP, and on the registry page at once — with the expert, the date, the rationale,
+and where the decision was made.
+
+Three things it refuses to do, because each would publish more than the record supports. It does
+not lift a qualification: the certificates under a confirmed value were still computed while it
+was unreviewed, so they keep withholding a clean pass until `reverify_dependents` re-issues them,
+and that is mechanical rather than promised — were they re-issued, the assumption would no longer
+be load-bearing and the item would not be derived at all. It does not resolve disagreement: two
+experts who answer differently are two records, both shown, the item marked disputed. And it does
+not trust an id — every record carries the fingerprint of the question as it was answered, so a
+decision filed against an item whose wording later changed is reported as **stale** and its item
+goes back to pending, rather than attributing an answer to somebody for a question they never
+read. The repository records no decision today, and the queue says so from the file rather than
+from a sentence that could outlive it.
+
+Questions are still raised as issues **by hand**, from the verification template; wiring the queue
+to GitHub automatically is unbuilt. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licensing
 

@@ -356,6 +356,15 @@ def _cmd_verification_queue(query: ReprolithQuery, args: argparse.Namespace) -> 
             print(f"    rests under: {paper['title']}{doi}")
         for alt in item["alternatives"]:
             print(f"    alternative: {alt}")
+        # What a merged decision has to quote to be checkable against the question it answered.
+        print(f"    question fingerprint: {item['question_fingerprint']}")
+        for record in item.get("stale_decisions", []):
+            # Shown on a question that otherwise reads as untouched: somebody answered an earlier
+            # wording of it, and without this line the next expert repeats their work.
+            print(
+                f"    earlier answer, no longer applies: {record['expert']} "
+                f"{record['kind']}ed this on {record['decided_on']} — {record['detail']}"
+            )
         if not item["linked"]:
             # The difference between an id a reader can grep the certificates for and one this
             # command computed from the question. Printing them alike would suggest the
@@ -365,7 +374,7 @@ def _cmd_verification_queue(query: ReprolithQuery, args: argparse.Namespace) -> 
                 f"assumption id: {', '.join(item['assumption_ids'])})"
             )
 
-    if not report["pending"] and not report["engine_limits"]:
+    if not report["pending"] and not report["engine_limits"] and not report.get("decided"):
         print("(nothing queued — no standing certificate rests on a load-bearing assumption)")
         return 0
     if report["pending"]:
@@ -389,6 +398,35 @@ def _cmd_verification_queue(query: ReprolithQuery, args: argparse.Namespace) -> 
         print(f"  {report['engine_limits_note']}")
         for item in report["engine_limits"]:
             _show(item)
+    if report.get("decided"):
+        # Under its own heading and after the two open ones, because it is the part of the queue
+        # that is answered: an expert scanning for work should reach it last.
+        print(
+            f"DECIDED — {report['decided_count']} value(s) an expert has answered, still carried "
+            "as unreviewed by the certificates resting on them"
+        )
+        for item in report["decided"]:
+            _show(item)
+            for decision in item["decisions"]:
+                corrected = (
+                    f" -> {decision['corrected_value']}" if decision["corrected_value"] else ""
+                )
+                print(
+                    f"    {decision['kind']}ed by {decision['expert']} on "
+                    f"{decision['decided_on']}{corrected}"
+                )
+                print(f"      rationale: {decision['rationale']}")
+                print(f"      recorded at: {decision['source']}")
+            if item["disputed"]:
+                print("    experts disagree here; both judgments stand, neither is resolved away")
+            print(f"    still qualified: {item['qualification']}")
+            if "action_required" in item:
+                print(f"    action required: {item['action_required']}")
+    for record in report.get("orphaned_decisions", []):
+        print(
+            f"(recorded decision on {record['item_id']} by {record['expert']} names no standing "
+            f"item — {record['detail']})"
+        )
     return 0
 
 
@@ -1873,9 +1911,12 @@ def run(argv: list[str] | None = None) -> int:
         # An explicit --data-dir means "read exactly this state" — no cross-class aggregation.
         try:
             query, _catalog = load_repository(args.data_dir)
-        except FileNotFoundError as unreadable:
+        except (FileNotFoundError, ValueError) as unreadable:
             # A mistyped path is the ordinary failure here (the README tells a reader to point an
-            # installed copy at a checkout), so it gets a message, not a traceback.
+            # installed copy at a checkout), so it gets a message, not a traceback. So is a
+            # hand-edited decisions file that no longer parses: CONTRIBUTING.md asks an expert to
+            # write one by hand in a pull request, which makes a typo in it an ordinary mistake
+            # rather than a bug — and the loader's message already names the file and the shape.
             print(str(unreadable), file=sys.stderr)
             return 1
     else:
@@ -1883,9 +1924,10 @@ def run(argv: list[str] | None = None) -> int:
         # verdict from any of the six classes is reachable, not just the PK/PD one.
         try:
             query, _catalog = load_repository(default_data_dir(), aggregate=True)
-        except FileNotFoundError as unreadable:
+        except (FileNotFoundError, ValueError) as unreadable:
             # default_data_dir() composes a message written for a human running an installed copy
-            # outside a checkout; only the --data-dir branch was showing it to them.
+            # outside a checkout; only the --data-dir branch was showing it to them. ValueError for
+            # the same reason as above — this is the branch that reads the committed decisions.
             print(str(unreadable), file=sys.stderr)
             return 1
     try:

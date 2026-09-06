@@ -20,6 +20,7 @@ from reprolith.mcp_server import (
     milestone_agreement_reports,
     milestone_certificate_dirs,
     milestone_corroboration_records,
+    repository_decisions,
 )
 from reprolith.query import self_validation_summary
 
@@ -89,7 +90,12 @@ def main() -> None:
     # credibility summary can't diverge from the queried one.
     self_validation = self_validation_summary(milestone_agreement_reports())
     html = render_registry(
-        entries, self_validation=self_validation, corroboration=milestone_corroboration_records()
+        entries,
+        self_validation=self_validation,
+        corroboration=milestone_corroboration_records(),
+        # The same committed record the CLI and the agent surface read, so the public page cannot
+        # show a question as unanswered that the terminal shows as decided.
+        decisions=repository_decisions(),
     )
     out = _DATASETS / "registry.html"
     out.write_text(html, encoding="utf-8")

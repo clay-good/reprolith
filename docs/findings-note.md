@@ -4231,3 +4231,36 @@ because an item nobody can decide is not pending review.
 That makes four surfaces derived from one pair of fields — the certificate, the gap report, the
 author fix list and the verification queue — and it took four separate commits to get them to
 agree, each found by reading one more artifact as its reader rather than by any check.
+
+
+## The collaboration surface had no way to accept an answer
+
+`VerificationQueue.decide` and `reverify_dependents` were both built, tested, and unreachable. The
+queue is *derived* from the standing certificates on every call and stored nowhere — the property
+that keeps it from drifting — and the consequence nobody had drawn is that a decision made against
+it lived only as long as the interpreter. So `reprolith verification-queue` printed the same items
+as pending for as long as the certificates stood, under a **hard-coded** sentence saying no
+decision was stored, while CONTRIBUTING.md told an expert their decision "becomes the record" and
+called answering one the most valuable thing they could do here.
+
+Decisions are committed data now, joined to the derived queue by the same function all three
+surfaces answer from. Three refusals shaped it, each a way the feature could have published more
+than the record supports:
+
+- **It does not lift a qualification.** A confirmed value is still one whose certificates were
+  computed while it was unreviewed. The proof is mechanical rather than promised: had the
+  dependents been re-issued, the assumption would no longer be load-bearing and the item would not
+  be derived at all — so an item still appearing is one whose certificates stand exactly as they
+  were.
+- **It does not resolve disagreement.** Two answers are two records and a `disputed` flag.
+- **It does not trust an id.** A *derived* id is the digest of its own question, so nothing can
+  slip underneath it. An id the certificates **name** — the four metformin deposits name
+  `verify:time-unit-of-the-Zake2021-deposits` — is an author's string, and the wording, the basis
+  and the alternatives under it can all change with the id unchanged, attributing an answer to an
+  expert for a question they never read. Every record carries the fingerprint of the question as it
+  was answered; a mismatch is *stale* and its item is pending again, with the earlier answer shown
+  beside it so the next expert does not silently repeat the work.
+
+The sentence that started this is the finding in miniature: it was a constant, true of the
+repository and false of the software the moment a decision was recorded. It is derived from the
+file now, so it cannot outlive the state it describes.
