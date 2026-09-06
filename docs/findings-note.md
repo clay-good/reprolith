@@ -4369,3 +4369,27 @@ sides of the assertion computed the same number and it passed with the filter de
 testing caught it; a fixture that actually supersedes something replaced it. The lesson is the one
 this repository keeps relearning: a check read off a corpus that has never contained the condition
 is a check of nothing, and it looks exactly like a passing test.
+
+
+## A bound on retrying says how often; it took a second pass to say what stopped them
+
+Parking landed earlier the same day and reported, truthfully, that an entry had been claimed three
+times with no lifecycle transition between the claims. What it could not say is whether the three
+claimants hit the *same wall*. That is the distinction `blocked_on` already draws for blocked
+entries — twenty-seven waiting on one input is one problem, not twenty-seven — and the parked half
+of the same report was one attempt record short of drawing it.
+
+`release_work` accepted no reason and wrote nothing, so the information did not exist to aggregate.
+It takes one now, recorded onto the attempt the release ends, and the diagnosis groups them: three
+claimants reporting one obstacle reads as one obstacle, and distinct reasons are all listed.
+
+The case worth keeping separate is **silence**. An attempt that ends by lease expiry had nobody
+there to say anything, and a park with no reasons must not read as a park whose reasons were
+unremarkable — so it says that none of them said why, and a mixed park says how many were silent.
+
+One guard here is defended only at the library level, and mutation testing showed the first test of
+it was checking the wrong layer: `release_work` refuses a non-holder before `release_lease` is ever
+called, so deleting the guard inside `release_lease` broke nothing. Its reachable case is a second
+release on an entry already handed back, which would backdate an explanation onto somebody else's
+attempt and make the diagnosis report a wall that claimant never described. That is what the test
+exercises now.

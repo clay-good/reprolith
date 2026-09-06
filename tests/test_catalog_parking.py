@@ -250,3 +250,111 @@ def test_the_committed_catalog_still_offers_what_it_offered() -> None:
     file = default_data_dir() / "catalog.json"
     catalog = Catalog.from_dict(json.loads(file.read_text(encoding="utf-8")))
     assert catalog.parked(0.0) == []
+
+
+# --- why they gave up -------------------------------------------------------------------------
+
+
+def _claim_and_release(catalog: Catalog, requester: str, *, at: float, reason: str = "") -> None:
+    from reprolith.mcp_server import release_work
+
+    claim_work(catalog, {"requester": requester}, at=at)
+    release_work(
+        catalog,
+        {"accession": "A1", "requester": requester, **({"reason": reason} if reason else {})},
+    )
+
+
+def test_three_claimants_reporting_one_wall_is_reported_as_one_wall() -> None:
+    """The same insight `blocked_on` carries for blocked entries: twenty-seven entries waiting on
+    one input is a different fact from twenty-seven problems, and so is this."""
+    catalog = _catalog("A1")
+    entry = catalog.find(Identifiers(title="", accession="A1"))
+    for i in range(PARK_AFTER_ATTEMPTS):
+        _claim_and_release(
+            catalog, f"agent-{i}", at=i * 100.0, reason="the deposited model ships no rate laws"
+        )
+    diagnosis = entry.parking_diagnosis()
+    assert f"{PARK_AFTER_ATTEMPTS} of them gave the same reason" in diagnosis
+    assert "ships no rate laws" in diagnosis
+
+
+def test_different_reasons_are_all_reported() -> None:
+    catalog = _catalog("A1")
+    entry = catalog.find(Identifiers(title="", accession="A1"))
+    for i in range(PARK_AFTER_ATTEMPTS):
+        _claim_and_release(catalog, f"agent-{i}", at=i * 100.0, reason=f"wall {i}")
+    diagnosis = entry.parking_diagnosis()
+    for i in range(PARK_AFTER_ATTEMPTS):
+        assert f"wall {i}" in diagnosis
+
+
+def test_silence_is_reported_as_silence_not_as_an_absent_problem() -> None:
+    """An attempt that ended by lease expiry had nobody there to say anything, and that is worth
+    telling apart from a considered answer — otherwise a park with no reasons reads as a park
+    whose reasons were unremarkable."""
+    catalog = _catalog("A1")
+    entry = catalog.find(Identifiers(title="", accession="A1"))
+    for i in range(PARK_AFTER_ATTEMPTS):
+        _claim_and_abandon(catalog, f"agent-{i}", at=i * 100.0)
+    assert "None of them said why" in entry.parking_diagnosis()
+    assert "ended by lease expiry" in entry.parking_diagnosis()
+
+
+def test_a_mix_says_how_many_said_nothing() -> None:
+    catalog = _catalog("A1")
+    entry = catalog.find(Identifiers(title="", accession="A1"))
+    _claim_and_release(catalog, "agent-0", at=0.0, reason="no runnable model")
+    _claim_and_abandon(catalog, "agent-1", at=100.0)
+    _claim_and_abandon(catalog, "agent-2", at=200.0)
+    diagnosis = entry.parking_diagnosis()
+    assert "no runnable model" in diagnosis
+    assert "2 ended by lease expiry, saying nothing" in diagnosis
+
+
+def test_only_the_lease_holder_writes_the_outcome() -> None:
+    """A release by anyone else is refused, so nothing can attribute a reason to a claimant who
+    did not give one."""
+    from reprolith.mcp_server import release_work
+
+    catalog = _catalog("A1")
+    entry = catalog.find(Identifiers(title="", accession="A1"))
+    claim_work(catalog, {"requester": "agent"}, at=0.0)
+    refused = release_work(
+        catalog, {"accession": "A1", "requester": "someone-else", "reason": "made up"}
+    )
+    assert refused == {"released": False, "reason": "not the lease holder"}
+    assert entry.attempts[-1].outcome == ""
+
+
+def test_a_reason_cannot_be_written_onto_an_attempt_already_handed_back() -> None:
+    """The library-level guard, which the MCP refusal above never reaches: `release_lease` on an
+    entry that is no longer leased must not attach a reason to whoever claimed it last. Otherwise
+    a second release — or any caller with the object — backdates an explanation onto somebody
+    else's attempt, and the diagnosis reports a wall that claimant never described."""
+    catalog = _catalog("A1")
+    entry = catalog.find(Identifiers(title="", accession="A1"))
+    catalog.claim_next("agent", at=0.0, seconds=1.0)
+    entry.release_lease("what actually stopped me")
+    assert entry.attempts[-1].outcome == "what actually stopped me"
+    entry.release_lease("a second, unattributable story")
+    assert entry.attempts[-1].outcome == "what actually stopped me"
+
+
+def test_a_release_without_a_reason_still_releases_and_says_it_recorded_none() -> None:
+    from reprolith.mcp_server import release_work
+
+    catalog = _catalog("A1")
+    claim_work(catalog, {"requester": "agent"}, at=0.0)
+    assert release_work(catalog, {"accession": "A1", "requester": "agent"}) == {
+        "released": True,
+        "reason_recorded": False,
+    }
+
+
+def test_an_outcome_survives_a_save_and_load() -> None:
+    catalog = _catalog("A1")
+    _claim_and_release(catalog, "agent", at=0.0, reason="no runnable model")
+    reloaded = Catalog.from_dict(json.loads(json.dumps(catalog.to_dict())))
+    entry = reloaded.find(Identifiers(title="", accession="A1"))
+    assert entry.attempts[-1].outcome == "no runnable model"

@@ -16,7 +16,7 @@ splits deterministic content from caller-supplied, non-deterministic transition 
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from .enums import LifecycleState, ModelClass, OverallVerdict
@@ -244,6 +244,10 @@ class Attempt:
     at: float
     state: LifecycleState
     progress_marker: int
+    #: What the claimant said when they handed the entry back, if they said anything. Empty for an
+    #: attempt that ended by lease expiry — nobody was there to say — which is itself the useful
+    #: distinction between an abandoned claim and a considered one.
+    outcome: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -251,6 +255,7 @@ class Attempt:
             "at": self.at,
             "state": self.state.value,
             "progress_marker": self.progress_marker,
+            **({"outcome": self.outcome} if self.outcome else {}),
         }
 
     @classmethod
@@ -260,6 +265,7 @@ class Attempt:
             at=float(record["at"]),
             state=LifecycleState(record["state"]),
             progress_marker=int(record["progress_marker"]),
+            outcome=str(record.get("outcome", "")),
         )
 
 
@@ -378,9 +384,25 @@ class CatalogEntry:
             if len(who) == 1
             else f"{len(who)} different claimants took it ({', '.join(who)})"
         )
+        said = Counter(a.outcome for a in stalled if a.outcome)
+        silent = len(stalled) - sum(said.values())
+        if not said:
+            reported = (
+                "None of them said why — every one ended by lease expiry, so what stopped them is "
+                "not recorded"
+            )
+        else:
+            top, count = said.most_common(1)[0]
+            reported = (
+                f"{count} of them gave the same reason: {top}"
+                if count > 1
+                else "Reasons given: " + "; ".join(sorted(said))
+            )
+            if silent:
+                reported += f" ({silent} ended by lease expiry, saying nothing)"
         return (
             f"claimed {len(stalled)} times in {self._state.value} without a single lifecycle "
-            f"transition between them — {claimants}. It is out of the pool handed out "
+            f"transition between them — {claimants}. {reported}. It is out of the pool handed out "
             "automatically, not out of reach: a caller that has read this and wants to try anyway "
             "claims it with include_parked, and the park clears itself the moment any transition "
             "is recorded, so nothing has to remember to lower a flag"
@@ -404,8 +426,20 @@ class CatalogEntry:
             )
         )
 
-    def release_lease(self) -> None:
-        """Release any lease, returning the entry to the claimable pool."""
+    def release_lease(self, reason: str = "") -> None:
+        """Release any lease, returning the entry to the claimable pool.
+
+        ``reason`` is what the claimant says about why they are handing it back, and it is written
+        onto the attempt this release ends. Without it a park could say three claims moved an entry
+        nowhere and nothing about *whether they all hit the same wall* — which is the difference
+        between three problems and one, exactly as ``blocked_on`` is for blocked entries. An
+        attempt that ends by lease expiry keeps an empty outcome, because nobody was there to say
+        anything, and that silence is worth being able to tell apart from a considered answer.
+        """
+        if reason.strip() and self._attempts:
+            last = self._attempts[-1]
+            if last.requester == self.leased_to:
+                self._attempts[-1] = replace(last, outcome=reason.strip())
         self.leased_to = None
         self.lease_expires = None
 

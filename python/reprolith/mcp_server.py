@@ -437,11 +437,23 @@ EFFECTFUL_TOOLS: list[dict[str, Any]] = [
         "name": "release_work",
         "description": (
             "EFFECTFUL: release a claimed entry (by accession) back to the queue. Only the lease "
-            "holder may release it."
+            "holder may release it. Say why in `reason` — it is recorded on the attempt, and it "
+            "is what lets a parked entry report whether everyone who tried hit the same wall."
         ),
         "inputSchema": {
             "type": "object",
-            "properties": {"accession": {"type": "string"}, "requester": {"type": "string"}},
+            "properties": {
+                "accession": {"type": "string"},
+                "requester": {"type": "string"},
+                "reason": {
+                    "type": "string",
+                    "description": (
+                        "why you are handing it back. Optional, and worth writing: without it a "
+                        "park can say three claims moved this nowhere and nothing about what "
+                        "stopped them"
+                    ),
+                },
+            },
             "required": ["accession", "requester"],
         },
     },
@@ -617,8 +629,8 @@ def release_work(catalog: Catalog, arguments: dict[str, Any]) -> dict[str, Any]:
         return {"released": False, "reason": "unknown entry"}
     if entry.leased_to != arguments["requester"]:
         return {"released": False, "reason": "not the lease holder"}
-    entry.release_lease()
-    return {"released": True}
+    entry.release_lease(str(arguments.get("reason", "")))
+    return {"released": True, "reason_recorded": bool(str(arguments.get("reason", "")).strip())}
 
 
 def _held_by_another(entry: CatalogEntry, requester: str, *, at: float) -> bool:

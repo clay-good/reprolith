@@ -69,7 +69,9 @@ what that requester can handle.
 - **WHEN** an entry has been claimed several times in a row without a single lifecycle transition
   between the claims
 - **THEN** it stops being offered as the next work item, and the refusal that results names it
-  with a diagnosis: how many claims, in what state, and by whom
+  with a diagnosis: how many claims, in what state, by whom, and what those claimants said
+  stopped them — reporting one shared obstacle as one obstacle, and distinguishing a claim
+  abandoned at lease expiry, where nobody was there to say anything, from a considered answer
 - **AND** it remains claimable on explicit request, and returns to the offered pool as soon as any
   transition is recorded, so nothing has to remember to un-park it
 
