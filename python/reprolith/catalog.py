@@ -674,10 +674,9 @@ class Catalog:
                 (t for t in reversed(entry.history) if t.to_state is LifecycleState.BLOCKED),
                 None,
             )
-            # A blocked entry whose history does not say why is itself worth reporting rather
-            # than dropping: it is still work nobody can pick up.
-            missing = latest.missing_inputs if latest is not None else ()
-            for item in missing or ("(the entry is blocked and its history states no reason)",):
+            if latest is None:  # unreachable: both paths into `blocked` require the reason —
+                continue  # `transition` refuses an empty list, and so does the load path
+            for item in latest.missing_inputs:
                 reasons[item] += 1
                 if entry.identifiers.accession:
                     accessions.setdefault(item, []).append(entry.identifiers.accession)

@@ -66,12 +66,23 @@ def test_every_load_bearing_assumption_gets_an_item() -> None:
     assert len(queue) == 2
 
 
-def test_an_assumption_that_is_not_load_bearing_is_not_queued() -> None:
+def test_an_assumption_that_is_neither_load_bearing_nor_named_is_not_queued() -> None:
     # The queue is for values that plausibly change an outcome. Filling it with the rest would
     # bury the two that matter under the thirty that do not.
     cert = _cert(_assumption(id="minor", load_bearing=False))
     queue, _, _ = queue_from_certificates(_pairs(cert))
     assert len(queue) == 0
+
+
+def test_an_assumption_the_certificate_says_is_queued_is_queued() -> None:
+    """`derive_overall` withholds a clean pass for a `verification_item` whether or not the
+    assumption is flagged load-bearing, and the gap report names it either way. This loop tested
+    only `load_bearing`, so the one assumption whose certificate says in so many words that it is
+    under review was the one thing the queue left out.
+    """
+    cert = _cert(_assumption(id="minor", load_bearing=False, verification_item="verify:named"))
+    report = queue_report(_pairs(cert))
+    assert [i["id"] for i in report["pending"]] == ["verify:named"]
 
 
 def test_no_committed_certificate_cites_an_item_the_queue_cannot_open() -> None:

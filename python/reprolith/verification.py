@@ -202,6 +202,11 @@ def queue_from_certificates(
     nothing else. That is deliberate — an escalation that moved a verdict would be a reason not
     to escalate.
 
+    An assumption is queued when it is load-bearing *or* when the certificate names a
+    verification item for it — the same pair ``derive_overall`` consults when it withholds a clean
+    pass, so nothing that costs a certificate its clean pass is missing from the list of what the
+    certificate is resting on.
+
     ``pairs`` is (digest, certificate); pass the certificates whose results still stand, since a
     superseded certificate's dependency is not a live one. Raises ``ValueError`` when one item id
     carries two different questions, which is a data defect that would publish one of them under
@@ -215,7 +220,11 @@ def queue_from_certificates(
     answerable: set[str] = set()
     for digest, cert in pairs:
         for assumption in cert.assumptions:
-            if not assumption.load_bearing:
+            # `load_bearing` is the usual reason, and an explicit `verification_item` is the other
+            # one: `derive_overall` withholds a clean pass for either, and the gap report names
+            # either. This loop tested only the first, so an assumption whose certificate says in
+            # so many words that it is queued for review was the one thing the queue left out.
+            if not assumption.load_bearing and not assumption.verification_item:
                 continue
             item_id = _item_id(assumption)
             question = _question(assumption)
