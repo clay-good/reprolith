@@ -138,22 +138,40 @@ def test_the_brain_cmax_contradicts_its_own_row() -> None:
 
 
 def test_the_certificate_publishes_both_causes() -> None:
-    """Six failures, two causes, each naming the element it implicates."""
+    """Nine failures, two causes, each naming the element it implicates.
+
+    Six became nine when this table's AUC24 column was claimed: red blood cells miss on exposure
+    as well as on peak, at all three doses, which is the whole point of the second metric — an
+    incomplete protocol is a whole-profile cause and shows up on both, where a wrong table cell
+    shows up on one. Brain is that one: its AUC reproduces to 0.07% while its Cmax misses 20%.
+    """
     certificate = json.loads(
         (_ROOT / "datasets" / "milestone" / "certificates" / "BIOMD0000001029.json").read_text(
             encoding="utf-8"
         )
     )
     failed = [a for a in certificate["assessments"] if a["verdict"] == "failed"]
-    assert len(failed) == 6
+    assert len(failed) == 9
     causes = {a["root_cause"] for a in failed}
     assert causes == {
         "artifact-runs-less-of-the-protocol-than-the-paper-states",
         "apparent-manuscript-error",
     }
-    # And the entry is still partially reproduced: twenty-four of its thirty claims do reproduce.
+    # The separation that makes the manuscript-error accusation evidence rather than a guess:
+    # the incomplete protocol misses on both metrics, the wrong cell on one.
+    incomplete = {
+        a["claim_id"] for a in failed
+        if a["root_cause"] == "artifact-runs-less-of-the-protocol-than-the-paper-states"
+    }
+    assert {a.split("-", 1)[0] for a in incomplete} == {"Cmax", "AUC24"}
+    manuscript = {
+        a["claim_id"] for a in failed if a["root_cause"] == "apparent-manuscript-error"
+    }
+    assert {a.split("-", 1)[0] for a in manuscript} == {"Cmax"}, manuscript
+
+    # And the entry is still partially reproduced: fifty-one of its sixty claims do reproduce.
     assert certificate["overall"] == "partially-reproduced"
-    assert sum(1 for a in certificate["assessments"] if a["verdict"] == "reproduced") == 24
+    assert sum(1 for a in certificate["assessments"] if a["verdict"] == "reproduced") == 51
     # Each failure attributes a fault, and the two point in opposite directions.
     faults = {a["root_cause"]: a["fault_hypothesis"] for a in failed}
     assert faults["apparent-manuscript-error"] == "manuscript"

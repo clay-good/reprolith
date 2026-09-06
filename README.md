@@ -12,10 +12,11 @@ That is what it is *for*, and it is worth being exact about how much of it is do
 Of the thirty-three published certificates, **four** check a reconstruction against numbers read
 from one paper's own tables — one for each model that paper deposited. (A fifth is checked against
 a published number too, and the count below says which.) Between them they carry **one hundred and
-ten claims**,
+forty claims**,
 every one a number the paper's own model reports: ten tissues at 500, 1000 and 1500 mg after a
-single human dose, each by peak and by 24-hour exposure, those same ten tissues by peak again under
-twice-daily dosing, seven tissues in mice by peak and by 24-hour exposure,
+single human dose, each by peak and by 24-hour exposure; those same ten tissues both ways again
+under twice-daily dosing, where the exposure is over the final dosing day and not the whole run;
+seven tissues in mice by peak and by 24-hour exposure;
 three validation arms that each follow an earlier dose, and the intravenous mouse model's
 three exposures.
 
@@ -31,13 +32,17 @@ AUC claims and a front page announcing a clean pass before the check that finds 
 at more than one entry. It is pointed at every one now
 ([`tests/test_claim_units.py`](tests/test_claim_units.py)).
 
-**One hundred and two reproduce, seven do not, and one cannot be evaluated — each with its reason.** Three because the
+**One hundred and twenty-nine reproduce, ten do not, and one cannot be evaluated — each with its reason.** Six because the
 deposited model runs four of the eight administrations its own name states — which matters only for
-a tissue slow enough to still be accumulating, so the cause is recorded per claim rather than as a
-verdict on the model. Three because one cell of the paper's table contradicts the rest of its own
+a tissue slow enough to still be accumulating, and shows there on *both* metrics: red blood cells
+miss on peak by 15% and on exposure by 37%, at each of three doses. The cause is recorded per claim
+rather than as a verdict on the model. Three more because one cell of the paper's table contradicts
+the rest of its own
 row: its Brain Cmax equals plasma's, while that row's AUC and mean concentration are four fifths of
-plasma's — and the reconstruction regenerates that row's AUC to 0.07% while missing its Cmax by
-20%, so it reproduces every other number the paper published for that tissue. One more misses by
+plasma's — and the reconstruction regenerates that row's certified AUC to 0.07% while missing its
+Cmax by 20%, so it reproduces every other number the paper published for that tissue. **That
+separation is the evidence**: a protocol run too short misses the whole profile, a wrong cell
+misses one number in a row that otherwise reproduces. One more misses by
 75% with **no cause established**, and says exactly that rather than inventing one. And one claim
 cannot be evaluated at all: an intravenous exposure whose value still moves 22% when the run is
 sampled twice as finely, so no verdict is stated. Each publishes what was measured, what it

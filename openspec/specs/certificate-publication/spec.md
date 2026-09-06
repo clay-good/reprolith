@@ -64,6 +64,15 @@ that runs it, and a manifest saying what each file is — so re-running it needs
 - **AND** re-ingesting an exported archive therefore yields the model's structure and no
   targetable claims
 
+#### Scenario: A step the document cannot state is listed, never written as a neighbour
+
+- **WHEN** a recipe step describes a run a uniform time course cannot express — one that begins
+  from the state a prior administration left, or one whose area is taken over part of the run
+- **THEN** the step is listed as unexpressed with the reason, and no task is written for it
+- **AND** it is never written as the nearest run the document *can* state: the same model at the
+  same dose reporting the whole run produces a plausible number answering a different question,
+  with nothing in the archive to say which question it answered
+
 #### Scenario: An exported experiment agrees with the model it ships with
 
 - **WHEN** the exported document records a variable

@@ -51,6 +51,17 @@ auditable and contestable.
   an area both move with the sample count, and two claims that differ only by dose are otherwise
   indistinguishable on the certificate
 
+#### Scenario: An area is taken over the interval its paper reports
+
+- **WHEN** a claim reports an area under a curve over part of the run rather than all of it — a
+  multiple-dose paper's AUC24 over one dosing day, say
+- **THEN** the claim states that interval, the area is taken over it, and the assessment's
+  protocol names it beside the run's own length
+- **AND** the convergence check that decides whether an area is a property of the model or of the
+  sampling grid is measured over the same interval, never over the whole run
+- **AND** an interval stated for a quantity that is not an area is refused rather than honored: a
+  peak over part of a run is a different quantity, not the same one measured more carefully
+
 #### Scenario: Two levels of reproduction are distinguished
 
 - **WHEN** a claim is evaluated

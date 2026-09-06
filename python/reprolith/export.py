@@ -765,6 +765,18 @@ def _plan(
             "restarted from the state each one ended in — and a uniform time course cannot state "
             "a run that begins from another run's end"
         )
+    if step.window is not None:
+        # The claim's area is over part of the run, and a report of the whole time course does not
+        # say which part. Written as one anyway it would be adopted as a whole-run area — the same
+        # model, a plausible number, and nothing to say it answers a different question. The
+        # metformin twice-daily model gives 84.3 over the day its paper reports and 162.1 over the
+        # run. Listed rather than dropped, like a prior administration, and for the same reason.
+        start, end = step.window
+        return None, (
+            f"the claim's area is taken over [{start!r}, {end!r}] of a run of '{step.time_span}', "
+            "and a uniform time course report states the whole run — adopting it would compare "
+            "the paper's number against an area over a different interval"
+        )
     if step.steps is None or step.steps <= 0:
         return None, (
             f"the recipe states no sample count, so how finely to sample "

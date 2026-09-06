@@ -3859,3 +3859,41 @@ explained: every peak agrees, every area is off by the deposit's factor of a hun
 entry carrying an area carries the assumption that says which reading was taken. Which is the same
 shape as the 18th pass's finding and the 21st's: a check that guards one path is not a check on the
 corpus, and a defect shape has to be swept across every reader before it can be called absent.
+
+## The other thirty, and what "AUC24" means on a model that runs 48 hours
+
+Table 7 prints an AUC24 for the same ten tissues at the same three doses under twice-daily dosing,
+and the deposited model for it runs **48** hours. Integrating the run gives 162.1 for plasma at
+500 mg against a printed 84.2 — a 92% miss that is arithmetic, not science. The paper means one
+dosing day, and its own numbers say which: the first 24 hours give 77.8 and the **last** 24 give
+84.3. Every tissue agrees with that reading, and the three the earlier accusation rested on land
+where `findings-note.md` had measured them by hand: brain 67.446 against 67.4, liver 701.059
+against 700.4, red blood cells 57.090 against 90.3.
+
+So a claim can now state the interval its area is taken over, defaulting to the whole run. The
+protocol names it beside the run's own length, because a reader given `duration=48.0` and no
+interval re-runs the whole thing and gets a number the certificate does not contain. The
+convergence guard measures the *windowed* area, since clearing an integral nobody publishes says
+nothing about the one the verdict rests on. And an interval stated for a peak is refused rather
+than honored — a peak over part of a run is a different quantity, not the same one measured more
+carefully.
+
+The export refuses these steps by name, the way it already refuses a claim that follows a prior
+administration. A SED-ML report states the whole run; written as one anyway, the archive would ship
+the right model at the right dose reporting an area over 48 hours where the paper printed one over
+24, with nothing to say which question it answered.
+
+**What the thirty claims say.** Twenty-seven reproduce and three do not, and the three are the red
+blood cells at all three doses — the same `artifact-runs-less-of-the-protocol-than-the-paper-states`
+cause the peak claims already carry, missing by 37% on exposure where they miss by 15% on peak.
+That is the separation that makes the manuscript-error accusation evidence rather than a guess, and
+it is now in the certificate rather than in this document: **an incomplete protocol misses the whole
+profile; a wrong table cell misses one number in a row that otherwise reproduces.** Brain's AUC
+reproduces to 0.07% while its Cmax misses 20%.
+
+**One observation, deliberately not made into a claim.** Muscle at 500 mg reproduces at 3.20% where
+every other tissue in that column is inside 0.25%. The table's own dose-proportionality says why:
+the 500→1000 mg ratio is 1.835 for every tissue except muscle, which is 1.892, and 633.1/1.836 is
+344.8 — the number the model gives. It looks like a second printing error in the same table. It
+passes at 3.20%, so it is published as a pass; a second finding is not something to argue into
+existence from one ratio.

@@ -309,6 +309,10 @@ def _recipe_step_from(record: dict[str, Any]) -> RecipeStep:
             ))
             for segment in record.get("schedule", ())
         ),
+        window=(
+            None if record.get("window") is None
+            else (float(record["window"][0]), float(record["window"][1]))
+        ),
     )
 
 

@@ -864,6 +864,864 @@
       "reference_kind": "numeric",
       "source_location": "Table 7, Liver row, 1500 mg twice-daily regimen (the paper simulates 210.1 nmol/mL)",
       "targetable": true
+    },
+    {
+      "conditions": "auc of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-500mg-twice-daily",
+      "quantity": "plasma AUC over the final 24 h under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        84.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, plasma row, 500 mg twice-daily regimen (the paper simulates 84.2 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-1000mg-twice-daily",
+      "quantity": "plasma AUC over the final 24 h under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        154.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, plasma row, 1000 mg twice-daily regimen (the paper simulates 154.6 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mPlasmaVenous",
+      "footprint": [
+        "Adipose",
+        "Brain",
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "KidneyPlasma",
+        "Ktp_Adipose",
+        "Ktp_Brain",
+        "Ktp_Heart",
+        "Ktp_Kidney",
+        "Ktp_Liver",
+        "Ktp_Muscle",
+        "Ktp_Remainder",
+        "Liver",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaVenous",
+        "QAdipose",
+        "QBrain",
+        "QHeart",
+        "QKidney",
+        "QLiverOut",
+        "QMuscle",
+        "QRemainder",
+        "RBC",
+        "Remainder",
+        "_06_3__Liver____PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_08_2__Brain____PlasmaVenous",
+        "_09_2__Muscle____PlasmaVenous",
+        "_10_2__Adipose____PlasmaVenous",
+        "_11_2__Heart____PlasmaVenous",
+        "_12_2__Remainder____PlasmaVenous",
+        "_13_2__KidneyPlasma____PlasmaVenous",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mAdipose",
+        "mBrain",
+        "mHeart",
+        "mKidneyPlasma",
+        "mLiver",
+        "mMuscle",
+        "mPlasmaVenous",
+        "mRBC",
+        "mRemainder"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-1500mg-twice-daily",
+      "quantity": "plasma AUC over the final 24 h under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        221.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, plasma row, 1500 mg twice-daily regimen (the paper simulates 221.4 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mRBC",
+      "footprint": [
+        "ModelValue_1",
+        "PlasmaVenous",
+        "RBC",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mPlasmaVenous",
+        "mRBC"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-red-blood-cells-500mg-twice-daily",
+      "quantity": "Red blood cells AUC over the final 24 h under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        90.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Red blood cells row, 500 mg twice-daily regimen (the paper simulates 90.3 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-adipose-500mg-twice-daily",
+      "quantity": "Adipose AUC over the final 24 h under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        61.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Adipose row, 500 mg twice-daily regimen (the paper simulates 61.4 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-brain-500mg-twice-daily",
+      "quantity": "Brain AUC over the final 24 h under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        67.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Brain row, 500 mg twice-daily regimen (the paper simulates 67.4 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mRemainder",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Remainder",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QRemainder",
+        "Remainder",
+        "_12_1__PlasmaArterial____Remainder",
+        "_12_2__Remainder____PlasmaVenous",
+        "mPlasmaArterial",
+        "mRemainder"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-remainder-500mg-twice-daily",
+      "quantity": "Remainder AUC over the final 24 h under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        67.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Remainder row, 500 mg twice-daily regimen (the paper simulates 67.3 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-muscle-500mg-twice-daily",
+      "quantity": "Muscle AUC over the final 24 h under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        334.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Muscle row, 500 mg twice-daily regimen (the paper simulates 334.7 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLung",
+      "footprint": [
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Lung",
+        "Lung",
+        "ModelValue_1",
+        "PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_07_2__Lung____PlasmaArterial",
+        "mLung",
+        "mPlasmaVenous"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-lungs-500mg-twice-daily",
+      "quantity": "Lungs AUC over the final 24 h under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        252.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Lungs row, 500 mg twice-daily regimen (the paper simulates 252.6 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-stomach-500mg-twice-daily",
+      "quantity": "Stomach AUC over the final 24 h under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        269.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Stomach row, 500 mg twice-daily regimen (the paper simulates 269.4 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-heart-500mg-twice-daily",
+      "quantity": "Heart AUC over the final 24 h under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        210.5
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Heart row, 500 mg twice-daily regimen (the paper simulates 210.5 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-liver-500mg-twice-daily",
+      "quantity": "Liver AUC over the final 24 h under twice-daily 500 mg oral dosing",
+      "reference_data": [
+        700.4
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Liver row, 500 mg twice-daily regimen (the paper simulates 700.4 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mRBC",
+      "footprint": [
+        "ModelValue_1",
+        "PlasmaVenous",
+        "RBC",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mPlasmaVenous",
+        "mRBC"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-red-blood-cells-1000mg-twice-daily",
+      "quantity": "Red blood cells AUC over the final 24 h under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        166.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Red blood cells row, 1000 mg twice-daily regimen (the paper simulates 166.1 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-adipose-1000mg-twice-daily",
+      "quantity": "Adipose AUC over the final 24 h under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        112.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Adipose row, 1000 mg twice-daily regimen (the paper simulates 112.8 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-brain-1000mg-twice-daily",
+      "quantity": "Brain AUC over the final 24 h under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        123.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Brain row, 1000 mg twice-daily regimen (the paper simulates 123.7 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mRemainder",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Remainder",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QRemainder",
+        "Remainder",
+        "_12_1__PlasmaArterial____Remainder",
+        "_12_2__Remainder____PlasmaVenous",
+        "mPlasmaArterial",
+        "mRemainder"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-remainder-1000mg-twice-daily",
+      "quantity": "Remainder AUC over the final 24 h under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        123.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Remainder row, 1000 mg twice-daily regimen (the paper simulates 123.8 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-muscle-1000mg-twice-daily",
+      "quantity": "Muscle AUC over the final 24 h under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        633.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Muscle row, 1000 mg twice-daily regimen (the paper simulates 633.1 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLung",
+      "footprint": [
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Lung",
+        "Lung",
+        "ModelValue_1",
+        "PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_07_2__Lung____PlasmaArterial",
+        "mLung",
+        "mPlasmaVenous"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-lungs-1000mg-twice-daily",
+      "quantity": "Lungs AUC over the final 24 h under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        463.9
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Lungs row, 1000 mg twice-daily regimen (the paper simulates 463.9 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-stomach-1000mg-twice-daily",
+      "quantity": "Stomach AUC over the final 24 h under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        494.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Stomach row, 1000 mg twice-daily regimen (the paper simulates 494.8 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-heart-1000mg-twice-daily",
+      "quantity": "Heart AUC over the final 24 h under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        386.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Heart row, 1000 mg twice-daily regimen (the paper simulates 386.6 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-liver-1000mg-twice-daily",
+      "quantity": "Liver AUC over the final 24 h under twice-daily 1000 mg oral dosing",
+      "reference_data": [
+        1285.8
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Liver row, 1000 mg twice-daily regimen (the paper simulates 1 285.8 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mRBC",
+      "footprint": [
+        "ModelValue_1",
+        "PlasmaVenous",
+        "RBC",
+        "_14_1__PlasmaVenous____RBC",
+        "_14_2__RBC____PlasmaVenous",
+        "mPlasmaVenous",
+        "mRBC"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-red-blood-cells-1500mg-twice-daily",
+      "quantity": "Red blood cells AUC over the final 24 h under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        238.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Red blood cells row, 1500 mg twice-daily regimen (the paper simulates 238.7 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mAdipose",
+      "footprint": [
+        "Adipose",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Adipose",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QAdipose",
+        "_10_1__PlasmaArterial____Adipose",
+        "_10_2__Adipose____PlasmaVenous",
+        "mAdipose",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-adipose-1500mg-twice-daily",
+      "quantity": "Adipose AUC over the final 24 h under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        161.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Adipose row, 1500 mg twice-daily regimen (the paper simulates 161.6 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mBrain",
+      "footprint": [
+        "Brain",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Brain",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QBrain",
+        "_08_1__PlasmaArterial____Brain",
+        "_08_2__Brain____PlasmaVenous",
+        "mBrain",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-brain-1500mg-twice-daily",
+      "quantity": "Brain AUC over the final 24 h under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        177.2
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Brain row, 1500 mg twice-daily regimen (the paper simulates 177.2 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mRemainder",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Remainder",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QRemainder",
+        "Remainder",
+        "_12_1__PlasmaArterial____Remainder",
+        "_12_2__Remainder____PlasmaVenous",
+        "mPlasmaArterial",
+        "mRemainder"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-remainder-1500mg-twice-daily",
+      "quantity": "Remainder AUC over the final 24 h under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        177.1
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Remainder row, 1500 mg twice-daily regimen (the paper simulates 177.1 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mMuscle",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Muscle",
+        "ModelValue_1",
+        "Muscle",
+        "PlasmaArterial",
+        "QMuscle",
+        "_09_1__PlasmaArterial____Muscle",
+        "_09_2__Muscle____PlasmaVenous",
+        "mMuscle",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-muscle-1500mg-twice-daily",
+      "quantity": "Muscle AUC over the final 24 h under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        906.7
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Muscle row, 1500 mg twice-daily regimen (the paper simulates 906.7 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLung",
+      "footprint": [
+        "Cardiac_Output",
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Lung",
+        "Lung",
+        "ModelValue_1",
+        "PlasmaVenous",
+        "_07_1__PlasmaVenous____Lung",
+        "_07_2__Lung____PlasmaArterial",
+        "mLung",
+        "mPlasmaVenous"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-lungs-1500mg-twice-daily",
+      "quantity": "Lungs AUC over the final 24 h under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        664.3
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Lungs row, 1500 mg twice-daily regimen (the paper simulates 664.3 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mStomach",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Stomach",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QStomach",
+        "Stomach",
+        "_05_1__PlasmaArterial____Stomach",
+        "_05_2__Stomach____PortalVein",
+        "mPlasmaArterial",
+        "mStomach"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-stomach-1500mg-twice-daily",
+      "quantity": "Stomach AUC over the final 24 h under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        708.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Stomach row, 1500 mg twice-daily regimen (the paper simulates 708.6 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mHeart",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Heart",
+        "Ktp_Heart",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "QHeart",
+        "_11_1__PlasmaArterial____Heart",
+        "_11_2__Heart____PlasmaVenous",
+        "mHeart",
+        "mPlasmaArterial"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-heart-1500mg-twice-daily",
+      "quantity": "Heart AUC over the final 24 h under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        553.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Heart row, 1500 mg twice-daily regimen (the paper simulates 553.6 nmol*h/mL over 24 h)",
+      "targetable": true
+    },
+    {
+      "conditions": "auc of mLiver",
+      "footprint": [
+        "Flow",
+        "Flow_from_organ",
+        "Ktp_Liver",
+        "Liver",
+        "ModelValue_1",
+        "PlasmaArterial",
+        "PortalVein",
+        "QLiverArtery",
+        "QLiverOut",
+        "QPortalVeinOut",
+        "_06_1__PlasmaArterial____Liver",
+        "_06_2__PortalVein____Liver",
+        "_06_3__Liver____PlasmaVenous",
+        "mLiver",
+        "mPlasmaArterial",
+        "mPortalVein"
+      ],
+      "footprint_origin": "derived-from-model",
+      "id": "AUC24-liver-1500mg-twice-daily",
+      "quantity": "Liver AUC over the final 24 h under twice-daily 1500 mg oral dosing",
+      "reference_data": [
+        1840.6
+      ],
+      "reference_kind": "numeric",
+      "source_location": "Table 7, Liver row, 1500 mg twice-daily regimen (the paper simulates 1 840.6 nmol*h/mL over 24 h)",
+      "targetable": true
     }
   ],
   "entry": "BIOMD0000001029",

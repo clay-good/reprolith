@@ -163,7 +163,7 @@ def main() -> None:
                        time_span=f"0-{c.schedule[-1][0] if c.schedule else entry['duration']}",
                        steps=int(entry.get("steps", 480)),
                        parameter_overrides=c.parameter_overrides, metric=c.metric,
-                       schedule=c.schedule)
+                       schedule=c.schedule, window=c.window)
             for rec in entry["claims"]
         )
         bundle = ReconstructionBundle(

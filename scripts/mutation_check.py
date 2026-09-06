@@ -45,6 +45,21 @@ REPO = Path(__file__).resolve().parents[1]
 #: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
+        "an area the paper took over one dosing day is judged over the whole run",
+        "certify.py",
+        (
+            "    times, values = _window_of(times, values, window)",
+            "    times, values = times, values",
+        ),
+        ["tests/test_certify.py", "tests/test_twice_daily_shortfalls.py"],
+    ),
+    (
+        "an exported document states a whole-run area for a claim taken over part of it",
+        "export.py",
+        ("    if step.window is not None:", "    if False:"),
+        ["tests/test_export.py"],
+    ),
+    (
         "the not-ready sentence describes one cause while the flag was set by four",
         "presubmission.py",
         (

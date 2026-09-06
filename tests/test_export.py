@@ -661,3 +661,37 @@ def test_an_exported_document_says_what_it_is() -> None:
     # Nothing that moves between two runs of the same export: the archive is byte-reproducible,
     # and a clock or a run id in this note would end that.
     assert build_bundle_sedml(bundle, _MODEL, model_location="model.xml").sedml == document
+
+
+def test_an_area_over_part_of_the_run_is_listed_rather_than_written_as_a_whole_run() -> None:
+    """A uniform time course report states the whole run, so it cannot state an AUC24 of it.
+
+    This is the same call the schedule case makes, for the same reason. Writing the step anyway
+    would ship a document that runs the right model with the right dose and reports an area over
+    forty-eight hours where the paper printed one over twenty-four — 162 against 84.2 on this very
+    model, a plausible number answering a different question with nothing to say so.
+    """
+    import json
+    from pathlib import Path
+
+    from reprolith import build_bundle_sedml, bundle_from_dict
+
+    root = Path(__file__).parent.parent
+    bundle = bundle_from_dict(
+        json.loads(
+            (root / "datasets/milestone/bundles/BIOMD0000001029.json").read_text(encoding="utf-8")
+        )
+    )
+    model = (
+        root / "datasets/worked_examples/Zake2021_Metformin_Human_multiple_PO_dose.xml"
+    ).read_text(encoding="utf-8")
+
+    experiment = build_bundle_sedml(bundle, model)
+    windowed = [step.claim_id for step in bundle.recipe if step.window is not None]
+    assert windowed, "no claim in this bundle states a window; this check would pass vacuously"
+    assert set(experiment.expressed) == {
+        step.claim_id for step in bundle.recipe if step.window is None
+    }
+    for claim_id in windowed:
+        (reason,) = [line for line in experiment.unexpressed if line.startswith(f"claim '{claim_id}'")]
+        assert "area is taken over" in reason and "a different interval" in reason

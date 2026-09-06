@@ -644,3 +644,70 @@ def test_a_scalar_read_off_a_figure_walks_to_a_certificate_that_says_so(
         ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
     )
     assert printed_band.reproduced_within == 0.05
+
+
+def test_an_area_is_taken_over_the_window_the_claim_states() -> None:
+    """A multiple-dose paper's AUC24 is over one dosing day, not over the whole simulation.
+
+    Reprolith's own twice-daily metformin entry runs 48 hours and its paper's Table 7 reports an
+    area over 24 — the *last* 24, which the paper's own numbers settle: plasma reads 77.8 over the
+    first day against a printed 84.2, and 84.3 over the second. Without a window the comparison
+    would have been 162 against 84.2, and the failure it published would have been arithmetic.
+    """
+    from reprolith.certify import _metric
+
+    # A ramp: the area over the second half is three times the area over the first.
+    times = tuple(float(i) for i in range(5))
+    values = (0.0, 1.0, 2.0, 3.0, 4.0)
+    assert _metric(times, values, "auc") == pytest.approx(8.0)
+    assert _metric(times, values, "auc", (0.0, 2.0)) == pytest.approx(2.0)
+    assert _metric(times, values, "auc", (2.0, 4.0)) == pytest.approx(6.0)
+    # Sliced by sample, not interpolated at the bounds: the grid is the claim's own protocol, and
+    # a partial trapezoid at the edge is a number nobody chose.
+    assert _metric(times, values, "auc", (1.5, 4.0)) == pytest.approx(6.0)
+
+
+def test_a_window_on_a_metric_that_has_no_interval_is_refused() -> None:
+    """A peak over part of a run is a different quantity, not the same one measured better."""
+    for metric in ("cmax", "final"):
+        with pytest.raises(ValueError, match="only an area is integrated over an interval"):
+            Claim(claim_id="c", quantity="q", species="s", reported=1.0,
+                  source_location="Table 1", metric=metric, window=(0.0, 1.0))
+    with pytest.raises(ValueError, match="spans no time"):
+        Claim(claim_id="c", quantity="q", species="s", reported=1.0,
+              source_location="Table 1", metric="auc", window=(24.0, 24.0))
+    # And the ordinary windowed area is accepted.
+    claim = Claim(claim_id="c", quantity="q", species="s", reported=1.0,
+                  source_location="Table 1", metric="auc", window=(24.0, 48.0))
+    assert claim.window == (24.0, 48.0)
+
+
+def test_the_protocol_states_the_interval_the_area_was_taken_over() -> None:
+    """Four things make a simulated number, and on a multiple-dose model this is one of them.
+
+    A reader given `duration=48.0, steps=960, read=[mPlasmaVenous] auc` and no window re-runs the
+    whole thing and gets 162 where the certificate says 84.3, with nothing on the page to explain
+    the gap.
+    """
+    from reprolith.certify import _run_protocol
+
+    whole = _run_protocol(duration=48.0, steps=960, read="[mPlasmaVenous] auc")
+    part = _run_protocol(duration=48.0, steps=960, read="[mPlasmaVenous] auc", window=(24.0, 48.0))
+    assert "integrated over" not in whole
+    assert part.startswith(whole)
+    assert "integrated over [24.0, 48.0]" in part
+
+
+def test_a_windowed_claim_carries_its_window_into_the_recipe_and_back() -> None:
+    """The bundle re-runs the claims it describes, so it has to describe the same run."""
+    from reprolith.persistence import _recipe_step_from
+    from reprolith.reconstruction import RecipeStep
+
+    step = RecipeStep(claim_id="AUC24-500mg-twice-daily", protocol="Table 7", output="[mX]",
+                      time_span="0-48.0", steps=960, metric="auc", window=(24.0, 48.0))
+    record = step.to_dict()
+    assert record["window"] == [24.0, 48.0]
+    assert _recipe_step_from(record) == step
+    # And a step with no window writes exactly what it wrote before the field existed.
+    plain = RecipeStep(claim_id="c", protocol="p", output="[mX]", time_span="0-24.0", steps=480)
+    assert "window" not in plain.to_dict()

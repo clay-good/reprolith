@@ -1,6 +1,6 @@
 REPRODUCTION CERTIFICATE — Zake2021 - PBPK model of metformin in humans, single PO dose
   doi=10.1371/journal.pone.0249594
-Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev 48cb90780fc6)
+Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev a17d6cc5fac8)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=63, partial=0, failed=0, not-evaluable=0

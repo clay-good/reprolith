@@ -149,6 +149,11 @@ class Claim:
     #: See :func:`_reading_required` for why the wider band is not free.
     digitizer: str = ""
     assumption_qualified: bool = False
+    #: The interval of the run an ``auc`` claim is integrated over, ``None`` for the whole
+    #: run. A paper reporting a multiple-dose regimen prints an AUC over one dosing day, not
+    #: over the whole simulation, and which day is the paper's statement rather than
+    #: something to infer.
+    window: tuple[float, float] | None = None
     shortfall: Attribution | None = field(default=None)
 
     @property
@@ -169,6 +174,21 @@ class Claim:
             )
         if self.schedule and any(duration <= 0.0 for duration, _ in self.schedule):
             raise ValueError("every segment of a dosing schedule must run for a positive time")
+        if self.window is not None:
+            start, end = self.window
+            if self.metric != "auc":
+                # A peak or an end value over part of a run is a different quantity, and a claim
+                # that states a window for one is describing something its metric cannot read.
+                raise ValueError(
+                    f"claim '{self.claim_id}' states a window and reads '{self.metric}': only an "
+                    "area is integrated over an interval, so a window on any other metric names "
+                    "a quantity this claim does not compute"
+                )
+            if not end > start:
+                raise ValueError(
+                    f"claim '{self.claim_id}' states the window [{start}, {end}], which spans no "
+                    "time; an area over it is zero for every model alike"
+                )
 
     @classmethod
     def from_record(cls, record: dict[str, Any]) -> Claim:
@@ -203,6 +223,10 @@ class Claim:
             reference_kind=ReferenceKind(record.get("reference_kind", "numeric")),
             digitizer=str(record.get("digitizer", "")),
             assumption_qualified=bool(record.get("assumption_qualified", False)),
+            window=(
+                None if record.get("window") is None
+                else (float(record["window"][0]), float(record["window"][1]))
+            ),
             shortfall=_shortfall_from(record.get("shortfall")),
         )
 
@@ -230,7 +254,42 @@ def _shortfall_from(record: dict[str, Any] | None) -> Attribution | None:
     )
 
 
-def _metric(times: Sequence[float], values: Sequence[float], metric: str) -> float:
+def _window_of(
+    times: Sequence[float], values: Sequence[float], window: tuple[float, float] | None
+) -> tuple[Sequence[float], Sequence[float]]:
+    """The samples inside ``window``, or the whole run when the claim states none.
+
+    Sliced by sample rather than interpolated at the bounds: the run is on a uniform grid the
+    claim's own protocol states, so a window that lands between samples would otherwise be judged
+    on a partial trapezoid nobody chose. A window that names no sample at all is refused where it
+    is stated, not silently answered with zero.
+    """
+    if window is None:
+        return times, values
+    start, end = window
+    kept = [i for i, t in enumerate(times) if start <= t <= end]
+    return [times[i] for i in kept], [values[i] for i in kept]
+
+
+def _metric(
+    times: Sequence[float],
+    values: Sequence[float],
+    metric: str,
+    window: tuple[float, float] | None = None,
+) -> float:
+    """The scalar a claim reads off a run, over the window it states (default: the whole run).
+
+    A window is what a multiple-dose paper's AUC24 actually means. The metformin twice-daily model
+    runs 48 hours and its paper's table reports an area over 24 — the *last* 24, as its own numbers
+    show: plasma reads 77.8 over the first day against a printed 84.2, and 84.3 over the second.
+    Integrating the whole run instead would have compared 162 against 84.2 and published a failure
+    that is arithmetic rather than science.
+
+    Only an area has a window to state. A peak or an end value read over part of a run is a
+    different quantity, not the same one measured more carefully, so stating one there is refused
+    on the claim rather than quietly honored here.
+    """
+    times, values = _window_of(times, values, window)
     if metric == "cmax":
         return max(values)
     if metric == "final":
@@ -251,6 +310,7 @@ def _run_protocol(
     overrides: tuple[tuple[str, float], ...] = (),
     overwritten: tuple[str, ...] = (),
     prior: tuple[tuple[float, tuple[tuple[str, float], ...]], ...] = (),
+    window: tuple[float, float] | None = None,
 ) -> str:
     """Describe the run a time-course judgment rests on, for the certificate's protocol field.
 
@@ -273,6 +333,11 @@ def _run_protocol(
     it was harmless only because every other committed model has a compartment of size 1.
     """
     stated = f"duration={duration!r}, steps={int(steps)}, read={read}"
+    if window is not None:
+        # Which part of the run the area was taken over, for the same reason the run's own length
+        # is here: on a multiple-dose model the first day and the last are different numbers, and
+        # a reader who re-runs the whole thing gets neither.
+        stated += f", integrated over [{window[0]!r}, {window[1]!r}]"
     if overrides:
         stated += ", overrides: " + ", ".join(f"{name}={value!r}" for name, value in overrides)
     if prior:
@@ -595,6 +660,7 @@ def _auc_is_established(
     steps: int,
     within: float,
     schedule: Sequence[tuple[float, tuple[tuple[str, float], ...]]] = (),
+    window: tuple[float, float] | None = None,
 ) -> tuple[bool, float]:
     """``(established, relative change)`` for an AUC read off a uniform grid at ``steps``.
 
@@ -624,8 +690,11 @@ def _auc_is_established(
     else:
         coarse_times, coarse_values = simulate(model, species, duration=duration, steps=steps)
         fine_times, fine_values = simulate(model, species, duration=duration, steps=steps * 2)
-    coarse = _metric(coarse_times, coarse_values, "auc")
-    fine = _metric(fine_times, fine_values, "auc")
+    # Over the claim's own window, not the whole run: convergence is a property of the integral
+    # being published, and the guard would otherwise clear an area nobody computes while saying
+    # nothing about the one the verdict rests on.
+    coarse = _metric(coarse_times, coarse_values, "auc", window)
+    fine = _metric(fine_times, fine_values, "auc", window)
     scale = max(abs(coarse), abs(fine))
     if not math.isfinite(coarse) or not math.isfinite(fine) or scale == 0.0:
         # Non-finite output is the existing abstention's business, and an AUC of exactly zero has
@@ -724,7 +793,7 @@ def certify_model(
             )
             times, values = simulate(model, claim.species, duration=duration, steps=steps)
             claim_duration, claim_overrides = duration, claim.parameter_overrides
-        predicted = _metric(times, values, claim.metric)
+        predicted = _metric(times, values, claim.metric, claim.window)
         if claim.metric == "auc":
             # The width the claim will actually be judged against: its own tolerance when it
             # states one, else the documented class default for this comparison.
@@ -736,7 +805,7 @@ def certify_model(
             ).reproduced_within
             established, change = _auc_is_established(
                 model, claim.species, duration=claim_duration, steps=steps,
-                within=pass_width, schedule=claim.schedule,
+                within=pass_width, schedule=claim.schedule, window=claim.window,
             )
             if not established:
                 assessments.append(replace(
@@ -759,6 +828,7 @@ def certify_model(
                         overrides=claim_overrides,
                         overwritten=_events_overwriting(sbml, claim_overrides),
                         prior=claim.schedule[:-1] if claim.schedule else (),
+                        window=claim.window,
                     ),
                 ))
                 continue
@@ -789,6 +859,7 @@ def certify_model(
                     overrides=claim_overrides,
                     overwritten=_events_overwriting(sbml, claim_overrides),
                     prior=claim.schedule[:-1] if claim.schedule else (),
+                    window=claim.window,
                 ),
             )
         )

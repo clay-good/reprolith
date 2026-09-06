@@ -93,6 +93,12 @@ class RecipeStep:
     #: arm, which is the defect `parameter_overrides` was added to this record to fix, one level
     #: up. Omitted at its default, so a recipe that states none is written exactly as before.
     schedule: tuple[tuple[float, tuple[tuple[str, float], ...]], ...] = ()
+    #: The interval of the run this step's ``auc`` is taken over, when the claim states one. A
+    #: multiple-dose paper's AUC24 is over one dosing day, and a recipe that omits it describes a
+    #: run whose area is over the whole simulation — a different number, from the same model, with
+    #: nothing in the record to say so. The metformin twice-daily model gives 84.3 over its second
+    #: day and 162.1 over both.
+    window: tuple[float, float] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         record: dict[str, Any] = {
@@ -112,6 +118,8 @@ class RecipeStep:
                 {"duration": duration, "parameter_overrides": {n: v for n, v in overrides}}
                 for duration, overrides in self.schedule
             ]
+        if self.window is not None:
+            record["window"] = [self.window[0], self.window[1]]
         return record
 
 

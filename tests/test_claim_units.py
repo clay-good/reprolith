@@ -345,7 +345,7 @@ def test_every_committed_claim_is_in_the_unit_its_cited_table_prints() -> None:
             c.detail for c in results if c.agrees is not True
         ]
         checked += len(results)
-    assert checked == 110, checked
+    assert checked == 140, checked
 
 
 def test_a_count_based_class_is_passed_over_rather_than_accused() -> None:
@@ -437,4 +437,4 @@ def test_every_committed_claim_is_in_the_unit_its_own_model_reads() -> None:
             else:
                 assert check.agrees is True, check
                 peaks += 1
-    assert (peaks, areas) == (70, 40), (peaks, areas)
+    assert (peaks, areas) == (70, 70), (peaks, areas)
