@@ -267,7 +267,15 @@ dossier or bundle, see what the published set is still resting on — each deleg
 always travels with its scope flag and qualifications. A separate set of effectful tools closes
 an agent's work loop: claim the next entry, then record the result against
 that certificate's digest so the finished unit leaves the queue. The outcome state is read from
-the certificate's own verdict, never asserted by the caller. Run it with `reprolith-mcp` (after
+the certificate's own verdict, never asserted by the caller. That loop is **bounded**: a claim is
+recorded even when it achieves nothing, and an entry claimed three times with no lifecycle
+transition between the claims stops being offered — otherwise an entry that defeats everyone who
+takes it is handed out again the moment its lease lapses, and since readier work ranks first, an
+easy one of those sits at the head of the queue in front of every agent forever. It is out of the
+automatic pool, not out of reach, and the refusal names it with a diagnosis: how many claims, by
+whom, and what those claimants said stopped them — so one shared obstacle reads as one obstacle
+rather than three. Say why when you hand an entry back; a claim abandoned at lease expiry records
+nothing, and the diagnosis distinguishes that silence from a considered answer. Run it with `reprolith-mcp` (after
 `pip install -e .`); see [docs/mcp-server.md](docs/mcp-server.md) to register it in a client and
 for the tool reference.
 
