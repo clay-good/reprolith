@@ -84,7 +84,8 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "one solver limitation asked by three claims becomes three items to answer three times",
         "verification.py",
-        ('    return f"verify:{body[:12]}"', '    return f"verify:{assumption.id}@{body[:12]}"'),
+        ('    return f"verify:{question_fingerprint(assumption)[:12]}"',
+         '    return f"verify:{assumption.id}@{question_fingerprint(assumption)[:12]}"'),
         ["tests/test_verification_escalation.py"],
     ),
     (
@@ -863,6 +864,87 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
             '        return f"all engine-independent to {float(bound):.0e}"',
         ),
         ["tests/test_stochastic_corroboration.py"],
+    ),
+    # --- the collaboration surface, 2026-09-06 -------------------------------------------------
+    # Twelve guards from one day's work. Every one was hand-mutated when it was written and none
+    # was in this list, which is the gap this file exists to close: a guard proved once by hand is
+    # a guard nothing checks next week.
+    (
+        "an expert appears to settle a question the same report says no expert decision closes",
+        "verification.py",
+        ("        if item.id not in answerable:", "        if False:"),
+        ["tests/test_verification_decisions.py"],
+    ),
+    (
+        "a decision keeps applying after the question under its id was reworded",
+        "verification.py",
+        ("        elif current != decision.question_fingerprint:", "        elif False:"),
+        ["tests/test_verification_decisions.py"],
+    ),
+    (
+        "a decision naming nothing standing is dropped instead of reported",
+        "verification.py",
+        ('        if current is None:\n            orphaned.append(',
+         '        if current is None:\n            [].append('),
+        ["tests/test_verification_decisions.py"],
+    ),
+    (
+        "a decided item claims its dependent certificates were re-issued",
+        "verification.py",
+        ('view["dependents_reissued"] = False', 'view["dependents_reissued"] = True'),
+        ["tests/test_verification_decisions.py"],
+    ),
+    (
+        "an engine limit is filed as a question for an expert who cannot close it",
+        "verification.py",
+        ('    if not item.get("author_can_close", True):', "    if False:"),
+        ["tests/test_verification_issue.py"],
+    ),
+    (
+        "repeated fruitless claims never take an entry out of the offered pool",
+        "catalog.py",
+        ("        return len(self.attempts_without_progress()) >= after", "        return False"),
+        ["tests/test_catalog_parking.py"],
+    ),
+    (
+        "progress does not clear the run of fruitless claims, so an entry parks despite moving",
+        "catalog.py",
+        ("            if attempt.progress_marker != marker:\n                break",
+         "            if False:\n                break"),
+        ["tests/test_catalog_parking.py"],
+    ),
+    (
+        "the attempt record is not persisted, so the retry bound resets on every restart",
+        "catalog.py",
+        ('            **({"outcome": self.outcome} if self.outcome else {}),\n', ""),
+        ["tests/test_catalog_parking.py"],
+    ),
+    (
+        "only the majority reason is reported, hiding the claimant who found something different",
+        "catalog.py",
+        ("                for reason, count in sorted(said.items(), key=lambda kv: (-kv[1], kv[0]))",
+         "                for reason, count in [said.most_common(1)[0]]"),
+        ["tests/test_catalog_parking.py"],
+    ),
+    (
+        "a saved attempt the retry bound could never compare against the record is accepted",
+        "catalog.py",
+        ("        if not 0 <= attempt.progress_marker <= len(history):", "        if False:"),
+        ["tests/test_catalog_parking.py"],
+    ),
+    (
+        "the stop reason names the first cause that holds rather than every one",
+        "query.py",
+        ("            if parked:\n                causes.append(",
+         "            if parked and not causes:\n                causes.append("),
+        ["tests/test_loop_status.py"],
+    ),
+    (
+        "a superseded certificate is counted among what the repository has published",
+        "query.py",
+        ("                            if self.superseded_by(digest) is None",
+         "                            if True"),
+        ["tests/test_loop_status.py"],
     ),
 ]
 

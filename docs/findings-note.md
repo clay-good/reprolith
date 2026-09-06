@@ -4475,3 +4475,19 @@ but used an assumption that was *both* load-bearing and queued for review, so th
 for each other — deleting either one still left the other. Only asserting each rule against an
 assumption carrying that property alone pins both. A test of an invariant guarded by several
 independent rules has to isolate each of them, or it measures whichever one happens to survive.
+
+
+## The mutation checker had stopped checking one of its guards, and I did it
+
+`mutation_check.py` is run on a weekly schedule, for a reason it states plainly: the failure it
+catches is not introduced by the commit that reveals it, so a run only when somebody remembers is a
+run that finds it late. Today's work moved the line one of its anchors names — extracting
+`question_fingerprint` out of `_item_id` — and that guard, which holds the rule that one solver
+limitation asked by three claims is one item and not three, silently stopped being checked at all.
+Running the checker after a day of edits rather than waiting for Monday is what caught it.
+
+The rest of the run is the reassuring half: **113 killed, no survivors**, including all twelve
+guards from today added to the list in the same pass. Every one of those had been hand-mutated when
+it was written and none was in the file — which is the gap the file exists to close, because a
+guard proved once by hand is a guard nothing checks next week. That is the same sentence as the
+paragraph above, from the other direction.

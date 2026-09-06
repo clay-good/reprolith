@@ -176,6 +176,16 @@ agents or humans.
 - **AND** an expired or abandoned lease returns the item to the queue with partial work
   preserved
 
+#### Scenario: A claim that achieved nothing is still recorded
+
+- **WHEN** an agent hands a claimed entry back, or abandons it until the lease expires
+- **THEN** the claim itself is recorded on the entry, carrying what the claimant said stopped them
+  when they said anything — an abandoned claim records no reason, because nobody was there to give
+  one
+- **AND** after repeated such claims with no lifecycle transition between them the entry stops
+  being offered as the next work item, and the refusal that results names it with a diagnosis
+  rather than reporting a pool that has quietly become smaller
+
 #### Scenario: A finished reproduction leaves the queue
 
 - **WHEN** an agent records that a claimed entry is done, naming the certificate it published
