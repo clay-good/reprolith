@@ -12,19 +12,24 @@ judgment and keep the dataset fresh, with every contribution attributed and revi
 
 No code in this repository touches the GitHub API. The gates are real — CI runs `ruff`, `mypy`,
 `pytest`, and `openspec validate` on every push, and every contribution goes through a pull
-request — but the *issue* half of this capability is carried by people, not machinery, and the
-requirement text below describes the intent:
+request — but the *issue* half of this capability is carried by people, not machinery:
 
-- *Verification-queue items are GitHub issues.* `reprolith.VerificationQueue` holds the shapes and
-  ranks pending items by impact, but nothing files one as an issue. The issue templates say so in
-  their own text: queue issues are opened by hand.
-- *An agent can query collaboration state over MCP.* There is no tool for it. The server's
-  read-only surface covers certificates, verdicts, gaps, dossiers, bundles and the backlog; the
-  verification queue is not among them, so an agent cannot see what is pending human validation.
+- *Verification-queue items are GitHub issues.* Still opened by hand, and the issue templates say
+  so in their own text. What changed on 2026-09-06 is what a person opening one has to write:
+  `queue_from_certificates` now derives the items, so the question, Reprolith's estimate, its
+  basis, the alternatives, and the papers that rest on it are all in
+  `reprolith verification-queue` rather than being transcribed out of certificates by eye.
+  Nothing files the issue, and nothing reconciles a queue item with an issue's state.
+- *An agent can query collaboration state over MCP.* This is carried now. The `verification_queue`
+  tool returns what is pending human validation, split into what an expert can decide and what
+  only this engine's development can close, ranked by how many standing certificates rest on it.
+  This section said there was no tool for it, which stopped being true the morning the tool
+  landed — the sentence is here rather than deleted because the gap it describes was real, and a
+  spec that quietly drops what it once admitted is worth less than one that says when it closed.
 
-Neither gap can produce a wrong certificate — an unescalated uncertainty still travels as a
-load-bearing assumption, which downgrades the verdict on its own — but a reader should not take
-these requirements as implemented machinery.
+The remaining gap cannot produce a wrong certificate — an unescalated uncertainty still travels
+as a load-bearing assumption, which downgrades the verdict on its own — but a reader should not
+take the issue-filing requirement below as implemented machinery.
 
 ## Requirements
 

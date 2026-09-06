@@ -631,11 +631,20 @@ def _verification_banner(rows: list[tuple[str, Certificate]]) -> str:
                 if item["alternatives"]
                 else ""
             )
+            # Named, not digested: an expert scanning this page decides whether they know the
+            # paper before deciding whether they can answer, and a content hash tells them nothing.
+            rests = "".join(
+                f"<li>{html.escape(paper['title'])}"
+                + (f" ({html.escape(paper['doi'])})" if paper["doi"] else "")
+                + "</li>"
+                for paper in item["depends_on_papers"]
+            )
             out.append(
                 f"<li><strong>{item['impact']} {dependents}</strong> — "
                 f"{html.escape(item['question'])}. Reprolith chose "
                 f"{html.escape(item['best_estimate'])}, because "
-                f"{html.escape(item['basis'])}.{alternatives}</li>"
+                f"{html.escape(item['basis'])}.{alternatives}"
+                f"<ul>{rests}</ul></li>"
             )
         return "".join(out)
 

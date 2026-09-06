@@ -351,6 +351,9 @@ def _cmd_verification_queue(query: ReprolithQuery, args: argparse.Namespace) -> 
         print(f"    question: {item['question']}")
         print(f"    reprolith's estimate: {item['best_estimate']}")
         print(f"    basis: {item['basis']}")
+        for paper in item["depends_on_papers"]:
+            doi = f" ({paper['doi']})" if paper["doi"] else ""
+            print(f"    rests under: {paper['title']}{doi}")
         for alt in item["alternatives"]:
             print(f"    alternative: {alt}")
         if not item["linked"]:

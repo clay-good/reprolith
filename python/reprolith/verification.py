@@ -289,9 +289,20 @@ def queue_report(pairs: Sequence[tuple[str, Certificate]]) -> dict[str, Any]:
 
     ``linked`` says whether the certificates naming this item did so themselves or whether the id
     was derived from the question — the difference between a citation a reader can search for and
-    one this function computed.
+    one this function computed. ``depends_on_papers`` is the same dependents as ``depends_on``,
+    named rather than digested, so an expert can tell whether they know the paper before deciding
+    whether they can answer — a 64-character hash is the right identifier for
+    :func:`reverify_dependents` and the wrong one for a person.
     """
     queue, assumption_ids, answerable = queue_from_certificates(pairs)
+    # A dependent is a 64-character digest, which is the right identifier for
+    # `reverify_dependents` and the wrong one for a person deciding whether they know enough
+    # to answer. The papers behind those digests are what an expert recognizes, and the whole
+    # point of an item is that an outside reader can act on it without knowing Reprolith.
+    papers = {
+        digest: {"title": cert.paper.title, "doi": cert.paper.doi}
+        for digest, cert in pairs
+    }
     linked = {
         assumption.verification_item
         for _, cert in pairs
@@ -306,6 +317,16 @@ def queue_report(pairs: Sequence[tuple[str, Certificate]]) -> dict[str, Any]:
         # A derived id appears in no certificate, so it is not what a reader greps for. The
         # assumption ids are, and there is more than one wherever a question spans claims.
         view["assumption_ids"] = list(assumption_ids[item.id])
+        seen: list[dict[str, Any]] = []
+        for digest in item.depends_on:
+            paper = papers.get(digest)
+            # De-duplicated on the whole identity, because a re-issued certificate for the same
+            # deposit is one paper to the reader. It does not collapse by DOI: the four metformin
+            # certificates share one DOI and name four different model deposits, and an expert
+            # deciding the time unit needs to see that it is four deposits and not one.
+            if paper is not None and paper not in seen:
+                seen.append(paper)
+        view["depends_on_papers"] = seen
         (pending if item.id in answerable else engine_limits).append(view)
     return {
         "pending": pending,

@@ -642,7 +642,9 @@ do here.
 `reprolith verification-queue` is where those questions collect. It reads every load-bearing
 assumption off every *standing* certificate — a superseded one is not a live dependency — and
 opens one item per distinct question: what was assumed, what Reprolith chose, on what basis,
-against what alternatives, and which certificates would have to be re-issued if you corrected it.
+against what alternatives, and which papers would have to be re-certified if you corrected it —
+named, not digested, since a content hash tells an expert nothing about whether they know the
+paper.
 That last number is the ranking, so the value four published results rest on is the first thing
 you see and not the twentieth.
 

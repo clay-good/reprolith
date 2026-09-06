@@ -344,3 +344,32 @@ def test_the_gap_report_says_awaiting_review_for_every_answerable_assumption() -
     assert "awaiting expert confirmation" in needs(plain)
     # And an engine limit is not awaiting anyone, so it does not say it is.
     assert "awaiting expert confirmation" not in needs(limit)
+
+
+def test_an_item_names_the_papers_that_rest_on_it_not_only_their_digests() -> None:
+    """`depends_on` is a 64-character hash — the right identifier for `reverify_dependents` and
+    the wrong one for the expert deciding whether they know enough to answer."""
+    a = _cert(_assumption(), title="Zake2021 - metformin in mice")
+    b = _cert(_assumption(), title="Zake2021 - metformin in humans")
+    report = queue_report(_pairs(a, b))
+    titles = [p["title"] for p in report["pending"][0]["depends_on_papers"]]
+    assert sorted(titles) == [
+        "Zake2021 - metformin in humans",
+        "Zake2021 - metformin in mice",
+    ]
+
+
+def test_the_same_paper_certified_twice_is_named_once() -> None:
+    """A re-issued certificate for one deposit is one paper to the reader."""
+    cert = _cert(_assumption())
+    report = queue_report([("digest-one", cert), ("digest-two", cert)])
+    assert report["pending"][0]["impact"] == 2  # two certificates rest on it
+    assert len(report["pending"][0]["depends_on_papers"]) == 1  # and they are one paper
+
+
+def test_the_registry_page_names_them_too() -> None:
+    page = (Path(__file__).parent.parent / "datasets" / "registry.html").read_text(encoding="utf-8")
+    query, _ = load_repository("datasets/milestone", aggregate=True)
+    for item in query.verification_queue()["pending"]:
+        for paper in item["depends_on_papers"]:
+            assert paper["title"] in page, paper["title"]
