@@ -305,7 +305,10 @@ a change under `openspec/changes/`.
   `validate_stochastic` (unstated sampling protocol as a load-bearing gap), `certify_stochastic`,
   `ingest_stochastic_sbml`, the `lint_stochastic` inline linter, and a walkable 3/3 milestone.
 - **Spatial / PDE simulation class** — *DONE*: landed as `spatial-class`, a pure-Python 1-D/2-D
-  finite-difference reaction-diffusion solver reusing the curve oracle, self-validated against
+  finite-difference reaction-diffusion solver reusing the curve oracle — and, since 2026-09-06, the
+  scalar comparison too: `GradientClaim` certifies a reported **decay length**, which unlike a whole
+  profile is a number a gradient paper prints in its text, so it is reachable by the table and prose
+  extraction that already works rather than waiting on figure digitization. Self-validated against
   closed-form results (Gaussian diffusion, Fisher-KPP and Nagumo front speeds, morphogen decay
   length, the Turing dispersion relation and wavelength selection). Has `spatial_dossier` /
   `validate_spatial` (unstated domain/boundary as a load-bearing gap), `certify_spatial`, the
