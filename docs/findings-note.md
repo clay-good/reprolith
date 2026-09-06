@@ -4491,3 +4491,39 @@ guards from today added to the list in the same pass. Every one of those had bee
 it was written and none was in the file — which is the gap the file exists to close, because a
 guard proved once by hand is a guard nothing checks next week. That is the same sentence as the
 paragraph above, from the other direction.
+
+
+## The only boundary this engine implements, and what having a second one measured
+
+The verification queue's second heading lists what waits on this engine rather than on a person.
+Its largest entry, under three published certificates, was the spatial solver's single wall: "on a
+domain narrow enough for the walls to matter the distance moves with a choice the paper did not
+make". True, conditional, and unfalsifiable in place — with one boundary there is nothing to move
+the answer *to*.
+
+`diffuse_1d` runs three now: zero-flux, Dirichlet (absorbing, or held at a value), and periodic.
+Each is validated against an exact solution rather than against another run of this solver — an
+eigenfunction of the Laplacian satisfying that boundary decays as `exp(-Dk²t)` without changing
+shape — and against what each does to mass, which needs no grid convention at all: reflect, absorb,
+wrap. The default is untouched, so every published certificate still means exactly what it meant.
+
+**What the second wall buys is the number.** Each spatial certificate now states what the choice
+costs *that claim*, in the statistic its verdict is drawn from: the judged distance moves by 2e-10
+to 2e-06 across the alternatives, against a pass threshold of 1e-01. The assumption stays
+load-bearing and stays this engine's limit — a claim still carries no field naming a boundary, so
+no wording in any paper reaches this front-end — but a reader no longer has to guess whether the
+condition in that sentence holds for the run in front of them.
+
+The first version of the measurement compared a maximum absolute concentration difference against a
+tolerance that is a *normalized curve distance*. Both are small numbers and the sentence read
+fine; it was a length against a ratio. It reports the change in the judged distance now, which is
+the quantity the verdict actually turns on.
+
+And measuring it turned up an accuracy fact this repository had written down nowhere. Halving the
+grid cuts the Dirichlet error by four and the zero-flux error by **two**: the mirrored ghost point
+imposes a zero gradient half a cell outside the domain, at `x = -dx/2` rather than at `x = 0`, and
+that offset is first-order. The interior stencil is second-order either way — which is what the
+corroboration record says, and it is true — so wherever a wall influences the answer, this solver's
+order of accuracy is set by its boundary and not by its stencil. The three certified profiles keep
+their walls more than four standard deviations from the peak, which is why it costs them nothing,
+and that is now measured rather than assumed.

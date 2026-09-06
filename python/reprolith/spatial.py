@@ -17,15 +17,19 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
+from typing import Any
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Gap, GapKind, Parameter
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import (
     Attribution,
+    ComparisonMethod,
     ReferenceKind,
     Tolerance,
+    default_tolerance,
     judge_curve,
+    normalized_curve_distance,
     not_evaluable,
     undetermined_shortfall,
 )
@@ -236,6 +240,31 @@ def _left_checked(values: Sequence[float], checked: tuple[float, float, float]) 
     return min(finite) < lo or max(finite) > hi
 
 
+#: The boundary conditions this solver implements, and what each does at the edge of the domain.
+#:
+#: ``no-flux`` mirrors the edge point, so nothing leaves the domain and mass is conserved. It was
+#: the only one for as long as this class has existed, which made it an unconditional assumption on
+#: every spatial certificate: the queue reported it as a limit of this engine that no expert
+#: decision closes, and it was true. ``dirichlet`` holds the edge at a fixed value (absorbing at
+#: the default 0), and ``periodic`` wraps, so what leaves one end enters the other.
+#:
+#: Having more than one is what makes the assumption *measurable*: with a single boundary, "the
+#: distance moves with a choice the paper did not make" can only ever be asserted.
+BOUNDARIES = ("no-flux", "dirichlet", "periodic")
+
+
+def _neighbours(
+    current: list[float], i: int, n: int, boundary: str, value: float
+) -> tuple[float, float]:
+    """The two neighbours of grid point ``i`` under ``boundary``."""
+    if boundary == "periodic":
+        return current[i - 1], current[(i + 1) % n]
+    if boundary == "dirichlet":
+        return (current[i - 1] if i > 0 else value), (current[i + 1] if i < n - 1 else value)
+    # no-flux: mirror the edge point, so the gradient across the boundary is zero
+    return (current[i - 1] if i > 0 else current[i]), (current[i + 1] if i < n - 1 else current[i])
+
+
 def diffuse_1d(
     profile: Sequence[float],
     *,
@@ -244,19 +273,31 @@ def diffuse_1d(
     dt: float,
     steps: int,
     decay: float = 0.0,
+    boundary: str = "no-flux",
+    boundary_value: float = 0.0,
 ) -> list[float]:
     """Evolve a 1-D concentration profile under diffusion (and optional first-order decay).
 
-    Solves ``∂C/∂t = D ∂²C/∂x² − k·C`` with the explicit forward-time centered-space scheme under
-    zero-flux (Neumann) boundaries, which conserves mass when ``decay`` is zero. ``profile`` is the
-    initial concentration at uniformly spaced points ``dx`` apart; the result is the profile after
-    ``steps`` steps of size ``dt``. Deterministic in its inputs.
+    Solves ``∂C/∂t = D ∂²C/∂x² − k·C`` with the explicit forward-time centered-space scheme.
+    ``profile`` is the initial concentration at uniformly spaced points ``dx`` apart; the result is
+    the profile after ``steps`` steps of size ``dt``. Deterministic in its inputs.
+
+    ``boundary`` is one of :data:`BOUNDARIES`. The default, ``no-flux``, is what this solver did
+    unconditionally before the others existed, so every published spatial certificate was computed
+    under it and still is — the default is the compatibility guarantee, not a preference.
+    ``dirichlet`` holds both ends at ``boundary_value`` (absorbing at the default 0); ``periodic``
+    wraps. Only ``no-flux`` conserves mass: the other two are ways for material to leave or
+    re-enter, which is the point of having them.
 
     Raises if the diffusion number ``D·dt/dx²`` exceeds ``0.5`` — the explicit scheme's stability
     limit — so an unstable discretization is refused, not run to a diverging profile, and equally
     refuses a discretization too small to advance the profile at all (see
     :func:`_diffusion_number`), which would otherwise return the initial condition as a result.
     """
+    if boundary not in BOUNDARIES:
+        raise ValueError(
+            f"unknown boundary {boundary!r}; this solver implements {', '.join(BOUNDARIES)}"
+        )
     alpha = _diffusion_number(
         diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, limit=0.5, decay=decay,
     )
@@ -267,10 +308,13 @@ def diffuse_1d(
     for _ in range(steps):
         nxt = current[:]
         for i in range(n):
-            left = current[i - 1] if i > 0 else current[i]  # zero-flux: mirror the boundary
-            right = current[i + 1] if i < n - 1 else current[i]
+            left, right = _neighbours(current, i, n, boundary, boundary_value)
             laplacian = left - 2.0 * current[i] + right
             nxt[i] = current[i] + alpha * laplacian - decay * dt * current[i]
+        if boundary == "dirichlet":
+            # The edge points are held, not evolved: a Dirichlet condition fixes the value there
+            # rather than merely supplying a neighbour for it.
+            nxt[0] = nxt[-1] = boundary_value
         current = nxt
     return current
 
@@ -618,6 +662,64 @@ class SpatialClaim:
     shortfall: Attribution | None = field(default=None)
 
 
+def boundary_sensitivity(claim: SpatialClaim) -> dict[str, Any] | None:
+    """What the wall costs this claim, in the statistic the verdict is actually drawn from.
+
+    The measurement the boundary assumption could not carry while this solver had exactly one wall.
+    Re-runs the claim's own protocol under each alternative in :data:`BOUNDARIES` and reports the
+    **judged distance** — the same normalized curve distance against the claim's own reference that
+    decides the verdict — under the wall that was used and under the worst alternative. ``None``
+    when the discretization does not run: it is the claim's own, so if it is unstable for one wall
+    it is unstable for all, and nothing is reported rather than a number from a run that did not
+    happen.
+
+    Reporting the distance rather than the raw profile deviation is the whole point of the units.
+    The tolerance a spatial claim is judged against is a normalized curve distance; a maximum
+    absolute concentration difference is a different quantity, and putting the two beside each
+    other — which the first version of this did — compares a length to a ratio and reads as though
+    it means something.
+
+    This turns "on a domain narrow enough for the walls to matter the distance moves with a choice
+    the paper did not make" from a statement into a bound. It stays a *conditional* claim — it
+    always was — and the condition is now checked for the run in hand rather than left to the
+    reader. An unbounded domain is not among the alternatives because this solver cannot run one;
+    it stays listed on the assumption, unmeasured and said to be so.
+    """
+    def distance(boundary: str) -> float | None:
+        try:
+            profile = diffuse_1d(
+                claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
+                steps=claim.steps, decay=claim.decay, boundary=boundary,
+            )
+        except UnstableDiscretization:
+            return None
+        return normalized_curve_distance(claim.reference, profile)
+
+    judged = distance("no-flux")
+    if judged is None or not claim.reference:
+        return None
+    alternatives: dict[str, float] = {}
+    for name in BOUNDARIES:
+        if name == "no-flux":
+            continue
+        moved = distance(name)
+        if moved is not None:  # pragma: no branch - the discretization is the same for all walls
+            alternatives[name] = moved
+    if not alternatives:  # pragma: no cover - unreachable while every wall shares one grid
+        return None
+    worst = max(alternatives, key=lambda name: abs(alternatives[name] - judged))
+    tolerance = claim.tolerance or default_tolerance(
+        ComparisonMethod.CURVE_NORMALIZED_DISTANCE, ReferenceKind.NUMERIC
+    )
+    return {
+        "judged_distance": judged,
+        "worst_alternative": worst,
+        "worst_distance": alternatives[worst],
+        "moved_by": abs(alternatives[worst] - judged),
+        "pass_within": tolerance.reproduced_within,
+    }
+
+
 def solver_pin() -> EnginePin:
     """The :class:`~reprolith.model.EnginePin` for this module's solver, at its current revision.
 
@@ -769,21 +871,22 @@ def certify_spatial(
                 # concedes. Asserting it published a fact about the author's paper that nothing
                 # checked, and vacuously so for the three committed entries, which have no paper
                 # at all. What is true is what this engine does, and that it did not look.
-                "the profile judged here was evolved under zero-flux (Neumann) boundaries, the "
-                "only boundary this engine implements; Reprolith did not check what boundary the "
-                "source specifies"
+                "the profile judged here was evolved under zero-flux (Neumann) boundaries; "
+                "Reprolith did not check what boundary the source specifies"
             ),
             chosen="zero-flux (Neumann) boundaries",
-            basis=(
-                "this solver has exactly one boundary condition and a claim carries no field to "
-                "state another, so on a domain narrow enough for the walls to matter the distance "
-                "moves with a choice the paper did not make"
-            ),
+            basis=_boundary_basis(claim),
             load_bearing=True,
-            alternatives=("Dirichlet (fixed value)", "absorbing", "periodic", "an unbounded domain"),
-            # The alternatives listed are ones this engine does not implement, so no
-            # wording in a paper discharges this: it is Reprolith's limit, not the
-            # paper's omission.
+            alternatives=(
+                "Dirichlet (fixed value)",
+                "absorbing (Dirichlet at zero)",
+                "periodic",
+                "an unbounded domain (not implemented, so not measured)",
+            ),
+            # A claim carries no field naming a boundary, so no wording in a paper reaches this
+            # front-end: it stays this engine's limit rather than the paper's omission, even now
+            # that the alternatives can be *run*. What changed is that the cost of the choice is
+            # measured instead of asserted.
             author_can_close=False,
         )
         for claim in qualified
@@ -791,6 +894,31 @@ def certify_spatial(
     return build_certificate(
         paper=paper, engine_pin=engine_pin,
         assessments=assessments, assumptions=(*assumptions, *boundary),
+    )
+
+
+def _boundary_basis(claim: SpatialClaim) -> str:
+    """The boundary assumption's basis, carrying the measured cost of the choice where there is one.
+
+    This used to end "so on a domain narrow enough for the walls to matter the distance moves with
+    a choice the paper did not make" — true, conditional, and leaving the reader to guess whether
+    the condition holds for the run in front of them. It holds or it does not, and the solver can
+    now be asked.
+    """
+    measured = boundary_sensitivity(claim)
+    if measured is None:  # pragma: no cover - an unstable claim never reaches an assumption
+        return (
+            "a claim carries no field naming a boundary, so this run's wall is this engine's "
+            "choice; its cost could not be measured because the discretization does not run"
+        )
+    return (
+        "a claim carries no field naming a boundary, so this run's wall is this engine's choice. "
+        f"Re-running the same protocol under the alternatives it implements moves the judged "
+        f"distance from {measured['judged_distance']:.3e} to at most "
+        f"{measured['worst_distance']:.3e} ({measured['worst_alternative']}), a change of "
+        f"{measured['moved_by']:.3e} against a pass threshold of {measured['pass_within']:.3e} — "
+        "so what the choice costs this claim is measured rather than left as a caveat. An "
+        "unbounded domain is not among the alternatives this solver runs and is not measured"
     )
 
 

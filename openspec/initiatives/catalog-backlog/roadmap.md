@@ -319,7 +319,20 @@ a change under `openspec/changes/`.
   included, since running a Dirichlet model under Neumann walls is a different model with no sign
   that it happened. What *is* blocked is narrower and still true: no published spatial model is in
   this corpus and none can be fetched here, so the reader is validated against files libSBML's own
-  spatial API wrote, not against one from the field.
+  spatial API wrote, not against one from the field. **The single boundary condition is gone
+  (2026-09-06):** `diffuse_1d` runs zero-flux, Dirichlet (absorbing or held at a value) and
+  periodic walls, each validated against the exact eigenmode decay for that boundary and against
+  what it does to mass — reflect, absorb, wrap. The default is unchanged, so every published
+  certificate still means what it meant. What the second wall *buys* is the measurement: the
+  boundary assumption used to say the distance "moves with a choice the paper did not make" and
+  could only assert it, and each spatial certificate now carries what the choice costs that claim
+  — on the three committed profiles the judged distance moves by 2e-10 to 2e-06 against a pass
+  threshold of 1e-01. The assumption stays load-bearing and stays this engine's limit, because a
+  claim still carries no field naming a boundary; what changed is that its cost is a number.
+  Measuring it also turned up an accuracy fact written down nowhere: the mirrored-ghost-point
+  zero-flux wall is **first-order** (error ratio 1.95 as the grid halves) while Dirichlet and the
+  interior stencil are second-order (4.00), so wherever a wall influences the answer this solver's
+  order is set by its boundary and not by its stencil.
 - **Whole-cell and very large QSP networks** — in-kind but often intractable under a single
   pinned engine; wait for item 5 and better resource handling.
 - **A hosted web dashboard** — valuable for outreach, but the certificate and MCP surface come
