@@ -98,6 +98,26 @@ for reported profiles and the scalar comparison for the length scales papers sta
   travelled is the domain's length rather than the model's speed, and reporting that as a front
   that never existed would send a reader after the wrong cause
 
+#### Scenario: Pattern-wavelength reproduction
+
+- **WHEN** a claim is a reported Turing pattern wavelength
+- **THEN** the claim names one of the reaction families this class implements and states its
+  parameters, rather than supplying a reaction function, so the number can be re-derived from the
+  certificate; a family the class does not implement is refused by name rather than approximated
+  by a neighbouring one
+- **AND** the oracle grows the pattern from a broadband seed on every admissible mode, measures the
+  dominant mode of the activator field, and compares the wavelength it selects — not the one linear
+  stability predicts — to the reported value, recording the prediction beside it, since the
+  saturated pattern and the linearization can select different modes
+- **AND** the reading is confirmed over a further window and abstains if the dominant mode changed
+  across it, because the selected mode moves while the pattern is still growing
+- **AND** a domain whose neighbouring measurable wavelengths are further apart than the width the
+  claim is judged at abstains, saying so: wavelength is quantized to 2L/m there, and a pass and a
+  fail would be the same measurement
+- **AND** the run carries a load-bearing assumption for its boundary — unlike a gradient's, whose
+  walls are the model — because the admissible modes, and therefore the set of measurable
+  wavelengths, follow from the wall this solver imposes
+
 #### Scenario: Concentration-profile reproduction
 
 - **WHEN** a claim is a reported concentration profile over space at a stated time

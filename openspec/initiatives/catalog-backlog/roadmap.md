@@ -312,11 +312,21 @@ a change under `openspec/changes/`.
   works rather than waiting on figure digitization. The front claim also measures its own
   convergence — a KPP speed approaches `2√(rD)` only logarithmically, so it reports how much the
   measurement is still moving and a reader can tell a still-converging run from a converged one.
-  The third scalar, a Turing **pattern wavelength**, is not a claim type and the obstacle is worth
-  stating: measuring it is easy (project onto the admissible modes and take the largest), but this
-  class records every input a number turns on, and a two-species reaction has no canonical
-  parameterization to record — Schnakenberg, Brusselator and Gierer-Meinhardt are different
-  functions, and a claim taking a callable could not be re-derived from its own certificate. Self-validated against
+  The third scalar, a Turing **pattern wavelength**, landed later the same day as `PatternClaim`.
+  This entry said it could not be a claim type, and the obstacle it named was real: this class
+  records every input a number turns on, and a two-species reaction has no canonical
+  parameterization — Schnakenberg, Brusselator and Gierer-Meinhardt are different functions, and a
+  claim taking a callable could not be re-derived from its own certificate. **Naming the family is
+  the resolution**: `TURING_KINETICS` holds all three with their rate laws, steady states and
+  Jacobians, a claim states one plus its two parameters, and a family this class does not implement
+  is refused by name rather than approximated by a neighbour. Two measurements shaped the rest of
+  it. The selected mode *moves while the pattern grows* (22 at t=3, 21 at t=6, 20 from t=9 on), so
+  a claim states a confirming window and abstains when the mode changes across it. And the
+  wavelength is *quantized* to 2L/m, so the claim reports the finest distinction its own domain can
+  make and abstains where that is coarser than the width it would be judged at — resolving to 5%
+  takes a domain holding twenty wavelengths. The certificate judges what the nonlinear run selects
+  and reports the linear-stability prediction beside it, those being 16.0 and 15.24 on the
+  self-validation configuration. Self-validated against
   closed-form results (Gaussian diffusion, Fisher-KPP and Nagumo front speeds, morphogen decay
   length, the Turing dispersion relation and wavelength selection). Has `spatial_dossier` /
   `validate_spatial` (unstated domain/boundary as a load-bearing gap), `certify_spatial`, the

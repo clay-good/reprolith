@@ -635,16 +635,18 @@ population path are written up in
 [docs/population-and-estimation.md](docs/population-and-estimation.md).
 
 **Spatial reaction-diffusion (PDE) models** are the sixth class: the reproducible result is a
-concentration profile over space — or one of the two scalars a paper usually prints as a *number*
+concentration profile over space — or one of the three scalars a paper usually prints as a *number*
 rather than a picture, and so the ones reachable without a curator digitizing a figure: the **decay
-length** of a morphogen gradient (`λ = √(D/k)`), and the **speed of an invasion front**
-(Fisher-KPP's `c = 2√(rD)`). A pure-Python finite-difference solver feeds the same curve
-oracle for a profile and the scalar comparison for a length or a speed, self-validated non-circularly against the exact analytical diffusion solution (a Gaussian
-whose variance grows by 2·D·t) with a 3/3 [milestone blind run](datasets/spatial/milestone/). Every
-spatial certificate reads *partially* reproduced even where the profile matches the closed form
-exactly: a claim carries no field naming a boundary, so the wall the run used is a choice Reprolith
-made rather than anything a paper could state, and the verdict rests on it — the same qualification
-the stochastic class carries for its ensemble.
+length** of a morphogen gradient (`λ = √(D/k)`), the **speed of an invasion front** (Fisher-KPP's
+`c = 2√(rD)`), and the **wavelength a Turing pattern selects** — stripe, spot and digit spacing. A
+pure-Python finite-difference solver feeds the same curve oracle for a profile and the scalar
+comparison for a length, a speed or a wavelength, self-validated non-circularly against the exact
+analytical diffusion solution (a Gaussian whose variance grows by 2·D·t) with a 3/3
+[milestone blind run](datasets/spatial/milestone/). The three committed spatial certificates read
+*partially* reproduced even where the profile matches the closed form exactly: they state no
+boundary, so the wall each run used is a choice Reprolith made rather than anything their source
+stated, and the verdict rests on it — the same qualification the stochastic class carries for its
+ensemble. A claim that *does* state its wall is run under it and can reach a clean pass.
 
 **What that choice costs is measured, not asserted.** The solver runs three walls — zero-flux,
 Dirichlet (absorbing or held at a value), and periodic, each checked against the exact decay of an
@@ -655,6 +657,17 @@ the same kind of thing about their ensembles: a standard error of 1.53%, 1.26% a
 reported value against a 5% threshold, where the abstention line is half the threshold. Both
 qualifications stand — they are still this engine's choices — but a reader can now see what each
 one is worth instead of being told only that it matters.
+
+**The wavelength claim is the one that had to say what it cannot measure.** Which wavelengths are
+measurable at all is set by the domain — on a zero-flux domain of length `L` only `2L/m` — so the
+claim reports the finest distinction its own domain can make and abstains when that is coarser than
+the width it would be judged at: agreeing to 1% where the measurable values are 16.7% apart — a
+domain holding five wavelengths — is agreement nobody measured. It also reads the pattern twice
+and abstains if the dominant mode moved between them, because the selected mode changes while the
+pattern is still growing (measured on Schnakenberg: mode 22, then 21, then 20 as it saturates). And it judges the wavelength the
+*nonlinear run* selects while reporting the one linear stability predicts beside it — on that same
+configuration those are 16.0 and 15.24, five percent apart, which is the entire class-default
+tolerance.
 
 All six classes are measured blind against independently-established ground truth on the same
 machinery — [docs/self-validation.md](docs/self-validation.md) is the one-look evidence summary.

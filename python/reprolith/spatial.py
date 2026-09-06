@@ -768,20 +768,18 @@ class GradientClaim:
         return math.sqrt(self.diffusivity / self.decay)
 
 
-# Why there is no wavelength claim, recorded where someone would come looking to write one.
+# The wavelength claim below used to be a note here saying why there was none. The obstacle it
+# named was real and is worth keeping: this class's discipline is that every input the number turns
+# on is recorded on the certificate, so a claim carrying a *callable* reaction could not be
+# re-derived from its own protocol line — and a two-species reaction has no single canonical form,
+# Schnakenberg, the Brusselator and Gierer-Meinhardt being different functions of ``(u, v)``.
 #
-# A Turing pattern's selected wavelength is the third scalar this class could certify, and the
-# measurement is the easy part: project the field onto the admissible modes and take the largest,
-# as `tests/test_spatial.py` does when it validates wavelength selection against linear stability
-# analysis. The obstacle is this class's own discipline — every input a number turns on is
-# recorded on the certificate, so the number can be re-derived from it. A two-species reaction has
-# no canonical parameterization to record: Schnakenberg, the Brusselator and Gierer-Meinhardt are
-# different functions of ``(u, v)``, and a claim carrying a callable could not be re-derived from
-# its own certificate. A closed form for one family would certify that family and quietly refuse
-# the rest under a name that promises all of them.
-#
-# Both scalars that *are* claims avoided this because their reaction is the model's definition
-# rather than a choice: a gradient decays at one rate, a KPP front grows logistically at one rate.
+# What the note got wrong was the conclusion, that a closed form "would certify that family and
+# quietly refuse the rest under a name that promises all of them". Naming the family is the
+# resolution: `TURING_KINETICS` holds three of them with their rate laws, steady states and
+# Jacobians, a claim names one and states its two parameters, and an unrecognized name is refused
+# by name rather than run. `schnakenberg(a=0.1, b=0.9)` is as complete a statement of what was run
+# as a Fisher-KPP front's logistic growth.
 @dataclass(frozen=True)
 class FrontSpeedClaim:
     """A published **invasion front speed**: how fast a growing population's edge advances.
@@ -840,6 +838,261 @@ class FrontSpeedClaim:
     def analytical_speed(self) -> float:
         """``2√(rD)`` — the asymptotic speed the continuum equation has, for the protocol line."""
         return 2.0 * math.sqrt(self.growth * self.diffusivity)
+
+
+#: The two-species reaction families this class certifies a wavelength for, each by name.
+#:
+#: A family is not a callable a caller supplies: this class's discipline is that every input the
+#: number turns on is recorded on the certificate, and a claim carrying a function could not be
+#: re-derived from its own protocol line. Naming the family instead makes the reaction as
+#: re-derivable as a Fisher-KPP front's logistic growth — ``schnakenberg(a=0.1, b=0.9)`` is a
+#: complete statement of what was run. Each entry gives the two rate laws, the homogeneous steady
+#: state, and the reaction Jacobian there, all as functions of the family's two parameters.
+#:
+#: All three take exactly two parameters, which is why :class:`PatternClaim` carries ``a`` and
+#: ``b`` rather than a parameter bag. A family needing a third would need a field, and adding one
+#: silently — as an optional dict, say — is how a claim stops being re-derivable.
+
+
+@dataclass(frozen=True)
+class TuringKinetics:
+    """One named activator-inhibitor family: its rate laws, its steady state, its Jacobian."""
+
+    name: str
+    #: The rate laws as a paper writes them, for the protocol line. A reader who cannot see the
+    #: equations cannot check that the family named is the one their paper used.
+    equations: str
+    reaction_u: Callable[[float, float, float, float], float]
+    reaction_v: Callable[[float, float, float, float], float]
+    #: ``(a, b) -> (u*, v*)``, the homogeneous steady state the pattern grows out of.
+    steady_state: Callable[[float, float], tuple[float, float]]
+    #: ``(a, b) -> (f_u, f_v, g_u, g_v)`` at that steady state.
+    jacobian: Callable[[float, float], tuple[float, float, float, float]]
+
+
+def _schnakenberg_steady(a: float, b: float) -> tuple[float, float]:
+    total = a + b
+    if total == 0.0:
+        raise ValueError("schnakenberg with a + b = 0 has no positive steady state")
+    return total, b / (total * total)
+
+
+def _schnakenberg_jacobian(a: float, b: float) -> tuple[float, float, float, float]:
+    u, v = _schnakenberg_steady(a, b)
+    return (-1.0 + 2.0 * u * v, u * u, -2.0 * u * v, -u * u)
+
+
+def _brusselator_steady(a: float, b: float) -> tuple[float, float]:
+    if a == 0.0:
+        raise ValueError("a brusselator with a = 0 has no positive steady state")
+    return a, b / a
+
+
+def _brusselator_jacobian(a: float, b: float) -> tuple[float, float, float, float]:
+    return (b - 1.0, a * a, -b, -a * a)
+
+
+def _gierer_meinhardt_steady(a: float, b: float) -> tuple[float, float]:
+    if b == 0.0:
+        raise ValueError("gierer-meinhardt with b = 0 has no positive steady state")
+    u = (a + 1.0) / b
+    return u, u * u
+
+
+def _gierer_meinhardt_jacobian(a: float, b: float) -> tuple[float, float, float, float]:
+    u, v = _gierer_meinhardt_steady(a, b)
+    return (-b + 2.0 * u / v, -(u * u) / (v * v), 2.0 * u, -1.0)
+
+
+TURING_KINETICS: dict[str, TuringKinetics] = {
+    "schnakenberg": TuringKinetics(
+        name="schnakenberg",
+        equations="f = a - u + u^2 v, g = b - u^2 v",
+        reaction_u=lambda u, v, a, b: a - u + u * u * v,
+        reaction_v=lambda u, v, a, b: b - u * u * v,
+        steady_state=_schnakenberg_steady,
+        jacobian=_schnakenberg_jacobian,
+    ),
+    "brusselator": TuringKinetics(
+        name="brusselator",
+        equations="f = a - (b+1) u + u^2 v, g = b u - u^2 v",
+        reaction_u=lambda u, v, a, b: a - (b + 1.0) * u + u * u * v,
+        reaction_v=lambda u, v, a, b: b * u - u * u * v,
+        steady_state=_brusselator_steady,
+        jacobian=_brusselator_jacobian,
+    ),
+    "gierer-meinhardt": TuringKinetics(
+        name="gierer-meinhardt",
+        equations="f = a - b u + u^2 / v, g = u^2 - v",
+        reaction_u=lambda u, v, a, b: a - b * u + u * u / v,
+        reaction_v=lambda u, v, a, b: u * u - v,
+        steady_state=_gierer_meinhardt_steady,
+        jacobian=_gierer_meinhardt_jacobian,
+    ),
+}
+
+
+@dataclass(frozen=True)
+class PatternClaim:
+    """A published **Turing pattern wavelength**: the spacing a self-organized pattern selects.
+
+    The third scalar this class certifies, and the third that a paper prints in its text rather
+    than draws — stripe spacing, spot spacing, digit spacing — so it is reachable by the table and
+    prose extraction that already works instead of waiting on figure digitization.
+
+    ``kinetics`` names one of :data:`TURING_KINETICS` and ``a``/``b`` are that family's two
+    parameters. The reaction is not a callable for the reason the Fisher-KPP claim's is not: the
+    number has to be re-derivable from the certificate, and "some function of (u, v)" documents
+    nothing.
+
+    The measurement is the dominant admissible mode of the activator field after ``steps``, so it
+    is **quantized**: on a zero-flux domain of length ``L`` only ``2L/m`` is measurable. That is a
+    property of the domain rather than of the model, so the claim reports the finest distinction
+    its own domain can make and abstains when that is coarser than the width it would be judged
+    at: a wavelength agreeing to 1% where the measurable values are 16.7% apart (mode 5, which is
+    what a domain holding five wavelengths gives) is agreement nobody measured.
+    """
+
+    claim_id: str
+    quantity: str
+    reported: float
+    source_location: str
+    kinetics: str
+    a: float
+    b: float
+    #: The activator's and inhibitor's diffusivities. A Turing instability needs ``dv`` well above
+    #: ``du`` — short-range activation, long-range inhibition — and the run says so if it does not.
+    du: float
+    dv: float
+    length: float
+    points: int
+    dt: float
+    #: Steps to the reading, then a further window that has to agree with it. **The selected mode
+    #: moves while the pattern is still growing**: measured on this class's own Schnakenberg
+    #: configuration, the dominant mode is 22 at t=3, 21 at t=6 and 20 from t=9 on, as the linear
+    #: growth phase gives way to a saturated pattern. A wavelength read at an arbitrary step count
+    #: is therefore not the wavelength the model selects, and the two readings are what tell those
+    #: apart — the pattern analogue of the front claim's second window.
+    steps: int
+    confirm_steps: int
+    #: The amplitude of the broadband seed: an equal-weight perturbation on every admissible mode,
+    #: so which one wins is the solver's doing and not the seed's. Recorded because a different
+    #: seed is a different run, and a single-mode seed would decide the answer in advance.
+    seed_amplitude: float = 1e-3
+    tolerance: Tolerance | None = None
+    #: Defaults True for the reason `SpatialClaim`'s does: the set of admissible modes — and so
+    #: the set of measurable wavelengths — comes from the zero-flux wall this solver imposes, and
+    #: a claim states no other. See the assumption `certify_spatial` attaches.
+    assumption_qualified: bool = True
+    shortfall: Attribution | None = field(default=None)
+
+    def __post_init__(self) -> None:
+        if self.kinetics not in TURING_KINETICS:
+            raise ValueError(
+                f"claim {self.claim_id!r} names kinetics {self.kinetics!r}; this class certifies "
+                f"{', '.join(sorted(TURING_KINETICS))}. A family it does not implement is refused "
+                "rather than approximated by a neighbouring one: the wavelength a paper reports is "
+                "a property of its own reaction"
+            )
+        if self.points < 3:
+            raise ValueError(
+                f"claim {self.claim_id!r} asks for {self.points} grid points; a pattern needs a "
+                "grid that can hold at least one interior mode"
+            )
+        if self.length <= 0.0:
+            raise ValueError(
+                f"claim {self.claim_id!r} states a domain length of {self.length!r}"
+            )
+        if self.steps < 1:
+            raise ValueError(
+                f"claim {self.claim_id!r} asks for {self.steps} steps: a pattern claim must evolve "
+                "the fields, since the seed is an input and not evidence about the model"
+            )
+        if self.confirm_steps < 1:
+            raise ValueError(
+                f"claim {self.claim_id!r} asks for {self.confirm_steps} confirming steps: without "
+                "a second reading there is nothing to tell a settled pattern from one whose mode "
+                "is still moving"
+            )
+        if self.seed_amplitude <= 0.0:
+            raise ValueError(
+                f"claim {self.claim_id!r} seeds with amplitude {self.seed_amplitude!r}: with no "
+                "perturbation the homogeneous state is a fixed point and no pattern can form"
+            )
+
+    @property
+    def modes(self) -> range:
+        """The admissible zero-flux modes ``cos(m·pi·x/L)`` this grid can hold.
+
+        Stops at ``points - 1``: two grid points per wavelength is the most a grid can represent,
+        and a mode above that is aliased rather than resolved.
+        """
+        return range(1, self.points)
+
+    def growth_rate(self, mode: int) -> float:
+        """The dominant eigenvalue of ``J − k²·diag(Du, Dv)`` for one mode — linear stability.
+
+        This is the *prediction*, computed from the reaction Jacobian and the diffusivities alone.
+        The certificate judges what the nonlinear run produced, so the two are independent: the
+        analytic wavelength below is not what is being measured.
+        """
+        fu, fv, gu, gv = TURING_KINETICS[self.kinetics].jacobian(self.a, self.b)
+        k2 = (mode * math.pi / self.length) ** 2
+        m00, m11 = fu - self.du * k2, gv - self.dv * k2
+        trace, det = m00 + m11, m00 * m11 - fv * gu
+        disc = trace * trace - 4.0 * det
+        return trace / 2.0 if disc < 0.0 else (trace + math.sqrt(disc)) / 2.0
+
+    @property
+    def fastest_growing_mode(self) -> int:
+        """The mode linear stability predicts wins — ``argmax_m λ(k_m)`` over the admissible set."""
+        return max(self.modes, key=self.growth_rate)
+
+    @property
+    def analytical_wavelength(self) -> float:
+        """``2L/m*`` — the wavelength linear stability predicts, for the protocol line.
+
+        Recorded beside the measured one for the reason the gradient's continuum length is: they
+        answer different questions. This is what the *linearized* equation selects; the certificate
+        judges what the nonlinear discretized run produced.
+        """
+        return 2.0 * self.length / self.fastest_growing_mode
+
+
+def mode_amplitudes(
+    field_values: Sequence[float], *, length: float, modes: Iterable[int], baseline: float
+) -> dict[int, float]:
+    """Each admissible mode's amplitude in a field: ``|<field − baseline, cos(m·pi·x/L)>|``.
+
+    The zero-flux eigenfunctions, projected by the trapezoid rule. ``baseline`` is the homogeneous
+    state the pattern grew out of; projecting the raw field instead would let the m=0 offset leak
+    into every mode. The projection is an unweighted sum over grid points, so a mode seeded at
+    amplitude ``A`` starts at ``A·(points − 1)/2`` — which is what tells a pattern that grew from
+    one that has not.
+    """
+    values = list(field_values)
+    n = len(values)
+    if n < 2:
+        raise ValueError("a field needs at least two points to be projected onto a mode")
+    dx = length / (n - 1)
+
+    def amplitude(mode: int) -> float:
+        total = 0.0
+        for i, value in enumerate(values):
+            weight = 0.5 if i in (0, n - 1) else 1.0
+            total += weight * (value - baseline) * math.cos(mode * math.pi * i * dx / length)
+        return abs(total)
+
+    return {mode: amplitude(mode) for mode in modes}
+
+
+def pattern_wavelength(
+    field_values: Sequence[float], *, length: float, modes: Iterable[int], baseline: float
+) -> tuple[int, float]:
+    """The dominant admissible mode of a field and its wavelength ``2L/m``."""
+    amplitudes = mode_amplitudes(field_values, length=length, modes=modes, baseline=baseline)
+    dominant = max(amplitudes, key=lambda mode: amplitudes[mode])
+    return dominant, 2.0 * length / dominant
 
 
 def boundary_sensitivity(claim: SpatialClaim) -> dict[str, Any] | None:
@@ -1061,6 +1314,187 @@ def _judge_front_speed(claim: FrontSpeedClaim) -> ClaimAssessment:
     )
 
 
+def _mode_resolution(claim: PatternClaim, mode: int) -> float:
+    """The finest wavelength difference this domain can express near ``mode``, as a fraction.
+
+    Measurable wavelengths are ``2L/m``, so the neighbours of ``m`` are ``2L/(m±1)`` and the
+    smaller gap is ``1/(m+1)`` of the wavelength. Written once because it is asked twice: of the
+    mode linear stability predicts, before the run, and of the mode that actually won, after it.
+    """
+    measured = 2.0 * claim.length / mode
+    neighbours = [
+        2.0 * claim.length / other
+        for other in (mode - 1, mode + 1)
+        if other in claim.modes
+    ]
+    if not neighbours:
+        return 0.0
+    return min(abs(measured - neighbour) for neighbour in neighbours) / measured
+
+
+def _judge_pattern(claim: PatternClaim) -> ClaimAssessment:
+    """Grow a Turing pattern from a broadband seed and judge the wavelength it selects.
+
+    Five ways this abstains rather than publishing a number, each a case where a wavelength can be
+    computed and would mean nothing:
+
+    ``the discretization does not run``
+        as everywhere else in this class.
+    ``the reaction is not Turing-unstable``
+        the homogeneous state is unstable on its own (trace ≥ 0 or det ≤ 0), so whatever grows is
+        not a diffusion-driven pattern and its spacing is not a Turing wavelength.
+    ``no admissible mode grows``
+        the parameters are stable to every mode this domain can hold: linear stability predicts no
+        pattern at all, and measuring the largest mode of a decaying perturbation reports noise.
+    ``no pattern formed``
+        the run finished with the activator still flat, so the dominant mode is whichever way the
+        arithmetic fell.
+    ``the domain cannot resolve the claim``
+        wavelength is quantized to ``2L/m`` here, and where neighbouring modes are further apart
+        than the width the claim is judged at, a pass and a fail are the same measurement. This is
+        the pattern analogue of the metric-establishment check the PK/PD class runs on its grid.
+    """
+    kinetics = TURING_KINETICS[claim.kinetics]
+
+    def abstain(reason: str) -> ClaimAssessment:
+        return not_evaluable(
+            claim_id=claim.claim_id, quantity=claim.quantity,
+            source_location=claim.source_location, reason=reason,
+            reference_kind=ReferenceKind.NUMERIC,
+        )
+
+    try:
+        u_star, v_star = kinetics.steady_state(claim.a, claim.b)
+    except ValueError as unusable:
+        return abstain(str(unusable))
+    fu, fv, gu, gv = kinetics.jacobian(claim.a, claim.b)
+    trace, det = fu + gv, fu * gv - fv * gu
+    if trace >= 0.0 or det <= 0.0:
+        return abstain(
+            f"the {claim.kinetics} reaction at a={claim.a!r}, b={claim.b!r} is not stable without "
+            f"diffusion (trace {trace:.4g}, determinant {det:.4g}): what grows here is not a "
+            "diffusion-driven pattern, so its spacing is not a Turing wavelength"
+        )
+    predicted_mode = claim.fastest_growing_mode
+    if claim.growth_rate(predicted_mode) <= 0.0:
+        return abstain(
+            f"no mode this domain admits grows: the fastest, m={predicted_mode}, has rate "
+            f"{claim.growth_rate(predicted_mode):.4g}, so linear stability predicts no pattern "
+            "and the largest mode of a decaying perturbation is noise"
+        )
+    tolerance = claim.tolerance or default_tolerance(
+        ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+    )
+    # Asked before the run as well as after it. The finest distinction this domain can make around
+    # a mode is 1/(m+1) of the wavelength, so a domain that cannot resolve the width this claim
+    # would be judged at cannot be helped by running: a pass and a fail are the same measurement,
+    # and the honest answer is available for the cost of a division.
+    predicted_resolution = _mode_resolution(claim, predicted_mode)
+    if predicted_resolution > tolerance.reproduced_within:
+        return abstain(
+            f"this domain cannot resolve the claim: the wavelength is quantized to 2L/m, so even "
+            f"at the mode linear stability predicts (m={predicted_mode}) the nearest measurable "
+            f"values are {predicted_resolution:.2%} away while a pass is "
+            f"{tolerance.reproduced_within:.2%} — a longer domain holds more modes and measures "
+            "finer"
+        )
+    dx = claim.length / (claim.points - 1)
+    seed = [
+        claim.seed_amplitude * sum(
+            math.cos(mode * math.pi * i * dx / claim.length) for mode in claim.modes
+        )
+        for i in range(claim.points)
+    ]
+    def evolve(u: Sequence[float], v: Sequence[float], steps: int) -> tuple[list[float], list[float]]:
+        return react_diffuse_2species(
+            u, v, du=claim.du, dv=claim.dv, dx=dx, dt=claim.dt, steps=steps,
+            reaction_u=lambda uu, vv: kinetics.reaction_u(uu, vv, claim.a, claim.b),
+            reaction_v=lambda uu, vv: kinetics.reaction_v(uu, vv, claim.a, claim.b),
+        )
+
+    try:
+        activator, inhibitor = evolve(
+            [u_star + s for s in seed], [v_star] * claim.points, claim.steps
+        )
+        later, _ = evolve(activator, inhibitor, claim.confirm_steps)
+    except UnstableDiscretization as unstable:
+        return abstain(str(unstable))
+    if not all(math.isfinite(value) for value in activator):
+        return abstain(
+            "the activator field left the finite range during the run, so there is no pattern to "
+            "measure a wavelength of"
+        )
+    amplitudes = mode_amplitudes(
+        activator, length=claim.length, modes=claim.modes, baseline=u_star
+    )
+    dominant = max(amplitudes, key=lambda mode: amplitudes[mode])
+    measured = 2.0 * claim.length / dominant
+    # Against the seed's own per-mode amplitude, not against the field's range. The broadband seed
+    # is a Dirichlet kernel — every mode at equal weight sums to a spike at x=0 — so it spans about
+    # `seed_amplitude × modes` from the first step, and a guard comparing the field's range to the
+    # seed amplitude could never fire. What has to have happened is that one mode *grew*: measured
+    # on the self-validation configuration, every mode starts at 0.16 and the winner reaches 1.09
+    # at t=3, 10.4 at t=9 and 18.3 at t=12.
+    seeded = claim.seed_amplitude * (claim.points - 1) / 2.0
+    if amplitudes[dominant] <= 10.0 * seeded:
+        return abstain(
+            f"no pattern formed: the largest mode after {claim.steps} steps stands at "
+            f"{amplitudes[dominant]:.3e} against the {seeded:.3e} every mode was seeded at, so "
+            "nothing has been selected and the dominant mode is whichever way the arithmetic fell"
+        )
+    settled, settled_wavelength = pattern_wavelength(
+        later, length=claim.length, modes=claim.modes, baseline=u_star
+    )
+    if settled != dominant:
+        # Not a drift to report beside the number, as the front's residual is: the mode is
+        # discrete, so a change is a jump of a whole measurable step and the reading is simply
+        # not the wavelength this model selects. Measured on the Schnakenberg configuration this
+        # class self-validates against: mode 22 at t=3, 21 at t=6, 20 from t=9 — a claim read at
+        # t=3 would have published 14.5 for a pattern that selects 16.0.
+        return abstain(
+            f"the pattern has not settled: mode {dominant} (wavelength {measured:.6g}) after "
+            f"{claim.steps} steps becomes mode {settled} ({settled_wavelength:.6g}) after "
+            f"{claim.confirm_steps} more, so this reading is the pattern still forming rather "
+            "than the wavelength it selects"
+        )
+    # The finest distinction this domain can make around the mode that won: the wavelength is
+    # 2L/m, so the neighbouring measurable values are 2L/(m±1) and the smaller gap is the
+    # resolution. Reported always, and grounds for abstention when it is coarser than the width
+    # the claim would be judged at — where a pass and a fail are the same measurement.
+    # Asked again of the mode that actually won, which can be far below the predicted one: the
+    # pre-run check clears the domain at m*, and a run that settles on a low mode is measured on a
+    # coarser scale than the one that was cleared.
+    resolution = _mode_resolution(claim, dominant)
+    if resolution > tolerance.reproduced_within:
+        return abstain(
+            f"this domain cannot resolve the claim: the wavelength is quantized to 2L/m, so the "
+            f"nearest measurable values to {measured:.6g} (mode {dominant}) are "
+            f"{resolution:.2%} away while a pass is {tolerance.reproduced_within:.2%} — a longer "
+            "domain holds more modes and measures finer"
+        )
+    assessment = judge_scalar(
+        claim_id=claim.claim_id, quantity=claim.quantity,
+        source_location=claim.source_location, reported=claim.reported, predicted=measured,
+        tolerance=claim.tolerance,
+        attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
+        assumption_qualified=claim.assumption_qualified,
+    )
+    return replace(
+        assessment,
+        protocol=(
+            f"1-D two-species reaction-diffusion, {claim.kinetics} kinetics ({kinetics.equations}) "
+            f"with a={claim.a!r}, b={claim.b!r}: Du={claim.du!r}, Dv={claim.dv!r}, "
+            f"L={claim.length!r} over {claim.points} points, dt={claim.dt!r}, {claim.steps} steps, "
+            f"seeded at {claim.seed_amplitude!r} on every admissible mode; zero-flux walls, which "
+            f"are what makes the modes cos(m·pi·x/L). Mode {dominant} won, so the measured "
+            f"wavelength is 2L/{dominant}, unchanged over a further {claim.confirm_steps} "
+            f"steps; linear stability predicts m={predicted_mode} "
+            f"({claim.analytical_wavelength:.6g}). The nearest measurable wavelength is "
+            f"{resolution:.2%} away, which is this domain's own resolution"
+        ),
+    )
+
+
 def certify_spatial(
     *,
     paper: PaperIdentity,
@@ -1068,6 +1502,7 @@ def certify_spatial(
     claims: Iterable[SpatialClaim] = (),
     gradients: Iterable[GradientClaim] = (),
     fronts: Iterable[FrontSpeedClaim] = (),
+    patterns: Iterable[PatternClaim] = (),
     assumptions: Iterable[Assumption] = (),
 ) -> Certificate:
     """Run each spatial claim's diffusion to its stated time, judge the profile, build the certificate.
@@ -1242,6 +1677,33 @@ def certify_spatial(
     # Like a gradient, a front carries no boundary assumption: it is judged only while it is far
     # from the walls, and a reading that has reached one abstains rather than being qualified.
     assessments.extend(_judge_front_speed(front) for front in fronts)
+    # A pattern is the opposite case, and it is the wall that decides: the measurable wavelengths
+    # are 2L/m *because* the domain is zero-flux, so a claim whose walls Reprolith supplied rests
+    # on them for the answer itself and not merely for the last few percent. Read off the
+    # assessment, as the profile claims are, so an abstention mints no assumption.
+    pattern_claims = list(patterns)
+    pattern_assessments = [_judge_pattern(pattern) for pattern in pattern_claims]
+    assessments.extend(pattern_assessments)
+    pattern_assumptions = tuple(
+        Assumption(
+            id=f"spatial-pattern-boundary-{pattern.claim_id}",
+            description=(
+                "the wavelength judged here was measured on a zero-flux (Neumann) domain, whose "
+                "eigenfunctions cos(m·pi·x/L) are what make the measurable wavelengths 2L/m; "
+                "Reprolith did not check what boundary the source specifies"
+            ),
+            chosen="zero-flux (Neumann) boundaries",
+            basis=_PATTERN_BOUNDARY_BASIS,
+            load_bearing=True,
+            alternatives=(
+                "periodic, whose modes are L/m and whose measurable set is therefore different",
+                "Dirichlet (fixed value), whose eigenfunctions are sin(m·pi·x/L)",
+            ),
+            author_can_close=False,
+        )
+        for pattern, assessment in zip(pattern_claims, pattern_assessments)
+        if assessment.assumption_qualified
+    )
     if not assessments:
         raise ValueError(
             "a spatial certificate needs at least one claim: certifying a paper this class judged "
@@ -1249,7 +1711,7 @@ def certify_spatial(
         )
     return build_certificate(
         paper=paper, engine_pin=engine_pin,
-        assessments=assessments, assumptions=(*assumptions, *boundary),
+        assessments=assessments, assumptions=(*assumptions, *boundary, *pattern_assumptions),
     )
 
 
@@ -1265,6 +1727,20 @@ _BOUNDARY_BASIS = (
     "protocol line reports how far re-running the same discretization under the alternatives this "
     "solver implements moves the judged distance, against the threshold it is judged at. An "
     "unbounded domain is not among those alternatives and is not measured"
+)
+
+
+#: A pattern claim's boundary basis, separate from the profile claims' because it is a different
+#: fact: there the wall shifts a judged distance, here it decides which wavelengths are measurable
+#: at all. Identical across pattern claims for the same reason the other one is — one solver
+#: limitation should merge into one queue item with every dependent on it, and a per-claim number
+#: in the wording splits it into one question per claim.
+_PATTERN_BOUNDARY_BASIS = (
+    "the two-species solver implements zero-flux walls only, and a pattern claim carries no field "
+    "naming another, so the set of admissible modes — and therefore the set of wavelengths that "
+    "can be measured at all — is this engine's choice rather than anything a paper could state. "
+    "Unlike the profile claims' wall, what this one costs is not measured: measuring it needs a "
+    "second wall in this solver, which is not implemented"
 )
 
 

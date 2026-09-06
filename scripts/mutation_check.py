@@ -1115,6 +1115,49 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          "        if revision is None:\n            [].append("),
         ["tests/test_recertification_due.py"],
     ),
+    # --- the Turing wavelength claim, 2026-09-06 -----------------------------------------------
+    (
+        "a wavelength read while the pattern is still forming is published as the one it selects",
+        "spatial.py",
+        ("    if settled != dominant:", "    if False:"),
+        ["tests/test_spatial_pattern_claim.py"],
+    ),
+    (
+        "a domain that cannot tell two wavelengths apart is run anyway, then judged",
+        "spatial.py",
+        ("    if predicted_resolution > tolerance.reproduced_within:", "    if False:"),
+        ["tests/test_spatial_pattern_claim.py"],
+    ),
+    (
+        "a run that settled on a mode coarser than the domain was cleared for is judged",
+        "spatial.py",
+        ("    if resolution > tolerance.reproduced_within:", "    if False:"),
+        ["tests/test_spatial_pattern_claim.py"],
+    ),
+    (
+        "the seed's own modes are reported as a pattern the model selected",
+        "spatial.py",
+        ("    if amplitudes[dominant] <= 10.0 * seeded:", "    if False:"),
+        ["tests/test_spatial_pattern_claim.py"],
+    ),
+    (
+        "a reaction unstable without diffusion is certified as a Turing pattern",
+        "spatial.py",
+        ("    if trace >= 0.0 or det <= 0.0:", "    if False:"),
+        ["tests/test_spatial_pattern_claim.py"],
+    ),
+    (
+        "a reaction family this class does not implement is run as a neighbouring one",
+        "spatial.py",
+        ("        if self.kinetics not in TURING_KINETICS:", "        if False:"),
+        ["tests/test_spatial_pattern_claim.py"],
+    ),
+    (
+        "a pattern claim publishes a clean pass for modes the engine's own wall decided",
+        "spatial.py",
+        ("        if assessment.assumption_qualified\n    )", "        if False\n    )"),
+        ["tests/test_spatial_pattern_claim.py"],
+    ),
 ]
 
 

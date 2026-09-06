@@ -4818,3 +4818,53 @@ Three distinctions are what make it a report rather than a list:
 
 On the shipped repository the answer is that nothing owes a re-run, which is the same fact the pin
 test asserts — now available to a reader instead of only to CI.
+
+
+## The third spatial scalar, and the note that said it could not exist
+
+`PatternClaim` certifies a reported **Turing pattern wavelength** — stripe, spot and digit spacing,
+the numbers morphogenesis papers print in their text. Same argument as the decay length and the
+front speed: a number rather than a picture, so it is reachable without figure digitization.
+
+The interesting part is that this class's own source carried a note saying why there was no such
+claim, and the note was half right. Its obstacle was real: every input a number turns on is recorded
+on the certificate so the number can be re-derived from it, and a two-species reaction has no
+canonical form — Schnakenberg, the Brusselator and Gierer-Meinhardt are different functions of
+`(u, v)`, and a claim carrying a callable documents nothing. Its conclusion was wrong. **Naming the
+family is the resolution**: `TURING_KINETICS` holds the three with their rate laws, steady states
+and reaction Jacobians, a claim names one and states its two parameters, and a family this class
+does not implement is refused by name rather than approximated by a neighbouring one.
+`schnakenberg(a=0.1, b=0.9)` is as complete a statement of what was run as a Fisher-KPP front's
+logistic growth.
+
+Three measurements decided the rest of the design, and each one changed what I had planned to write.
+
+**The selected mode moves while the pattern is still growing.** On the self-validation
+configuration the dominant mode is 22 at t=3, 21 at t=6, and 20 from t=9 on, as the linear growth
+phase gives way to a saturated pattern. A wavelength read at an arbitrary step count is the pattern
+still forming, and a claim read at t=3 would have published 14.5 for a model that selects 16.0. So
+the claim states a confirming window and abstains when the dominant mode changes across it. Unlike
+the front speed's residual, this is not a drift to report beside the number: the mode is discrete,
+so a change is a jump of a whole measurable step.
+
+**The nonlinear selection is not the linear prediction.** Linear stability picks m=21 on that
+configuration; the saturated pattern selects m=20. Those wavelengths are 15.24 and 16.0 — five
+percent apart, which is the entire class-default tolerance. So the certificate judges what the run
+produced and reports the prediction beside it. Certifying the closed form would have published
+15.24 for a model that produces 16.0, and it would have looked like agreement.
+
+**A wavelength is quantized, and a short domain cannot resolve a claim however precisely it
+agrees.** The measurable values are `2L/m`, so their spacing near mode `m` is `1/(m+1)`: on a
+domain holding five wavelengths the neighbours are 17% apart while a pass is 5%, and a pass and a
+fail are the same measurement. The claim reports its own domain's resolution on every certificate
+and abstains when it is coarser than the width it would be judged at. Resolving to 5% takes a
+domain holding twenty wavelengths, which is why the self-validation domain is four times longer
+than the pattern it measures needs. This is the pattern analogue of the grid-establishment check
+the PK/PD class already runs.
+
+One more thing it has to say and cannot measure: the admissible modes are `cos(m·pi·x/L)` **because
+the domain is zero-flux**, so the wall does not merely shift this number — it decides which numbers
+are measurable at all. Every pattern claim therefore carries a load-bearing assumption for it. The
+profile claims' wall reports what it costs by re-running under the alternatives; this one cannot,
+because the two-species solver implements one wall, and the assumption says so rather than implying
+a measurement nobody made.
