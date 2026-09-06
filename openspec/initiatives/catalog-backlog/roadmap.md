@@ -341,8 +341,13 @@ a change under `openspec/changes/`.
   boundary assumption used to say the distance "moves with a choice the paper did not make" and
   could only assert it, and each spatial certificate now carries what the choice costs that claim
   — on the three committed profiles the judged distance moves by 2e-10 to 2e-06 against a pass
-  threshold of 1e-01. The assumption stays load-bearing and stays this engine's limit, because a
-  claim still carries no field naming a boundary; what changed is that its cost is a number.
+  threshold of 1e-01. On a claim that states no wall the assumption stays load-bearing and stays
+  this engine's limit — the wall is then Reprolith's — and what changed is that its cost is a
+  number. **This entry said a claim carries no field naming a boundary, which stopped being true
+  the same day it was written:** `SpatialClaim.boundary` carries the source's wall through to the
+  run, so a claim that states one is neither assumed for nor qualified, and `ingest_spatial_sbml`
+  stopped refusing a file that states a Dirichlet wall. The sentence is corrected here rather than
+  deleted, because the limitation was real until it was not.
   Measuring it also turned up an accuracy fact written down nowhere: the mirrored-ghost-point
   zero-flux wall is **first-order** (error ratio 1.95 as the grid halves) while Dirichlet and the
   interior stencil are second-order (4.00), so wherever a wall influences the answer this solver's

@@ -4134,7 +4134,8 @@ No expert decision is recorded anywhere on disk, so every item reads as pending 
 says so rather than implying the queue is being worked. `VerificationQueue.decide` and
 `reverify_dependents` are live APIs waiting for a first real decision; inventing one to exercise
 them would be fabricating the very thing this capability exists to collect. Nothing files a GitHub
-issue and nothing reconciles a queue item with an issue's state. And `margin` is `None` on every
+issue. (Reconciling a queue item with an issue's state was in this sentence too, and stopped being
+true on 2026-09-06 — `reprolith issue-reconcile` is below.) And `margin` is `None` on every
 item and stays that way: the only numbers on a certificate that could supply it are prose a judge
 wrote for a person to read, and a number parsed back out of prose is a guess dressed as a
 measurement — on the surface where it would be least visible.

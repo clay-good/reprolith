@@ -16,7 +16,7 @@ results. It gets better in two ways, and **both need people who know the science
    Reprolith chose, why, the alternatives, and the papers that would have to be re-certified if
    you corrected it. Add `--json` for the same object an agent gets over MCP.
 
-   **You still open the issue by hand** — nothing wires the queue to GitHub — but you no longer
+   **You still open the issue by hand** — nothing files one for you — but you no longer
    fill it in by hand: `reprolith verification-issue <item-id>` prints the title, the labels, and
    a body with every field the template asks for.
 
