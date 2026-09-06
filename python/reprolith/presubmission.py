@@ -78,6 +78,10 @@ _READINESS = {
 #:   file. "Not cleanly" sends that author to re-examine their results.
 _NOT_READY_REASONS: tuple[tuple[str, str], ...] = (
     ("not_evaluable", "a claim could not be evaluated at all"),
+    (
+        "method",
+        "a claim went unjudged for a limit of Reprolith's own, which is not yours to fix",
+    ),
     ("qualified", "a claim reproduces only under a value a reproducer had to assume"),
     ("estimation", "a claim was reproduced by re-fitting it from your data, not by running your "
                    "model as described"),
@@ -99,8 +103,20 @@ def _withheld_reasons(cert: Certificate, estimation: list[str]) -> list[str]:
     always tested it, and the point of one list is that the two cannot disagree about what a clean
     pass is.
     """
+    def unjudged(by_method: bool) -> bool:
+        return any(
+            a.verdict is Verdict.NOT_EVALUABLE
+            and ((a.fault_hypothesis or "") == Fault.METHOD.value) is by_method
+            for a in cert.assessments
+        )
+
     present = {
-        "not_evaluable": any(a.verdict is Verdict.NOT_EVALUABLE for a in cert.assessments),
+        # Told apart for the same reason the fix list ranks them apart: one is a claim the author's
+        # artifact left unjudgeable, the other is a verdict this tool withheld over its own
+        # sampling. Rolled into one sentence, an author whose only outstanding item was Reprolith's
+        # grid read "a claim could not be evaluated at all" as a statement about their submission.
+        "not_evaluable": unjudged(by_method=False),
+        "method": unjudged(by_method=True),
         "qualified": any(a.assumption_qualified for a in cert.assessments),
         "estimation": bool(estimation),
         "gaps": bool(cert.gap_report),

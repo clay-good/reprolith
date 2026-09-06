@@ -604,11 +604,22 @@ def test_the_readiness_line_names_every_reason_the_clean_pass_was_withheld() -> 
 
     clean = ClaimAssessment(claim_id="c1", quantity="peak", source_location="Table 1",
                             verdict=Verdict.REPRODUCED)
+    from reprolith.oracle import Fault
+
     cases = {
         "could not be evaluated": cert(assessments=[
             clean,
             ClaimAssessment(claim_id="c2", quantity="exposure", source_location="Table 1",
                             verdict=Verdict.NOT_EVALUABLE, root_cause="no reference value"),
+        ]),
+        # Reprolith's own limit, told apart from the author's: rolled into the line above, an
+        # author whose only outstanding item was this tool's sampling grid read "a claim could not
+        # be evaluated at all" as a statement about their submission.
+        "a limit of Reprolith's own": cert(assessments=[
+            clean,
+            ClaimAssessment(claim_id="c2", quantity="time to peak", source_location="Table 1",
+                            verdict=Verdict.NOT_EVALUABLE, root_cause="the grid decided it",
+                            fault_hypothesis=Fault.METHOD.value),
         ]),
         "re-fitting it from your data": cert(assessments=[
             ClaimAssessment(claim_id="c1", quantity="clearance", source_location="Table 2",
