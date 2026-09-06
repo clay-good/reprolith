@@ -61,10 +61,14 @@ A spatial dossier SHALL capture the elements that determine the spatial dynamics
 - **AND** anything the solver cannot honour is refused by name: a non-Cartesian or higher-
   dimensional geometry, a stated domain shape or more than one domain, an anisotropic coefficient,
   a field-valued initial condition or one the model's own math overrides, a spatial species with no
-  coefficient or one the model holds fixed, a boundary condition that is not zero flux, an
+  coefficient or one the model holds fixed, a prescribed non-zero flux across the boundary, more
+  than one kind of boundary condition in one file, an
   advection term, a parameter standing for a coordinate, and any reaction that is not a first-order
   decay — each of these read and ignored would produce a profile from a
   model nobody wrote, with no sign that it happened
+- **AND** a boundary condition the solver *does* run — a zero-flux wall or a wall held at a fixed
+  value — is carried through to the run rather than refused, so the model is evolved under the wall
+  its own file states
 
 ### Requirement: Standard spatial reproduction targets
 

@@ -807,15 +807,21 @@ def certify_spatial(
     which is an input to the reconstruction rather than evidence about it, so judging it against a
     reported profile would certify a simulation that never ran.
 
-    **The boundary condition is an unconditional assumption of this class.** Every solver here
-    imposes zero-flux (Neumann) boundaries; there is no Dirichlet, absorbing, or periodic option, and
-    a claim carries no boundary field to state one. So a paper whose model has a different boundary
-    is being run under a condition it did not specify. ``spatial_dossier`` records an unstated
-    boundary as a load-bearing gap, but this front-end takes claims rather than a dossier and cannot
-    see it — so the qualification is on by default and each qualified claim gets a load-bearing
-    ``spatial-boundary-*`` assumption, exactly as the stochastic class does for its ensemble. Left to
-    the caller it was never set, and the class published clean passes for runs whose walls are
-    Reprolith's own. A caller certifying a genuinely unbounded claim can clear it per claim.
+    **The boundary condition is an assumption of this class wherever a claim does not state one.**
+    It used to be an unconditional one — this paragraph said so, and said there was "no Dirichlet,
+    absorbing, or periodic option, and a claim carries no boundary field to state one", both of
+    which stopped being true on 2026-09-06. :func:`diffuse_1d` runs three walls and
+    :attr:`SpatialClaim.boundary` carries the one a source states, so a claim that names its wall is
+    run under it and rests on nothing Reprolith supplied for it: no ``spatial-boundary-*``
+    assumption, and a clean pass is reachable.
+
+    A claim that names none is still run under zero-flux, and that is Reprolith's choice: the
+    qualification is on by default and each such claim gets a load-bearing assumption, exactly as
+    the stochastic class does for its ensemble. Left to the caller it was never set, and the class
+    published clean passes for runs whose walls are Reprolith's own. What the choice *costs* is no
+    longer a caveat either — :func:`boundary_sensitivity` re-runs the claim's own discretization
+    under the alternatives and each claim's protocol line reports how far the judged distance moves
+    against the threshold it is judged at.
     """
     assessments = []
     qualified = []
