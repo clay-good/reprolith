@@ -643,7 +643,10 @@ def certify_stochastic(
             basis=(
                 "a finite ensemble's mean differs from the model's true mean by sampling noise of "
                 "a size the trajectory count sets, so the verdict moves with the count and the "
-                "seed; both are pinned here to make it byte-reproducible"
+                "seed; both are pinned here to make it byte-reproducible. How far it moves is "
+                "measured rather than left as a caveat: this claim's protocol line reports the "
+                "mean's standard error as a share of the reported value, against the threshold it "
+                "is judged at"
             ),
             load_bearing=True,
             alternatives=("a different seed", "a larger ensemble"),
