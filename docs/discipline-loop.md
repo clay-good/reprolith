@@ -228,6 +228,24 @@ split between what an expert can decide and what only this engine can close, the
 assumption the certificate says is under review, the gap report's matching sentence, and the
 backlog blocker's rule that only the block an entry is *currently* in counts.
 
+**Run it after a day of edits, not only when the schedule does.** A day's work on 2026-09-06 took
+the list from 102 entries to 119 — twelve guards from the collaboration surface, five from
+measuring what the engine's own limits cost — and running the checker that same afternoon caught
+something the Monday job would have reported four days late: extracting `question_fingerprint` out
+of `_item_id` had moved a line an anchor named, so the guard holding "one solver limitation asked
+by three claims is one item, not three" had silently stopped being checked at all. That is the
+failure mode this file is about, arriving by the ordinary route — a refactor, not a mistake.
+
+Two of the day's own additions needed a second attempt, both for the same reason: the mutation has
+to be the *defect worth fearing*. Replacing "the alternative that moves the judged distance most"
+with "the alphabetically first" survived, because on every reachable input the absorbing wall is
+already the worst one and `dirichlet` sorts before `periodic` — the wrong rule and the right one
+agree. Replacing it with "the alternative that moves it **least**" is the real risk, since it
+understates what an assumption costs, and that one is held. A mutation the code cannot distinguish
+measures nothing; a mutation naming the direction the number must never err in measures the guard.
+
+The whole list stands at 119, all held, no anchors stale.
+
 It fails two ways, and the second is the one worth having. A **surviving** mutation means the guard
 has no test, or the test never reaches the case that makes it load-bearing — which is how the
 manuscript check's suppression of a model-computed parameter was found passing with its branch
