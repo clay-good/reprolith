@@ -86,3 +86,18 @@ def test_the_agent_surface_answers_the_same() -> None:
     assert dispatch_tool(query, "backlog_health", {})["blocked_on"] == (
         query.backlog_health()["blocked_on"]
     )
+
+
+def test_a_refusal_to_hand_out_work_says_what_the_backlog_is_waiting_on() -> None:
+    """"no eligible work" in front of 31 entries is a dead end, and it need not be.
+
+    The agent asking for work is the one that could build the capability releasing them, and the
+    list is already computed one method away.
+    """
+    from reprolith.mcp_server import claim_work, load_repository
+
+    _query, catalog = load_repository("datasets/milestone")
+    refusal = claim_work(catalog, {"requester": "an-agent"}, at=1e9)
+    assert refusal["claimed"] is False
+    assert refusal["blocked_on"] == catalog.backlog_health(1e9)["blocked_on"]
+    assert refusal["blocked_on"][0]["entries"] == 27

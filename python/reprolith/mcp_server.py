@@ -497,6 +497,11 @@ def claim_work(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dic
             break
         unaddressable += 1
     else:
+        # A refusal that says only "no eligible work" is a dead end, and on the shipped catalog it
+        # is a dead end in front of 31 entries: 27 blocked, all of them on one and the same
+        # missing input. The agent asking for work is the one that could build the capability that
+        # releases them, and the read surface already computes exactly that list — so the refusal
+        # carries it rather than making the caller think to ask a second tool why.
         return {
             "claimed": False,
             "reason": (
@@ -511,6 +516,7 @@ def claim_work(catalog: Catalog, arguments: dict[str, Any], *, at: float) -> dic
                 )
             ),
             "skipped_without_accession": unaddressable,
+            "blocked_on": catalog.backlog_health(at)["blocked_on"],
         }
     entry.lease(
         arguments["requester"],
