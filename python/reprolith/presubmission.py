@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any
 from .enums import OverallVerdict, Verdict
 from .ingest import UNSTATED_UNIT
 from .manuscript_values import model_time_unit
-from .model import Certificate
+from .model import Assumption, Certificate
 from .oracle import ComparisonMethod, Fault, figure_band_widening
 from .render import claims_in_paper, estimation_claims, is_figure_read, unattempted_claims
 
@@ -202,6 +202,37 @@ def _figure_reading_consequence(method: str | None) -> str:
     )
 
 
+def _rollup_fix(named: list[Assumption]) -> str:
+    """What the roll-up row asks of an author, given what the rows above it are.
+
+    Three cases and they are genuinely different. Every assumption statable: say them. None
+    statable — a spatial profile under this engine's only boundary, a mean drawn from an ensemble
+    Reprolith sampled — and no wording closes the qualification, so an instruction to write
+    something is worse than no instruction: it reads as a route to a clean pass that does not
+    exist. Mixed: say which half moves.
+    """
+    if not named:
+        # Nothing above names one: this certificate carries no Assumption object, which is what
+        # the claims-dataset path produces, and then this row is the whole signal rather than a
+        # roll-up of one.
+        return "state the values these claims rest on so they need not be assumed"
+    closable = [asm for asm in named if asm.author_can_close]
+    if not closable:
+        return (
+            "nothing in your paper clears these — every value above is a limit of Reprolith's "
+            "engine rather than an omission in the paper, so the qualification stands however "
+            "completely you write it up. What is worth checking is whether those limits describe "
+            "your model; if they do not, this result is not evidence about it"
+        )
+    if len(closable) < len(named):
+        return (
+            f"state the {len(closable)} assumed value(s) above that your paper can state, so "
+            f"those need not rest on them; the other {len(named) - len(closable)} are limits of "
+            "Reprolith's engine and no wording clears them"
+        )
+    return "state the assumed values listed above explicitly, so these need not rest on them"
+
+
 def presubmission_report(cert: Certificate) -> dict[str, Any]:
     """An author-facing pre-submission report derived from a certificate.
 
@@ -354,15 +385,12 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
                 "source_location": None,
                 "issue": "these reproduced only under an assumption Reprolith supplied, not as a "
                          "clean pass",
-                "fix": (
-                    "state the assumed values listed above explicitly, so these need not rest on "
-                    "them"
-                    if named
-                    # Nothing above names one: this certificate carries no Assumption object, which
-                    # is what the claims-dataset path produces, and then this row is the whole
-                    # signal rather than a roll-up of one.
-                    else "state the values these claims rest on so they need not be assumed"
-                ),
+                # The same correction the rows above already carry, which this roll-up did not:
+                # "state the assumed values listed above" is the wrong instruction when the values
+                # above are Reprolith's own limits, and on six shipped certificates it was
+                # printed one line under a row saying nothing in the paper can clear them. What
+                # the roll-up says now depends on the assumptions it is rolling up.
+                "fix": _rollup_fix(named),
             }
         )
     # Stable, deterministic order: impact bucket first, insertion order (the certificate's claim

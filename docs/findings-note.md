@@ -4138,3 +4138,35 @@ issue and nothing reconciles a queue item with an issue's state. And `margin` is
 item and stays that way: the only numbers on a certificate that could supply it are prose a judge
 wrote for a person to read, and a number parsed back out of prose is a guess dressed as a
 measurement — on the surface where it would be least visible.
+
+
+## Giving an old field a new job, and finding two places it had never been set right
+
+The verification queue's split — what an expert can decide against what only this engine's
+development can close — reads `Assumption.author_can_close`, a field that until then had exactly
+one consumer: the author-facing fix list. Giving a field a second load-bearing job is a reason to
+go and check every place that sets it, because "right enough for one surface" is not a property
+anybody had tested for.
+
+Three front-ends draw their own sample and then judge it. Two of them say so — the stochastic
+class's `ssa-sampling-*` and the spatial class's `spatial-boundary-*`, both carrying a comment
+explaining that no wording in a paper discharges the assumption. **The population class was left
+at the default.** Its two alternatives are `a different subject count` and `a different sampling
+seed`, both Reprolith's own knobs; a paper that states its subject count and its variability model
+in full still does not discharge it, because Reprolith draws the population and drawing it again
+moves the percentiles. Left closable, the fix list answered it with "state *the percentile bands
+judged here came from a virtual population Reprolith reconstructed and sampled* explicitly so it
+need not be assumed" — the instruction-no-author-can-follow defect this flag exists for, in the
+one path the original correction missed.
+
+Fixing it surfaced the second, and the second was already live. The fix list ends with a **roll-up
+row** covering every claim that reproduced only under an assumption, and its instruction was a
+constant: "state the assumed values listed above explicitly, so these need not rest on them". On
+six shipped certificates — three spatial profiles and three stochastic networks — that sentence was
+printed one line under a row saying *nothing in the paper can clear this one*. An author reading
+the summary is being offered a route to a clean pass that does not exist.
+
+The roll-up now depends on what it is rolling up, in the three cases that are genuinely different:
+every value statable, none statable, or mixed — and mixed says which half moves. The unchanged case
+is held by its own test, because a correction that quietly removes the useful instruction is the
+other way to get this wrong.

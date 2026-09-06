@@ -1238,6 +1238,15 @@ def certify_population(
             ),
             load_bearing=True,
             alternatives=("a different subject count", "a different sampling seed"),
+            # The same shape as the stochastic class's `ssa-sampling-*` block, and it was the one
+            # of the three ensemble-drawing paths left at the default. Both alternatives above are
+            # Reprolith's own — a paper that states its subject count and its variability model in
+            # full still does not discharge this, because Reprolith draws the population and
+            # drawing it again moves the percentiles. Left closable, the author-facing fix list
+            # answered it with "state the percentile bands judged here came from a virtual
+            # population Reprolith reconstructed and sampled ... explicitly so it need not be
+            # assumed", which is the instruction-no-author-can-follow defect this flag exists for.
+            author_can_close=False,
         )
         for claim in claims
         if claim.assumption_qualified

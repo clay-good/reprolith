@@ -45,6 +45,21 @@ REPO = Path(__file__).resolve().parents[1]
 #: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
+        "a population's own ensemble is billed to the author as a value their paper could state",
+        "certify.py",
+        ("            author_can_close=False,\n        )\n        for claim in claims",
+         "        )\n        for claim in claims"),
+        ["tests/test_ensemble_assumptions.py"],
+    ),
+    (
+        "the fix list's summary row asks for values the row above it says nothing can clear",
+        "presubmission.py",
+        ('                "fix": _rollup_fix(named),',
+         '                "fix": "state the assumed values listed above explicitly, so these '
+         'need not rest on them",'),
+        ["tests/test_ensemble_assumptions.py"],
+    ),
+    (
         "a queue item id the certificate itself names is replaced by a derived hash",
         "verification.py",
         (
