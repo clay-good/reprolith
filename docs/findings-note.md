@@ -4060,3 +4060,81 @@ So the real-engine test now asserts what the floor actually guarantees, that no 
 falls below it, and the floor's rule is checked exactly and without an engine by patching the
 distance function the way its sibling patches the aggregation: a distance under the floor comes out
 at the floor, and one above it is published as measured rather than pulled down.
+
+
+## A citation four certificates carried, to a thing nothing had ever built
+
+`openspec/specs/autonomous-build-loop/spec.md` keeps a section naming which of its own
+requirements are carried by code and which are carried by the agent in prose. One entry read: the
+verification queue's shapes exist, a certificate resting on a queued item is correctly qualified,
+but *no code path opens an item*. Reading it against the shipped data made it sharper than the
+sentence: four published metformin certificates cite
+`verify:time-unit-of-the-Zake2021-deposits`, `derive_overall` withholds a clean pass from anything
+carrying such a citation, and a reader who followed one found nothing. The engine's most public
+invitation to a domain expert pointed at an empty room.
+
+`queue_from_certificates` builds the items — from the certificates, on every call, stored nowhere,
+so the queue cannot drift from what it describes and a superseded certificate stops being a
+dependency without anything having to remember it. `reprolith verification-queue`, the MCP
+`verification_queue` tool and the registry page are the three readings of the one derivation.
+
+**The design decision was not the derivation; it was the key.** The first draft keyed an item by
+the assumption's own id, and the first run of the command showed why that is wrong: the three
+certified spatial profiles each carry a boundary-condition assumption whose id names its own claim
+— `spatial-boundary-diffusion_D1-profile` and two siblings — under four fields that are
+character-for-character identical, because it is one limitation of one solver. Keyed by id, three
+items an expert answers three times; keyed by the question, one item with three dependents, which
+is both the true impact and the true amount of expert time it costs. The converse is live in the
+same corpus: `dose-salt-form` appears on two certificates with different doses in it, and those
+must not merge into one item that misstates both.
+
+### Escalating everything, then discovering most of it was not waiting on anyone
+
+The first version published one ranked list of seven and called it "awaiting expert review". On the
+committed certificates that was an overstatement of the kind the rest of this page exists to catch:
+**six of the eight load-bearing assumptions are Reprolith's own limits**, not anything a paper left
+out. The spatial solver implements one boundary condition; the stochastic class judges an ensemble
+it drew itself. No expert confirming anything closes either.
+
+`Assumption.author_can_close` already carried that distinction — it was added for the author-facing
+fix list, which had the identical problem first, six of thirty certificates carrying an instruction
+no wording in any paper could satisfy — and it carries it here. Three questions are open to a
+reviewer; four wait on this engine and say so under their own heading. The lesson is one question
+to ask of any generated to-do list before publishing it: *who can actually answer this?*
+
+### The same defect one surface over, and then in my own diff
+
+Two more fell out of asking what the existing checks say about the new capability.
+
+- The gap report appended "awaiting expert confirmation" only where a certificate happened to carry
+  a hand-written item id. The four metformin certificates have one; the salt-form assumption beside
+  them, equally queued and equally answerable, said nothing — two published surfaces disagreeing
+  about whether the same kind of value is under review. It now depends on what is true of the
+  assumption rather than on what somebody remembered to type.
+- Re-auditing the same day's diff, `queue_from_certificates` tested `load_bearing` and nothing
+  else, so an assumption carrying an explicit `verification_item` while not flagged load-bearing
+  was dropped. That is precisely the pair `derive_overall` consults: the certificate would say its
+  clean pass was withheld because a value is under review, and the list of what is under review
+  would not have it.
+
+### Twenty-seven blocked entries and one reason
+
+The same reading applied to the catalog. `backlog_health` reported depth by state, class and
+difficulty: "31 entries, 0 claimable, 27 blocked" — a dead end, with no indication anywhere that
+all 27 are blocked on one and the same missing input. That is the difference between twenty-seven
+problems and one, and it is the sentence the build-loop spec asks an agent to be able to write
+about why it chose one unit of work over the alternatives. `blocked_on` counts them, ranked by how
+many entries the capability would release, and `claim_work`'s refusal carries it too, since the
+agent being told there is no work is the one that could build what releases it. The number had been
+written by hand into `Catalog.backlog_health`'s own docstring, and had gone stale by three.
+
+### What is deliberately still not built
+
+No expert decision is recorded anywhere on disk, so every item reads as pending and the report
+says so rather than implying the queue is being worked. `VerificationQueue.decide` and
+`reverify_dependents` are live APIs waiting for a first real decision; inventing one to exercise
+them would be fabricating the very thing this capability exists to collect. Nothing files a GitHub
+issue and nothing reconciles a queue item with an issue's state. And `margin` is `None` on every
+item and stays that way: the only numbers on a certificate that could supply it are prose a judge
+wrote for a person to read, and a number parsed back out of prose is a guess dressed as a
+measurement — on the surface where it would be least visible.

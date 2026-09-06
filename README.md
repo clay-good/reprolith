@@ -263,7 +263,7 @@ same answers as the human-facing repository.
 
 The server is dependency-free (JSON-RPC over stdio, no third-party SDK) and exposes read-only
 tools — browse the catalog, get a paper's status, fetch a certificate, read its gaps, inspect a
-dossier or bundle — each delegating to the same query surface the repository uses, so a verdict
+dossier or bundle, see what the published set is still resting on — each delegating to the same query surface the repository uses, so a verdict
 always travels with its scope flag and qualifications. A separate set of effectful tools closes
 an agent's work loop: claim the next entry, then record the result against
 that certificate's digest so the finished unit leaves the queue. The outcome state is read from
