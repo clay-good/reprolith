@@ -132,6 +132,17 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "recertification_due",
+        "description": (
+            "Which standing certificates owe a re-run, and why. Two causes: an expert corrected "
+            "a value they rest on (a confirmation owes nothing — the numbers do not move), and "
+            "the judging code has moved since they were issued, so their numbers are not the ones "
+            "this checkout produces. Dependents of a rejected estimate are reported as blocked "
+            "rather than due: a rejection supplies no replacement value. It re-runs nothing."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
         "name": "loop_status",
         "description": (
             "Whether there is gated, publishable work — and if not, exactly why not. Assembles "
@@ -914,6 +925,8 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         return query.loop_status()
     if name == "verification_issue":
         return query.verification_issue(arguments["item_id"])
+    if name == "recertification_due":
+        return query.recertification_due()
     if name == "certificates_for":
         return query.certificates_for(**_identifier_kwargs(arguments))
     if name == "backlog_health":

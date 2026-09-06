@@ -380,6 +380,7 @@ from .verification import (
     question_fingerprint,
     queue_from_certificates,
     queue_report,
+    recertification_due,
     reconcile_issues,
     reverify_dependents,
 )
@@ -645,6 +646,7 @@ __all__ = [
     "question_fingerprint",
     "queue_from_certificates",
     "queue_report",
+    "recertification_due",
     "reconcile_issues",
     "reverify_dependents",
     "revise",

@@ -302,6 +302,7 @@ reprolith loop-status                # is there publishable work — and if not,
 reprolith verification-queue         # what every standing certificate rests on, awaiting review
 reprolith verification-issue <id>    # one of those as the filled GitHub issue to open
 reprolith issue-reconcile <issues>   # where the filed issues and that queue disagree
+reprolith recertification-due        # which standing certificates owe a re-run, and why
 reprolith self-validation            # the blind track record, per class and overall
 reprolith corroboration              # what a second engine said — and where none was asked
 reprolith select-claims <accession> \ # which claims to reproduce on a budget you can afford

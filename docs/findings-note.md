@@ -4780,3 +4780,41 @@ One defect the work found in itself: the first version matched the first 64-hex 
 and a certificate digest is the same shape. An issue quoting one above the question — a maintainer's
 edit, a comment — would have been matched on the digest and reported as asking a question nothing
 rests on. It takes every token now and prefers the one that is a live question.
+
+
+## What a repository owes a re-run, asked rather than remembered
+
+Two facts about the published set were true, checkable, and reachable only by somebody who already
+knew to look for them.
+
+**An expert's correction changes a value that standing certificates rest on.** The
+`verification-queue` spec asks that a correction "triggers re-verification of every dependent
+entry"; `reverify_dependents` performs the re-issue and a person has to call it. Nothing was
+missing there — re-running a class means its models, its scripts and its solver, and a decision
+file carries none of them. What was missing is the question that comes before the call: *which*
+standing certificates the correction reaches.
+
+**The judging code moves.** A certificate names the revision of the code that produced its numbers,
+and one naming an older revision states a number the current code would not produce.
+`tests/test_pins.py` holds the committed corpus to exactly this — which is the corpus, not the
+mechanism. A reader running against their own `--data-dir` had no way to ask the same question.
+
+`reprolith recertification-due` (MCP: `recertification_due`) answers both, and re-runs nothing.
+Three distinctions are what make it a report rather than a list:
+
+- **A confirmation owes nothing.** The value is still one Reprolith chose, the numbers do not move,
+  and the qualification stands either way — so a confirmation is counted and not listed. Listing it
+  would present an answer as a re-certification, which is the overstatement this whole surface
+  exists to avoid.
+- **A rejection owes a re-run it cannot have.** It supplies no replacement value, so its dependents
+  are reported as blocked rather than due; asking for a re-run with nothing to re-run against is
+  worse than saying so.
+- **A class the report cannot name is unchecked, not passed.** The read surface spells the
+  constraint-based class `constraint-based` and the judge map spells it `constraint_based`. A label
+  falling through there would take a whole class out of the freshness check while the report still
+  read as complete — the recurring shape in these notes, a check whose population is defined by
+  what it is checking for. The two vocabularies are now held against each other by a test rather
+  than by a spelling.
+
+On the shipped repository the answer is that nothing owes a re-run, which is the same fact the pin
+test asserts — now available to a reader instead of only to CI.

@@ -37,6 +37,7 @@ _PAIRS = {
     "gaps": ("gaps", {"digest": "{digest}"}),
     "presubmission": ("presubmission", {"digest": "{digest}"}),
     "verification-queue": ("verification_queue", {}),
+    "recertification-due": ("recertification_due", {}),
     "verification-issue": ("verification_issue", {"item_id": "{item_id}"}),
     "dossier": ("dossier", {"accession": "ACC1"}),
     "bundle": ("bundle", {"accession": "ACC1"}),

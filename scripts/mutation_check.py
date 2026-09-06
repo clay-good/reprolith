@@ -1088,6 +1088,33 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('            if state != "OPEN":', "            if False:"),
         ["tests/test_issue_reconciliation.py"],
     ),
+    # --- what a repository owes a re-run, 2026-09-06 -------------------------------------------
+    (
+        "a confirmation is presented as a re-certification the repository owes",
+        "verification.py",
+        ('            if decision["kind"] == "confirm":', "            if False:"),
+        ["tests/test_recertification_due.py"],
+    ),
+    (
+        "the dependents of a rejected estimate are listed as re-runnable",
+        "verification.py",
+        ('                if decision["kind"] == "correct":', "                if True:"),
+        ["tests/test_recertification_due.py"],
+    ),
+    (
+        "a certificate naming an older revision of the judging code reads as fresh",
+        "verification.py",
+        ('        if algorithm is None or f"rev {revision}" not in algorithm:',
+         "        if False:"),
+        ["tests/test_recertification_due.py"],
+    ),
+    (
+        "a class the freshness check cannot name passes it instead of being unchecked",
+        "verification.py",
+        ("        if revision is None:\n            unknown_class.append(",
+         "        if revision is None:\n            [].append("),
+        ["tests/test_recertification_due.py"],
+    ),
 ]
 
 

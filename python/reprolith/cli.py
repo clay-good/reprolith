@@ -507,6 +507,44 @@ def _cmd_verification_issue(query: ReprolithQuery, args: argparse.Namespace) -> 
     return 0
 
 
+def _cmd_recertification_due(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """What this repository owes a re-run, and why — without re-running anything.
+
+    The step after an expert answers, which the `autonomous-build-loop` spec has listed as carried
+    by an agent: `reverify_dependents` re-issues the dependents of a corrected value and somebody
+    has to know which they are. Its other half is freshness — a certificate naming an older
+    revision of the judging code states a number the current code would not produce.
+    """
+    report = query.recertification_due()
+    if args.json:
+        _print_json(report)
+        return 0
+    print(report["note"])
+    for entry in report["due"]:
+        print()
+        paper = entry["paper"]["title"] or "(untitled)"
+        print(f"{entry['digest'][:12]}  {paper}" + (f"  [{entry['model_class']}]" if entry["model_class"] else ""))
+        for reason in entry["reasons"]:
+            if reason["kind"] == "correction":
+                print(
+                    f"  - {reason['expert']} corrected this value on {reason['decided_on']}: "
+                    f"{reason['corrected_value']}"
+                )
+                print(f"    {reason['question']}")
+            else:
+                print(f"  - {reason['why']}")
+                print(f"    pinned: {reason['pinned']}  current: rev {reason['current_revision']}")
+    for entry in report["blocked"]:
+        print()
+        print(f"{entry['digest'][:12]}  {entry['paper']['title'] or '(untitled)'}")
+        print(f"  - {entry['why']}")
+    for entry in report["unknown_class"]:
+        print()
+        print(f"{entry['digest'][:12]}  {entry['paper']['title'] or '(untitled)'}")
+        print(f"  - {entry['why']}")
+    return 0
+
+
 def _cmd_issue_reconcile(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Compare the filed GitHub issues against the derived queue, and change neither.
 
@@ -1706,6 +1744,7 @@ def build_parser() -> argparse.ArgumentParser:
             "reading this repository: catalog, backlog, loop-status, self-validation, "
             "corroboration, status, "
             "certificate, verdict, gaps, presubmission, verification-queue, verification-issue, "
+            "recertification-due, "
             "certificates-for, "
             "dossier, bundle, select-claims\n"
             "checking your own files: issue-reconcile, archive-check, claims-template, "
@@ -1821,6 +1860,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("item_id", help="a queue item id from `reprolith verification-queue`")
     add_json(p)
     p.set_defaults(func=_cmd_verification_issue)
+
+    p = sub.add_parser(
+        "recertification-due",
+        help="which standing certificates owe a re-run, and why (it re-runs nothing)",
+    )
+    add_json(p)
+    p.set_defaults(func=_cmd_recertification_due)
 
     p = sub.add_parser(
         "issue-reconcile",

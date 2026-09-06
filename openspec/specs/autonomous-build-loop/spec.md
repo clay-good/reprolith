@@ -61,8 +61,22 @@ author-named id whose wording later changed is reported as stale and its item re
 This repository records no decision yet, and the report says so **from the file** rather than from
 a constant that could outlive it.
 
-What is still agent-carried is the step after: a merged correction triggers no re-certification on
-its own. `reverify_dependents` implements it and a person has to call it.
+The step after became half code-carried on 2026-09-06 as well. A merged correction still triggers
+no re-certification on its own — `reverify_dependents` implements the re-issue and a person has to
+call it, because re-running a class means its models, its scripts and its solver, none of which a
+decision file carries. What *was* missing beside it is the question a person would have to answer
+before calling it at all: which standing certificates the correction reaches.
+`reprolith recertification-due` (MCP: `recertification_due`) answers it, and answers the other
+half of freshness with it — a certificate naming an older revision of the judging code states a
+number the current code would not produce, which `tests/test_pins.py` held the *committed* corpus
+to and no surface could be asked about any other. Three distinctions are what make it a report
+rather than a list: a **confirmation** owes nothing (the value is still one Reprolith chose, the
+numbers do not move, and the qualification stands either way), a **rejection** owes a re-run it
+cannot have (it supplies no replacement value, so its dependents are blocked rather than due), and
+a certificate whose class the surface cannot name is reported as unchecked rather than passed —
+the read surface spells the constraint-based class with a hyphen and the pin map with an
+underscore, and a label falling through there would take a whole class out of the check while the
+report still read as complete.
 
 *Repeated failure is parked* became code-carried on 2026-09-06. Before it there was no attempt
 counter anywhere, and the gap was worse than an absent number: `release_lease` records nothing and

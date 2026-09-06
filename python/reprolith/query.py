@@ -34,7 +34,12 @@ from .presubmission import presubmission_report
 from .render import claim_counts, gap_items, plural
 from .selection import claim_selection_report
 from .supersession import CertificateLedger
-from .verification import issue_for_item, queue_report, reconcile_issues
+from .verification import (
+    issue_for_item,
+    queue_report,
+    recertification_due,
+    reconcile_issues,
+)
 
 
 def _label_basis(report: dict[str, Any]) -> str:
@@ -198,6 +203,20 @@ def corroboration_summary(records: dict[str, dict[str, Any]]) -> dict[str, Any]:
         },
     }
 
+
+
+#: The :data:`reprolith.pins.JUDGE_MODULES` key for each model-class label the read surface uses.
+#: The two vocabularies differ by one character — ``constraint-based`` here, ``constraint_based``
+#: there — and a label that fell through would take a whole class out of the freshness check while
+#: the report still read as complete, so this is written out rather than derived by munging.
+_JUDGE_KEYS = {
+    "ode-pkpd": "ode-pkpd",
+    "kinetic": "kinetic",
+    "constraint-based": "constraint_based",
+    "logical": "logical",
+    "spatial": "spatial",
+    "stochastic": "stochastic",
+}
 
 
 def corroboration_held(entry: Mapping[str, Any]) -> str:
@@ -623,6 +642,40 @@ class ReprolithQuery:
         # done.
         issue["existing_decisions"] = len(item.get("decisions", []))
         return issue
+
+    def recertification_due(self) -> dict[str, Any]:
+        """Which standing certificates owe a re-run, and why.
+
+        The step after a decision, which the ``autonomous-build-loop`` spec has listed as carried
+        by an agent since the decision record landed: an expert's correction changes a value that
+        published certificates rest on, and nothing said which they were. The other half is
+        freshness — a certificate naming an older revision of the judging code states a number the
+        current code would not produce, which ``tests/test_pins.py`` holds the *committed* corpus
+        to and no surface could be asked about any other.
+
+        It re-runs nothing. Re-issuing is :func:`reprolith.reverify_dependents` with a real
+        re-certification behind it, and a report that quietly re-ran a solver would be publishing
+        rather than answering.
+        """
+        from .pins import class_revisions
+
+        pairs = [
+            (digest, cert)
+            for digest, cert in self._ledger.items()
+            if self.superseded_by(digest) is None
+        ]
+        revisions = class_revisions()
+        current = {
+            label: revisions[key]
+            for label, key in _JUDGE_KEYS.items()
+            if key in revisions
+        }
+        return recertification_due(
+            self.verification_queue(),
+            pairs,
+            model_classes=self._model_classes,
+            current_revisions=current,
+        )
 
     def issue_reconciliation(self, issues: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         """Where the filed GitHub issues and this repository's queue disagree.

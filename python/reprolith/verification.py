@@ -938,6 +938,156 @@ def reverify_dependents(
     return replacements
 
 
+def recertification_due(
+    report: Mapping[str, Any],
+    certificates: Sequence[tuple[str, Certificate]],
+    *,
+    model_classes: Mapping[str, str],
+    current_revisions: Mapping[str, str],
+) -> dict[str, Any]:
+    """Which standing certificates owe a re-run, and why (spec: verification-queue — freshness).
+
+    Two causes, and each was reachable only by a person who already knew to look.
+
+    *An expert corrected a value.* The ``verification-queue`` spec asks that "a correction triggers
+    re-verification of every dependent entry"; :func:`reverify_dependents` does it and somebody has
+    to call it, which the ``autonomous-build-loop`` spec has listed as agent-carried since the
+    decision record landed. A **confirmation** owes nothing — the numbers do not move, the value is
+    still one Reprolith chose, and re-issuing would publish the same certificate under a new digest
+    — so it is counted and not listed as due. A **rejection** owes a re-run it cannot have: a
+    rejection supplies no replacement, so its dependents are reported as blocked rather than due.
+
+    *The judge moved.* A certificate names the revision of the code that produced its numbers
+    (:mod:`reprolith.pins`), and one naming an older revision states a number the current code
+    would not produce. ``tests/test_pins.py`` holds the committed corpus to this, which is the
+    corpus and not the mechanism: a reader with their own ``--data-dir`` had no way to ask.
+
+    A decision recorded against an **engine-limit** item is not read here at all, for the reason
+    every other surface gives: what that value waits on is this engine, not a person, so an
+    expert's "correction" of it changes nothing to re-run against. Those items keep their own
+    heading in the queue and owe no re-certification.
+
+    ``model_classes`` maps a digest to its class label and ``current_revisions`` maps that label to
+    the revision this checkout publishes under. A certificate whose class is not in either mapping
+    is reported under ``unknown_class`` rather than passing quietly: a class that drops out of a
+    freshness check is the check's own failure mode, and the two mappings spell the
+    constraint-based class differently by one character, which is exactly how that happens.
+    """
+    papers = {digest: {"title": cert.paper.title, "doi": cert.paper.doi} for digest, cert in certificates}
+    reasons: dict[str, list[dict[str, Any]]] = {}
+    blocked: list[dict[str, Any]] = []
+    confirmed = 0
+    for item in report.get("decided", ()):
+        for decision in item.get("decisions", ()):
+            if decision["kind"] == "confirm":
+                confirmed += 1
+                continue
+            entry = {
+                "kind": "correction" if decision["kind"] == "correct" else "rejected-estimate",
+                "item_id": item["id"],
+                "question": item["question"],
+                # Carried onto the reason because a disputed item can put one certificate in both
+                # lists at once — a correction says re-run it, a rejection says it cannot be — and
+                # a reader seeing it twice with nothing explaining why would read a contradiction
+                # where the record is a disagreement this project keeps rather than resolves.
+                "disputed": bool(item.get("disputed")),
+                "corrected_value": decision.get("corrected_value"),
+                "expert": decision["expert"],
+                "decided_on": decision["decided_on"],
+                "source": decision["source"],
+            }
+            for digest in item["depends_on"]:
+                if digest not in papers:
+                    continue
+                if decision["kind"] == "correct":
+                    reasons.setdefault(digest, []).append(entry)
+                else:
+                    blocked.append({
+                        "digest": digest,
+                        "paper": papers[digest],
+                        "reason": entry,
+                        "why": (
+                            "a rejection supplies no replacement value, so this certificate "
+                            "cannot be re-issued until the value beneath it is corrected"
+                        ),
+                    })
+    unknown_class: list[dict[str, Any]] = []
+    for digest, cert in certificates:
+        label = model_classes.get(digest)
+        revision = current_revisions.get(label) if label else None
+        if revision is None:
+            unknown_class.append({
+                "digest": digest,
+                "paper": papers[digest],
+                "model_class": label,
+                "why": (
+                    "no judge revision is known for this certificate's class, so whether the code "
+                    "that produced its numbers has moved cannot be answered here"
+                ),
+            })
+            continue
+        algorithm = cert.engine_pin.algorithm
+        if algorithm is None or f"rev {revision}" not in algorithm:
+            reasons.setdefault(digest, []).append({
+                "kind": "engine-revision",
+                "pinned": algorithm,
+                "current_revision": revision,
+                "why": (
+                    "this certificate names a revision of the judging code other than the one "
+                    "this checkout would publish under, so its numbers are not the ones the "
+                    "current code produces"
+                ),
+            })
+    # Most reasons first: a certificate a correction *and* a moved judge both reach is the one to
+    # re-run first, and ordering by digest would put it wherever its hash fell.
+    ordered = sorted(reasons.items(), key=lambda pair: (-len(pair[1]), pair[0]))
+    due: list[dict[str, Any]] = [
+        {
+            "digest": digest,
+            "paper": papers[digest],
+            "model_class": model_classes.get(digest),
+            "reasons": entries,
+        }
+        for digest, entries in ordered
+    ]
+    return {
+        "due": due,
+        "due_count": len(due),
+        "blocked": blocked,
+        "unknown_class": unknown_class,
+        "confirmations": confirmed,
+        "note": _recertification_note(due, blocked, unknown_class, confirmed),
+    }
+
+
+def _recertification_note(
+    due: Sequence[Mapping[str, Any]],
+    blocked: Sequence[Mapping[str, Any]],
+    unknown_class: Sequence[Mapping[str, Any]],
+    confirmations: int,
+) -> str:
+    """What this repository owes, derived from the answer rather than asserted beside it."""
+    parts = [
+        f"{len(due)} standing certificate(s) owe a re-run" if due
+        else "no standing certificate owes a re-run"
+    ]
+    if confirmations:
+        parts.append(
+            f"{confirmations} confirmation(s) owe none: the value is still one Reprolith chose, "
+            "the numbers do not move, and the qualification stands either way"
+        )
+    if blocked:
+        parts.append(
+            f"{len(blocked)} cannot be re-issued at all — a rejection supplies no replacement value"
+        )
+    if unknown_class:
+        parts.append(
+            f"{len(unknown_class)} could not be checked for a moved judge, their class being "
+            "unknown here"
+        )
+    return "; ".join(parts)
+
+
 def certificates_needing_review(ledger: CertificateLedger, current_pin: EnginePin) -> list[Certificate]:
     """Certificates pinned to a different engine than ``current_pin`` — flagged for re-review.
 
@@ -959,6 +1109,7 @@ __all__ = [
     "question_fingerprint",
     "queue_from_certificates",
     "queue_report",
+    "recertification_due",
     "reconcile_issues",
     "reverify_dependents",
 ]
