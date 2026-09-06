@@ -169,3 +169,41 @@ def test_a_bundle_distinguishes_no_mismatches_from_never_having_looked() -> None
 
     agreed = replace(unchecked, mismatches=())
     assert agreed.to_dict()["mismatches"] == []
+
+
+def test_a_gap_that_is_this_engines_limit_can_say_so() -> None:
+    """The documented gap-closing route could not set the flag its own classes set directly.
+
+    Two surfaces read it: the author-facing fix list, which otherwise prints an instruction
+    nobody can follow, and the verification queue, which otherwise ranks the engine's own backlog
+    as questions waiting on an expert.
+    """
+    from reprolith import Gap, GapKind, close_gap, queue_report
+    from reprolith.determinism import certificate_digest
+
+    gap = Gap(
+        element="domain/boundary condition",
+        kind=GapKind.BOUNDARY,
+        detail="the paper does not state the boundary conditions",
+        load_bearing=True,
+    )
+    assert close_gap(gap, chosen="zero-flux", basis="the only one implemented").author_can_close
+    ours = close_gap(
+        gap, chosen="zero-flux", basis="the only one implemented", author_can_close=False
+    )
+    assert ours.author_can_close is False
+
+    cert = build_certificate(
+        paper=PaperIdentity(title="t"),
+        engine_pin=EnginePin(engine="e", version="1"),
+        assessments=[
+            ClaimAssessment(
+                claim_id="c", quantity="profile", verdict=Verdict.REPRODUCED,
+                source_location="Fig 1", assumption_qualified=True,
+            )
+        ],
+        assumptions=[ours],
+    )
+    report = queue_report([(certificate_digest(cert), cert)])
+    assert report["pending"] == []
+    assert report["engine_limits_count"] == 1

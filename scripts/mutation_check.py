@@ -45,6 +45,12 @@ REPO = Path(__file__).resolve().parents[1]
 #: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
+        "the documented gap-closing route cannot say a gap is this engine's limit",
+        "reconstruction.py",
+        ("        author_can_close=author_can_close,\n    )", "    )"),
+        ["tests/test_reconstruction.py"],
+    ),
+    (
         "a population's own ensemble is billed to the author as a value their paper could state",
         "certify.py",
         ("            author_can_close=False,\n        )\n        for claim in claims",

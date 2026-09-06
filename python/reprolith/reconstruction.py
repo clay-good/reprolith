@@ -44,6 +44,7 @@ def close_gap(
     basis: str,
     alternatives: tuple[str, ...] = (),
     assumption_id: str | None = None,
+    author_can_close: bool = True,
 ) -> Assumption:
     """Close a dossier gap as an assumption attributed to Reprolith (tasks 3.2, 3.3).
 
@@ -51,6 +52,17 @@ def close_gap(
     are reconstruction judgments. What is enforced here is the honesty: the result is always
     attributed to Reprolith (never the paper), and it inherits the gap's load-bearing flag so
     a verdict that rests on it cannot later be reported as an unqualified reproduction.
+
+    ``author_can_close`` is the caller's judgment too, and it is the one this function could not
+    express. Most gaps are the paper's omission and stating the value discharges them, which is
+    the default. Some are *this engine's* limits — the spatial solver implements one boundary
+    condition, the stochastic class judges an ensemble it drew — and no wording in any paper
+    clears those. Two surfaces now read the flag: the author-facing fix list, which otherwise
+    prints an instruction nobody can follow, and `reprolith verification-queue`, which otherwise
+    ranks the engine's own backlog as questions waiting on an expert. Both of the class front-ends
+    that produce such an assumption build it directly and set the flag; a caller taking this
+    documented route could not, and would have hit the same defect. Passed through rather than
+    derived, because nothing in a ``Gap`` says which kind it is.
     """
     return Assumption(
         id=assumption_id or f"assume:{gap.element}",
@@ -60,6 +72,7 @@ def close_gap(
         load_bearing=gap.load_bearing,
         alternatives=tuple(alternatives),
         attributed_to="reprolith",
+        author_can_close=author_can_close,
     )
 
 

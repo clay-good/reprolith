@@ -4186,3 +4186,18 @@ which is the line an author is meant to act on. The description after a colon re
 either way, and it is how the sibling gap row already words the same instruction, so that is what
 it says now. Not a wrong instruction like the two above it — a correct one nobody can parse, which
 on a list headed *FIX BEFORE YOU SUBMIT* costs about the same.
+
+
+## The route the library documents, and the route its own classes took
+
+Two of the class front-ends build an engine-limit assumption directly and set `author_can_close`
+themselves. The public, documented way to turn a dossier gap into an assumption —
+`reconstruction.close_gap`, which exists precisely so a reconstruction does not hand-roll one —
+could not set it at all. A consumer following the documented route would produce an assumption
+with the flag at its default and hit the same two defects fixed above: an author-facing instruction
+nobody can follow, and a place in the verification queue's expert half that belongs in the engine's.
+
+The spatial dossier makes exactly such a gap (`GapKind.BOUNDARY`), and the spatial certify path
+goes around `close_gap` to build the assumption. That the library's own class avoided its own
+documented route is the whole finding. The parameter is passed through rather than derived, because
+nothing in a `Gap` says which kind of gap it is.
