@@ -392,11 +392,21 @@ class CatalogEntry:
                 "not recorded"
             )
         else:
-            top, count = said.most_common(1)[0]
+            # Every distinct reason, with how many gave it. Reporting only the most common one
+            # read as unanimity whenever it was not: three claimants naming one wall and a fourth
+            # naming another printed the first and dropped the second, so the one claimant who
+            # found something different was the one the summary hid.
+            listed = "; ".join(
+                f"{reason} ({count})" if count > 1 else reason
+                for reason, count in sorted(said.items(), key=lambda kv: (-kv[1], kv[0]))
+            )
             reported = (
-                f"{count} of them gave the same reason: {top}"
-                if count > 1
-                else "Reasons given: " + "; ".join(sorted(said))
+                # One reason covering everyone who spoke is the actionable case and says so
+                # without repeating the count it just gave.
+                f"All {sum(said.values())} who spoke gave the same reason: "
+                + next(iter(said))
+                if len(said) == 1 and sum(said.values()) > 1
+                else f"Reasons given: {listed}"
             )
             if silent:
                 reported += f" ({silent} ended by lease expiry, saying nothing)"

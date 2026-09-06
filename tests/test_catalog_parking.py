@@ -272,10 +272,10 @@ def test_three_claimants_reporting_one_wall_is_reported_as_one_wall() -> None:
     entry = catalog.find(Identifiers(title="", accession="A1"))
     for i in range(PARK_AFTER_ATTEMPTS):
         _claim_and_release(
-            catalog, f"agent-{i}", at=i * 100.0, reason="the deposited model ships no rate laws"
+            catalog, f"agent-{i}", at=i * 10000.0, reason="the deposited model ships no rate laws"
         )
     diagnosis = entry.parking_diagnosis()
-    assert f"{PARK_AFTER_ATTEMPTS} of them gave the same reason" in diagnosis
+    assert f"All {PARK_AFTER_ATTEMPTS} who spoke gave the same reason" in diagnosis
     assert "ships no rate laws" in diagnosis
 
 
@@ -283,10 +283,35 @@ def test_different_reasons_are_all_reported() -> None:
     catalog = _catalog("A1")
     entry = catalog.find(Identifiers(title="", accession="A1"))
     for i in range(PARK_AFTER_ATTEMPTS):
-        _claim_and_release(catalog, f"agent-{i}", at=i * 100.0, reason=f"wall {i}")
+        _claim_and_release(catalog, f"agent-{i}", at=i * 10000.0, reason=f"wall {i}")
     diagnosis = entry.parking_diagnosis()
     for i in range(PARK_AFTER_ATTEMPTS):
         assert f"wall {i}" in diagnosis
+
+
+def test_the_one_claimant_who_found_something_different_is_not_hidden() -> None:
+    """Caught re-auditing the diff that added the reasons. Reporting only the most common one read
+    as unanimity whenever it was not: three claimants naming one wall and a fourth naming another
+    printed the first and dropped the second, so the claimant who found something *different* —
+    the one worth reading — was exactly the one the summary hid.
+    """
+    catalog = _catalog("A1")
+    entry = catalog.find(Identifiers(title="", accession="A1"))
+    for i in range(PARK_AFTER_ATTEMPTS):
+        _claim_and_release(catalog, f"agent-{i}", at=i * 10000.0, reason="no runnable model")
+    assert entry.is_parked()
+    # Deliberately taken after the park, which is the only way a fourth claim happens.
+    claim_work(catalog, {"requester": "agent-x", "include_parked": True}, at=90000.0)
+    from reprolith.mcp_server import release_work
+
+    release_work(
+        catalog,
+        {"accession": "A1", "requester": "agent-x", "reason": "the SED-ML names a missing output"},
+    )
+    diagnosis = entry.parking_diagnosis()
+    assert "no runnable model" in diagnosis
+    assert "the SED-ML names a missing output" in diagnosis
+    assert f"no runnable model ({PARK_AFTER_ATTEMPTS})" in diagnosis, "the shared wall keeps its count"
 
 
 def test_silence_is_reported_as_silence_not_as_an_absent_problem() -> None:
@@ -305,8 +330,8 @@ def test_a_mix_says_how_many_said_nothing() -> None:
     catalog = _catalog("A1")
     entry = catalog.find(Identifiers(title="", accession="A1"))
     _claim_and_release(catalog, "agent-0", at=0.0, reason="no runnable model")
-    _claim_and_abandon(catalog, "agent-1", at=100.0)
-    _claim_and_abandon(catalog, "agent-2", at=200.0)
+    _claim_and_abandon(catalog, "agent-1", at=10000.0)
+    _claim_and_abandon(catalog, "agent-2", at=20000.0)
     diagnosis = entry.parking_diagnosis()
     assert "no runnable model" in diagnosis
     assert "2 ended by lease expiry, saying nothing" in diagnosis

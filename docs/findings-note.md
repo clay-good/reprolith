@@ -4413,3 +4413,11 @@ for the same reason.
 
 Two halves of one feature disagreeing, found by reading the diff again rather than by any check —
 which is the fourth time this session's methods list has been right about where to look.
+
+The same pass found a second one, in the parking diagnosis added an hour earlier. It reported the
+*most common* reason claimants gave and nothing else, which reads as unanimity whenever it is not:
+three claimants naming one wall and a fourth naming another printed the first and dropped the
+second. The claimant who found something **different** is the one worth reading, and was exactly
+the one the summary hid. Every distinct reason is listed now, with its count, still leading with
+the shared one because that is the actionable case. This is the "floor that cannot see what it
+never counted" shape, one more time.
