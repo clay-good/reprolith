@@ -335,7 +335,16 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
                 "fix": (
                     (
                         asm.closed_by
-                        or f"state {asm.description} explicitly so it need not be assumed"
+                        # Not `f"state {asm.description} explicitly"`. That template reads well
+                        # only when the description happens to be a noun phrase naming the value,
+                        # and half of them are clauses — the shipped salt-form assumption came out
+                        # as "state the stated oral doses are metformin HCl; the model's dose input
+                        # is free base explicitly so it need not be assumed", which is not an
+                        # English sentence and is the fix line an author is meant to act on. The
+                        # description after a colon reads correctly either way, and it is how the
+                        # sibling gap row already words the same instruction.
+                        or "state this in your paper or your model file, so a reproducer need "
+                           f"not assume it: {asm.description}"
                     )
                     if asm.author_can_close
                     else (

@@ -744,7 +744,7 @@ def test_an_assumption_the_author_closes_by_correcting_says_so() -> None:
         )
 
     omission = presubmission_report(built())["fix_list"][0]["fix"]
-    assert omission.startswith("state ") and "need not be assumed" in omission
+    assert omission.startswith("state this in your paper") and "need not assume it" in omission
 
     correction = built(closed_by="correct the model's `time` unitDefinition")
     assert presubmission_report(correction)["fix_list"][0]["fix"] == (

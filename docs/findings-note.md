@@ -4170,3 +4170,19 @@ The roll-up now depends on what it is rolling up, in the three cases that are ge
 every value statable, none statable, or mixed — and mixed says which half moves. The unchanged case
 is held by its own test, because a correction that quietly removes the useful instruction is the
 other way to get this wrong.
+
+
+## A fix line that is not an English sentence
+
+Reading the same author-facing list again, one row down. An assumption the author *can* close is
+answered by interpolating its description into a sentence: `state {description} explicitly so it
+need not be assumed`. That reads well when the description is a noun phrase naming a value, and
+about half of them are clauses. The shipped salt-form assumption came out as
+
+> state the stated oral doses are metformin HCl; the model's dose input is free base explicitly so
+> it need not be assumed
+
+which is the line an author is meant to act on. The description after a colon reads correctly
+either way, and it is how the sibling gap row already words the same instruction, so that is what
+it says now. Not a wrong instruction like the two above it — a correct one nobody can parse, which
+on a list headed *FIX BEFORE YOU SUBMIT* costs about the same.

@@ -4,9 +4,8 @@
 instruction no wording in any paper could satisfy. Two of the three paths that draw their own
 sample were corrected then — the stochastic class's ensemble and the spatial class's boundary —
 and the third, the population class, was left at the default. Its author-facing fix read "state the
-percentile bands judged here came from a virtual population Reprolith reconstructed and sampled …
-explicitly so it need not be assumed": the exact defect the flag was added for, addressed to an
-author who cannot act on it.
+percentile bands judged here came from a virtual population Reprolith reconstructed and sampled":
+the exact defect the flag was added for, addressed to an author who cannot act on it.
 
 The flag also decides which half of `reprolith verification-queue` an item lands in — what an
 expert can settle, or what only this engine's development can close — so a path that gets it wrong
@@ -79,7 +78,6 @@ def test_its_author_facing_fix_does_not_ask_for_something_no_paper_can_say() -> 
     fixes = [a["fix"] for a in report["fix_list"] if a["kind"] == "assumption"]
     assert len(fixes) == 2, report["fix_list"]
     assert not any("listed above explicitly" in fix for fix in fixes)
-    assert not any("explicitly so it need not be assumed" in fix for fix in fixes)
     assert any("nothing in the paper can clear this one" in fix for fix in fixes)
     assert any("nothing in your paper clears these" in fix for fix in fixes)
 
@@ -128,3 +126,28 @@ def test_every_front_end_that_draws_its_own_sample_says_so(front_end: str) -> No
     import reprolith
 
     assert hasattr(reprolith, front_end)
+
+
+def test_a_statable_assumption_reads_as_an_english_sentence() -> None:
+    """The instruction used to interpolate the description mid-sentence, which reads correctly
+    only when the description is a noun phrase. Half of them are clauses, and the shipped
+    salt-form one came out as "state the stated oral doses are metformin HCl; the model's dose
+    input is free base explicitly so it need not be assumed"."""
+    from dataclasses import replace
+
+    cert = _population_certificate()
+    clause = replace(
+        cert.assumptions[0],
+        description="the stated oral doses are metformin HCl; the model's dose input is free base",
+        author_can_close=True,
+    )
+    fixes = [
+        a["fix"]
+        for a in presubmission_report(replace(cert, assumptions=(clause,)))["fix_list"]
+        if a["kind"] == "assumption"
+    ]
+    named = next(f for f in fixes if "metformin HCl" in f)
+    assert named == (
+        "state this in your paper or your model file, so a reproducer need not assume it: "
+        "the stated oral doses are metformin HCl; the model's dose input is free base"
+    )
