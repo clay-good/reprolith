@@ -45,6 +45,56 @@ REPO = Path(__file__).resolve().parents[1]
 #: worth.
 MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
+        "a queue item id the certificate itself names is replaced by a derived hash",
+        "verification.py",
+        (
+            "    if assumption.verification_item:\n        return assumption.verification_item",
+            "    if False:\n        return assumption.verification_item",
+        ),
+        ["tests/test_verification_escalation.py"],
+    ),
+    (
+        "one solver limitation asked by three claims becomes three items to answer three times",
+        "verification.py",
+        ('    return f"verify:{body[:12]}"', '    return f"verify:{assumption.id}@{body[:12]}"'),
+        ["tests/test_verification_escalation.py"],
+    ),
+    (
+        "this engine's own limits are ranked as questions waiting on an expert",
+        "verification.py",
+        ("            if assumption.author_can_close:", "            if True:"),
+        ["tests/test_verification_escalation.py"],
+    ),
+    (
+        "an assumption the certificate says is under review is left out of the queue",
+        "verification.py",
+        (
+            "            if not assumption.load_bearing and not assumption.verification_item:",
+            "            if not assumption.load_bearing:",
+        ),
+        ["tests/test_verification_escalation.py"],
+    ),
+    (
+        "the gap report says a value is under review only where somebody wrote an id by hand",
+        "render.py",
+        (
+            "        awaits = asm.verification_item is not None or "
+            "(asm.load_bearing and asm.author_can_close)",
+            "        awaits = asm.verification_item is not None",
+        ),
+        ["tests/test_verification_escalation.py"],
+    ),
+    (
+        "a backlog blocker is ranked by every block in an entry's history, not its current one",
+        "catalog.py",
+        (
+            "                (t for t in reversed(entry.history) "
+            "if t.to_state is LifecycleState.BLOCKED),",
+            "                (t for t in entry.history if t.to_state is LifecycleState.BLOCKED),",
+        ),
+        ["tests/test_backlog_blockers.py"],
+    ),
+    (
         "a window the run does not reach reads as an area of zero or a traceback",
         "certify.py",
         ("    if len(kept) < 2:", "    if False:"),

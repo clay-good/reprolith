@@ -219,6 +219,15 @@ emptiable was never the whole invariant — a scope reading "clinically validate
 missing one, and it travels through the badge, the registry, the human render and the query — and
 only the load path had ever been tested for it. It is held now.
 
+The verification queue arrived with six of its own (2026-09-06), which is what the list is for on
+a *new* capability rather than an old defect: the two decisions it turns on — honoring an item id
+the certificate itself names, and keying an item by the question rather than by whichever claim the
+assumption hung off — were each verified by reverting them and watching the tests go red, and that
+verification now lives in the list instead of in one session's terminal. The other four hold the
+split between what an expert can decide and what only this engine can close, the inclusion of an
+assumption the certificate says is under review, the gap report's matching sentence, and the
+backlog blocker's rule that only the block an entry is *currently* in counts.
+
 It fails two ways, and the second is the one worth having. A **surviving** mutation means the guard
 has no test, or the test never reaches the case that makes it load-bearing — which is how the
 manuscript check's suppression of a model-computed parameter was found passing with its branch
