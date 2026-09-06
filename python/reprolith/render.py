@@ -573,6 +573,61 @@ def _corroboration_banner(corroboration: dict[str, dict[str, Any]]) -> str:
     )
 
 
+def _verification_banner(rows: list[tuple[str, Certificate]]) -> str:
+    """What the whole published set rests on that nobody has confirmed yet.
+
+    Each card already names the load-bearing assumptions behind its own certificate, and that is
+    the per-paper honesty payload. It is not the page-level one. A reader who wants to know what
+    *this registry* is resting on had to open thirty-three cards and merge the answers by eye — and
+    would still not learn that one of those questions carries four of the certificates, which is
+    the only number that says which one to look at first.
+
+    Derived by :func:`reprolith.verification.queue_report`, the same function the terminal's
+    `reprolith verification-queue` and the agent surface's `verification_queue` tool answer from,
+    so the public page and the two queried views cannot disagree about what is unreviewed. The
+    superseded set is computed here the same way the cards do it — a withdrawn certificate is not
+    a live dependency, and counting it would rank a question by work already replaced.
+    """
+    from .canonical import content_hash
+    from .verification import queue_report
+
+    superseded = {cert.supersedes for _, cert in rows if cert.supersedes is not None}
+    pairs = [
+        (content_hash(cert.content()), cert)
+        for _, cert in rows
+        if content_hash(cert.content()) not in superseded
+    ]
+    report = queue_report(pairs)
+    if not report["pending"]:
+        return ""
+    items = []
+    for item in report["pending"]:
+        dependents = "certificate" if item["impact"] == 1 else "certificates"
+        alternatives = (
+            " Alternatives considered: "
+            + html.escape("; ".join(item["alternatives"]))
+            + "."
+            if item["alternatives"]
+            else ""
+        )
+        items.append(
+            f"<li><strong>{item['impact']} {dependents}</strong> — "
+            f"{html.escape(item['question'])}. Reprolith chose "
+            f"{html.escape(item['best_estimate'])}, because "
+            f"{html.escape(item['basis'])}.{alternatives}</li>"
+        )
+    return (
+        '<section class="track-record"><h2>Awaiting expert review</h2>'
+        f'<p class="tr-note">{report["pending_count"]} load-bearing values that '
+        f'{len(pairs)} standing certificates on this page rest on, and that no expert has '
+        "confirmed. Each is a value Reprolith supplied because the paper did not state it; each "
+        "already withholds a clean pass from every certificate resting on it. Most consequential "
+        "first — the ranking is the number of published results that would have to be re-issued "
+        "if the value turned out to be wrong.</p>"
+        f"<ul class=\"tr-note\">{''.join(items)}</ul></section>"
+    )
+
+
 def render_registry(
     entries: Iterable[tuple[str, Certificate]],
     *,
@@ -744,6 +799,7 @@ def render_registry(
         f'<p class="disclaimer">{html.escape(scope_human)}</p>'
         f"{_track_record_banner(self_validation) if self_validation else ''}"
         f"{_corroboration_banner(corroboration) if corroboration is not None else ''}"
+        f"{_verification_banner(rows)}"
         f"{_AUTHOR_BANNER}"
         '<div class="filters">'
         f"{buttons('class', classes)}{buttons('verdict', verdicts)}</div>"

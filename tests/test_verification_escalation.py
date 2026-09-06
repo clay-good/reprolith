@@ -226,3 +226,38 @@ def test_the_committed_repository_has_a_queue_and_it_is_not_empty() -> None:
     )
     # No number is invented for a field nothing measured.
     assert all(item["margin"] is None for item in report["pending"])
+
+
+# --- the published page -------------------------------------------------------------------
+
+
+def test_the_registry_page_states_what_the_whole_set_rests_on() -> None:
+    """Each card names its own certificate's assumptions; the page named none of them together.
+
+    A reader wanting to know what this registry rests on had to open every card and merge the
+    answers by eye, and would still not learn that one question carries four of the certificates.
+    """
+    from reprolith import render_registry
+
+    page = render_registry([("ode-pkpd", _cert(_assumption(id="k", description="the time unit")))])
+    assert "Awaiting expert review" in page
+    assert "the time unit" in page
+
+
+def test_the_committed_registry_page_carries_the_queue() -> None:
+    page = (Path(__file__).parent.parent / "datasets" / "registry.html").read_text(encoding="utf-8")
+    query, _ = load_repository("datasets/milestone", aggregate=True)
+    report = query.verification_queue()
+    assert "Awaiting expert review" in page
+    # The page and the two queried surfaces answer from one derivation, so a regenerated registry
+    # that disagreed with `reprolith verification-queue` about the count fails here.
+    assert f"{report['pending_count']} load-bearing values" in page
+    assert f"{report['standing_certificates']} standing certificates" in page
+
+
+def test_a_page_with_nothing_load_bearing_shows_no_banner() -> None:
+    """An empty section reading "awaiting expert review" over nothing is worse than no section."""
+    from reprolith import render_registry
+
+    page = render_registry([("ode-pkpd", _cert())])
+    assert "Awaiting expert review" not in page

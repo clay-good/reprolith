@@ -651,6 +651,13 @@ on every call rather than stored beside them, so it cannot drift from what it de
 question asked by three claims about one solver limitation is one item with three dependents
 rather than three items you answer three times.
 
+The published [registry page](datasets/registry.html) carries the same list, beside the blind
+track record and the cross-engine corroboration, derived by the same function — so what a browser
+sees the whole set resting on and what `reprolith verification-queue` prints cannot disagree. Each
+card already named its own certificate's assumptions; what the page had no way to say was that one
+of those questions carries four of the certificates, which is the only number that says which to
+look at first.
+
 Opening an item changes no verdict, which is what makes escalating every load-bearing assumption
 safe: such an assumption already withholds a clean pass, so the queue adds a reader's route to
 the question and nothing else. Recording a decision and re-issuing what rests on it is a live
