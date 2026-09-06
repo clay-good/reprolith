@@ -4548,3 +4548,24 @@ it was wrong; a reader simply could not see how close it ran, and now can.
 On the protocol line, not in the assumption's basis. That lesson cost a commit an hour earlier: the
 basis is one fact about this engine, and a per-claim number in it splits one question into several,
 which is how a solver limitation with three dependents becomes three limitations with one each.
+
+
+## A measurement nothing checked the direction of
+
+Adding the day's new guards to `mutation_check.py` found one of them unheld. `boundary_sensitivity`
+promises the alternative that moves the judged distance **most**, and no test said so — replacing
+that choice with "the alphabetically first" passed the whole suite.
+
+The first replacement was a poor mutation, and finding out why was the interesting part. On these
+claims the absorbing wall is *always* the worst alternative, because removing mass changes a
+profile more than rearranging it, and "dirichlet" sorts before "periodic" — so the wrong rule and
+the right one agree on every reachable input. The mutation that matters is the defect worth
+fearing: report the alternative that moves it **least**, which understates what the choice costs.
+That is the one direction a number attached to an assumption must never err in, and it is killed
+now.
+
+The search for a case where the two rules disagree also turned up a physical identity worth
+keeping: for a profile symmetric about the centre of the domain, periodic and zero-flux runs
+coincide to floating point (1e-17). What leaves one end under periodicity is exactly what the
+mirror reflects back. It is now a test, and it checks the two implementations against each other in
+the one case where they must agree.

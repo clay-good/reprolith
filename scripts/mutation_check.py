@@ -865,6 +865,40 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ),
         ["tests/test_stochastic_corroboration.py"],
     ),
+    # --- measuring what the engine's own limits cost, 2026-09-06 --------------------------------
+    (
+        "the boundary's cost is reported from the alternative that moves it least, understating it",
+        "spatial.py",
+        ("    worst = max(alternatives, key=lambda name: abs(alternatives[name] - judged))",
+         "    worst = min(alternatives, key=lambda name: abs(alternatives[name] - judged))"),
+        ["tests/test_spatial_boundaries.py"],
+    ),
+    (
+        "a per-claim number in the boundary basis splits one solver limit into three questions",
+        "spatial.py",
+        ("            basis=_BOUNDARY_BASIS,", "            basis=_BOUNDARY_BASIS + claim.claim_id,"),
+        ["tests/test_spatial_boundaries.py"],
+    ),
+    (
+        "the zero-flux wall is the only one, so a Dirichlet model runs under Neumann walls",
+        "spatial.py",
+        ('    if boundary == "periodic":\n        return current[i - 1], current[(i + 1) % n]',
+         "    if False:\n        return current[i - 1], current[(i + 1) % n]"),
+        ["tests/test_spatial_boundaries.py"],
+    ),
+    (
+        "an absorbing wall is fed a neighbour but never actually held at its value",
+        "spatial.py",
+        ("            nxt[0] = nxt[-1] = boundary_value", "            pass"),
+        ["tests/test_spatial_boundaries.py"],
+    ),
+    (
+        "the ensemble's sampling noise is reported only when it is too large to decide anything",
+        "stochastic.py",
+        ("    sem = math.sqrt(variance / trajectories)\n    return abs(sem / reported_mean), tol.reproduced_within",
+         "    return None"),
+        ["tests/test_stochastic.py"],
+    ),
     # --- the collaboration surface, 2026-09-06 -------------------------------------------------
     # Twelve guards from one day's work. Every one was hand-mutated when it was written and none
     # was in this list, which is the gap this file exists to close: a guard proved once by hand is

@@ -223,3 +223,78 @@ def test_the_measured_cost_is_on_the_claim_and_the_question_stays_one_question()
     assert all("that wall costs this claim" in p for p in protocols)
     # Two different claims, two different measured costs — which is why it cannot be in the basis.
     assert protocols[0] != protocols[1]
+
+
+def test_the_reported_cost_is_the_worst_alternative_not_a_convenient_one() -> None:
+    """Found by mutation: replacing "the alternative that moves the judged distance most" with
+    "the alphabetically first" survived the whole suite. Nothing checked which one is reported, and
+    reporting the *least* moving wall would understate what the choice costs — the one direction a
+    number about an assumption must never err in.
+    """
+    from reprolith.oracle import normalized_curve_distance
+    from reprolith.spatial import (
+        SpatialClaim,
+        boundary_sensitivity,
+        diffuse_1d,
+        gaussian_profile,
+    )
+
+    # A domain narrow enough for the walls to matter: the profile is wide against the box, so the
+    # three boundaries genuinely disagree and there is a worst one to pick.
+    length, points = 3.0, 121
+    dx = 2 * length / (points - 1)
+    centers = [-length + i * dx for i in range(points)]
+    diffusivity, steps = 1.0, 900
+    dt = 0.2 * dx * dx / diffusivity
+    initial = tuple(gaussian_profile(centers, mass=10.0, variance=1.0))
+    reference = tuple(
+        gaussian_profile(centers, mass=10.0, variance=1.0 + 2 * diffusivity * steps * dt)
+    )
+    claim = SpatialClaim(
+        claim_id="narrow", quantity="profile", initial=initial, reference=reference,
+        source_location="closed-form", diffusivity=diffusivity, dx=dx, dt=dt, steps=steps,
+    )
+
+    def distance(boundary: str) -> float:
+        return normalized_curve_distance(
+            reference,
+            diffuse_1d(
+                initial, diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, boundary=boundary
+            ),
+        )
+
+    judged = distance("no-flux")
+    alternatives = {name: distance(name) for name in ("dirichlet", "periodic")}
+    # The premise: on this domain the two alternatives really do differ, or the check is vacuous.
+    assert abs(alternatives["dirichlet"] - alternatives["periodic"]) > 1e-6
+
+    measured = boundary_sensitivity(claim)
+    assert measured is not None
+    expected = max(alternatives, key=lambda name: abs(alternatives[name] - judged))
+    assert measured["worst_alternative"] == expected
+    assert measured["moved_by"] == pytest.approx(abs(alternatives[expected] - judged))
+    assert measured["moved_by"] >= abs(alternatives[
+        "dirichlet" if expected == "periodic" else "periodic"
+    ] - judged)
+
+
+def test_a_symmetric_profile_centred_in_the_box_makes_wrapping_and_mirroring_identical() -> None:
+    """A physical identity that checks the two implementations against each other where they must
+    agree: for a profile symmetric about the centre of the domain, what leaves one end under
+    periodicity is exactly what the mirror reflects back, so the two runs coincide to floating
+    point. It also says why `dirichlet` is always the worst alternative on these claims — removing
+    mass changes a profile more than rearranging it.
+    """
+    from reprolith.spatial import diffuse_1d, gaussian_profile
+
+    length, points = 3.0, 121
+    dx = 2 * length / (points - 1)
+    centers = [-length + i * dx for i in range(points)]
+    dt = 0.2 * dx * dx / 1.0
+    initial = tuple(gaussian_profile(centers, mass=10.0, variance=1.0))
+    run = lambda b: diffuse_1d(  # noqa: E731
+        initial, diffusivity=1.0, dx=dx, dt=dt, steps=900, boundary=b
+    )
+    assert max(abs(a - b) for a, b in zip(run("no-flux"), run("periodic"))) < 1e-12
+    # And the absorbing wall is genuinely different, so this is not three names for one run.
+    assert max(abs(a - b) for a, b in zip(run("no-flux"), run("dirichlet"))) > 1e-3
