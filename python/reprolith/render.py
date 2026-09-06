@@ -652,12 +652,12 @@ def _verification_banner(rows: list[tuple[str, Certificate]]) -> str:
     if report["pending"]:
         sections.append(
             '<section class="track-record"><h2>Awaiting expert review</h2>'
-            f'<p class="tr-note">{report["pending_count"]} load-bearing values that '
-            f'{len(pairs)} standing certificates on this page rest on, and that no expert has '
-            "confirmed. Each is a value Reprolith supplied because the paper did not state it; "
-            "each already withholds a clean pass from every certificate resting on it. Most "
-            "consequential first — the ranking is the number of published results that would "
-            "have to be re-issued if the value turned out to be wrong.</p>"
+            f'<p class="tr-note">{report["pending_count"]} load-bearing values that no expert has '
+            f'confirmed, under {report["certificates_affected"]} of the {len(pairs)} standing '
+            "certificates on this page. Each is a value Reprolith supplied because the paper did "
+            "not state it; each already withholds a clean pass from every certificate resting on "
+            "it. Most consequential first — the ranking is the number of published results that "
+            "would have to be re-issued if the value turned out to be wrong.</p>"
             f"<ul class=\"tr-note\">{_items(report['pending'])}</ul></section>"
         )
     if report["engine_limits"]:
@@ -665,7 +665,9 @@ def _verification_banner(rows: list[tuple[str, Certificate]]) -> str:
             '<section class="track-record"><h2>Resting on this engine, not on anyone\'s '
             "judgment</h2>"
             f'<p class="tr-note">{report["engine_limits_count"]} more load-bearing values '
-            f'withhold a clean pass here, and {html.escape(report["engine_limits_note"])}.</p>'
+            f'withhold a clean pass, under '
+            f'{report["engine_limits_certificates_affected"]} of the {len(pairs)} standing '
+            f'certificates, and {html.escape(report["engine_limits_note"])}.</p>'
             f"<ul class=\"tr-note\">{_items(report['engine_limits'])}</ul></section>"
         )
     return "".join(sections)

@@ -4201,3 +4201,15 @@ The spatial dossier makes exactly such a gap (`GapKind.BOUNDARY`), and the spati
 goes around `close_gap` to build the assumption. That the library's own class avoided its own
 documented route is the whole finding. The parameter is passed through rather than derived, because
 nothing in a `Gap` says which kind of gap it is.
+
+
+## Reading the page I had just added, as somebody who had not added it
+
+The registry's new section opened with "3 load-bearing values that 33 standing certificates on this
+page rest on". Every number in it is true and the sentence is not: only **4** of those 33 carry one
+of the three. Put next to the size of the repository, a count of unreviewed values reads as a
+property of the whole published set, which is the same overstatement as ranking the engine's own
+limits as questions for an expert — one heading above, corrected the same morning.
+
+Both halves now say how much of the corpus they reach: three values under 4 of 33, and four engine
+limits under 6 of 33. The terminal headings say it too, since they carried the identical pairing.

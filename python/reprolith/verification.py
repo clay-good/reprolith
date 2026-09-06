@@ -331,10 +331,19 @@ def queue_report(pairs: Sequence[tuple[str, Certificate]]) -> dict[str, Any]:
     return {
         "pending": pending,
         "pending_count": len(pending),
+        # How much of the corpus each half actually reaches. Reported because the count alone was
+        # being read against the size of the repository: "3 values that 33 standing certificates
+        # rest on" is how the registry page put it, and only 4 of those 33 carry one. A sentence
+        # that makes an unreviewed value sound like a property of the whole published set is the
+        # same overstatement as ranking the engine's own limits as questions for an expert.
+        "certificates_affected": len({d for i in pending for d in i["depends_on"]}),
         "engine_limits": engine_limits,
         "engine_limits_count": len(engine_limits),
+        "engine_limits_certificates_affected": len(
+            {d for i in engine_limits for d in i["depends_on"]}
+        ),
         "engine_limits_note": (
-            "these rest on a choice this engine had to make rather than on anything the paper "
+            "they rest on a choice this engine had to make rather than on anything the paper "
             "left unsaid — the spatial solver's single boundary condition, the ensemble the "
             "stochastic class drew — so no expert decision closes one. They withhold a clean pass "
             "exactly as the others do; what they wait on is this engine, not a person"

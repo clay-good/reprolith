@@ -370,8 +370,9 @@ def _cmd_verification_queue(query: ReprolithQuery, args: argparse.Namespace) -> 
         return 0
     if report["pending"]:
         print(
-            f"AWAITING EXPERT REVIEW — {report['pending_count']} across "
-            f"{report['standing_certificates']} standing certificates"
+            f"AWAITING EXPERT REVIEW — {report['pending_count']} value(s) under "
+            f"{report['certificates_affected']} of {report['standing_certificates']} standing "
+            "certificates"
         )
         for item in report["pending"]:
             _show(item)
@@ -380,7 +381,11 @@ def _cmd_verification_queue(query: ReprolithQuery, args: argparse.Namespace) -> 
     if report["engine_limits"]:
         # Printed under their own heading rather than mixed in. Ranked together they read as
         # questions waiting on a person, and on this repository that would be five of seven.
-        print(f"NOT WAITING ON ANYONE — {report['engine_limits_count']} this engine's own limits")
+        print(
+            f"NOT WAITING ON ANYONE — {report['engine_limits_count']} of this engine's own "
+            f"limits, under {report['engine_limits_certificates_affected']} of "
+            f"{report['standing_certificates']} standing certificates"
+        )
         print(f"  {report['engine_limits_note']}")
         for item in report["engine_limits"]:
             _show(item)

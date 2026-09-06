@@ -265,6 +265,10 @@ def test_the_committed_registry_page_carries_the_queue() -> None:
     assert f"{report['pending_count']} load-bearing values" in page
     assert f"{report['standing_certificates']} standing certificates" in page
     assert f"{report['engine_limits_count']} more load-bearing values" in page
+    # And how much of the corpus each half reaches. "3 values that 33 standing certificates rest
+    # on" was the old sentence, and only 4 of those 33 carry one — a page-wide overstatement of
+    # exactly the kind the rest of the page is written to avoid.
+    assert f"under {report['certificates_affected']} of the" in page
 
 
 def test_a_page_with_nothing_load_bearing_shows_no_banner() -> None:
@@ -373,3 +377,23 @@ def test_the_registry_page_names_them_too() -> None:
     for item in query.verification_queue()["pending"]:
         for paper in item["depends_on_papers"]:
             assert paper["title"] in page, paper["title"]
+
+
+def test_the_count_of_values_is_not_read_against_the_size_of_the_repository() -> None:
+    """Most certificates rest on nothing unreviewed, and the report says how many do.
+
+    Without it the two counts sat side by side — "3 load-bearing values that 33 standing
+    certificates rest on" — which reads as the whole published set resting on unreviewed values.
+    """
+    with_one = _cert(_assumption(), title="one")
+    clean = [_cert(title=f"clean {n}") for n in range(5)]
+    report = queue_report(_pairs(with_one, *clean))
+    assert report["pending_count"] == 1
+    assert report["certificates_affected"] == 1  # not 6
+    limit = _cert(
+        _assumption(id="ours", description="our own limit", author_can_close=False),
+        title="ours",
+    )
+    report = queue_report(_pairs(with_one, limit, *clean))
+    assert report["certificates_affected"] == 1
+    assert report["engine_limits_certificates_affected"] == 1

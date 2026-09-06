@@ -648,6 +648,10 @@ paper.
 That last number is the ranking, so the value four published results rest on is the first thing
 you see and not the twentieth.
 
+It says how much of the corpus each value reaches, because a count of unreviewed values read
+against the size of the repository is its own overstatement: three values under **4 of the 33**
+standing certificates, not under all of them.
+
 It prints in two parts, and the second is the one worth reading first. Six of the eight
 load-bearing assumptions on today's certificates are **this engine's** limits rather than
 anything a paper left out — the spatial solver implements one boundary condition, the stochastic
