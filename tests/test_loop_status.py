@@ -69,7 +69,7 @@ def test_a_blocked_backlog_names_the_input_that_would_release_the_most() -> None
         )
     status = _query(catalog).loop_status(at=0.0)
     assert status["publishable_work"] is False
-    assert "2 entries are blocked" in status["stop_reason"]
+    assert "2 entries blocked" in status["stop_reason"]
     assert "the manuscript's claims" in status["stop_reason"]
 
 
@@ -93,11 +93,62 @@ def test_an_unaddressable_backlog_says_what_makes_it_unworkable() -> None:
     catalog.add(Identifiers(title="no accession here"), ModelClass.ODE_PKPD)
     status = _query(catalog).loop_status(at=0.0)
     assert status["publishable_work"] is False
-    assert "carry no accession" in status["stop_reason"]
+    assert "carrying no accession" in status["stop_reason"]
     assert status["claimable_without_accession"] == 1
 
 
 # --- what it escalates ------------------------------------------------------------------------
+
+
+def test_a_backlog_that_is_blocked_and_parked_at_once_names_both() -> None:
+    """Caught re-auditing the diff that added this. These are not alternatives — a backlog can be
+    part blocked and part parked at the same time, and what would lift each is entirely different.
+    An if/elif chain reported the blocked entries and said nothing about the parked ones, which is
+    precisely what this field exists to stop.
+    """
+    catalog = Catalog()
+    blocked = _entry(catalog, "B1")
+    blocked.transition(
+        LifecycleState.INGESTING, at="2026-09-06T00:00:00Z", actor="agent", reason="start"
+    )
+    blocked.transition(
+        LifecycleState.BLOCKED,
+        at="2026-09-06T00:01:00Z",
+        actor="agent",
+        reason="missing",
+        missing_inputs=("a paywalled supplement",),
+    )
+    _entry(catalog, "P1")
+    for i in range(PARK_AFTER_ATTEMPTS):
+        catalog.claim_next("agent", at=i * 100.0, seconds=1.0)
+    catalog.add(Identifiers(title="no accession here"), ModelClass.ODE_PKPD)
+
+    reason = _query(catalog).loop_status(at=1000.0)["stop_reason"]
+    assert "a paywalled supplement" in reason
+    assert "parked after repeated claims" in reason
+    assert "carrying no accession" in reason
+
+
+def test_the_stop_reason_counts_read_as_english() -> None:
+    """It is the headline the terminal prints and the string an agent keys on; "1 entries" is
+    noise in the one sentence that has to be read carefully."""
+    catalog = Catalog()
+    entry = _entry(catalog, "B1")
+    entry.transition(
+        LifecycleState.INGESTING, at="2026-09-06T00:00:00Z", actor="agent", reason="start"
+    )
+    entry.transition(
+        LifecycleState.BLOCKED,
+        at="2026-09-06T00:01:00Z",
+        actor="agent",
+        reason="missing",
+        missing_inputs=("a supplement",),
+    )
+    reason = _query(catalog).loop_status(at=0.0)["stop_reason"]
+    assert "1 entry blocked" in reason
+    assert "1 entries" not in reason
+    # And with one blocked entry on one input, "1 of them" is not the phrasing.
+    assert "all on one input" in reason
 
 
 def test_escalations_are_split_the_way_the_queue_splits_them() -> None:
@@ -192,7 +243,7 @@ def test_the_terminal_prints_the_reason_and_the_json_is_the_tool_object(capsys) 
     assert run(["loop-status"]) == 0
     out = capsys.readouterr().out
     assert "NO PUBLISHABLE WORK" in out
-    assert "27 entries are blocked" in out
+    assert "27 entries blocked" in out
     assert "escalated: 3 awaiting an expert" in out
 
     assert run(["loop-status", "--json"]) == 0

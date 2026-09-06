@@ -4421,3 +4421,11 @@ second. The claimant who found something **different** is the one worth reading,
 the one the summary hid. Every distinct reason is listed now, with its count, still leading with
 the shared one because that is the actionable case. This is the "floor that cannot see what it
 never counted" shape, one more time.
+
+And a third, in `loop-status`, written the same afternoon and specifically to stop this: its
+`stop_reason` chose the *first* cause that held rather than every one that did. A backlog can be
+part blocked and part parked at once — and entries carrying no accession are a third, unrelated
+thing — with what would lift each entirely different, which is the whole argument for the field
+existing. The if/elif chain reported the blocked entries and said nothing about the parked ones.
+It composes every cause now. Writing the reason a feature is needed and then implementing the
+thing it warns against, in the same file, is worth recording plainly.

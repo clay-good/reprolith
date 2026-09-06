@@ -37,6 +37,11 @@ from .supersession import CertificateLedger
 from .verification import issue_for_item, queue_report
 
 
+def _plural(count: int, singular: str, plural: str) -> str:
+    """``1 entry`` / ``2 entries`` — a stop reason is read by people, and "1 entries" is noise."""
+    return f"{count} {singular if count == 1 else plural}"
+
+
 def _label_basis(report: dict[str, Any]) -> str:
     """What a class's agreement number can and cannot establish, derived from its own labels.
 
@@ -385,24 +390,35 @@ class ReprolithQuery:
         blocked_on = health["blocked_on"]
         stop_reason: str | None = None
         if claimable == 0:
+            # Every cause that holds, not the first one found. These are not alternatives: a
+            # backlog can be part blocked and part parked at once, and what would lift each is
+            # entirely different — which is the whole reason this field exists. An if/elif chain
+            # here reported the blocked entries and said nothing about the parked ones, quietly
+            # doing to `stop_reason` exactly what this report was written to stop.
+            causes: list[str] = []
+            blocked = int(health["by_state"].get("blocked", 0))
             if blocked_on:
                 releases = blocked_on[0]
-                stop_reason = (
-                    f"no claimable work: {health['by_state'].get('blocked', 0)} entries are "
-                    f"blocked, {releases['entries']} of them on one input — {releases['missing']}"
+                shared = int(releases["entries"])
+                causes.append(
+                    f"{_plural(blocked, 'entry', 'entries')} blocked, "
+                    + ("all on one input" if shared == blocked else f"{shared} of them on one input")
+                    + f" — {releases['missing']}"
                 )
-            elif parked:
-                stop_reason = (
-                    f"no claimable work: {len(parked)} entries are parked after repeated claims "
-                    "that moved them nowhere, and nothing else is queued"
+            if parked:
+                causes.append(
+                    f"{_plural(len(parked), 'entry', 'entries')} parked after repeated claims "
+                    "that achieved nothing"
                 )
-            elif health.get("claimable_without_accession"):
-                stop_reason = (
-                    f"no claimable work: {health['claimable_without_accession']} queued entries "
-                    "carry no accession, and an entry without one cannot be finished or released"
+            without = int(health.get("claimable_without_accession", 0))
+            if without:
+                causes.append(
+                    f"{_plural(without, 'queued entry', 'queued entries')} carrying no "
+                    "accession, which cannot be finished or released"
                 )
-            else:
-                stop_reason = "no claimable work: the backlog holds nothing in a workable state"
+            stop_reason = "no claimable work: " + (
+                "; ".join(causes) if causes else "the backlog holds nothing in a workable state"
+            )
         return {
             "publishable_work": claimable > 0,
             "stop_reason": stop_reason,
