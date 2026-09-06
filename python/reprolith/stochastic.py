@@ -345,6 +345,31 @@ class StochasticClaim:
     shortfall: Attribution | None = field(default=None)
 
 
+def _sampling_cost(claim: StochasticClaim, variance: float, trajectories: int) -> str:
+    """What this ensemble's size buys the claim, as a clause for the protocol line.
+
+    The assumption behind every stochastic certificate says the verdict "moves with the count and
+    the seed" and could not say by how much. It can: the ensemble's own standard error is the size
+    of that movement, it was already computed to decide whether to abstain, and it was reported
+    only when the answer was no. On the protocol line rather than in the assumption's basis — the
+    basis states one fact about this engine, and a per-claim number there splits one question into
+    several (the spatial class learned that the expensive way).
+    """
+    measured = ensemble_headroom(
+        reported_mean=claim.reported_mean,
+        variance=variance,
+        trajectories=trajectories,
+        tolerance=claim.tolerance,
+    )
+    if measured is None:
+        return ""
+    relative_sem, threshold = measured
+    return (
+        f" (sampling noise: the mean's standard error is {relative_sem:.2%} of the reported value, "
+        f"against a {threshold:.0%} pass threshold)"
+    )
+
+
 def _protocol(claim: StochasticClaim) -> str:
     """The sampling a stochastic assessment rests on, in the form the certificate records.
 
@@ -478,6 +503,30 @@ def unresolvable_ensemble_reason(
     )
 
 
+def ensemble_headroom(
+    *, reported_mean: float, variance: float, trajectories: int, tolerance: Tolerance | None = None
+) -> tuple[float, float] | None:
+    """This ensemble's sampling noise and the threshold it is judged against, or ``None``.
+
+    The same standard error :func:`unresolvable_ensemble_reason` abstains on — reported for the
+    claims that *did* resolve, which is where it was invisible. That check speaks only when the
+    noise is too large; a claim it passes says nothing about whether it passed at half the line or
+    at a fiftieth of it, and those are very different certificates. Both published the same
+    unquantified sentence: "the verdict moves with the count and the seed".
+
+    Returns ``(relative standard error, pass threshold)``, both as fractions of the reported mean.
+    ``None`` where the quantity is undefined — a zero reported mean, or an ensemble with no spread
+    — which are exactly the cases the abstention rule handles separately.
+    """
+    if reported_mean == 0.0 or variance <= 0.0 or trajectories <= 0:
+        return None
+    tol = tolerance or default_tolerance(
+        ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+    )
+    sem = math.sqrt(variance / trajectories)
+    return abs(sem / reported_mean), tol.reproduced_within
+
+
 def solver_pin() -> EnginePin:
     """The :class:`~reprolith.model.EnginePin` for this module's SSA, at its current revision.
 
@@ -571,7 +620,14 @@ def certify_stochastic(
             attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
             assumption_qualified=claim.assumption_qualified,
         )
-        assessments.append(replace(assessment, protocol=_protocol(claim)))
+        assessments.append(
+            replace(
+                assessment,
+                # The judged claims are the ones this was invisible on: the abstention rule reports
+                # the ensemble's noise only when it is too large to decide anything.
+                protocol=_protocol(claim) + _sampling_cost(claim, variance, len(ensemble)),
+            )
+        )
         judged.append(claim)
     # Only the claims a verdict was drawn from: an abstention concluded nothing, so an assumption
     # saying its mean rests on this ensemble would describe a judgment that was never made — and,

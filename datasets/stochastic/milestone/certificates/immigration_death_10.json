@@ -8,7 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "SSA ensemble: 400 trajectories to t=40, seed 20260807, read=species[0]",
+      "protocol": "SSA ensemble: 400 trajectories to t=40, seed 20260807, read=species[0] (sampling noise: the mean's standard error is 1.53% of the reported value, against a 5% pass threshold)",
       "quantity": "mean copy number",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -35,7 +35,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "gillespie-direct-method (rev de0afde03353)",
+    "algorithm": "gillespie-direct-method (rev 0ce61b404023)",
     "engine": "reprolith-ssa",
     "version": "0.0.1"
   },

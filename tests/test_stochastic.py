@@ -705,3 +705,53 @@ def test_the_stochastic_protocol_names_the_species_it_read() -> None:
                              source_location="Fig 1", duration=1.0, trajectories=200, seed=5)
     assert _protocol(first) != _protocol(second)
     assert "read=species[0]" in _protocol(first)
+
+
+# --- what the ensemble's size buys, published rather than implied ------------------------------
+
+
+def test_a_judged_claim_reports_the_sampling_noise_it_rests_on() -> None:
+    """Every stochastic certificate's assumption says the verdict "moves with the count and the
+    seed" and could not say by how much. The ensemble's own standard error *is* that movement, it
+    was already computed to decide whether to abstain, and it was reported only when the answer was
+    "too much" — so a claim that resolved at half the line and one that resolved at a fiftieth of it
+    published the same sentence.
+    """
+    from reprolith.stochastic import ensemble_headroom
+
+    # A spread of 4 over 400 draws: standard error 0.1, which is 1% of a reported mean of 10.
+    measured = ensemble_headroom(reported_mean=10.0, variance=4.0, trajectories=400)
+    assert measured is not None
+    relative_sem, threshold = measured
+    assert relative_sem == pytest.approx(0.01)
+    assert threshold == pytest.approx(0.05)
+    # Sixteen times the ensemble halves the noise, which is the whole point of reporting it.
+    bigger = ensemble_headroom(reported_mean=10.0, variance=4.0, trajectories=1600)
+    assert bigger is not None and bigger[0] == pytest.approx(0.005)
+
+
+def test_the_headroom_is_undefined_exactly_where_the_abstention_rule_takes_over() -> None:
+    """A zero reported mean and a spreadless ensemble are the two cases the resolvability rule
+    handles on their own; reporting a ratio there would divide by the thing that is zero."""
+    from reprolith.stochastic import ensemble_headroom
+
+    assert ensemble_headroom(reported_mean=0.0, variance=4.0, trajectories=400) is None
+    assert ensemble_headroom(reported_mean=10.0, variance=0.0, trajectories=400) is None
+
+
+def test_every_committed_stochastic_certificate_states_its_sampling_noise() -> None:
+    """Read off the published set: the number is on the artifact a person opens, not only
+    available to a caller who knows to ask for it."""
+    import json
+    from pathlib import Path
+
+    directory = Path(__file__).parent.parent / "datasets" / "stochastic" / "milestone"
+    published = sorted((directory / "certificates").glob("*.json"))
+    assert published, "no stochastic certificates to check"
+    for path in published:
+        content = json.loads(path.read_text(encoding="utf-8"))
+        for assessment in content["assessments"]:
+            protocol = assessment["protocol"]
+            assert "SSA ensemble:" in protocol
+            assert "standard error is" in protocol, f"{path.name} states no sampling noise"
+            assert "pass threshold" in protocol

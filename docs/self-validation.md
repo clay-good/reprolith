@@ -143,7 +143,7 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   spatial               3 model(s) on reprolith-fd, scipy-lsoda — all engine-independent to 1e-03
                           as reprolith-fd explicit-forward-euler-finite-difference (rev 28ff89552731), scipy-lsoda 1.13.1
   stochastic            3 model(s) on reprolith-ssa, roadrunner-gillespie — all engine-independent within 1.9 combined standard errors, resolving a bias above 6.5% of the mean
-                          as reprolith-ssa gillespie-direct-method (rev de0afde03353), roadrunner-gillespie 2.7.0
+                          as reprolith-ssa gillespie-direct-method (rev 0ce61b404023), roadrunner-gillespie 2.7.0
 
   overall: 6 of 6 classes re-run on a second engine — 170 claim(s), 29 model(s)
 ```

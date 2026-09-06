@@ -4527,3 +4527,24 @@ corroboration record says, and it is true — so wherever a wall influences the 
 order of accuracy is set by its boundary and not by its stencil. The three certified profiles keep
 their walls more than four standard deviations from the peak, which is why it costs them nothing,
 and that is now measured rather than assumed.
+
+
+## The same measurement, for the ensemble — and it was already being computed
+
+Having done it for the wall, the other three entries under "not waiting on anyone" say the same
+kind of thing: the mean judged here is an average of an ensemble Reprolith drew, and "the verdict
+moves with the count and the seed". By how much was, again, not stated.
+
+It did not need a new computation. `unresolvable_ensemble_reason` already derives the standard
+error of the mean and abstains when it exceeds half the pass threshold — it just only ever *speaks*
+when the answer is "too much". A claim it passes says nothing about whether it passed at half the
+line or at a fiftieth of it, and those are very different certificates carrying identical wording.
+
+Each judged stochastic claim now states it: 1.53%, 1.26% and 0.42% of the reported value against a
+5% pass threshold. The first of those is worth reading twice — the abstention line is half the
+threshold, 2.5%, so that certificate resolves its claim with a factor of 1.6 in hand. Nothing about
+it was wrong; a reader simply could not see how close it ran, and now can.
+
+On the protocol line, not in the assumption's basis. That lesson cost a commit an hour earlier: the
+basis is one fact about this engine, and a per-claim number in it splits one question into several,
+which is how a solver limitation with three dependents becomes three limitations with one each.

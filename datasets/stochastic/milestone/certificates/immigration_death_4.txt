@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Immigration-death process (k=6, γ=1.5) — Poisson stationary mean
-Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev de0afde03353)
+Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev 0ce61b404023)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
@@ -8,7 +8,7 @@ OVERALL: partially-reproduced
 CLAIMS
   [immigration_death_4-mean] mean copy number: reproduced [assumption-qualified] (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0230
-      protocol: SSA ensemble: 1600 trajectories to t=40, seed 11, read=species[0]
+      protocol: SSA ensemble: 1600 trajectories to t=40, seed 11, read=species[0] (sampling noise: the mean's standard error is 1.26% of the reported value, against a 5% pass threshold)
 
 ASSUMPTIONS (supplied by Reprolith, not the paper)
   [ssa-sampling-immigration_death_4-mean] the mean judged here is the average of an ensemble Reprolith sampled, not a number the paper's own run produced -> SSA ensemble: 1600 trajectories to t=40, seed 11, read=species[0] [load-bearing] [this engine's limit — no expert decision closes it]
