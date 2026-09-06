@@ -383,3 +383,62 @@ def test_an_outcome_survives_a_save_and_load() -> None:
     reloaded = Catalog.from_dict(json.loads(json.dumps(catalog.to_dict())))
     entry = reloaded.find(Identifiers(title="", accession="A1"))
     assert entry.attempts[-1].outcome == "no runnable model"
+
+
+def test_a_saved_attempt_that_the_bound_could_never_see_is_refused() -> None:
+    """`_require_coherent_entry` exists because a hand-edited or badly merged catalog loads
+    whatever it says, and it did not know about attempts. Parking compares an attempt's
+    `progress_marker` against the history as it stands, so a marker past the end can never match:
+    that attempt is invisible to the count for ever and the entry simply never parks — silently,
+    which is the same shape of permanent wedge the lease-expiry check already guards.
+    """
+    import pytest
+
+    catalog = _catalog("A1")
+    for i in range(PARK_AFTER_ATTEMPTS):
+        _claim_and_abandon(catalog, "agent", at=i * 100.0)
+    record = catalog.to_dict()
+    record["entries"][0]["attempts"][0]["progress_marker"] = 5
+    with pytest.raises(ValueError, match="can never be compared"):
+        Catalog.from_dict(json.loads(json.dumps(record)))
+
+
+def test_a_negative_progress_marker_is_refused_too() -> None:
+    import pytest
+
+    catalog = _catalog("A1")
+    _claim_and_abandon(catalog, "agent", at=0.0)
+    record = catalog.to_dict()
+    record["entries"][0]["attempts"][0]["progress_marker"] = -1
+    with pytest.raises(ValueError, match="can never be compared"):
+        Catalog.from_dict(json.loads(json.dumps(record)))
+
+
+def test_a_coherent_attempt_record_still_loads() -> None:
+    """The guard has to admit every record the writer produces, or it is a bound on saving."""
+    catalog = _catalog("A1")
+    entry = catalog.find(Identifiers(title="", accession="A1"))
+    _claim_and_abandon(catalog, "agent", at=0.0)
+    # The real path back to a second claim: an entry stops being claimable the moment it moves,
+    # so it has to come back through the queue before anyone can take it again.
+    entry.transition(
+        LifecycleState.INGESTING, at="2026-09-06T00:00:00Z", actor="agent", reason="started"
+    )
+    entry.transition(
+        LifecycleState.BLOCKED,
+        at="2026-09-06T00:01:00Z",
+        actor="agent",
+        reason="missing",
+        missing_inputs=("a supplement",),
+    )
+    entry.transition(
+        LifecycleState.QUEUED, at="2026-09-06T00:02:00Z", actor="curator", reason="it arrived"
+    )
+    entry.release_lease()
+    _claim_and_abandon(catalog, "agent", at=100.0)
+    reloaded = Catalog.from_dict(json.loads(json.dumps(catalog.to_dict())))
+    markers = [a.progress_marker for a in reloaded.find(Identifiers(title="", accession="A1")).attempts]
+    assert markers == [0, 3], markers
+    # And that second claim is the only one the retry bound can still see, because the three
+    # transitions in between are exactly the progress that clears the run.
+    assert len(reloaded.find(Identifiers(title="", accession="A1")).attempts_without_progress()) == 1

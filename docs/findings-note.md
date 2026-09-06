@@ -4436,3 +4436,10 @@ one said "1 entry blocked" and the other "1 claimable entries". A formatting hel
 and the other does not is a drift waiting to happen, and this one had already happened within the
 hour — so it lives in `render`, where both formatters reach it. The same pass removed a "standing:
 0 certificates ()" whose parenthesis had nothing to hold.
+
+The last of the pass went to the load path. `_require_coherent_entry` exists because a hand-edited
+or badly merged catalog loads whatever it says, and it did not know about attempts. Parking
+compares an attempt's `progress_marker` against the history as it stands, so a marker past the end
+of that history can never match — the attempt is invisible to the count for ever and the entry
+simply never parks. Silently, and permanently, which is the same shape as the lease expiry that is
+not a time, one check above it in the same function.

@@ -590,6 +590,20 @@ def _require_coherent_entry(entry: CatalogEntry) -> None:
             )
     if entry.state is LifecycleState.BLOCKED and not (history and history[-1].missing_inputs):
         raise ValueError("a saved blocked entry must record what it is blocked on")
+    for attempt in entry.attempts:
+        # An attempt claims the entry had this many transitions when it was taken, and parking is
+        # derived by comparing that against the history as it stands. A marker past the end of the
+        # history can never match, so such an attempt is invisible to the count for ever — the
+        # entry simply never parks, silently, which is the same shape of permanent wedge as the
+        # lease expiry above. Fewer transitions than the marker cannot have happened either: the
+        # history only grows.
+        if not 0 <= attempt.progress_marker <= len(history):
+            raise ValueError(
+                f"the saved entry records a claim by {attempt.requester!r} taken after "
+                f"{attempt.progress_marker} transitions, and its history holds {len(history)}; "
+                "an attempt that can never be compared against the record is one the retry bound "
+                "can never see"
+            )
     if entry.lease_expires is not None and not isinstance(entry.lease_expires, (int, float)):
         raise ValueError("a saved lease expiry must be a time, or absent")
 
