@@ -4569,3 +4569,27 @@ keeping: for a profile symmetric about the centre of the domain, periodic and ze
 coincide to floating point (1e-17). What leaves one end under periodicity is exactly what the
 mirror reflects back. It is now a test, and it checks the two implementations against each other in
 the one case where they must agree.
+
+
+## A refusal whose reason stopped being true is worse than one with no reason
+
+`ingest_spatial_sbml` refuses a file that states a Dirichlet wall, and said why: "this solver's
+boundaries are zero-flux Neumann, and running another kind under them is a different model with no
+sign that it happened". Adding the second wall made the first half false and left the refusal
+standing on it.
+
+The refusal is still right, and the true reason is a different thing entirely: the solver runs a
+Dirichlet wall now, but a `SpatialClaim` carries no field naming one, so nothing conveys what the
+file states through to the run. Accept it and the model is evolved under walls it did not ask for —
+exactly the substitution the refusal prevents.
+
+Why the wrong reason costs more than none: it tells the next implementer to go and write a
+Dirichlet solver, which already exists. The accurate reason names what is actually missing — a
+field on the claim — and therefore names the work that would lift the refusal. Three surfaces said
+the old thing (the docstring, the raised message, and the self-validation page); all three say the
+new one.
+
+The edit landed in `sbml.py`, which is a judge module for the constraint-based class, so eight FBA
+certificates, three worked-example renders, the registry and a transcript were regenerated for a
+change that moved no number. That is the pin doing its job — it hashes the file, so a comment moves
+it, and the safe direction of error is a needless re-run.

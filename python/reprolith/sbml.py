@@ -1132,8 +1132,11 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
       rule makes the stated attribute inert, so reading it would carry a profile the model
       replaces. A spatial species SBML holds fixed (a boundary or constant species) is refused for
       the mirror reason: this solver evolves every field it is given;
-    * a stated boundary condition must be **zero-flux** — this solver's boundaries are Neumann and
-      nothing else, and running a Dirichlet model under them is a different model, quietly;
+    * a stated boundary condition must be **zero-flux**. The solver runs a Dirichlet wall now, so
+      the reason is no longer that it cannot: nothing carries a boundary from an ingested model
+      through to the run, because a claim has no field naming one. Accepting the file would
+      therefore substitute one boundary for another with no sign that it happened, which is what
+      this refusal exists to prevent — and giving a claim that field is what would lift it;
     * an **advection** coefficient, or a parameter standing for a coordinate, is refused: the first
       is a drift term this scheme does not step, the second a quantity that varies with position,
       and dropping either produces a profile from a model nobody wrote;
@@ -1220,8 +1223,11 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
         if parameter_plugin.isSetBoundaryCondition():
             condition = parameter_plugin.getBoundaryCondition()
             kind = condition.getType()
-            # Zero-flux is what this solver imposes. A Dirichlet wall, or a flux that is not zero,
-            # is a different problem — and one that would run here without complaint.
+            # Zero-flux is what a run of this model would get. Not because the solver has no
+            # other wall — `diffuse_1d` takes Dirichlet and periodic — but because a claim carries
+            # no field naming one, so nothing conveys what this file states through to the run. A
+            # Dirichlet wall, or a flux that is not zero, would run here without complaint under a
+            # boundary the file did not ask for.
             zero_flux = (
                 kind == libsbml.SPATIAL_BOUNDARYKIND_NEUMANN
                 and parameter.isSetValue()
@@ -1230,9 +1236,10 @@ def ingest_spatial_sbml(sbml: str) -> SpatialModel:
             if not zero_flux:
                 raise ValueError(
                     f"parameter {parameter.getId()!r} states a boundary condition on "
-                    f"{condition.getVariable()!r} that is not zero flux; this solver's boundaries "
-                    "are zero-flux Neumann, and running another kind under them is a different "
-                    "model with no sign that it happened"
+                    f"{condition.getVariable()!r} that is not zero flux; this solver runs such a "
+                    "wall, but a claim carries no field naming one, so nothing would carry this "
+                    "file's boundary through to the run — the model would be evolved under "
+                    "zero-flux walls it did not ask for, with no sign that it happened"
                 )
             continue
         if not parameter_plugin.isSetDiffusionCoefficient():

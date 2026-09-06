@@ -16,14 +16,20 @@ follow end to end, all regenerable from the repository alone.
 
 Two rows read `partially-reproduced` where the profile or the mean matches its analytical target
 exactly, and that is the point: the stochastic class samples an ensemble Reprolith chose, and the
-spatial class runs every profile under a zero-flux boundary Reprolith imposes rather than one the
-paper stated. Both are load-bearing assumptions, both are named on the certificate, and a class
-does not get to publish a clean pass for a result resting on its own choice.
+spatial class runs every profile under a zero-flux boundary that is Reprolith's choice, since a
+claim carries no field naming one. Both are load-bearing assumptions, both are named on the
+certificate, and a class does not get to publish a clean pass for a result resting on its own
+choice. What each choice *costs* is measured and stated on the claim — the boundary moves the
+judged distance by 2e-10 to 2e-06 against a 1e-01 threshold, the ensembles carry a standard error
+of 1.53%, 1.26% and 0.42% against 5% — so the qualification says how much it is worth, not only
+that it exists.
 
-That zero-flux boundary is also why `ingest_spatial_sbml` refuses any other kind. A file in the
-SBML L3 `spatial` package can state a Dirichlet wall; this solver would run it under Neumann walls
-and produce a profile with nothing to say it had substituted one boundary for another. A refusal
-names it instead. (No published spatial model is in this corpus, so that reader is checked against
+That missing field is also why `ingest_spatial_sbml` refuses any wall but zero-flux. The solver
+runs a Dirichlet or periodic wall, so the reason is not that it cannot: a file in the SBML L3
+`spatial` package can state a Dirichlet wall, and nothing would carry that statement through to the
+run, so the model would be evolved under zero-flux walls it did not ask for with nothing to say a
+boundary had been substituted. A refusal names it instead, and giving a claim that field is what
+would lift it. (No published spatial model is in this corpus, so that reader is checked against
 files libSBML's own spatial API wrote — the spec's reference implementation, not the field.)
 
 ## What makes each row honest
@@ -133,7 +139,7 @@ $ reprolith corroboration
 CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   reported beside the verdicts, never gating them
   constraint-based      8 model(s) on cobrapy, scipy-linprog — all engine-independent to 1e-08
-                          as cobrapy 0.31.1, scipy-linprog highs (reprolith-fba rev 82910e677734)
+                          as cobrapy 0.31.1, scipy-linprog highs (reprolith-fba rev 5fdbb63fa5cd)
   kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   logical               9 model(s) on cana, reprolith-logical, sympy-sat — all agree exactly
