@@ -768,6 +768,20 @@ class GradientClaim:
         return math.sqrt(self.diffusivity / self.decay)
 
 
+# Why there is no wavelength claim, recorded where someone would come looking to write one.
+#
+# A Turing pattern's selected wavelength is the third scalar this class could certify, and the
+# measurement is the easy part: project the field onto the admissible modes and take the largest,
+# as `tests/test_spatial.py` does when it validates wavelength selection against linear stability
+# analysis. The obstacle is this class's own discipline — every input a number turns on is
+# recorded on the certificate, so the number can be re-derived from it. A two-species reaction has
+# no canonical parameterization to record: Schnakenberg, the Brusselator and Gierer-Meinhardt are
+# different functions of ``(u, v)``, and a claim carrying a callable could not be re-derived from
+# its own certificate. A closed form for one family would certify that family and quietly refuse
+# the rest under a name that promises all of them.
+#
+# Both scalars that *are* claims avoided this because their reaction is the model's definition
+# rather than a choice: a gradient decays at one rate, a KPP front grows logistically at one rate.
 @dataclass(frozen=True)
 class FrontSpeedClaim:
     """A published **invasion front speed**: how fast a growing population's edge advances.

@@ -306,9 +306,17 @@ a change under `openspec/changes/`.
   `ingest_stochastic_sbml`, the `lint_stochastic` inline linter, and a walkable 3/3 milestone.
 - **Spatial / PDE simulation class** — *DONE*: landed as `spatial-class`, a pure-Python 1-D/2-D
   finite-difference reaction-diffusion solver reusing the curve oracle — and, since 2026-09-06, the
-  scalar comparison too: `GradientClaim` certifies a reported **decay length**, which unlike a whole
-  profile is a number a gradient paper prints in its text, so it is reachable by the table and prose
-  extraction that already works rather than waiting on figure digitization. Self-validated against
+  scalar comparison too: `GradientClaim` certifies a reported **decay length** and
+  `FrontSpeedClaim` a reported **invasion front speed**, which unlike a whole profile are numbers a
+  paper prints in its text, so they are reachable by the table and prose extraction that already
+  works rather than waiting on figure digitization. The front claim also measures its own
+  convergence — a KPP speed approaches `2√(rD)` only logarithmically, so it reports how much the
+  measurement is still moving and a reader can tell a still-converging run from a converged one.
+  The third scalar, a Turing **pattern wavelength**, is not a claim type and the obstacle is worth
+  stating: measuring it is easy (project onto the admissible modes and take the largest), but this
+  class records every input a number turns on, and a two-species reaction has no canonical
+  parameterization to record — Schnakenberg, Brusselator and Gierer-Meinhardt are different
+  functions, and a claim taking a callable could not be re-derived from its own certificate. Self-validated against
   closed-form results (Gaussian diffusion, Fisher-KPP and Nagumo front speeds, morphogen decay
   length, the Turing dispersion relation and wavelength selection). Has `spatial_dossier` /
   `validate_spatial` (unstated domain/boundary as a load-bearing gap), `certify_spatial`, the

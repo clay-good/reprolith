@@ -633,10 +633,11 @@ population path are written up in
 [docs/population-and-estimation.md](docs/population-and-estimation.md).
 
 **Spatial reaction-diffusion (PDE) models** are the sixth class: the reproducible result is a
-concentration profile over space — or the **decay length** of a morphogen gradient, which is the
-one a paper usually prints as a number rather than a picture, and so the one reachable without a
-curator digitizing a figure. A pure-Python finite-difference solver feeds the same curve
-oracle for a profile and the scalar comparison for a length, self-validated non-circularly against the exact analytical diffusion solution (a Gaussian
+concentration profile over space — or one of the two scalars a paper usually prints as a *number*
+rather than a picture, and so the ones reachable without a curator digitizing a figure: the **decay
+length** of a morphogen gradient (`λ = √(D/k)`), and the **speed of an invasion front**
+(Fisher-KPP's `c = 2√(rD)`). A pure-Python finite-difference solver feeds the same curve
+oracle for a profile and the scalar comparison for a length or a speed, self-validated non-circularly against the exact analytical diffusion solution (a Gaussian
 whose variance grows by 2·D·t) with a 3/3 [milestone blind run](datasets/spatial/milestone/). Every
 spatial certificate reads *partially* reproduced even where the profile matches the closed form
 exactly: a claim carries no field naming a boundary, so the wall the run used is a choice Reprolith
