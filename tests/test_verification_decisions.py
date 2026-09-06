@@ -279,6 +279,7 @@ def test_the_queue_is_still_order_independent_with_decisions() -> None:
 def _write_repo(tmp_path: Path, assumption: Assumption) -> Path:
     from reprolith import Catalog, GroundTruth, Identifiers, ModelClass, OverallVerdict
 
+    tmp_path.mkdir(parents=True, exist_ok=True)
     catalog = Catalog()
     catalog.add(
         Identifiers(title="t", doi="10.1/x", accession="ACC1"),
@@ -450,3 +451,41 @@ def test_every_queued_assumption_on_this_repository_is_load_bearing() -> None:
     ]
     assert queued, "no queued assumption on the corpus; this measurement guards nothing"
     assert all(assumption.load_bearing for assumption in queued)
+
+
+def test_a_decision_on_disk_reaches_a_loaded_repository(tmp_path, monkeypatch) -> None:
+    """The path the tests above stop short of. Every one of them replaces `repository_decisions`,
+    so the reading, the parsing and the join into a live query were exercised by nothing — the
+    committed file is empty by design, which is right, and left the non-empty path uncovered.
+
+    Pointing the datasets root at a temp directory drives the real function, and the assertion is
+    against `load_repository`, the loader both surfaces actually use.
+    """
+    from reprolith import mcp_server
+
+    assumption = _assumption(verification_item="verify:named")
+    repo = _write_repo(tmp_path / "repo", assumption)
+    datasets = tmp_path / "datasets"
+    datasets.mkdir()
+    (datasets / "verification_decisions.json").write_text(
+        json.dumps(decisions_document([_decision("verify:named", assumption)])), encoding="utf-8"
+    )
+    monkeypatch.setattr(mcp_server, "repository_data_root", lambda: datasets)
+
+    assert [d.expert for d in mcp_server.repository_decisions()] == ["A. Curator"]
+    query, _ = mcp_server.load_repository(repo)
+    report = query.verification_queue()
+    assert [item["id"] for item in report["decided"]] == ["verify:named"]
+    assert report["decided"][0]["decisions"][0]["source"] == "https://example.invalid/issues/1"
+    assert report["pending"] == []
+
+
+def test_a_datasets_directory_without_the_file_reads_as_no_decisions(tmp_path, monkeypatch) -> None:
+    """An installed copy outside a source checkout carries no datasets at all, which is the
+    condition `default_data_dir` names — it gets an empty record rather than an error."""
+    from reprolith import mcp_server
+
+    empty = tmp_path / "datasets"
+    empty.mkdir()
+    monkeypatch.setattr(mcp_server, "repository_data_root", lambda: empty)
+    assert mcp_server.repository_decisions() == ()
