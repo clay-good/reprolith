@@ -953,6 +953,27 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          'f"[a window); Dirichlet source at x=0 and a zero-flux far "'),
         ["tests/test_spatial_gradient_claim.py"],
     ),
+    (
+        "a front that ran out of domain is reported as a front that never existed",
+        "spatial.py",
+        ("        ran_out = any(profile[-1] > claim.level for profile in readings)",
+         "        ran_out = False"),
+        ["tests/test_spatial_front_claim.py"],
+    ),
+    (
+        "how far a KPP front is from its asymptote is left off the certificate",
+        "spatial.py",
+        ('f"identical window this speed still changes by {drift:.3e} "',
+         'f"identical window this speed is what it is "'),
+        ["tests/test_spatial_front_claim.py"],
+    ),
+    (
+        "a front speed is measured from the initial condition rather than between two readings",
+        "spatial.py",
+        ("    speed = (middle - start) / window",
+         "    speed = middle / (claim.settle_steps + claim.measure_steps) / claim.dt"),
+        ["tests/test_spatial_front_claim.py"],
+    ),
     # --- the collaboration surface, 2026-09-06 -------------------------------------------------
     # Twelve guards from one day's work. Every one was hand-mutated when it was written and none
     # was in this list, which is the gap this file exists to close: a guard proved once by hand is

@@ -4699,3 +4699,42 @@ the loop publishing that engine was running on a status line.
 Fixed by putting the exit status in the condition rather than in a string, and by not running two
 full suites at once — the timeout that exposed it was contention, not a failure, which is its own
 small lesson about what a wall-clock budget measures.
+
+**And the fix had the same defect.** Piping pytest through `tail` and reading `${PIPESTATUS[0]}`
+captures nothing in zsh, which uses `pipestatus`; the status line came out as a bare `EXIT:` with no
+number, and an empty string is not obviously wrong at a glance. The lesson is not about shells. A
+status that can be *absent* and still look like a status is the same defect as a status that always
+reads success — twice in one evening, in the code checking the code. The way to know an exit code
+is to branch on it, not to print it: `pytest > log; echo "EXIT:$?"` with no pipe, and read the
+number.
+
+
+## The second spatial scalar, and two more premises that sounded right
+
+`FrontSpeedClaim` certifies a reported invasion front speed — the Fisher-KPP asymptotic
+`c = 2√(rD)` that ecology and epidemic-wave papers print in their text. Same argument as the decay
+length: it is a number, not a picture, so it is reachable without figure digitization.
+
+It has a subtlety the gradient does not, and the subtlety is the interesting part. **A KPP front
+approaches its asymptotic speed only logarithmically**, so a finite-time measurement sits low and
+the class-default 5% can fail a *correct* reproduction. Measured on this system: 9.47% low over
+10-unit windows, 5.78% over 25, 4.72% over 50, 4.23% over 100. So the default misses a right answer
+at the short runs and passes it at the long ones — which is precisely why a wider tolerance has to
+be a stated override with its reason, not a number nudged upward.
+
+Rather than only widening it, the claim measures its own convergence: it takes a third reading one
+window further on and reports how much the speed is still changing. On the long run that is 0.21%,
+so a reader can see the front has essentially settled and the residual 4.23% is the known
+logarithmic bias rather than an unconverged measurement. Those are different situations that
+looked identical.
+
+Two premises I wrote and had to correct by measuring:
+
+- "The class default would fail this" — not for the configuration I first chose, where the error is
+  4.23% against a 5% default. It fails at shorter runs. The test says which, with the numbers.
+- "A front that reaches the wall abstains for reaching the wall" — it does not. A KPP front that
+  runs out of domain **saturates** it, so nothing descends through the level and the reading looks
+  exactly like a profile that never had a front. The guard I wrote was unreachable and the
+  abstention a reader would actually get named the wrong cause: "there is no edge to follow", for a
+  front that formed perfectly well and hit a wall. The two are named apart now, which is worth more
+  than the guard was.

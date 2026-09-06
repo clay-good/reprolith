@@ -85,6 +85,19 @@ for reported profiles and the scalar comparison for the length scales papers sta
 - **AND** the run carries no boundary assumption: a fixed source at one end and a zero-flux far
   field are the gradient model itself rather than a wall this engine chose in the absence of one
 
+#### Scenario: Front-speed reproduction
+
+- **WHEN** a claim is a reported invasion or growth-front speed
+- **THEN** the oracle advances the front through a settling window and then a measuring window,
+  takes the speed from the distance between two front positions rather than from the initial
+  condition, and compares it to the reported value with the shared scalar comparison
+- **AND** the certificate reports how much that speed is still changing over a further identical
+  window, because a Fisher-KPP front approaches its asymptotic speed only logarithmically and a
+  reader cannot otherwise tell a still-converging measurement from a converged one
+- **AND** a front that has run out of domain abstains, saying so — past the wall the distance
+  travelled is the domain's length rather than the model's speed, and reporting that as a front
+  that never existed would send a reader after the wrong cause
+
 #### Scenario: Concentration-profile reproduction
 
 - **WHEN** a claim is a reported concentration profile over space at a stated time

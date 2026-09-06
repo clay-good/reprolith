@@ -768,6 +768,66 @@ class GradientClaim:
         return math.sqrt(self.diffusivity / self.decay)
 
 
+@dataclass(frozen=True)
+class FrontSpeedClaim:
+    """A published **invasion front speed**: how fast a growing population's edge advances.
+
+    The other scalar a spatial paper prints rather than draws. Fisher-KPP —
+    ``u_t = D u_xx + r·u(1−u)`` — is the canonical invasion and growth-front model, and its
+    asymptotic speed ``c = 2√(rD)`` is the number ecology and epidemic-wave papers report.
+
+    The reaction is *not* a callable the caller supplies. It is logistic growth at rate ``growth``,
+    written out here, because a claim has to be re-derivable from the certificate: a protocol line
+    saying "some function of u" documents nothing, and this class's discipline is that every input
+    the number turns on is recorded.
+
+    **A KPP front approaches its asymptotic speed logarithmically in time**, so a finite-time
+    measurement sits a few percent low and the class-default 5% would fail a correct reproduction.
+    That is a property of the model, not a tolerance to be quietly widened: the claim measures the
+    speed over two consecutive windows and reports how much it is still changing between them, so
+    a reader sees whether the front had settled. Set a principled ``tolerance`` with a rationale
+    for the finite-time bias; the default is left alone rather than special-cased.
+    """
+
+    claim_id: str
+    quantity: str
+    reported: float
+    source_location: str
+    initial: tuple[float, ...]
+    diffusivity: float
+    growth: float
+    dx: float
+    dt: float
+    #: Steps to the first front reading, then from there to the second. The speed is the distance
+    #: between the two readings over the time between them; the first window exists to let the
+    #: front form, since a speed measured from the initial condition measures the initial
+    #: condition.
+    settle_steps: int
+    measure_steps: int
+    #: The concentration the front's position is read at. Half the carrying capacity by
+    #: convention, and recorded because a different level gives a different position.
+    level: float = 0.5
+    tolerance: Tolerance | None = None
+    shortfall: Attribution | None = field(default=None)
+
+    def __post_init__(self) -> None:
+        if self.growth <= 0.0:
+            raise ValueError(
+                f"claim {self.claim_id!r} states a growth rate of {self.growth!r}: without growth "
+                "there is no advancing front, only diffusive spreading with no speed"
+            )
+        if self.settle_steps < 1 or self.measure_steps < 1:
+            raise ValueError(
+                f"claim {self.claim_id!r} asks for {self.settle_steps} settling and "
+                f"{self.measure_steps} measuring steps; both windows must advance the model"
+            )
+
+    @property
+    def analytical_speed(self) -> float:
+        """``2√(rD)`` — the asymptotic speed the continuum equation has, for the protocol line."""
+        return 2.0 * math.sqrt(self.growth * self.diffusivity)
+
+
 def boundary_sensitivity(claim: SpatialClaim) -> dict[str, Any] | None:
     """What the wall costs this claim, in the statistic the verdict is actually drawn from.
 
@@ -897,12 +957,103 @@ def _judge_gradient(claim: GradientClaim) -> ClaimAssessment:
     )
 
 
+def _judge_front_speed(claim: FrontSpeedClaim) -> ClaimAssessment:
+    """Advance a Fisher-KPP front through two windows and judge the speed between them.
+
+    Three ways this abstains rather than publishing a number, each a case where a speed can be
+    computed and would mean nothing:
+
+    ``the discretization does not run``
+        as everywhere else in this class.
+    ``the front cannot be located``
+        the profile never crosses ``level``, so there is no edge to follow.
+    ``the front has reached the domain's edge``
+        beyond that the wall holds it, and the distance it "travelled" is the distance to the
+        wall. A speed measured across that boundary is confidently wrong, which is worse than
+        absent, and it is the front-speed analogue of the gradient's fitting window.
+    """
+    def evolve(state: Sequence[float], steps: int) -> list[float]:
+        return react_diffuse_1d(
+            state, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt, steps=steps,
+            reaction=lambda u: claim.growth * u * (1.0 - u),
+        )
+
+    def abstain(reason: str) -> ClaimAssessment:
+        return not_evaluable(
+            claim_id=claim.claim_id, quantity=claim.quantity,
+            source_location=claim.source_location, reason=reason,
+            reference_kind=ReferenceKind.NUMERIC,
+        )
+
+    try:
+        settled = evolve(claim.initial, claim.settle_steps)
+        measured = evolve(settled, claim.measure_steps)
+        # A third reading, one more window on: the difference between the two speeds is how far
+        # this front still is from its asymptote, which is the whole reason a KPP claim needs a
+        # wider tolerance. Measured rather than asserted.
+        later = evolve(measured, claim.measure_steps)
+    except UnstableDiscretization as unstable:
+        return abstain(str(unstable))
+
+    readings = (settled, measured, later)
+    positions = [front_position(p, dx=claim.dx, level=claim.level) for p in readings]
+    far_edge = (len(claim.initial) - 1) * claim.dx
+    if any(position is None for position in positions):
+        # Two very different situations present identically as "no descending crossing", and
+        # naming them apart is the whole value of the abstention. A KPP front that runs out of
+        # domain *saturates* it — every point ends above the level, so nothing descends — and
+        # reporting that as "there is no edge to follow" would send a reader looking for a front
+        # that formed perfectly well and simply ran into the wall. Measured: this is what every
+        # short domain does, so the wall case reaches here and never a position check below.
+        ran_out = any(profile[-1] > claim.level for profile in readings)
+        return abstain(
+
+                f"the front reached the end of the domain ({far_edge:.6g}) and saturated it: "
+                "past the wall there is no distance left to travel, so what a speed would measure "
+                "is the domain's length rather than the model"
+                if ran_out
+                else f"no front at the {claim.level!r} level in any reading: nothing crosses it, "
+                     "so there is no edge to follow and no speed to measure"
+
+        )
+    start, middle, end = (float(position) for position in positions)  # type: ignore[arg-type]
+    if end >= far_edge - claim.dx:
+        # The narrow case the saturation check above does not cover: a front sitting on the last
+        # cell while the profile still descends somewhere.
+        return abstain(
+            f"the front reached the end of the domain ({end:.6g} of {far_edge:.6g}): beyond it "
+            "the wall holds the front, so the distance travelled is the distance to the wall "
+            "rather than the model's speed"
+        )
+    window = claim.measure_steps * claim.dt
+    speed = (middle - start) / window
+    drift = abs((end - middle) / window - speed)
+    assessment = judge_scalar(
+        claim_id=claim.claim_id, quantity=claim.quantity,
+        source_location=claim.source_location, reported=claim.reported, predicted=speed,
+        tolerance=claim.tolerance,
+        attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
+    )
+    return replace(
+        assessment,
+        protocol=(
+            f"1-D Fisher-KPP front: D={claim.diffusivity!r}, r={claim.growth!r}, "
+            f"dx={claim.dx!r}, dt={claim.dt!r}, {claim.settle_steps} settling steps then "
+            f"{claim.measure_steps} measured, front read at u={claim.level!r}; the asymptotic "
+            f"speed of the continuum equation is {claim.analytical_speed:.6g}; over the next "
+            f"identical window this speed still changes by {drift:.3e} "
+            f"({drift / speed:.2%} of it), which is how far the front is from having settled"
+        ),
+    )
+
+
 def certify_spatial(
     *,
     paper: PaperIdentity,
     engine_pin: EnginePin,
     claims: Iterable[SpatialClaim] = (),
     gradients: Iterable[GradientClaim] = (),
+    fronts: Iterable[FrontSpeedClaim] = (),
     assumptions: Iterable[Assumption] = (),
 ) -> Certificate:
     """Run each spatial claim's diffusion to its stated time, judge the profile, build the certificate.
@@ -1074,6 +1225,9 @@ def certify_spatial(
     # engine made in the absence of one. Qualifying it would overstate the uncertainty, which is
     # the same defect as understating it.
     assessments.extend(_judge_gradient(gradient) for gradient in gradients)
+    # Like a gradient, a front carries no boundary assumption: it is judged only while it is far
+    # from the walls, and a reading that has reached one abstains rather than being qualified.
+    assessments.extend(_judge_front_speed(front) for front in fronts)
     if not assessments:
         raise ValueError(
             "a spatial certificate needs at least one claim: certifying a paper this class judged "

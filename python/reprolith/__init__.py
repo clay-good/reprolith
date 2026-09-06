@@ -331,6 +331,7 @@ from .selection import (
     stated_objective,
 )
 from .spatial import (
+    FrontSpeedClaim,
     GradientClaim,
     SpatialClaim,
     SpatialModel,
@@ -680,6 +681,7 @@ __all__ = [
     "solver_pin_for",
     "spatial_dossier",
     "spatial_solver_pin",
+    "FrontSpeedClaim",
     "GradientClaim",
     "SpatialClaim",
     "SpatialModel",
