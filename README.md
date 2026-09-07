@@ -9,7 +9,7 @@ reproduced, partially, or not — for each result, with the reason.
 
 That is what it is *for*, and it is worth being exact about how much of it is done today.
 
-Of the thirty-three published certificates, **four** check a reconstruction against numbers read
+Of the thirty-five published certificates, **four** check a reconstruction against numbers read
 from one paper's own tables — one for each model that paper deposited. (A fifth is checked against
 a published number too, and the count below says which.) Between them they carry **one hundred and
 seventy claims**,
@@ -237,7 +237,9 @@ guessing — just: *does the described model produce the shown result?*
   seen, 6.5%, 5.2% and 1.8% of the mean. The first of those is wider than the 5% that class's own
   verdict passes at, so on that model the second opinion is weaker than the verdict it stands
   beside, and the record says so. The spatial class's 3 profiles complete the set under scipy's
-  LSODA, and their 1e-03 is the other number that must not be misread: it is what this class's
+  LSODA — its two scalar certificates have no second engine behind them and every surface says so,
+  since `corroborate_profile` re-solves a profile and a decay length is read *off* a run rather
+  than being one — and their 1e-03 is the other number that must not be misread: it is what this class's
   explicit stepper costs against an exact integration of the same semi-discrete system, and against
   the continuum solution the same profiles sit 2.0e-05 away — *closer* than the two engines are to
   each other, because the scheme's time and space errors have opposite signs. **All six classes are
@@ -245,7 +247,8 @@ guessing — just: *does the described model produce the shown result?*
   no installed implementation answered their questions. Neither half was ever checked and neither
   held. `reprolith corroboration` still prints an unchecked class in the same list as the checked
   ones, because a class can lose an engine and a table of only the corroborated ones would read
-  as a whole-repository pass. It is reachable from the terminal and over MCP, not only from the
+  as a whole-repository pass — and it now says the same thing about a *partly* corroborated class,
+  since a count of what has a record cannot see a certificate that has none. It is reachable from the terminal and over MCP, not only from the
   published page ([`docs/self-validation.md`](docs/self-validation.md)).
 
 ## What it is *not*
@@ -651,13 +654,16 @@ rather than a picture, and so the ones reachable without a curator digitizing a 
 length** of a morphogen gradient (`λ = √(D/k)`), the **speed of an invasion front** (Fisher-KPP's
 `c = 2√(rD)`), and the **wavelength a Turing pattern selects** — stripe, spot and digit spacing. A
 pure-Python finite-difference solver feeds the same curve oracle for a profile and the scalar
-comparison for a length, a speed or a wavelength, self-validated non-circularly against the exact
-analytical diffusion solution (a Gaussian whose variance grows by 2·D·t) with a 3/3
-[milestone blind run](datasets/spatial/milestone/). The three committed spatial certificates read
+comparison for a length, a speed or a wavelength, self-validated non-circularly against closed
+forms — a Gaussian whose variance grows by 2·D·t, `λ = √(D/k)`, and `c = 2√(rD)` — with a 5/5
+[milestone blind run](datasets/spatial/milestone/). The three committed *profile* certificates read
 *partially* reproduced even where the profile matches the closed form exactly: they state no
 boundary, so the wall each run used is a choice Reprolith made rather than anything their source
 stated, and the verdict rests on it — the same qualification the stochastic class carries for its
-ensemble. A claim that *does* state its wall is run under it and can reach a clean pass.
+ensemble. A claim that *does* state its wall is run under it and can reach a clean pass, and so
+does a gradient, whose walls are the model rather than a choice: its milestone certificate is a
+clean `reproduced`, which is what keeps that qualification from reading as something the class
+cannot escape.
 
 **What that choice costs is measured, not asserted.** The solver runs three walls — zero-flux,
 Dirichlet (absorbing or held at a value), and periodic, each checked against the exact decay of an

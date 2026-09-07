@@ -1211,6 +1211,20 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if sensitivity is None or sensitivity.get("agree"):', "    if True:"),
         ["tests/test_logical_scheme.py"],
     ),
+    # --- a class can be partly corroborated, 2026-09-06 -----------------------------------------
+    (
+        "a class re-run on fewer certificates than it published reads as fully corroborated",
+        "query.py",
+        ("        if published is not None and model_class in published:", "        if False:"),
+        ["tests/test_corroboration_surface.py"],
+    ),
+    (
+        "a class re-running each claim counts its claims as if they were certificates",
+        "query.py",
+        ('            covered = len({key.split(":", 1)[0] for key in record})',
+         "            covered = len(record)"),
+        ["tests/test_corroboration_surface.py"],
+    ),
 ]
 
 

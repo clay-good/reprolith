@@ -57,14 +57,22 @@ def test_the_readme_shows_every_command_the_cli_has() -> None:
 #: Longest first: "thirty" is a substring of "thirty-one", so a shorter spelling that happens to
 #: be a prefix would match the longer sentence and check the wrong number.
 _WORDED_COUNTS = {"thirty-one": 31, "thirty-two": 32, "thirty-three": 33,
-                  "thirty-four": 34, "thirty": 30}
+                  "thirty-four": 34, "thirty-five": 35, "thirty-six": 36, "thirty": 30}
+
+#: What the counted sentence is *about*. The word alone is not unique in this README: the
+#: claim-selection section says a paper's "thirty-three published numbers" are not thirty-three
+#: independent things to check, and while the certificate count happened to be thirty-three too,
+#: this check was reading whichever sentence came first in its own dictionary order. It failed
+#: the day the counts diverged, which is the good ending — a quote that is not unique is a guard
+#: pointed at the wrong text.
+_COUNTED = "published certificates"
 
 
 def test_the_published_certificate_count_the_readme_states_is_the_count() -> None:
     published = len(list(_ROOT.glob("datasets/**/milestone/certificates/*.json")))
     assert published > 0, "no published certificates found; this check would pass vacuously"
     for word, number in _WORDED_COUNTS.items():
-        if word in _README:
+        if f"{word} {_COUNTED}" in _README:
             assert published == number, (
                 f"the README says '{word}' published certificates and the repository has "
                 f"{published}; update the sentence, or this file's _WORDED_COUNTS if the wording "
@@ -72,7 +80,7 @@ def test_the_published_certificate_count_the_readme_states_is_the_count() -> Non
             )
             return
     raise AssertionError(
-        "the README no longer states a certificate count in any wording this knows; add it to "
+        f"the README no longer states a '<count> {_COUNTED}' in any wording this knows; add it to "
         "_WORDED_COUNTS so the claim stays checked"
     )
 

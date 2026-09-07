@@ -1,0 +1,13 @@
+REPRODUCTION CERTIFICATE — Morphogen gradient decay length (D=1, k=0.25)
+Engine pin: reprolith-fd 0.0.1 / explicit-forward-euler-finite-difference (rev f05a691b21bc)
+
+OVERALL: reproduced
+  claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
+
+CLAIMS
+  [gradient-decay-length] morphogen decay length: reproduced (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0001
+      protocol: 1-D morphogen gradient to steady state: source=100.0, D=1.0, k=0.25, dx=0.1, dt=0.0020000000000000005, 40000 steps over 300 points; decay length fitted over grid [20, 120); Dirichlet source at x=0 and a zero-flux far wall, which is the model rather than a choice; the continuum length is 2
+
+SCOPE
+  This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

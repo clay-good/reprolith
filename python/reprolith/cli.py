@@ -213,6 +213,13 @@ def _cmd_corroboration(query: ReprolithQuery, args: argparse.Namespace) -> int:
         # could not be told apart from a current one.
         versions = entry["engine_versions"]
         print(f"  {'':<18}      {'as ' + ', '.join(versions) if versions else 'engine builds unstated'}")
+        # A class can be *partly* corroborated, and the line above counts only what has a record:
+        # the spatial class publishes five certificates and three of them were re-run. Without
+        # this, "3 model(s) — all engine-independent" reads as the whole class.
+        if entry.get("uncorroborated"):
+            print(f"  {'':<18}      {entry['uncorroborated']} of {entry['published']} standing "
+                  "certificate(s) in this class have no second engine behind them — an absence, "
+                  "not a pass")
     # The absence is the finding, so it prints in the same list rather than as a footnote a reader
     # can miss: four of the six classes have no second engine, and a table of the two that do
     # would read as a whole-repository pass.
@@ -223,7 +230,9 @@ def _cmd_corroboration(query: ReprolithQuery, args: argparse.Namespace) -> int:
     runs = ", ".join(f"{n} {unit}(s)" for unit, n in sorted(o["runs"].items()))
     print(f"\n  overall: {o['classes_checked']} of "
           f"{o['classes_checked'] + o['classes_unchecked']} classes re-run on a second engine"
-          + (f" — {runs}" if runs else ""))
+          + (f" — {runs}" if runs else "")
+          + (f"; {o['uncorroborated_certificates']} standing certificate(s) in those classes have "
+             "none" if o.get("uncorroborated_certificates") else ""))
     return 0
 
 

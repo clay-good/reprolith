@@ -1,8 +1,9 @@
 {
   "agreement_rate": 1.0,
-  "agreements": 3,
+  "agreements": 5,
   "confusion": {
-    "partially-reproduced->partially-reproduced": 3
+    "partially-reproduced->partially-reproduced": 3,
+    "reproduced->reproduced": 2
   },
   "disagreements": 0,
   "per_entry": [
@@ -26,7 +27,21 @@
       "entry": "diffusion_Dhalf",
       "expected": "partially-reproduced",
       "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "gradient_length",
+      "expected": "reproduced",
+      "source": "closed-form exponential gradient, lambda = sqrt(D/k) = 2.0"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "front_speed",
+      "expected": "reproduced",
+      "source": "closed-form pulled-front speed, c = 2*sqrt(rD) = 2.0, judged under a stated 10% tolerance for the logarithmic finite-time convergence"
     }
   ],
-  "total": 3
+  "total": 5
 }

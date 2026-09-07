@@ -4938,3 +4938,41 @@ fixed-point certificate this class publishes.
 One difference from the spatial wall is worth stating, because the verification queue ranks on it:
 a scheme is something a paper can state, so this assumption is `author_can_close=True`. The wall is
 a limit of the solver and is not.
+
+
+## Two scalars in the milestone, and the summary that could not see them
+
+The spatial class advertises three scalars a paper prints as numbers — a decay length, a front
+speed, a pattern wavelength — as the results reachable without a curator digitizing a figure. Its
+blind evidence covered profiles alone. The milestone carries a **decay length** and a **front
+speed** now, judged against `λ = √(D/k)` and `c = 2√(rD)`, and scores 5/5.
+
+Two of those entries are worth more than the count. They are the first spatial certificates that
+read a clean `reproduced`: a gradient's walls are the model — a fixed source at one end, a zero-flux
+far field — rather than a choice this engine made in the absence of one, so nothing qualifies them.
+A class whose every published certificate says `partially-reproduced` invites the reading that the
+qualification is a property of the class rather than of what its claims state, and these are the
+counter-example. A run that started qualifying them would show up as a disagreement.
+
+The **wavelength** is deliberately not among them, and the reason is the finding underneath the
+claim: linear stability predicts the fastest-growing mode and the saturated nonlinear pattern
+selects a different one. There is no independent closed form for the quantity the certificate
+judges, so a blind entry would either score the class against the wrong number or check the solver
+against itself.
+
+Publishing them turned up a defect in a surface that had been right for as long as nothing tested
+it. `corroboration_summary` is a function of the corroboration **records**, so it could only ever
+count what had one: the spatial class went to five certificates and three records, and the terminal,
+the agent surface and the public page all went on reading "spatial: 3 model(s) — all
+engine-independent" with nothing saying that two of its five were never re-run at all. The
+`unchecked` list catches a class with *no* second engine; there was no half-open case until now.
+The summary takes the standing certificate count per class now and reports the shortfall — by
+accession, since a record key is `accession:claim_id` where a class re-runs each claim, and
+counting keys would have read four claims of one paper as four corroborated papers.
+
+And the README's certificate count moved from thirty-three to thirty-five, which found a third
+thing: the guard pinning that sentence searched for the *word*, and "thirty-three" appears twice in
+this README — once for the certificates and once for a paper's thirty-three published numbers. It
+was reading whichever sentence its own dictionary order reached first. It anchors on
+"<count> published certificates" now. A quote that is not unique is a guard pointed at the wrong
+text, which is the third time that shape has been found here.

@@ -16,11 +16,14 @@ Run from the repo root:  python scripts/run_spatial_milestone.py
 from __future__ import annotations
 
 import json
+import math
 from collections import Counter
 from pathlib import Path
 
 from reprolith import (
     Catalog,
+    FrontSpeedClaim,
+    GradientClaim,
     GroundTruth,
     Identifiers,
     ModelClass,
@@ -28,6 +31,8 @@ from reprolith import (
     PaperIdentity,
     RunMetadata,
     SpatialClaim,
+    Tolerance,
+    ToleranceSource,
     certificate_digest,
     certify_spatial,
     gaussian_profile,
@@ -57,6 +62,76 @@ _SYSTEMS = {
     "diffusion_D2": {"title": "1-D diffusion of a Gaussian (D=2)", "D": 2.0, "var0": 1.5, "mass": 7.0, "steps": 800},
     "diffusion_Dhalf": {"title": "1-D diffusion of a Gaussian (D=0.5)", "D": 0.5, "var0": 2.0, "mass": 5.0, "steps": 1200},
 }
+
+
+#: The two **scalars** this class certifies, beside the three profiles. They are here for a reason
+#: the profiles cannot serve: a decay length and a front speed are numbers a paper prints in its
+#: text, so unlike a profile they are reachable without a curator digitizing a figure — and the
+#: README says so, while the blind evidence covered profiles alone. They also make this the one
+#: milestone whose entries do not all carry the same expected verdict: a gradient's walls are the
+#: model rather than a choice this engine made, so its certificate can and does read a clean
+#: `reproduced`, and a run that started qualifying it would show up here as a disagreement.
+#:
+#: The wavelength claim is deliberately **not** here, and the reason is worth stating: linear
+#: stability predicts the mode that grows fastest, and the saturated nonlinear pattern selects a
+#: different one (21 against 20 on the configuration this class self-validates). So there is no
+#: independent closed form for the quantity the certificate judges, and a blind entry would either
+#: score the class against the wrong number or check the solver against itself.
+_GRADIENT_D, _GRADIENT_K, _GRADIENT_SOURCE = 1.0, 0.25, 100.0
+_GRADIENT_DX = 0.1
+_FRONT_D, _FRONT_R = 1.0, 1.0
+_FRONT_DX = 0.5
+
+#: The finite-time bias is known and stated, so the override is principled rather than a magic
+#: number: a KPP front approaches `2√(rD)` logarithmically, and this configuration measures 4.2%
+#: low. `tests/test_spatial_front_claim.py` uses the same one.
+_FRONT_TOLERANCE = Tolerance(
+    0.10, 0.20, ToleranceSource.REVIEWER_OVERRIDE,
+    rationale="KPP front speed converges to 2*sqrt(rD) logarithmically; a finite-time, discretized "
+              "measurement is expected within ~10%",
+)
+
+
+def _gradient_entry() -> tuple[Identifiers, GroundTruth, list[GradientClaim]]:
+    """A morphogen gradient's decay length against the closed form `λ = √(D/k)`."""
+    dt = _DIFFUSION_NUMBER * _GRADIENT_DX * _GRADIENT_DX / _GRADIENT_D
+    claim = GradientClaim(
+        claim_id="gradient-decay-length", quantity="morphogen decay length",
+        reported=math.sqrt(_GRADIENT_D / _GRADIENT_K), source_location="closed-form",
+        source=_GRADIENT_SOURCE, diffusivity=_GRADIENT_D, decay=_GRADIENT_K,
+        dx=_GRADIENT_DX, points=300, dt=dt, steps=40000, fit_from=20, fit_to=120,
+    )
+    return (
+        Identifiers(title="Morphogen gradient decay length (D=1, k=0.25)", accession="gradient_length"),
+        GroundTruth(
+            expected=OverallVerdict.REPRODUCED,
+            source="closed-form exponential gradient, lambda = sqrt(D/k) = 2.0",
+        ),
+        [claim],
+    )
+
+
+def _front_entry() -> tuple[Identifiers, GroundTruth, list[FrontSpeedClaim]]:
+    """A Fisher-KPP invasion front's speed against the closed form `c = 2√(rD)`."""
+    dt = _DIFFUSION_NUMBER * _FRONT_DX * _FRONT_DX / _FRONT_D
+    window = round(100.0 / dt)
+    points = 1201  # [0, 600]: long enough that the front never reaches the wall
+    claim = FrontSpeedClaim(
+        claim_id="front-speed", quantity="Fisher-KPP asymptotic front speed",
+        reported=2.0 * math.sqrt(_FRONT_R * _FRONT_D), source_location="closed-form",
+        initial=tuple(1.0 if i * _FRONT_DX < 20.0 else 0.0 for i in range(points)),
+        diffusivity=_FRONT_D, growth=_FRONT_R, dx=_FRONT_DX, dt=dt,
+        settle_steps=window, measure_steps=window, tolerance=_FRONT_TOLERANCE,
+    )
+    return (
+        Identifiers(title="Fisher-KPP invasion front speed (D=1, r=1)", accession="front_speed"),
+        GroundTruth(
+            expected=OverallVerdict.REPRODUCED,
+            source="closed-form pulled-front speed, c = 2*sqrt(rD) = 2.0, judged under a stated "
+                   "10% tolerance for the logarithmic finite-time convergence",
+        ),
+        [claim],
+    )
 
 
 def main() -> None:
@@ -102,6 +177,17 @@ def main() -> None:
             )],
         )
 
+    for identifiers, truth, claims in (_gradient_entry(), _front_entry()):
+        catalog.add(identifiers, ModelClass.SPATIAL, ground_truth=truth)
+        # Certified blind like the profiles: the verdict path never sees the label. Routed by
+        # claim type rather than by a flag — `certify_spatial` takes each kind in its own argument.
+        certified[str(identifiers.accession)] = certify_spatial(
+            paper=PaperIdentity(title=identifiers.title, doi=""),
+            engine_pin=pin,
+            gradients=[c for c in claims if isinstance(c, GradientClaim)],
+            fronts=[c for c in claims if isinstance(c, FrontSpeedClaim)],
+        )
+
     certificates, report = run_test_set(catalog.entries, engine_pin=pin, certified=certified, advance=True)
 
     # The same three profiles re-solved under scipy's LSODA by method of lines — an adaptive
@@ -143,6 +229,11 @@ def main() -> None:
     print(f"digests: {[certificate_digest(c) for c in certificates]}")
     agreed = sum(1 for row in corroboration.values() if row["engine_independent"])
     print(f"corroboration: {agreed}/{len(corroboration)} engine-independent vs scipy's LSODA")
+    # Said out loud rather than left to arithmetic: the two scalar entries have no second engine
+    # behind them. `corroborate_profile` re-solves a profile, and a decay length and a front speed
+    # are read off a run rather than being one — so the surfaces report them as uncorroborated,
+    # which is the honest state and not a pass.
+    print(f"({len(certified) - len(corroboration)} entries carry no corroboration record)")
 
 
 if __name__ == "__main__":

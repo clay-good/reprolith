@@ -560,7 +560,9 @@ def _track_record_banner(self_validation: dict[str, Any]) -> str:
     )
 
 
-def _corroboration_banner(corroboration: dict[str, dict[str, Any]]) -> str:
+def _corroboration_banner(
+    corroboration: dict[str, dict[str, Any]], published: Mapping[str, int] | None = None
+) -> str:
     """What a second independent engine said, per class — including where none was asked.
 
     Cross-engine corroboration is the check that separates a model's behaviour from one solver's
@@ -580,7 +582,7 @@ def _corroboration_banner(corroboration: dict[str, dict[str, Any]]) -> str:
     """
     from .query import corroboration_held, corroboration_summary
 
-    summary = corroboration_summary(corroboration)
+    summary = corroboration_summary(corroboration, published)
     checked = []
     for model_class, entry in sorted(summary["by_class"].items()):
         # One decision, shared with the terminal and the agent surface: how an agreement reads
@@ -590,9 +592,17 @@ def _corroboration_banner(corroboration: dict[str, dict[str, Any]]) -> str:
         built = (
             f" ({html.escape(', '.join(versions))})" if versions else " (engine builds unstated)"
         )
+        # A class can be *partly* corroborated, and the count above sees only what has a record.
+        # Without this, "3 model(s) re-run — all engine-independent" reads as the whole class on
+        # the one page a stranger meets this work through.
+        short = (
+            f" <strong>{entry['uncorroborated']} of {entry['published']} standing "
+            "certificate(s) in this class have no second engine behind them</strong>"
+            if entry.get("uncorroborated") else ""
+        )
         checked.append(
             f"<li>{html.escape(model_class)}: {entry['checked']} {entry['unit']}(s) re-run on "
-            f"{html.escape(', '.join(entry['engines']))}{built} —{held}</li>"
+            f"{html.escape(', '.join(entry['engines']))}{built} —{held}.{short}</li>"
         )
     unchecked = summary["unchecked"]
     if not checked and not unchecked:
@@ -785,6 +795,14 @@ def render_registry(
     # entry on the page is published under.
     scope_human = Scope().human
     classes = sorted({model_class for model_class, _ in rows})
+    # How many certificates each class actually has on this page, so the corroboration banner can
+    # say when it re-ran fewer than all of them. Superseded ones are excluded for the reason their
+    # cards are marked: a withdrawn record is not a standing result.
+    published_per_class: dict[str, int] = {}
+    for model_class, cert in rows:
+        if content_hash(cert.content()) in superseded:
+            continue
+        published_per_class[model_class] = published_per_class.get(model_class, 0) + 1
     verdicts = ["reproduced", "partially-reproduced", "not-reproduced", "blocked"]
 
     cards: list[str] = []
@@ -926,7 +944,7 @@ def render_registry(
         "to assume to get there. Every one of them is published under this scope statement:</p>"
         f'<p class="disclaimer">{html.escape(scope_human)}</p>'
         f"{_track_record_banner(self_validation) if self_validation else ''}"
-        f"{_corroboration_banner(corroboration) if corroboration is not None else ''}"
+        f"{_corroboration_banner(corroboration, published_per_class) if corroboration is not None else ''}"
         f"{_verification_banner(rows, decisions)}"
         f"{_AUTHOR_BANNER}"
         '<div class="filters">'

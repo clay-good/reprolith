@@ -172,13 +172,25 @@ def test_a_class_that_loses_its_second_engine_prints_as_an_absence() -> None:
 def test_the_registry_page_and_the_queried_surface_read_one_computation(capsys) -> None:
     """The page is the reason this existed at all, and it must not be able to disagree with the
     surfaces now answering the same question — which it could when it was their only reader."""
+    from reprolith.mcp_server import default_data_dir, load_repository
     from reprolith.render import _corroboration_banner
 
     records = milestone_corroboration_records()
-    banner = _corroboration_banner(records)
-    summary = corroboration_summary(records)
+    # The published counts the page and the query both carry: without them the page can say "3
+    # model(s) re-run" for a class of five and be in perfect agreement with a surface that also
+    # cannot see the other two.
+    query, _catalog = load_repository(default_data_dir(), aggregate=True)
+    summary = query.corroboration()
+    published = {
+        model_class: entry["published"]
+        for model_class, entry in summary["by_class"].items()
+        if "published" in entry
+    }
+    banner = _corroboration_banner(records, published)
     for model_class, entry in summary["by_class"].items():
         assert f"{model_class}: {entry['checked']} {entry['unit']}(s) re-run" in banner
+        if entry.get("uncorroborated"):
+            assert f"{entry['uncorroborated']} of {entry['published']} standing" in banner
 
     assert run(["corroboration", "--json"]) == 0
     assert json.loads(capsys.readouterr().out) == summary
@@ -190,9 +202,14 @@ def test_the_committed_registry_page_states_what_the_terminal_states(capsys) -> 
     page = (_ROOT / "datasets" / "registry.html").read_text(encoding="utf-8")
     assert run(["corroboration"]) == 0
     out = capsys.readouterr().out
-    summary = corroboration_summary(milestone_corroboration_records())
+    from reprolith.mcp_server import default_data_dir, load_repository
+
+    summary = load_repository(default_data_dir(), aggregate=True)[0].corroboration()
     for model_class, entry in summary["by_class"].items():
         assert f"{model_class}: {entry['checked']} {entry['unit']}(s) re-run" in page
+        # The shortfall too, on the page a stranger meets this work through.
+        if entry.get("uncorroborated"):
+            assert f"{entry['uncorroborated']} of {entry['published']} standing" in page
         assert ", ".join(entry["engine_versions"]) in page
         assert f"{model_class:<18} {entry['checked']:>4} {entry['unit']}(s)" in out
     assert not summary["unchecked"], summary["unchecked"]
@@ -208,3 +225,66 @@ def test_the_mcp_tool_and_the_command_are_the_same_answer() -> None:
         a for a in build_parser()._actions if isinstance(a, argparse._SubParsersAction)
     ).choices
     assert "corroboration" in subcommands
+
+
+# --- a class can be *partly* corroborated, and the count only sees what has a record ------------
+
+
+def test_a_class_with_more_certificates_than_records_reports_the_shortfall() -> None:
+    """The half-open version of the absence above, and it went live the day the spatial class
+    published two scalar certificates with no second engine: the page went on reading "spatial
+    3 model(s) — all engine-independent" while two of its five had never been re-run. A summary
+    whose population is the thing it is summarizing cannot report an absence."""
+    summary = corroboration_summary(
+        {
+            "spatial": {
+                "diffusion_D1": {"engines": ["reprolith-fd", "scipy-lsoda"],
+                                 "engine_independent": True, "distance_at_most": 1e-03},
+            }
+        },
+        {"spatial": 3},
+    )
+    entry = summary["by_class"]["spatial"]
+    assert entry["checked"] == 1
+    assert entry["published"] == 3
+    assert entry["uncorroborated"] == 2
+    assert summary["overall"]["uncorroborated_certificates"] == 2
+
+
+def test_a_class_re_running_each_claim_counts_its_certificates_by_accession() -> None:
+    """A record key is an accession, or `accession:claim_id` where a class re-runs each claim.
+    Counting keys there would report four claims of one paper as four corroborated papers."""
+    summary = corroboration_summary(
+        {
+            "ode-pkpd": {
+                "BIOMD1:Cmax": {"engines": ["copasi"], "engine_independent": True},
+                "BIOMD1:AUC": {"engines": ["copasi"], "engine_independent": True},
+            }
+        },
+        {"ode-pkpd": 2},
+    )
+    entry = summary["by_class"]["ode-pkpd"]
+    assert entry["checked"] == 2  # two claims
+    assert entry["uncorroborated"] == 1  # of two certificates, one has no record at all
+
+
+def test_a_leftover_record_is_not_reported_as_a_negative_absence() -> None:
+    """A record for a certificate that has since been withdrawn is not an absence; reporting it
+    as a negative count would be arithmetic standing in for a finding."""
+    summary = corroboration_summary(
+        {"spatial": {"a": {"engines": ["x"], "engine_independent": True},
+                     "b": {"engines": ["x"], "engine_independent": True}}},
+        {"spatial": 1},
+    )
+    assert summary["by_class"]["spatial"]["uncorroborated"] == 0
+    assert summary["overall"]["uncorroborated_certificates"] == 0
+
+
+def test_the_shipped_repository_says_which_certificates_have_no_second_engine(capsys) -> None:
+    """Live, not constructed: the spatial class publishes five certificates and three records —
+    a decay length and a front speed are read off a run rather than being one, so
+    `corroborate_profile` has nothing to re-solve for them."""
+    assert run(["corroboration"]) == 0
+    printed = capsys.readouterr().out
+    assert "2 of 5 standing certificate(s) in this class have no second engine" in printed
+    assert "an absence, not a pass" in printed

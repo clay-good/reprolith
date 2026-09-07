@@ -1,0 +1,39 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": false,
+      "claim_id": "front-speed",
+      "discrepancy": "relative error 0.0423",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "protocol": "1-D Fisher-KPP front: D=1.0, r=1.0, dx=0.5, dt=0.05, 2000 settling steps then 2000 measured, front read at u=0.5; the asymptotic speed of the continuum equation is 2; over the next identical window this speed still changes by 3.989e-03 (0.21% of it), which is how far the front is from having settled",
+      "quantity": "Fisher-KPP asymptotic front speed",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "closed-form",
+      "tolerance": "reproduced<=0.1, partial<=0.2 (reviewer-override)",
+      "tolerance_source": "reviewer-override",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": "explicit-forward-euler-finite-difference (rev f05a691b21bc)",
+    "engine": "reprolith-fd",
+    "version": "0.0.1"
+  },
+  "gap_report": [],
+  "overall": "reproduced",
+  "paper": {
+    "doi": "",
+    "pubmed_id": null,
+    "title": "Fisher-KPP invasion front speed (D=1, r=1)"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

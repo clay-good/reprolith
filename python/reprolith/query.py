@@ -106,7 +106,9 @@ def self_validation_summary(agreement_reports: dict[str, dict[str, Any]]) -> dic
     }
 
 
-def corroboration_summary(records: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def corroboration_summary(
+    records: dict[str, dict[str, Any]], published: Mapping[str, int] | None = None
+) -> dict[str, Any]:
     """What a second, independent engine said about each class's verdicts — and where none was asked.
 
     Pure function of :func:`reprolith.mcp_server.milestone_corroboration_records`, so the public
@@ -131,6 +133,20 @@ def corroboration_summary(records: dict[str, dict[str, Any]]) -> dict[str, Any]:
     ``engine_versions`` names the builds each class's numbers came out of. A record written before
     those were captured carries none, and publishes an empty list — it must not borrow the
     versions installed today, which would make a stale bound read as a fresh one.
+
+    ``published`` is how many certificates each class actually has standing, and it closes the
+    half-open version of the same gap ``unchecked`` closes for a whole class. This summary could
+    only ever see what had a *record*: when the spatial class published two scalar certificates
+    with no second engine behind them, the page went on reading "spatial 3 model(s) — all
+    engine-independent" and nothing on any surface said that two of its five were never re-run.
+    A summary whose population is the thing it is summarizing cannot report an absence, which is
+    the shape this repository keeps finding in its own output.
+
+    The comparison is by *entry*: a record key is an accession, or ``accession:claim_id`` where a
+    class re-runs each claim, so the entries with any record are the distinct accessions. Where
+    that is fewer than the class's standing certificates the difference is reported as
+    ``uncorroborated``; where the record covers more (a retired certificate's row) it is zero
+    rather than negative, since a leftover record is not an absence.
     """
     by_class: dict[str, dict[str, Any]] = {}
     unchecked: list[str] = []
@@ -175,6 +191,12 @@ def corroboration_summary(records: dict[str, dict[str, Any]]) -> dict[str, Any]:
                 str(row.get("comparison", "normalized-distance")) for row in record.values()
             }),
         }
+        if published is not None and model_class in published:
+            covered = len({key.split(":", 1)[0] for key in record})
+            by_class[model_class]["published"] = int(published[model_class])
+            by_class[model_class]["uncorroborated"] = max(
+                0, int(published[model_class]) - covered
+            )
         # The weakest resolution in the class, where the comparison is between two *sampled*
         # answers. Two ensembles agree at any tolerance if they are small enough, so the count of
         # agreements is not the whole statement — this is the size of the bias that would have
@@ -200,6 +222,11 @@ def corroboration_summary(records: dict[str, dict[str, Any]]) -> dict[str, Any]:
             "classes_unchecked": len(unchecked),
             "runs": runs,
             "engine_independent": independent,
+            # Across the checked classes, how many standing certificates have no second engine
+            # behind them at all. Zero says so; it does not say nothing.
+            "uncorroborated_certificates": sum(
+                int(entry.get("uncorroborated", 0)) for entry in by_class.values()
+            ),
         },
     }
 
@@ -492,8 +519,16 @@ class ReprolithQuery:
         them (spec: ``simulation-oracle`` — engine sensitivity). ``unchecked`` names the
         classes with no second registered engine, where nothing was re-run — an absence, not
         a pass. See :func:`corroboration_summary`. Empty when none are loaded.
+
+        The standing certificate count per class travels with it, because a class can be
+        *partly* corroborated: the spatial class publishes five certificates and three
+        corroboration records, and this summary could see only the three.
         """
-        return corroboration_summary(self._corroboration)
+        published: dict[str, int] = {}
+        for digest, label in self._model_classes.items():
+            if self.superseded_by(digest) is None:
+                published[label] = published.get(label, 0) + 1
+        return corroboration_summary(self._corroboration, published)
 
     def dossier(self, accession: str) -> dict[str, Any] | None:
         """The ingested dossier for an entry accession — its extracted model structure."""
