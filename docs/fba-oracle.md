@@ -74,14 +74,22 @@ reader and a different LP backend — across all 423 components: the objective, 
 bounds and the deletion objective for each of 95 reactions, and the deletion objective for each of
 137 genes. They agree to 3.4e-12 of the objective value.
 
-Three details in that record are the ones worth carrying to any other fingerprint comparison. The
+Whether they agree is `compare_frog`'s answer rather than a second comparison written beside it,
+and reaching for the shared rule is what found the third detail below.
+
+Four details in that record are the ones worth carrying to any other fingerprint comparison. The
 difference is measured against the **model's own scale** (its optimal objective) rather than each
 component's magnitude: the worst component is a flux bound both implementations call numerically
 zero, 5.6e-14 against 3.0e-12, whose relative difference is 3e-03 and means nothing. Identifiers
 that appear in only one fingerprint are refused as a structural disagreement rather than compared
 on the part that lines up — and COBRApy strips the SBML `R_`/`G_` prefixes this package keeps, so
-without knowing that, *every* reaction reads as present in only one. And it is published for the
-reference model only, for a measured reason: a fingerprint is a couple of LPs per reaction plus one
+without knowing that, *every* reaction reads as present in only one. **COBRApy reports a lethal
+knockout as NaN with an infeasible status** where this package reports `0.0`: the two agree about
+the model and differ in how they say so, so the convention is translated explicitly and counted in
+the record (four components here). A hand-rolled comparison had called those four agreed, because
+`abs(a - b)` on a NaN is a NaN and never becomes the worst difference; a NaN whose status is *not*
+infeasible raises instead, that being the other implementation declining to answer. And it is
+published for the reference model only, for a measured reason: a fingerprint is a couple of LPs per reaction plus one
 per gene, which is 0.8s here and 145s on the 1226-reaction iEK1008, so the genome-scale set would
 put half an hour on a script that must be re-run after any change to the solver, the oracle or the
 verdict rule.

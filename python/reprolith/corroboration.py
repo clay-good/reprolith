@@ -938,6 +938,67 @@ def _bare(identifier: str) -> str:
     return identifier[2:] if identifier[:2] in _SBML_PREFIXES else identifier
 
 
+def _require_same_model(
+    *,
+    reaction_ids: Sequence[str],
+    gene_ids: Sequence[str],
+    theirs_reactions: set[str],
+    theirs_genes: set[str],
+) -> None:
+    """Refuse two fingerprints that do not describe the same model.
+
+    An identifier on one side and not the other is a structural disagreement about *which model*
+    is being compared, and comparing the part that happens to line up would publish a fingerprint
+    match for two different ones. Ids are matched bare, since COBRApy strips the SBML ``R_``/``G_``
+    prefixes this package keeps — without that every reaction is "present in only one", a naming
+    convention read as a finding.
+    """
+    missing = [rid for rid in reaction_ids if _bare(rid) not in theirs_reactions]
+    missing += [gid for gid in gene_ids if _bare(gid) not in theirs_genes]
+    if missing:
+        raise ValueError(
+            "these fingerprints do not describe the same model: "
+            f"{len(missing)} identifier(s) appear in only one of them, first {missing[0]!r}. "
+            "That is a structural disagreement and is refused rather than compared on the part "
+            "that happens to line up"
+        )
+
+
+def _deletion_growths(frame: Any, kind: str) -> tuple[dict[str, float], list[str]]:
+    """COBRApy's deletion results as ``id -> growth``, with its infeasible convention translated.
+
+    The two implementations say the same thing about a lethal knockout in two ways: this package
+    documents ``0.0`` where the deletion makes the model infeasible, and COBRApy returns ``NaN``
+    with ``status == "infeasible"``. Left untranslated those four components on the reference model
+    read as a disagreement about the model, which is the same shape as the id prefixes one function
+    up — a convention read as a finding.
+
+    A ``NaN`` whose status is *not* infeasible is a different matter and raises: that is the other
+    implementation declining to answer, and quietly calling it zero growth would publish an
+    agreement about a number nobody computed.
+
+    Returns the translated growths and the identifiers that were translated, so the published
+    record can say how many components the two sides did not literally agree the same way about.
+    """
+    growths: dict[str, float] = {}
+    translated: list[str] = []
+    for ids, growth, status in zip(frame["ids"], frame["growth"], frame["status"]):
+        identifier = next(iter(ids))
+        value = float(growth)
+        if math.isnan(value):
+            if str(status) != "infeasible":
+                raise ValueError(
+                    f"cobrapy returned no growth for the {kind} deletion of {identifier!r} with "
+                    f"status {status!r}; that is the other implementation declining to answer "
+                    "rather than a lethal knockout, and calling it zero would publish an "
+                    "agreement about a number nobody computed"
+                )
+            value = 0.0
+            translated.append(identifier)
+        growths[identifier] = value
+    return growths, translated
+
+
 def frog_agreement(sbml: str) -> dict[str, Any]:
     """Reprolith's FROG fingerprint against COBRApy's, component by component.
 
@@ -964,7 +1025,7 @@ def frog_agreement(sbml: str) -> dict[str, Any]:
 
     import cobra
 
-    from .fba import frog_fingerprint, solver_pin
+    from .fba import FrogFingerprint, compare_frog, frog_fingerprint, solver_pin
     from .sbml import ingest_fbc_sbml
 
     mine = frog_fingerprint(ingest_fbc_sbml(sbml))
@@ -980,31 +1041,41 @@ def frog_agreement(sbml: str) -> dict[str, Any]:
     )
     reaction_deletions = cobra.flux_analysis.single_reaction_deletion(model, processes=1)
     gene_deletions = cobra.flux_analysis.single_gene_deletion(model, processes=1)
-    theirs_reaction = {
-        next(iter(ids)): float(growth)
-        for ids, growth in zip(reaction_deletions["ids"], reaction_deletions["growth"])
-    }
-    theirs_gene = {
-        next(iter(ids)): float(growth)
-        for ids, growth in zip(gene_deletions["ids"], gene_deletions["growth"])
-    }
-    missing = [
-        rid for rid in mine.reaction_ids
-        if _bare(rid) not in variability.index or _bare(rid) not in theirs_reaction
-    ] + [gid for gid in mine.gene_ids if _bare(gid) not in theirs_gene]
-    if missing:
-        raise ValueError(
-            "these fingerprints do not describe the same model: "
-            f"{len(missing)} identifier(s) appear in only one of them, first {missing[0]!r}. "
-            "That is a structural disagreement and is refused rather than compared on the part "
-            "that happens to line up"
-        )
+    theirs_reaction, reaction_infeasible = _deletion_growths(reaction_deletions, "reaction")
+    theirs_gene, gene_infeasible = _deletion_growths(gene_deletions, "gene")
+    _require_same_model(
+        reaction_ids=mine.reaction_ids,
+        gene_ids=mine.gene_ids,
+        theirs_reactions=set(variability.index) & set(theirs_reaction),
+        theirs_genes=set(theirs_gene),
+    )
     scale = abs(mine.objective_value)
     if scale == 0.0:
         raise ValueError(
             "this model's optimal objective is zero, so there is no scale to measure the two "
             "fingerprints' agreement against"
         )
+    # Whether they agree is `compare_frog`'s question, and it has been this package's answer to it
+    # since the class was written. Re-deciding it here would be two implementations of one rule,
+    # which is the defect this repository has caught itself in more than once — so COBRApy's side
+    # is assembled into a fingerprint under *these* identifiers and handed to it. What is computed
+    # below is the magnitude of the agreement, which is a different question and one `compare_frog`
+    # deliberately does not answer: it returns booleans and names disagreements.
+    theirs = FrogFingerprint(
+        reaction_ids=mine.reaction_ids,
+        objective_value=float(model.slim_optimize()),
+        variability=tuple(
+            (
+                float(variability.loc[_bare(rid), "minimum"]),
+                float(variability.loc[_bare(rid), "maximum"]),
+            )
+            for rid in mine.reaction_ids
+        ),
+        deletion_objectives=tuple(theirs_reaction[_bare(rid)] for rid in mine.reaction_ids),
+        gene_ids=mine.gene_ids,
+        gene_deletion_objectives=tuple(theirs_gene[_bare(gid)] for gid in mine.gene_ids),
+    )
+    comparison = compare_frog(mine, theirs)
     worst, where, compared = 0.0, "", 0
     def note(a: float, b: float, what: str) -> None:
         nonlocal worst, where, compared
@@ -1012,19 +1083,35 @@ def frog_agreement(sbml: str) -> dict[str, Any]:
         if abs(a - b) > worst:
             worst, where = abs(a - b), f"{what}: {a:.6g} vs {b:.6g}"
 
-    note(mine.objective_value, float(model.slim_optimize()), "objective")
+    note(mine.objective_value, theirs.objective_value, "objective")
     for index, rid in enumerate(mine.reaction_ids):
-        low, high = mine.variability[index]
-        note(low, float(variability.loc[_bare(rid), "minimum"]), f"{rid} variability minimum")
-        note(high, float(variability.loc[_bare(rid), "maximum"]), f"{rid} variability maximum")
-        note(mine.deletion_objectives[index], theirs_reaction[_bare(rid)], f"{rid} deletion")
+        note(mine.variability[index][0], theirs.variability[index][0], f"{rid} variability minimum")
+        note(mine.variability[index][1], theirs.variability[index][1], f"{rid} variability maximum")
+        note(mine.deletion_objectives[index], theirs.deletion_objectives[index], f"{rid} deletion")
     for index, gid in enumerate(mine.gene_ids):
-        note(mine.gene_deletion_objectives[index], theirs_gene[_bare(gid)], f"{gid} deletion")
+        note(
+            mine.gene_deletion_objectives[index],
+            theirs.gene_deletion_objectives[index],
+            f"{gid} deletion",
+        )
     pin = solver_pin()
     return {
         "engines": [pin.engine, COBRAPY_ENGINE],
         "engine_versions": [_reprolith_build(pin), str(cobra.__version__)],
+        # `compare_frog`'s verdict, component group by component group, and every disagreement it
+        # names — the same function a curated fingerprint would be judged against, so the published
+        # comparison and a verdict use one rule.
+        "agrees": comparison.agrees,
+        "objective_agrees": comparison.objective_agrees,
+        "variability_agrees": comparison.variability_agrees,
+        "deletion_agrees": comparison.deletion_agrees,
+        "gene_deletion_agrees": comparison.gene_deletion_agrees,
+        "disagreements": list(comparison.disagreements),
         "components_compared": compared,
+        # The components where the two implementations agree on the *model* and differ on how they
+        # say so: a knockout that leaves no feasible flux distribution is 0.0 here and NaN with an
+        # infeasible status there. Counted rather than hidden by the translation.
+        "infeasible_deletions_translated": len(reaction_infeasible) + len(gene_infeasible),
         "reactions": len(mine.reaction_ids),
         "genes": len(mine.gene_ids),
         "objective_value": mine.objective_value,

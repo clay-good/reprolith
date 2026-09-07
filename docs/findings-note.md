@@ -5168,6 +5168,17 @@ two fingerprints without knowing that reports *every* reaction as "present in on
 in only one side are still refused rather than compared on the part that lines up, because that
 would publish a fingerprint match for two different models.
 
+**The verdict rule, which found the fourth thing.** The first version of this comparison decided
+agreement itself, beside `compare_frog` — two implementations of one rule, the shape this project
+has caught itself in more than once. Handing COBRApy's side to `compare_frog` as a fingerprint
+under these identifiers immediately reported four disagreements the hand-rolled version had called
+perfect: **COBRApy returns NaN with an infeasible status where this package returns 0.0** for a
+knockout that leaves no feasible flux distribution, and `abs(a - b)` on a NaN is a NaN, which never
+becomes the worst difference. So four of the 423 components were not compared at all while the
+record said they agreed — a floor that cannot see what it never counted, in code an hour old. The
+convention is translated explicitly now and counted in the published record, and a NaN whose status
+is *not* infeasible raises rather than being read as zero growth.
+
 **The scope, with its cost measured.** It is published for the reference model only: a fingerprint
 is a couple of LPs per reaction plus one per gene, which is 0.8s on this 95-reaction model and 145s
 on the 1226-reaction iEK1008, so the genome-scale set would put half an hour on a script that must

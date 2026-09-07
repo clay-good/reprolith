@@ -243,7 +243,7 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "a partial SAT model is compared against a complete state",
         "corroboration.py",
-        ("    if missing:", "    if False:"),
+        ("    if missing:\n        raise ValueError(", "    if False:\n        raise ValueError("),
         ["tests/test_logical_corroboration.py"],
     ),
     (
@@ -1270,6 +1270,18 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         "certify.py",
         ("    if grid_change is not None:", "    if False:"),
         ["tests/test_auc_convergence.py"],
+    ),
+    (
+        "a lethal knockout the other implementation declines to answer for is read as zero growth",
+        "corroboration.py",
+        ('            if str(status) != "infeasible":', "            if False:"),
+        ["tests/test_frog_publication.py"],
+    ),
+    (
+        "two fingerprints of different models are compared on the part that lines up",
+        "corroboration.py",
+        ("    if missing:", "    if False:"),
+        ["tests/test_frog_publication.py"],
     ),
 ]
 
