@@ -928,6 +928,113 @@ def _scipy_ode() -> tuple[Any, Any, Any]:
     return numpy, solve_ivp, diags
 
 
+#: The SBML id prefixes COBRApy strips and this package keeps. Aligning two fingerprints without
+#: knowing that reports every reaction as "present in only one" — a naming convention read as a
+#: structural disagreement about the model.
+_SBML_PREFIXES = ("R_", "G_", "M_")
+
+
+def _bare(identifier: str) -> str:
+    return identifier[2:] if identifier[:2] in _SBML_PREFIXES else identifier
+
+
+def frog_agreement(sbml: str) -> dict[str, Any]:
+    """Reprolith's FROG fingerprint against COBRApy's, component by component.
+
+    FROG — flux optimum, reaction variability, objective, gene/reaction deletion — is the
+    constraint-based field's own portable reproducibility artifact, and the ``constraint-based``
+    spec asks this class to generate one and to make a verdict the comparison of two where a second
+    is available. :func:`reprolith.frog_fingerprint` has computed one since the class was written
+    and nothing published or compared it. A second one is available: COBRApy computes every
+    component from a different reader and a different LP backend.
+
+    Returns the comparison as a record: how many components were compared, the worst difference and
+    where, and the engines and builds behind each side.
+
+    **The difference is measured against the model's own scale — its optimal objective value — and
+    not against each component's magnitude.** Two implementations that both report a flux bound as
+    numerically zero differ by 5.6e-14 against 3.0e-12, which is a *relative* difference of 3e-03
+    and means nothing: it is the ratio of two zeros. Against the objective it is 3.4e-12, which is
+    the statement a reader wants. This is the denominator trap this repository has been caught by
+    before, met again in a new place.
+
+    Needs the ``fba`` extra (Reprolith's own solver) and the ``corroborate`` extra (COBRApy).
+    """
+    import tempfile
+
+    import cobra
+
+    from .fba import frog_fingerprint, solver_pin
+    from .sbml import ingest_fbc_sbml
+
+    mine = frog_fingerprint(ingest_fbc_sbml(sbml))
+    with tempfile.NamedTemporaryFile("w", suffix=".xml", encoding="utf-8") as handle:
+        handle.write(sbml)
+        handle.flush()
+        model = cobra.io.read_sbml_model(handle.name)
+    # `processes=1`: COBRApy's deletion analyses fan out over multiprocessing by default, which
+    # re-imports the entry point — harmless in a script, fatal in an interpreter without one, and
+    # a source of an error that says nothing about fluxes.
+    variability = cobra.flux_analysis.flux_variability_analysis(
+        model, fraction_of_optimum=1.0, processes=1
+    )
+    reaction_deletions = cobra.flux_analysis.single_reaction_deletion(model, processes=1)
+    gene_deletions = cobra.flux_analysis.single_gene_deletion(model, processes=1)
+    theirs_reaction = {
+        next(iter(ids)): float(growth)
+        for ids, growth in zip(reaction_deletions["ids"], reaction_deletions["growth"])
+    }
+    theirs_gene = {
+        next(iter(ids)): float(growth)
+        for ids, growth in zip(gene_deletions["ids"], gene_deletions["growth"])
+    }
+    missing = [
+        rid for rid in mine.reaction_ids
+        if _bare(rid) not in variability.index or _bare(rid) not in theirs_reaction
+    ] + [gid for gid in mine.gene_ids if _bare(gid) not in theirs_gene]
+    if missing:
+        raise ValueError(
+            "these fingerprints do not describe the same model: "
+            f"{len(missing)} identifier(s) appear in only one of them, first {missing[0]!r}. "
+            "That is a structural disagreement and is refused rather than compared on the part "
+            "that happens to line up"
+        )
+    scale = abs(mine.objective_value)
+    if scale == 0.0:
+        raise ValueError(
+            "this model's optimal objective is zero, so there is no scale to measure the two "
+            "fingerprints' agreement against"
+        )
+    worst, where, compared = 0.0, "", 0
+    def note(a: float, b: float, what: str) -> None:
+        nonlocal worst, where, compared
+        compared += 1
+        if abs(a - b) > worst:
+            worst, where = abs(a - b), f"{what}: {a:.6g} vs {b:.6g}"
+
+    note(mine.objective_value, float(model.slim_optimize()), "objective")
+    for index, rid in enumerate(mine.reaction_ids):
+        low, high = mine.variability[index]
+        note(low, float(variability.loc[_bare(rid), "minimum"]), f"{rid} variability minimum")
+        note(high, float(variability.loc[_bare(rid), "maximum"]), f"{rid} variability maximum")
+        note(mine.deletion_objectives[index], theirs_reaction[_bare(rid)], f"{rid} deletion")
+    for index, gid in enumerate(mine.gene_ids):
+        note(mine.gene_deletion_objectives[index], theirs_gene[_bare(gid)], f"{gid} deletion")
+    pin = solver_pin()
+    return {
+        "engines": [pin.engine, COBRAPY_ENGINE],
+        "engine_versions": [_reprolith_build(pin), str(cobra.__version__)],
+        "components_compared": compared,
+        "reactions": len(mine.reaction_ids),
+        "genes": len(mine.gene_ids),
+        "objective_value": mine.objective_value,
+        "worst_difference": worst,
+        "worst_difference_at": where,
+        # Against the model's own scale, for the reason in the docstring.
+        "worst_difference_of_objective": worst / scale,
+    }
+
+
 def corroborate_objective(sbml: str, *, rel_tol: float = 1e-6) -> EngineCorroboration:
     """Solve one constraint-based model under two independent implementations and compare.
 

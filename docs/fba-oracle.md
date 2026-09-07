@@ -66,6 +66,26 @@ Gene deletion is populated whenever the model carries GPR rules — `ingest_fbc_
 reaction's SBML-fbc `geneProductAssociation` into a boolean rule (`FbaModel.gene_associations`), so
 a model with gene data gets the full four-part FROG and one without simply has an empty gene section.
 
+**One is published** (2026-09-06), which the requirement had been carried without: the fingerprint
+existed, tests exercised it, and no committed artifact held one.
+[`datasets/constraint_based/milestone/frog/e_coli_core.json`](../datasets/constraint_based/milestone/frog/e_coli_core.json)
+is this class's reference model's fingerprint compared against **COBRApy's own** — a different
+reader and a different LP backend — across all 423 components: the objective, both variability
+bounds and the deletion objective for each of 95 reactions, and the deletion objective for each of
+137 genes. They agree to 3.4e-12 of the objective value.
+
+Three details in that record are the ones worth carrying to any other fingerprint comparison. The
+difference is measured against the **model's own scale** (its optimal objective) rather than each
+component's magnitude: the worst component is a flux bound both implementations call numerically
+zero, 5.6e-14 against 3.0e-12, whose relative difference is 3e-03 and means nothing. Identifiers
+that appear in only one fingerprint are refused as a structural disagreement rather than compared
+on the part that lines up — and COBRApy strips the SBML `R_`/`G_` prefixes this package keeps, so
+without knowing that, *every* reaction reads as present in only one. And it is published for the
+reference model only, for a measured reason: a fingerprint is a couple of LPs per reaction plus one
+per gene, which is 0.8s here and 145s on the 1226-reaction iEK1008, so the genome-scale set would
+put half an hour on a script that must be re-run after any change to the solver, the oracle or the
+verdict rule.
+
 `compare_frog` then checks two fingerprints component-wise, aligning reactions *and genes* by id and
 naming every disagreement — an id present in only one fingerprint is a disagreement, so a structural
 mismatch is never hidden behind a numeric pass.

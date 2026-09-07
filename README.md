@@ -587,7 +587,12 @@ The blind milestone then scales this to **8 real BiGG models** spanning bacteria
 eukaryote (up to genome-scale *E. coli* iJO1366, 2583 reactions), each reproduced against the growth
 rate the independent COBRApy implementation computes — 8/8 blind agreement — with FROG variability
 cross-checked on two models and synthetic lethality (reaction- and gene-level), loopless-FVA, pFBA,
-and the production envelope against COBRApy too.
+and the production envelope against COBRApy too. The **whole FROG fingerprint** of the reference
+model is published beside those certificates and compared against COBRApy's across all 423 of its
+components — objective, both variability bounds and the deletion objective for each of 95
+reactions, and the deletion objective for each of 137 genes — agreeing to 3.4e-12 of the objective
+value. The requirement had been carried by unit tests alone until then: the fingerprint was
+computed and nothing published or compared one.
 
 ```bash
 pip install -e ".[dev,engine,fba]"   # fba brings the LP solver; engine (libsbml) reads the .xml model

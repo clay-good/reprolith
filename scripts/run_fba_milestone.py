@@ -190,6 +190,33 @@ def main() -> None:
         stable = sum(1 for c in corroboration.values() if c["engine_independent"])
         print(f"engine-independent: {stable}/{len(corroboration)}")
 
+    # The **FROG fingerprint** the class spec asks this class to generate — flux optimum, reaction
+    # variability, objective, gene and reaction deletion — published beside the certificates, and
+    # compared component by component against COBRApy's own. `frog_fingerprint` had computed one
+    # since the class was written with nothing publishing or comparing it.
+    #
+    # For `e_coli_core` only, and the reason is measured rather than a preference: a fingerprint is
+    # a couple of LPs per reaction plus one per gene, which is 0.8s on this 95-reaction model and
+    # 145s on the 1226-reaction iEK1008 — so the genome-scale set would put half an hour on a
+    # script that must be re-run after any change to the solver, the oracle or the verdict rule.
+    # What is published is what a reader can check quickly; what it would cost to publish the rest
+    # is stated rather than left as a silence.
+    core = next((sbml for identifiers, _, _, sbml in specs
+                 if identifiers.accession == "e_coli_core"), None)
+    if core is not None and corroboration:
+        from reprolith.corroboration import frog_agreement
+
+        agreement = frog_agreement(core)
+        frog_dir = milestone / "frog"
+        frog_dir.mkdir(exist_ok=True)
+        (frog_dir / "e_coli_core.json").write_text(
+            json.dumps(agreement, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        print(
+            f"FROG: {agreement['components_compared']} components agree with cobrapy to "
+            f"{agreement['worst_difference_of_objective']:.1e} of the objective"
+        )
+
     counts = Counter(cert.overall.value for cert in certificates)
     print(f"entries: {len(certificates)} | verdicts: {dict(counts)}")
     print(f"agreement: {report.agreements}/{report.total}")

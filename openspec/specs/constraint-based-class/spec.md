@@ -75,6 +75,22 @@ is solver-independent and portable.
 - **AND** where the paper or its curation provides such a fingerprint, the verdict is the
   comparison of fingerprints rather than of a single number
 
+#### Scenario: The fingerprint is published and compared against another implementation
+
+- **WHEN** the class's milestone is run
+- **THEN** a fingerprint is written beside the certificates for at least the class's reference
+  model, compared component by component against an independent implementation's, and the record
+  names how many components were compared, the worst difference and where it was
+- **AND** the difference is measured against the model's own scale — its optimal objective — since
+  two implementations that both report a flux bound as numerically zero differ by a *relative*
+  amount that means nothing
+- **AND** identifiers that appear in only one fingerprint are refused as a structural disagreement
+  rather than compared on the part that lines up, allowing for the SBML id prefixes one
+  implementation strips and the other keeps
+- **AND** what publishing the rest would cost is stated where it is not published: a fingerprint is
+  a couple of linear programs per reaction plus one per gene, measured at 0.8s for the 95-reaction
+  reference model and 145s for a 1226-reaction genome-scale one
+
 ### Requirement: Alternate optima are handled honestly
 
 The class SHALL not report a flux mismatch as a failure when the mismatch is an artifact of

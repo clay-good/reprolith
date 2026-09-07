@@ -1,0 +1,17 @@
+{
+  "components_compared": 423,
+  "engine_versions": [
+    "highs (reprolith-fba rev c7778379864b)",
+    "0.31.1"
+  ],
+  "engines": [
+    "scipy-linprog",
+    "cobrapy"
+  ],
+  "genes": 137,
+  "objective_value": 0.8739215069684304,
+  "reactions": 95,
+  "worst_difference": 2.968409169475982e-12,
+  "worst_difference_at": "R_MALS variability maximum: 5.63904e-14 vs 3.0248e-12",
+  "worst_difference_of_objective": 3.3966542141446722e-12
+}

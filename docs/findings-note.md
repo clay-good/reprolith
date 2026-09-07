@@ -5138,3 +5138,38 @@ direction, that no badge outlives the certificate it describes. Written from the
 rather than from the six milestone scripts, because that is the one place that walks every
 published certificate, and six copies of "write the badge" is how five of them end up not having
 it. Which is the state this found.
+
+
+## The fingerprint the field asks for, computed since the class was written and never published
+
+FROG — flux optimum, reaction variability, objective, gene and reaction deletion — is the
+constraint-based field's own portable reproducibility artifact, and this class's spec asks it to
+generate one and to make a verdict the comparison of two where a second is available.
+`frog_fingerprint` has done the first since the class was written. Nothing published one, nothing
+compared one, and no committed artifact held one: the whole requirement rested on unit tests.
+
+A second implementation *is* available, and it is the one already used for this class's objective
+corroboration. COBRApy computes every FROG component from a different reader and a different LP
+backend. Across all 423 components of the reference model — the objective, both variability bounds
+and the deletion objective for each of 95 reactions, and the deletion objective for each of 137
+genes — the two agree to **3.4e-12 of the objective value**. That record is published beside the
+certificates.
+
+Three things had to be got right, and two of them are mistakes this repository has made before.
+
+**The denominator.** The worst component is `R_MALS`'s upper variability bound, where one side says
+5.6e-14 and the other 3.0e-12. Measured against each component's own magnitude that is a relative
+difference of 3e-03 — a headline number produced entirely by dividing one zero by another. Measured
+against the model's own scale it is 3.4e-12. The same trap, in a new place.
+
+**The identifiers.** COBRApy strips the SBML `R_`/`G_` prefixes this package keeps. Aligning the
+two fingerprints without knowing that reports *every* reaction as "present in only one fingerprint"
+— a naming convention read as a structural disagreement about the model. Ids that genuinely appear
+in only one side are still refused rather than compared on the part that lines up, because that
+would publish a fingerprint match for two different models.
+
+**The scope, with its cost measured.** It is published for the reference model only: a fingerprint
+is a couple of LPs per reaction plus one per gene, which is 0.8s on this 95-reaction model and 145s
+on the 1226-reaction iEK1008, so the genome-scale set would put half an hour on a script that must
+be re-run after any change to the solver, the oracle or the verdict rule. What is published is what
+a reader can check quickly; what the rest would cost is a measurement rather than a silence.
