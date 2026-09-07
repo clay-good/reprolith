@@ -113,6 +113,15 @@ assessment = judge_fingerprint(                       # -> a certificate-ready C
 reproduces, otherwise it fails with the named component disagreements recorded as the discrepancy —
 so a fingerprint verdict feeds `build_certificate` exactly like a scalar or curve one.
 
+**No committed certificate uses it, and that is the honest state rather than an oversight.** The
+requirement's second half is conditional — *where the paper or its curation provides such a
+fingerprint*, the verdict is the comparison of fingerprints — and no paper in this corpus provides
+one. COBRApy's fingerprint is not the paper's: comparing against it answers whether two tools agree,
+which is what the published FROG record above says and where it belongs. Folding that into a
+*certificate* would make a verdict about reproducing a paper's results rest on agreement with
+another tool, which is the distinction this project is most careful about. The machinery is ready
+for a curated fingerprint; the corpus has none.
+
 ## The LP dual — shadow prices and reduced costs
 
 The FROG fingerprint reads the optimum from the primal side. Its economic dual — what each
