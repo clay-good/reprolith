@@ -244,7 +244,19 @@ agree. Replacing it with "the alternative that moves it **least**" is the real r
 understates what an assumption costs, and that one is held. A mutation the code cannot distinguish
 measures nothing; a mutation naming the direction the number must never err in measures the guard.
 
-The whole list stands at 119, all held, no anchors stale.
+The list stands at 163 (2026-09-06, later the same day), all held, no anchors stale — and that
+afternoon added two lessons the earlier run had not reached.
+
+**A test that reads the artifacts does not guard the code that writes them.** A new guard on the
+PK/PD protocol line was checked by reading the committed certificates, which carry the clause
+whatever the code does, so removing the guard left every assertion passing: SURVIVED. The check
+certifies a claim live now, and the corpus-reading assertion stays beside it as a separate
+statement about the artifact.
+
+**And an anchor can be broken by its own author, two commits later.** `_front_step_cost(claim,
+speed)` became `_front_step_cost(moved)` in a refactor, and the entry added an hour earlier went
+stale. The checker reports that rather than skipping it — which is the whole design — but only
+when it runs, so the rule is the one above: run it the same day, not on the schedule alone.
 
 It fails two ways, and the second is the one worth having. A **surviving** mutation means the guard
 has no test, or the test never reaches the case that makes it load-bearing — which is how the
