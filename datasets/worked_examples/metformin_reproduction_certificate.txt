@@ -1,6 +1,6 @@
 REPRODUCTION CERTIFICATE — Zake2021 - PBPK model of metformin in humans, single PO dose
   doi=10.1371/journal.pone.0249594
-Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev 0df28660f5a1)
+Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev e4bd04e0732a)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=89, partial=0, failed=0, not-evaluable=4
@@ -108,94 +108,94 @@ CLAIMS
       protocol: duration=24.0, steps=480, read=[mLiver] cmax, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79
   [AUC24-500mg] plasma AUC over 24 h after 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, plasma row, 500 mg single PO dose (the paper simulates 42.2 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0178
-      protocol: duration=24.0, steps=480, read=[mPlasmaVenous] auc; this metric moves 1.62e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mPlasmaVenous] auc; this metric moves 1.61e-07% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-1000mg] plasma AUC over 24 h after 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, plasma row, 1000 mg single PO dose (the paper simulates 76.1 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0003
-      protocol: duration=24.0, steps=480, read=[mPlasmaVenous] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 3.92e-07% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mPlasmaVenous] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 5.98e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-red-blood-cells-500mg] Red blood cells AUC over 24 h after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Red blood cells row, 500 mg single PO dose (the paper simulates 19.3 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0022
-      protocol: duration=24.0, steps=480, read=[mRBC] auc; this metric moves 2e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mRBC] auc; this metric moves 2.2e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-adipose-500mg] Adipose AUC over 24 h after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Adipose row, 500 mg single PO dose (the paper simulates 30.2 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0006
-      protocol: duration=24.0, steps=480, read=[mAdipose] auc; this metric moves 9.5e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mAdipose] auc; this metric moves 8.44e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-brain-500mg] Brain AUC over 24 h after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Brain row, 500 mg single PO dose (the paper simulates 33.2 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0014
-      protocol: duration=24.0, steps=480, read=[mBrain] auc; this metric moves 9.36e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mBrain] auc; this metric moves 1.08e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-remainder-500mg] Remainder AUC over 24 h after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Remainder row, 500 mg single PO dose (the paper simulates 33.1 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0010
-      protocol: duration=24.0, steps=480, read=[mRemainder] auc; this metric moves 8.99e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mRemainder] auc; this metric moves 7.56e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-muscle-500mg] Muscle AUC over 24 h after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Muscle row, 500 mg single PO dose (the paper simulates 168.4 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0000
-      protocol: duration=24.0, steps=480, read=[mMuscle] auc; this metric moves 9.85e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mMuscle] auc; this metric moves 1.24e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-lungs-500mg] Lungs AUC over 24 h after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Lungs row, 500 mg single PO dose (the paper simulates 124.3 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0003
-      protocol: duration=24.0, steps=480, read=[mLung] auc; this metric moves 6.45e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mLung] auc; this metric moves 5.86e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-stomach-500mg] Stomach AUC over 24 h after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Stomach row, 500 mg single PO dose (the paper simulates 132.6 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0002
-      protocol: duration=24.0, steps=480, read=[mStomach] auc; this metric moves 7.86e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mStomach] auc; this metric moves 9.1e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-heart-500mg] Heart AUC over 24 h after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Heart row, 500 mg single PO dose (the paper simulates 103.6 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0001
-      protocol: duration=24.0, steps=480, read=[mHeart] auc; this metric moves 9.54e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mHeart] auc; this metric moves 8.71e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-liver-500mg] Liver AUC over 24 h after a 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Liver row, 500 mg single PO dose (the paper simulates 346.6 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0001
-      protocol: duration=24.0, steps=480, read=[mLiver] auc; this metric moves 4.67e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mLiver] auc; this metric moves 4.51e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-red-blood-cells-1000mg] Red blood cells AUC over 24 h after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Red blood cells row, 1000 mg single PO dose (the paper simulates 35.5 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0014
-      protocol: duration=24.0, steps=480, read=[mRBC] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 2.19e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mRBC] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 1.83e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-adipose-1000mg] Adipose AUC over 24 h after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Adipose row, 1000 mg single PO dose (the paper simulates 55.4 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0006
-      protocol: duration=24.0, steps=480, read=[mAdipose] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 9.53e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mAdipose] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 5.81e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-brain-1000mg] Brain AUC over 24 h after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Brain row, 1000 mg single PO dose (the paper simulates 60.9 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0001
-      protocol: duration=24.0, steps=480, read=[mBrain] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 1.03e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mBrain] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 4.08e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-remainder-1000mg] Remainder AUC over 24 h after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Remainder row, 1000 mg single PO dose (the paper simulates 60.8 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0009
-      protocol: duration=24.0, steps=480, read=[mRemainder] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 9.08e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mRemainder] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 1.28e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-muscle-1000mg] Muscle AUC over 24 h after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Muscle row, 1000 mg single PO dose (the paper simulates 309.3 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0000
-      protocol: duration=24.0, steps=480, read=[mMuscle] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 1.25e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mMuscle] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 1.02e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-lungs-1000mg] Lungs AUC over 24 h after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Lungs row, 1000 mg single PO dose (the paper simulates 228.4 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0001
-      protocol: duration=24.0, steps=480, read=[mLung] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 6.88e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mLung] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 1.32e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-stomach-1000mg] Stomach AUC over 24 h after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Stomach row, 1000 mg single PO dose (the paper simulates 243.5 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0001
-      protocol: duration=24.0, steps=480, read=[mStomach] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 8.79e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mStomach] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 3.5e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-heart-1000mg] Heart AUC over 24 h after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Heart row, 1000 mg single PO dose (the paper simulates 190.2 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0003
-      protocol: duration=24.0, steps=480, read=[mHeart] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 9.6e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mHeart] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 1.57e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-liver-1000mg] Liver AUC over 24 h after a 1000 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Liver row, 1000 mg single PO dose (the paper simulates 636.4 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0001
-      protocol: duration=24.0, steps=480, read=[mLiver] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 4.12e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mLiver] auc, overrides: Metformin_Dose_in_Lumen_in_mg=779.9; this metric moves 5.3e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-plasma-1500mg] Plasma AUC over 24 h after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Plasma row, 1500 mg single PO dose (the paper simulates 109.0 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0000
-      protocol: duration=24.0, steps=480, read=[mPlasmaVenous] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 1.78e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mPlasmaVenous] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 1.75e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-red-blood-cells-1500mg] Red blood cells AUC over 24 h after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Red blood cells row, 1500 mg single PO dose (the paper simulates 50.9 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0010
-      protocol: duration=24.0, steps=480, read=[mRBC] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 2.45e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mRBC] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 2.17e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-adipose-1500mg] Adipose AUC over 24 h after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Adipose row, 1500 mg single PO dose (the paper simulates 79.4 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0003
-      protocol: duration=24.0, steps=480, read=[mAdipose] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 8e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mAdipose] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 9.85e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-brain-1500mg] Brain AUC over 24 h after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Brain row, 1500 mg single PO dose (the paper simulates 87.2 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0001
-      protocol: duration=24.0, steps=480, read=[mBrain] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 1.34e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mBrain] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 9.97e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-remainder-1500mg] Remainder AUC over 24 h after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Remainder row, 1500 mg single PO dose (the paper simulates 87.1 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0004
-      protocol: duration=24.0, steps=480, read=[mRemainder] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 5.97e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mRemainder] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 9.39e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-muscle-1500mg] Muscle AUC over 24 h after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Muscle row, 1500 mg single PO dose (the paper simulates 442.9 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0001
-      protocol: duration=24.0, steps=480, read=[mMuscle] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 1.34e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mMuscle] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 1.21e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-lungs-1500mg] Lungs AUC over 24 h after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Lungs row, 1500 mg single PO dose (the paper simulates 327.0 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0000
-      protocol: duration=24.0, steps=480, read=[mLung] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 3.94e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mLung] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 7.61e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-stomach-1500mg] Stomach AUC over 24 h after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Stomach row, 1500 mg single PO dose (the paper simulates 348.6 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0001
-      protocol: duration=24.0, steps=480, read=[mStomach] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 1.19e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mStomach] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 8.45e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-heart-1500mg] Heart AUC over 24 h after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Heart row, 1500 mg single PO dose (the paper simulates 272.4 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0001
-      protocol: duration=24.0, steps=480, read=[mHeart] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 6.36e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mHeart] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 9.81e-06% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [AUC24-liver-1500mg] Liver AUC over 24 h after a 1500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, Liver row, 1500 mg single PO dose (the paper simulates 910.9 nmol*h/mL over 24 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0001
-      protocol: duration=24.0, steps=480, read=[mLiver] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 3.44e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
+      protocol: duration=24.0, steps=480, read=[mLiver] auc, overrides: Metformin_Dose_in_Lumen_in_mg=1169.79; this metric moves 3.94e-05% between 480 and 960 samples, against the 5% that separates a pass from a failure here
   [Tmax-500mg] plasma Tmax after 500 mg single oral dose: reproduced [assumption-qualified] (source Table 6, plasma row, 500 mg single PO dose (the paper simulates a peak at 2.0 h) via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0250
       protocol: duration=24.0, steps=480, read=[mPlasmaVenous] tmax; this metric moves 1.28% between 480 and 960 samples, against the 5% that separates a pass from a failure here

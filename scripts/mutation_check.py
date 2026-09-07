@@ -1219,6 +1219,40 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if sensitivity is None or sensitivity.get("agree"):', "    if True:"),
         ["tests/test_logical_scheme.py"],
     ),
+    # --- a reported basin can be certified, 2026-09-07 ------------------------------------------
+    (
+        "a basin claim is waved through as a fixed point, whose schemes provably agree",
+        "logical.py",
+        ("    if claim.basin is not None:\n        # A basin claim must not reach the shortcut",
+         "    if False:\n        # A basin claim must not reach the shortcut"),
+        ["tests/test_logical_basin_claim.py"],
+    ),
+    (
+        "a basin is answered under a scheme that does not define one",
+        "logical.py",
+        ("    if scheme is UpdateScheme.ASYNCHRONOUS:\n        return not_evaluable(",
+         "    if False:\n        return not_evaluable("),
+        ["tests/test_logical_basin_claim.py"],
+    ),
+    (
+        "the state space a basin was counted in is left off the certificate",
+        "logical.py",
+        ("    return replace(assessment, protocol=protocol)", "    return assessment"),
+        ["tests/test_logical_basin_claim.py"],
+    ),
+    (
+        "a count of states in a finite space is judged in a tolerance band",
+        "logical.py",
+        ("        if self.states is not None and self.tolerance is not None:",
+         "        if False:"),
+        ["tests/test_logical_basin_claim.py"],
+    ),
+    (
+        "a basin's own load-bearing reason is replaced by one written about attractor sets",
+        "logical.py",
+        ('    if (stated := sensitivity.get("basis")) is not None:', "    if False:"),
+        ["tests/test_logical_basin_claim.py"],
+    ),
     # --- a class can be partly corroborated, 2026-09-06 -----------------------------------------
     (
         "a class re-run on fewer certificates than it published reads as fully corroborated",

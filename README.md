@@ -631,6 +631,17 @@ attractor set differs (three under synchronous updating, two under asynchronous 
 artifact of updating both nodes at once) while its fixed points do not, so its attractor claim is
 qualified and its steady-state claim is not.
 
+**A reported basin of attraction can be certified too** — how much of the state space reaches one
+attractor, which is what these papers argue robustness with. Li et al. 2004's yeast cell-cycle
+network reaches its G1 steady state from **1764 of 2048** initial states, and Reprolith reproduces
+all seven of that paper's published basins exactly from the committed rules. A count of states is
+judged exactly (a basin is a number of states in a finite space, not a measurement with error) and a
+printed percentage in a band; the size of the space it was counted in goes on the certificate,
+because a paper that fixed its inputs first reports a share of a smaller whole — the same G1 basin is
+86% of the paper's space and 43% of CANA's 12-node variant. A claim judged under asynchronous
+updating is abstained on rather than answered with the synchronous number, since basins overlap
+there rather than partitioning anything.
+
 **Stochastic (SSA) models** are the fifth class: discrete-molecule reaction networks where a single
 run is a random sample, so the reproducible result is a distribution. An exact, pure-Python
 Gillespie simulator (deterministic under a pinned seed) feeds the same distributional oracle the

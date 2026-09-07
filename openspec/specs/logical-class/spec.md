@@ -81,6 +81,18 @@ discrete-dynamics analysis.
 - **AND** a reported attractor absent from the computed set, or an extra computed attractor, is
   surfaced rather than hidden
 
+#### Scenario: Basin-of-attraction reproduction
+
+- **WHEN** a claim is the basin of one attractor — how much of the state space reaches it
+- **THEN** the oracle computes that attractor's basin under synchronous updating and compares it to
+  the reported one, judging a reported count of states exactly and a reported share of the space by
+  relative error
+- **AND** the size of the state space it was counted in is recorded, so a share taken of a smaller
+  space (a paper that fixed its inputs first) is visible rather than compared against the wrong
+  whole
+- **AND** a claim judged under asynchronous updating is abstained on rather than answered with the
+  synchronous number, because a basin does not partition the state space under that scheme
+
 ### Requirement: Known logical failure modes are first-class
 
 The oracle SHALL recognize the recurring reasons logical reproductions fail.

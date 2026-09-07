@@ -31,7 +31,10 @@ from .oracle import (
     Attribution,
     ComparisonMethod,
     ReferenceKind,
+    Tolerance,
     assess_match,
+    judge_scalar,
+    not_evaluable,
     undetermined_shortfall,
 )
 from .pins import algorithm_revision
@@ -47,6 +50,14 @@ Rule = Callable[[Mapping[str, int]], int]
 #: is astronomically beyond exhaustive enumeration. Above this the oracle refuses fast and clearly
 #: rather than hang or exhaust memory — the honest scale boundary of an exact method.
 MAX_ENUMERABLE_NODES = 20
+
+#: The largest network whose *asynchronous reachability* this module measures. Reachability needs
+#: the state graph's edges rather than one successor per state, so it holds n·2ⁿ of them where an
+#: enumeration holds 2ⁿ: at :data:`MAX_ENUMERABLE_NODES` that is twenty million edges to answer one
+#: sensitivity question. Above this the measurement says it is out of reach rather than being
+#: attempted — the same honesty as the enumeration ceiling, at the size this computation actually
+#: costs rather than at the one its neighbour costs.
+MAX_REACHABILITY_NODES = 16
 
 #: The most fixed points the scalable SAT path will enumerate before refusing. A well-posed model
 #: has a handful; a network dominated by free input nodes has 2^(#inputs) of them, which is a
@@ -237,6 +248,15 @@ class BooleanNetwork:
         :data:`MAX_ENUMERABLE_NODES` raises :class:`NetworkTooLarge`. Runs in one pass over the state
         space by memoizing each trajectory onto the attractor it reaches.
         """
+        return [size for _, size in self._sync_basins()]
+
+    def _sync_basins(self) -> list[tuple[tuple[State, ...], int]]:
+        """Each synchronous attractor paired with the size of its basin, in :meth:`attractors` order.
+
+        The computation :meth:`basin_sizes` publishes half of. A caller that needs to know *which*
+        attractor a basin belongs to — judging a reported basin does — would otherwise call
+        :meth:`attractors` and :meth:`basin_sizes` and walk the 2ⁿ space twice to line them up.
+        """
         attractors = self._sync_attractors()
         resolved: dict[State, int] = {
             state: index for index, cycle in enumerate(attractors) for state in cycle
@@ -253,7 +273,7 @@ class BooleanNetwork:
         sizes = [0] * len(attractors)
         for index in resolved.values():
             sizes[index] += 1
-        return sizes
+        return list(zip(attractors, sizes))
 
     def _sync_attractors(self) -> list[tuple[State, ...]]:
         found: dict[frozenset[State], tuple[State, ...]] = {}
@@ -613,6 +633,231 @@ def judge_attractor_set(
 
 
 @dataclass(frozen=True)
+class ReportedBasin:
+    """A published **basin of attraction**: which attractor, and how much of the space reaches it.
+
+    The class's third reproduction target, and the one that is about the *state space* rather than
+    about the attractors in it. It is what Boolean-model papers report when they argue a network is
+    biologically robust — Li et al. 2004's yeast cell-cycle network reaches its G1 steady state from
+    1764 of 2048 initial states, which is the sentence that paper is remembered for — and two
+    networks can agree on every attractor while disagreeing entirely on how much of the space
+    reaches each one. :meth:`BooleanNetwork.basin_sizes` has computed it since the class was
+    written; nothing could certify it.
+
+    ``attractor`` is the attractor the basin belongs to, given as its cycle (one state for a fixed
+    point) and identified the way :func:`judge_attractor_set` identifies one — by its set of states,
+    not by where the cycle starts.
+
+    The basin itself is reported one of two ways, and which one it is decides how it is judged:
+
+    ``states``
+        the count a paper prints (1764). Judged **exactly**: a basin is a number of states in a
+        finite space, so there is no numerical error for a tolerance to absorb, and a band here
+        would pass a network that reaches its attractor from eighty states fewer.
+    ``fraction``
+        the share a paper prints as a percentage (86%). Judged by relative error, because a printed
+        percentage is a rounded number.
+
+    Both are read against **this** network's state space, whose size the protocol line records: a
+    paper that fixed its input nodes before counting has a smaller space than the one Reprolith
+    enumerates, and a fraction compared across two different denominators is not a comparison. The
+    count is the safer of the two to publish for exactly that reason — it disagrees loudly where a
+    fraction would quietly be judged against the wrong whole.
+    """
+
+    attractor: Sequence[Mapping[str, int]]
+    states: int | None = None
+    fraction: float | None = None
+    #: A paper-stated or reviewer-set band for a reported ``fraction``. Refused beside ``states``
+    #: rather than ignored, since an exact comparison has no band.
+    tolerance: Tolerance | None = None
+
+    def __post_init__(self) -> None:
+        if not self.attractor:
+            raise ValueError("a reported basin must name the attractor whose basin it is")
+        if (self.states is None) == (self.fraction is None):
+            raise ValueError(
+                "a reported basin is either a count of states or a share of the state space; "
+                "give exactly one of states= and fraction="
+            )
+        if self.states is not None and self.states < 1:
+            # An attractor's own states are in its basin, so a basin of zero states is not a small
+            # basin: it says the attractor is not there. That is a claim about the attractor set,
+            # and judging it here would compare a count against an attractor nothing identified.
+            raise ValueError(
+                f"a basin of {self.states} states says the attractor is not one of this network's "
+                "at all, which is a claim about its attractor set rather than about a basin; "
+                "report it as an attractor-set claim"
+            )
+        if self.states is not None and self.tolerance is not None:
+            raise ValueError(
+                "a basin reported as a count of states is judged exactly — a count in a finite "
+                "state space has no numerical error for a tolerance to absorb; report the "
+                "paper's rounded share as fraction= to have it judged in a band"
+            )
+        if self.fraction is not None and not 0.0 < self.fraction <= 1.0:
+            raise ValueError(
+                f"a basin is a share of the state space above zero, so {self.fraction!r} is not "
+                "one (86% is given as 0.86; a basin of none of it says the attractor is absent, "
+                "which is an attractor-set claim)"
+            )
+
+
+def _attractor_label(cycle: Sequence[Mapping[str, int]]) -> str:
+    """How a certificate line names the attractor a basin belongs to.
+
+    The nodes that are *on* in its first state, which is how these papers name a phenotype, plus
+    the cycle's length where it has one — an all-zero attractor would otherwise render as an empty
+    brace and read like a missing value.
+    """
+    # The cycle's smallest state, not the one the claim happened to start at: an attractor is
+    # identified by its set of states, so two claims about the same 2-cycle must not render two
+    # different names for it.
+    first = dict(min(tuple(sorted(state.items())) for state in cycle))
+    on = [node for node, value in first.items() if value]
+    named = "+".join(on) if on else "all nodes off"
+    return named if len(cycle) == 1 else f"{named} (a {len(cycle)}-state cycle)"
+
+
+def _async_reachable_states(network: BooleanNetwork, target: frozenset[State]) -> int:
+    """How many states can reach ``target`` under asynchronous updating — the async counterpart.
+
+    A synchronous basin is a partition: every state has one successor, so it flows to exactly one
+    attractor. Asynchronously it has one successor per unstable node, so "the basin of X" can only
+    mean the states from which X is *reachable*, and those sets overlap. This counts that, by
+    walking the async state graph backwards from the attractor.
+
+    Only ever asked of networks within :data:`MAX_REACHABILITY_NODES`, since it holds the graph's
+    edges rather than one successor per state.
+    """
+    predecessors: dict[State, list[State]] = {}
+    for state in network._states():
+        for successor in network._async_successors(state):
+            predecessors.setdefault(successor, []).append(state)
+    seen = set(target)
+    frontier = list(target)
+    while frontier:
+        state = frontier.pop()
+        for previous in predecessors.get(state, ()):
+            if previous not in seen:
+                seen.add(previous)
+                frontier.append(previous)
+    return len(seen)
+
+
+def judge_basin_size(
+    *,
+    claim_id: str,
+    quantity: str,
+    source_location: str,
+    reported: ReportedBasin,
+    network: BooleanNetwork,
+    scheme: UpdateScheme = UpdateScheme.SYNCHRONOUS,
+    attribution: Attribution | None = None,
+    assumption_qualified: bool = False,
+) -> ClaimAssessment:
+    """Judge a reported basin of attraction against the basin this network actually has.
+
+    Three ways this abstains rather than answering, and each is a different fact about the run:
+
+    * the claim is judged under **asynchronous** updating, where a basin is not defined — a state
+      can reach several attractors, the sets overlap, and nothing partitions the space. Answering
+      with the synchronous number would publish a number the claim did not ask for;
+    * the network is past :data:`MAX_ENUMERABLE_NODES`, so the space cannot be walked at all;
+    * neither of those, and the comparison happens.
+
+    A reported attractor this network does not have is **not** an abstention: no state flows to an
+    attractor that is not there, so the observed basin is zero and the claim fails, with the
+    discrepancy saying which of the two is the disagreement. Abstaining there would hide the
+    strongest kind of non-reproduction this class can find behind "could not be judged".
+
+    A non-match requires an ``attribution``.
+    """
+    if scheme is UpdateScheme.ASYNCHRONOUS:
+        return not_evaluable(
+            claim_id=claim_id,
+            quantity=quantity,
+            source_location=source_location,
+            reason=(
+                "this claim is judged under asynchronous updating, where a basin of attraction is "
+                "not defined: a state has one successor per unstable node, so it can reach several "
+                "attractors and the basins overlap rather than partitioning the state space. The "
+                "synchronous count exists and is a different quantity, so it is not reported here"
+            ),
+            reference_kind=ReferenceKind.NUMERIC,
+        )
+    try:
+        basins = network._sync_basins()
+    except NetworkTooLarge as exc:
+        return not_evaluable(
+            claim_id=claim_id,
+            quantity=quantity,
+            source_location=source_location,
+            reason=(
+                f"a basin is counted by walking the whole state space, and {exc}. The claim is "
+                "unjudged rather than judged on a sample: a basin counted over part of the space "
+                "is a different number, not an approximate one"
+            ),
+            reference_kind=ReferenceKind.NUMERIC,
+        )
+    target = frozenset(network._as_tuple(state) for state in reported.attractor)
+    total = 2 ** len(network.nodes)
+    observed = next((size for cycle, size in basins if frozenset(cycle) == target), None)
+    absent = (
+        None
+        if observed is not None
+        else (
+            f"the reported attractor is not one of this network's {len(basins)} synchronous "
+            "attractors, so no state flows to it"
+        )
+    )
+    counted = 0 if observed is None else observed
+    protocol = (
+        f"basin of {_attractor_label(reported.attractor)}: {counted} of "
+        f"2^{len(network.nodes)} = {total} states"
+    )
+    if reported.states is not None:
+        assessment = assess_match(
+            claim_id=claim_id,
+            quantity=quantity,
+            source_location=source_location,
+            matched=observed == reported.states,
+            method=ComparisonMethod.BASIN_SIZE_MATCH,
+            exact_on="the number of states in the basin",
+            discrepancy=absent
+            or f"{counted} states flow to it against the reported {reported.states}",
+            reference_kind=ReferenceKind.NUMERIC,
+            attribution=attribution,
+            assumption_qualified=assumption_qualified,
+        )
+    else:
+        assessment = judge_scalar(
+            claim_id=claim_id,
+            quantity=quantity,
+            source_location=source_location,
+            # A reported basin is above zero by construction (a zero one is refused as an
+            # attractor-set claim), so the relative error always has a magnitude to normalize by
+            # and there is no scale to supply. It is the *observed* side that can be zero here,
+            # which needs none.
+            reported=reported.fraction or 0.0,
+            predicted=counted / total,
+            tolerance=reported.tolerance,
+            reference_kind=ReferenceKind.NUMERIC,
+            attribution=attribution,
+            assumption_qualified=assumption_qualified,
+        )
+        if absent is not None and assessment.discrepancy is not None:
+            assessment = replace(
+                assessment, discrepancy=f"{assessment.discrepancy} — {absent}"
+            )
+    # The size of the space this basin was counted in, on the line that records what a verdict
+    # rests on. It is the per-claim degree of freedom that moves the number: a paper that fixed its
+    # inputs before counting has a smaller denominator than the one enumerated here, and without it
+    # a reader cannot see that two percentages were taken of different wholes.
+    return replace(assessment, protocol=protocol)
+
+
+@dataclass(frozen=True)
 class LogicalClaim:
     """A published logical steady-state claim to reproduce: a network and a reported fixed point.
 
@@ -638,8 +883,21 @@ class LogicalClaim:
     #: class spec has called an unstated scheme load-bearing since the dossier was written; until
     #: this field existed, a *stated* one had no way to reach the run.
     scheme: UpdateScheme | None = None
+    #: A reported **basin of attraction** — how much of the state space reaches one attractor —
+    #: where the paper reports one. With it the claim is judged by :func:`judge_basin_size` and
+    #: neither ``reported`` nor ``attractors`` is read.
+    basin: ReportedBasin | None = None
     assumption_qualified: bool = False
     shortfall: Attribution | None = field(default=None)
+
+    def __post_init__(self) -> None:
+        if self.basin is not None and self.attractors is not None:
+            raise ValueError(
+                f"claim {self.claim_id!r} reports both an attractor set and a basin size. They are "
+                "two claims about one network and one assessment carries one verdict, so judging "
+                "them together would publish the basin's verdict over the set's quantity; certify "
+                "them as two claims"
+            )
 
     @property
     def update_scheme(self) -> UpdateScheme:
@@ -798,6 +1056,95 @@ def require_pin_matches_path(engine_pin: EnginePin, *, node_counts: Iterable[int
         )
 
 
+def _basin_scheme_sensitivity(claim: LogicalClaim) -> dict[str, Any]:
+    """What an unstated update scheme costs a **basin** claim — measured, like its sibling.
+
+    A basin presupposes the single successor synchronous updating gives every state: that is what
+    makes the basins partition the space. Under asynchronous updating they do not, and the nearest
+    comparable quantity is **reachability** — from how many states the attractor can be reached at
+    all — which is what a paper reporting basins for an asynchronous model means. So an unstated
+    scheme is a genuine ambiguity here, and it is settled by computing both rather than by
+    qualifying every basin certificate on principle:
+
+    * the two counts **agree**: every state that can reach this attractor also flows to it, so the
+      reading cannot move the number and no assumption is minted;
+    * they **differ**: the verdict rests on this engine's reading and the basis carries both
+      counts;
+    * the network is past a ceiling: out of reach, which is not the same as agreement.
+
+    Two ceilings apply, and they are different sizes because the two computations are: the basin
+    needs one successor per state (:data:`MAX_ENUMERABLE_NODES`), and the reachability needs the
+    async graph's edges (:data:`MAX_REACHABILITY_NODES`).
+    """
+    assert claim.basin is not None  # only called for a basin claim
+    network = parse_boolean_network(claim.rules)
+    nodes = len(network.nodes)
+    if nodes > MAX_REACHABILITY_NODES:
+        return {
+            "comparable": False,
+            "basis": (
+                "the claim's source names no update scheme, so this run counted the states whose "
+                "synchronous trajectory ends in this attractor. Under asynchronous updating a "
+                "basin does not partition the state space and the comparable quantity is "
+                f"reachability, which this network's {nodes} nodes put past the "
+                f"{MAX_REACHABILITY_NODES} that measurement can walk — so unlike a smaller "
+                "network, this one cannot be shown to give the same answer either way"
+            ),
+        }
+    target = frozenset(network._as_tuple(state) for state in claim.basin.attractor)
+    synchronous = next(
+        (size for cycle, size in network._sync_basins() if frozenset(cycle) == target), 0
+    )
+    if synchronous == 0:
+        # The reported attractor is not one of this network's synchronous attractors, so the claim
+        # has already failed on the attractor rather than on the count. Whether the scheme is what
+        # that failure rests on is a real question with a computable answer: an attractor absent
+        # synchronously can exist asynchronously, and then the disagreement may be the reading.
+        if target in _attractor_ids(network, UpdateScheme.ASYNCHRONOUS):
+            return {
+                "comparable": True,
+                "agree": False,
+                "basis": (
+                    "the claim's source names no update scheme, so this run used synchronous "
+                    "updating — under which the reported attractor does not exist, which is why "
+                    "no state flows to it. It *is* an attractor under asynchronous updating, so "
+                    "this verdict may rest on the reading rather than on the network"
+                ),
+            }
+        return {
+            "comparable": True,
+            "agree": True,
+            "why": (
+                "the reported attractor is not one of this network's attractors under either "
+                "scheme, so no reading of 'basin' produces the reported number and the scheme is "
+                "not what this verdict rests on"
+            ),
+        }
+    reachable = _async_reachable_states(network, target)
+    if synchronous == reachable:
+        return {
+            "comparable": True,
+            "agree": True,
+            "why": (
+                f"every one of the {reachable} states that can reach this attractor under "
+                "asynchronous updating also flows to it synchronously, so the two readings of "
+                "'basin' give the same number here"
+            ),
+        }
+    return {
+        "comparable": True,
+        "agree": False,
+        "basis": (
+            "the claim's source names no update scheme, so this run counted the "
+            f"{synchronous} states whose synchronous trajectory ends in this attractor. A basin "
+            "means something else under asynchronous updating — the basins overlap rather than "
+            "partitioning the space, and the comparable quantity is reachability, which holds "
+            f"{reachable} states here. The number this verdict rests on depends on which of the "
+            "two the source meant"
+        ),
+    }
+
+
 def scheme_sensitivity(claim: LogicalClaim) -> dict[str, Any] | None:
     """What this claim's update scheme costs it: the same network's attractors under the other one.
 
@@ -827,6 +1174,11 @@ def scheme_sensitivity(claim: LogicalClaim) -> dict[str, Any] | None:
     """
     if not claim.scheme_is_reprolith_s:
         return None
+    if claim.basin is not None:
+        # A basin claim must not reach the shortcut below, which would read "this claim reports no
+        # attractor set, so it is judged on a fixed point, so the schemes agree" — true of neither
+        # half. What the scheme costs a basin is a different question with a different answer.
+        return _basin_scheme_sensitivity(claim)
     if claim.attractors is None:
         # The claim is judged on a *fixed point*, and a fixed point is one under either scheme: a
         # state whose synchronous successor is itself has no unstable node to flip. So the answer
@@ -939,7 +1291,15 @@ def certify_logical(
     # size of the state space and whether it was enumerated or solved are what tell a reader
     # which of the two the number came from, and how much of the network the check saw.
     assessments = [
-        replace(a, protocol=search_protocol(len(claim.rules)))
+        replace(
+            a,
+            protocol=" — ".join(
+                # The judge's own clause, where it has one, is appended rather than overwritten: a
+                # basin is counted in a state space whose size only the judge knows, and dropping
+                # it leaves two percentages taken of different wholes looking comparable.
+                part for part in (search_protocol(len(claim.rules)), a.protocol) if part
+            ),
+        )
         for a, claim in zip(assessments, claims)
     ]
     # The counterpart of the spatial class's boundary assumption, and selective in the way that one
@@ -971,6 +1331,17 @@ def _judge_logical_claim(claim: LogicalClaim) -> ClaimAssessment:
     # A miss the caller did not categorize is published as uncategorized rather than raised, so
     # this front-end can say a network did not reproduce.
     attribution = claim.shortfall or undetermined_shortfall(claim.quantity)
+    if claim.basin is not None:
+        return judge_basin_size(
+            claim_id=claim.claim_id,
+            quantity=claim.quantity,
+            source_location=claim.source_location,
+            reported=claim.basin,
+            network=network,
+            scheme=claim.update_scheme,
+            attribution=attribution,
+            assumption_qualified=claim.assumption_qualified,
+        )
     if claim.attractors is not None:
         return judge_attractor_set(
             claim_id=claim.claim_id,
@@ -1015,7 +1386,12 @@ def _scheme_assumption(claim: LogicalClaim, assessment: ClaimAssessment) -> Assu
     sensitivity = scheme_sensitivity(claim)
     if sensitivity is None or sensitivity.get("agree"):
         return None
-    if sensitivity["comparable"]:
+    if (stated := sensitivity.get("basis")) is not None:
+        # A sensitivity that knows why it is load-bearing states it. The two sentences below are
+        # about attractor *sets*, and neither is true of a basin: it is not a count of attractors,
+        # and its out-of-reach case is a different ceiling from the enumeration one.
+        basis = stated
+    elif sensitivity["comparable"]:
         basis = (
             "the claim's source names no update scheme, so this run used synchronous updating — "
             "and on this network the choice is not free: it has "
@@ -1030,11 +1406,15 @@ def _scheme_assumption(claim: LogicalClaim, assessment: ClaimAssessment) -> Assu
             f"{sensitivity['why']} — so unlike a smaller network, this one cannot be shown to give "
             "the same answer either way"
         )
+    judged = (
+        "the basin judged here was"
+        if claim.basin is not None
+        else "the attractors judged here were"
+    )
     return Assumption(
         id=f"logical-scheme-{claim.claim_id}",
         description=(
-            "the attractors judged here were computed under synchronous updating; the claim's "
-            "source states no scheme"
+            f"{judged} computed under synchronous updating; the claim's source states no scheme"
         ),
         chosen="synchronous updating",
         basis=basis,
@@ -1053,6 +1433,8 @@ __all__ = [
     "MAX_SAT_FIXED_POINTS",
     "BooleanNetwork",
     "LogicalClaim",
+    "MAX_REACHABILITY_NODES",
+    "ReportedBasin",
     "NetworkTooLarge",
     "Rule",
     "State",
@@ -1060,6 +1442,7 @@ __all__ = [
     "certify_logical",
     "compile_boolean_rule",
     "judge_attractor_set",
+    "judge_basin_size",
     "require_pin_matches_scheme",
     "scheme_sensitivity",
     "judge_steady_state",

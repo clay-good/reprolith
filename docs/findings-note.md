@@ -5217,3 +5217,68 @@ recording:
   was written for. libRoadRunner's Gillespie gives a mean at a time, not a first passage, so this
   entry has no second engine and the surface reports "1 of 4 standing certificates in this class
   have no second engine behind them" rather than three corroborated out of four reading as a sweep.
+
+
+## The basin nobody could claim, and the ambiguity that turned out to be real
+
+`BooleanNetwork.basin_sizes` has answered "how much of the state space reaches this attractor" since
+the logical class was written. It is checked against an independent count over ~1,800 random
+networks, and it is the number these papers argue robustness with — Li et al. 2004's yeast
+cell-cycle network reaches its G1 steady state from 1764 of 2048 initial states, which is the result
+that paper is remembered for. No claim type could reach it: the fourth thing in this repository
+found implemented and unreachable, after the Turing wavelength, `judge_attractor_set`, and
+`time_to_extinction`.
+
+`ReportedBasin` and `judge_basin_size` certify it. Four decisions, and two of them are things this
+repository has been wrong about before:
+
+**A count is judged exactly and a share is judged in a band.** A basin is a number of states in a
+finite space; there is no numerical error for a tolerance to absorb, and a 5% band on the toggle
+switch would pass a network that reaches its attractor from one state instead of two. A printed
+*percentage* is a rounded number, so that form is judged by relative error — and a tolerance handed
+to the count form is refused rather than ignored.
+
+**The denominator is on the protocol line, and the measurement says why.** CANA's 12-node variant of
+the yeast network adds `CellSize` as a free self-loop input, which doubles the state space without
+moving anything: the G1 basin is 1764 states in *both* networks, and 86% of the paper's space
+against 43% of CANA's. So a count survives a change of whole and a fraction does not, and a paper
+that fixed its inputs before counting reports a share of a smaller space. Without the denominator
+beside the verdict, two percentages taken of different wholes read as comparable — the same shape as
+the FROG denominator and the unit inversion before it.
+
+**An asynchronous claim abstains; an absent attractor does not.** Under asynchronous updating a
+state has one successor per unstable node, so it can reach several attractors and the basins overlap
+rather than partitioning anything: the synchronous count exists and answers a different question.
+But a reported attractor this network does not *have* is not an abstention — no state flows to an
+attractor that is not there, so the basin is zero and the claim fails. That is the strongest
+non-reproduction this class can find, and filing it as "could not be judged" would hide it behind
+the weakest verdict available.
+
+**The unstated-scheme question was measured, and the answer was not the convenient one.** A basin
+claim carries no attractor set, and `scheme_sensitivity`'s existing shortcut reads "no attractor set,
+so this is judged on a fixed point, so the schemes provably agree" — which would have waved every
+basin claim through under a proof about a quantity it is not. The honest counterpart of a basin
+under asynchronous updating is *reachability*: from how many states the attractor can be reached at
+all. So both are computed. On Li's network they differ — 1764 states flow to G1 synchronously and
+1960 can reach it asynchronously — so an unstated scheme there is a real ambiguity that moves the
+number, not a formality, and the certificate says so with both counts. Where they agree, no
+assumption is minted, because the reading provably cannot move the verdict. The reachability walk
+holds the async state graph's edges rather than one successor per state, so it carries its own,
+lower ceiling and reports being out of reach rather than reading as agreement.
+
+Re-reading that diff found the same shape one layer down. A reported attractor this network does
+not have makes the synchronous basin zero, and the sensitivity was about to mint a load-bearing
+assumption whose basis read "this run counted the 0 states whose trajectory ends in this attractor"
+— blaming the scheme for a failure it may have nothing to do with. Whether it does is computable:
+an attractor absent under synchronous updating can exist under asynchronous updating, and where it
+does the reading genuinely may be the disagreement. Both cases are separated now, and only one of
+them qualifies a verdict.
+
+What is **not** here is a certificate. The milestone's networks have no independently published
+basin to judge against — CANA's own attractors come out of a constant-node reduction whose states do
+not line up with the full space — and Li's 11-node network is a derivation from the committed
+12-node rules (its cell-size input pinned off), which is a load-bearing reconstruction owing its own
+assumption and its own explained disagreement. What is committed is the check:
+`tests/test_logical_basin_claim.py` proves the restriction faithful state-by-state against the
+12-node network and reproduces all seven of the paper's published basins exactly. Publishing a
+certificate over that derivation is the next slice, not a line to leave out of this one.

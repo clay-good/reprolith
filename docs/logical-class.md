@@ -47,6 +47,7 @@ stepping never enumerates and stays available at any size.
 | `BooleanNetwork.basin_sizes` | How many states flow into each synchronous attractor — the basins, which partition the 2ⁿ space (so the sizes sum to 2ⁿ) and answer "which attractor dominates" |
 | `judge_steady_state` | Is a reported steady state one of the network's fixed points? |
 | `judge_attractor_set` | Does the reported set of attractors equal the computed set under a scheme — surfacing any missing or unexpected one? |
+| `judge_basin_size` | Does the reported basin of one attractor — a count of states, or a share of the space — match the one this network has? |
 
 `attractors` takes an `UpdateScheme`: **synchronous** (every node advances at once; attractors are
 simple cycles) or **asynchronous** (any single unstable node may flip; attractors are the terminal
@@ -127,6 +128,60 @@ literal in the transition math all raise on their own. Transition constructs the
 not implement — a production (additive) output, a consuming input, a missing default term — raise
 too, because running them as ordinary assignment logic would certify a different model. It needs the
 `engine` extra (python-libsbml, which bundles the qual package).
+
+## The basin of an attractor
+
+`basin_sizes` answered "how much of the state space reaches this attractor" from the day the class
+was written, and no claim could reach it — the same shape as `judge_attractor_set` before it. It is
+the number these papers argue robustness with: Li et al. 2004's yeast cell-cycle network reaches its
+G1 steady state from **1764 of 2048** initial states, which is the result that paper is remembered
+for, and two networks can agree on every attractor while disagreeing entirely on how much of the
+space reaches each one.
+
+`ReportedBasin` carries it and `judge_basin_size` judges it. Four decisions are what make it a
+comparison rather than a number:
+
+- **A count is judged exactly; a share is judged in a band.** A basin is a number of states in a
+  finite space, so there is no numerical error for a tolerance to absorb and a band would pass a
+  network that reaches its attractor from eighty states fewer. A printed *percentage* is a rounded
+  number, so that form is judged by relative error.
+- **The denominator is on the protocol line.** A paper that fixed its input nodes before counting
+  reports a share of a smaller space. CANA's 12-node variant of the yeast network adds `CellSize` as
+  a free self-loop, which doubles the space without moving anything: the G1 basin is 1764 states in
+  both networks, and **86% of the paper's space against 43% of CANA's**. The count survives the
+  change of whole and the fraction does not, which is why the space it was counted in is recorded
+  beside the verdict.
+- **An asynchronous claim abstains.** Under asynchronous updating a state has one successor per
+  unstable node, so it can reach several attractors and the basins overlap rather than partitioning
+  anything. The synchronous count exists; answering with it would answer a question the claim did
+  not ask.
+- **An attractor this network does not have fails, and does not abstain.** No state flows to an
+  attractor that is not there, so the observed basin is zero and the discrepancy says which of the
+  two disagreements it is. That is the strongest non-reproduction this class can find, and filing it
+  as "could not be judged" would hide it.
+
+An **unstated** update scheme is load-bearing here in a way it is not for a fixed point, and — like
+its sibling — the cost is measured rather than asserted. The comparable asynchronous quantity is
+*reachability*: from how many states the attractor can be reached at all. Where every state that can
+reach it also flows to it, the reading cannot move the number and no assumption is minted; where the
+two differ, the basis carries both counts. On Li's network they differ (1764 against 1960), so an
+unstated scheme there is a real ambiguity and not a formality. Reachability holds the async state
+graph's edges rather than one successor per state, so it has its own, lower ceiling
+(`MAX_REACHABILITY_NODES`) and says it is out of reach past it rather than reading as agreement.
+
+A reported attractor that is not there gets the same treatment rather than a blanket answer: the
+claim has already failed on the attractor, so the question is whether the *scheme* explains that,
+and an attractor absent under synchronous updating can exist under asynchronous updating. Where it
+does, the certificate says the verdict may rest on the reading; where the attractor is absent either
+way, no assumption is minted, because a scheme choice that cannot explain the failure should not be
+recorded as what the verdict rests on.
+
+No certificate in the shipped corpus carries a basin claim yet: the milestone's networks have no
+independently published basin to judge against, and Li's 11-node network is a *derivation* from the
+committed 12-node rules — a load-bearing reconstruction that owes its own assumption. What is
+committed is the check: [`tests/test_logical_basin_claim.py`](../tests/test_logical_basin_claim.py)
+proves the restriction faithful state-by-state against the 12-node network and reproduces all seven
+of the paper's published basins (1764/151/109/9/7/7/1) exactly.
 
 ## Self-validation
 

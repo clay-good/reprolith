@@ -41,6 +41,10 @@ class ComparisonMethod(str, Enum):
     # have, and on the length of each, while sharing not one state between them. A reference that
     # reports counts and periods rather than the attractors themselves can only support this.
     ATTRACTOR_SIGNATURE_MATCH = "attractor-signature-match"
+    # A count of states in a finite space, compared exactly. Not a set match and not a signature:
+    # two networks can agree on every attractor and disagree entirely on how much of the space
+    # reaches each one, which is the quantity a basin claim is about.
+    BASIN_SIZE_MATCH = "basin-size-match"
 
 
 class ReferenceKind(str, Enum):
