@@ -190,3 +190,60 @@ def test_the_corpus_abstains_exactly_where_the_grid_decides_the_verdict() -> Non
     assert by_reason["boundary"] == {
         "Tmax-1000mg", "Tmax-liver-500mg", "Tmax-liver-1000mg", "Tmax-liver-1500mg",
     }, by_reason["boundary"]
+
+
+def test_a_live_passing_auc_carries_its_own_sampling_cost() -> None:
+    """Certified here rather than read off a committed file, because a test that reads the
+    artifacts does not guard the code that writes them — this exact check was written against the
+    corpus first, and the mutation checker walked straight through it."""
+    claim = Claim(
+        claim_id="AUC24", quantity="plasma AUC over 24 h", species="mPlasmaVenous",
+        reported=42.2, source_location="Table 6, plasma row, 500 mg", metric="auc",
+    )
+    certificate = certify_model(
+        _HUMAN, paper=PaperIdentity(title="Zake2021", doi="10.1371/journal.pone.0249594"),
+        engine_pin=engine_pin(), claims=[claim], duration=24.0, steps=480,
+    )
+    (assessment,) = certificate.assessments
+    assert "this metric moves" in assessment.protocol
+    assert "that separates a pass from a failure here" in assessment.protocol
+
+
+def test_a_passing_grid_dependent_metric_publishes_what_its_sampling_cost() -> None:
+    """The number was computed and thrown away on the passing side.
+
+    `_metric_is_established` runs the doubled simulation for every AUC and every time-to-peak, and
+    quotes what it measured only when the grid decides a verdict. So a reader of a *published* AUC
+    could not tell a grid that was six figures converged from one that had just cleared the check —
+    with the answer already paid for. It is on the protocol line now, against the width the claim
+    is judged at, in three significant figures rather than two decimal places: 76 of the 95
+    grid-dependent claims in this repository move by less than a hundredth of a percent, and
+    "0.00%" throws away the difference between those and the ones that move 1.4%.
+    """
+    import json
+    from pathlib import Path
+
+    certificates = sorted(
+        (Path(__file__).parent.parent / "datasets" / "milestone" / "certificates").glob("*.json")
+    )
+    assert certificates, "no committed PK/PD certificates; this would pass vacuously"
+    measured = []
+    for path in certificates:
+        content = json.loads(path.read_text(encoding="utf-8"))
+        for assessment in content["assessments"]:
+            protocol = assessment.get("protocol") or ""
+            if "this metric moves" in protocol:
+                measured.append(protocol)
+                assert "that separates a pass from a failure here" in protocol, path.name
+    assert len(measured) > 50, len(measured)
+    # A peak height is read off the trajectory rather than summed over it, so the question does not
+    # arise and the clause is absent rather than zero — an absence that means "not this metric's
+    # property", not "unmeasured".
+    peaks = [
+        assessment
+        for path in certificates
+        for assessment in json.loads(path.read_text(encoding="utf-8"))["assessments"]
+        if "cmax" in (assessment.get("protocol") or "").lower()
+    ]
+    assert peaks, "no peak claims committed; the absence below would be vacuous"
+    assert not any("this metric moves" in (a.get("protocol") or "") for a in peaks)

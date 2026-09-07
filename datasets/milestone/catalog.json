@@ -1,6 +1,7 @@
 {
   "entries": [
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -42,6 +43,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -83,6 +85,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -124,6 +127,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -165,6 +169,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -206,6 +211,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -247,6 +253,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -288,6 +295,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -329,6 +337,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -370,6 +379,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -411,6 +421,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -452,6 +463,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -493,6 +505,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -534,6 +547,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -575,6 +589,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -616,6 +631,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -657,6 +673,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": "high",
       "ground_truth": {
         "expected": "reproduced",
@@ -728,6 +745,7 @@
       "state": "certified"
     },
     {
+      "attempts": [],
       "difficulty": "high",
       "ground_truth": {
         "expected": "reproduced",
@@ -799,6 +817,7 @@
       "state": "certified"
     },
     {
+      "attempts": [],
       "difficulty": "high",
       "ground_truth": {
         "expected": "reproduced",
@@ -870,6 +889,7 @@
       "state": "certified"
     },
     {
+      "attempts": [],
       "difficulty": "high",
       "ground_truth": {
         "expected": "reproduced",
@@ -941,6 +961,7 @@
       "state": "certified"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -982,6 +1003,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "not-reproduced",
@@ -1023,6 +1045,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "not-reproduced",
@@ -1064,6 +1087,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "not-reproduced",
@@ -1105,6 +1129,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "not-reproduced",
@@ -1146,6 +1171,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "not-reproduced",
@@ -1187,6 +1213,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "not-reproduced",
@@ -1228,6 +1255,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "not-reproduced",
@@ -1269,6 +1297,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "not-reproduced",
@@ -1310,6 +1339,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "not-reproduced",
@@ -1351,6 +1381,7 @@
       "state": "blocked"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "not-reproduced",

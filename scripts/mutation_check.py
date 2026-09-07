@@ -1265,6 +1265,12 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          "    if False:"),
         ["tests/test_spatial_front_claim.py"],
     ),
+    (
+        "a published grid-dependent metric hides what its sampling cost it",
+        "certify.py",
+        ("    if grid_change is not None:", "    if False:"),
+        ["tests/test_auc_convergence.py"],
+    ),
 ]
 
 

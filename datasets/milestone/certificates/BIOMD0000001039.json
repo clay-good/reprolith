@@ -25,7 +25,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "duration=24.0, steps=960, read=[mStomach] auc",
+      "protocol": "duration=24.0, steps=960, read=[mStomach] auc; this metric moves 1.46% between 960 and 1920 samples, against the 5% that separates a pass from a failure here",
       "quantity": "Stomach AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -42,7 +42,7 @@
       "implicated": "Liver AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "duration=24.0, steps=960, read=[mLiver] auc",
+      "protocol": "duration=24.0, steps=960, read=[mLiver] auc; this metric moves 0.471% between 960 and 1920 samples, against the 5% that separates a pass from a failure here",
       "quantity": "Liver AUC over 24 h after a single 50 mg/kg intravenous dose in mice",
       "reference_kind": "numeric",
       "root_cause": "uncategorized",
@@ -68,7 +68,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "deterministic-lsoda (judge rev ba5193e99f49)",
+    "algorithm": "deterministic-lsoda (judge rev 0df28660f5a1)",
     "engine": "copasi",
     "version": "4.46.300 (Source)"
   },

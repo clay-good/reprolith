@@ -331,6 +331,8 @@ def _run_protocol(
     overwritten: tuple[str, ...] = (),
     prior: tuple[tuple[float, tuple[tuple[str, float], ...]], ...] = (),
     window: tuple[float, float] | None = None,
+    grid_change: float | None = None,
+    grid_pass_width: float | None = None,
 ) -> str:
     """Describe the run a time-course judgment rests on, for the certificate's protocol field.
 
@@ -384,6 +386,26 @@ def _run_protocol(
         )
     if overwritten:
         stated += "; " + "; ".join(overwritten)
+    if grid_change is not None:
+        # What the sampling costs this number, for the metrics where the question arises. The
+        # abstention already quoted it when the grid decided a verdict; on the passing side it was
+        # computed and thrown away, so a reader could not tell a grid that was comfortably fine
+        # from one that had just cleared the check. Same treatment the spatial front's time step
+        # gets, and paid for already: the doubled run is the establishment check's own.
+        # Three significant figures rather than two decimal places: 76 of the 95 grid-dependent
+        # claims in this repository move by less than a hundredth of a percent, and printing them
+        # all as "0.00%" throws away the difference between a grid that is six figures converged
+        # and one that is two. And against the width it is judged at, because a number without its
+        # scale is the thing this project keeps catching itself publishing.
+        stated += (
+            f"; this metric moves {grid_change * 100.0:.3g}% between {int(steps)} and "
+            f"{int(steps) * 2} samples"
+            + (
+                f", against the {grid_pass_width * 100.0:.3g}% that separates a pass from a "
+                "failure here"
+                if grid_pass_width is not None else ""
+            )
+        )
     return stated
 
 
@@ -845,6 +867,12 @@ def certify_model(
             times, values = simulate(model, claim.species, duration=duration, steps=steps)
             claim_duration, claim_overrides = duration, claim.parameter_overrides
         predicted = _metric(times, values, claim.metric, claim.window)
+        # None where the question does not arise: a peak height or an end value is read off the
+        # trajectory rather than summed over it, so it is not a property of the sampling in the way
+        # an area or a time-to-peak is, and reporting a convergence for it would invite reading the
+        # absence as unmeasured on the ones where it matters.
+        grid_change: float | None = None
+        grid_pass_width: float | None = None
         if claim.metric in _GRID_DEPENDENT_METRICS:
             # The width the claim will actually be judged against: its own tolerance when it
             # states one, else the documented class default for this comparison.
@@ -867,6 +895,12 @@ def certify_model(
                 within=pass_width, nearest_boundary=nearest,
                 schedule=claim.schedule, window=claim.window,
             )
+            # Kept for the protocol line whichever way the check goes. It was computed and then
+            # discarded on the passing side, so a reader of a published AUC could not tell a grid
+            # that was comfortably fine from one that had just cleared the check — the number that
+            # answers it had already been paid for.
+            grid_change = change
+            grid_pass_width = pass_width
             if not established:
                 assessments.append(replace(
                     not_evaluable(
@@ -934,6 +968,8 @@ def certify_model(
                     overwritten=_events_overwriting(sbml, claim_overrides),
                     prior=claim.schedule[:-1] if claim.schedule else (),
                     window=claim.window,
+                    grid_change=grid_change,
+                    grid_pass_width=grid_pass_width,
                 ),
             )
         )

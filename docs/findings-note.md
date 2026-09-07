@@ -5098,3 +5098,27 @@ Dirichlet wall is not implemented for two species, so those are the answers this
 The prose that stated the split moved with it — and one of those sentences is now written to *not*
 state a count, because it had already gone stale twice. The surfaces report the split; the
 documents say that both halves exist and that the line between them moves as the engine does.
+
+
+## A number that was computed, used once, and thrown away
+
+`_metric_is_established` runs every AUC and every time-to-peak at twice the sample count, so the
+PK/PD class knows exactly what its grid costs each of those numbers. It quoted that measurement in
+one place: the abstention, when the grid was about to decide a verdict. On the passing side it was
+discarded — so a reader of a *published* AUC could not tell a grid that was six figures converged
+from one that had just cleared the check, with the answer already paid for.
+
+It is on the protocol line now, against the width the claim is judged at. Across the committed
+PK/PD corpus that is 95 measurements: nine exactly zero, most between 1e-07% and 1e-05%, and a
+handful between 0.2% and 1.6% — all against a 5% pass width. A peak height carries no such clause,
+because it is read off the trajectory rather than summed over it and the question does not arise;
+that absence means "not this metric's property", not "unmeasured".
+
+Three significant figures rather than two decimal places, and the reason is the corpus: 76 of the
+95 move by less than a hundredth of a percent, so `{:.2%}` printed three quarters of the evidence
+as `0.00%`.
+
+The mutation checker caught the first version of the test for it. That test read the *committed*
+certificates, which carry the clause whatever the code does — so removing the guard left every
+assertion passing. **A test that reads the artifacts does not guard the code that writes them.**
+The check certifies a claim live now, and the mutation dies.
