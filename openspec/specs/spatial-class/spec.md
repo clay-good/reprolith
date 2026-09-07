@@ -114,9 +114,13 @@ for reported profiles and the scalar comparison for the length scales papers sta
 - **AND** a domain whose neighbouring measurable wavelengths are further apart than the width the
   claim is judged at abstains, saying so: wavelength is quantized to 2L/m there, and a pass and a
   fail would be the same measurement
-- **AND** the run carries a load-bearing assumption for its boundary — unlike a gradient's, whose
-  walls are the model — because the admissible modes, and therefore the set of measurable
-  wavelengths, follow from the wall this solver imposes
+- **AND** a claim that states its own wall is run under it and carries no boundary assumption;
+  where it states none the run carries a load-bearing one — unlike a gradient's, whose walls are
+  the model — because the admissible modes, and therefore the set of measurable wavelengths,
+  follow from the wall
+- **AND** what that wall costs is measured rather than asserted: the same grid is re-run under the
+  other wall this solver implements and the certificate reports what it measured there, including
+  when the answer is that it could measure nothing, since the two walls admit different mode sets
 
 #### Scenario: Concentration-profile reproduction
 

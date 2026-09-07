@@ -658,7 +658,15 @@ reported value against a 5% threshold, where the abstention line is half the thr
 qualifications stand — they are still this engine's choices — but a reader can now see what each
 one is worth instead of being told only that it matters.
 
-**The wavelength claim is the one that had to say what it cannot measure.** Which wavelengths are
+**The wavelength claim is the one whose wall decides what is measurable at all.** A profile's
+boundary shifts a judged distance; a pattern's decides which wavelengths exist — `2L/m` under zero
+flux, `L/m` under periodicity — so a claim that states no wall carries a load-bearing assumption
+for it, and the two-species solver runs both walls so that what the choice costs can be re-run
+rather than asserted. On the self-validation domain the answer is that the alternative measures
+*nothing*: periodic modes are half as dense on the same length, so its best resolution is 8.33%
+against a 5% pass width. That is more useful than a number would have been.
+
+**It also had to say what it cannot measure.** Which wavelengths are
 measurable at all is set by the domain — on a zero-flux domain of length `L` only `2L/m` — so the
 claim reports the finest distinction its own domain can make and abstains when that is coarser than
 the width it would be judged at: agreeing to 1% where the measurable values are 16.7% apart — a

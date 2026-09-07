@@ -331,6 +331,7 @@ from .selection import (
     stated_objective,
 )
 from .spatial import (
+    PATTERN_BOUNDARIES,
     TURING_KINETICS,
     FrontSpeedClaim,
     GradientClaim,
@@ -345,7 +346,9 @@ from .spatial import (
     gaussian_profile,
     gradient_decay_length,
     mode_amplitudes,
+    mode_wavelength,
     morphogen_gradient,
+    pattern_boundary_sensitivity,
     pattern_wavelength,
     react_diffuse_1d,
     react_diffuse_2species,
@@ -692,7 +695,10 @@ __all__ = [
     "FrontSpeedClaim",
     "PatternClaim",
     "TURING_KINETICS",
+    "PATTERN_BOUNDARIES",
     "mode_amplitudes",
+    "mode_wavelength",
+    "pattern_boundary_sensitivity",
     "pattern_wavelength",
     "GradientClaim",
     "SpatialClaim",

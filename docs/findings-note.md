@@ -4868,3 +4868,34 @@ are measurable at all. Every pattern claim therefore carries a load-bearing assu
 profile claims' wall reports what it costs by re-running under the alternatives; this one cannot,
 because the two-species solver implements one wall, and the assumption says so rather than implying
 a measurement nobody made.
+
+
+## A pattern's wall does not bend the answer — it decides which answers exist
+
+The wavelength claim shipped with a load-bearing boundary assumption it could not measure the cost
+of: the two-species solver ran one wall, so "the modes are cos(m·pi·x/L) because the domain is
+zero-flux" could only be asserted. The module's own note beside `BOUNDARIES` had predicted this
+exactly — "periodic walls are the conventional choice for a Turing simulation, so it is worth doing
+when something judges one". Something judged one.
+
+`react_diffuse_2species` runs zero-flux and periodic now, and `PatternClaim` carries the wall its
+source states, so a claim that names one is run under it and rests on nothing this engine chose.
+Three things had to change with the wall, and each is a place where a single-wall implementation
+had quietly hard-coded a convention:
+
+- **The grid.** A periodic grid excludes the far endpoint — `x=0` and `x=L` are one point — so the
+  same `dx` over the same `L` is one point fewer. Comparing at equal point counts would compare two
+  different discretizations and report the difference as the wall's doing.
+- **The basis, and therefore the measurable set.** Zero flux admits `cos(m·pi·x/L)` and periodicity
+  `cos(2·pi·m·x/L)`, so the wavelengths are `2L/m` against `L/m`: the same length holds half as
+  many measurable values under periodicity.
+- **The phase.** A periodic domain is translation-invariant, so a pattern is as likely to sit in
+  sine as in cosine. Projecting onto the cosine alone would report a strong pattern as absent
+  whenever it had drifted a quarter wavelength — which, with no walls to pin it, it will. The
+  amplitude there is the magnitude of both projections.
+
+What the measurement then says is more interesting than a number. On the self-validation domain the
+zero-flux run selects mode 20 and resolves to 4.76%; the same grid under periodicity admits only
+`L/m`, so its best possible resolution is 8.33% and it **measures nothing at all**. The certificate
+says that, in those words. An assumption whose alternative cannot even be evaluated at this length
+is a stronger statement about the choice than "it moves the answer by x%", and it is the honest one.

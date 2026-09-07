@@ -123,6 +123,12 @@ def test_the_settled_wavelength_is_certified_and_the_linear_prediction_travels_w
     assert "linear stability predicts m=21" in assessment.protocol
     # The domain's own resolution, on the certificate rather than in a reader's head.
     assert "4.76%" in assessment.protocol
+    # …and what the wall it was given cost it, re-run rather than asserted. The answer here is
+    # that the alternative cannot measure this claim at all, which is the honest one: periodic
+    # modes are L/m, half as dense on the same domain, so its best resolution is 8.33%.
+    assert "What this wall costs, re-run on the same spacing" in assessment.protocol
+    assert "under periodic the same grid measures nothing" in assessment.protocol
+    assert "8.33%" in assessment.protocol
 
     # The wall decides which wavelengths are measurable at all, and this solver has one — so the
     # verdict rests on a choice Reprolith made and cannot read as a clean pass.
@@ -174,7 +180,7 @@ def test_a_run_that_settles_on_a_coarse_mode_is_caught_after_the_run_too(monkeyp
     does it takes minutes to grow."""
     import reprolith.spatial as spatial
 
-    def peaked(field_values, *, length, modes, baseline):
+    def peaked(field_values, *, length, modes, baseline, wall="no-flux"):
         return {mode: 100.0 / (abs(mode - 3) + 1) for mode in modes}
 
     monkeypatch.setattr(spatial, "mode_amplitudes", peaked)
@@ -223,3 +229,64 @@ def test_a_stable_parameter_set_admits_no_growing_mode_and_abstains() -> None:
 def test_a_claim_that_could_not_be_a_measurement_is_refused(kw, message) -> None:
     with pytest.raises(ValueError, match=message):
         _claim(**kw)
+
+
+# --- the wall, which decides what is measurable rather than merely bending an edge ---------------
+
+
+def test_a_periodic_domain_measures_a_different_set_of_wavelengths() -> None:
+    """Zero flux admits cos(m·pi·x/L) and periodicity cos(2·pi·m·x/L), so the same length holds
+    half as many measurable wavelengths — and its grid excludes the far endpoint, since x=0 and
+    x=L are one point."""
+    flux = _claim()
+    wrapped = _claim(boundary="periodic", points=POINTS - 1)
+    assert flux.dx == pytest.approx(wrapped.dx)
+    assert flux.modes == range(1, POINTS)
+    assert wrapped.modes == range(1, (POINTS - 1) // 2 + 1)
+    assert flux.analytical_wavelength == pytest.approx(2 * LENGTH / flux.fastest_growing_mode)
+    assert wrapped.analytical_wavelength == pytest.approx(LENGTH / wrapped.fastest_growing_mode)
+    # The same physical pattern, so the two predictions agree even though the mode numbers do not.
+    assert flux.analytical_wavelength == pytest.approx(wrapped.analytical_wavelength, rel=0.1)
+    assert flux.fastest_growing_mode != wrapped.fastest_growing_mode
+
+
+def test_a_claim_that_states_its_wall_rests_on_nothing_this_engine_chose() -> None:
+    """The pattern analogue of `SpatialClaim.boundary`: a stated wall is the model's, so there is
+    no assumption to carry and no cost to measure."""
+    from reprolith.spatial import pattern_boundary_sensitivity
+
+    stated = _claim(boundary="no-flux", assumption_qualified=False)
+    assert stated.wall_is_reprolith_s is False
+    assert pattern_boundary_sensitivity(stated) is None
+    assert _claim().wall_is_reprolith_s is True
+
+
+def test_a_two_species_run_refuses_a_wall_it_cannot_hold_a_value_for() -> None:
+    """A Dirichlet wall holds each species at a value; this signature carries none, and a
+    fixed-value wall on a pattern is a different model rather than a different edge rule."""
+    from reprolith import react_diffuse_2species
+
+    with pytest.raises(ValueError, match="Dirichlet wall holds each species"):
+        react_diffuse_2species(
+            [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], du=1.0, dv=1.0, dx=1.0, dt=0.01, steps=1,
+            reaction_u=lambda u, v: 0.0, reaction_v=lambda u, v: 0.0, boundary="dirichlet",
+        )
+    with pytest.raises(ValueError, match="names boundary 'dirichlet'"):
+        _claim(boundary="dirichlet")
+
+
+def test_a_periodic_pattern_is_found_at_any_phase() -> None:
+    """A periodic domain is translation-invariant, so a pattern is as likely to sit in sine as in
+    cosine. Projecting onto the cosine alone reports a strong pattern as absent whenever it has
+    drifted a quarter wavelength — which, on a domain with no walls to pin it, it will."""
+    from reprolith.spatial import mode_amplitudes
+
+    n, length = 64, 32.0
+    dx = length / n
+    for phase in (0.0, math.pi / 2, math.pi / 4):
+        field = [5.0 + 0.5 * math.cos(2 * math.pi * 6 * i * dx / length + phase) for i in range(n)]
+        amplitudes = mode_amplitudes(
+            field, length=length, modes=range(1, n // 2), baseline=5.0, wall="periodic"
+        )
+        assert max(amplitudes, key=lambda mode: amplitudes[mode]) == 6
+        assert amplitudes[6] == pytest.approx(0.5 * n / 2, rel=1e-6)

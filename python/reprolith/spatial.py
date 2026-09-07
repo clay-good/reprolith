@@ -243,15 +243,16 @@ def _left_checked(values: Sequence[float], checked: tuple[float, float, float]) 
 
 #: The boundary conditions :func:`diffuse_1d` takes, and what each does at the edge of the domain.
 #:
-#: **Only that one function.** The module's other steppers — :func:`react_diffuse_1d`,
-#: :func:`react_diffuse_2species` and :func:`diffuse_2d` — still mirror their edges
+#: **That one function, and — since a pattern claim judges one — the two-species stepper.**
+#: :func:`react_diffuse_2species` takes :data:`PATTERN_BOUNDARIES`, the subset it can hold a
+#: meaning for. :func:`react_diffuse_1d` and :func:`diffuse_2d` still mirror their edges
 #: unconditionally, and :func:`morphogen_gradient` deliberately holds a source at one end against a
 #: zero-flux far wall, which is the model rather than a limitation. Naming this "the boundary
-#: conditions *this solver* implements" would claim for four functions what one of them does; the
-#: reason it was added is that pure diffusion is what a certified claim runs through
-#: (:func:`certify_spatial`), so it is where the choice had to stop being unmeasurable. Extending
-#: the others is real work with no consumer today — periodic walls are the conventional choice for
-#: a Turing simulation, so it is worth doing when something judges one.
+#: conditions *this solver* implements" would still claim for four functions what two of them do.
+#: This note said extending the others was "real work with no consumer today — periodic walls are
+#: the conventional choice for a Turing simulation, so it is worth doing when something judges
+#: one". Something judges one now, and the extension is what turns a pattern claim's wall from an
+#: assumption that could only be asserted into one whose cost is re-run and reported.
 #:
 #: ``no-flux`` mirrors the edge point, so nothing leaves the domain and mass is conserved. It was
 #: the only one for as long as this class has existed, which made it an unconditional assumption on
@@ -270,6 +271,13 @@ _WALL_NAMES = {
     "dirichlet": "Dirichlet (fixed-value) boundaries",
     "periodic": "periodic boundaries",
 }
+
+
+#: The walls a two-species run takes. Fewer than :data:`BOUNDARIES`, and the omission is stated
+#: rather than silent: a Dirichlet wall holds each species at a value, a pattern claim carries no
+#: such value, and a fixed-value wall on a pattern is a different model rather than a different
+#: edge rule.
+PATTERN_BOUNDARIES = ("no-flux", "periodic")
 
 
 def _neighbours(
@@ -468,6 +476,7 @@ def react_diffuse_2species(
     steps: int,
     reaction_u: Callable[[float, float], float],
     reaction_v: Callable[[float, float], float],
+    boundary: str = "no-flux",
 ) -> tuple[list[float], list[float]]:
     """Evolve two coupled fields under reaction-diffusion — the basis of pattern formation.
 
@@ -478,7 +487,25 @@ def react_diffuse_2species(
     diffusion-plus-reaction stability rule :func:`react_diffuse_1d` explains — a reaction term feeds
     the node-to-node oscillation an α near 0.5 stops damping, and the result is finite, plausible,
     and wrong.
+
+    ``boundary`` is ``no-flux`` (the default, and what this function did unconditionally) or
+    ``periodic``, which is the conventional choice for a Turing simulation and the one that makes a
+    pattern claim's wall measurable rather than merely stated. A **Dirichlet** wall is refused by
+    name rather than approximated: it holds each species at a value, this signature carries none,
+    and a fixed-value wall on a pattern is a different model rather than a different edge rule.
+
+    The two walls change *which wavelengths exist*, not just the edges: zero-flux admits
+    ``cos(m·pi·x/L)`` and periodic admits ``cos(2·pi·m·x/L)``, so the same reaction on the same grid
+    selects from two different sets. A periodic grid excludes the far endpoint — the wrap is from
+    the last interior point back to the first — or the domain is one cell longer than it says.
     """
+    if boundary not in ("no-flux", "periodic"):
+        raise ValueError(
+            f"unknown boundary {boundary!r} for a two-species run; this solver implements "
+            "no-flux and periodic. A Dirichlet wall holds each species at a value and this "
+            "signature carries none, so it is refused rather than approximated by a neighbouring "
+            "wall"
+        )
     au = _diffusion_number(diffusivity=du, dx=dx, dt=dt, steps=steps, limit=0.5, must_advance=False)
     av = _diffusion_number(diffusivity=dv, dx=dx, dt=dt, steps=steps, limit=0.5, must_advance=False)
     cu, cv = list(u), list(v)
@@ -542,10 +569,14 @@ def react_diffuse_2species(
     for _ in range(steps):
         nu, nv = cu[:], cv[:]
         for i in range(n):
-            ul = cu[i - 1] if i > 0 else cu[i]
-            ur = cu[i + 1] if i < n - 1 else cu[i]
-            vl = cv[i - 1] if i > 0 else cv[i]
-            vr = cv[i + 1] if i < n - 1 else cv[i]
+            if boundary == "periodic":
+                ul, ur = cu[i - 1], cu[(i + 1) % n]
+                vl, vr = cv[i - 1], cv[(i + 1) % n]
+            else:
+                ul = cu[i - 1] if i > 0 else cu[i]
+                ur = cu[i + 1] if i < n - 1 else cu[i]
+                vl = cv[i - 1] if i > 0 else cv[i]
+                vr = cv[i + 1] if i < n - 1 else cv[i]
             nu[i] = cu[i] + au * (ul - 2.0 * cu[i] + ur) + dt * reaction_u(cu[i], cv[i])
             nv[i] = cv[i] + av * (vl - 2.0 * cv[i] + vr) + dt * reaction_v(cu[i], cv[i])
         cu, cv = nu, nv
@@ -979,10 +1010,17 @@ class PatternClaim:
     #: so which one wins is the solver's doing and not the seed's. Recorded because a different
     #: seed is a different run, and a single-mode seed would decide the answer in advance.
     seed_amplitude: float = 1e-3
+    #: The wall this claim's source states, when it states one — ``no-flux`` or ``periodic``, the
+    #: two the two-species solver runs. ``None`` means it does not, and the run then uses zero flux
+    #: and carries the load-bearing assumption saying so. It matters more here than on a profile
+    #: claim: the wall decides which wavelengths are *measurable at all* (``2L/m`` against ``L/m``),
+    #: not just how far the edges bend an answer.
+    boundary: str | None = None
     tolerance: Tolerance | None = None
-    #: Defaults True for the reason `SpatialClaim`'s does: the set of admissible modes — and so
-    #: the set of measurable wavelengths — comes from the zero-flux wall this solver imposes, and
-    #: a claim states no other. See the assumption `certify_spatial` attaches.
+    #: Defaults True for the reason `SpatialClaim`'s does: where a claim states no wall, the set of
+    #: admissible modes — and so the set of measurable wavelengths — is this engine's choice. A
+    #: claim that states its own sets this False for itself. See the assumption `certify_spatial`
+    #: attaches.
     assumption_qualified: bool = True
     shortfall: Attribution | None = field(default=None)
 
@@ -1019,15 +1057,49 @@ class PatternClaim:
                 f"claim {self.claim_id!r} seeds with amplitude {self.seed_amplitude!r}: with no "
                 "perturbation the homogeneous state is a fixed point and no pattern can form"
             )
+        if self.boundary is not None and self.boundary not in PATTERN_BOUNDARIES:
+            raise ValueError(
+                f"claim {self.claim_id!r} names boundary {self.boundary!r}; a two-species run "
+                f"takes {', '.join(PATTERN_BOUNDARIES)}"
+            )
+
+    @property
+    def wall(self) -> str:
+        """The boundary this claim is actually run under — its own, or this engine's default."""
+        return self.boundary or "no-flux"
+
+    @property
+    def wall_is_reprolith_s(self) -> bool:
+        """Whether the wall was Reprolith's choice rather than something the source stated."""
+        return self.boundary is None
+
+    @property
+    def dx(self) -> float:
+        """The grid spacing, which the wall decides.
+
+        A periodic grid **excludes** the far endpoint — ``x=0`` and ``x=L`` are one point — so it
+        spans ``L`` in ``points`` cells where a zero-flux grid spans it in ``points − 1``. Getting
+        this wrong makes the wrap span an extra cell, which looks exactly like a solver error.
+        """
+        return self.length / self.points if self.wall == "periodic" else self.length / (self.points - 1)
 
     @property
     def modes(self) -> range:
-        """The admissible zero-flux modes ``cos(m·pi·x/L)`` this grid can hold.
+        """The admissible modes this grid can hold under this claim's wall.
 
-        Stops at ``points - 1``: two grid points per wavelength is the most a grid can represent,
-        and a mode above that is aliased rather than resolved.
+        Zero flux admits ``cos(m·pi·x/L)`` up to ``points − 1``; periodicity admits
+        ``cos(2·pi·m·x/L)`` up to ``points // 2``, since a periodic mode uses two grid points per
+        wavelength across the whole domain rather than one half-wavelength across it. Two grid
+        points per wavelength is the most any grid can represent; above that a mode is aliased
+        rather than resolved.
         """
-        return range(1, self.points)
+        return range(1, self.points // 2 + 1) if self.wall == "periodic" else range(1, self.points)
+
+    def wavenumber(self, mode: int) -> float:
+        """The wavenumber of one admissible mode: ``m·pi/L`` under zero flux, ``2·pi·m/L`` under
+        periodicity. The dispersion relation is a function of ``k``, and the wall sets which ``k``
+        the domain has."""
+        return 2.0 * math.pi * mode / self.length if self.wall == "periodic" else mode * math.pi / self.length
 
     def growth_rate(self, mode: int) -> float:
         """The dominant eigenvalue of ``J − k²·diag(Du, Dv)`` for one mode — linear stability.
@@ -1037,7 +1109,7 @@ class PatternClaim:
         analytic wavelength below is not what is being measured.
         """
         fu, fv, gu, gv = TURING_KINETICS[self.kinetics].jacobian(self.a, self.b)
-        k2 = (mode * math.pi / self.length) ** 2
+        k2 = self.wavenumber(mode) ** 2
         m00, m11 = fu - self.du * k2, gv - self.dv * k2
         trace, det = m00 + m11, m00 * m11 - fv * gu
         disc = trace * trace - 4.0 * det
@@ -1050,49 +1122,86 @@ class PatternClaim:
 
     @property
     def analytical_wavelength(self) -> float:
-        """``2L/m*`` — the wavelength linear stability predicts, for the protocol line.
+        """The wavelength linear stability predicts, for the protocol line.
 
         Recorded beside the measured one for the reason the gradient's continuum length is: they
         answer different questions. This is what the *linearized* equation selects; the certificate
         judges what the nonlinear discretized run produced.
         """
-        return 2.0 * self.length / self.fastest_growing_mode
+        return mode_wavelength(self.fastest_growing_mode, length=self.length, wall=self.wall)
 
 
 def mode_amplitudes(
-    field_values: Sequence[float], *, length: float, modes: Iterable[int], baseline: float
+    field_values: Sequence[float],
+    *,
+    length: float,
+    modes: Iterable[int],
+    baseline: float,
+    wall: str = "no-flux",
 ) -> dict[int, float]:
-    """Each admissible mode's amplitude in a field: ``|<field − baseline, cos(m·pi·x/L)>|``.
+    """Each admissible mode's amplitude in a field, projected onto that wall's eigenfunctions.
 
-    The zero-flux eigenfunctions, projected by the trapezoid rule. ``baseline`` is the homogeneous
-    state the pattern grew out of; projecting the raw field instead would let the m=0 offset leak
-    into every mode. The projection is an unweighted sum over grid points, so a mode seeded at
-    amplitude ``A`` starts at ``A·(points − 1)/2`` — which is what tells a pattern that grew from
-    one that has not.
+    ``baseline`` is the homogeneous state the pattern grew out of; projecting the raw field instead
+    would let the m=0 offset leak into every mode. The projection is an unweighted sum over grid
+    points, so a mode seeded at amplitude ``A`` starts at about ``A·points/2`` — which is what tells
+    a pattern that grew from one that has not.
+
+    **The wall decides both the basis and the phase.** ``no-flux`` admits ``cos(m·pi·x/L)``, whose
+    phase is pinned by the walls, so a cosine projection is the whole amplitude and the endpoints
+    get trapezoid half-weights. ``periodic`` admits ``cos(2·pi·m·x/L)`` at *any phase* — the domain
+    is translation-invariant, so a pattern is as likely to sit in sine as in cosine — and its
+    amplitude is therefore the magnitude of both projections. Taking the cosine alone there reports
+    a strong pattern as absent whenever it happens to have drifted a quarter wavelength.
     """
     values = list(field_values)
     n = len(values)
     if n < 2:
         raise ValueError("a field needs at least two points to be projected onto a mode")
-    dx = length / (n - 1)
+    if wall == "periodic":
+        dx = length / n
 
-    def amplitude(mode: int) -> float:
-        total = 0.0
-        for i, value in enumerate(values):
-            weight = 0.5 if i in (0, n - 1) else 1.0
-            total += weight * (value - baseline) * math.cos(mode * math.pi * i * dx / length)
-        return abs(total)
+        def amplitude(mode: int) -> float:
+            angle = 2.0 * math.pi * mode / length
+            cosine = sum((value - baseline) * math.cos(angle * i * dx) for i, value in enumerate(values))
+            sine = sum((value - baseline) * math.sin(angle * i * dx) for i, value in enumerate(values))
+            return math.hypot(cosine, sine)
+
+    else:
+        dx = length / (n - 1)
+
+        def amplitude(mode: int) -> float:
+            total = 0.0
+            for i, value in enumerate(values):
+                weight = 0.5 if i in (0, n - 1) else 1.0
+                total += weight * (value - baseline) * math.cos(mode * math.pi * i * dx / length)
+            return abs(total)
 
     return {mode: amplitude(mode) for mode in modes}
 
 
+def mode_wavelength(mode: int, *, length: float, wall: str = "no-flux") -> float:
+    """The wavelength of one admissible mode: ``2L/m`` under zero flux, ``L/m`` under periodicity.
+
+    Two walls, two measurable sets. Written once because every part of a pattern claim — the
+    prediction, the measurement, and the domain's own resolution — has to use the same one.
+    """
+    return length / mode if wall == "periodic" else 2.0 * length / mode
+
+
 def pattern_wavelength(
-    field_values: Sequence[float], *, length: float, modes: Iterable[int], baseline: float
+    field_values: Sequence[float],
+    *,
+    length: float,
+    modes: Iterable[int],
+    baseline: float,
+    wall: str = "no-flux",
 ) -> tuple[int, float]:
-    """The dominant admissible mode of a field and its wavelength ``2L/m``."""
-    amplitudes = mode_amplitudes(field_values, length=length, modes=modes, baseline=baseline)
+    """The dominant admissible mode of a field and the wavelength that mode has under ``wall``."""
+    amplitudes = mode_amplitudes(
+        field_values, length=length, modes=modes, baseline=baseline, wall=wall
+    )
     dominant = max(amplitudes, key=lambda mode: amplitudes[mode])
-    return dominant, 2.0 * length / dominant
+    return dominant, mode_wavelength(dominant, length=length, wall=wall)
 
 
 def boundary_sensitivity(claim: SpatialClaim) -> dict[str, Any] | None:
@@ -1314,16 +1423,22 @@ def _judge_front_speed(claim: FrontSpeedClaim) -> ClaimAssessment:
     )
 
 
+#: What each wall makes measurable, in the notation a reader can check against their own model.
+_EIGENFUNCTIONS = {"no-flux": "cos(m·pi·x/L)", "periodic": "cos(2·pi·m·x/L)"}
+_MEASURABLE_SET = {"no-flux": "2L/m", "periodic": "L/m"}
+
+
 def _mode_resolution(claim: PatternClaim, mode: int) -> float:
     """The finest wavelength difference this domain can express near ``mode``, as a fraction.
 
-    Measurable wavelengths are ``2L/m``, so the neighbours of ``m`` are ``2L/(m±1)`` and the
-    smaller gap is ``1/(m+1)`` of the wavelength. Written once because it is asked twice: of the
-    mode linear stability predicts, before the run, and of the mode that actually won, after it.
+    Measurable wavelengths are this wall's set — ``2L/m`` under zero flux, ``L/m`` under
+    periodicity — so the neighbours of ``m`` are its ``m±1`` and the smaller gap is ``1/(m+1)`` of
+    the wavelength either way. Written once because it is asked twice: of the mode linear stability
+    predicts, before the run, and of the mode that actually won, after it.
     """
-    measured = 2.0 * claim.length / mode
+    measured = mode_wavelength(mode, length=claim.length, wall=claim.wall)
     neighbours = [
-        2.0 * claim.length / other
+        mode_wavelength(other, length=claim.length, wall=claim.wall)
         for other in (mode - 1, mode + 1)
         if other in claim.modes
     ]
@@ -1332,11 +1447,79 @@ def _mode_resolution(claim: PatternClaim, mode: int) -> float:
     return min(abs(measured - neighbour) for neighbour in neighbours) / measured
 
 
-def _judge_pattern(claim: PatternClaim) -> ClaimAssessment:
-    """Grow a Turing pattern from a broadband seed and judge the wavelength it selects.
+def pattern_boundary_sensitivity(
+    claim: PatternClaim, *, judged: _PatternMeasurement | None = None
+) -> dict[str, Any] | None:
+    """What this claim's wall costs it: the same run under the other wall this solver implements.
 
-    Five ways this abstains rather than publishing a number, each a case where a wavelength can be
-    computed and would mean nothing:
+    ``None`` where the claim states its own boundary — nothing was assumed, so there is nothing to
+    measure the cost of — mirroring :func:`boundary_sensitivity` for a profile claim. What it
+    reports differs from that one in a way worth stating: a profile's wall moves a judged distance,
+    while a pattern's wall changes **which wavelengths exist**, so the alternative may not be able
+    to resolve the claim at this length at all. Measured on the self-validation configuration: the
+    zero-flux domain selects mode 20 and resolves to 4.76%, and the same domain under periodicity
+    admits only ``L/m`` — half as many wavelengths in the same span — so its best resolution is
+    8.33% and it abstains. That is the honest answer, and it is more useful than a number.
+
+    The alternative run keeps the *grid spacing*, not the point count: a periodic grid excludes the
+    far endpoint, so the same ``dx`` over the same ``L`` is one point fewer. Comparing at equal
+    point counts would compare two different discretizations and report the difference as the
+    wall's doing.
+    """
+    if not claim.wall_is_reprolith_s:
+        return None
+    # The claim's own run, which the judge has already done: passing it in halves the work, and a
+    # certificate that ran its own model twice to say what the alternative cost would be paying
+    # for the answer to a question it had already answered.
+    judged = judged if judged is not None else _measure_pattern(claim)
+    if judged.wavelength is None:
+        return None
+    alternatives: dict[str, Any] = {}
+    for wall in PATTERN_BOUNDARIES:
+        if wall == claim.wall:
+            continue
+        points = claim.points - 1 if wall == "periodic" else claim.points + 1
+        other = _measure_pattern(replace(claim, boundary=wall, points=points))
+        alternatives[wall] = {
+            "wavelength": other.wavelength,
+            "refused": other.reason,
+            "moved_by": (
+                abs(other.wavelength - judged.wavelength) / judged.wavelength
+                if other.wavelength is not None else None
+            ),
+        }
+    tolerance = claim.tolerance or default_tolerance(
+        ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+    )
+    return {
+        "judged_wavelength": judged.wavelength,
+        "alternatives": alternatives,
+        "pass_within": tolerance.reproduced_within,
+    }
+
+
+@dataclass(frozen=True)
+class _PatternMeasurement:
+    """One pattern run's outcome: the wavelength it selected, or why there is not one.
+
+    Separated from the judging because two callers need the same run under different walls —
+    :func:`_judge_pattern`, which judges the claim's own, and
+    :func:`pattern_boundary_sensitivity`, which asks what the alternative would have measured. A
+    second copy of the abstention rules would be a second set of them.
+    """
+
+    wavelength: float | None = None
+    mode: int | None = None
+    predicted_mode: int | None = None
+    resolution: float | None = None
+    reason: str | None = None
+
+
+def _measure_pattern(claim: PatternClaim) -> _PatternMeasurement:
+    """Grow the pattern and read the wavelength it selects, or say why there is none.
+
+    Six ways there is no wavelength to publish, each a case where one can be computed and would
+    mean nothing:
 
     ``the discretization does not run``
         as everywhere else in this class.
@@ -1347,41 +1530,36 @@ def _judge_pattern(claim: PatternClaim) -> ClaimAssessment:
         the parameters are stable to every mode this domain can hold: linear stability predicts no
         pattern at all, and measuring the largest mode of a decaying perturbation reports noise.
     ``no pattern formed``
-        the run finished with the activator still flat, so the dominant mode is whichever way the
-        arithmetic fell.
+        the run finished with the seed's own modes still the largest, so the dominant one is
+        whichever way the arithmetic fell.
+    ``the pattern has not settled``
+        the dominant mode changed across the confirming window, so this reading is the pattern
+        still forming rather than the wavelength it selects.
     ``the domain cannot resolve the claim``
-        wavelength is quantized to ``2L/m`` here, and where neighbouring modes are further apart
+        wavelength is quantized to this wall's set, and where neighbouring modes are further apart
         than the width the claim is judged at, a pass and a fail are the same measurement. This is
         the pattern analogue of the metric-establishment check the PK/PD class runs on its grid.
     """
     kinetics = TURING_KINETICS[claim.kinetics]
-
-    def abstain(reason: str) -> ClaimAssessment:
-        return not_evaluable(
-            claim_id=claim.claim_id, quantity=claim.quantity,
-            source_location=claim.source_location, reason=reason,
-            reference_kind=ReferenceKind.NUMERIC,
-        )
-
     try:
         u_star, v_star = kinetics.steady_state(claim.a, claim.b)
     except ValueError as unusable:
-        return abstain(str(unusable))
+        return _PatternMeasurement(reason=str(unusable))
     fu, fv, gu, gv = kinetics.jacobian(claim.a, claim.b)
     trace, det = fu + gv, fu * gv - fv * gu
     if trace >= 0.0 or det <= 0.0:
-        return abstain(
+        return _PatternMeasurement(reason=(
             f"the {claim.kinetics} reaction at a={claim.a!r}, b={claim.b!r} is not stable without "
             f"diffusion (trace {trace:.4g}, determinant {det:.4g}): what grows here is not a "
             "diffusion-driven pattern, so its spacing is not a Turing wavelength"
-        )
+        ))
     predicted_mode = claim.fastest_growing_mode
     if claim.growth_rate(predicted_mode) <= 0.0:
-        return abstain(
+        return _PatternMeasurement(predicted_mode=predicted_mode, reason=(
             f"no mode this domain admits grows: the fastest, m={predicted_mode}, has rate "
             f"{claim.growth_rate(predicted_mode):.4g}, so linear stability predicts no pattern "
             "and the largest mode of a decaying perturbation is noise"
-        )
+        ))
     tolerance = claim.tolerance or default_tolerance(
         ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
     )
@@ -1391,25 +1569,27 @@ def _judge_pattern(claim: PatternClaim) -> ClaimAssessment:
     # and the honest answer is available for the cost of a division.
     predicted_resolution = _mode_resolution(claim, predicted_mode)
     if predicted_resolution > tolerance.reproduced_within:
-        return abstain(
-            f"this domain cannot resolve the claim: the wavelength is quantized to 2L/m, so even "
-            f"at the mode linear stability predicts (m={predicted_mode}) the nearest measurable "
-            f"values are {predicted_resolution:.2%} away while a pass is "
-            f"{tolerance.reproduced_within:.2%} — a longer domain holds more modes and measures "
-            "finer"
-        )
-    dx = claim.length / (claim.points - 1)
+        return _PatternMeasurement(predicted_mode=predicted_mode, resolution=predicted_resolution, reason=(
+            f"this domain cannot resolve the claim: the wavelength is quantized to "
+            f"{_MEASURABLE_SET[claim.wall]}, so even at the mode linear stability predicts "
+            f"(m={predicted_mode}) the nearest measurable values are {predicted_resolution:.2%} "
+            f"away while a pass is {tolerance.reproduced_within:.2%} — a longer domain holds more "
+            "modes and measures finer"
+        ))
+    dx = claim.dx
     seed = [
         claim.seed_amplitude * sum(
-            math.cos(mode * math.pi * i * dx / claim.length) for mode in claim.modes
+            math.cos(claim.wavenumber(mode) * i * dx) for mode in claim.modes
         )
         for i in range(claim.points)
     ]
+
     def evolve(u: Sequence[float], v: Sequence[float], steps: int) -> tuple[list[float], list[float]]:
         return react_diffuse_2species(
             u, v, du=claim.du, dv=claim.dv, dx=dx, dt=claim.dt, steps=steps,
             reaction_u=lambda uu, vv: kinetics.reaction_u(uu, vv, claim.a, claim.b),
             reaction_v=lambda uu, vv: kinetics.reaction_v(uu, vv, claim.a, claim.b),
+            boundary=claim.wall,
         )
 
     try:
@@ -1418,32 +1598,32 @@ def _judge_pattern(claim: PatternClaim) -> ClaimAssessment:
         )
         later, _ = evolve(activator, inhibitor, claim.confirm_steps)
     except UnstableDiscretization as unstable:
-        return abstain(str(unstable))
+        return _PatternMeasurement(predicted_mode=predicted_mode, reason=str(unstable))
     if not all(math.isfinite(value) for value in activator):
-        return abstain(
+        return _PatternMeasurement(predicted_mode=predicted_mode, reason=(
             "the activator field left the finite range during the run, so there is no pattern to "
             "measure a wavelength of"
-        )
+        ))
     amplitudes = mode_amplitudes(
-        activator, length=claim.length, modes=claim.modes, baseline=u_star
+        activator, length=claim.length, modes=claim.modes, baseline=u_star, wall=claim.wall
     )
     dominant = max(amplitudes, key=lambda mode: amplitudes[mode])
-    measured = 2.0 * claim.length / dominant
+    measured = mode_wavelength(dominant, length=claim.length, wall=claim.wall)
     # Against the seed's own per-mode amplitude, not against the field's range. The broadband seed
     # is a Dirichlet kernel — every mode at equal weight sums to a spike at x=0 — so it spans about
     # `seed_amplitude × modes` from the first step, and a guard comparing the field's range to the
     # seed amplitude could never fire. What has to have happened is that one mode *grew*: measured
     # on the self-validation configuration, every mode starts at 0.16 and the winner reaches 1.09
     # at t=3, 10.4 at t=9 and 18.3 at t=12.
-    seeded = claim.seed_amplitude * (claim.points - 1) / 2.0
+    seeded = claim.seed_amplitude * claim.points / 2.0
     if amplitudes[dominant] <= 10.0 * seeded:
-        return abstain(
+        return _PatternMeasurement(predicted_mode=predicted_mode, reason=(
             f"no pattern formed: the largest mode after {claim.steps} steps stands at "
             f"{amplitudes[dominant]:.3e} against the {seeded:.3e} every mode was seeded at, so "
             "nothing has been selected and the dominant mode is whichever way the arithmetic fell"
-        )
+        ))
     settled, settled_wavelength = pattern_wavelength(
-        later, length=claim.length, modes=claim.modes, baseline=u_star
+        later, length=claim.length, modes=claim.modes, baseline=u_star, wall=claim.wall
     )
     if settled != dominant:
         # Not a drift to report beside the number, as the front's residual is: the mode is
@@ -1451,30 +1631,50 @@ def _judge_pattern(claim: PatternClaim) -> ClaimAssessment:
         # not the wavelength this model selects. Measured on the Schnakenberg configuration this
         # class self-validates against: mode 22 at t=3, 21 at t=6, 20 from t=9 — a claim read at
         # t=3 would have published 14.5 for a pattern that selects 16.0.
-        return abstain(
+        return _PatternMeasurement(predicted_mode=predicted_mode, reason=(
             f"the pattern has not settled: mode {dominant} (wavelength {measured:.6g}) after "
             f"{claim.steps} steps becomes mode {settled} ({settled_wavelength:.6g}) after "
             f"{claim.confirm_steps} more, so this reading is the pattern still forming rather "
             "than the wavelength it selects"
-        )
-    # The finest distinction this domain can make around the mode that won: the wavelength is
-    # 2L/m, so the neighbouring measurable values are 2L/(m±1) and the smaller gap is the
-    # resolution. Reported always, and grounds for abstention when it is coarser than the width
-    # the claim would be judged at — where a pass and a fail are the same measurement.
+        ))
     # Asked again of the mode that actually won, which can be far below the predicted one: the
     # pre-run check clears the domain at m*, and a run that settles on a low mode is measured on a
     # coarser scale than the one that was cleared.
     resolution = _mode_resolution(claim, dominant)
     if resolution > tolerance.reproduced_within:
-        return abstain(
-            f"this domain cannot resolve the claim: the wavelength is quantized to 2L/m, so the "
-            f"nearest measurable values to {measured:.6g} (mode {dominant}) are "
-            f"{resolution:.2%} away while a pass is {tolerance.reproduced_within:.2%} — a longer "
-            "domain holds more modes and measures finer"
+        return _PatternMeasurement(mode=dominant, predicted_mode=predicted_mode, resolution=resolution, reason=(
+            f"this domain cannot resolve the claim: the wavelength is quantized to "
+            f"{_MEASURABLE_SET[claim.wall]}, so the nearest measurable values to {measured:.6g} "
+            f"(mode {dominant}) are {resolution:.2%} away while a pass is "
+            f"{tolerance.reproduced_within:.2%} — a longer domain holds more modes and measures "
+            "finer"
+        ))
+    return _PatternMeasurement(
+        wavelength=measured, mode=dominant, predicted_mode=predicted_mode, resolution=resolution
+    )
+
+
+def _judge_pattern(claim: PatternClaim) -> ClaimAssessment:
+    """Judge the wavelength a pattern claim's run selects, and record what the run cost.
+
+    The measurement, and every way it can decline to produce a number, is
+    :func:`_measure_pattern`. This turns that into a verdict and a protocol line carrying the whole
+    run: the family and its parameters, the discretization, the wall and what it makes measurable,
+    the mode that won against the one linear stability predicted, this domain's own resolution, and
+    — where the wall was this engine's choice — what the alternative measured.
+    """
+    kinetics = TURING_KINETICS[claim.kinetics]
+    measurement = _measure_pattern(claim)
+    if measurement.wavelength is None:
+        return not_evaluable(
+            claim_id=claim.claim_id, quantity=claim.quantity,
+            source_location=claim.source_location, reason=str(measurement.reason),
+            reference_kind=ReferenceKind.NUMERIC,
         )
     assessment = judge_scalar(
         claim_id=claim.claim_id, quantity=claim.quantity,
-        source_location=claim.source_location, reported=claim.reported, predicted=measured,
+        source_location=claim.source_location, reported=claim.reported,
+        predicted=measurement.wavelength,
         tolerance=claim.tolerance,
         attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
         assumption_qualified=claim.assumption_qualified,
@@ -1485,13 +1685,47 @@ def _judge_pattern(claim: PatternClaim) -> ClaimAssessment:
             f"1-D two-species reaction-diffusion, {claim.kinetics} kinetics ({kinetics.equations}) "
             f"with a={claim.a!r}, b={claim.b!r}: Du={claim.du!r}, Dv={claim.dv!r}, "
             f"L={claim.length!r} over {claim.points} points, dt={claim.dt!r}, {claim.steps} steps, "
-            f"seeded at {claim.seed_amplitude!r} on every admissible mode; zero-flux walls, which "
-            f"are what makes the modes cos(m·pi·x/L). Mode {dominant} won, so the measured "
-            f"wavelength is 2L/{dominant}, unchanged over a further {claim.confirm_steps} "
-            f"steps; linear stability predicts m={predicted_mode} "
-            f"({claim.analytical_wavelength:.6g}). The nearest measurable wavelength is "
-            f"{resolution:.2%} away, which is this domain's own resolution"
+            f"seeded at {claim.seed_amplitude!r} on every admissible mode; "
+            f"{_WALL_NAMES[claim.wall]}"
+            + ("" if claim.wall_is_reprolith_s else " stated by the source")
+            + f", which is what makes the modes {_EIGENFUNCTIONS[claim.wall]}. Mode "
+            f"{measurement.mode} won, so the measured wavelength is "
+            f"{_MEASURABLE_SET[claim.wall].replace('m', str(measurement.mode))}, unchanged over a "
+            f"further {claim.confirm_steps} steps; linear stability predicts "
+            f"m={measurement.predicted_mode} ({claim.analytical_wavelength:.6g}). The nearest "
+            f"measurable wavelength is {measurement.resolution:.2%} away, which is this domain's "
+            "own resolution"
+            + _pattern_boundary_cost(claim, measurement)
         ),
+    )
+
+
+def _pattern_boundary_cost(claim: PatternClaim, measurement: _PatternMeasurement) -> str:
+    """The protocol line's clause about what this claim's wall cost it, measured.
+
+    A claim that states its own wall says so and stops — nothing was assumed. Where the wall was
+    this engine's, the same run under the alternative is what the assumption used to only assert,
+    and the answer is sometimes that the alternative cannot measure this claim at all: its modes
+    are a different set, and half as dense on the same domain.
+    """
+    if not claim.wall_is_reprolith_s:
+        return ". The wall is the source's, so nothing here rests on a choice this engine made"
+    sensitivity = pattern_boundary_sensitivity(claim, judged=measurement)
+    if sensitivity is None:  # pragma: no cover - only when the judged run itself has no wavelength
+        return ""
+    parts = []
+    for wall, outcome in sorted(sensitivity["alternatives"].items()):
+        if outcome["wavelength"] is None:
+            parts.append(f"under {wall} the same grid measures nothing ({outcome['refused']})")
+        else:
+            parts.append(
+                f"under {wall} the same grid measures {outcome['wavelength']:.6g}, "
+                f"{outcome['moved_by']:.2%} away"
+            )
+    return (
+        ". What this wall costs, re-run on the same spacing: "
+        + "; ".join(parts)
+        + f" — against a pass width of {sensitivity['pass_within']:.2%}"
     )
 
 
@@ -1689,15 +1923,16 @@ def certify_spatial(
             id=f"spatial-pattern-boundary-{pattern.claim_id}",
             description=(
                 "the wavelength judged here was measured on a zero-flux (Neumann) domain, whose "
-                "eigenfunctions cos(m·pi·x/L) are what make the measurable wavelengths 2L/m; "
-                "Reprolith did not check what boundary the source specifies"
+                "eigenfunctions cos(m·pi·x/L) are what make the measurable wavelengths 2L/m; the "
+                "claim named no wall, so this one is Reprolith's"
             ),
             chosen="zero-flux (Neumann) boundaries",
             basis=_PATTERN_BOUNDARY_BASIS,
             load_bearing=True,
             alternatives=(
                 "periodic, whose modes are L/m and whose measurable set is therefore different",
-                "Dirichlet (fixed value), whose eigenfunctions are sin(m·pi·x/L)",
+                "Dirichlet (fixed value), whose eigenfunctions are sin(m·pi·x/L) — not implemented "
+                "for two species, since it holds each at a value a claim does not carry",
             ),
             author_can_close=False,
         )
@@ -1736,11 +1971,11 @@ _BOUNDARY_BASIS = (
 #: limitation should merge into one queue item with every dependent on it, and a per-claim number
 #: in the wording splits it into one question per claim.
 _PATTERN_BOUNDARY_BASIS = (
-    "the two-species solver implements zero-flux walls only, and a pattern claim carries no field "
-    "naming another, so the set of admissible modes — and therefore the set of wavelengths that "
-    "can be measured at all — is this engine's choice rather than anything a paper could state. "
-    "Unlike the profile claims' wall, what this one costs is not measured: measuring it needs a "
-    "second wall in this solver, which is not implemented"
+    "where a claim states no wall, the set of admissible modes — and therefore the set of "
+    "wavelengths that can be measured at all — is this engine's choice rather than anything the "
+    "source stated. What the choice costs is measured rather than asserted: each claim's protocol "
+    "line reports what the same grid measures under the other wall this solver runs, which is "
+    "sometimes that it measures nothing, periodic modes being half as dense on the same domain"
 )
 
 

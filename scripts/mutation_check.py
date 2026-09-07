@@ -1158,6 +1158,26 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ("        if assessment.assumption_qualified\n    )", "        if False\n    )"),
         ["tests/test_spatial_pattern_claim.py"],
     ),
+    # --- the wall a pattern is measured on, 2026-09-06 ------------------------------------------
+    (
+        "a periodic pattern claim is measured on the zero-flux mode set",
+        "spatial.py",
+        ('        return self.length / self.points if self.wall == "periodic" else self.length / (self.points - 1)',
+         "        return self.length / (self.points - 1)"),
+        ["tests/test_spatial_pattern_claim.py"],
+    ),
+    (
+        "a periodic pattern that drifted a quarter wavelength is reported as absent",
+        "spatial.py",
+        ('    if wall == "periodic":', "    if False:"),
+        ["tests/test_spatial_pattern_claim.py"],
+    ),
+    (
+        "a two-species run accepts a wall it cannot hold a value for",
+        "spatial.py",
+        ('    if boundary not in ("no-flux", "periodic"):', "    if False:"),
+        ["tests/test_spatial_pattern_claim.py"],
+    ),
 ]
 
 
