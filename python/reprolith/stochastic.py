@@ -22,6 +22,7 @@ from dataclasses import dataclass, field, replace
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, Parameter
+from .enums import Verdict
 from .model import Assumption, Certificate, ClaimAssessment, EnginePin, PaperIdentity
 from .oracle import (
     Attribution,
@@ -645,11 +646,17 @@ def _judge_extinction(
                 quantity=claim.quantity,
                 source_location=claim.source_location,
                 reason=(
-                    f"{censored} of {claim.trajectories} trajectories reached the "
-                    f"{claim.max_time!r} cap without the species going extinct, so this ensemble "
-                    "observed no extinction time for them. A mean over the runs that finished is "
-                    "the mean of a conditioned sample and is short by an amount the sample cannot "
-                    "bound — run longer, or state a cap the model actually reaches"
+                    f"{censored} of {claim.trajectories} trajectories observed no extinction — "
+                    f"they reached the {claim.max_time!r} cap, or a state from which the species "
+                    "can never reach zero, and the two are the same to a first-passage reading. "
+                    "A mean over the runs that finished is the mean of a conditioned sample and "
+                    "is short by an amount the sample cannot bound — run longer, or check that "
+                    "this species can go extinct in this network at all"
+                    + (
+                        ". Every trajectory is in that state, which points at the network rather "
+                        "than at the cap"
+                        if censored == claim.trajectories else ""
+                    )
                 ),
                 reference_kind=ReferenceKind.NUMERIC,
             ),
@@ -795,13 +802,14 @@ def certify_stochastic(
     extinction_sampling: list[Assumption] = []
     for extinction in extinction_claims:
         assessment, variance = _judge_extinction(extinction, n_species, reactions, initial)
-        assessments.append(
-            replace(
-                assessment,
-                protocol=_extinction_protocol(extinction)
-                + _extinction_cost(extinction, variance),
-            )
-        )
+        # The cost clause goes on a *judged* assessment only, as it does for a mean count. On an
+        # abstention the reason already carries the ensemble's noise, and printing it again from a
+        # second formatter gave one number two roundings — 20.1% in the reason and 20.08% in the
+        # protocol — which is this repository's "two accounts of one computation" in miniature.
+        protocol = _extinction_protocol(extinction)
+        if assessment.verdict is not Verdict.NOT_EVALUABLE:
+            protocol += _extinction_cost(extinction, variance)
+        assessments.append(replace(assessment, protocol=protocol))
         if assessment.assumption_qualified:
             extinction_sampling.append(
                 Assumption(

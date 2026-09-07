@@ -90,8 +90,36 @@ def test_a_run_that_observed_no_extinction_abstains_rather_than_averaging_the_re
     becomes the answer."""
     assessment = _certify(_claim(max_time=0.5, trajectories=200)).assessments[0]
     assert assessment.verdict is Verdict.NOT_EVALUABLE
-    assert "reached the 0.5 cap without the species going extinct" in assessment.root_cause
+    assert "198 of 200 trajectories observed no extinction" in assessment.root_cause
     assert "conditioned sample" in assessment.root_cause
+    # Two situations look identical to a first-passage reading — the cap, and a state the species
+    # can never leave — so the reason names both rather than asserting the one that is usually
+    # true. The spatial class learned this on a front that saturated its domain and was reported
+    # as a front that never existed.
+    assert "or a state from which the species can never reach zero" in assessment.root_cause
+    # And the abstention carries no sampling-noise clause: the reason is the noise statement, and
+    # printing it from a second formatter gave one number two roundings.
+    assert "standard error" not in assessment.protocol
+
+
+def test_a_species_that_can_never_go_extinct_is_pointed_at_the_network() -> None:
+    """When *every* trajectory observes no extinction, the cap is not the interesting cause: the
+    species cannot reach zero in this network at all, and a reader sent to lengthen the run would
+    be sent after the wrong thing."""
+    immigration = [
+        Reaction(reactants=(), products=((0, 1),), rate=5.0),
+        Reaction(reactants=((0, 1),), products=(), rate=_K),
+    ]
+    certificate = certify_stochastic(
+        paper=PaperIdentity(title="an immigration-death process"),
+        engine_pin=solver_pin(),
+        n_species=1, reactions=immigration, initial=[50],
+        extinctions=[_claim(trajectories=20, max_time=1.0)],
+    )
+    (assessment,) = certificate.assessments
+    assert assessment.verdict is Verdict.NOT_EVALUABLE
+    assert "20 of 20 trajectories" in assessment.root_cause
+    assert "points at the network rather than at the cap" in assessment.root_cause
 
 
 def test_an_ensemble_too_small_to_decide_the_claim_abstains() -> None:
