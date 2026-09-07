@@ -9,10 +9,13 @@ results. It gets better in two ways, and **both need people who know the science
    values is the single most valuable thing an expert can do here.
 
    **`reprolith verification-queue` is the list.** One command, every standing certificate, ranked
-   by how many published results rest on each value — and split, because most of them are not
-   waiting on you: four of the seven on today's repository are limits of Reprolith's own engine
-   that no wording in any paper clears, and they say so under their own heading. The three under
-   *awaiting expert review* are the ones your judgment settles. Each carries the question, what
+   by how many published results rest on each value — and split, because some of them are not
+   waiting on you: three of the seven on today's repository are limits of Reprolith's own engine
+   that no wording in any paper clears, and they say so under their own heading. The four under
+   *awaiting expert review* are the ones your judgment settles. That split moves as the engine
+   changes, and it moved on 2026-09-06: a spatial claim can carry the boundary its source states,
+   so "which wall did this paper use?" stopped being a limit of the solver and became a question
+   somebody can answer. Each carries the question, what
    Reprolith chose, why, the alternatives, and the papers that would have to be re-certified if
    you corrected it. Add `--json` for the same object an agent gets over MCP.
 

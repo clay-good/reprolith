@@ -135,7 +135,9 @@ def test_the_settled_wavelength_is_certified_and_the_linear_prediction_travels_w
     (assumption,) = certificate.assumptions
     assert assumption.id == "spatial-pattern-boundary-stripe-spacing"
     assert assumption.load_bearing
-    assert assumption.author_can_close is False
+    # True since a claim can carry the wall its source states: an expert who knows which one the
+    # paper used lets a curator state it, and the re-issued certificate carries no assumption.
+    assert assumption.author_can_close is True
     assert certificate.overall is OverallVerdict.PARTIALLY_REPRODUCED
 
 

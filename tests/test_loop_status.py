@@ -244,7 +244,11 @@ def test_the_terminal_prints_the_reason_and_the_json_is_the_tool_object(capsys) 
     out = capsys.readouterr().out
     assert "NO PUBLISHABLE WORK" in out
     assert "27 entries blocked" in out
-    assert "escalated: 3 awaiting an expert" in out
+    # Four, not three, since the spatial wall moved into the half an expert can close: a claim
+    # carries the boundary its source names, so somebody who knows which wall the paper used
+    # settles it. The counts are read off the same report the JSON below carries, so this pins the
+    # *line*, not the arithmetic.
+    assert "escalated: 4 awaiting an expert, 3 limits of this engine" in out
 
     assert run(["loop-status", "--json"]) == 0
     printed = json.loads(capsys.readouterr().out)

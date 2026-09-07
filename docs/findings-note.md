@@ -5074,3 +5074,27 @@ re-measured — the judge is holding it, and recomputing would re-run two full w
 number already in hand. Where the halved run cannot be read at all — a front that runs into the
 wall has no speed at either step — the certificate says the cost is not measured rather than
 reporting a zero, which would say the stepper costs nothing.
+
+
+## A flag that outlived the sentence under it
+
+`Assumption.author_can_close` decides which half of the verification queue a question lands in:
+what an expert can settle, and what only this engine's development can. The spatial boundary
+assumption carried `False`, on honest grounds — a claim carried no field naming a boundary, so no
+wording in any paper could reach the run.
+
+`SpatialClaim.boundary` closed that, and the flag stayed `False`. So "which wall did this paper
+use?" — a question a curator can now act on, by stating the wall on the claim and re-certifying
+without the assumption at all — sat under **not waiting on anyone**, which is the one distinction
+that surface exists to make. The comment beside the flag still said "a claim carries no field
+naming a boundary", which is how it survived: the sentence and the flag were both wrong together,
+so neither contradicted the other.
+
+Both spatial walls are `author_can_close=True` now, and the queue moved from three questions for an
+expert and four engine limits to four and three. What an answer still *cannot* buy is named in the
+basis rather than hidden by the flag: an unbounded domain is not implemented for a profile, and a
+Dirichlet wall is not implemented for two species, so those are the answers this cannot act on.
+
+The prose that stated the split moved with it — and one of those sentences is now written to *not*
+state a count, because it had already gone stale twice. The surfaces report the split; the
+documents say that both halves exist and that the line between them moves as the engine does.

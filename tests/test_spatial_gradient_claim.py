@@ -167,3 +167,32 @@ def test_profile_and_gradient_claims_travel_on_one_certificate() -> None:
     )
     assert [a.claim_id for a in cert.assessments] == ["profile", "lambda"]
     assert [a.id for a in cert.assumptions] == ["spatial-boundary-profile"]
+
+
+def test_a_wall_a_source_could_state_is_a_question_for_an_expert_and_not_an_engine_limit() -> None:
+    """`Assumption.author_can_close` decides which half of the verification queue a question lands
+    in, and this one was in the wrong half for a day.
+
+    It was `False` on the honest grounds that no wording in a paper could reach the run: a claim
+    carried no field naming a boundary. `SpatialClaim.boundary` closed that, and the flag outlived
+    the sentence under it — so "which wall did this paper use?", which a curator can now act on,
+    was filed under "not waiting on anyone", the one distinction that surface exists to make.
+    """
+    from reprolith import PaperIdentity, SpatialClaim, certify_spatial, gaussian_profile
+    from reprolith.spatial import solver_pin
+
+    centers = [(-10.0 + i * 0.2) for i in range(101)]
+    initial = tuple(gaussian_profile(centers, mass=1.0, variance=1.0))
+    certificate = certify_spatial(
+        paper=PaperIdentity(title="a profile that states no wall"),
+        engine_pin=solver_pin(),
+        claims=[SpatialClaim(
+            claim_id="p", quantity="profile", initial=initial, reference=initial,
+            source_location="Fig 1", diffusivity=1.0, dx=0.2, dt=0.2 * 0.04, steps=10,
+        )],
+    )
+    (assumption,) = certificate.assumptions
+    assert assumption.load_bearing
+    assert assumption.author_can_close is True
+    # And what an answer still cannot buy is named rather than hidden by the flag.
+    assert "unbounded domain" in assumption.basis

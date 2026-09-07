@@ -213,9 +213,13 @@ def test_the_measured_cost_is_on_the_claim_and_the_question_stays_one_question()
     assert len({a.basis for a in boundary}) == 1, "and one question between them"
 
     report = queue_report([(certificate_digest(cert), cert)])
-    items = [i for i in report["engine_limits"] if "boundary" in i["question"]]
-    assert len(items) == 1, "two claims, one solver limitation, one item"
+    # Under `pending`, not `engine_limits`: a claim can carry the wall its source names, so this
+    # is a question somebody can answer rather than a limit of the solver. It was filed under the
+    # engine's own half for a day after that stopped being true.
+    items = [i for i in report["pending"] if "boundary" in i["question"]]
+    assert len(items) == 1, "two claims, one modelling question, one item"
     assert items[0]["impact"] == 1, "one certificate carries it"
+    assert not [i for i in report["engine_limits"] if "boundary" in i["question"]]
 
     # The measurement is still published, per claim, where the discretization is.
     protocols = [a.protocol for a in cert.assessments]

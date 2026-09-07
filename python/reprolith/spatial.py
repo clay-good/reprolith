@@ -2027,11 +2027,17 @@ def certify_spatial(
                 "periodic",
                 "an unbounded domain (not implemented, so not measured)",
             ),
-            # A claim carries no field naming a boundary, so no wording in a paper reaches this
-            # front-end: it stays this engine's limit rather than the paper's omission, even now
-            # that the alternatives can be *run*. What changed is that the cost of the choice is
-            # measured instead of asserted.
-            author_can_close=False,
+            # True since `SpatialClaim.boundary` landed, and it was False for a day after that
+            # — the flag outlived the sentence under it, which said "a claim carries no field
+            # naming a boundary, so no wording in a paper reaches this front-end". It does now: an
+            # expert who says which wall the source used lets a curator state it on the claim, and
+            # the re-issued certificate carries no assumption at all. That is exactly what this
+            # flag means, and while it read False the queue filed this under "not waiting on
+            # anyone" — the one distinction that surface exists to make.
+            #
+            # The residue is named in the basis rather than hidden by the flag: an unbounded
+            # domain is not implemented, so that is the answer this cannot act on.
+            author_can_close=True,
         )
         for claim in qualified
     )
@@ -2066,7 +2072,10 @@ def certify_spatial(
                 "Dirichlet (fixed value), whose eigenfunctions are sin(m·pi·x/L) — not implemented "
                 "for two species, since it holds each at a value a claim does not carry",
             ),
-            author_can_close=False,
+            # As with the profile claims' wall: a source that names zero-flux or periodic can be
+            # honoured on the claim, so an expert's answer closes this. The one it cannot act on
+            # is named in the basis rather than hidden by the flag.
+            author_can_close=True,
         )
         for pattern, assessment in zip(pattern_claims, pattern_assessments)
         if assessment.assumption_qualified
@@ -2089,11 +2098,13 @@ def certify_spatial(
 #: understates precisely what the queue exists to rank. The measurement lives on each claim's
 #: protocol line, where the rest of that run's facts already are.
 _BOUNDARY_BASIS = (
-    "a claim carries no field naming a boundary, so this run's wall is this engine's choice rather "
-    "than anything a paper could state. What the choice costs is no longer a caveat: each claim's "
-    "protocol line reports how far re-running the same discretization under the alternatives this "
-    "solver implements moves the judged distance, against the threshold it is judged at. An "
-    "unbounded domain is not among those alternatives and is not measured"
+    "this claim states no boundary, so the wall its run used is this engine's choice rather than "
+    "anything its source stated — and a source that states one can be honoured: a claim carries "
+    "the wall it names, is run under it, and is not qualified for it. What the choice costs is no "
+    "longer a caveat either: each claim's protocol line reports how far re-running the same "
+    "discretization under the alternatives this solver implements moves the judged distance, "
+    "against the threshold it is judged at. An unbounded domain is not among those alternatives, "
+    "so a source that states one is the case this cannot be closed by"
 )
 
 
@@ -2105,9 +2116,12 @@ _BOUNDARY_BASIS = (
 _PATTERN_BOUNDARY_BASIS = (
     "where a claim states no wall, the set of admissible modes — and therefore the set of "
     "wavelengths that can be measured at all — is this engine's choice rather than anything the "
-    "source stated. What the choice costs is measured rather than asserted: each claim's protocol "
-    "line reports what the same grid measures under the other wall this solver runs, which is "
-    "sometimes that it measures nothing, periodic modes being half as dense on the same domain"
+    "source stated. A source that states zero-flux or periodic can be honoured: the claim carries "
+    "the wall it names and is not qualified for it. What the choice costs is measured rather than "
+    "asserted: each claim's protocol line reports what the same grid measures under the other wall "
+    "this solver runs, which is sometimes that it measures nothing, periodic modes being half as "
+    "dense on the same domain. A Dirichlet wall is the answer this cannot act on: it holds each "
+    "species at a value a claim does not carry, so it is refused rather than approximated"
 )
 
 

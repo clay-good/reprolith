@@ -33,11 +33,14 @@ dependents. The queue is derived from the ledger on every call, never stored, so
 from the certificates it describes.
 
 It reports in two parts, because escalating everything and then ranking it together overstated
-what escalation buys: six of the eight load-bearing assumptions on today's certificates are this
-engine's own limits — the wall the spatial solver ran under, the ensemble the stochastic
-class drew — and no expert decision closes one. `Assumption.author_can_close` already carried that
-distinction for the author-facing fix list, and it carries it here. Three questions are genuinely
-open to a reviewer; the rest wait on this engine and say so.
+what escalation buys: some of the load-bearing assumptions on today's certificates are this
+engine's own limits — the ensemble the stochastic class drew — and no expert decision closes one.
+`Assumption.author_can_close` already carried that distinction for the author-facing fix list, and
+it carries it here. The split is three of seven today and it *moves as the engine changes*: the
+spatial wall sat in the engine's half until a claim could carry the boundary its source states,
+and the flag stayed False for a day after that, filing a question somebody could answer under
+"not waiting on anyone". A count written into prose here would have gone stale the same way, so
+the surfaces report it and this says only that both halves exist.
 
 *Goal-directed work selection* gained its evidence at the same time, though the selecting is
 still the agent's. `backlog_health` now reports `blocked_on`: what each blocked entry is waiting

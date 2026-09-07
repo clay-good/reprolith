@@ -666,8 +666,9 @@ def test_the_boundary_assumption_does_not_assert_what_the_paper_said() -> None:
     description = cert.assumptions[0].description
     assert "the paper stated" not in description, description
     assert "did not check" in description
-    # And the author is told it is not theirs to fix.
-    assert cert.assumptions[0].author_can_close is False
+    # And it *is* theirs to answer, since `SpatialClaim.boundary` carries the wall a source names.
+    # This asserted the opposite for as long as a claim could not carry one, and for a day after.
+    assert cert.assumptions[0].author_can_close is True
 
 
 def test_a_claim_with_no_reported_profile_abstains_like_its_sibling_front_end() -> None:
