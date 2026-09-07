@@ -1245,6 +1245,19 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ("    if mine.wavelength is None:", "    if False:"),
         ["tests/test_spatial_corroboration.py"],
     ),
+    (
+        "a front certificate reports its settling drift and hides what its time step costs",
+        "spatial.py",
+        ("            + _front_step_cost(claim, speed)", "            + \"\""),
+        ["tests/test_spatial_front_claim.py"],
+    ),
+    (
+        "an unreadable step sensitivity is published as costing nothing",
+        "spatial.py",
+        ("    if coarse is None or fine is None or coarse == 0.0:\n        return None",
+         "    if coarse is None or fine is None or coarse == 0.0:\n        return 0.0"),
+        ["tests/test_spatial_front_claim.py"],
+    ),
 ]
 
 

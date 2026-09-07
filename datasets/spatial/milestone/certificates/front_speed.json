@@ -8,7 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "1-D Fisher-KPP front: D=1.0, r=1.0, dx=0.5, dt=0.05, 2000 settling steps then 2000 measured, front read at u=0.5; the asymptotic speed of the continuum equation is 2; over the next identical window this speed still changes by 3.989e-03 (0.21% of it), which is how far the front is from having settled",
+      "protocol": "1-D Fisher-KPP front: D=1.0, r=1.0, dx=0.5, dt=0.05, 2000 settling steps then 2000 measured, front read at u=0.5; the asymptotic speed of the continuum equation is 2; over the next identical window this speed still changes by 3.989e-03 (0.21% of it), which is how far the front is from having settled. Halving the time step moves this speed by 2.42%, which is the explicit stepper's own first-order error rather than the front's approach to its asymptote",
       "quantity": "Fisher-KPP asymptotic front speed",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "explicit-forward-euler-finite-difference (rev df8cad311c71)",
+    "algorithm": "explicit-forward-euler-finite-difference (rev 274f90166a24)",
     "engine": "reprolith-fd",
     "version": "0.0.1"
   },

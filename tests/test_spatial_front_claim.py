@@ -159,3 +159,31 @@ def test_an_unstable_discretization_abstains_rather_than_raising() -> None:
     assessment = _certify(_claim(dt=_DT * 100)).assessments[0]
     assert assessment.verdict is Verdict.NOT_EVALUABLE
     assert "unstable" in assessment.root_cause or "diffusion number" in assessment.root_cause
+
+
+def test_the_certificate_says_what_its_time_step_costs_the_speed() -> None:
+    """The rationale, turned into a per-claim measurement.
+
+    A reader with only the settling drift cannot tell a converged-but-under-resolved measurement
+    from a still-converging one, and this class published exactly that confusion for a day: the
+    drift over the next window is 0.21% while halving the time step moves the speed by 2.4%, and
+    the total deficit is 4.2%. Both numbers are on the certificate now, so which term dominates is
+    read rather than believed.
+    """
+    from reprolith.spatial import front_step_sensitivity
+
+    assessment = _certify(_claim()).assessments[0]
+    assert "Halving the time step moves this speed by" in assessment.protocol
+    assert "which is how far the front is from having settled" in assessment.protocol
+    moved = front_step_sensitivity(_claim())
+    assert 0.02 < moved < 0.03, moved
+
+
+def test_a_step_sensitivity_that_cannot_be_read_is_absent_rather_than_zero() -> None:
+    """The halved run fails on the same domain the judged one does — a front that runs into the
+    wall has no readable speed at either step — and a sensitivity of 0.0 there would say the
+    stepper costs nothing, which is the opposite of what is known."""
+    from reprolith.spatial import front_step_sensitivity
+
+    short = _claim(initial=_initial(points=60), settle_steps=_WINDOW, measure_steps=_WINDOW)
+    assert front_step_sensitivity(short) is None

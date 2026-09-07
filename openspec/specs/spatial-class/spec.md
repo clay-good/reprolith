@@ -94,6 +94,10 @@ for reported profiles and the scalar comparison for the length scales papers sta
 - **AND** the certificate reports how much that speed is still changing over a further identical
   window, because a Fisher-KPP front approaches its asymptotic speed only logarithmically and a
   reader cannot otherwise tell a still-converging measurement from a converged one
+- **AND** it reports how much the speed moves when the time step is halved, since that is a
+  different question with a different answer: on this class's own configuration the run is settled
+  to 0.2% and the step is worth 2.4% of a 4.2% deficit, so a reader who had only the first number
+  would attribute the whole of it to the front
 - **AND** a front that has run out of domain abstains, saying so — past the wall the distance
   travelled is the domain's length rather than the model's speed, and reporting that as a front
   that never existed would send a reader after the wrong cause

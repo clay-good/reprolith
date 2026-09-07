@@ -5039,3 +5039,23 @@ What this does not do is give the wavelength claim a blind milestone entry. Both
 same second-order central differences on the same grid, so LSODA is a second *integrator* and not
 a second ground truth — the milestone script says so where a reader would look for the missing
 entry.
+
+
+## A rationale, turned into a number on every certificate
+
+The correction two entries above left the front claim in a state this project does not accept
+anywhere else: the reason for its tolerance was right, measured once, and written in a docstring.
+Every front certificate now carries the measurement instead. Beside the drift it already reported —
+how much the speed is still changing over the next identical window — it reports how much the speed
+moves when the time step is **halved**.
+
+On the milestone configuration those two numbers are 0.21% and 2.42%, against a total deficit of
+4.23%. A reader with only the first would conclude the run had converged and attribute the whole
+deficit to the front's asymptotics, which is exactly the mistake this project made. With both, the
+split is read rather than believed.
+
+It costs one extra measurement at half the step, and the coarse speed is passed in rather than
+re-measured — the judge is holding it, and recomputing would re-run two full windows to arrive at a
+number already in hand. Where the halved run cannot be read at all — a front that runs into the
+wall has no speed at either step — the certificate says the cost is not measured rather than
+reporting a zero, which would say the stepper costs nothing.

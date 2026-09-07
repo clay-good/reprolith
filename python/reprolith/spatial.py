@@ -839,7 +839,7 @@ class FrontSpeedClaim:
     (:func:`reprolith.corroboration.corroborate_front_speed`), so at this ``dt`` the two engines
     disagree by 4.7% and the milestone publishes that disagreement. The logarithmic approach is
     real and is the smaller term here. A tolerance is still needed; what it is for is now measured
-    rather than attributed.
+    rather than attributed — per claim, on the certificate, by :func:`front_step_sensitivity`.
     """
 
     claim_id: str
@@ -1349,6 +1349,85 @@ def _judge_gradient(claim: GradientClaim) -> ClaimAssessment:
     )
 
 
+def front_step_sensitivity(
+    claim: FrontSpeedClaim, *, speed: float | None = None
+) -> float | None:
+    """How much this front's measured speed moves when the time step is halved, as a fraction.
+
+    The number that says how much of a front's deficit belongs to the *stepper* rather than to the
+    front. ``None`` where the halved run cannot be measured at all — an unstable discretization,
+    a front that never forms or reaches the wall — which is the same set of situations
+    :func:`_judge_front_speed` abstains on, and reporting a sensitivity for a run nobody could read
+    would be worse than reporting none.
+
+    This exists because a rationale here was attributed rather than measured. The class-default 5%
+    fails a correct KPP reproduction, and the reason given was the front's logarithmic approach to
+    ``2√(rD)`` — real, and the smaller term. Refining the time step at a fixed window gives 1.9154
+    at a diffusion number of 0.2, 1.9617 at 0.1 and 1.9856 at 0.05: halving ``dt`` halves the
+    deficit, which is the explicit stepper's own first-order error.
+    :func:`reprolith.corroboration.corroborate_front_speed` says the same from the other side —
+    scipy's LSODA measures 2.0100 over the same window. So every front certificate carries what its
+    own step costs it, in the same way the profile claims carry what their wall costs.
+    """
+    halved = replace(
+        claim, dt=claim.dt / 2.0,
+        settle_steps=claim.settle_steps * 2, measure_steps=claim.measure_steps * 2,
+    )
+    # The judge has already measured the coarse speed; recomputing it here would re-run two full
+    # windows to arrive at a number the caller is holding.
+    coarse = speed if speed is not None else _front_speed(claim)
+    fine = _front_speed(halved)
+    if coarse is None or fine is None or coarse == 0.0:
+        return None
+    return abs(fine - coarse) / abs(coarse)
+
+
+def _front_speed(claim: FrontSpeedClaim) -> float | None:
+    """The speed this claim's own two windows measure, or ``None`` where it cannot be read.
+
+    The measuring half of :func:`_judge_front_speed`, split out because the step-sensitivity
+    measurement needs the identical reading at a different ``dt`` — and a second copy of "how a
+    front's speed is read" would be a second definition of the quantity.
+    """
+    def evolve(state: Sequence[float], steps: int) -> list[float]:
+        return react_diffuse_1d(
+            state, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt, steps=steps,
+            reaction=lambda u: claim.growth * u * (1.0 - u),
+        )
+
+    try:
+        settled = evolve(claim.initial, claim.settle_steps)
+        measured = evolve(settled, claim.measure_steps)
+    except UnstableDiscretization:
+        return None
+    start = front_position(settled, dx=claim.dx, level=claim.level)
+    end = front_position(measured, dx=claim.dx, level=claim.level)
+    far_edge = (len(claim.initial) - 1) * claim.dx
+    if start is None or end is None or end >= far_edge - claim.dx:
+        return None
+    return (end - start) / (claim.measure_steps * claim.dt)
+
+
+def _front_step_cost(claim: FrontSpeedClaim, speed: float) -> str:
+    """The protocol line's clause for what this claim's time step costs its speed, measured.
+
+    Beside the drift, and answering a different question: the drift says how far the front is from
+    its asymptote, and this says how much of what is left belongs to the way the run was stepped.
+    A reader who has only the drift cannot tell a converged-but-under-resolved measurement from a
+    still-converging one, and this class published exactly that confusion for a day.
+    """
+    moved = front_step_sensitivity(claim, speed=speed)
+    if moved is None:  # pragma: no cover - the halved run fails only where the judged one would
+        return (
+            ". Halving the time step gives no readable front, so what this step costs is not "
+            "measured here"
+        )
+    return (
+        f". Halving the time step moves this speed by {moved:.2%}, which is the explicit "
+        "stepper's own first-order error rather than the front's approach to its asymptote"
+    )
+
+
 def _judge_front_speed(claim: FrontSpeedClaim) -> ClaimAssessment:
     """Advance a Fisher-KPP front through two windows and judge the speed between them.
 
@@ -1435,6 +1514,7 @@ def _judge_front_speed(claim: FrontSpeedClaim) -> ClaimAssessment:
             f"speed of the continuum equation is {claim.analytical_speed:.6g}; over the next "
             f"identical window this speed still changes by {drift:.3e} "
             f"({drift / speed:.2%} of it), which is how far the front is from having settled"
+            + _front_step_cost(claim, speed)
         ),
     )
 
