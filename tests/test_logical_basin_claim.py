@@ -80,6 +80,13 @@ def test_a_count_is_judged_exactly_not_in_a_band() -> None:
     assert "2 states flow to it against the reported 1" in certificate.assessments[0].discrepancy
 
 
+def test_a_basin_of_one_state_reads_as_one_state() -> None:
+    # The published certificate says this seven times over; "1 states flow to it" is the kind of
+    # line a reader stops on, and this repository has shipped a half-applied pluralization before.
+    certificate = _certify(_claim(ReportedBasin(attractor=A_ON, states=2)))
+    assert "1 state flows to it against the reported 2" in certificate.assessments[0].discrepancy
+
+
 def test_a_count_refuses_a_tolerance_rather_than_ignoring_it() -> None:
     with pytest.raises(ValueError, match="judged exactly"):
         ReportedBasin(
@@ -252,7 +259,7 @@ _REFERENCE = (
     / "datasets" / "logical" / "cross_validation" / "reference.json"
 )
 
-#: Li et al. 2004, "The yeast cell-cycle network is robustly designed" (PNAS 101:4781), Table 1:
+#: Li et al. 2004, "The yeast cell-cycle network is robustly designed" (PNAS 101:4781-4786):
 #: seven fixed points over eleven nodes, with these basins over the 2048-state space. The largest
 #: — the G1 state — takes 1764 of them, which is the result that paper is remembered for.
 LI_2004_BASINS = [1764, 151, 109, 9, 7, 7, 1]
@@ -298,7 +305,7 @@ def test_the_paper_s_headline_basin_certifies_as_reproduced() -> None:
         quantity="states reaching the G1 steady state",
         rules=rules,
         reported={},
-        source_location="Li et al. 2004 (PNAS 101:4781), Table 1",
+        source_location="Li et al. 2004 (PNAS 101:4781-4786)",
         basin=ReportedBasin(attractor=list(g1), states=1764),
         # The paper updates every node at once, and says so — nothing is assumed here.
         scheme=UpdateScheme.SYNCHRONOUS,

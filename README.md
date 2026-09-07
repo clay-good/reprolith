@@ -9,9 +9,9 @@ reproduced, partially, or not — for each result, with the reason.
 
 That is what it is *for*, and it is worth being exact about how much of it is done today.
 
-Of the thirty-six published certificates, **four** check a reconstruction against numbers read
-from one paper's own tables — one for each model that paper deposited. (A fifth is checked against
-a published number too, and the count below says which.) Between them they carry **one hundred and
+Of the thirty-seven published certificates, **four** check a reconstruction against numbers read
+from one paper's own tables — one for each model that paper deposited. (Two more are checked
+against published numbers too, and the count below says which.) Between them they carry **one hundred and
 seventy claims**,
 every one a number the paper's own model reports: ten tissues at 500, 1000 and 1500 mg after a
 single human dose, each by peak, by the time of that peak, and by 24-hour exposure; those same ten
@@ -79,11 +79,13 @@ anything not committed: every reference value is quoted from the article in
 of this repository's life nothing did — one of the first two was recorded as 6.2, a number the
 paper does not contain.
 
-Twenty-eight of the other twenty-nine certificates check Reprolith's engine against an independent
+Thirty-one of the other thirty-three certificates check Reprolith's engine against an independent
 tool — COBRApy, libRoadRunner, CANA — or against closed-form mathematics, re-running the same model
-file. The twenty-ninth is checked against a published number like the four above: the E. coli core
+file. The other two are checked against published numbers like the four above: the E. coli core
 model's maximal growth rate of **0.873922**, which the publication that distributes that model
-reports. Five against a publication, then, and twenty-eight against a tool or against mathematics —
+reports, and the seven basin sizes Li et al. 2004 publish for the yeast cell-cycle network — how
+many initial states reach each of its steady states, all seven reproduced exactly. Six against a
+publication, then, and thirty-one against a tool or against mathematics —
 counted from the certificates themselves by `tests/test_reference_provenance.py`, because this
 division is the reader's whole guide to what the corpus reaches, and it was prose that was off by
 one. Each certificate says which on its own claim line. Getting a paper's claims out of its manuscript *at scale* is the piece that is not built.
@@ -617,8 +619,8 @@ budding-yeast cell-cycle networks, and a schemata example). For networks too lar
 scalable SAT path (optional `sat` extra) finds fixed points without walking the 2ⁿ state space — the
 steady states of three real 44–60-node signalling networks (T-LGL leukemia, MAPK cancer cell-fate,
 guard-cell ABA) are reproduced against an independent solver — so the
-[milestone blind run](datasets/logical/milestone/) scores 9/9 through the same catalog and agreement
-machinery. See [docs/logical-class.md](docs/logical-class.md).
+[milestone blind run](datasets/logical/milestone/) scores 10/10 through the same catalog and
+agreement machinery. See [docs/logical-class.md](docs/logical-class.md).
 
 **The update scheme now reaches the run and the certificate, and is qualified only where it could
 change the answer.** A claim states its scheme and its reported attractor set; the pin is refused
@@ -634,7 +636,8 @@ qualified and its steady-state claim is not.
 **A reported basin of attraction can be certified too** — how much of the state space reaches one
 attractor, which is what these papers argue robustness with. Li et al. 2004's yeast cell-cycle
 network reaches its G1 steady state from **1764 of 2048** initial states, and Reprolith reproduces
-all seven of that paper's published basins exactly from the committed rules. A count of states is
+all seven of that paper's published basins exactly from the committed rules — the tenth entry in
+that milestone, and the one whose reference values are a paper's rather than a second tool's. A count of states is
 judged exactly (a basin is a number of states in a finite space, not a measurement with error) and a
 printed percentage in a band; the size of the space it was counted in goes on the certificate,
 because a paper that fixed its inputs first reports a share of a smaller whole — the same G1 basin is

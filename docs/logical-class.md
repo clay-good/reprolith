@@ -176,12 +176,15 @@ does, the certificate says the verdict may rest on the reading; where the attrac
 way, no assumption is minted, because a scheme choice that cannot explain the failure should not be
 recorded as what the verdict rests on.
 
-No certificate in the shipped corpus carries a basin claim yet: the milestone's networks have no
-independently published basin to judge against, and Li's 11-node network is a *derivation* from the
-committed 12-node rules — a load-bearing reconstruction that owes its own assumption. What is
-committed is the check: [`tests/test_logical_basin_claim.py`](../tests/test_logical_basin_claim.py)
-proves the restriction faithful state-by-state against the 12-node network and reproduces all seven
-of the paper's published basins (1764/151/109/9/7/7/1) exactly.
+The milestone publishes one, and it is the only entry in this class judged against a **paper's**
+number rather than a second tool's: `budding_yeast_basins` certifies all seven of Li et al. 2004's
+published basins (1764/151/109/9/7/7/1), each reproduced exactly. No restriction of the network was
+needed and nothing is assumed. CANA's bundled variant adds `CellSize` as a free self-loop, so its
+space is 2¹² against the paper's 2¹¹ — but `CellSize` is invariant under the update, which the
+milestone script *verifies over every state*, so the paper's space is a closed half of this one and
+a basin inside it has the same count here. That closure is the whole reason the comparison is legal,
+and it is also why the entry certifies counts: the same G1 basin is 86% of the paper's space and 43%
+of this one.
 
 ## Self-validation
 

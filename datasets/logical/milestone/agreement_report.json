@@ -1,8 +1,8 @@
 {
   "agreement_rate": 1.0,
-  "agreements": 9,
+  "agreements": 10,
   "confusion": {
-    "reproduced->reproduced": 9
+    "reproduced->reproduced": 10
   },
   "disagreements": 0,
   "per_entry": [
@@ -68,7 +68,14 @@
       "entry": "mapk_cancer",
       "expected": "reproduced",
       "source": "sympy SAT (independent of Reprolith's z3); rules from CANA 1.0.0: 12 fixed points, set digest 90613385f4a0\u2026"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "budding_yeast_basins",
+      "expected": "reproduced",
+      "source": "Li et al. 2004 (PNAS 101:4781-4786), the published basin sizes of its eleven-node network \u2014 the sizes are the paper's; which fixed point each belongs to is read off this network: 1764/151/109/9/7/7/1"
     }
   ],
-  "total": 9
+  "total": 10
 }

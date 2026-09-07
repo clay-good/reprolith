@@ -175,8 +175,8 @@ def test_standing_counts_what_is_published_and_says_it_is_not_a_record_of_a_run(
 
     query, _ = load_repository(default_data_dir(), aggregate=True)
     status = query.loop_status()
-    assert status["standing"]["certificates"] == 36
-    assert sum(status["standing"]["by_class"].values()) == 36
+    assert status["standing"]["certificates"] == 37
+    assert sum(status["standing"]["by_class"].values()) == 37
     assert "not what any one run produced" in status["standing_note"]
 
 

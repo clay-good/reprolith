@@ -52,24 +52,26 @@ def test_every_certificate_is_checked_against_a_tool_mathematics_or_a_publicatio
         assert len(kinds) == 1, f"{name} mixes reference kinds: {sorted(kinds)}"
         by_kind[kinds.pop()].append(name)
 
-    assert len(sum(by_kind.values(), [])) == 36
+    assert len(sum(by_kind.values(), [])) == 37
     assert len(by_kind["tool"]) == 22       # COBRApy 7, libRoadRunner 6, CANA 9
     # Four stochastic (three means and a first-passage time), three spatial profiles, and the
     # spatial class's two scalars — a decay length against sqrt(D/k) and a front speed against
     # 2*sqrt(rD), which are mathematics for the same reason the Gaussian is.
     assert len(by_kind["mathematics"]) == 9
-    # Five against a published number: the four models the metformin paper deposited, and the
-    # E. coli core growth rate its own distributing publication reports.
-    assert len(by_kind["publication"]) == 5, sorted(by_kind["publication"])
+    # Six against a published number: the four models the metformin paper deposited, the E. coli
+    # core growth rate its own distributing publication reports, and the seven basin sizes Li et
+    # al. 2004 print for the yeast cell-cycle network — the one logical entry whose reference is a
+    # paper's number rather than CANA's.
+    assert len(by_kind["publication"]) == 6, sorted(by_kind["publication"])
     assert sorted(Path(name).stem for name in by_kind["publication"]) == [
         "BIOMD0000001027", "BIOMD0000001028", "BIOMD0000001029", "BIOMD0000001039",
-        "e_coli_core",
+        "budding_yeast_basins", "e_coli_core",
     ]
 
 
 def test_the_front_page_states_that_division_in_the_numbers_it_is() -> None:
     """The sentence a reader takes the corpus's reach from, held to the corpus."""
-    assert "twenty-eight" in README, (
+    assert "thirty-one" in README, (
         "the README no longer says how many certificates are checked against a tool or against "
         "mathematics; that count is the reader's whole guide to what this corpus reaches"
     )

@@ -5274,11 +5274,22 @@ an attractor absent under synchronous updating can exist under asynchronous upda
 does the reading genuinely may be the disagreement. Both cases are separated now, and only one of
 them qualifies a verdict.
 
-What is **not** here is a certificate. The milestone's networks have no independently published
-basin to judge against — CANA's own attractors come out of a constant-node reduction whose states do
-not line up with the full space — and Li's 11-node network is a derivation from the committed
-12-node rules (its cell-size input pinned off), which is a load-bearing reconstruction owing its own
-assumption and its own explained disagreement. What is committed is the check:
-`tests/test_logical_basin_claim.py` proves the restriction faithful state-by-state against the
-12-node network and reproduces all seven of the paper's published basins exactly. Publishing a
-certificate over that derivation is the next slice, not a line to leave out of this one.
+**And then the certificate, which needed no derivation after all.** The first plan for publishing
+one was to restrict CANA's 12-node variant to the paper's eleven nodes by pinning its free
+`CellSize` input off — a reconstruction that is load-bearing, and measurably so: pinned *on*
+instead, the same network has four attractors with basins 1869/79/73/27 and not one of the paper's
+seven numbers appears. That would have bought a published basin at the price of an assumption and an
+explained blind disagreement.
+
+It was unnecessary. `CellSize` is a self-loop, so no update crosses between the two halves of the
+12-node state space — which makes the paper's 2¹¹ space a *closed half* of CANA's 2¹², and every
+basin inside it the same **count** here as there. The milestone verifies that closure over all 4096
+states rather than arguing it from the rule text, and then certifies the paper's seven basins on the
+committed rules with nothing assumed. All seven reproduce exactly, and the logical milestone is
+10/10 with one entry — the first in that class — whose reference value is a paper's rather than a
+tool's.
+
+It is also the cleanest demonstration of why this claim type judges counts and shares differently:
+the same G1 basin is 86% of the paper's space and 43% of CANA's, so a *fraction* claim could not
+have been carried across that difference at all. The distinction was written into the judge before
+anything needed it, and the first real entry needed it immediately.

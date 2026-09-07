@@ -629,6 +629,76 @@
       "model_class": "logical",
       "sources": [],
       "state": "certified"
+    },
+    {
+      "attempts": [],
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "Li et al. 2004 (PNAS 101:4781-4786), the published basin sizes of its eleven-node network \u2014 the sizes are the paper's; which fixed point each belongs to is read off this network: 1764/151/109/9/7/7/1"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "budding_yeast_basins",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "The yeast cell-cycle network is robustly designed (Li et al. 2004) \u2014 published basins"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "logical",
+      "sources": [],
+      "state": "certified"
     }
   ]
 }

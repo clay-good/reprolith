@@ -294,9 +294,13 @@ def test_the_shipped_repository_names_the_certificate_with_no_second_engine(caps
     from reprolith.mcp_server import default_data_dir, load_repository
 
     summary = load_repository(default_data_dir(), aggregate=True)[0].corroboration()
-    assert summary["overall"]["uncorroborated_certificates"] == 1
+    assert summary["overall"]["uncorroborated_certificates"] == 2
     assert run(["corroboration"]) == 0
     printed = capsys.readouterr().out
     assert "1 of 4 standing certificate(s) in this class have no second engine" in printed
+    # And a third route to the same rendering: the logical class's published-basin entry. CANA
+    # reduces constant nodes out of its state graph, so it cannot count basins in the space that
+    # certificate reports them in — nine of that class's ten are re-run and the tenth is named.
+    assert "1 of 10 standing certificate(s) in this class have no second engine" in printed
     assert "an absence, not a pass" in printed
     assert "4 of 5 engine-independent" in printed

@@ -8,7 +8,7 @@ nothing with curve-matching or linear programming.
 
 ## What is here
 
-- [`catalog.json`](catalog.json) — the nine entries, each tagged `logical`, carrying a ground-truth
+- [`catalog.json`](catalog.json) — the ten entries, each tagged `logical`, carrying a ground-truth
   label (`reproduced`) withheld from the verdict path, advanced to `certified`.
 - [`certificates/`](certificates/) — one machine- and human-readable certificate per model. Each
   certifies a single claim. The six small networks are judged by `attractor-signature-match` — the
@@ -21,7 +21,24 @@ nothing with curve-matching or linear programming.
   the 60-node **leukemia**, 53-node **MAPK cancer cell-fate** (Grieco et al. 2013), and 44-node
   **guard-cell ABA** networks — that it reproduces the **steady-state count** via the scalable SAT
   fixed-point path, where 2⁴⁴–2⁶⁰ enumeration is impossible.
-- [`agreement_report.json`](agreement_report.json) — **9/9** agreement with ground truth.
+- [`agreement_report.json`](agreement_report.json) — **10/10** agreement with ground truth.
+
+## The one entry checked against a paper
+
+Nine of the ten are checked against a number an independent *tool* computed from the same rules,
+which is what makes them non-circular. The tenth —
+[`budding_yeast_basins`](certificates/budding_yeast_basins.txt) — is checked against **Li et al.
+2004's own published basin sizes**: how many of the 2¹¹ initial states reach each of the seven
+steady states of the yeast cell-cycle network (1764/151/109/9/7/7/1). All seven reproduce exactly,
+through `certify_logical` and the class's basin judge rather than through this script's own
+comparison.
+
+Two facts make that comparison legitimate rather than convenient, and the script checks the first
+rather than arguing it. CANA's bundled variant adds `CellSize` as a free self-loop, so its space is
+2¹² — twice the paper's. `CellSize` is invariant under the update (verified over every state), so
+the paper's space is a closed half of this one and a basin inside it has the same *count* here. And
+that is why this entry certifies counts: the same G1 basin is 86% of the paper's space and 43% of
+this one, so the share would not have carried across.
 
 ## Blind and non-circular
 

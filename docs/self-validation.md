@@ -10,7 +10,7 @@ follow end to end, all regenerable from the repository alone.
 | **PK/PD (ODE)** | 27 honest abstentions + **4 verdicts stricter than the label**, over 31 BioModels entries; no false pass | BioModels manual-curation status; the metformin claim read from the paper | [`datasets/milestone/`](../datasets/milestone/) |
 | **Constraint-based (FBA)** | **8/8** blind agreement across bacteria, a pathogen, and a eukaryote | E. coli core's documented growth rate; COBRApy references for the genome-scale set | [`datasets/constraint_based/milestone/`](../datasets/constraint_based/milestone/) |
 | **Generic-kinetic (ODE)** | **6/6** blind agreement across six network types | libRoadRunner (independent CVODE) reference trajectories | [`datasets/kinetic/milestone/`](../datasets/kinetic/milestone/) |
-| **Logical (Boolean)** | **9/9** blind agreement (incl. three 44–60-node models at scale) | CANA attractor signatures — how many attractors and the period of each, which is what the reference records; not the attractor states themselves (small models) + the SHA-256 of the fixed-point **set** an independent SAT solver found (the large signalling networks). Every certificate states the update scheme its numbers were computed under | [`datasets/logical/milestone/`](../datasets/logical/milestone/) |
+| **Logical (Boolean)** | **10/10** blind agreement (incl. three 44–60-node models at scale, and one entry judged against a paper's own published basin sizes) | CANA attractor signatures — how many attractors and the period of each, which is what the reference records; not the attractor states themselves (small models) + the SHA-256 of the fixed-point **set** an independent SAT solver found (the large signalling networks). Every certificate states the update scheme its numbers were computed under | [`datasets/logical/milestone/`](../datasets/logical/milestone/) |
 | **Stochastic (SSA)** | **4/4** blind agreement, every one `partially-reproduced` | Closed-form Poisson / binomial means and a pure death process's mean first passage `H(n₀)/k` (analytical) | [`datasets/stochastic/milestone/`](../datasets/stochastic/milestone/) |
 | **Spatial (reaction-diffusion)** | **5/5** blind agreement — three profiles `partially-reproduced`, a decay length and a front speed `reproduced` | Closed-form Gaussian diffusion, λ = √(D/k), and the Fisher-KPP speed 2√(rD) (analytical) | [`datasets/spatial/milestone/`](../datasets/spatial/milestone/) |
 
@@ -146,7 +146,8 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   logical               9 model(s) on cana, reprolith-logical, sympy-sat — all agree exactly
-                          as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev b42e64a59aa7), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev b42e64a59aa7), sympy-sat 1.14.0
+                          as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 2c72ec42a984), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 2c72ec42a984), sympy-sat 1.14.0
+                          1 of 10 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
   ode-pkpd            170 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   spatial               5 model(s) on reprolith-fd, scipy-lsoda — 4 of 5 engine-independent
@@ -155,7 +156,7 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
                           as reprolith-ssa gillespie-direct-method (rev 59c2e42997db), roadrunner-gillespie 2.7.0
                           1 of 4 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
 
-  overall: 6 of 6 classes re-run on a second engine — 170 claim(s), 31 model(s); 1 standing certificate(s) in those classes have none
+  overall: 6 of 6 classes re-run on a second engine — 170 claim(s), 31 model(s); 2 standing certificate(s) in those classes have none
 ```
 
 Three things about that output are deliberate.
@@ -168,7 +169,11 @@ reaction-diffusion solve. Neither half was ever checked, and neither held: libRo
 Gillespie integrator, and scipy's LSODA integrates a method-of-lines diffusion system, and both
 were already installed here. The shape that prints an absence in the same list as the passes is
 kept, because a class can lose an engine and a table of only the corroborated ones would read as
-a whole-repository pass.
+a whole-repository pass. Two standing certificates have no second engine behind them today, each
+for a reason its class's line names: the stochastic first-passage entry (libRoadRunner's Gillespie
+gives a mean at a time, not a first passage) and the logical published-basin entry, since CANA
+reduces constant nodes out of its state graph and a reduced graph cannot be counted for basins in
+the space this certificate reports them in.
 
 And **the stochastic line does not say "to 1.9"**, because it is not a distance. Two engines that
 solve an ODE or a linear program agree to their last digits; two Gillespie *ensembles* of the same

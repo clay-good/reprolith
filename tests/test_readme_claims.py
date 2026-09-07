@@ -57,7 +57,8 @@ def test_the_readme_shows_every_command_the_cli_has() -> None:
 #: Longest first: "thirty" is a substring of "thirty-one", so a shorter spelling that happens to
 #: be a prefix would match the longer sentence and check the wrong number.
 _WORDED_COUNTS = {"thirty-one": 31, "thirty-two": 32, "thirty-three": 33,
-                  "thirty-four": 34, "thirty-five": 35, "thirty-six": 36, "thirty": 30}
+                  "thirty-four": 34, "thirty-five": 35, "thirty-six": 36,
+                  "thirty-seven": 37, "thirty": 30}
 
 #: What the counted sentence is *about*. The word alone is not unique in this README: the
 #: claim-selection section says a paper's "thirty-three published numbers" are not thirty-three

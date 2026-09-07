@@ -33,9 +33,11 @@ from reprolith import (
     Fault,
     GroundTruth,
     Identifiers,
+    LogicalClaim,
     ModelClass,
     OverallVerdict,
     PaperIdentity,
+    ReportedBasin,
     RunMetadata,
     assess_match,
     build_certificate,
@@ -46,7 +48,13 @@ from reprolith import (
     search_protocol,
 )
 from reprolith.corroboration import corroborate_attractors, corroborate_fixed_points
-from reprolith.logical import require_pin_matches_path, solver_pin, solver_pin_for
+from reprolith.logical import (
+    UpdateScheme,
+    certify_logical,
+    require_pin_matches_path,
+    solver_pin,
+    solver_pin_for,
+)
 from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import prune_certificate_directory
 
@@ -74,6 +82,118 @@ def _cited(citation: str, reference_tool: str) -> str:
     for its neighbours.
     """
     return f"{citation} — reference computed by {reference_tool}, not a count read from the paper"
+
+
+#: Li et al. 2004, "The yeast cell-cycle network is robustly designed" (PNAS 101:4781-4786): the
+#: seven fixed points of its eleven-node network, and how many of the 2^11 initial states reach
+#: each. Unlike every other reference in this milestone, these numbers are **the paper's own** —
+#: not a second tool's — which is what makes this the one entry here that reproduces a published
+#: result rather than an independently computed one.
+_LI_2004_BASINS = {
+    ("Cdh1", "Sic1"): 1764,          # G1, the state the paper's robustness argument is about
+    ("Cln1_2", "SBF"): 151,
+    ("Cdh1", "MBF", "Sic1"): 109,
+    ("Sic1",): 9,
+    (): 7,
+    ("MBF", "Sic1"): 7,
+    ("Cdh1",): 1,
+}
+
+#: What the certificate cites, and what it does not claim. The seven *sizes* are the paper's, which
+#: is the whole point of this entry. Which fixed point each belongs to is read off this network —
+#: so the pairing is Reprolith's, and a certificate that let it read as the paper's would be the
+#: same defect `_cited` exists to prevent, one field over. A mis-pairing would still reproduce
+#: (the same seven numbers in a different order), so the disclosure is the only thing standing
+#: between a reader and that reading.
+_LI_2004 = (
+    "Li et al. 2004 (PNAS 101:4781-4786), the published basin sizes of its eleven-node network — "
+    "the sizes are the paper's; which fixed point each belongs to is read off this network"
+)
+
+#: One title for the catalog entry and the certificate. `run_test_set` refuses a certificate filed
+#: under an entry whose paper it cannot match, and two hand-written titles for one paper is exactly
+#: what that check exists to catch.
+_LI_2004_TITLE = (
+    "The yeast cell-cycle network is robustly designed (Li et al. 2004) — published basins"
+)
+
+
+def _require_cell_size_halves_are_closed(net) -> None:
+    """Prove the paper's state space is this network's ``CellSize=0`` half, and that it is closed.
+
+    The paper counts basins over 2^11 states and CANA's variant has 2^12, so comparing the two
+    counts needs more than a hope. ``CellSize`` is a self-loop, so no update crosses between the
+    halves — which makes every basin of a ``CellSize=0`` attractor lie entirely inside the paper's
+    space, and its *count* the paper's count. Checked over every state rather than argued from the
+    rule text, because that closure is the whole reason these numbers are comparable at all.
+
+    It is also why this entry certifies **counts** and not shares: the same basin is 86% of the
+    paper's space and 43% of this one.
+    """
+    for state in net._states():
+        assignment = net._as_dict(state)
+        if net.step(assignment)["CellSize"] != assignment["CellSize"]:
+            raise AssertionError(
+                "CellSize is not invariant under this network's update, so the paper's 2^11 space "
+                "is not a closed half of it and its basin counts are not comparable to these"
+            )
+
+
+def _certify_published_basins(entry, catalog, certified) -> None:
+    """Certify the yeast network's published basins — the paper's numbers, through the front end.
+
+    The one entry in this milestone whose reference value is read from a paper. It goes through
+    ``certify_logical`` rather than being assembled here, so the class's own front end (its pin
+    checks, its scheme handling, its basin judge) is what produces it.
+    """
+    net = parse_boolean_network(entry["rules"])
+    _require_cell_size_halves_are_closed(net)
+    by_on_nodes = {
+        tuple(node for node, value in sorted(cycle[0].items()) if value): cycle
+        for cycle in net.attractors()
+        if len(cycle) == 1 and cycle[0]["CellSize"] == 0
+    }
+    claims = []
+    for on_nodes, states in sorted(_LI_2004_BASINS.items(), key=lambda kv: -kv[1]):
+        cycle = by_on_nodes.get(on_nodes)
+        if cycle is None:
+            raise AssertionError(
+                f"the paper's fixed point {on_nodes or ('all nodes off',)} is not a CellSize=0 "
+                "fixed point of the committed network"
+            )
+        label = "+".join(on_nodes) or "all nodes off"
+        claims.append(LogicalClaim(
+            claim_id=f"li2004-basin-{label}",
+            quantity=(
+                f"initial states reaching the {label} fixed point — a count in this network's "
+                "CellSize=0 half, which is the paper's own 2^11 space and which the update "
+                "never leaves"
+            ),
+            rules=entry["rules"],
+            reported={},
+            source_location=_LI_2004,
+            basin=ReportedBasin(attractor=list(cycle), states=states),
+            # The paper updates every node at once and says so, so nothing is assumed here — and
+            # a basin claim under an unstated scheme would be qualified, since the asynchronous
+            # reading of "basin" is reachability and gives a different number on this network.
+            scheme=UpdateScheme.SYNCHRONOUS,
+        ))
+    catalog.add(
+        Identifiers(title=_LI_2004_TITLE, accession="budding_yeast_basins"),
+        ModelClass.LOGICAL,
+        ground_truth=GroundTruth(
+            expected=OverallVerdict.REPRODUCED,
+            source=(
+                f"{_LI_2004}: "
+                + "/".join(str(v) for v in sorted(_LI_2004_BASINS.values(), reverse=True))
+            ),
+        ),
+    )
+    certified["budding_yeast_basins"] = certify_logical(
+        paper=PaperIdentity(title=_LI_2004_TITLE, doi=""),
+        engine_pin=solver_pin_for(nodes=len(net.nodes)),
+        claims=claims,
+    )
 
 
 def main() -> None:
@@ -170,6 +290,8 @@ def main() -> None:
             engine_pin=entry_pin,
             assessments=[assessment],
         )
+
+    _certify_published_basins(reference["models"]["budding_yeast"], catalog, certified)
 
     certificates, report = run_test_set(
         catalog.entries, engine_pin=pin, certified=certified, advance=True

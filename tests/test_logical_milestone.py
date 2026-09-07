@@ -28,7 +28,14 @@ _EXPECTED = (
             encoding="utf-8"
         )
     )["models"])
+    # The one entry with no reference file of its own: it reproduces the *paper's* published basin
+    # sizes on the budding-yeast rules already committed above, so there is nothing for a second
+    # tool to have computed and nothing for a reference to grow.
+    | {"budding_yeast_basins"}
 )
+
+#: The entry whose reference value comes from a publication rather than from an independent tool.
+_FROM_THE_PAPER = "budding_yeast_basins"
 
 
 def test_agreement_report_shows_a_blind_full_agreement() -> None:
@@ -55,15 +62,36 @@ def test_every_committed_certificate_is_a_reproduced_attractor_verdict() -> None
         # gives the SHA-256 of the fixed-point set itself, which is a set match. Neither may claim
         # the other's strength, and the tolerance column says which projection was compared rather
         # than printing a zero that reads as an exact match of the whole quantity.
-        assessment = content["assessments"][0]
-        assert assessment["method"] in ("attractor-signature-match", "attractor-set-match")
-        assert assessment["tolerance"].startswith("exact match on ")
-        if assessment["method"] == "attractor-set-match":
-            assert "fixed-point set" in assessment["tolerance"]
+        for assessment in content["assessments"]:
+            assert assessment["method"] in (
+                "attractor-signature-match", "attractor-set-match", "basin-size-match"
+            )
+            assert assessment["tolerance"].startswith("exact match on ")
+            if assessment["method"] == "attractor-set-match":
+                assert "fixed-point set" in assessment["tolerance"]
         # The update scheme every number was computed under is on the pin: the same network has
         # different cyclic attractors asynchronously, so a certificate omitting it names a result
         # a third party cannot reproduce.
         assert content["engine_pin"]["algorithm"].startswith("synchronous-update")
+
+
+def test_the_published_basins_are_judged_against_the_paper_and_counted_in_this_space() -> None:
+    # Every other entry here is judged against a number a second tool computed, and says so in its
+    # own source_location. This one is judged against the paper's, so it must cite the paper —
+    # and, because its state space is twice the paper's, its protocol has to say which space each
+    # count was taken in. A share would not survive that difference; a count does.
+    content = json.loads(
+        (_MILESTONE / "certificates" / f"{_FROM_THE_PAPER}.json").read_text(encoding="utf-8")
+    )
+    assert len(content["assessments"]) == 7  # the paper's seven fixed points
+    assert content["assumptions"] == []  # nothing is assumed: the network is the committed one
+    for assessment in content["assessments"]:
+        assert assessment["method"] == "basin-size-match"
+        assert "Li et al. 2004" in assessment["source_location"]
+        assert "not a count read from the paper" not in assessment["source_location"]
+        assert "2^12 = 4096 states" in assessment["protocol"]
+    biggest = next(a for a in content["assessments"] if "1764" in (a["discrepancy"] or ""))
+    assert biggest["verdict"] == "reproduced"
 
 
 def test_the_catalog_recorded_every_entry_as_a_certified_logical_model() -> None:

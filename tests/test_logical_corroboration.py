@@ -45,6 +45,15 @@ def _committed() -> dict:
     return json.loads((_MILESTONE / "corroboration.json").read_text(encoding="utf-8"))
 
 
+#: The one certified entry no second engine covers, and why. It is not a network of its own: it
+#: certifies Li et al. 2004's published *basin sizes* on the budding-yeast rules already re-run
+#: above. CANA reduces constant nodes out of its state graph, so its states do not line up with the
+#: 2¹² space those counts are taken in, and a basin counted in a different space is a different
+#: number rather than a second opinion on this one. Named here rather than skipped, so any *other*
+#: omission still fails this guard — and the corroboration surface reports it as an absence.
+_NO_SECOND_ENGINE = {"budding_yeast_basins"}
+
+
 def test_every_certified_network_is_covered_by_the_committed_record() -> None:
     """The population is the certificates, not the models that happened to be easy to re-run.
 
@@ -54,8 +63,10 @@ def test_every_certified_network_is_covered_by_the_committed_record() -> None:
     """
     certified = {p.stem for p in (_MILESTONE / "certificates").glob("*.json")}
     assert certified, "expected committed logical certificates"
-    assert set(_committed()) == certified
-    assert set(_SMALL) | set(_LARGE) == certified
+    assert set(_committed()) == certified - _NO_SECOND_ENGINE
+    assert set(_SMALL) | set(_LARGE) == certified - _NO_SECOND_ENGINE
+    # The exception is a certificate that exists, not a stale name in this file.
+    assert _NO_SECOND_ENGINE <= certified
 
 
 @pytest.mark.parametrize("model_id", sorted(_SMALL))

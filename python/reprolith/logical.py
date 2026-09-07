@@ -825,7 +825,10 @@ def judge_basin_size(
             method=ComparisonMethod.BASIN_SIZE_MATCH,
             exact_on="the number of states in the basin",
             discrepancy=absent
-            or f"{counted} states flow to it against the reported {reported.states}",
+            or (
+                f"{counted} state{'' if counted == 1 else 's'} flow"
+                f"{'s' if counted == 1 else ''} to it against the reported {reported.states}"
+            ),
             reference_kind=ReferenceKind.NUMERIC,
             attribution=attribution,
             assumption_qualified=assumption_qualified,
