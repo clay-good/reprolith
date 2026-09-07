@@ -1092,6 +1092,12 @@ class PatternClaim:
         wavelength across the whole domain rather than one half-wavelength across it. Two grid
         points per wavelength is the most any grid can represent; above that a mode is aliased
         rather than resolved.
+
+        The top of that range is the checkerboard — a pattern alternating on every grid point —
+        and it is admitted here rather than trimmed off, because the run refuses it earlier and
+        more precisely than a mode cap could: :func:`react_diffuse_2species` rejects any
+        discretization whose diffusion-plus-reaction update stops damping the node-to-node
+        oscillation, which is what would have to grow for the dominant mode to land there.
         """
         return range(1, self.points // 2 + 1) if self.wall == "periodic" else range(1, self.points)
 
@@ -1423,9 +1429,18 @@ def _judge_front_speed(claim: FrontSpeedClaim) -> ClaimAssessment:
     )
 
 
-#: What each wall makes measurable, in the notation a reader can check against their own model.
+#: Each wall's eigenfunctions, in the notation a reader can check against their own model.
 _EIGENFUNCTIONS = {"no-flux": "cos(m·pi·x/L)", "periodic": "cos(2·pi·m·x/L)"}
-_MEASURABLE_SET = {"no-flux": "2L/m", "periodic": "L/m"}
+
+
+def _measurable_as(wall: str, mode: object = "m") -> str:
+    """The measurable set for ``wall``, with ``m`` standing for a mode or for the mode that won.
+
+    A one-line function rather than a table plus ``.replace("m", str(mode))``, which is
+    the shape of trap this repository keeps finding: it happens to work for ``2L/m`` and ``L/m``
+    and would silently corrupt any set string that carried a second ``m``.
+    """
+    return f"2L/{mode}" if wall == "no-flux" else f"L/{mode}"
 
 
 def _mode_resolution(claim: PatternClaim, mode: int) -> float:
@@ -1571,7 +1586,7 @@ def _measure_pattern(claim: PatternClaim) -> _PatternMeasurement:
     if predicted_resolution > tolerance.reproduced_within:
         return _PatternMeasurement(predicted_mode=predicted_mode, resolution=predicted_resolution, reason=(
             f"this domain cannot resolve the claim: the wavelength is quantized to "
-            f"{_MEASURABLE_SET[claim.wall]}, so even at the mode linear stability predicts "
+            f"{_measurable_as(claim.wall)}, so even at the mode linear stability predicts "
             f"(m={predicted_mode}) the nearest measurable values are {predicted_resolution:.2%} "
             f"away while a pass is {tolerance.reproduced_within:.2%} — a longer domain holds more "
             "modes and measures finer"
@@ -1644,7 +1659,7 @@ def _measure_pattern(claim: PatternClaim) -> _PatternMeasurement:
     if resolution > tolerance.reproduced_within:
         return _PatternMeasurement(mode=dominant, predicted_mode=predicted_mode, resolution=resolution, reason=(
             f"this domain cannot resolve the claim: the wavelength is quantized to "
-            f"{_MEASURABLE_SET[claim.wall]}, so the nearest measurable values to {measured:.6g} "
+            f"{_measurable_as(claim.wall)}, so the nearest measurable values to {measured:.6g} "
             f"(mode {dominant}) are {resolution:.2%} away while a pass is "
             f"{tolerance.reproduced_within:.2%} — a longer domain holds more modes and measures "
             "finer"
@@ -1690,7 +1705,7 @@ def _judge_pattern(claim: PatternClaim) -> ClaimAssessment:
             + ("" if claim.wall_is_reprolith_s else " stated by the source")
             + f", which is what makes the modes {_EIGENFUNCTIONS[claim.wall]}. Mode "
             f"{measurement.mode} won, so the measured wavelength is "
-            f"{_MEASURABLE_SET[claim.wall].replace('m', str(measurement.mode))}, unchanged over a "
+            f"{_measurable_as(claim.wall, measurement.mode)}, unchanged over a "
             f"further {claim.confirm_steps} steps; linear stability predicts "
             f"m={measurement.predicted_mode} ({claim.analytical_wavelength:.6g}). The nearest "
             f"measurable wavelength is {measurement.resolution:.2%} away, which is this domain's "
