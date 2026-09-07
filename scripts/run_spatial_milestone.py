@@ -39,7 +39,11 @@ from reprolith import (
     render_human,
     run_test_set,
 )
-from reprolith.corroboration import corroborate_profile
+from reprolith.corroboration import (
+    corroborate_front_speed,
+    corroborate_gradient_length,
+    corroborate_profile,
+)
 from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import prune_certificate_directory
 from reprolith.spatial import solver_pin
@@ -82,13 +86,14 @@ _GRADIENT_DX = 0.1
 _FRONT_D, _FRONT_R = 1.0, 1.0
 _FRONT_DX = 0.5
 
-#: The finite-time bias is known and stated, so the override is principled rather than a magic
-#: number: a KPP front approaches `2√(rD)` logarithmically, and this configuration measures 4.2%
-#: low. `tests/test_spatial_front_claim.py` uses the same one.
+#: The bias is measured, so the override is principled rather than a magic number — and what it is
+#: *for* was corrected once: this said the deficit was the front's logarithmic approach to its
+#: asymptote, and refining the time step shows it is mostly the explicit stepper (4.2% at a
+#: diffusion number of 0.2, 1.9% at 0.1, 0.7% at 0.05). `tests/test_spatial_front_claim.py` uses
+#: the same tolerance.
 _FRONT_TOLERANCE = Tolerance(
     0.10, 0.20, ToleranceSource.REVIEWER_OVERRIDE,
-    rationale="KPP front speed converges to 2*sqrt(rD) logarithmically; a finite-time, discretized "
-              "measurement is expected within ~10%",
+    rationale="the measured speed sits below 2*sqrt(rD) by the explicit stepper's O(dt) time error (4.2% at a diffusion number of 0.2, 1.9% at 0.1, 0.7% at 0.05) plus the KPP front's logarithmic finite-time approach; 10% covers both",
 )
 
 
@@ -128,7 +133,8 @@ def _front_entry() -> tuple[Identifiers, GroundTruth, list[FrontSpeedClaim]]:
         GroundTruth(
             expected=OverallVerdict.REPRODUCED,
             source="closed-form pulled-front speed, c = 2*sqrt(rD) = 2.0, judged under a stated "
-                   "10% tolerance for the logarithmic finite-time convergence",
+                   "10% tolerance for the explicit stepper's O(dt) error and the front's "
+                   "finite-time approach",
         ),
         [claim],
     )
@@ -203,6 +209,24 @@ def main() -> None:
             diffusivity=s["D"], dx=_DX, dt=dt, steps=s["steps"],
         ).record()
 
+    # The two scalars, re-solved under the same second engine. They had no corroboration at all
+    # when they landed — `corroborate_profile` re-solves a profile, and a decay length is read
+    # *off* a run rather than being one — and every surface said so. What closing it turned up is
+    # in the front's record: the two engines disagree about the speed by 4.7%, which is published
+    # as a disagreement rather than widened away.
+    gradient_dt = _DIFFUSION_NUMBER * _GRADIENT_DX * _GRADIENT_DX / _GRADIENT_D
+    corroboration["gradient_length"] = corroborate_gradient_length(
+        source=_GRADIENT_SOURCE, diffusivity=_GRADIENT_D, decay=_GRADIENT_K,
+        dx=_GRADIENT_DX, points=300, dt=gradient_dt, steps=40000, fit_from=20, fit_to=120,
+    ).record()
+    front_dt = _DIFFUSION_NUMBER * _FRONT_DX * _FRONT_DX / _FRONT_D
+    front_window = round(100.0 / front_dt)
+    corroboration["front_speed"] = corroborate_front_speed(
+        initial=tuple(1.0 if i * _FRONT_DX < 20.0 else 0.0 for i in range(1201)),
+        diffusivity=_FRONT_D, growth=_FRONT_R, dx=_FRONT_DX, dt=front_dt,
+        settle_steps=front_window, measure_steps=front_window,
+    ).record()
+
     milestone = SPA / "milestone"
     (milestone / "certificates").mkdir(parents=True, exist_ok=True)
     prune_certificate_directory(milestone / "certificates", certified)
@@ -229,11 +253,10 @@ def main() -> None:
     print(f"digests: {[certificate_digest(c) for c in certificates]}")
     agreed = sum(1 for row in corroboration.values() if row["engine_independent"])
     print(f"corroboration: {agreed}/{len(corroboration)} engine-independent vs scipy's LSODA")
-    # Said out loud rather than left to arithmetic: the two scalar entries have no second engine
-    # behind them. `corroborate_profile` re-solves a profile, and a decay length and a front speed
-    # are read off a run rather than being one — so the surfaces report them as uncorroborated,
-    # which is the honest state and not a pass.
-    print(f"({len(certified) - len(corroboration)} entries carry no corroboration record)")
+    for key in sorted(corroboration):
+        if not corroboration[key]["engine_independent"]:
+            print(f"  {key}: the two engines disagree by more than the criterion — published as a "
+                  "disagreement, which is what this comparison is for")
 
 
 if __name__ == "__main__":

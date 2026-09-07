@@ -17,7 +17,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .engine import ENGINE as _COPASI_ENGINE
 from .engine import (
@@ -620,6 +620,207 @@ def _cobrapy_objective(sbml: str) -> tuple[float, str]:
             "that is a disagreement about whether the program is solvable rather than a distance"
         )
     return float(value), str(cobra.__version__)
+
+
+def corroborate_gradient_length(
+    *,
+    source: float,
+    diffusivity: float,
+    decay: float,
+    dx: float,
+    points: int,
+    dt: float,
+    steps: int,
+    fit_from: int,
+    fit_to: int,
+    rel_tol: float = 0.02,
+) -> EngineCorroboration:
+    """Re-solve a morphogen gradient under LSODA and compare the decay length each engine gives.
+
+    The spatial class publishes two **scalar** certificates that :func:`corroborate_profile` could
+    not reach: it re-solves a profile, and a decay length is read *off* a run rather than being one.
+    So both stood in the repository with no second engine behind them, which every surface said —
+    an honest absence, and one worth closing rather than keeping.
+
+    What is compared is the **fitted length**, not the profile, and that is the point rather than a
+    shortcut: it is the quantity the certificate publishes, and it is where the two engines could
+    disagree in a way a reader would act on. The profile comparison is available beside it and
+    measures something else — two discretizations of the same semi-discrete system.
+
+    The same caveat :func:`corroborate_profile` carries applies here: both sides use the same
+    second-order central differences on the same grid with the same Dirichlet source and zero-flux
+    far wall, so this separates the **time integration** and its implementation, not the spatial
+    scheme. The operator is built here rather than imported from :mod:`reprolith.spatial`.
+
+    Needs the ``fba`` or ``corroborate`` extra (scipy).
+    """
+    from .spatial import gradient_decay_length, morphogen_gradient, solver_pin
+
+    numpy, solve_ivp, diags = _scipy_ode()
+    # Reprolith's own solve first, so its stability refusals are raised before anything is
+    # integrated — a comparison against a configuration this class would not run is a number about
+    # nothing.
+    mine = morphogen_gradient(
+        source=source, diffusivity=diffusivity, decay=decay, dx=dx, points=points,
+        dt=dt, steps=steps,
+    )
+    # The interior operator, written independently: node 0 is *held* at the source (a Dirichlet
+    # cell, so its row is zero and the source enters as a constant on node 1), and the far wall
+    # mirrors, so its row carries -1 like the profile solver's.
+    interior = points - 1
+    main = numpy.full(interior, -2.0)
+    main[-1] = -1.0
+    off = numpy.ones(interior - 1)
+    operator = diags([off, main, off], [-1, 0, 1], format="csc") * (diffusivity / (dx * dx))
+    inflow = numpy.zeros(interior)
+    inflow[0] = source * diffusivity / (dx * dx)
+    duration = dt * steps
+    solution = solve_ivp(
+        lambda _t, u: operator.dot(u) + inflow - decay * u,
+        (0.0, duration),
+        numpy.zeros(interior),
+        method="LSODA",
+        rtol=1e-10,
+        atol=1e-12,
+        t_eval=[duration],
+        lband=1,
+        uband=1,
+    )
+    if not solution.success:
+        raise EngineUnavailable(
+            f"the second engine did not integrate this gradient: {solution.message}; a failed "
+            "reference is not a disagreement about a value and is not published as one"
+        )
+    theirs = [source, *(float(v) for v in solution.y[:, -1])]
+    mine_length = gradient_decay_length(mine, dx=dx, start=fit_from, end=fit_to)
+    their_length = gradient_decay_length(theirs, dx=dx, start=fit_from, end=fit_to)
+    return _scalar_agreement(
+        quantity="morphogen decay length",
+        mine=mine_length,
+        theirs=their_length,
+        engine=solver_pin(),
+        rel_tol=rel_tol,
+    )
+
+
+def corroborate_front_speed(
+    *,
+    initial: Sequence[float],
+    diffusivity: float,
+    growth: float,
+    dx: float,
+    dt: float,
+    settle_steps: int,
+    measure_steps: int,
+    level: float = 0.5,
+    rel_tol: float = 0.02,
+) -> EngineCorroboration:
+    """Re-solve a Fisher-KPP front under LSODA and compare the speed each engine measures.
+
+    The front's sibling of :func:`corroborate_gradient_length`, and the more interesting of the two
+    because the equation is **nonlinear**: ``u_t = D u_xx + r·u(1−u)``. LSODA's adaptive implicit
+    stepping and Reprolith's fixed-step explicit one are being asked for the same emergent
+    quantity — the distance the front's level crossing travels over one window — rather than for
+    the same profile.
+
+    The two speeds are read the same way, by :func:`reprolith.front_position` over the same window,
+    so what is compared is the two integrations and not two definitions of a front. Same caveat as
+    the other spatial comparisons: the spatial stencil is shared, so this separates the time
+    integration.
+
+    Needs the ``fba`` or ``corroborate`` extra (scipy).
+    """
+    from .spatial import front_position, react_diffuse_1d, solver_pin
+
+    numpy, solve_ivp, diags = _scipy_ode()
+    settled = react_diffuse_1d(
+        initial, diffusivity=diffusivity, dx=dx, dt=dt, steps=settle_steps,
+        reaction=lambda u: growth * u * (1.0 - u),
+    )
+    measured = react_diffuse_1d(
+        settled, diffusivity=diffusivity, dx=dx, dt=dt, steps=measure_steps,
+        reaction=lambda u: growth * u * (1.0 - u),
+    )
+    n = len(initial)
+    main = numpy.full(n, -2.0)
+    main[0] = main[-1] = -1.0
+    off = numpy.ones(n - 1)
+    operator = diags([off, main, off], [-1, 0, 1], format="csc") * (diffusivity / (dx * dx))
+
+    def integrate(state: Sequence[float], steps: int) -> list[float]:
+        solution = solve_ivp(
+            lambda _t, u: operator.dot(u) + growth * u * (1.0 - u),
+            (0.0, dt * steps),
+            numpy.asarray(state, dtype=float),
+            method="LSODA",
+            rtol=1e-10,
+            atol=1e-12,
+            t_eval=[dt * steps],
+            lband=1,
+            uband=1,
+        )
+        if not solution.success:
+            raise EngineUnavailable(
+                f"the second engine did not integrate this front: {solution.message}; a failed "
+                "reference is not a disagreement about a value and is not published as one"
+            )
+        return [float(v) for v in solution.y[:, -1]]
+
+    their_settled = integrate(initial, settle_steps)
+    their_measured = integrate(their_settled, measure_steps)
+    window = measure_steps * dt
+    positions = [
+        front_position(profile, dx=dx, level=level)
+        for profile in (settled, measured, their_settled, their_measured)
+    ]
+    if any(position is None for position in positions):
+        raise EngineUnavailable(
+            "one of the two engines produced no front at this level, so there is no second speed "
+            "to compare; that is an absent measurement rather than a disagreement about one"
+        )
+    mine_start, mine_end, their_start, their_end = (float(p) for p in positions)  # type: ignore[arg-type]
+    return _scalar_agreement(
+        quantity="Fisher-KPP asymptotic front speed",
+        mine=(mine_end - mine_start) / window,
+        theirs=(their_end - their_start) / window,
+        engine=solver_pin(),
+        rel_tol=rel_tol,
+    )
+
+
+def _scalar_agreement(
+    *, quantity: str, mine: float, theirs: float, engine: EnginePin, rel_tol: float
+) -> EngineCorroboration:
+    """Two engines' answers for one scalar, as a relative difference on the published-bound rule.
+
+    The same shape :func:`corroborate_objective` uses, and for the same reason: a relative
+    difference puts a scalar comparison on the curve comparison's scale so one surface can print
+    both. No noise floor is applied here — unlike an LP optimum, whose last places move with the
+    BLAS, these two numbers are the output of two *different* integrations and their difference is
+    the thing being reported.
+    """
+    scale = max(abs(mine), abs(theirs))
+    result = EngineCorroboration(
+        quantity=quantity,
+        engines=(engine.engine, SCIPY_ODE_ENGINE),
+        distance=0.0 if scale == 0.0 else abs(mine - theirs) / scale,
+        stable=False,
+        versions=(_reprolith_build(engine), _scipy_version()),
+    )
+    return replace(result, stable=result.distance_bound() <= rel_tol, criterion=rel_tol)
+
+
+def _scipy_ode() -> tuple[Any, Any, Any]:
+    """scipy's integrator and sparse builder, or a refusal naming the extra that is missing."""
+    try:
+        import numpy
+        from scipy.integrate import solve_ivp
+        from scipy.sparse import diags
+    except ImportError as exc:  # pragma: no cover - exercised by the extra being absent
+        raise EngineUnavailable(
+            "corroborating a spatial result needs scipy (the 'fba' or 'corroborate' extra)"
+        ) from exc
+    return numpy, solve_ivp, diags
 
 
 def corroborate_objective(sbml: str, *, rel_tol: float = 1e-6) -> EngineCorroboration:

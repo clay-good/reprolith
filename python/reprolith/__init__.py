@@ -49,6 +49,8 @@ from .corroboration import (
     corroborate_curve,
     corroborate_ensemble_mean,
     corroborate_fixed_points,
+    corroborate_front_speed,
+    corroborate_gradient_length,
     corroborate_objective,
     corroborate_profile,
 )
@@ -498,6 +500,8 @@ __all__ = [
     "corroborate_fixed_points",
     "corroborate_objective",
     "corroborate_ensemble_mean",
+    "corroborate_front_speed",
+    "corroborate_gradient_length",
     "corroborate_profile",
     "EnginePin",
     "EngineUnavailable",

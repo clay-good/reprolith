@@ -4976,3 +4976,43 @@ this README — once for the certificates and once for a paper's thirty-three pu
 was reading whichever sentence its own dictionary order reached first. It anchors on
 "<count> published certificates" now. A quote that is not unique is a guard pointed at the wrong
 text, which is the third time that shape has been found here.
+
+
+## The second engine disagreed, and the reason we had published was the wrong one
+
+Closing the corroboration gap the two spatial scalars published — `corroborate_profile` re-solves a
+profile, and a decay length is read *off* a run rather than being one — turned up the most
+substantive finding of the day.
+
+The decay length agrees to better than 1e-10, which is expected and uninteresting: a steady state
+is the same fixed point for both integrators, so that comparison is not a statement about time
+stepping at all.
+
+The **front speed does not agree**. Over the same window, on the same grid, this package's
+fixed-step explicit stepper measures 1.9154 and scipy's LSODA measures 2.0100 — 4.7% apart, against
+a 2% criterion. The record is published as a disagreement.
+
+And it falsifies a rationale this project wrote down the same day. The front claim's 10% tolerance
+was justified by the KPP front's *logarithmic* approach to its asymptotic speed, which is a real
+property of the model and, it turns out, the smaller term. Refining the time step at a fixed window
+gives 1.9154 at a diffusion number of 0.2, 1.9617 at 0.1 and 1.9856 at 0.05: halving `dt` halves
+the deficit, which is first-order convergence in time — forward Euler's own error, not the front's
+asymptotics. LSODA, integrating the same semi-discrete system essentially exactly in time, sits at
+2.0100, slightly *above* the continuum `2√(rD)`, which is the lattice front rather than the
+continuum one.
+
+So the tolerance stays at 10% and its stated reason changed, in the claim's docstring, the
+milestone's rationale, the tests and this page. The lesson is one this repository keeps relearning
+in new places: **a rationale is a measurement, not an explanation that sounds right.** The
+logarithmic story was plausible, cited a real property of the model, and was wrong about which term
+dominated — and nothing would have caught it except asking a second implementation, which is
+precisely what corroboration is for. It is the first time in this project that a cross-engine
+comparison has changed something other than a confidence.
+
+Three committed checks had to change to let the record exist, and each was the same shape: they
+asserted that *every* corroboration row was a pass, which was true of the repository and not of the
+software. A contract admitting only agreements makes publishing a disagreement impossible, which is
+the opposite of what a corroboration surface is for. They check the two directions now — a passing
+row is inside its criterion, a row marked as a disagreement is outside it — and the one
+disagreement is named rather than skipped by a predicate, so a second one fails until somebody says
+so.

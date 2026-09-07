@@ -286,7 +286,7 @@
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
-        "source": "closed-form pulled-front speed, c = 2*sqrt(rD) = 2.0, judged under a stated 10% tolerance for the logarithmic finite-time convergence"
+        "source": "closed-form pulled-front speed, c = 2*sqrt(rD) = 2.0, judged under a stated 10% tolerance for the explicit stepper's O(dt) error and the front's finite-time approach"
       },
       "history": [
         {

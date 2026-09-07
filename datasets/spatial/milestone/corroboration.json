@@ -3,7 +3,7 @@
     "distance_at_most": 0.001,
     "engine_independent": true,
     "engine_versions": [
-      "explicit-forward-euler-finite-difference (rev f05a691b21bc)",
+      "explicit-forward-euler-finite-difference (rev df8cad311c71)",
       "1.13.1"
     ],
     "engines": [
@@ -15,7 +15,7 @@
     "distance_at_most": 0.001,
     "engine_independent": true,
     "engine_versions": [
-      "explicit-forward-euler-finite-difference (rev f05a691b21bc)",
+      "explicit-forward-euler-finite-difference (rev df8cad311c71)",
       "1.13.1"
     ],
     "engines": [
@@ -27,7 +27,31 @@
     "distance_at_most": 0.001,
     "engine_independent": true,
     "engine_versions": [
-      "explicit-forward-euler-finite-difference (rev f05a691b21bc)",
+      "explicit-forward-euler-finite-difference (rev df8cad311c71)",
+      "1.13.1"
+    ],
+    "engines": [
+      "reprolith-fd",
+      "scipy-lsoda"
+    ]
+  },
+  "front_speed": {
+    "distance_at_most": 0.1,
+    "engine_independent": false,
+    "engine_versions": [
+      "explicit-forward-euler-finite-difference (rev df8cad311c71)",
+      "1.13.1"
+    ],
+    "engines": [
+      "reprolith-fd",
+      "scipy-lsoda"
+    ]
+  },
+  "gradient_length": {
+    "distance_at_most": 1e-10,
+    "engine_independent": true,
+    "engine_versions": [
+      "explicit-forward-euler-finite-difference (rev df8cad311c71)",
       "1.13.1"
     ],
     "engines": [

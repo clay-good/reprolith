@@ -87,18 +87,42 @@ def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
     # the two implementations' agreement, measured at up to 4e-11 apart between two machines
     # running the same eight models. See `_LP_NOISE_FLOOR`.
     assert worst["constraint-based"] == pytest.approx(1e-08)
-    # The spatial pair *is* a curve comparison and is judged against this budget: 1e-03, the same
-    # 1% the kinetic class spends. It is not a distance from the truth — see
+    # The spatial *profiles* are a curve comparison judged against this budget: 1e-03, the same 1%
+    # the kinetic class spends. It is not a distance from the truth — see
     # `test_the_gap_is_not_a_distance_from_the_truth_and_the_numbers_say_which_way`.
-    assert worst["spatial"] == pytest.approx(1e-03)
+    #
+    # The class's worst row is no longer that, and the difference is the finding rather than an
+    # exception to it: its front-speed entry compares a *scalar* the two engines genuinely
+    # disagree about (1.9154 against 2.0100 over the same window), and it is committed as a
+    # disagreement. So the profiles are checked on their own, and the front is checked for being
+    # outside the criterion rather than inside it.
+    spatial = _records()["spatial"]
+    profiles = {key: row for key, row in spatial.items() if key.startswith("diffusion_")}
+    assert profiles, "the spatial profile rows are gone; this check would pass vacuously"
+    assert max(float(row["distance_at_most"]) for row in profiles.values()) == pytest.approx(1e-03)
+    assert spatial["front_speed"]["engine_independent"] is False
+    assert float(spatial["front_speed"]["distance_at_most"]) > 0.02
+    worst["spatial"] = max(float(row["distance_at_most"]) for row in profiles.values())
 
     shares = {name: bound / _CURVE_PASS for name, bound in worst.items()}
     assert shares["ode-pkpd"] < 1e-04       # a hundredth of a percent of the budget
     assert shares["kinetic"] == pytest.approx(0.01, rel=1e-6)  # one percent of it
 
-    # And every single record, not only the worst: no committed result rests on one solver.
+    # And every single record, not only the worst — with the one exception this repository
+    # publishes rather than hides: the spatial front's two engines disagree, and a check that
+    # required every row to be a pass would have made committing that record impossible. It is
+    # named here rather than skipped by a predicate, so a *second* disagreement fails this.
+    disagreements = {
+        (model_class, key)
+        for model_class, record in _records().items()
+        for key, row in record.items()
+        if not row["engine_independent"]
+    }
+    assert disagreements == {("spatial", "front_speed")}, sorted(disagreements)
     for model_class, record in _records().items():
         for key, row in record.items():
+            if (model_class, key) in disagreements:
+                continue
             assert row["engine_independent"] is True, (model_class, key)
             if row.get("comparison") == "monte-carlo-agreement":
                 # Not a curve distance and not comparable to one. Dividing a count of standard

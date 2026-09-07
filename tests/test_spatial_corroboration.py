@@ -156,3 +156,95 @@ def test_decay_is_carried_to_the_second_engine() -> None:
     plain = diffuse_1d(profile, diffusivity=1.0, dx=_DX, dt=dt, steps=400)
     decayed = diffuse_1d(profile, diffusivity=1.0, dx=_DX, dt=dt, steps=400, decay=0.5)
     assert normalized_curve_distance(plain, decayed) > 0.1
+
+
+# --- the two scalars, which `corroborate_profile` cannot reach ----------------------------------
+
+
+def test_a_decay_length_is_corroborated_on_the_quantity_the_certificate_publishes() -> None:
+    """`corroborate_profile` re-solves a profile; a decay length is read *off* a run rather than
+    being one, so the class's two scalar certificates stood with no second engine at all. What is
+    compared is the fitted length — the number the certificate publishes — not the profile."""
+    from reprolith.corroboration import corroborate_gradient_length
+
+    dx = 0.1
+    result = corroborate_gradient_length(
+        source=100.0, diffusivity=1.0, decay=0.25, dx=dx, points=300,
+        dt=_DIFFUSION_NUMBER * dx * dx, steps=40000, fit_from=20, fit_to=120,
+    )
+    assert result.quantity == "morphogen decay length"
+    assert result.engines == ("reprolith-fd", "scipy-lsoda")
+    # A steady state is the same fixed point for both integrators, so this one is not a statement
+    # about the time stepping at all — which is why the front below is the interesting half.
+    assert result.stable
+    assert result.distance < 1e-6
+
+
+def test_the_two_engines_disagree_about_the_front_speed_and_it_is_published() -> None:
+    """The finding this comparison exists for. The front claim's tolerance was attributed to the
+    KPP front's logarithmic approach to its asymptote; the second engine, integrating the same
+    semi-discrete system essentially exactly in time over the same window, measures 2.0100 where
+    this package's explicit stepper measures 1.9154. That is the stepper's own O(dt) error, and it
+    is reported as a disagreement rather than widened away."""
+    from reprolith.corroboration import corroborate_front_speed
+
+    dx = 0.5
+    dt = _DIFFUSION_NUMBER * dx * dx
+    window = round(100.0 / dt)
+    result = corroborate_front_speed(
+        initial=tuple(1.0 if i * dx < 20.0 else 0.0 for i in range(1201)),
+        diffusivity=1.0, growth=1.0, dx=dx, dt=dt,
+        settle_steps=window, measure_steps=window,
+    )
+    assert result.quantity == "Fisher-KPP asymptotic front speed"
+    assert not result.stable, "the two engines agree here, which they did not when this was written"
+    assert 0.04 < result.distance < 0.06
+
+
+def test_halving_the_time_step_halves_the_front_speed_deficit() -> None:
+    """Why the disagreement above is the *stepper* and not the front: at a fixed window, refining
+    dt walks the measured speed toward the second engine's 2.0100, first-order. Attributing it to
+    the logarithmic approach — as this class's own docstrings did — would have been a rationale
+    nobody had measured."""
+    import math
+
+    from reprolith import front_position, react_diffuse_1d
+
+    dx, points = 0.5, 1201
+    initial = [1.0 if i * dx < 20.0 else 0.0 for i in range(points)]
+    speeds = []
+    for number in (0.2, 0.1, 0.05):
+        dt = number * dx * dx
+        window = round(100.0 / dt)
+
+        def run(state, steps=window, dt=dt):
+            return react_diffuse_1d(
+                state, diffusivity=1.0, dx=dx, dt=dt, steps=steps,
+                reaction=lambda u: u * (1.0 - u),
+            )
+
+        settled = run(initial)
+        measured = run(settled)
+        start = front_position(settled, dx=dx, level=0.5)
+        end = front_position(measured, dx=dx, level=0.5)
+        speeds.append((end - start) / (window * dt))
+    deficits = [(2.0 * math.sqrt(1.0) - speed) / 2.0 for speed in speeds]
+    assert deficits[0] == pytest.approx(0.042, abs=0.003)
+    assert deficits[1] == pytest.approx(0.019, abs=0.003)
+    assert deficits[2] == pytest.approx(0.007, abs=0.003)
+    # Halving dt roughly halves the deficit: first order in time, which is what forward Euler is.
+    assert 1.8 < deficits[0] / deficits[1] < 2.6
+    assert 1.8 < deficits[1] / deficits[2] < 3.0
+
+
+def test_every_milestone_entry_carries_a_corroboration_record() -> None:
+    """The absence the scalars published when they landed is closed, and this is what keeps it
+    closed: a sixth entry added without a second engine fails here rather than being counted as
+    corroborated by a summary that can only see records."""
+    records = json.loads((_MILESTONE / "corroboration.json").read_text(encoding="utf-8"))
+    certificates = {path.stem for path in (_MILESTONE / "certificates").glob("*.json")}
+    assert set(records) == certificates
+    assert records["front_speed"]["engine_independent"] is False, (
+        "the committed record says the two engines agree about the front speed; re-run "
+        "scripts/run_spatial_milestone.py, and if they now do, say so here"
+    )

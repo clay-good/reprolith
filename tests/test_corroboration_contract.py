@@ -99,18 +99,36 @@ def test_our_own_side_publishes_a_code_revision_and_not_a_package_version() -> N
 
 
 def test_a_published_bound_never_states_better_agreement_than_a_pass_requires() -> None:
-    """Every row is a pass, and every pass is at or under the criterion its comparison uses.
+    """Every row that *passes* is at or under the criterion its comparison uses, and a row that
+    does not pass says so rather than being absent.
 
     The three comparison kinds are on three scales — a normalized distance, an exact match, and a
     count of standard errors — and the whole reason the kind is recorded is that a number from one
     read on another's scale is nonsense. So the bound is checked against its own kind's ceiling.
+
+    This asserted that every committed row was a pass, which was true of the repository and not of
+    the software: the spatial front's two engines measure 1.9154 and 2.0100 over the same window,
+    and that record is committed as the disagreement it is. A contract that only admitted passes
+    would have made publishing one impossible.
     """
     ceilings = {"normalized-distance": 0.02, "exact-match": 0.0, "monte-carlo-agreement": 3.0}
+    disagreements = 0
     for where, row in _rows():
-        assert row["engine_independent"] is True, where
         kind = row.get("comparison", "normalized-distance")
         assert kind in ceilings, (where, kind)
-        assert 0.0 <= float(row["distance_at_most"]) <= ceilings[kind], (where, kind)
+        bound = float(row["distance_at_most"])
+        assert bound >= 0.0, where
+        if row["engine_independent"]:
+            assert bound <= ceilings[kind], (where, kind)
+        else:
+            # The other direction, which matters just as much: a row marked as a disagreement must
+            # actually be outside its criterion, or the flag is decoration.
+            assert bound > ceilings[kind], (where, kind)
+            disagreements += 1
+    assert disagreements == 1, (
+        "the committed records hold a number of disagreements this test does not expect; if a "
+        "comparison changed, say so here rather than loosening the count"
+    )
 
 
 def test_a_sampled_comparison_says_what_it_could_not_have_seen() -> None:

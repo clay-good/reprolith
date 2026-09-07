@@ -5,11 +5,16 @@ asymptotic speed `c = 2√(rD)` is the number ecology and epidemic-wave papers r
 length and unlike a whole profile, it is a scalar in the text, so it is reachable without a curator
 digitizing a figure.
 
-The subtlety this claim has and the gradient does not: **a KPP front approaches its asymptotic
-speed logarithmically in time**, so a finite-time measurement sits a few percent low and the
-class-default 5% would fail a correct reproduction. That is a property of the model, not a
-tolerance to widen quietly — so the claim measures the speed over two consecutive windows and
-reports how much it is still changing, and a wider tolerance has to be a stated override.
+The subtlety this claim has and the gradient does not: **a measured KPP speed sits a few percent
+below** `2√(rD)`, so the class-default 5% would fail a correct reproduction. It is not a tolerance
+to widen quietly — the claim measures the speed over two consecutive windows and reports how much
+it is still changing, and a wider tolerance has to be a stated override.
+
+Which cause dominates was measured after the fact and it is not the front's logarithmic approach,
+which is what this file first said: halving `dt` halves the deficit (1.9154 at a diffusion number
+of 0.2, 1.9617 at 0.1, 1.9856 at 0.05), so most of it is the explicit stepper's own O(dt) error.
+The second engine measures 2.0100 over the same window, and the milestone publishes that 4.7%
+disagreement rather than widening it away.
 """
 
 from __future__ import annotations
@@ -38,8 +43,7 @@ _WINDOW = round(100.0 / _DT)
 #: number — the same tolerance `tests/test_spatial.py` has used for this system since it landed.
 _TOL = Tolerance(
     0.10, 0.20, ToleranceSource.REVIEWER_OVERRIDE,
-    rationale="KPP front speed converges to 2*sqrt(rD) logarithmically; a finite-time, discretized "
-              "measurement is expected within ~10%",
+    rationale="the measured speed sits below 2*sqrt(rD) by the explicit stepper's O(dt) time error (4.2% at a diffusion number of 0.2, 1.9% at 0.1, 0.7% at 0.05) plus the KPP front's logarithmic finite-time approach; 10% covers both",
 )
 
 

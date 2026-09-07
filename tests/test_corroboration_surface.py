@@ -280,11 +280,21 @@ def test_a_leftover_record_is_not_reported_as_a_negative_absence() -> None:
     assert summary["overall"]["uncorroborated_certificates"] == 0
 
 
-def test_the_shipped_repository_says_which_certificates_have_no_second_engine(capsys) -> None:
-    """Live, not constructed: the spatial class publishes five certificates and three records —
-    a decay length and a front speed are read off a run rather than being one, so
-    `corroborate_profile` has nothing to re-solve for them."""
+def test_the_shipped_repository_has_no_certificate_without_a_second_engine(capsys) -> None:
+    """The live instance this rendering was written for lasted one session: the spatial class's
+    two scalars had no second engine, and `corroborate_gradient_length` and
+    `corroborate_front_speed` gave them one. So what is live here is the *absence of a shortfall*,
+    and the rendering itself is exercised on constructed records above — a repository where
+    nothing is missing cannot exercise it, and the day a class loses an engine is the wrong time
+    to find out the path rotted.
+
+    What the shipped surface does say is the other half of honesty: one of those five comparisons
+    is a **disagreement**, and it is printed rather than absorbed."""
+    from reprolith.mcp_server import default_data_dir, load_repository
+
+    summary = load_repository(default_data_dir(), aggregate=True)[0].corroboration()
+    assert summary["overall"]["uncorroborated_certificates"] == 0
     assert run(["corroboration"]) == 0
     printed = capsys.readouterr().out
-    assert "2 of 5 standing certificate(s) in this class have no second engine" in printed
-    assert "an absence, not a pass" in printed
+    assert "no second engine behind them" not in printed
+    assert "4 of 5 engine-independent" in printed

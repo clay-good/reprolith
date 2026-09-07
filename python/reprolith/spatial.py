@@ -824,12 +824,22 @@ class FrontSpeedClaim:
     saying "some function of u" documents nothing, and this class's discipline is that every input
     the number turns on is recorded.
 
-    **A KPP front approaches its asymptotic speed logarithmically in time**, so a finite-time
-    measurement sits a few percent low and the class-default 5% would fail a correct reproduction.
-    That is a property of the model, not a tolerance to be quietly widened: the claim measures the
-    speed over two consecutive windows and reports how much it is still changing between them, so
-    a reader sees whether the front had settled. Set a principled ``tolerance`` with a rationale
-    for the finite-time bias; the default is left alone rather than special-cased.
+    **A measured KPP speed sits a few percent below** ``2√(rD)``, so the class-default 5% would
+    fail a correct reproduction, and the claim measures the speed over two consecutive windows and
+    reports how much it is still changing between them so a reader sees whether the front had
+    settled. Set a principled ``tolerance`` with a rationale; the default is left alone rather than
+    special-cased.
+
+    **Which cause dominates was measured, and it is not the one this docstring first named.** It
+    said the deficit was the front's logarithmic approach to its asymptote. Refining the time step
+    on the self-validation configuration at a fixed window gives 1.9154 at a diffusion number of
+    0.2, 1.9617 at 0.1 and 1.9856 at 0.05 — halving ``dt`` halves the deficit, which is the
+    explicit stepper's own O(dt) error and not a property of the front. scipy's LSODA, integrating
+    the same semi-discrete system essentially exactly in time, measures 2.0100 over the same window
+    (:func:`reprolith.corroboration.corroborate_front_speed`), so at this ``dt`` the two engines
+    disagree by 4.7% and the milestone publishes that disagreement. The logarithmic approach is
+    real and is the smaller term here. A tolerance is still needed; what it is for is now measured
+    rather than attributed.
     """
 
     claim_id: str

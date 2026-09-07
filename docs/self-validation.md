@@ -149,13 +149,12 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
                           as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 42a4a3d8faa9), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 42a4a3d8faa9), sympy-sat 1.14.0
   ode-pkpd            170 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
-  spatial               3 model(s) on reprolith-fd, scipy-lsoda — all engine-independent to 1e-03
-                          as reprolith-fd explicit-forward-euler-finite-difference (rev f05a691b21bc), scipy-lsoda 1.13.1
-                          2 of 5 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
+  spatial               5 model(s) on reprolith-fd, scipy-lsoda — 4 of 5 engine-independent
+                          as reprolith-fd explicit-forward-euler-finite-difference (rev df8cad311c71), scipy-lsoda 1.13.1
   stochastic            3 model(s) on reprolith-ssa, roadrunner-gillespie — all engine-independent within 1.9 combined standard errors, resolving a bias above 6.5% of the mean
                           as reprolith-ssa gillespie-direct-method (rev 0698cfc5d629), roadrunner-gillespie 2.7.0
 
-  overall: 6 of 6 classes re-run on a second engine — 170 claim(s), 29 model(s); 2 standing certificate(s) in those classes have none
+  overall: 6 of 6 classes re-run on a second engine — 170 claim(s), 31 model(s)
 ```
 
 Three things about that output are deliberate.
@@ -280,8 +279,13 @@ the whole catalogue below is reproduced on every commit.
 
 Non-circular by construction: the reference is a mathematical law (a front speed, a dispersion
 relation, a noise law, an attractor theorem, an LP-duality consequence), not a number this engine
-produced. Where a law is only approached asymptotically — the KPP pulled front converges
-logarithmically — the tolerance is a stated, principled override rather than the 5% default.
+produced. Where a measurement cannot reach the law exactly — the KPP front's speed is read from a
+run that is both finite in time and discretized in it — the tolerance is a stated, principled
+override rather than the 5% default. What the override is *for* was corrected once by measuring:
+it was attributed to the front's logarithmic approach, and halving the time step halves the deficit
+(4.2% at a diffusion number of 0.2, 1.9% at 0.1, 0.7% at 0.05), so most of it is the explicit
+stepper. The milestone's cross-engine record says the same thing from the other side — LSODA
+measures 2.0100 over the same window, a 4.7% disagreement, published rather than widened away.
 
 ## Regenerate it
 

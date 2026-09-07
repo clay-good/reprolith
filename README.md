@@ -236,10 +236,15 @@ guessing — just: *does the described model produce the shown result?*
   and 1.0 against a criterion of three — and each is published with the bias it could *not* have
   seen, 6.5%, 5.2% and 1.8% of the mean. The first of those is wider than the 5% that class's own
   verdict passes at, so on that model the second opinion is weaker than the verdict it stands
-  beside, and the record says so. The spatial class's 3 profiles complete the set under scipy's
-  LSODA — its two scalar certificates have no second engine behind them and every surface says so,
-  since `corroborate_profile` re-solves a profile and a decay length is read *off* a run rather
-  than being one — and their 1e-03 is the other number that must not be misread: it is what this class's
+  beside, and the record says so. The spatial class's 5 entries complete the set under scipy's
+  LSODA — its two *scalars* are compared on the quantity each certificate publishes, a fitted decay
+  length and a measured front speed, and the front is the one place in this repository where two
+  engines **disagree**: 1.9154 against 2.0100 over the same window, 4.7% apart, published as a
+  disagreement rather than widened away. Refining the time step walks this side toward the other
+  (4.2% low at a diffusion number of 0.2, 1.9% at 0.1, 0.7% at 0.05), so what the claim's stated
+  tolerance is *for* is the explicit stepper's own error and not, as this project first wrote down,
+  the front's logarithmic approach to its asymptote. The profiles' 1e-03 is the other number that
+  must not be misread: it is what this class's
   explicit stepper costs against an exact integration of the same semi-discrete system, and against
   the continuum solution the same profiles sit 2.0e-05 away — *closer* than the two engines are to
   each other, because the scheme's time and space errors have opposite signs. **All six classes are
