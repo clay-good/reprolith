@@ -98,6 +98,9 @@ for reported profiles and the scalar comparison for the length scales papers sta
   different question with a different answer: on this class's own configuration the run is settled
   to 0.2% and the step is worth 2.4% of a 4.2% deficit, so a reader who had only the first number
   would attribute the whole of it to the front
+- **AND** a speed the time step moves further than the distance to the line it would be judged at
+  abstains rather than publishing whichever side it landed on, since that side is the
+  discretization's answer rather than the model's
 - **AND** a front that has run out of domain abstains, saying so — past the wall the distance
   travelled is the domain's length rather than the model's speed, and reporting that as a front
   that never existed would send a reader after the wrong cause

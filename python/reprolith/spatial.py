@@ -1408,7 +1408,7 @@ def _front_speed(claim: FrontSpeedClaim) -> float | None:
     return (end - start) / (claim.measure_steps * claim.dt)
 
 
-def _front_step_cost(claim: FrontSpeedClaim, speed: float) -> str:
+def _front_step_cost(moved: float | None) -> str:
     """The protocol line's clause for what this claim's time step costs its speed, measured.
 
     Beside the drift, and answering a different question: the drift says how far the front is from
@@ -1416,7 +1416,6 @@ def _front_step_cost(claim: FrontSpeedClaim, speed: float) -> str:
     A reader who has only the drift cannot tell a converged-but-under-resolved measurement from a
     still-converging one, and this class published exactly that confusion for a day.
     """
-    moved = front_step_sensitivity(claim, speed=speed)
     if moved is None:  # pragma: no cover - the halved run fails only where the judged one would
         return (
             ". Halving the time step gives no readable front, so what this step costs is not "
@@ -1431,7 +1430,7 @@ def _front_step_cost(claim: FrontSpeedClaim, speed: float) -> str:
 def _judge_front_speed(claim: FrontSpeedClaim) -> ClaimAssessment:
     """Advance a Fisher-KPP front through two windows and judge the speed between them.
 
-    Three ways this abstains rather than publishing a number, each a case where a speed can be
+    Four ways this abstains rather than publishing a number, each a case where a speed can be
     computed and would mean nothing:
 
     ``the discretization does not run``
@@ -1442,6 +1441,11 @@ def _judge_front_speed(claim: FrontSpeedClaim) -> ClaimAssessment:
         beyond that the wall holds it, and the distance it "travelled" is the distance to the
         wall. A speed measured across that boundary is confidently wrong, which is worse than
         absent, and it is the front-speed analogue of the gradient's fitting window.
+    ``the time step decides the verdict``
+        halving the step moves this speed further than the measurement sits from the line it would
+        be judged at, so which side it fell on is the discretization's answer. The same rule the
+        PK/PD class applies to a grid-dependent metric, and like that one it can only add
+        abstentions.
     """
     def evolve(state: Sequence[float], steps: int) -> list[float]:
         return react_diffuse_1d(
@@ -1499,6 +1503,29 @@ def _judge_front_speed(claim: FrontSpeedClaim) -> ClaimAssessment:
     window = claim.measure_steps * claim.dt
     speed = (middle - start) / window
     drift = abs((end - middle) / window - speed)
+    # The same question the PK/PD class asks of a grid-dependent metric (`_metric_is_established`),
+    # asked of a time step: this speed's own discretization moves it, and where it moves it further
+    # than the distance to the line the claim is judged at, which side it landed on is the step's
+    # answer rather than the model's. Both conditions are required, as there, so this can only turn
+    # a judgment into an abstention and never the reverse. On the milestone's configuration the
+    # step is worth 2.42% and the nearest line is 5.77% away, so the verdict stands; under the
+    # class default it would not, which is the honest reading of a 4.2% deficit judged at 5%.
+    tolerance = claim.tolerance or default_tolerance(
+        ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+    )
+    moved = front_step_sensitivity(claim, speed=speed)
+    error = abs(speed - claim.reported) / abs(claim.reported) if claim.reported else float("inf")
+    nearest = min(
+        abs(error - tolerance.reproduced_within), abs(error - tolerance.partial_within)
+    )
+    if moved is not None and (moved > tolerance.reproduced_within or moved > nearest):
+        return abstain(
+            f"this speed is not established at this time step: halving it moves the speed by "
+            f"{moved:.2%}, and the measurement sits {nearest:.2%} from the nearest line it would "
+            f"be judged at (a pass within {tolerance.reproduced_within:.2%}). Which side of that "
+            "line it fell on is the discretization's answer rather than the model's — run it at a "
+            "smaller step, or state a tolerance wide enough for what the step is worth"
+        )
     assessment = judge_scalar(
         claim_id=claim.claim_id, quantity=claim.quantity,
         source_location=claim.source_location, reported=claim.reported, predicted=speed,
@@ -1514,7 +1541,7 @@ def _judge_front_speed(claim: FrontSpeedClaim) -> ClaimAssessment:
             f"speed of the continuum equation is {claim.analytical_speed:.6g}; over the next "
             f"identical window this speed still changes by {drift:.3e} "
             f"({drift / speed:.2%} of it), which is how far the front is from having settled"
-            + _front_step_cost(claim, speed)
+            + _front_step_cost(moved)
         ),
     )
 

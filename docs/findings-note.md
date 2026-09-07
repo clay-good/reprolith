@@ -5054,6 +5054,21 @@ On the milestone configuration those two numbers are 0.21% and 2.42%, against a 
 deficit to the front's asymptotics, which is exactly the mistake this project made. With both, the
 split is read rather than believed.
 
+And once the number exists, it decides something. A speed the step moves further than the
+measurement sits from the line it would be judged at abstains, exactly as the PK/PD class abstains
+on a grid-dependent metric its sampling could carry across a line. The four cases together say
+something sharper than "the class default is too tight for this claim":
+
+| run | tolerance | error | nearest line | verdict |
+| --- | --- | --- | --- | --- |
+| 10-unit windows | class default 5% | 9.5% | 5.5% away | `partial` — a correct model, missed |
+| 10-unit windows | 10% override | 9.5% | 0.5% away | abstains: the step decides it |
+| 100-unit windows | class default 5% | 4.2% | 0.8% away | abstains: the step decides it |
+| 100-unit windows | 10% override | 4.2% | 5.8% away | `reproduced`, and it is the model's |
+
+So the override is not a wider line, it is **the line far enough away that the discretization
+cannot decide it** — which is a reason a reviewer can check rather than a number somebody chose.
+
 It costs one extra measurement at half the step, and the coarse speed is passed in rather than
 re-measured — the judge is holding it, and recomputing would re-run two full windows to arrive at a
 number already in hand. Where the halved run cannot be read at all — a front that runs into the

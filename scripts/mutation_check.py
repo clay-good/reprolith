@@ -1258,6 +1258,13 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          "    if coarse is None or fine is None or coarse == 0.0:\n        return 0.0"),
         ["tests/test_spatial_front_claim.py"],
     ),
+    (
+        "a front speed the time step could carry across its line is published anyway",
+        "spatial.py",
+        ("    if moved is not None and (moved > tolerance.reproduced_within or moved > nearest):",
+         "    if False:"),
+        ["tests/test_spatial_front_claim.py"],
+    ),
 ]
 
 

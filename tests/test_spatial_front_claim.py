@@ -88,22 +88,38 @@ def test_a_wrong_reported_speed_fails_with_a_stated_cause() -> None:
     assert assessment.root_cause
 
 
-def test_the_finite_time_bias_is_measured_and_is_why_the_override_exists() -> None:
-    """Measured rather than asserted, because the first version of this test asserted it and was
-    wrong. The bias shrinks with run length: over 10-unit windows the measured speed is 9.5% below
-    `2√(rD)`, over 25 it is 5.8%, and over 100 it is 4.2%. So the class-default 5% fails a
-    *correct* reproduction at the shorter runs and passes at the longer ones — which is exactly
-    why the override has to state its reason rather than being a widened number.
+def test_the_override_is_the_line_the_discretization_cannot_decide() -> None:
+    """The four cases together, and they say something sharper than "the default is too tight".
+
+    The measured deficit shrinks with run length — 9.5% below `2√(rD)` over 10-unit windows, 4.2%
+    over 100 — and halving the time step moves the speed by 2.4%. So a verdict is only the model's
+    where the measurement sits further from the line than the step can carry it:
+
+    * short run, class default: 9.5% against lines at 5% and 15%, the nearer 5.5% away — a real
+      `partial`, and a correct model missed at the default;
+    * short run, 10% override: 9.5% against a 10% line, 0.5% away. Which side it fell on is the
+      discretization's answer, so it abstains rather than passing;
+    * long run, class default: 4.2% against a 5% line, 0.8% away — the same abstention, and the
+      one that makes the override necessary rather than merely convenient;
+    * long run, 10% override: 4.2% with the nearest line 5.8% away, which the step cannot reach.
+      Reproduced, and it is the model's.
     """
     short = round(10.0 / _DT)
     at_default = _certify(
         _claim(settle_steps=short, measure_steps=short, tolerance=None)
     ).assessments[0]
-    assert at_default.verdict is not Verdict.REPRODUCED, "a correct model, missed at the default"
-    with_override = _certify(_claim(settle_steps=short, measure_steps=short)).assessments[0]
-    assert with_override.verdict is Verdict.REPRODUCED
-    # And the long run is inside the default, so the override is not load-bearing everywhere.
-    assert _certify(_claim(tolerance=None)).assessments[0].verdict is Verdict.REPRODUCED
+    assert at_default.verdict is Verdict.PARTIAL, "a correct model, missed at the default"
+    assert "0.0947" in at_default.discrepancy
+
+    near_the_line = _certify(_claim(settle_steps=short, measure_steps=short)).assessments[0]
+    assert near_the_line.verdict is Verdict.NOT_EVALUABLE
+    assert "not established at this time step" in near_the_line.root_cause
+
+    long_at_default = _certify(_claim(tolerance=None)).assessments[0]
+    assert long_at_default.verdict is Verdict.NOT_EVALUABLE
+    assert "not established at this time step" in long_at_default.root_cause
+
+    assert _certify(_claim()).assessments[0].verdict is Verdict.REPRODUCED
 
 
 # --- what the certificate records ---------------------------------------------------------------
