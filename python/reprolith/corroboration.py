@@ -788,6 +788,111 @@ def corroborate_front_speed(
     )
 
 
+def corroborate_pattern_wavelength(claim: Any) -> EngineCorroboration:
+    """Re-solve a Turing pattern under LSODA and compare the wavelength each engine's run selects.
+
+    ``claim`` is a :class:`~reprolith.spatial.PatternClaim`; this takes the whole claim rather than
+    its parts because a pattern's answer depends on every one of them — the family and its
+    parameters, the domain, the wall, the seed — and a signature repeating them would be a second
+    place for them to disagree.
+
+    The contrast with :func:`corroborate_front_speed` is the reason this is worth running. A front
+    speed is a *rate* read from a moving feature, and it is sensitive to the time discretization:
+    the two engines differ by 4.7% there. A wavelength is a **selected mode** — a discrete outcome
+    of which perturbation grows fastest and how the nonlinearity saturates it — so it either
+    survives a completely different integrator or it does not, with no gradual disagreement in
+    between. Measured on the Schnakenberg configuration this class self-validates against, both
+    engines select mode 20 and the comparison is exact.
+
+    The usual limit applies and is narrower than for the other classes' second engines: both sides
+    take the same second-order central differences on the same grid, so this separates the **time
+    integration** and not the spatial scheme. What it can say is that the mode is not an artifact
+    of stepping the system explicitly at this ``dt``.
+
+    Needs the ``fba`` or ``corroborate`` extra (scipy).
+    """
+    from .spatial import TURING_KINETICS, _measure_pattern, mode_amplitudes, solver_pin
+
+    numpy, solve_ivp, diags = _scipy_ode()
+    kinetics = TURING_KINETICS[claim.kinetics]
+    # Reprolith's own run first, and every abstention it can reach comes with it: a comparison
+    # against a claim this class declines to measure is a number about nothing.
+    mine = _measure_pattern(claim)
+    if mine.wavelength is None:
+        raise EngineUnavailable(
+            f"this class measures no wavelength for this claim ({mine.reason}), so there is no "
+            "number for a second engine to corroborate"
+        )
+    u_star, v_star = kinetics.steady_state(claim.a, claim.b)
+    n, dx = claim.points, claim.dx
+    main = numpy.full(n, -2.0)
+    if claim.wall == "periodic":
+        # The wrap as a matrix: the corner entries are the two cells that are neighbours only
+        # because the domain closes on itself.
+        operator_shape = diags(
+            [numpy.ones(n - 1), main, numpy.ones(n - 1)], [-1, 0, 1], format="lil"
+        )
+        operator_shape[0, n - 1] = 1.0
+        operator_shape[n - 1, 0] = 1.0
+        base = operator_shape.tocsc()
+    else:
+        main[0] = main[-1] = -1.0
+        base = diags([numpy.ones(n - 1), main, numpy.ones(n - 1)], [-1, 0, 1], format="csc")
+    laplace_u = base * (claim.du / (dx * dx))
+    laplace_v = base * (claim.dv / (dx * dx))
+    seed = numpy.array([
+        claim.seed_amplitude * sum(
+            math.cos(claim.wavenumber(mode) * i * dx) for mode in claim.modes
+        )
+        for i in range(n)
+    ])
+
+    def rhs(_t: float, y: Any) -> Any:
+        u, v = y[:n], y[n:]
+        return numpy.concatenate([
+            laplace_u.dot(u) + kinetics.reaction_u(u, v, claim.a, claim.b),
+            laplace_v.dot(v) + kinetics.reaction_v(u, v, claim.a, claim.b),
+        ])
+
+    duration = claim.dt * claim.steps
+    solution = solve_ivp(
+        rhs,
+        (0.0, duration),
+        numpy.concatenate([u_star + seed, numpy.full(n, v_star)]),
+        method="LSODA",
+        # Looser than the profile comparison's 1e-10 and deliberately so: this is a two-field
+        # nonlinear system over hundreds of points, and what is compared is which *mode* wins —
+        # an integer — rather than a distance whose last digits could come from the tolerance.
+        rtol=1e-8,
+        atol=1e-10,
+        t_eval=[duration],
+    )
+    if not solution.success:
+        raise EngineUnavailable(
+            f"the second engine did not integrate this pattern: {solution.message}; a failed "
+            "reference is not a disagreement about a value and is not published as one"
+        )
+    theirs = [float(value) for value in solution.y[:n, -1]]
+    amplitudes = mode_amplitudes(
+        theirs, length=claim.length, modes=claim.modes, baseline=u_star, wall=claim.wall
+    )
+    their_mode = max(amplitudes, key=lambda mode: amplitudes[mode])
+    pin = solver_pin()
+    # An **exact match**, not a distance, and the difference is this package's own rule: a
+    # wavelength here is `2L/m` for an integer `m`, so the two engines select the same mode or they
+    # do not, with nothing in between. Publishing that agreement as "engine-independent to 0e+00"
+    # would invite reading it as six orders better than the curve classes when it is a different
+    # kind of statement — the same reason `corroborate_attractors` compares discretely.
+    return EngineCorroboration(
+        quantity="Turing pattern wavelength",
+        engines=(pin.engine, SCIPY_ODE_ENGINE),
+        distance=0.0 if their_mode == mine.mode else 1.0,
+        stable=their_mode == mine.mode,
+        versions=(_reprolith_build(pin), _scipy_version()),
+        comparison="exact-match",
+    )
+
+
 def _scalar_agreement(
     *, quantity: str, mine: float, theirs: float, engine: EnginePin, rel_tol: float
 ) -> EngineCorroboration:

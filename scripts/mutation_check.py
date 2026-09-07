@@ -1225,6 +1225,26 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          "            covered = len(record)"),
         ["tests/test_corroboration_surface.py"],
     ),
+    (
+        "a scalar corroboration reports agreement whatever the two engines returned",
+        "corroboration.py",
+        ("        distance=0.0 if scale == 0.0 else abs(mine - theirs) / scale,",
+         "        distance=0.0,"),
+        ["tests/test_spatial_corroboration.py"],
+    ),
+    (
+        "a discrete mode match is published on the curve classes' distance scale",
+        "corroboration.py",
+        ('        versions=(_reprolith_build(pin), _scipy_version()),\n        comparison="exact-match",\n    )',
+         "        versions=(_reprolith_build(pin), _scipy_version()),\n    )"),
+        ["tests/test_spatial_corroboration.py"],
+    ),
+    (
+        "a claim this class abstains on is corroborated against a number it never produced",
+        "corroboration.py",
+        ("    if mine.wavelength is None:", "    if False:"),
+        ["tests/test_spatial_corroboration.py"],
+    ),
 ]
 
 

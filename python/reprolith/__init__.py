@@ -52,6 +52,7 @@ from .corroboration import (
     corroborate_front_speed,
     corroborate_gradient_length,
     corroborate_objective,
+    corroborate_pattern_wavelength,
     corroborate_profile,
 )
 from .decisions import RecordedDecision, decisions_document, load_decisions
@@ -499,6 +500,7 @@ __all__ = [
     "corroborate_attractors",
     "corroborate_fixed_points",
     "corroborate_objective",
+    "corroborate_pattern_wavelength",
     "corroborate_ensemble_mean",
     "corroborate_front_speed",
     "corroborate_gradient_length",

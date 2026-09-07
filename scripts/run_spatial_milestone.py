@@ -80,7 +80,11 @@ _SYSTEMS = {
 #: stability predicts the mode that grows fastest, and the saturated nonlinear pattern selects a
 #: different one (21 against 20 on the configuration this class self-validates). So there is no
 #: independent closed form for the quantity the certificate judges, and a blind entry would either
-#: score the class against the wrong number or check the solver against itself.
+#: score the class against the wrong number or check the solver against itself. It is not
+#: unchecked: `corroborate_pattern_wavelength` re-runs it under scipy's LSODA and both engines
+#: select mode 20 (`tests/test_spatial_corroboration.py`). That is a second *integrator* and not a
+#: second ground truth — they share this grid and this stencil — which is why it corroborates the
+#: claim without qualifying as the blind reference an entry here would need.
 _GRADIENT_D, _GRADIENT_K, _GRADIENT_SOURCE = 1.0, 0.25, 100.0
 _GRADIENT_DX = 0.1
 _FRONT_D, _FRONT_R = 1.0, 1.0

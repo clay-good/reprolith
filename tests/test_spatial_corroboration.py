@@ -248,3 +248,45 @@ def test_every_milestone_entry_carries_a_corroboration_record() -> None:
         "the committed record says the two engines agree about the front speed; re-run "
         "scripts/run_spatial_milestone.py, and if they now do, say so here"
     )
+
+
+def test_the_selected_wavelength_survives_a_different_integrator() -> None:
+    """The contrast that makes this worth running, beside the front's 4.7% disagreement.
+
+    A front speed is a *rate* read from a moving feature, so the time discretization moves it. A
+    wavelength is a **selected mode** — which perturbation grows fastest, and how the nonlinearity
+    saturates it — so it either survives a different integrator or it does not, with nothing in
+    between. Both engines select mode 20 here, and the comparison is published as an exact match
+    rather than as a distance of zero, which would read as six orders better than the curve
+    classes when it is a different kind of statement.
+    """
+    from reprolith import PatternClaim
+    from reprolith.corroboration import corroborate_pattern_wavelength
+
+    length, dx = 160.0, 0.5
+    claim = PatternClaim(
+        claim_id="stripes", quantity="Turing pattern wavelength", reported=16.0,
+        source_location="closed-form", kinetics="schnakenberg", a=0.1, b=0.9,
+        du=1.0, dv=40.0, length=length, points=int(round(length / dx)) + 1,
+        dt=0.0015, steps=6000, confirm_steps=2000,
+    )
+    result = corroborate_pattern_wavelength(claim)
+    assert result.comparison == "exact-match"
+    assert result.stable
+    assert result.distance == 0.0
+    assert result.engines == ("reprolith-fd", "scipy-lsoda")
+
+
+def test_a_claim_this_class_declines_to_measure_has_nothing_to_corroborate() -> None:
+    """A comparison against a claim Reprolith itself abstains on would be a number about nothing,
+    so it refuses by name rather than integrating anything."""
+    from reprolith import PatternClaim
+    from reprolith.corroboration import EngineUnavailable, corroborate_pattern_wavelength
+
+    unresolvable = PatternClaim(
+        claim_id="short", quantity="Turing pattern wavelength", reported=16.0,
+        source_location="closed-form", kinetics="schnakenberg", a=0.1, b=0.9,
+        du=1.0, dv=40.0, length=40.0, points=201, dt=0.0002, steps=100, confirm_steps=100,
+    )
+    with pytest.raises(EngineUnavailable, match="measures no wavelength"):
+        corroborate_pattern_wavelength(unresolvable)

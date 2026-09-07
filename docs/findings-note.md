@@ -5016,3 +5016,26 @@ the opposite of what a corroboration surface is for. They check the two directio
 row is inside its criterion, a row marked as a disagreement is outside it — and the one
 disagreement is named rather than skipped by a predicate, so a second one fails until somebody says
 so.
+
+
+## What survives a different integrator, and what does not
+
+The wavelength claim went through the same second engine that had just disagreed about the front
+speed, and it came back **exactly** equal: both engines select mode 20 on the Schnakenberg
+configuration, so the wavelength is 16.0 either way.
+
+The contrast is the finding, and it is a fact about the two quantities rather than about the
+solvers. A front speed is a *rate* read from a moving feature: the time discretization moves the
+feature, and the two engines differ by 4.7%. A wavelength is a *selected mode* — which perturbation
+grows fastest, and how the nonlinearity saturates it — so it is discrete and structurally stable:
+either a different integrator selects the same mode or it selects another one, with nothing in
+between. It selected the same one, under both walls.
+
+So the comparison is published as an **exact match** rather than as a distance of zero, following
+this package's own rule for the discrete classes: "engine-independent to 0e+00" reads as six orders
+better than the curve classes when it is a different kind of statement entirely.
+
+What this does not do is give the wavelength claim a blind milestone entry. Both sides take the
+same second-order central differences on the same grid, so LSODA is a second *integrator* and not
+a second ground truth — the milestone script says so where a reader would look for the missing
+entry.
