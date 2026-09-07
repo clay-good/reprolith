@@ -250,3 +250,37 @@ def test_the_page_says_what_it_is_before_what_it_disclaims() -> None:
     escaped = _html.escape(Scope().human)
     assert escaped in page
     assert page.index("published under this scope statement") < page.index(escaped)
+
+
+def test_every_committed_certificate_has_the_badge_its_own_content_renders() -> None:
+    """The one artifact designed to be embedded where nobody will check it.
+
+    `render_badge` existed for a long while with exactly one `.svg` committed, nothing producing
+    them, and that one stale: it read `partially-reproduced` where its certificate had come to say
+    `partially-reproduced (gaps)`. A published badge that understates its certificate is the silent
+    green this capability exists to prevent, so every certificate has one and every one is exactly
+    what its own content renders.
+    """
+    import json
+    from pathlib import Path
+
+    from reprolith import certificate_from_content, render_badge
+
+    datasets = Path(__file__).parent.parent / "datasets"
+    certificates = sorted(datasets.glob("**/milestone/certificates/*.json"))
+    assert certificates, "no committed certificates; this check would pass vacuously"
+    for path in certificates:
+        badge = path.with_suffix(".svg")
+        assert badge.is_file(), f"{path.name} has no badge; run scripts/build_registry.py"
+        certificate = certificate_from_content(json.loads(path.read_text(encoding="utf-8")))
+        assert badge.read_text(encoding="utf-8") == render_badge(certificate), (
+            f"{badge.relative_to(datasets)} is not what its certificate renders; re-run "
+            "scripts/build_registry.py"
+        )
+    # And no badge without a certificate: a withdrawn result must not leave its badge behind,
+    # which is what `prune_certificate_directory` exists for.
+    orphans = [
+        path for path in datasets.glob("**/milestone/certificates/*.svg")
+        if not path.with_suffix(".json").is_file()
+    ]
+    assert orphans == [], orphans

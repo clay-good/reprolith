@@ -732,6 +732,14 @@ on every call rather than stored beside them, so it cannot drift from what it de
 question asked by three claims about one solver limitation is one item with three dependents
 rather than three items you answer three times.
 
+Every published certificate also has an **embeddable badge** beside it — `<accession>.svg` next to
+`<accession>.json` — showing that certificate's own verdict, including the qualification: the
+metformin badge reads `partially-reproduced (gaps)` and not `partially-reproduced`. They are
+written from the certificates on every registry build and checked against them in CI, because a
+badge is the one artifact designed to be embedded where nobody will look at the certificate behind
+it. For a long while exactly one existed, nothing produced it, and it had gone stale in precisely
+that direction.
+
 The published [registry page](datasets/registry.html) carries the same two lists, beside the
 blind track record and the cross-engine corroboration, derived by the same function — so what a browser
 sees the whole set resting on and what `reprolith verification-queue` prints cannot disagree. Each

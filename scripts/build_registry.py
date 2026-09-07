@@ -5,7 +5,18 @@ Aggregates the walkable milestone certificates of all six model classes — PK/P
 kinetic, logical, stochastic, and spatial — into one browsable HTML page via
 `reprolith.render_registry` (spec: certificate-publication, "Every certificate is publicly
 browsable"), with a blind self-validation summary banner. Reads only committed JSON, so it needs no
-extras and no network. Writes `datasets/registry.html`. Run from the repo root:
+extras and no network.
+
+Writes `datasets/registry.html`, and an **embeddable badge** beside every certificate it publishes
+(spec: certificate-publication, "Embeddable status badge"). The badge was half-built for a long
+while: `render_badge` existed, exactly one certificate had an `.svg` beside it, nothing produced
+them, and that one had gone stale — it read `partially-reproduced` where its own certificate now
+says `partially-reproduced (gaps)`. A published badge that understates its certificate is the
+"silent green" this capability exists to prevent, in the one artifact designed to be embedded
+somewhere nobody will check. They are written from the certificate on every build now, and
+`tests/test_registry.py` holds each to being exactly what `render_badge` returns for its sibling.
+
+Run from the repo root:
 
     python scripts/build_registry.py
 """
@@ -15,7 +26,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from reprolith import certificate_digest, certificate_from_content, render_registry
+from reprolith import (
+    certificate_digest,
+    certificate_from_content,
+    render_badge,
+    render_registry,
+)
 from reprolith.mcp_server import (
     milestone_agreement_reports,
     milestone_certificate_dirs,
@@ -70,6 +86,11 @@ def collect() -> list[tuple[str, object]]:
                 continue  # the same certificate committed twice under one class — publish it once
             seen[digest] = model_class
             entries.append((model_class, certificate))
+            # The embeddable badge, beside the certificate it describes and named for it. Written
+            # here rather than in the six milestone scripts because this is the one place that
+            # walks every published certificate, and six copies of "write the badge" is how five
+            # of them end up not having it — which is the state this found.
+            path.with_suffix(".svg").write_text(render_badge(certificate), encoding="utf-8")
     return entries
 
 
@@ -103,6 +124,7 @@ def main() -> None:
     for model_class, _ in entries:
         by_class[model_class] = by_class.get(model_class, 0) + 1
     print(f"wrote {out} — {len(entries)} certificates: {by_class}")
+    print(f"wrote {len(entries)} badges beside their certificates")
 
 
 if __name__ == "__main__":

@@ -5122,3 +5122,19 @@ The mutation checker caught the first version of the test for it. That test read
 certificates, which carry the clause whatever the code does — so removing the guard left every
 assertion passing. **A test that reads the artifacts does not guard the code that writes them.**
 The check certifies a claim live now, and the mutation dies.
+
+
+## One badge, stale, and thirty-four that did not exist
+
+`render_badge` has been in this package for a long time, with tests, and exactly one `.svg` was
+committed beside a certificate. Nothing produced it. And it had gone stale in the direction that
+matters: it read `partially-reproduced` where its own certificate now says `partially-reproduced
+(gaps)` — a published artifact understating its own verdict, in the one form designed to be
+embedded somewhere nobody will look at the certificate behind it.
+
+The registry build writes one beside every certificate now, from that certificate's content, and a
+test holds each to being exactly what `render_badge` returns for its sibling — plus the other
+direction, that no badge outlives the certificate it describes. Written from the registry builder
+rather than from the six milestone scripts, because that is the one place that walks every
+published certificate, and six copies of "write the badge" is how five of them end up not having
+it. Which is the state this found.

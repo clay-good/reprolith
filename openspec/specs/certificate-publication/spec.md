@@ -107,6 +107,16 @@ glance and links to the full certificate.
 - **THEN** the badge reflects the new verdict, and the prior verdict remains retrievable through
   the certificate history
 
+#### Scenario: Every published certificate has one, and it is what that certificate renders
+
+- **WHEN** the registry is built
+- **THEN** a badge is written beside every certificate it publishes, from that certificate's own
+  content, and a badge left behind by a withdrawn certificate is removed with it
+- **AND** a committed badge that is not what its certificate renders fails the build's checks,
+  because a badge is the one artifact designed to be embedded where nobody will look at the
+  certificate behind it — a stale one understating its own verdict is the silent green this
+  capability exists to prevent
+
 ### Requirement: No silent green
 
 A badge or registry entry SHALL never present a qualified or partial result as a clean success,
