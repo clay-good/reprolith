@@ -52,12 +52,12 @@ def test_every_certificate_is_checked_against_a_tool_mathematics_or_a_publicatio
         assert len(kinds) == 1, f"{name} mixes reference kinds: {sorted(kinds)}"
         by_kind[kinds.pop()].append(name)
 
-    assert len(sum(by_kind.values(), [])) == 35
+    assert len(sum(by_kind.values(), [])) == 36
     assert len(by_kind["tool"]) == 22       # COBRApy 7, libRoadRunner 6, CANA 9
-    # Three stochastic, three spatial profiles, and the spatial class's two scalars — a decay
-    # length against sqrt(D/k) and a front speed against 2*sqrt(rD), which are mathematics for
-    # the same reason the Gaussian is.
-    assert len(by_kind["mathematics"]) == 8
+    # Four stochastic (three means and a first-passage time), three spatial profiles, and the
+    # spatial class's two scalars — a decay length against sqrt(D/k) and a front speed against
+    # 2*sqrt(rD), which are mathematics for the same reason the Gaussian is.
+    assert len(by_kind["mathematics"]) == 9
     # Five against a published number: the four models the metformin paper deposited, and the
     # E. coli core growth rate its own distributing publication reports.
     assert len(by_kind["publication"]) == 5, sorted(by_kind["publication"])

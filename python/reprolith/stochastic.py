@@ -345,6 +345,63 @@ class StochasticClaim:
     shortfall: Attribution | None = field(default=None)
 
 
+@dataclass(frozen=True)
+class ExtinctionTimeClaim:
+    """A published **mean time to extinction**: how long a small population survives.
+
+    The class's third reproduction target, and the one that is a *first-passage* observable rather
+    than a state at a fixed time. It is what population-dynamics and resistance papers report — how
+    long a small population, or a drug-resistant clone, persists before its last individual is
+    gone — and it is a number a paper prints, so it is reachable without any figure.
+
+    The protocol is the claim's, exactly as it is for a mean count: ``trajectories`` and ``seed``
+    make the run byte-reproducible, and ``max_time`` bounds each trajectory. That bound is part of
+    the claim rather than a hidden default because it decides what the number *means*: a run that
+    reaches it has observed no extinction, and :func:`time_to_extinction` returns infinity for it
+    rather than the cap.
+    """
+
+    claim_id: str
+    quantity: str
+    species: int
+    reported_mean: float
+    source_location: str
+    trajectories: int
+    seed: int
+    #: The hard cap on each trajectory. A run that reaches it observed no extinction, and the claim
+    #: abstains rather than averaging over the ones that finished — see :func:`_judge_extinction`.
+    max_time: float
+    tolerance: Tolerance | None = None
+    assumption_qualified: bool = True
+    shortfall: Attribution | None = field(default=None)
+
+    def __post_init__(self) -> None:
+        if self.trajectories < 2:
+            raise ValueError(
+                f"claim {self.claim_id!r} asks for {self.trajectories} trajectories: a mean "
+                "first-passage time needs an ensemble, and its standard error needs at least two"
+            )
+        if self.max_time <= 0.0:
+            raise ValueError(
+                f"claim {self.claim_id!r} caps each run at {self.max_time!r}: a run that cannot "
+                "advance observes no extinction"
+            )
+
+
+#: The sampling assumption's basis, shared by every claim this class qualifies. Identical wording
+#: on purpose: a verification-queue item is keyed by its question, so one sampling limitation asked
+#: by several claims is one item with several dependents rather than one question each. The
+#: per-claim number lives on the protocol line, where the rest of that run's facts already are —
+#: the spatial class learned that the expensive way.
+_SAMPLING_BASIS = (
+    "a finite ensemble's mean differs from the model's true mean by sampling noise of a size the "
+    "trajectory count sets, so the verdict moves with the count and the seed; both are pinned here "
+    "to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this "
+    "claim's protocol line reports the mean's standard error as a share of the reported value, "
+    "against the threshold it is judged at"
+)
+
+
 def _sampling_cost(claim: StochasticClaim, variance: float, trajectories: int) -> str:
     """What this ensemble's size buys the claim, as a clause for the protocol line.
 
@@ -547,6 +604,87 @@ def solver_pin() -> EnginePin:
     )
 
 
+def _judge_extinction(
+    claim: ExtinctionTimeClaim,
+    n_species: int,
+    reactions: Sequence[Reaction],
+    initial: Sequence[int],
+) -> tuple[ClaimAssessment, float]:
+    """Run the claim's ensemble of first passages and judge the mean, or say why it cannot be.
+
+    Returns the assessment and the ensemble's variance, which the protocol line reports as the
+    sampling cost exactly as it does for a mean count.
+
+    Two ways this abstains rather than publishing a number:
+
+    ``a run observed no extinction``
+        :func:`time_to_extinction` returns infinity for a trajectory that hit ``max_time`` or an
+        absorbing state, and a mean over the finished ones alone is the mean of a *conditioned*
+        sample — systematically short, and short by an amount nobody can bound from the sample
+        itself. Averaging the finite ones is how a cap silently becomes the answer, which is the
+        defect the infinity was introduced to prevent; this refuses to average past it and says how
+        many runs did not finish.
+    ``the ensemble cannot resolve the claim``
+        the same rule the mean count is held to: when the standard error is more than half the pass
+        threshold, a correct model routinely misses and a wrong one routinely passes, so the honest
+        verdict is that this ensemble cannot decide it.
+    """
+    rng = random.Random(claim.seed)
+    times = [
+        time_to_extinction(
+            n_species, reactions, initial,
+            species=claim.species, rng=rng, max_time=claim.max_time,
+        )
+        for _ in range(claim.trajectories)
+    ]
+    censored = sum(1 for value in times if not math.isfinite(value))
+    if censored:
+        return (
+            not_evaluable(
+                claim_id=claim.claim_id,
+                quantity=claim.quantity,
+                source_location=claim.source_location,
+                reason=(
+                    f"{censored} of {claim.trajectories} trajectories reached the "
+                    f"{claim.max_time!r} cap without the species going extinct, so this ensemble "
+                    "observed no extinction time for them. A mean over the runs that finished is "
+                    "the mean of a conditioned sample and is short by an amount the sample cannot "
+                    "bound — run longer, or state a cap the model actually reaches"
+                ),
+                reference_kind=ReferenceKind.NUMERIC,
+            ),
+            0.0,
+        )
+    mean = sum(times) / len(times)
+    variance = sum((value - mean) ** 2 for value in times) / (len(times) - 1)
+    reason = unresolvable_ensemble_reason(
+        reported_mean=claim.reported_mean, variance=variance, trajectories=len(times),
+        observed_mean=mean, tolerance=claim.tolerance,
+    )
+    if reason is not None:
+        return (
+            not_evaluable(
+                claim_id=claim.claim_id, quantity=claim.quantity,
+                source_location=claim.source_location, reason=reason,
+                reference_kind=ReferenceKind.NUMERIC,
+            ),
+            variance,
+        )
+    return (
+        judge_scalar(
+            claim_id=claim.claim_id,
+            quantity=claim.quantity,
+            source_location=claim.source_location,
+            reported=claim.reported_mean,
+            predicted=mean,
+            tolerance=claim.tolerance,
+            attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
+            assumption_qualified=claim.assumption_qualified,
+        ),
+        variance,
+    )
+
+
 def certify_stochastic(
     *,
     paper: PaperIdentity,
@@ -554,7 +692,8 @@ def certify_stochastic(
     n_species: int,
     reactions: Sequence[Reaction],
     initial: Sequence[int],
-    claims: Iterable[StochasticClaim],
+    claims: Iterable[StochasticClaim] = (),
+    extinctions: Iterable[ExtinctionTimeClaim] = (),
     assumptions: Iterable[Assumption] = (),
 ) -> Certificate:
     """Run each claim's pinned ensemble, judge its mean, and assemble the certificate.
@@ -640,14 +779,7 @@ def certify_stochastic(
                 "number the paper's own run produced"
             ),
             chosen=_protocol(claim),
-            basis=(
-                "a finite ensemble's mean differs from the model's true mean by sampling noise of "
-                "a size the trajectory count sets, so the verdict moves with the count and the "
-                "seed; both are pinned here to make it byte-reproducible. How far it moves is "
-                "measured rather than left as a caveat: this claim's protocol line reports the "
-                "mean's standard error as a share of the reported value, against the threshold it "
-                "is judged at"
-            ),
+            basis=_SAMPLING_BASIS,
             load_bearing=True,
             alternatives=("a different seed", "a larger ensemble"),
             # The ensemble is Reprolith's sampling choice, not anything the paper
@@ -657,9 +789,68 @@ def certify_stochastic(
         for claim in judged
         if claim.assumption_qualified
     )
+    # The first-passage claims, judged by the same rules and carrying the same assumption: the
+    # ensemble is Reprolith's, and its cost is measured on the protocol line rather than asserted.
+    extinction_claims = tuple(extinctions)
+    extinction_sampling: list[Assumption] = []
+    for extinction in extinction_claims:
+        assessment, variance = _judge_extinction(extinction, n_species, reactions, initial)
+        assessments.append(
+            replace(
+                assessment,
+                protocol=_extinction_protocol(extinction)
+                + _extinction_cost(extinction, variance),
+            )
+        )
+        if assessment.assumption_qualified:
+            extinction_sampling.append(
+                Assumption(
+                    id=f"ssa-sampling-{extinction.claim_id}",
+                    description=(
+                        "the mean extinction time judged here is the average of an ensemble "
+                        "Reprolith sampled, not a number the paper's own run produced"
+                    ),
+                    chosen=_extinction_protocol(extinction),
+                    basis=_SAMPLING_BASIS,
+                    load_bearing=True,
+                    alternatives=("a different seed", "a larger ensemble"),
+                    author_can_close=False,
+                )
+            )
+    if not assessments:
+        raise ValueError(
+            "a stochastic certificate needs at least one claim: certifying a paper this class "
+            "judged nothing of would publish a verdict about no evidence"
+        )
     return build_certificate(
         paper=paper, engine_pin=engine_pin,
-        assessments=assessments, assumptions=(*assumptions, *sampling),
+        assessments=assessments,
+        assumptions=(*assumptions, *sampling, *extinction_sampling),
+    )
+
+
+def _extinction_protocol(claim: ExtinctionTimeClaim) -> str:
+    """The run behind a first-passage verdict, in the form a reader can re-run."""
+    return (
+        f"SSA first passage: {claim.trajectories} trajectories, seed {claim.seed}, "
+        f"species[{claim.species}] to zero, each capped at t={claim.max_time!r}"
+    )
+
+
+def _extinction_cost(claim: ExtinctionTimeClaim, variance: float) -> str:
+    """What this ensemble's size buys the first-passage claim, measured as it is for a mean."""
+    measured = ensemble_headroom(
+        reported_mean=claim.reported_mean,
+        variance=variance,
+        trajectories=claim.trajectories,
+        tolerance=claim.tolerance,
+    )
+    if measured is None:
+        return ""
+    relative_sem, threshold = measured
+    return (
+        f" (sampling noise: the mean's standard error is {relative_sem:.2%} of the reported "
+        f"value, against a {threshold:.0%} pass threshold)"
     )
 
 

@@ -9,7 +9,7 @@ reproduced, partially, or not — for each result, with the reason.
 
 That is what it is *for*, and it is worth being exact about how much of it is done today.
 
-Of the thirty-five published certificates, **four** check a reconstruction against numbers read
+Of the thirty-six published certificates, **four** check a reconstruction against numbers read
 from one paper's own tables — one for each model that paper deposited. (A fifth is checked against
 a published number too, and the count below says which.) Between them they carry **one hundred and
 seventy claims**,
@@ -635,8 +635,18 @@ qualified and its steady-state claim is not.
 run is a random sample, so the reproducible result is a distribution. An exact, pure-Python
 Gillespie simulator (deterministic under a pinned seed) feeds the same distributional oracle the
 population figures use, and the class is self-validated non-circularly against closed-form results —
-the immigration-death process's Poisson stationary mean and variance and a reversible reaction's
-binomial equilibrium — with a 3/3 [milestone blind run](datasets/stochastic/milestone/).
+the immigration-death process's Poisson stationary mean and variance, a reversible reaction's
+binomial equilibrium, and a pure death process's **mean time to extinction** (`H(n₀)/k`) — with a
+4/4 [milestone blind run](datasets/stochastic/milestone/).
+
+That last one is a *first-passage* claim rather than a state at a fixed time: how long a small
+population, or a drug-resistant clone, survives before its last individual is gone. It is the one
+place this class refuses to average: a trajectory that reaches its cap without going extinct has
+observed no extinction time at all, so the claim abstains rather than taking the mean of the runs
+that finished — which is the mean of a conditioned sample, short by an amount the sample itself
+cannot bound. And it is the class's one certificate with no second engine behind it, since
+libRoadRunner's Gillespie gives a mean at a time rather than a first passage; every surface says
+so rather than counting three corroborated out of four as a clean sweep.
 
 **Population figures** — a median with outer percentiles across a virtual population, which is how
 a large slice of the PK/PD and QSP literature reports its results — are judged by the same

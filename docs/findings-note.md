@@ -5184,3 +5184,36 @@ is a couple of LPs per reaction plus one per gene, which is 0.8s on this 95-reac
 on the 1226-reaction iEK1008, so the genome-scale set would put half an hour on a script that must
 be re-run after any change to the solver, the oracle or the verdict rule. What is published is what
 a reader can check quickly; what the rest would cost is a measurement rather than a silence.
+
+
+## The first-passage claim, and two guards that caught it on the way in
+
+`time_to_extinction` has been in this package with its censoring semantics carefully worked out —
+a trajectory that reaches its cap returns infinity rather than the cap, because returning `t` made
+a censored run indistinguishable from a first passage and a cap silently became the answer. No
+claim type could certify one. So the quantity population-dynamics and resistance papers report —
+how long a small population, or a drug-resistant clone, survives — was implemented and unreachable,
+the same shape as the Turing wavelength and `judge_attractor_set` before it.
+
+`ExtinctionTimeClaim` certifies it, against closed-form ground truth that needs no external tool: a
+pure death process leaves the mean first passage to zero at `H(n₀)/k`. The milestone is 4/4 now,
+and the new entry reproduces to 1.6% with the ensemble's own noise measured at 1.2%.
+
+It is the one claim in this class that refuses to average. An ensemble in which any trajectory
+reached the cap without going extinct abstains, because a mean over the runs that finished is the
+mean of a *conditioned* sample — short by an amount the sample itself cannot bound. That is the
+verdict-level counterpart of the infinity the sampler already returned, and without it the same
+defect would have come back one layer up.
+
+Two of this repository's own guards caught the change as it landed, which is the part worth
+recording:
+
+- The **loop-note audit** refused a citation quote that had stopped being unique. A note evidencing
+  the finite-ensemble-sampling failure mode quoted a line that my new judge duplicated, and the
+  audit's rule — a quote matching more than one line is satisfied by a line it does not cite — fired
+  immediately. It is the same rule added to the mutation checker this morning, in the place it was
+  invented.
+- The **corroboration shortfall** rendering went live again, by a different route than the one it
+  was written for. libRoadRunner's Gillespie gives a mean at a time, not a first passage, so this
+  entry has no second engine and the surface reports "1 of 4 standing certificates in this class
+  have no second engine behind them" rather than three corroborated out of four reading as a sweep.

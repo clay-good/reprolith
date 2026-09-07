@@ -92,6 +92,16 @@ distributional comparison, so a stochastic verdict is judged honestly against sa
 - **THEN** the oracle simulates the pinned ensemble, derives that statistic, and compares it to the
   reported value within a declared tolerance wide enough to absorb finite-sample noise
 
+#### Scenario: First-passage reproduction
+
+- **WHEN** a claim is a reported mean time to extinction — the first passage of a species to zero
+- **THEN** the oracle runs the claim's pinned ensemble of first passages, judges the mean by the
+  shared scalar comparison, and records the cap each trajectory ran under as part of the protocol,
+  since a cap decides what the number means
+- **AND** an ensemble in which any trajectory reached that cap without the species going extinct
+  abstains, because a mean over the trajectories that finished is the mean of a conditioned sample
+  and is short by an amount the sample itself cannot bound
+
 #### Scenario: Distribution reproduction
 
 - **WHEN** a claim is a reported distribution or percentile envelope of a species over time

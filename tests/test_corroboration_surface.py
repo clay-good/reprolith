@@ -280,21 +280,23 @@ def test_a_leftover_record_is_not_reported_as_a_negative_absence() -> None:
     assert summary["overall"]["uncorroborated_certificates"] == 0
 
 
-def test_the_shipped_repository_has_no_certificate_without_a_second_engine(capsys) -> None:
-    """The live instance this rendering was written for lasted one session: the spatial class's
-    two scalars had no second engine, and `corroborate_gradient_length` and
-    `corroborate_front_speed` gave them one. So what is live here is the *absence of a shortfall*,
-    and the rendering itself is exercised on constructed records above — a repository where
-    nothing is missing cannot exercise it, and the day a class loses an engine is the wrong time
-    to find out the path rotted.
+def test_the_shipped_repository_names_the_certificate_with_no_second_engine(capsys) -> None:
+    """Live again, and by a different route each time — which is the argument for the rendering.
 
-    What the shipped surface does say is the other half of honesty: one of those five comparisons
-    is a **disagreement**, and it is printed rather than absorbed."""
+    It was written for the spatial class's two scalars; `corroborate_gradient_length` and
+    `corroborate_front_speed` closed that within a session. The stochastic class's first-passage
+    entry re-opened it: libRoadRunner's Gillespie gives a mean at a time, not a first passage, so
+    one of that class's four certificates has no second engine behind it and the surface says so
+    rather than reporting "3 model(s) — all engine-independent" over four.
+
+    The other half of honesty is here too: one of the spatial comparisons is a **disagreement**,
+    printed rather than absorbed."""
     from reprolith.mcp_server import default_data_dir, load_repository
 
     summary = load_repository(default_data_dir(), aggregate=True)[0].corroboration()
-    assert summary["overall"]["uncorroborated_certificates"] == 0
+    assert summary["overall"]["uncorroborated_certificates"] == 1
     assert run(["corroboration"]) == 0
     printed = capsys.readouterr().out
-    assert "no second engine behind them" not in printed
+    assert "1 of 4 standing certificate(s) in this class have no second engine" in printed
+    assert "an absence, not a pass" in printed
     assert "4 of 5 engine-independent" in printed

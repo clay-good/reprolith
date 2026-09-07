@@ -11,7 +11,12 @@ import json
 from pathlib import Path
 
 _MILESTONE = Path(__file__).parent.parent / "datasets" / "stochastic" / "milestone"
-_EXPECTED = {"immigration_death_10", "immigration_death_4", "reversible_isomerization"}
+#: The three summary-statistic entries and the first-passage one. Every certificate in this class
+#: is `partially-reproduced` for the same reason — the ensemble is Reprolith's, so no verdict here
+#: is unqualified — which is why the split matters less than it does for the spatial class.
+_MEANS = {"immigration_death_10", "immigration_death_4", "reversible_isomerization"}
+_EXTINCTION = {"death_extinction_time"}
+_EXPECTED = _MEANS | _EXTINCTION
 
 
 def test_agreement_report_shows_a_blind_full_agreement() -> None:
@@ -44,3 +49,23 @@ def test_the_catalog_recorded_every_entry_as_a_certified_stochastic_model() -> N
     for entry in entries:
         assert entry["model_class"] == "stochastic"
         assert entry["state"] == "certified"
+
+
+def test_the_first_passage_entry_certifies_a_mean_extinction_time() -> None:
+    """The class's fourth entry and its first non-summary-statistic one: a pure death process
+    leaves the mean time to extinction at `H(n0)/k`, which is closed-form ground truth needing no
+    external tool. `time_to_extinction` had been implemented, with its censoring semantics worked
+    out, and unreachable from any certificate."""
+    (key,) = _EXTINCTION
+    content = json.loads((_MILESTONE / "certificates" / f"{key}.json").read_text(encoding="utf-8"))
+    (assessment,) = content["assessments"]
+    assert assessment["quantity"] == "mean time to extinction"
+    assert assessment["verdict"] == "reproduced"
+    # The cap each trajectory ran under is part of the protocol, because it decides what the
+    # number means: a run that reaches it observed no extinction at all.
+    assert "capped at t=" in assessment["protocol"]
+    assert "the mean's standard error is" in assessment["protocol"]
+    # And no second engine stands behind it, which the corroboration surface reports rather than
+    # counting it among the corroborated three.
+    corroboration = json.loads((_MILESTONE / "corroboration.json").read_text(encoding="utf-8"))
+    assert key not in corroboration

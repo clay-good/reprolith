@@ -10,9 +10,10 @@ results. It gets better in two ways, and **both need people who know the science
 
    **`reprolith verification-queue` is the list.** One command, every standing certificate, ranked
    by how many published results rest on each value — and split, because some of them are not
-   waiting on you: three of the seven on today's repository are limits of Reprolith's own engine
-   that no wording in any paper clears, and they say so under their own heading. The four under
-   *awaiting expert review* are the ones your judgment settles. That split moves as the engine
+   waiting on you: half of today's are limits of Reprolith's own engine that no wording in any
+   paper clears, and they say so under their own heading. The rest, under *awaiting expert
+   review*, are the ones your judgment settles — run the command for the current split rather than
+   trusting a number written here, which has gone stale twice. That split moves as the engine
    changes, and it moved on 2026-09-06: a spatial claim can carry the boundary its source states,
    so "which wall did this paper use?" stopped being a limit of the solver and became a question
    somebody can answer. Each carries the question, what

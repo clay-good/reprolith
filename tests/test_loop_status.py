@@ -175,8 +175,8 @@ def test_standing_counts_what_is_published_and_says_it_is_not_a_record_of_a_run(
 
     query, _ = load_repository(default_data_dir(), aggregate=True)
     status = query.loop_status()
-    assert status["standing"]["certificates"] == 35
-    assert sum(status["standing"]["by_class"].values()) == 35
+    assert status["standing"]["certificates"] == 36
+    assert sum(status["standing"]["by_class"].values()) == 36
     assert "not what any one run produced" in status["standing_note"]
 
 
@@ -244,11 +244,12 @@ def test_the_terminal_prints_the_reason_and_the_json_is_the_tool_object(capsys) 
     out = capsys.readouterr().out
     assert "NO PUBLISHABLE WORK" in out
     assert "27 entries blocked" in out
-    # Four, not three, since the spatial wall moved into the half an expert can close: a claim
+    # Four for an expert, since the spatial wall moved into the half an expert can close: a claim
     # carries the boundary its source names, so somebody who knows which wall the paper used
-    # settles it. The counts are read off the same report the JSON below carries, so this pins the
-    # *line*, not the arithmetic.
-    assert "escalated: 4 awaiting an expert, 3 limits of this engine" in out
+    # settles it. And four engine limits, the newest being the first-passage entry's ensemble —
+    # the sampling is this engine's draw and no wording in a paper clears it. The counts are read
+    # off the same report the JSON below carries, so this pins the *line*, not the arithmetic.
+    assert "escalated: 4 awaiting an expert, 4 limits of this engine" in out
 
     assert run(["loop-status", "--json"]) == 0
     printed = json.loads(capsys.readouterr().out)

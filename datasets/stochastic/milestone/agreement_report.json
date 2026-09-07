@@ -1,8 +1,8 @@
 {
   "agreement_rate": 1.0,
-  "agreements": 3,
+  "agreements": 4,
   "confusion": {
-    "partially-reproduced->partially-reproduced": 3
+    "partially-reproduced->partially-reproduced": 4
   },
   "disagreements": 0,
   "per_entry": [
@@ -26,7 +26,14 @@
       "entry": "reversible_isomerization",
       "expected": "partially-reproduced",
       "source": "closed-form mean 37.5"
+    },
+    {
+      "actual": "partially-reproduced",
+      "agree": true,
+      "entry": "death_extinction_time",
+      "expected": "partially-reproduced",
+      "source": "closed-form mean first passage H(5)/k = 2.283333"
     }
   ],
-  "total": 3
+  "total": 4
 }

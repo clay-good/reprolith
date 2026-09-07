@@ -752,6 +752,9 @@ def test_every_committed_stochastic_certificate_states_its_sampling_noise() -> N
         content = json.loads(path.read_text(encoding="utf-8"))
         for assessment in content["assessments"]:
             protocol = assessment["protocol"]
-            assert "SSA ensemble:" in protocol
+            # Two protocol shapes now: a mean count is read from an ensemble at a time,
+            # a mean extinction time from an ensemble of first passages. What this
+            # check is about is the sampling-noise clause below, which both carry.
+            assert protocol.startswith(("SSA ensemble:", "SSA first passage:")), protocol
             assert "standard error is" in protocol, f"{path.name} states no sampling noise"
             assert "pass threshold" in protocol

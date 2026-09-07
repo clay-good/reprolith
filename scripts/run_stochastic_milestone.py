@@ -37,7 +37,7 @@ from reprolith import (
 from reprolith.corroboration import corroborate_ensemble_mean
 from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import prune_certificate_directory
-from reprolith.stochastic import solver_pin
+from reprolith.stochastic import ExtinctionTimeClaim, solver_pin
 
 REPO = Path(__file__).resolve().parents[1]
 STO = REPO / "datasets" / "stochastic"
@@ -104,6 +104,38 @@ def main() -> None:
                 duration=s["duration"], trajectories=s["trajectories"], seed=s["seed"],
             )],
         )
+
+    # The class's **first-passage** target, beside the three summary-statistic ones. A pure death
+    # process leaves the mean time to extinction from n0 molecules at H(n0)/k — the harmonic number
+    # over the rate, since the wait in state i is exponential with rate k·i — so this is closed-form
+    # ground truth like the others and needs no external tool. It is here because the blind evidence
+    # covered means alone while `time_to_extinction` had been implemented, with its censoring
+    # semantics worked out, and unreachable from any certificate.
+    extinction_key = "death_extinction_time"
+    death = [Reaction(1.0, ((0, 1),), ())]
+    exact = sum(1.0 / (1.0 * i) for i in range(1, 6))
+    catalog.add(
+        Identifiers(
+            title="Pure death process (k=1, n0=5) — mean time to extinction", accession=extinction_key
+        ),
+        ModelClass.STOCHASTIC,
+        ground_truth=GroundTruth(
+            expected=OverallVerdict.PARTIALLY_REPRODUCED,  # qualified by sampling -> never clean
+            source=f"closed-form mean first passage H(5)/k = {exact:.6f}",
+        ),
+    )
+    certified[extinction_key] = certify_stochastic(
+        paper=PaperIdentity(title="Pure death process — mean time to extinction", doi=""),
+        engine_pin=pin,
+        n_species=1, reactions=death, initial=[5],
+        extinctions=[ExtinctionTimeClaim(
+            claim_id=f"{extinction_key}-mean", quantity="mean time to extinction", species=0,
+            reported_mean=exact, source_location="closed-form",
+            # The cap is far above the mean on purpose: a trajectory that reaches it observed no
+            # extinction, and the claim abstains rather than averaging the ones that finished.
+            trajectories=2000, seed=20260907, max_time=1e6,
+        )],
+    )
 
     certificates, report = run_test_set(catalog.entries, engine_pin=pin, certified=certified, advance=True)
 

@@ -255,7 +255,7 @@
         {
           "path": "python/reprolith/stochastic.py",
           "quotes": [
-            "attribution=claim.shortfall or undetermined_shortfall(claim.quantity)"
+            "unresolvable = _sampling_cannot_resolve(claim, variance, len(ensemble), mean)"
           ]
         },
         "datasets/stochastic/milestone/certificates",

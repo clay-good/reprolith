@@ -362,6 +362,7 @@ from .spatial import (
     solver_pin as spatial_solver_pin,
 )
 from .stochastic import (
+    ExtinctionTimeClaim,
     Reaction,
     StochasticClaim,
     certify_stochastic,
@@ -713,6 +714,7 @@ __all__ = [
     "stochastic_dossier",
     "stochastic_solver_pin",
     "StochasticClaim",
+    "ExtinctionTimeClaim",
     "storable_content",
     "SubjectVariability",
     "synthetic_lethal_genes",

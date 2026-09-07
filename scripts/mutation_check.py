@@ -1292,6 +1292,19 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          '    if False:\n        raise ValueError(\n            "these fingerprints do not describe the same model: "'),
         ["tests/test_frog_publication.py"],
     ),
+    (
+        "a censored first passage is averaged in as though the run had observed an extinction",
+        "stochastic.py",
+        ("    if censored:", "    if False:"),
+        ["tests/test_stochastic_extinction_claim.py"],
+    ),
+    (
+        "an extinction-time ensemble too small to decide the claim publishes a verdict anyway",
+        "stochastic.py",
+        ("    if reason is not None:\n        return (\n            not_evaluable(",
+         "    if False:\n        return (\n            not_evaluable("),
+        ["tests/test_stochastic_extinction_claim.py"],
+    ),
 ]
 
 
