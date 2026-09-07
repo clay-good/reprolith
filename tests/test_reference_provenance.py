@@ -44,16 +44,33 @@ def _kind(source: str) -> str:
     return "publication"
 
 
+#: The one certificate whose claims are checked against *two* kinds of reference, and the reason it
+#: is named rather than allowed generally: its growth rate is the number its own distributing
+#: publication reports, and its two essential sets are COBRApy's answers for the same model file.
+#: Both are true of that certificate and a reader is told which on each claim line — but a
+#: certificate that mixed kinds *silently* is how a published number gets counted as a tool's, which
+#: is the defect this file was written after finding.
+_MIXED = {"constraint_based/milestone/certificates/e_coli_core.json"}
+
+
 def test_every_certificate_is_checked_against_a_tool_mathematics_or_a_publication() -> None:
-    """Three buckets, no fourth, and each certificate lands in exactly one of them."""
+    """Three buckets, no fourth, and every claim lands in exactly one of them."""
     by_kind: dict[str, list[str]] = {"tool": [], "mathematics": [], "publication": []}
+    mixed = set()
     for name, content in _certificates():
         kinds = {_kind(a["source_location"]) for a in content["assessments"]}
-        assert len(kinds) == 1, f"{name} mixes reference kinds: {sorted(kinds)}"
-        by_kind[kinds.pop()].append(name)
+        if len(kinds) > 1:
+            mixed.add(name)
+        for kind in kinds:
+            by_kind[kind].append(name)
+    assert mixed == _MIXED, f"an unexpected certificate mixes reference kinds: {sorted(mixed)}"
 
-    assert len(sum(by_kind.values(), [])) == 38
-    assert len(by_kind["tool"]) == 22       # COBRApy 7, libRoadRunner 6, CANA 9
+    # One certificate is in two buckets, so the buckets hold one more name than there are
+    # certificates — counted rather than assumed, because that is the arithmetic the README states.
+    assert len(sum(by_kind.values(), [])) == 38 + len(_MIXED)
+    # COBRApy 7 + libRoadRunner 6 + CANA 9, plus E. coli core's two essential sets, which are
+    # COBRApy's answers on a certificate whose growth rate is a publication's.
+    assert len(by_kind["tool"]) == 23
     # Five stochastic (three means, a first-passage time, and the Poisson noise laws), three
     # spatial profiles, and the spatial class's two scalars — a decay length against sqrt(D/k) and
     # a front speed against 2*sqrt(rD), which are mathematics for the same reason the Gaussian is.

@@ -1219,6 +1219,27 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if sensitivity is None or sensitivity.get("agree"):', "    if True:"),
         ["tests/test_logical_scheme.py"],
     ),
+    # --- a reported essential set can be certified, 2026-09-07 ----------------------------------
+    (
+        "a reported count of essential genes is published as a match of the set itself",
+        "fba.py",
+        ("    if reported.count is not None:\n        return assess_match(",
+         "    if False:\n        return assess_match("),
+        ["tests/test_fba_essentiality_claim.py"],
+    ),
+    (
+        "a gene claim is compared against a model that carries no genes to delete",
+        "fba.py",
+        ("    if reported.kind is EssentialKind.GENES and not model.genes():",
+         "    if False:"),
+        ["tests/test_fba_essentiality_claim.py"],
+    ),
+    (
+        "a lethality cutoff that changes the essential set is not qualified for",
+        "constraint_based.py",
+        ('    if sensitivity["agree"]:\n        return None', "    if True:\n        return None"),
+        ["tests/test_fba_essentiality_claim.py"],
+    ),
     # --- a reported noise statistic can be certified, 2026-09-07 --------------------------------
     (
         "a ratio of moments is judged against a mean's error bar instead of its own",

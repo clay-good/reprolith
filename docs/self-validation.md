@@ -142,18 +142,18 @@ $ reprolith corroboration
 CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   reported beside the verdicts, never gating them
   constraint-based      8 model(s) on cobrapy, scipy-linprog — all engine-independent to 1e-08
-                          as cobrapy 0.31.1, scipy-linprog highs (reprolith-fba rev 46f8eed47244)
+                          as cobrapy 0.31.1, scipy-linprog highs (reprolith-fba rev af2e615edd8f)
   kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   logical               9 model(s) on cana, reprolith-logical, sympy-sat — all agree exactly
-                          as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 2c72ec42a984), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 2c72ec42a984), sympy-sat 1.14.0
+                          as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 62b941cbb008), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 62b941cbb008), sympy-sat 1.14.0
                           1 of 10 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
   ode-pkpd            170 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   spatial               5 model(s) on reprolith-fd, scipy-lsoda — 4 of 5 engine-independent
-                          as reprolith-fd explicit-forward-euler-finite-difference (rev d8c327166196), scipy-lsoda 1.13.1
+                          as reprolith-fd explicit-forward-euler-finite-difference (rev 1b6a8edcbeea), scipy-lsoda 1.13.1
   stochastic            4 model(s) on reprolith-ssa, roadrunner-gillespie — all engine-independent within 1.9 combined standard errors, resolving a bias above 9.6% of each quantity compared
-                          as reprolith-ssa gillespie-direct-method (rev a7ec4cb01f55), roadrunner-gillespie 2.7.0
+                          as reprolith-ssa gillespie-direct-method (rev 458b726a5f73), roadrunner-gillespie 2.7.0
                           1 of 5 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
 
   overall: 6 of 6 classes re-run on a second engine — 170 claim(s), 32 model(s); 2 standing certificate(s) in those classes have none

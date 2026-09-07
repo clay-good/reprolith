@@ -35,6 +35,37 @@ happens to land on.
 | `loopless_flux_variability` | Same interval, but with thermodynamically infeasible internal loops removed | it adds the loop law (Schellenberger 2011) so a spurious internal cycle can't inflate the interval |
 | `production_envelope` | What is the feasible range of a byproduct's flux at each growth rate? | it returns the whole growth-vs-product Pareto front (Varma & Palsson 1994), not one point |
 | `judge_flux` | Does a reported reaction flux reproduce? | it judges against the variability interval, and abstains when the model leaves the flux free |
+| `essential_set` / `judge_essentiality` | Does a reported essential set — genes or reactions, by the model's own ids — reproduce? | essentiality is an objective property, and the set is compared element for element rather than by size |
+
+### `judge_essentiality` — the set a paper validates against knockout data
+
+`gene_essentiality` and `reaction_essentiality` have answered this since the class was written, and
+both are cross-validated element-for-element against COBRApy. Until now nothing could *certify* one,
+so the second-most-reported constraint-based result after a growth rate was reachable from tests
+alone. `ReportedEssentialSet` carries it and the milestone publishes both sets for *E. coli* core.
+
+Three decisions make it a comparison rather than a number:
+
+- **A set is compared as a set; a count is compared as a count, and named so.** Two models can agree
+  on how many genes are essential while disagreeing about every one of them, so the two forms carry
+  different comparison methods (`essential-set-match`, `essential-count-match`) and the tolerance
+  column says which projection was checked. It is the same distinction the logical class draws
+  between an attractor signature and an attractor set.
+- **The cutoff is on the record, and what it costs is measured.** "Essential" means growth falls
+  below some fraction of wild type, and the two conventions in use — a millionth, and 1% — are
+  different sets on the same model. A claim that states its cutoff is judged at it. One that does
+  not has the sweep re-run at the convention: where the sets agree the choice provably cannot move
+  the verdict and nothing is qualified, and where they differ the certificate carries a load-bearing
+  assumption whose basis counts the *near-lethal* deletions between the two. On *E. coli* core they
+  agree, which is why that certificate is a clean pass.
+- **A model with no gene rules abstains.** An SBML file ingested without gene data has no genes to
+  delete, so comparing a reported gene set against its empty one would publish a total disagreement
+  about a question the model was never asked.
+
+The ids are the **model's**: `reaction_essentiality` answers in column indices, and COBRApy strips
+the `R_` prefix this package keeps, so `essential_set` exists to put the model's own names on the
+answer rather than leaving each caller to re-derive that mapping — the identifier trap the FROG
+comparison already had to learn once.
 
 ### `judge_flux` — the honest verdict for a reported flux
 

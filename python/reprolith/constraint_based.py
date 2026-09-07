@@ -27,13 +27,20 @@ dependency-free.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
-from dataclasses import replace
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass, replace
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Gap, GapKind, ModelArtifact, Parameter
-from .fba import FbaModel, judge_objective
-from .model import Certificate, EnginePin, PaperIdentity
+from .enums import Verdict
+from .fba import (
+    FbaModel,
+    ReportedEssentialSet,
+    essentiality_threshold_sensitivity,
+    judge_essentiality,
+    judge_objective,
+)
+from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import Attribution, ReferenceKind, Tolerance, undetermined_shortfall
 
 #: The field-standard flux unit; the unit every medium uptake limit is recorded in.
@@ -173,6 +180,66 @@ def _medium_protocol(medium: Sequence[Parameter], model: FbaModel) -> str:
     return f"medium: {stated}; maximize: {maximized}"
 
 
+@dataclass(frozen=True)
+class EssentialityClaim:
+    """A published essential-set claim to reproduce: which genes or reactions the model cannot lose.
+
+    The class's second reproduction target beside the objective value, and the one a genome-scale
+    paper validates against experimental knockout data. ``reported`` carries the set (or its size)
+    and the growth cutoff the paper states, if it states one; ``shortfall`` supplies the root cause
+    a non-pass verdict requires.
+    """
+
+    claim_id: str
+    quantity: str
+    reported: ReportedEssentialSet
+    source_location: str
+    assumption_qualified: bool = False
+    shortfall: Attribution | None = None
+
+
+def _cutoff_assumption(claim: EssentialityClaim, model: FbaModel) -> Assumption | None:
+    """The load-bearing assumption an unstated lethality cutoff earns — where it earns one.
+
+    The counterpart of the logical class's update-scheme assumption, and selective in the same way:
+    a cutoff the paper states is nothing this engine chose, and one it does not state is only
+    load-bearing where it could change the set — which is *computable*, by running the deletion
+    sweep again at the convention the literature uses. Where the two sets agree, qualifying the
+    verdict would downgrade a certificate for a choice that provably cannot move it.
+    """
+    if not claim.reported.cutoff_is_reprolith_s:
+        return None
+    sensitivity = essentiality_threshold_sensitivity(
+        model, claim.reported.kind, threshold=claim.reported.cutoff
+    )
+    if sensitivity["agree"]:
+        return None
+    return Assumption(
+        id=f"fba-lethality-cutoff-{claim.claim_id}",
+        description=(
+            "the essential set judged here counts a deletion as lethal when growth falls below a "
+            "millionth of the unperturbed optimum; the claim's source states no cutoff"
+        ),
+        chosen=f"growth below {sensitivity['threshold']:g} of the unperturbed optimum",
+        basis=(
+            "the claim's source names no lethality cutoff, and on this model the choice is not "
+            f"free: {sensitivity['size']} {claim.reported.kind.value} are lethal at "
+            f"{sensitivity['threshold']:g} of unperturbed growth against "
+            f"{sensitivity['other_size']} at the literature's "
+            f"{sensitivity['other_threshold']:g}, with {sensitivity['only_under_other']} that are "
+            "near-lethal rather than lethal — which is the difference the convention exists to "
+            "catch"
+        ),
+        load_bearing=True,
+        alternatives=(
+            f"growth below {sensitivity['other_threshold']:g} of the unperturbed optimum "
+            "(the convention this literature more often uses)",
+        ),
+        # A paper can state the cutoff it called lethal, so an author closes this one.
+        author_can_close=True,
+    )
+
+
 def certify_constraint_based(
     dossier: Dossier,
     *,
@@ -181,6 +248,7 @@ def certify_constraint_based(
     engine_pin: EnginePin,
     tolerance: Tolerance | None = None,
     shortfalls: Mapping[str, Attribution] | None = None,
+    essentiality: Iterable[EssentialityClaim] = (),
 ) -> Certificate:
     """Certify a constraint-based dossier end to end and assemble its certificate.
 
@@ -249,16 +317,48 @@ def certify_constraint_based(
     ]
     protocol = _medium_protocol(dossier.parameters, model)
     assessments = [replace(a, protocol=protocol) for a in assessments]
+    # The essential-set claims, judged against the same adopted model under the same medium — which
+    # is why they are certified here rather than beside this function: an essential set is a
+    # property of the model *and its bounds*, and a sweep run against the distributed defaults
+    # would answer a different question from the objective claims on the same certificate.
+    cutoff_assumptions: list[Assumption] = []
+    for claim in tuple(essentiality):
+        assessment = judge_essentiality(
+            claim_id=claim.claim_id,
+            quantity=claim.quantity,
+            source_location=claim.source_location,
+            reported=claim.reported,
+            model=model,
+            attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
+            assumption_qualified=claim.assumption_qualified or rests_on_a_gap,
+        )
+        assessments.append(
+            replace(
+                assessment,
+                protocol=(
+                    f"{protocol}; single-{claim.reported.kind.value[:-1]} deletion sweep, lethal "
+                    f"below {claim.reported.cutoff:g} of unperturbed growth"
+                ),
+            )
+        )
+        # Attached only where a verdict was drawn: an assumption on an abstention would describe a
+        # judgment nobody made and, being load-bearing, would downgrade the certificate for it.
+        if assessment.verdict is not Verdict.NOT_EVALUABLE:
+            assumption = _cutoff_assumption(claim, model)
+            if assumption is not None:
+                cutoff_assumptions.append(assumption)
     return build_certificate(
         paper=paper,
         engine_pin=engine_pin,
         assessments=assessments,
         gap_report=gap_report,
+        assumptions=tuple(cutoff_assumptions),
     )
 
 
 __all__ = [
     "FLUX_UNIT",
+    "EssentialityClaim",
     "certify_constraint_based",
     "constraint_based_dossier",
     "validate_constraint_based",

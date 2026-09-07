@@ -83,9 +83,13 @@ Thirty-two of the other thirty-four certificates check Reprolith's engine agains
 tool — COBRApy, libRoadRunner, CANA — or against closed-form mathematics, re-running the same model
 file. The other two are checked against published numbers like the four above: the E. coli core
 model's maximal growth rate of **0.873922**, which the publication that distributes that model
-reports, and the seven basin sizes Li et al. 2004 publish for the yeast cell-cycle network — how
-many initial states reach each of its steady states, all seven reproduced exactly. Six against a
-publication, then, and thirty-two against a tool or against mathematics —
+reports — that certificate also carries the **essential genes and reactions** of the same model,
+checked element for element against COBRApy's single-deletion answer — and the seven basin sizes
+Li et al. 2004 publish for the yeast cell-cycle network, how many initial states reach each of its
+steady states, all seven reproduced exactly. Six against a
+publication, then, and thirty-two against a tool or against mathematics — one certificate, the
+E. coli core one, in both counts, because its growth rate is a publication's number and its two
+essential sets are COBRApy's answers for the same file —
 counted from the certificates themselves by `tests/test_reference_provenance.py`, because this
 division is the reader's whole guide to what the corpus reaches, and it was prose that was off by
 one. Each certificate says which on its own claim line. Getting a paper's claims out of its manuscript *at scale* is the piece that is not built.

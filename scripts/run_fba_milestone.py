@@ -39,8 +39,9 @@ from reprolith import (
     constraint_based_dossier,
     run_test_set,
 )
+from reprolith.constraint_based import EssentialityClaim
 from reprolith.corroboration import corroborate_objective
-from reprolith.fba import solver_pin
+from reprolith.fba import EssentialKind, ReportedEssentialSet, solver_pin
 from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import dossier_from_dict, prune_certificate_directory
 
@@ -72,7 +73,10 @@ def _e_coli_core() -> tuple[Identifiers, GroundTruth, object, str]:
     )
     label = GroundTruth(
         expected=OverallVerdict.REPRODUCED,
-        source="BiGG / Orth, Fleming & Palsson (2010): known maximal growth rate 0.873922",
+        source=(
+            "BiGG / Orth, Fleming & Palsson (2010): known maximal growth rate 0.873922; "
+            "essential genes and reactions from COBRApy's single-deletion analysis"
+        ),
     )
     dossier = dossier_from_dict(
         json.loads((CB / "worked_example" / "dossier.json").read_text(encoding="utf-8"))
@@ -125,6 +129,58 @@ def _cross_validation_entry(model_id: str, record: dict) -> tuple[Identifiers, G
     return identifiers, label, dossier, sbml
 
 
+def _essentiality_claims(sbml: str) -> list[EssentialityClaim]:
+    """The E. coli core deletion claims, against COBRApy's own committed essential sets.
+
+    The class's second reproduction target beside the objective value, and the one a genome-scale
+    paper validates against experimental knockouts. Both sets are the *independent tool's*, so the
+    citation says so — the same disclosure every other reference in this milestone carries.
+
+    The reaction ids need translating and the translation is *checked*: COBRApy strips the SBML
+    ``R_`` prefix this package keeps, so a set aligned without knowing that reports all eighteen
+    reactions as present on one side only — a naming convention read as a structural disagreement
+    about the model, which is the trap the FROG comparison already had to learn once.
+    """
+    from reprolith import ingest_fbc_sbml
+
+    reference = json.loads(
+        (CROSS / "e_coli_core_essentiality.json").read_text(encoding="utf-8")
+    )
+    cited = (
+        f"{reference['reference_tool']} single-deletion analysis of this model file — reference "
+        "sets computed by that tool, not read from the paper"
+    )
+    # The sweep runs under the *dossier's* medium, as every claim on this certificate does — which
+    # for this entry is the model's own distributed bounds, and those are what the reference tool
+    # deleted against. An essential set is a property of the model and its bounds together, so two
+    # sets taken under different media would disagree for a reason that is not the solver's.
+    model = ingest_fbc_sbml(sbml)
+    reactions = tuple(f"R_{r}" for r in reference["essential_reactions"])
+    unknown = [r for r in reactions if r not in model.reaction_ids]
+    if unknown:
+        raise AssertionError(
+            f"the reference names reactions this model does not have after prefixing: {unknown}"
+        )
+    genes = tuple(reference["essential_genes"])
+    missing = [g for g in genes if g not in model.genes()]
+    if missing:
+        raise AssertionError(f"the reference names genes this model does not carry: {missing}")
+    return [
+        EssentialityClaim(
+            claim_id="e_coli_core-essential-genes",
+            quantity="the set of genes whose single deletion abolishes growth",
+            reported=ReportedEssentialSet(kind=EssentialKind.GENES, ids=genes),
+            source_location=cited,
+        ),
+        EssentialityClaim(
+            claim_id="e_coli_core-essential-reactions",
+            quantity="the set of reactions whose single knockout abolishes growth",
+            reported=ReportedEssentialSet(kind=EssentialKind.REACTIONS, ids=reactions),
+            source_location=cited,
+        ),
+    ]
+
+
 def main() -> None:
     catalog = Catalog()
     reference = json.loads((CROSS / "reference_growth.json").read_text(encoding="utf-8"))["models"]
@@ -141,6 +197,13 @@ def main() -> None:
             dossier, sbml=sbml,
             paper=PaperIdentity(title=identifiers.title, doi=""),
             engine_pin=PIN,
+            # Only for the small model: a deletion sweep is one LP per gene and per reaction, which
+            # is a second and a half here and minutes on the genome-scale set. What the rest would
+            # cost is a measurement rather than a silence — the same scoping the FROG fingerprint
+            # is published under.
+            essentiality=(
+                _essentiality_claims(sbml) if identifiers.accession == "e_coli_core" else ()
+            ),
         )
 
     certificates, report = run_test_set(

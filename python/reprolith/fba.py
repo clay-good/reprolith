@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, TypeVar, Union
 
 from .model import ClaimAssessment, EnginePin
@@ -1101,6 +1102,210 @@ def judge_fingerprint(
     )
 
 
+#: The growth cutoff below which a deletion counts as lethal, as a fraction of the unperturbed
+#: optimum. A millionth is "the model cannot grow at all"; the constraint-based literature more
+#: often calls a knockout lethal at **1% or 5% of wild-type growth**, which is a different set on
+#: the same model. Neither is wrong — they answer different questions — so a claim that states its
+#: cutoff is judged at it, and one that does not has the choice measured rather than assumed
+#: (:func:`essentiality_threshold_sensitivity`).
+DEFAULT_ESSENTIAL_THRESHOLD = 1e-6
+
+#: The convention a reported set is most likely to have used when it states no cutoff: growth below
+#: 1% of wild type. Used only to *measure* what the default costs, never silently adopted.
+CONVENTIONAL_ESSENTIAL_THRESHOLD = 0.01
+
+
+class EssentialKind(str, Enum):
+    """Whether a reported essential set names genes or reactions."""
+
+    GENES = "genes"
+    REACTIONS = "reactions"
+
+
+def essential_set(
+    model: FbaModel, kind: EssentialKind, *, threshold: float = DEFAULT_ESSENTIAL_THRESHOLD
+) -> frozenset[str]:
+    """The model's essential genes or reactions, **by id**, at this growth cutoff.
+
+    :func:`reaction_essentiality` answers in column indices, which is what the solver works in and
+    not what a paper reports; this is the same computation with the model's own ids on it, so a
+    reported set can be compared without the caller re-deriving the mapping and getting it wrong.
+    """
+    if kind is EssentialKind.GENES:
+        return gene_essentiality(model, threshold=threshold)
+    indices = reaction_essentiality(
+        model.stoichiometry, model.objective, model.lower, model.upper, threshold=threshold
+    )
+    return frozenset(model.reaction_ids[index] for index in indices)
+
+
+def essentiality_threshold_sensitivity(
+    model: FbaModel, kind: EssentialKind, *, threshold: float = DEFAULT_ESSENTIAL_THRESHOLD
+) -> dict[str, Any]:
+    """What this growth cutoff costs the set: the same model's set under the field's convention.
+
+    The cutoff is the one free choice in a deletion analysis, and it is the kind of choice this
+    repository measures rather than qualifies on principle. Two outcomes matter and they are
+    different findings:
+
+    ``the sets agree``
+        every gene (or reaction) lethal at a millionth of wild-type growth is also lethal at 1% of
+        it, and none in between. The cutoff cannot move this verdict, so qualifying it would
+        downgrade a certificate for a choice that provably does not matter.
+    ``they differ``
+        the set rests on a choice this engine made, and the difference is reported as a count of
+        the elements that fall between the two cutoffs — the near-lethal deletions, which are
+        exactly what the convention exists to catch.
+
+    Costs a second deletion sweep, so it is asked only where a claim states no cutoff.
+    """
+    at_default = essential_set(model, kind, threshold=threshold)
+    at_convention = essential_set(model, kind, threshold=CONVENTIONAL_ESSENTIAL_THRESHOLD)
+    return {
+        "threshold": threshold,
+        "other_threshold": CONVENTIONAL_ESSENTIAL_THRESHOLD,
+        "agree": at_default == at_convention,
+        "size": len(at_default),
+        "other_size": len(at_convention),
+        "only_under_other": len(at_convention - at_default),
+        "only_under_judged": len(at_default - at_convention),
+    }
+
+
+@dataclass(frozen=True)
+class ReportedEssentialSet:
+    """A published essential set: which genes or reactions a paper says the model cannot lose.
+
+    The second-most-reported constraint-based result after a growth rate, and the one a
+    genome-scale paper validates against experimental knockout data. ``gene_essentiality`` and
+    ``reaction_essentiality`` have computed it since this class was written, and both are
+    cross-validated element-for-element against COBRApy; no claim could carry one.
+
+    Reported one of two ways, and which one decides how strong the comparison is:
+
+    ``ids``
+        the set itself. Compared element for element — the strong form.
+    ``count``
+        how many, where the paper prints a number and not a list. Named a *count* match rather than
+        a set match, because two models can agree on how many genes are essential while disagreeing
+        about every one of them — the same distinction the logical class draws between an attractor
+        signature and an attractor set.
+
+    ``threshold`` is the growth cutoff below which the paper calls a deletion lethal, as a fraction
+    of unperturbed growth, **when the paper states one**. When it does not, the run uses
+    :data:`DEFAULT_ESSENTIAL_THRESHOLD` and what that choice costs is measured rather than assumed.
+    """
+
+    kind: EssentialKind
+    ids: tuple[str, ...] | None = None
+    count: int | None = None
+    threshold: float | None = None
+
+    def __post_init__(self) -> None:
+        if (self.ids is None) == (self.count is None):
+            raise ValueError(
+                "a reported essential set is either the set itself or how many are in it; give "
+                "exactly one of ids= and count="
+            )
+        if self.ids is not None and len(set(self.ids)) != len(self.ids):
+            raise ValueError(
+                "a reported essential set names the same element twice, so its size is not the "
+                "number of things it names; give each id once"
+            )
+        if self.count is not None and self.count < 0:
+            raise ValueError(f"a set cannot hold {self.count} elements")
+        if self.threshold is not None and not 0.0 < self.threshold < 1.0:
+            raise ValueError(
+                f"a lethality cutoff is a fraction of unperturbed growth, so {self.threshold!r} "
+                "is not one (1% of wild type is 0.01)"
+            )
+
+    @property
+    def cutoff(self) -> float:
+        """The cutoff this claim is judged at — its own, or this engine's default."""
+        return DEFAULT_ESSENTIAL_THRESHOLD if self.threshold is None else self.threshold
+
+    @property
+    def cutoff_is_reprolith_s(self) -> bool:
+        """Whether the cutoff was this engine's choice rather than something the paper stated."""
+        return self.threshold is None
+
+
+def judge_essentiality(
+    *,
+    claim_id: str,
+    quantity: str,
+    source_location: str,
+    reported: ReportedEssentialSet,
+    model: FbaModel,
+    attribution: Attribution | None = None,
+    assumption_qualified: bool = False,
+) -> ClaimAssessment:
+    """Judge a reported essential set against the one this model has.
+
+    A gene set on a model with no gene–protein–reaction rules is **abstained on** rather than
+    compared: an SBML file ingested without gene data has no genes, so every reported gene would
+    read as "not essential here" and the certificate would publish a total disagreement about a
+    model it could not ask the question of.
+
+    A non-match requires an ``attribution``.
+    """
+    if reported.kind is EssentialKind.GENES and not model.genes():
+        return not_evaluable(
+            claim_id=claim_id,
+            quantity=quantity,
+            source_location=source_location,
+            reason=(
+                "this model carries no gene-protein-reaction rules, so it has no genes to delete "
+                "and the essential-gene set is not a question it can be asked. Comparing the "
+                "reported set against an empty one would publish a total disagreement about a "
+                "model that was never consulted"
+            ),
+            reference_kind=ReferenceKind.NUMERIC,
+        )
+    computed = essential_set(model, reported.kind, threshold=reported.cutoff)
+    if reported.count is not None:
+        return assess_match(
+            claim_id=claim_id,
+            quantity=quantity,
+            source_location=source_location,
+            matched=len(computed) == reported.count,
+            method=ComparisonMethod.ESSENTIAL_COUNT_MATCH,
+            exact_on=f"the number of essential {reported.kind.value}",
+            discrepancy=(
+                f"{len(computed)} essential {reported.kind.value} against the reported "
+                f"{reported.count}"
+            ),
+            attribution=attribution,
+            assumption_qualified=assumption_qualified,
+        )
+    wanted = frozenset(reported.ids or ())
+    agreement = essentiality_agreement(computed, wanted)
+    missing = sorted(wanted - computed)
+    extra = sorted(computed - wanted)
+    return assess_match(
+        claim_id=claim_id,
+        quantity=quantity,
+        source_location=source_location,
+        matched=computed == wanted,
+        method=ComparisonMethod.ESSENTIAL_SET_MATCH,
+        exact_on=f"the set of essential {reported.kind.value}",
+        discrepancy=(
+            f"all {len(computed)} essential {reported.kind.value} reproduced"
+            if computed == wanted
+            else (
+                f"{len(missing)} reported not essential here"
+                + (f" ({', '.join(missing[:5])}{'…' if len(missing) > 5 else ''})" if missing else "")
+                + f", {len(extra)} essential here and not reported"
+                + (f" ({', '.join(extra[:5])}{'…' if len(extra) > 5 else ''})" if extra else "")
+                + f"; agreement {agreement:.3f} of the union"
+            )
+        ),
+        attribution=attribution,
+        assumption_qualified=assumption_qualified,
+    )
+
+
 _Element = TypeVar("_Element")
 
 
@@ -1121,6 +1326,9 @@ def essentiality_agreement(
 
 
 __all__ = [
+    "CONVENTIONAL_ESSENTIAL_THRESHOLD",
+    "DEFAULT_ESSENTIAL_THRESHOLD",
+    "EssentialKind",
     "FbaModel",
     "FbaUnavailable",
     "FrogComparison",
@@ -1130,7 +1338,11 @@ __all__ = [
     "ProductionEnvelope",
     "ShadowPrices",
     "compare_frog",
+    "ReportedEssentialSet",
+    "essential_set",
     "essentiality_agreement",
+    "essentiality_threshold_sensitivity",
+    "judge_essentiality",
     "flux_variability",
     "frog_fingerprint",
     "gene_essentiality",

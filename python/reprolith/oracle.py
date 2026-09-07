@@ -41,6 +41,11 @@ class ComparisonMethod(str, Enum):
     # have, and on the length of each, while sharing not one state between them. A reference that
     # reports counts and periods rather than the attractors themselves can only support this.
     ATTRACTOR_SIGNATURE_MATCH = "attractor-signature-match"
+    # A reported set of essential genes or reactions, compared element for element. Kept apart
+    # from the count below for the reason the two attractor comparisons are kept apart: two models
+    # can agree on how many genes are essential while disagreeing about every one of them.
+    ESSENTIAL_SET_MATCH = "essential-set-match"
+    ESSENTIAL_COUNT_MATCH = "essential-count-match"
     # A count of states in a finite space, compared exactly. Not a set match and not a signature:
     # two networks can agree on every attractor and disagree entirely on how much of the space
     # reaches each one, which is the quantity a basin claim is about.

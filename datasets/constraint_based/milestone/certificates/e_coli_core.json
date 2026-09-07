@@ -16,11 +16,45 @@
       "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "e_coli_core-essential-genes",
+      "discrepancy": "all 7 essential genes reproduced",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "essential-set-match",
+      "protocol": "medium: R_EX_glc__D_e<=10.0 mmol/gDW/h, R_EX_o2_e<=1000.0 mmol/gDW/h; maximize: R_BIOMASS_Ecoli_core_w_GAM; single-gene deletion sweep, lethal below 1e-06 of unperturbed growth",
+      "quantity": "the set of genes whose single deletion abolishes growth",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "COBRApy 0.31.1 single-deletion analysis of this model file \u2014 reference sets computed by that tool, not read from the paper",
+      "tolerance": "exact match on the set of essential genes",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "e_coli_core-essential-reactions",
+      "discrepancy": "all 18 essential reactions reproduced",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "essential-set-match",
+      "protocol": "medium: R_EX_glc__D_e<=10.0 mmol/gDW/h, R_EX_o2_e<=1000.0 mmol/gDW/h; maximize: R_BIOMASS_Ecoli_core_w_GAM; single-reaction deletion sweep, lethal below 1e-06 of unperturbed growth",
+      "quantity": "the set of reactions whose single knockout abolishes growth",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "COBRApy 0.31.1 single-deletion analysis of this model file \u2014 reference sets computed by that tool, not read from the paper",
+      "tolerance": "exact match on the set of essential reactions",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
     }
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "highs (reprolith-fba rev 46f8eed47244)",
+    "algorithm": "highs (reprolith-fba rev af2e615edd8f)",
     "engine": "scipy-linprog",
     "version": "1.13.1"
   },

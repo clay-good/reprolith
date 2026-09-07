@@ -6,7 +6,7 @@
       "ground_truth": {
         "expected": "reproduced",
         "note": null,
-        "source": "BiGG / Orth, Fleming & Palsson (2010): known maximal growth rate 0.873922"
+        "source": "BiGG / Orth, Fleming & Palsson (2010): known maximal growth rate 0.873922; essential genes and reactions from COBRApy's single-deletion analysis"
       },
       "history": [
         {

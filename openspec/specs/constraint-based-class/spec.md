@@ -61,6 +61,14 @@ using the field's standard analyses.
 - **THEN** the oracle reproduces it with the corresponding standard analysis (flux-balance,
   flux-variability, or systematic deletion) and compares within tolerance
 - **AND** the analysis used is recorded so the comparison is auditable
+- **AND** an essential set reported as the set itself is compared element for element, while one
+  reported only as a count is compared as a count and named as the weaker comparison it is, since
+  two models can agree on how many deletions are lethal while disagreeing about every one of them
+- **AND** the growth cutoff below which a deletion counts as lethal is recorded with the result,
+  and where the source states none, what this engine's choice costs is measured against the
+  convention the literature uses rather than assumed to be nothing
+- **AND** a gene-level claim against a model carrying no gene-protein-reaction rules is abstained
+  on rather than compared against an empty set
 
 ### Requirement: FROG report as the deterministic fingerprint
 

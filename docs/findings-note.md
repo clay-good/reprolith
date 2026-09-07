@@ -5334,3 +5334,36 @@ is arithmetic that applies unchanged to a Fano factor and wording that does not:
 carried on the record now, and a class comparing two kinds of sampled quantity says "each quantity
 compared" rather than picking one of them to name.
 
+
+## The set a genome-scale paper validates against, computed for years and never certified
+
+`gene_essentiality` and `reaction_essentiality` are cross-validated element-for-element against
+COBRApy, and their answers for *E. coli* core — seven genes, eighteen reactions — have been
+committed reference data for as long as this class has existed. `certify_constraint_based` judged
+**objective values and nothing else**, so the second-most-reported constraint-based result, and the
+one a genome-scale paper validates against experimental knockout data, was reachable from tests
+alone. That is the sixth quantity found implemented-and-unreachable here.
+
+`ReportedEssentialSet` and `judge_essentiality` close it, and the milestone's *E. coli* core
+certificate now carries all three claims — the growth rate and both essential sets — against
+COBRApy's own committed answers.
+
+**The cutoff was the real question.** "Essential" is not a property of a model; it is a property of
+a model and a threshold, and the two thresholds in use are a millionth of wild-type growth and 1% of
+it. They are different sets in general, and neither convention is wrong. Following this repository's
+own rule, the choice is measured rather than qualified on principle: a claim stating its cutoff is
+judged at it, and one that does not has the sweep re-run at the convention. Where the two sets agree
+the choice provably cannot move the verdict and nothing is qualified — which is the case on *E.
+coli* core, and why that certificate stays a clean pass. Where they differ, the assumption's basis
+counts the deletions that are *near-lethal rather than lethal*, which is exactly what the 1%
+convention exists to catch.
+
+Two smaller decisions that are the same lessons in new places. A set reported only as a **count**
+is judged as a count and named as one, because two models can agree on how many genes are essential
+while sharing not one of them — the attractor-signature distinction, in a second class. And the
+comparison uses the **model's own ids**: `reaction_essentiality` answers in column indices, COBRApy
+strips the `R_` prefix this package keeps, and aligning the two without knowing that reports all
+eighteen reactions as present on one side only. The milestone translates the reference ids and
+*checks* the translation against the model rather than trusting it, because the FROG comparison
+already paid for that lesson once.
+
