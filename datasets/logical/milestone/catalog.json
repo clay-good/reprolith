@@ -1,6 +1,7 @@
 {
   "entries": [
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -70,6 +71,7 @@
       "state": "certified"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -139,6 +141,7 @@
       "state": "certified"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -208,6 +211,7 @@
       "state": "certified"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -277,6 +281,7 @@
       "state": "certified"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -346,6 +351,7 @@
       "state": "certified"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -415,6 +421,7 @@
       "state": "certified"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -484,6 +491,7 @@
       "state": "certified"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",
@@ -553,6 +561,7 @@
       "state": "certified"
     },
     {
+      "attempts": [],
       "difficulty": null,
       "ground_truth": {
         "expected": "reproduced",

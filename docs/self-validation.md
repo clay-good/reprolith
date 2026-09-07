@@ -144,7 +144,7 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   logical               9 model(s) on cana, reprolith-logical, sympy-sat — all agree exactly
-                          as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev b4736d7784fb), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev b4736d7784fb), sympy-sat 1.14.0
+                          as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 42a4a3d8faa9), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 42a4a3d8faa9), sympy-sat 1.14.0
   ode-pkpd            170 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   spatial               3 model(s) on reprolith-fd, scipy-lsoda — all engine-independent to 1e-03

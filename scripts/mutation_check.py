@@ -1178,6 +1178,39 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if boundary not in ("no-flux", "periodic"):', "    if False:"),
         ["tests/test_spatial_pattern_claim.py"],
     ),
+    # --- the update scheme, carried to the run and to the certificate, 2026-09-06 ---------------
+    (
+        "a steady-state verdict is qualified for a scheme that cannot move it",
+        "logical.py",
+        ("    if claim.attractors is None:\n        # The claim is judged on a *fixed point*",
+         "    if False:\n        # The claim is judged on a *fixed point*"),
+        ["tests/test_logical_scheme.py"],
+    ),
+    (
+        "a reported attractor set is judged as if it were a single steady state",
+        "logical.py",
+        ("    if claim.attractors is not None:\n        return judge_attractor_set(",
+         "    if False:\n        return judge_attractor_set("),
+        ["tests/test_logical_scheme.py"],
+    ),
+    (
+        "a certificate announces one update scheme over verdicts computed under the other",
+        "logical.py",
+        ('    if f"{scheme.value}-update" not in algorithm:', "    if False:"),
+        ["tests/test_logical_scheme.py"],
+    ),
+    (
+        "claims judged under two schemes share one pin, which can name only one",
+        "logical.py",
+        ("    if len(wanted) > 1:", "    if False:"),
+        ["tests/test_logical_scheme.py"],
+    ),
+    (
+        "an unstated scheme that changes the attractors is not qualified for",
+        "logical.py",
+        ('    if sensitivity is None or sensitivity.get("agree"):', "    if True:"),
+        ["tests/test_logical_scheme.py"],
+    ),
 ]
 
 

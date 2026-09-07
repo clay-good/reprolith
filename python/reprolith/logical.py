@@ -25,6 +25,7 @@ from typing import Any
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, ModelArtifact
+from .enums import Verdict
 from .model import Assumption, Certificate, ClaimAssessment, EnginePin, PaperIdentity
 from .oracle import (
     Attribution,
@@ -625,8 +626,30 @@ class LogicalClaim:
     rules: Mapping[str, str]
     reported: Mapping[str, int]
     source_location: str
+    #: A reported **attractor set** — each attractor a sequence of its cycle's states — where the
+    #: paper reports one rather than a single steady state. With it the claim is judged by
+    #: :func:`judge_attractor_set` and ``reported`` is not read; without it, by
+    #: :func:`judge_steady_state`. This is where the update scheme starts to matter: fixed points
+    #: are the same under both schemes, and cyclic attractors are not.
+    attractors: Sequence[Sequence[Mapping[str, int]]] | None = None
+    #: The update scheme the claim's source states, when it states one. ``None`` means it does not
+    #: — the run then uses synchronous updating, and where that choice can change the verdict the
+    #: certificate carries a load-bearing assumption saying so, with the difference measured. The
+    #: class spec has called an unstated scheme load-bearing since the dossier was written; until
+    #: this field existed, a *stated* one had no way to reach the run.
+    scheme: UpdateScheme | None = None
     assumption_qualified: bool = False
     shortfall: Attribution | None = field(default=None)
+
+    @property
+    def update_scheme(self) -> UpdateScheme:
+        """The scheme this claim is actually judged under — its own, or this engine's default."""
+        return self.scheme or UpdateScheme.SYNCHRONOUS
+
+    @property
+    def scheme_is_reprolith_s(self) -> bool:
+        """Whether the scheme was Reprolith's choice rather than something the source stated."""
+        return self.scheme is None
 
 
 def validate_logical(dossier: Dossier) -> list[str]:
@@ -775,6 +798,111 @@ def require_pin_matches_path(engine_pin: EnginePin, *, node_counts: Iterable[int
         )
 
 
+def scheme_sensitivity(claim: LogicalClaim) -> dict[str, Any] | None:
+    """What this claim's update scheme costs it: the same network's attractors under the other one.
+
+    ``None`` where the claim states its own scheme — nothing was assumed, so there is nothing to
+    measure the cost of.
+
+    The measurement is **exact**, which makes it unlike every other sensitivity in this package:
+    attractors are enumerated rather than sampled or integrated, so "the two schemes agree" is a
+    proof and not a bound. Two outcomes matter and they are different findings:
+
+    ``the schemes agree``
+        the scheme is not load-bearing *for this claim*, whatever the spec says about the class.
+        Every fixed-point claim is in this case by construction — a fixed point is a fixed point
+        under either scheme — and so is any network whose synchronous attractors are all fixed
+        points. Minting an assumption there would qualify a verdict that cannot move.
+
+        The comparison is therefore of **what the claim was judged on**, not of attractor sets in
+        general: this compared attractor sets for every claim at first, and reported the toggle
+        switch's spurious synchronous 2-cycle as grounds to qualify a *steady-state* verdict that
+        the 2-cycle cannot touch.
+    ``the schemes differ``
+        the verdict rests on a choice this engine made, and the difference is reported as a count
+        rather than asserted: the toggle switch's spurious synchronous 2-cycle is exactly this.
+
+    A network past :data:`MAX_ENUMERABLE_NODES` cannot have its attractors enumerated at all, so
+    the comparison is out of reach and says so rather than reading as agreement.
+    """
+    if not claim.scheme_is_reprolith_s:
+        return None
+    if claim.attractors is None:
+        # The claim is judged on a *fixed point*, and a fixed point is one under either scheme: a
+        # state whose synchronous successor is itself has no unstable node to flip. So the answer
+        # is available without running anything, and it is a proof rather than a measurement.
+        # Comparing attractor *sets* here instead — which this function did first — reported the
+        # toggle switch's spurious synchronous 2-cycle as a reason to qualify a steady-state
+        # verdict that cannot move, which is measuring the wrong quantity and would have
+        # downgraded every fixed-point certificate this class publishes.
+        return {
+            "comparable": True,
+            "agree": True,
+            "why": (
+                "this claim is judged on a fixed point, and a fixed point is one under either "
+                "scheme — a state whose synchronous successor is itself has no unstable node to "
+                "flip, so no run is needed to know the schemes agree here"
+            ),
+        }
+    network = parse_boolean_network(claim.rules)
+    if len(network.nodes) > MAX_ENUMERABLE_NODES:
+        return {
+            "comparable": False,
+            "why": (
+                f"this network has {len(network.nodes)} nodes, past the {MAX_ENUMERABLE_NODES} "
+                "an attractor enumeration can reach, so what the other scheme would produce "
+                "cannot be computed here"
+            ),
+        }
+    under = {
+        scheme: _attractor_ids(network, scheme)
+        for scheme in (UpdateScheme.SYNCHRONOUS, UpdateScheme.ASYNCHRONOUS)
+    }
+    judged = under[claim.update_scheme]
+    other = next(scheme for scheme in under if scheme is not claim.update_scheme)
+    return {
+        "comparable": True,
+        "agree": judged == under[other],
+        "scheme": claim.update_scheme.value,
+        "other_scheme": other.value,
+        "attractors": len(judged),
+        "other_attractors": len(under[other]),
+        "only_under_judged": len(judged - under[other]),
+        "only_under_other": len(under[other] - judged),
+    }
+
+
+def require_pin_matches_scheme(engine_pin: EnginePin, *, schemes: Iterable[UpdateScheme]) -> None:
+    """Refuse a pin that does not name the update scheme the claims were actually judged under.
+
+    The sibling of :func:`require_pin_matches_path`, and the same defect it exists to prevent:
+    :func:`solver_pin` takes a scheme from the caller and nothing made it agree with what was
+    computed, so a certificate could announce asynchronous updating over a synchronous
+    enumeration. On the one class whose own specification says the scheme changes which attractors
+    exist, that is a certificate carrying two accounts of how its number was produced with the
+    stronger one false.
+
+    One pin cannot name two schemes, so claims judged under different ones are refused rather than
+    silently certified under whichever the pin happens to say.
+    """
+    wanted = set(schemes)
+    if not wanted:
+        return
+    if len(wanted) > 1:
+        raise ValueError(
+            "these claims are judged under both update schemes and one pin cannot name both; "
+            "certify them separately, each under its own solver_pin(scheme=...)"
+        )
+    scheme = wanted.pop()
+    algorithm = engine_pin.algorithm or ""
+    if f"{scheme.value}-update" not in algorithm:
+        raise ValueError(
+            f"these claims were judged under {scheme.value} updating and the pin says "
+            f"{algorithm!r}; use solver_pin(scheme=UpdateScheme.{scheme.name}) or "
+            "solver_pin_for(nodes=..., scheme=...)"
+        )
+
+
 def certify_logical(
     *,
     paper: PaperIdentity,
@@ -798,18 +926,13 @@ def certify_logical(
     # protocol line below says which path ran, and a pin that disagrees with it publishes two
     # contradictory accounts of how one number was computed.
     require_pin_matches_path(engine_pin, node_counts=[len(claim.rules) for claim in claims])
+    # …and the scheme, for exactly the same reason. The pin can name one (`solver_pin(scheme=)`)
+    # and nothing made it agree with what was judged, so a certificate could announce asynchronous
+    # updating over a synchronous enumeration — the stronger claim, and the false one, on the class
+    # whose own spec says the scheme changes which attractors exist.
+    require_pin_matches_scheme(engine_pin, schemes=[claim.update_scheme for claim in claims])
     assessments = [
-        judge_steady_state(
-            claim_id=claim.claim_id,
-            quantity=claim.quantity,
-            source_location=claim.source_location,
-            reported=claim.reported,
-            network=parse_boolean_network(claim.rules),
-            # A miss the caller did not categorize is published as uncategorized rather
-            # than raised, so this front-end can say a network did not reproduce.
-            attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
-            assumption_qualified=claim.assumption_qualified,
-        )
+        _judge_logical_claim(claim)
         for claim in claims
     ]
     # What was actually searched. The update scheme and the solver are on the pin already; the
@@ -819,11 +942,108 @@ def certify_logical(
         replace(a, protocol=search_protocol(len(claim.rules)))
         for a, claim in zip(assessments, claims)
     ]
+    # The counterpart of the spatial class's boundary assumption, and selective in the way that one
+    # is not: an unstated scheme is only load-bearing where it could change the answer, and whether
+    # it could is *computable* here. A fixed-point claim is never in that case — a fixed point is
+    # one under either scheme — so qualifying it would downgrade a verdict that cannot move.
+    scheme_assumptions = tuple(
+        assumption
+        for claim, assessment in zip(claims, assessments)
+        if (assumption := _scheme_assumption(claim, assessment)) is not None
+    )
     return build_certificate(
         paper=paper,
         engine_pin=engine_pin,
         assessments=assessments,
-        assumptions=tuple(assumptions),
+        assumptions=(*assumptions, *scheme_assumptions),
+    )
+
+
+def _judge_logical_claim(claim: LogicalClaim) -> ClaimAssessment:
+    """Judge one claim by what it reports: an attractor set, or a single steady state.
+
+    ``judge_attractor_set`` has been the class's answer to a reported attractor set since the class
+    was written, and no front-end could reach it — the milestone script re-implemented the
+    comparison rather than calling it, so the one place the update scheme changes an answer was
+    reachable from tests alone.
+    """
+    network = parse_boolean_network(claim.rules)
+    # A miss the caller did not categorize is published as uncategorized rather than raised, so
+    # this front-end can say a network did not reproduce.
+    attribution = claim.shortfall or undetermined_shortfall(claim.quantity)
+    if claim.attractors is not None:
+        return judge_attractor_set(
+            claim_id=claim.claim_id,
+            quantity=claim.quantity,
+            source_location=claim.source_location,
+            reported=claim.attractors,
+            network=network,
+            scheme=claim.update_scheme,
+            attribution=attribution,
+            assumption_qualified=claim.assumption_qualified,
+        )
+    return judge_steady_state(
+        claim_id=claim.claim_id,
+        quantity=claim.quantity,
+        source_location=claim.source_location,
+        reported=claim.reported,
+        network=network,
+        attribution=attribution,
+        assumption_qualified=claim.assumption_qualified,
+    )
+
+
+def _scheme_assumption(claim: LogicalClaim, assessment: ClaimAssessment) -> Assumption | None:
+    """The load-bearing assumption an unstated update scheme earns — where it earns one.
+
+    Three cases, and the distinction between the first two is the whole point of measuring rather
+    than asserting:
+
+    * the claim states its scheme, or the two schemes produce the same attractors: **no
+      assumption**. Nothing was assumed in the first case, and in the second the choice provably
+      cannot move this verdict;
+    * they differ: a load-bearing assumption whose basis carries the difference as a count;
+    * the network is past the enumeration ceiling: a load-bearing assumption saying the comparison
+      is out of reach, which is not the same as saying the schemes agree.
+
+    Attached only where a verdict was drawn — an assumption on an abstention would describe a
+    judgment nobody made, and being load-bearing it would downgrade the certificate on that
+    claim's behalf.
+    """
+    if assessment.verdict is Verdict.NOT_EVALUABLE:
+        return None
+    sensitivity = scheme_sensitivity(claim)
+    if sensitivity is None or sensitivity.get("agree"):
+        return None
+    if sensitivity["comparable"]:
+        basis = (
+            "the claim's source names no update scheme, so this run used synchronous updating — "
+            "and on this network the choice is not free: it has "
+            f"{sensitivity['attractors']} attractor(s) under {sensitivity['scheme']} updating "
+            f"against {sensitivity['other_attractors']} under {sensitivity['other_scheme']}, with "
+            f"{sensitivity['only_under_judged']} that exist only under the one judged. A "
+            "synchronous limit cycle need not survive asynchronous updating"
+        )
+    else:
+        basis = (
+            "the claim's source names no update scheme, so this run used synchronous updating. "
+            f"{sensitivity['why']} — so unlike a smaller network, this one cannot be shown to give "
+            "the same answer either way"
+        )
+    return Assumption(
+        id=f"logical-scheme-{claim.claim_id}",
+        description=(
+            "the attractors judged here were computed under synchronous updating; the claim's "
+            "source states no scheme"
+        ),
+        chosen="synchronous updating",
+        basis=basis,
+        load_bearing=True,
+        alternatives=("asynchronous updating (terminal strongly connected sets)",),
+        # A scheme is something a paper states, so an author *can* close this one — unlike the
+        # spatial wall, which is a limit of the solver. The queue ranks the two differently for
+        # exactly that reason.
+        author_can_close=True,
     )
 
 
@@ -840,6 +1060,8 @@ __all__ = [
     "certify_logical",
     "compile_boolean_rule",
     "judge_attractor_set",
+    "require_pin_matches_scheme",
+    "scheme_sensitivity",
     "judge_steady_state",
     "logical_dossier",
     "parse_boolean_network",

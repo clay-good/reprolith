@@ -35,6 +35,20 @@ reproduction is fully specified without the paper.
   is recorded as a gap, because synchronous and asynchronous updating can yield different
   attractors
 
+#### Scenario: The scheme reaches the run, and the certificate
+
+- **WHEN** a claim states its update scheme
+- **THEN** it is judged under that scheme, and the certificate's pin names the scheme its verdicts
+  were actually computed under — a pin naming the other one is refused rather than published, and
+  claims judged under two schemes are refused a single pin
+- **AND** a claim that states no scheme is judged under synchronous updating and carries a
+  load-bearing assumption **only where the choice could change its verdict**, which is computed
+  rather than assumed: the two schemes' results for the quantity the claim was judged on are
+  compared exactly, a fixed point being one under either scheme, and the difference is reported on
+  the assumption as a count
+- **AND** where the network is too large for that comparison to be computed, the assumption says
+  so, since "not comparable here" is not "the schemes agree"
+
 #### Scenario: A multi-valued model is refused, not flattened to Boolean
 
 - **WHEN** an ingested logical model uses more than two levels — declared by a maximum level, an

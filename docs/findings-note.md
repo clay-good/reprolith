@@ -4899,3 +4899,42 @@ zero-flux run selects mode 20 and resolves to 4.76%; the same grid under periodi
 `L/m`, so its best possible resolution is 8.33% and it **measures nothing at all**. The certificate
 says that, in those words. An assumption whose alternative cannot even be evaluated at this length
 is a stronger statement about the choice than "it moves the answer by x%", and it is the honest one.
+
+
+## The update scheme was a gap on the way in and nothing on the way out
+
+The logical class has called an unstated update scheme load-bearing since it was written: the
+dossier records one as a first-class element, `validate_logical` refuses a dossier that records an
+unstated scheme as anything but a load-bearing gap, and the spec says why — synchronous and
+asynchronous updating give different cyclic attractors. Every one of those is a check on the way
+**in**. On the way out:
+
+- a `LogicalClaim` had no scheme field, so a *stated* scheme could not reach the run;
+- `certify_logical` judged fixed points only, and `judge_attractor_set` — the class's answer to a
+  reported attractor set, and the one place the scheme changes an answer — was reachable from tests
+  and from nothing else. The milestone script re-implemented the comparison rather than calling it;
+- no certificate carried an assumption for the scheme, however load-bearing the dossier said it
+  was;
+- and `solver_pin(scheme=...)` took a scheme from the caller with nothing making it agree with what
+  was computed, so a certificate could announce asynchronous updating over a synchronous
+  enumeration — two accounts of one number with the stronger one false, which is a defect this
+  repository has found in its own output before.
+
+All four are closed. A claim carries its scheme and its reported attractor set; the pin is refused
+if it names the other scheme, and refused outright for claims judged under two; and an unstated
+scheme earns a load-bearing assumption **only where it could change the verdict**, which is
+computed rather than assumed.
+
+That last measurement is exact, which no other sensitivity in this package is: attractors are
+enumerated, so "the two schemes agree" is a proof rather than a bound. It also produced the round's
+one real defect, and the shape is worth keeping. The first version compared **attractor sets** for
+every claim — so on the toggle switch, whose spurious synchronous 2-cycle is the textbook example
+of scheme dependence, it qualified a *steady-state* verdict that the 2-cycle cannot touch. A fixed
+point is a fixed point under either scheme: a state whose synchronous successor is itself has no
+unstable node to flip. The comparison is now of the quantity the claim was judged on, and a
+fixed-point claim needs no run at all to answer it. Left as written, it would have downgraded every
+fixed-point certificate this class publishes.
+
+One difference from the spatial wall is worth stating, because the verification queue ranks on it:
+a scheme is something a paper can state, so this assumption is `author_can_close=True`. The wall is
+a limit of the solver and is not.

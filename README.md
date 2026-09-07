@@ -607,6 +607,17 @@ guard-cell ABA) are reproduced against an independent solver — so the
 [milestone blind run](datasets/logical/milestone/) scores 9/9 through the same catalog and agreement
 machinery. See [docs/logical-class.md](docs/logical-class.md).
 
+**The update scheme now reaches the run and the certificate, and is qualified only where it could
+change the answer.** A claim states its scheme and its reported attractor set; the pin is refused
+if it names the other scheme, since a certificate announcing asynchronous updating over a
+synchronous enumeration would carry two accounts of one number with the stronger one false. Where
+a claim states no scheme, the run is synchronous and the certificate carries a load-bearing
+assumption — but only where the choice could move that verdict, which is *computed*: attractors are
+enumerated, so "the two schemes agree" is a proof rather than a bound. On the toggle switch the
+attractor set differs (three under synchronous updating, two under asynchronous — its 2-cycle is an
+artifact of updating both nodes at once) while its fixed points do not, so its attractor claim is
+qualified and its steady-state claim is not.
+
 **Stochastic (SSA) models** are the fifth class: discrete-molecule reaction networks where a single
 run is a random sample, so the reproducible result is a distribution. An exact, pure-Python
 Gillespie simulator (deterministic under a pinned seed) feeds the same distributional oracle the

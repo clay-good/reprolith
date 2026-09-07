@@ -55,6 +55,18 @@ differ on cyclic attractors — the toggle switch's 2-cycle exists synchronously
 asynchronously — which is precisely why an unstated scheme is a first-class gap for this class, and
 why `judge_attractor_set` takes the scheme it should judge under.
 
+That gap was a check on the way *in* only. A `LogicalClaim` carries `scheme` and `attractors` now,
+so a stated scheme reaches the run and a reported attractor set is certified through the front end
+rather than through `judge_attractor_set` directly; `certify_logical` refuses a pin naming a
+different scheme than its claims were judged under, and refuses to give one pin to claims judged
+under two. Where a claim states no scheme, the run is synchronous and the certificate carries a
+load-bearing assumption — but only where the choice could move *that* verdict, which
+`scheme_sensitivity` computes exactly: enumerate under both and compare what the claim was judged
+on. A fixed-point claim needs no run to answer it, since a fixed point is one under either scheme,
+and a network past the enumeration ceiling says the comparison is out of reach rather than reading
+as agreement. Unlike the spatial class's wall, this assumption is `author_can_close=True`: a paper
+can state its scheme.
+
 Both judges map onto the shared assessment contract via `assess_match`: a match reproduces,
 otherwise it fails and — like any non-pass — requires a root-cause attribution. So a logical
 verdict feeds `build_certificate` exactly like a scalar, curve, or fingerprint one, and the
