@@ -1248,7 +1248,7 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "a front certificate reports its settling drift and hides what its time step costs",
         "spatial.py",
-        ("            + _front_step_cost(claim, speed)", "            + \"\""),
+        ("            + _front_step_cost(moved)", "            + \"\""),
         ["tests/test_spatial_front_claim.py"],
     ),
     (
