@@ -50,11 +50,28 @@
       "tolerance": "exact match on the set of essential reactions",
       "tolerance_source": "class-default",
       "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "e_coli_core-aconitase-flux",
+      "discrepancy": "relative error 0.0000",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "protocol": "medium: R_EX_glc__D_e<=10.0 mmol/gDW/h, R_EX_o2_e<=1000.0 mmol/gDW/h; maximize: R_BIOMASS_Ecoli_core_w_GAM; flux variability of R_ACONTa at the optimum: [6.00725, 6.00725]",
+      "quantity": "aconitase (R_ACONTa) flux at maximal growth",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "COBRApy 0.31.1 flux variability of this model file \u2014 reference interval computed by that tool, not a number read from the paper",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
     }
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "highs (reprolith-fba rev af2e615edd8f)",
+    "algorithm": "highs (reprolith-fba rev ed4ea43cf392)",
     "engine": "scipy-linprog",
     "version": "1.13.1"
   },

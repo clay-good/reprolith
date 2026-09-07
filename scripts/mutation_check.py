@@ -1219,6 +1219,27 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if sensitivity is None or sensitivity.get("agree"):', "    if True:"),
         ["tests/test_logical_scheme.py"],
     ),
+    # --- a reported flux can be certified, 2026-09-07 -------------------------------------------
+    (
+        "a flux claim is judged against a different analysis than the one its source used",
+        "constraint_based.py",
+        ("        interval = _flux_interval(model, index, loopless=flux.loopless)",
+         "        interval = _flux_interval(model, index, loopless=False)"),
+        ["tests/test_fba_flux_claim.py"],
+    ),
+    (
+        "a flux the model leaves free abstains without saying whether it is a loop",
+        "constraint_based.py",
+        ("        if assessment.verdict is Verdict.NOT_EVALUABLE:\n            # An interval",
+         "        if False:\n            # An interval"),
+        ["tests/test_fba_flux_claim.py"],
+    ),
+    (
+        "a flux claim naming a reaction the model does not carry is judged anyway",
+        "constraint_based.py",
+        ("        if flux.reaction_id not in model.reaction_ids:", "        if False:"),
+        ["tests/test_fba_flux_claim.py"],
+    ),
     # --- a reported essential set can be certified, 2026-09-07 ----------------------------------
     (
         "a reported count of essential genes is published as a match of the set itself",

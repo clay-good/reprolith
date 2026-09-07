@@ -37,6 +37,11 @@ happens to land on.
 | `judge_flux` | Does a reported reaction flux reproduce? | it judges against the variability interval, and abstains when the model leaves the flux free |
 | `essential_set` / `judge_essentiality` | Does a reported essential set — genes or reactions, by the model's own ids — reproduce? | essentiality is an objective property, and the set is compared element for element rather than by size |
 
+`judge_flux` and `judge_essentiality` are both reachable from `certify_constraint_based` now
+(`FluxClaim`, `EssentialityClaim`), which judged objective values and nothing else for most of this
+class's life. The *E. coli* core certificate carries all four kinds: its growth rate, both essential
+sets, and a reported flux.
+
 ### `judge_essentiality` — the set a paper validates against knockout data
 
 `gene_essentiality` and `reaction_essentiality` have answered this since the class was written, and
@@ -68,6 +73,18 @@ answer rather than leaving each caller to re-derive that mapping — the identif
 comparison already had to learn once.
 
 ### `judge_flux` — the honest verdict for a reported flux
+
+Reachable from the front end as a `FluxClaim`, whose one option is the analysis: `loopless=True`
+says the source removed thermodynamically infeasible internal loops, and the flux is then judged
+against the interval *that* analysis produces. It is the claim's property rather than a preference
+because it decides what the number is compared to.
+
+Where the plain interval leaves the flux free, the abstention now says **why**, which is the
+difference between two very different findings. "The model does not determine this flux" reads the
+same whether the freedom is real biology or a stoichiometric cycle with no driving force — and on
+*E. coli* core it is the second: the only two reactions unpinned at the optimum are `FRD7` and
+`SUCDi`, the model's textbook infeasible loop, and the loop law pins them. The reason says so, and
+names the interval a loopless claim would be judged against.
 
 Given a reported flux and its variability interval `(min, max)` (from `flux_variability`):
 

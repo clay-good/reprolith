@@ -475,6 +475,7 @@ def flux_variability(
     upper: Sequence[float | None],
     *,
     fraction_of_optimum: float = 1.0,
+    reactions: Sequence[int] | None = None,
 ) -> list[tuple[float, float]]:
     """The min and max each reaction's flux can take while the objective stays optimal.
 
@@ -483,6 +484,11 @@ def flux_variability(
     same objective, so instead of picking one, FVA reports the whole feasible interval per
     reaction at (a ``fraction_of_optimum`` of) the optimum. A reaction pinned to a single value
     reproduces exactly; one with a wide interval cannot be certified to a single reported flux.
+
+    ``reactions`` optionally restricts the computation to a subset of reaction indices; the result
+    is then one ``(min, max)`` per requested index, in the order given. Its loopless sibling has
+    taken one since it was written, and for the same reason: each reaction is two more linear
+    programs, so judging one reported flux on a genome-scale model should not solve 2,452 of them.
 
     Returns one ``(min, max)`` tuple per reaction, in reaction order.
     """
@@ -496,7 +502,8 @@ def flux_variability(
     a_ub = [[-x for x in objective]]
     bounds = list(zip(lower, upper))
     ranges: list[tuple[float, float]] = []
-    for i in range(len(objective)):
+    wanted = range(len(objective)) if reactions is None else reactions
+    for i in wanted:
         select = [1.0 if j == i else 0.0 for j in range(len(objective))]
         lo = _extreme_at_optimum(linprog, select, a_ub, floor, a_eq, b_eq, bounds, optimum)
         hi = _extreme_at_optimum(linprog, [-x for x in select], a_ub, floor, a_eq, b_eq, bounds, optimum)

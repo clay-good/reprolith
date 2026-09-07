@@ -5367,3 +5367,27 @@ eighteen reactions as present on one side only. The milestone translates the ref
 *checks* the translation against the model rather than trusting it, because the FROG comparison
 already paid for that lesson once.
 
+**And the same sweep, one function over.** `judge_flux` has judged a reported flux honestly since
+this class was written — pinned and matching is a reproduction, *inside* a wide interval is an
+abstention because the model permits the value rather than producing it, outside is a miss — and the
+spec has named a reported flux as a target for just as long. Nothing could reach it either.
+`FluxClaim` does, and the *E. coli* core certificate now carries all four kinds of claim this class
+can make.
+
+The abstention is where the work was. "The model does not determine this flux" is the same sentence
+whether the freedom is real biology or a stoichiometric cycle carrying no thermodynamic driving
+force — and on this model it is always the second: **the only two reactions unpinned at the optimum
+are `FRD7` and `SUCDi`**, its textbook infeasible loop, and the loop law pins them. So the reason
+runs the loopless analysis and says which case it is, and names the interval a claim stating
+loopless FBA would be judged against. The analysis is the *claim's* property, not a preference: run
+where the source did not, or skipped where the source did, it judges the reported number against a
+different analysis than the one that produced it.
+
+Two smaller things came out of it. `flux_variability` gained the reaction subset its loopless
+sibling has had since it was written — judging one reported flux on a genome-scale model was solving
+2,452 linear programs to use two of them. And a test written expecting an abstention to downgrade
+the certificate was wrong about the shared rule rather than finding a defect: the overall verdict is
+derived from the claims that *were* judged, which is why a certificate with nothing evaluable is
+`blocked` rather than `not-reproduced`. The abstention is visible on the claim line, in the counts,
+and in the gap report; it does not pretend the rest of the certificate did not happen.
+

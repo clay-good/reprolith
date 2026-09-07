@@ -37,8 +37,11 @@ from .fba import (
     FbaModel,
     ReportedEssentialSet,
     essentiality_threshold_sensitivity,
+    flux_variability,
     judge_essentiality,
+    judge_flux,
     judge_objective,
+    loopless_flux_variability,
 )
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import Attribution, ReferenceKind, Tolerance, undetermined_shortfall
@@ -240,6 +243,72 @@ def _cutoff_assumption(claim: EssentialityClaim, model: FbaModel) -> Assumption 
     )
 
 
+@dataclass(frozen=True)
+class FluxClaim:
+    """A published reaction flux to reproduce: one reaction, one number, under this medium.
+
+    The class's third reproduction target, and the one the spec has named since the class was
+    written — :func:`reprolith.judge_flux` has judged it honestly against the reaction's
+    flux-variability interval the whole time, and no front end could reach it.
+
+    ``loopless`` says the source's analysis removed thermodynamically infeasible internal loops
+    (Schellenberger et al. 2011). It is a property of the *claim*, not a preference: the loop law
+    tightens the interval a flux is judged against, so running it where the source did not — or
+    skipping it where the source did — judges the reported number against a different analysis than
+    the one that produced it. Where the plain interval leaves the flux free, the abstention says
+    whether the loop law would have pinned it, which is a fact about the model rather than a guess.
+    """
+
+    claim_id: str
+    quantity: str
+    reaction_id: str
+    reported: float
+    source_location: str
+    loopless: bool = False
+    tolerance: Tolerance | None = None
+    assumption_qualified: bool = False
+    shortfall: Attribution | None = None
+
+
+def _flux_interval(model: FbaModel, index: int, *, loopless: bool) -> tuple[float, float]:
+    """This reaction's feasible interval at the optimum, by the analysis the claim states."""
+    if loopless:
+        return loopless_flux_variability(
+            model.stoichiometry, model.objective, model.lower, model.upper, reactions=[index]
+        )[0]
+    return flux_variability(
+        model.stoichiometry, model.objective, model.lower, model.upper, reactions=[index]
+    )[0]
+
+
+def _loop_law_note(model: FbaModel, index: int) -> str:
+    """What the loop law would say about a flux the plain interval leaves free.
+
+    The abstention this follows is honest but unhelpful on its own: "the model does not determine
+    this flux" is the same sentence whether the freedom is real biology or a stoichiometric cycle
+    carrying no driving force. On *E. coli* core it is the second: the only two reactions the
+    interval leaves free are `FRD7` and `SUCDi`, the model's textbook infeasible loop. So the
+    reason says which, and a claim whose source used loopless FBA can be certified by saying so.
+
+    Silent — returning an empty clause — when the mixed-integer solver is unavailable, because an
+    abstention that names no alternative is still a correct abstention.
+    """
+    try:
+        lo, hi = _flux_interval(model, index, loopless=True)
+    except Exception:  # pragma: no cover - the milp extra, or an ill-conditioned encoding
+        return ""
+    if hi - lo <= 1e-6 * max(1.0, abs(lo), abs(hi)):
+        return (
+            f" The loop law does pin it, to {lo:.6g}: this freedom is an internal cycle carrying "
+            "no thermodynamic driving force, not flexibility the model has. A claim whose source "
+            "states it used loopless FBA is judged against that interval"
+        )
+    return (
+        f" The loop law does not pin it either ({lo:.6g} to {hi:.6g}), so the freedom is the "
+        "model's own and no analysis this class implements would decide the claim"
+    )
+
+
 def certify_constraint_based(
     dossier: Dossier,
     *,
@@ -249,6 +318,7 @@ def certify_constraint_based(
     tolerance: Tolerance | None = None,
     shortfalls: Mapping[str, Attribution] | None = None,
     essentiality: Iterable[EssentialityClaim] = (),
+    fluxes: Iterable[FluxClaim] = (),
 ) -> Certificate:
     """Certify a constraint-based dossier end to end and assemble its certificate.
 
@@ -347,6 +417,44 @@ def certify_constraint_based(
             assumption = _cutoff_assumption(claim, model)
             if assumption is not None:
                 cutoff_assumptions.append(assumption)
+    # The reported-flux claims, against the same adopted model under the same medium — an interval
+    # is a property of the bounds, so a claim judged against the distributed defaults would be
+    # judged against a different model than the objective claims beside it.
+    for flux in tuple(fluxes):
+        if flux.reaction_id not in model.reaction_ids:
+            raise ValueError(
+                f"claim {flux.claim_id!r} names reaction {flux.reaction_id!r}, which this model "
+                "does not have; a flux claim judged against a reaction the model does not carry "
+                "would be an abstention about the wrong thing"
+            )
+        index = model.reaction_index(flux.reaction_id)
+        interval = _flux_interval(model, index, loopless=flux.loopless)
+        assessment = judge_flux(
+            claim_id=flux.claim_id,
+            quantity=flux.quantity,
+            source_location=flux.source_location,
+            reported=flux.reported,
+            interval=interval,
+            tolerance=flux.tolerance,
+            attribution=flux.shortfall or undetermined_shortfall(flux.quantity),
+            assumption_qualified=flux.assumption_qualified or rests_on_a_gap,
+        )
+        if assessment.verdict is Verdict.NOT_EVALUABLE:
+            # An interval that leaves the flux free is where a reader most wants to know *why*.
+            assessment = replace(
+                assessment,
+                root_cause=(assessment.root_cause or "") + _loop_law_note(model, index),
+            )
+        analysis = "loopless flux variability" if flux.loopless else "flux variability"
+        assessments.append(
+            replace(
+                assessment,
+                protocol=(
+                    f"{protocol}; {analysis} of {flux.reaction_id} at the optimum: "
+                    f"[{interval[0]:.6g}, {interval[1]:.6g}]"
+                ),
+            )
+        )
     return build_certificate(
         paper=paper,
         engine_pin=engine_pin,
@@ -359,6 +467,7 @@ def certify_constraint_based(
 __all__ = [
     "FLUX_UNIT",
     "EssentialityClaim",
+    "FluxClaim",
     "certify_constraint_based",
     "constraint_based_dossier",
     "validate_constraint_based",

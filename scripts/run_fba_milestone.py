@@ -39,7 +39,7 @@ from reprolith import (
     constraint_based_dossier,
     run_test_set,
 )
-from reprolith.constraint_based import EssentialityClaim
+from reprolith.constraint_based import EssentialityClaim, FluxClaim
 from reprolith.corroboration import corroborate_objective
 from reprolith.fba import EssentialKind, ReportedEssentialSet, solver_pin
 from reprolith.mcp_server import write_json_atomically
@@ -75,7 +75,8 @@ def _e_coli_core() -> tuple[Identifiers, GroundTruth, object, str]:
         expected=OverallVerdict.REPRODUCED,
         source=(
             "BiGG / Orth, Fleming & Palsson (2010): known maximal growth rate 0.873922; "
-            "essential genes and reactions from COBRApy's single-deletion analysis"
+            "essential genes and reactions from COBRApy's single-deletion analysis; the aconitase "
+            "flux from its flux-variability interval"
         ),
     )
     dossier = dossier_from_dict(
@@ -181,6 +182,36 @@ def _essentiality_claims(sbml: str) -> list[EssentialityClaim]:
     ]
 
 
+def _flux_claims() -> list[FluxClaim]:
+    """One reported flux for E. coli core, against COBRApy's own committed interval.
+
+    The class's third target, published on the same certificate as the growth rate and the
+    essential sets. `R_ACONTa` is chosen because its interval *pins* it — 93 of this model's 95
+    reactions are pinned at the optimum — so it is a flux the model determines rather than merely
+    permits, which is the only kind :func:`reprolith.judge_flux` will certify.
+
+    The two that are *not* pinned are `FRD7` and `SUCDi`, the model's textbook infeasible loop, and
+    they are not published here for exactly the reason the judge abstains on them: this milestone
+    publishes what the model determines.
+    """
+    reference = json.loads((CROSS / "e_coli_core_fva.json").read_text(encoding="utf-8"))
+    lo, hi = reference["intervals"]["ACONTa"]
+    if lo != hi:
+        raise AssertionError(
+            "the reference no longer pins ACONTa, so this entry would abstain rather than certify"
+        )
+    return [FluxClaim(
+        claim_id="e_coli_core-aconitase-flux",
+        quantity="aconitase (R_ACONTa) flux at maximal growth",
+        reaction_id="R_ACONTa",
+        reported=lo,
+        source_location=(
+            f"{reference['reference_tool']} flux variability of this model file — reference "
+            "interval computed by that tool, not a number read from the paper"
+        ),
+    )]
+
+
 def main() -> None:
     catalog = Catalog()
     reference = json.loads((CROSS / "reference_growth.json").read_text(encoding="utf-8"))["models"]
@@ -204,6 +235,7 @@ def main() -> None:
             essentiality=(
                 _essentiality_claims(sbml) if identifiers.accession == "e_coli_core" else ()
             ),
+            fluxes=_flux_claims() if identifiers.accession == "e_coli_core" else (),
         )
 
     certificates, report = run_test_set(
