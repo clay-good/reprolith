@@ -17,7 +17,10 @@ Two ways to fail, and the second matters more than it looks:
   the document a value to run;
 * a mutation's **anchor is gone**: the code moved and this list did not. Reported as a failure, not
   skipped. A checker that quietly counts fewer things than it did last week is the shape of defect
-  it exists to catch.
+  it exists to catch;
+* a mutation's **anchor is ambiguous**: it matches more than one place, so the replacement lands on
+  whichever comes first and the entry owning the other site stops being checked. Also a failure —
+  a quote that is not unique is a guard pointed at the wrong text.
 
 Needs the engine extra (the tests it runs do). Run from the repo root:
 
@@ -98,8 +101,10 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         "an assumption the certificate says is under review is left out of the queue",
         "verification.py",
         (
-            "            if not assumption.load_bearing and not assumption.verification_item:",
-            "            if not assumption.load_bearing:",
+            "            if not assumption.load_bearing and not assumption.verification_item:\n"
+            "                continue\n            item_id = _item_id(assumption)",
+            "            if not assumption.load_bearing:\n"
+            "                continue\n            item_id = _item_id(assumption)",
         ),
         ["tests/test_verification_escalation.py"],
     ),
@@ -243,7 +248,8 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "a partial SAT model is compared against a complete state",
         "corroboration.py",
-        ("    if missing:\n        raise ValueError(", "    if False:\n        raise ValueError("),
+        ('    if missing:\n        raise ValueError(\n            "the independent solver returned a model that leaves "',
+         '    if False:\n        raise ValueError(\n            "the independent solver returned a model that leaves "'),
         ["tests/test_logical_corroboration.py"],
     ),
     (
@@ -690,7 +696,8 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "export answers a path it cannot write with a traceback",
         "cli.py",
-        ("    except OSError as unwritable:", "    except ZeroDivisionError as unwritable:"),
+        ("        replaced = _wrote(out, archive)\n    except OSError as unwritable:",
+         "        replaced = _wrote(out, archive)\n    except ZeroDivisionError as unwritable:"),
         ["tests/test_cli.py"],
     ),
     (
@@ -844,7 +851,8 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "the spatial reference is integrated over a window the certificate does not run",
         "corroboration.py",
-        ("    duration = dt * steps", "    duration = dt * steps * 2"),
+        ("    operator = diags([off, main, off], [-1, 0, 1], format=\"csc\") * (diffusivity / (dx * dx))\n    duration = dt * steps",
+         "    operator = diags([off, main, off], [-1, 0, 1], format=\"csc\") * (diffusivity / (dx * dx))\n    duration = dt * steps * 2"),
         ["tests/test_spatial_corroboration.py"],
     ),
     (
@@ -929,8 +937,8 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "a decay length is qualified for a boundary that is the model rather than a choice",
         "spatial.py",
-        ("        attribution=claim.shortfall or undetermined_shortfall(claim.quantity),\n    )\n    return replace(\n        assessment,",
-         "        attribution=claim.shortfall or undetermined_shortfall(claim.quantity),\n        assumption_qualified=True,\n    )\n    return replace(\n        assessment,"),
+        ("predicted=measured,\n        tolerance=claim.tolerance,\n        attribution=claim.shortfall or undetermined_shortfall(claim.quantity),\n    )",
+         "predicted=measured,\n        tolerance=claim.tolerance,\n        attribution=claim.shortfall or undetermined_shortfall(claim.quantity),\n        assumption_qualified=True,\n    )"),
         ["tests/test_spatial_gradient_claim.py"],
     ),
     (
@@ -1280,7 +1288,8 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "two fingerprints of different models are compared on the part that lines up",
         "corroboration.py",
-        ("    if missing:", "    if False:"),
+        ('    if missing:\n        raise ValueError(\n            "these fingerprints do not describe the same model: "',
+         '    if False:\n        raise ValueError(\n            "these fingerprints do not describe the same model: "'),
         ["tests/test_frog_publication.py"],
     ),
 ]
@@ -1289,6 +1298,7 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
 def main() -> int:
     survivors: list[str] = []
     stale: list[str] = []
+    ambiguous: list[str] = []
     with tempfile.TemporaryDirectory() as scratch:
         for meaning, module, (anchor, replacement), tests in MUTATIONS:
             package = Path(scratch) / "python"
@@ -1296,9 +1306,22 @@ def main() -> int:
             shutil.copytree(REPO / "python", package)
             target = package / "reprolith" / module
             source = target.read_text(encoding="utf-8")
-            if anchor not in source:
+            found = source.count(anchor)
+            if found == 0:
                 stale.append(f"{module}: {meaning}")
                 print(f"STALE     {meaning}")
+                continue
+            if found > 1:
+                # `str.replace(anchor, repl, 1)` mutates the *first* match, so an anchor that
+                # appears twice silently mutates whichever site comes first — and the entry that
+                # owns the other one stops being checked at all. That happened on 2026-09-07:
+                # `if missing:\n        raise ValueError(` was written for the SAT check and a new
+                # function further up the same module came to contain it, so a guard reported
+                # SURVIVED while another entry "passed" by mutating code its tests never cover.
+                # A quote that is not unique is a guard pointed at the wrong text, which this
+                # repository already refuses in its loop-note citations.
+                ambiguous.append(f"{module}: {meaning} ({found} matches)")
+                print(f"AMBIGUOUS {meaning} — the anchor matches {found} places")
                 continue
             target.write_text(source.replace(anchor, replacement, 1), encoding="utf-8")
             result = subprocess.run(
@@ -1314,6 +1337,12 @@ def main() -> int:
                 survivors.append(meaning)
                 print(f"SURVIVED  {meaning}")
 
+    if ambiguous:
+        print(f"\n{len(ambiguous)} anchor(s) match more than one place, so the entry that owns the")
+        print("other site is not being checked at all. Make each anchor unique — include the line")
+        print("under it, or the message it raises.")
+        for entry in ambiguous:
+            print(f"  - {entry}")
     if stale:
         print(f"\n{len(stale)} mutation(s) no longer apply — the code moved and this list did not.")
         print("Update the anchor or delete the entry; a checker that quietly checks less is the")
@@ -1322,9 +1351,9 @@ def main() -> int:
         print(f"\n{len(survivors)} guard(s) can be removed with every test still passing:")
         for meaning in survivors:
             print(f"  - {meaning}")
-    if not stale and not survivors:
+    if not stale and not survivors and not ambiguous:
         print(f"\nall {len(MUTATIONS)} guards are held by a test that fails without them")
-    return 1 if (stale or survivors) else 0
+    return 1 if (stale or survivors or ambiguous) else 0
 
 
 if __name__ == "__main__":

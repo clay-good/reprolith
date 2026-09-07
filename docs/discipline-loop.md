@@ -244,8 +244,8 @@ agree. Replacing it with "the alternative that moves it **least**" is the real r
 understates what an assumption costs, and that one is held. A mutation the code cannot distinguish
 measures nothing; a mutation naming the direction the number must never err in measures the guard.
 
-The list stands at 163 (2026-09-06, later the same day), all held, no anchors stale — and that
-afternoon added two lessons the earlier run had not reached.
+The list stands at 165 (2026-09-07), all held, no anchor stale and none ambiguous — and getting
+there added three lessons the earlier runs had not reached.
 
 **A test that reads the artifacts does not guard the code that writes them.** A new guard on the
 PK/PD protocol line was checked by reading the committed certificates, which carry the clause
@@ -257,6 +257,18 @@ statement about the artifact.
 speed)` became `_front_step_cost(moved)` in a refactor, and the entry added an hour earlier went
 stale. The checker reports that rather than skipping it — which is the whole design — but only
 when it runs, so the rule is the one above: run it the same day, not on the schedule alone.
+
+**And an anchor that is not unique is a guard pointed at the wrong text.** `str.replace(anchor,
+repl, 1)` mutates the *first* match, so when a new function came to contain
+`if missing:\n        raise ValueError(` — an anchor written for the SAT check further down the
+same module — the SAT guard silently stopped being checked, and the new entry "passed" by mutating
+code its own tests never cover. That is the same defect this repository refuses in its loop-note
+citations, in the checker itself.
+
+It is a **third failure mode** now: an anchor matching more than one place is reported as AMBIGUOUS
+and fails the run, exactly as a stale one does. Turning it on found four more, one of them the
+export command's `except OSError`, which matches eight places in the CLI. Every anchor is unique
+now, and the rule for writing one is to include the line it sits under or the message it raises.
 
 It fails two ways, and the second is the one worth having. A **surviving** mutation means the guard
 has no test, or the test never reaches the case that makes it load-bearing — which is how the
