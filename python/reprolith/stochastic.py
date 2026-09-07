@@ -19,6 +19,7 @@ import math
 import random
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
+from enum import Enum
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, Parameter
@@ -394,12 +395,16 @@ class ExtinctionTimeClaim:
 #: by several claims is one item with several dependents rather than one question each. The
 #: per-claim number lives on the protocol line, where the rest of that run's facts already are —
 #: the spatial class learned that the expensive way.
+#:
+#: It says "estimate" and not "mean" because this class stopped judging only means: a Fano factor
+#: and a coefficient of variation rest on the same sampling and the same pinned seed, and a basis
+#: naming a mean would have described a quantity two of its dependents are not about.
 _SAMPLING_BASIS = (
-    "a finite ensemble's mean differs from the model's true mean by sampling noise of a size the "
-    "trajectory count sets, so the verdict moves with the count and the seed; both are pinned here "
-    "to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this "
-    "claim's protocol line reports the mean's standard error as a share of the reported value, "
-    "against the threshold it is judged at"
+    "a finite ensemble's estimate differs from the model's true value by sampling noise of a size "
+    "the trajectory count sets, so the verdict moves with the count and the seed; both are pinned "
+    "here to make it byte-reproducible. How far it moves is measured rather than left as a caveat: "
+    "this claim's protocol line reports that estimate's standard error as a share of the reported "
+    "value, against the threshold it is judged at"
 )
 
 
@@ -498,6 +503,8 @@ def unresolvable_ensemble_reason(
     trajectories: int,
     observed_mean: float | None = None,
     tolerance: Tolerance | None = None,
+    standard_error: float | None = None,
+    quantity_noun: str = "reported mean",
 ) -> str | None:
     """Why this ensemble cannot decide this claim, or ``None`` when it can.
 
@@ -533,7 +540,11 @@ def unresolvable_ensemble_reason(
     tol = tolerance or default_tolerance(
         ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
     )
-    sem = math.sqrt(variance / trajectories)
+    # A mean's error bar is sqrt(variance/n); a ratio of moments — a Fano factor, a coefficient of
+    # variation — has a different one, measured by resampling rather than by that formula. The
+    # caller supplies it in that case, so the *rule* (the half-threshold bar, the zero-spread bar,
+    # the decisively-outside escape) stays one implementation for every quantity this class judges.
+    sem = math.sqrt(variance / trajectories) if standard_error is None else standard_error
     relative_sem = abs(sem / reported_mean)
     if relative_sem <= tol.reproduced_within / 2.0:
         return None
@@ -555,7 +566,7 @@ def unresolvable_ensemble_reason(
             return None
     return (
         f"this ensemble cannot resolve the claim: its standard error is "
-        f"{relative_sem:.1%} of the reported mean, against a "
+        f"{relative_sem:.1%} of the {quantity_noun}, against a "
         f"{tol.reproduced_within:.0%} pass threshold; "
         f"{trajectories} trajectories is too few to tell a reproduction from sampling noise"
     )
@@ -701,6 +712,7 @@ def certify_stochastic(
     initial: Sequence[int],
     claims: Iterable[StochasticClaim] = (),
     extinctions: Iterable[ExtinctionTimeClaim] = (),
+    noises: Iterable[NoiseClaim] = (),
     assumptions: Iterable[Assumption] = (),
 ) -> Certificate:
     """Run each claim's pinned ensemble, judge its mean, and assemble the certificate.
@@ -825,6 +837,40 @@ def certify_stochastic(
                     author_can_close=False,
                 )
             )
+    # The **noise** claims, judged by the same rules again: the ensemble is Reprolith's, its cost
+    # is measured rather than asserted, and what is measured is the statistic's own error bar
+    # rather than a mean's — see :func:`noise_standard_error`.
+    noise_sampling: list[Assumption] = []
+    for noise in tuple(noises):
+        assessment = _judge_noise(noise, n_species, reactions, initial)
+        assessments.append(assessment)
+        if assessment.assumption_qualified:
+            noise_sampling.append(
+                Assumption(
+                    id=f"ssa-sampling-{noise.claim_id}",
+                    description=(
+                        # Not "the fano-factor judged here": the queue keys an item by its
+                        # question, and a description naming the statistic asks the same question
+                        # once per statistic. Both rest on the same ensemble and the same choice,
+                        # so this is one item with two dependents — which is what the per-claim
+                        # `chosen` line below is for.
+                        "the noise statistic judged here is computed from an ensemble Reprolith "
+                        "sampled, not a number the paper's own run produced"
+                    ),
+                    # The ensemble, without the read. What Reprolith chose is the sampling; which
+                    # statistic is read off it is the claim's question, not this engine's estimate
+                    # — and putting it here made the same limitation, asked twice of one ensemble,
+                    # two verification-queue items instead of one item with two dependents.
+                    chosen=(
+                        f"SSA ensemble: {noise.trajectories} trajectories to "
+                        f"t={noise.duration:g}, seed {noise.seed}"
+                    ),
+                    basis=_SAMPLING_BASIS,
+                    load_bearing=True,
+                    alternatives=("a different seed", "a larger ensemble"),
+                    author_can_close=False,
+                )
+            )
     if not assessments:
         raise ValueError(
             "a stochastic certificate needs at least one claim: certifying a paper this class "
@@ -833,7 +879,7 @@ def certify_stochastic(
     return build_certificate(
         paper=paper, engine_pin=engine_pin,
         assessments=assessments,
-        assumptions=(*assumptions, *sampling, *extinction_sampling),
+        assumptions=(*assumptions, *sampling, *extinction_sampling, *noise_sampling),
     )
 
 
@@ -932,6 +978,228 @@ def coefficient_of_variation(ensemble: Sequence[Sequence[int]], species: int) ->
     return math.sqrt(variance) / mean
 
 
+class NoiseStatistic(str, Enum):
+    """Which noise statistic a claim reports. Both divide by the mean, and neither is a mean."""
+
+    #: variance / mean — 1 for Poisson (constitutive) statistics, above 1 for bursty expression.
+    FANO_FACTOR = "fano-factor"
+    #: standard deviation / mean — the relative noise level, ``1/sqrt(mean)`` for Poisson.
+    COEFFICIENT_OF_VARIATION = "coefficient-of-variation"
+
+
+def _noise_statistic(values: Sequence[int], statistic: NoiseStatistic) -> float:
+    """One ensemble's Fano factor or coefficient of variation, from its raw counts.
+
+    The two public functions take an ensemble of full states; this takes the one species' column,
+    which is what a jackknife needs to recompute the statistic without rebuilding the ensemble.
+    Raises for a zero mean, exactly as its public siblings do — both divide by it.
+    """
+    n = len(values)
+    if n == 0:
+        raise ValueError("need at least one trajectory")
+    mean = math.fsum(values) / n
+    if mean == 0.0:
+        raise ValueError(f"{statistic.value} is undefined for a zero mean")
+    variance = math.fsum((v - mean) ** 2 for v in values) / n
+    if statistic is NoiseStatistic.FANO_FACTOR:
+        return variance / mean
+    return math.sqrt(variance) / mean
+
+
+def noise_standard_error(values: Sequence[int], statistic: NoiseStatistic) -> float | None:
+    """How far this ensemble's noise statistic would move on a different draw — by jackknife.
+
+    A mean's standard error is ``sqrt(variance/n)`` and needs nothing but the sample's first two
+    moments. A **Fano factor** and a **coefficient of variation** are ratios of moments, and their
+    sampling error is not that formula: the closed forms that exist assume a distribution, which is
+    the very thing the claim is about. So it is *resampled* rather than assumed — leave-one-out,
+    the statistic recomputed on each of the n subsamples, and the spread of those n values scaled
+    the jackknife way.
+
+    Leave-one-out rather than a bootstrap for one reason that matters to this class: it draws no
+    random numbers. This class's whole contract is that a verdict is a deterministic function of a
+    pinned seed, and an error bar that moved on its own would put a second, unpinned sampler inside
+    the number that decides whether to abstain.
+
+    ``None`` when the ensemble cannot support one — fewer than two trajectories, or a subsample
+    whose mean is zero, where the statistic itself is undefined.
+    """
+    n = len(values)
+    if n < 2:
+        return None
+    # Running sums, so each leave-one-out statistic is O(1) rather than a rescan: at 2,000
+    # trajectories the naive form is four million operations to produce one error bar.
+    total = sum(values)
+    total_squares = sum(v * v for v in values)
+    rest = n - 1
+    thetas: list[float] = []
+    for value in values:
+        mean = (total - value) / rest
+        if mean == 0.0:
+            return None
+        variance = (total_squares - value * value) / rest - mean * mean
+        # Cancellation can put an exactly-zero variance a hair below zero.
+        variance = max(variance, 0.0)
+        thetas.append(
+            variance / mean
+            if statistic is NoiseStatistic.FANO_FACTOR
+            else math.sqrt(variance) / mean
+        )
+    centre = math.fsum(thetas) / n
+    return math.sqrt((rest / n) * math.fsum((theta - centre) ** 2 for theta in thetas))
+
+
+@dataclass(frozen=True)
+class NoiseClaim:
+    """A published **noise statistic**: the Fano factor or coefficient of variation of a species.
+
+    The class's fourth reproduction target, and the one that is about the *spread* rather than the
+    centre of the distribution — which is what a stochastic model is for. Single-cell and
+    gene-expression papers report it as their headline: a Fano factor of 1 says expression is
+    constitutive, above 1 says it is bursty, and the coefficient of variation is the noise level
+    itself. ``fano_factor`` and ``coefficient_of_variation`` have computed both since this class was
+    written, checked against the Poisson laws (Fano = 1, CV = 1/sqrt(mean)); no claim could carry
+    one.
+
+    The protocol is the same as a mean count's — ``duration``, ``trajectories`` and ``seed`` make
+    the run byte-reproducible — but the ensemble has to be *larger* for the same confidence, and
+    the certificate says by how much rather than leaving it to be assumed: the statistic's own
+    jackknife standard error is measured and reported on the protocol line, and an ensemble whose
+    noise is too large to decide the claim abstains rather than publishing either verdict.
+    """
+
+    claim_id: str
+    quantity: str
+    species: int
+    statistic: NoiseStatistic
+    reported_value: float
+    source_location: str
+    duration: float
+    trajectories: int
+    seed: int
+    tolerance: Tolerance | None = None
+    assumption_qualified: bool = True
+    shortfall: Attribution | None = field(default=None)
+
+    def __post_init__(self) -> None:
+        if self.trajectories < 2:
+            raise ValueError(
+                f"claim {self.claim_id!r} asks for {self.trajectories} trajectories: a noise "
+                "statistic is a property of a sample's spread, and one draw has none"
+            )
+        if self.duration <= 0.0:
+            raise ValueError(
+                f"claim {self.claim_id!r} asks for a run of {self.duration!r} time units: an "
+                "ensemble that never advances reports the initial state's spread, which is zero"
+            )
+        if self.reported_value <= 0.0:
+            raise ValueError(
+                f"claim {self.claim_id!r} reports {self.reported_value!r}: both statistics are "
+                "non-negative ratios, and a reported zero says the sample has no spread at all — "
+                "which is a statement about the sampling rather than about the model"
+            )
+
+
+def _noise_protocol(claim: NoiseClaim) -> str:
+    """The run behind a noise verdict, in the form a reader can re-run.
+
+    The statistic is named, not just the species: the same ensemble answers both, and two claims
+    reading different statistics off one run had byte-identical protocols while disagreeing about
+    the number.
+    """
+    return (
+        f"SSA ensemble: {claim.trajectories} trajectories to t={claim.duration:g}, "
+        f"seed {claim.seed}, read={claim.statistic.value} of species[{claim.species}]"
+    )
+
+
+def _judge_noise(
+    claim: NoiseClaim,
+    n_species: int,
+    reactions: Sequence[Reaction],
+    initial: Sequence[int],
+) -> ClaimAssessment:
+    """Run the claim's ensemble, judge its noise statistic, or say why this ensemble cannot.
+
+    Three ways it abstains, and each is a different fact about the run:
+
+    * every trajectory ended at zero, so both statistics divide by a zero mean and neither has a
+      value here at all;
+    * the ensemble has no spread and is too small for that to be a measurement rather than an
+      accident — the same bar a mean is held to, and it matters more here, since a spread of zero
+      *is* this claim's quantity and would publish a confident ``failed`` against a correct model;
+    * the statistic's own jackknife standard error is more than half the pass threshold, the regime
+      where a correct model routinely misses and a wrong one routinely passes.
+    """
+    ensemble = ensemble_final_counts(
+        n_species, reactions, initial,
+        duration=claim.duration, trajectories=claim.trajectories, seed=claim.seed,
+    )
+    values = [run[claim.species] for run in ensemble]
+    protocol = _noise_protocol(claim)
+    try:
+        observed = _noise_statistic(values, claim.statistic)
+    except ValueError as exc:
+        return replace(
+            not_evaluable(
+                claim_id=claim.claim_id, quantity=claim.quantity,
+                source_location=claim.source_location,
+                reason=(
+                    f"{exc}: every trajectory in this ensemble ended at zero copies, so there is "
+                    "no mean to normalize the spread by. The claim is unjudged rather than judged "
+                    "against a spread of zero, which would read as a measurement of the model"
+                ),
+                reference_kind=ReferenceKind.NUMERIC,
+            ),
+            protocol=protocol,
+        )
+    standard_error = noise_standard_error(values, claim.statistic)
+    _, count_variance = species_mean_variance(ensemble, claim.species)
+    reason = unresolvable_ensemble_reason(
+        reported_mean=claim.reported_value,
+        # The spread of the *counts*, which is what the zero-spread guard is about: an ensemble in
+        # which every trajectory landed on the same number has a Fano factor of exactly zero, and
+        # below `_SPREAD_IS_EVIDENCE` that is as likely an accident as a measurement.
+        variance=count_variance,
+        trajectories=len(values),
+        observed_mean=observed,
+        tolerance=claim.tolerance,
+        # The error bar on a ratio of moments is not sqrt(variance/n), so it is supplied rather
+        # than derived — one rule, two ways of measuring what feeds it.
+        standard_error=standard_error,
+        quantity_noun="reported value",
+    )
+    if reason is not None:
+        return replace(
+            not_evaluable(
+                claim_id=claim.claim_id, quantity=claim.quantity,
+                source_location=claim.source_location, reason=reason,
+                reference_kind=ReferenceKind.NUMERIC,
+            ),
+            protocol=protocol,
+        )
+    assessment = judge_scalar(
+        claim_id=claim.claim_id,
+        quantity=claim.quantity,
+        source_location=claim.source_location,
+        reported=claim.reported_value,
+        predicted=observed,
+        tolerance=claim.tolerance,
+        attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
+        assumption_qualified=claim.assumption_qualified,
+    )
+    if standard_error is not None:
+        tol = claim.tolerance or default_tolerance(
+            ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+        )
+        protocol += (
+            f" (sampling noise: the statistic's jackknife standard error is "
+            f"{standard_error / claim.reported_value:.2%} of the reported value, against a "
+            f"{tol.reproduced_within:.0%} pass threshold)"
+        )
+    return replace(assessment, protocol=protocol)
+
+
 def validate_stochastic(dossier: Dossier) -> list[str]:
     """Structural problems that make a stochastic dossier ill-formed; empty when well-formed.
 
@@ -995,8 +1263,11 @@ __all__ = [
     "Reaction",
     "StochasticClaim",
     "certify_stochastic",
+    "NoiseClaim",
+    "NoiseStatistic",
     "coefficient_of_variation",
     "fano_factor",
+    "noise_standard_error",
     "stochastic_dossier",
     "validate_stochastic",
     "ensemble_final_counts",

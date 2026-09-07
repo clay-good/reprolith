@@ -1219,6 +1219,36 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if sensitivity is None or sensitivity.get("agree"):', "    if True:"),
         ["tests/test_logical_scheme.py"],
     ),
+    # --- a reported noise statistic can be certified, 2026-09-07 --------------------------------
+    (
+        "a ratio of moments is judged against a mean's error bar instead of its own",
+        "stochastic.py",
+        ("    sem = math.sqrt(variance / trajectories) if standard_error is None else standard_error",
+         "    sem = math.sqrt(variance / trajectories)"),
+        ["tests/test_stochastic_noise_claim.py"],
+    ),
+    (
+        "an ensemble whose noise statistic cannot decide the claim publishes a verdict anyway",
+        "stochastic.py",
+        ("    if reason is not None:\n        return replace(\n            not_evaluable(",
+         "    if False:\n        return replace(\n            not_evaluable("),
+        ["tests/test_stochastic_noise_claim.py"],
+    ),
+    (
+        "a noise claim whose ensemble ended at zero everywhere is judged against a spread of zero",
+        "stochastic.py",
+        ("    except ValueError as exc:\n        return replace(\n            not_evaluable(",
+         "    except ValueError as exc:\n        raise exc from None\n        return replace(\n"
+         "            not_evaluable("),
+        ["tests/test_stochastic_noise_claim.py"],
+    ),
+    (
+        "the certificate does not say what the noise statistic's own error bar was",
+        "stochastic.py",
+        ("    if standard_error is not None:\n        tol = claim.tolerance or default_tolerance(",
+         "    if False:\n        tol = claim.tolerance or default_tolerance("),
+        ["tests/test_stochastic_noise_claim.py"],
+    ),
     # --- a reported basin can be certified, 2026-09-07 ------------------------------------------
     (
         "a basin claim is waved through as a fixed point, whose schemes provably agree",

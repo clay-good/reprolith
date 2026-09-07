@@ -5293,3 +5293,44 @@ It is also the cleanest demonstration of why this claim type judges counts and s
 the same G1 basin is 86% of the paper's space and 43% of CANA's, so a *fraction* claim could not
 have been carried across that difference at all. The distinction was written into the judge before
 anything needed it, and the first real entry needed it immediately.
+
+
+## The noise a stochastic model exists to describe, and the error bar it needed
+
+`fano_factor` and `coefficient_of_variation` have been in this package since the class was written,
+exported, and checked against the Poisson laws — Fano = 1, CV = 1/√mean. No claim could carry one.
+So the quantity a stochastic model is *for* was implemented and unreachable, the fifth thing found
+in that state here after the Turing wavelength, `judge_attractor_set`, `time_to_extinction` and
+`basin_sizes`. `NoiseClaim` certifies both, and the milestone publishes them against those closed
+forms.
+
+**The error bar is the part that could not be borrowed.** Every abstention in this class rests on
+comparing the ensemble's own noise to the pass threshold, and the noise of a *mean* is
+`sqrt(variance/n)`. A Fano factor is a ratio of moments and does not have that sampling error; the
+closed forms that do exist assume a distribution, which is the very thing the claim is about. So it
+is resampled — leave-one-out, the statistic recomputed on each subsample — and **not** bootstrapped,
+because a bootstrap draws random numbers and this class's whole contract is that a verdict is a
+deterministic function of one pinned seed. An error bar that moved on its own would put a second,
+unpinned sampler inside the number that decides whether to abstain.
+
+Three checks that it is the right number, not merely a number: it matches `sqrt(2/n)`, the Poisson
+theory, to two decimal places; it matches the actual spread of the statistic across twelve
+independently seeded ensembles; and libRoadRunner's Gillespie, corroborating the same network,
+lands 0.4 combined standard errors away.
+
+**What it then said is worth publishing on its own.** At the 400 trajectories this class certifies
+*means* at, a Fano factor's standard error is 7.2% of its value against a 5% pass threshold — the
+regime where a correct model routinely misses and a wrong one routinely passes — so the claim
+abstains. Resolving it takes 4,000, which the milestone entry uses and whose 2.3% its certificate
+prints. A noise statistic costs roughly ten times the ensemble its mean does, and that is now a
+measured sentence rather than an intuition.
+
+Two renderings had to stop naming a quantity they were no longer only about, and both are the same
+old shape. The shared sampling assumption said "a finite ensemble's **mean** differs from the
+model's true mean", which would have qualified a Fano-factor verdict with a sentence about a mean —
+generalized to "estimate", so the one question stays one verification-queue item. And the cross-
+engine line said "ensemble **means** differ by … resolving a bias above 6.5% **of the mean**", which
+is arithmetic that applies unchanged to a Fano factor and wording that does not: the subject is
+carried on the record now, and a class comparing two kinds of sampled quantity says "each quantity
+compared" rather than picking one of them to name.
+

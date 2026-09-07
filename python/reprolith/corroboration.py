@@ -80,6 +80,15 @@ class EngineCorroboration:
     #: whatever the ensembles happened to be — a hundred trajectories agree with almost anything.
     #: This is that strength as a number. ``None`` for a comparison where it does not apply.
     resolution: float | None = None
+    #: What the two sampled answers *are*, for the sentence that reports their difference. The
+    #: Monte Carlo wording was written for the one comparison that existed and said "ensemble means
+    #: differ … resolving a bias above 6.5% of the mean"; the noise comparison is the same
+    #: arithmetic about a Fano factor, and inheriting that sentence would publish a number under
+    #: the name of a quantity it is not. Defaults preserve every record and transcript written
+    #: before this field existed, and it is not part of :meth:`record` — it is wording, not data.
+    differing: str = "ensemble means"
+    #: The same, for the resolution clause: "of the mean", "of the Fano factor".
+    resolution_of: str = "the mean"
 
     def effective_criterion(self) -> float:
         """The largest decade at or below :attr:`criterion` — what the verdict was really held to."""
@@ -97,10 +106,10 @@ class EngineCorroboration:
         if self.comparison == "monte-carlo-agreement":
             resolution = (
                 "" if self.resolution is None
-                else f", resolving a bias above {self.resolution:.1%} of the mean"
+                else f", resolving a bias above {self.resolution:.1%} of {self.resolution_of}"
             )
             return (
-                f"{self.quantity}: {self.engines[0]} vs {self.engines[1]} ensemble means differ by "
+                f"{self.quantity}: {self.engines[0]} vs {self.engines[1]} {self.differing} differ by "
                 f"at most {self.distance_bound():.1f} combined standard errors against a "
                 f"{self.effective_criterion():.1f} criterion{resolution} -> {verdict}"
             )
@@ -132,6 +141,11 @@ class EngineCorroboration:
         }
         if self.comparison != "normalized-distance":
             record["comparison"] = self.comparison
+        if self.resolution_of != "the mean":
+            # What the resolution is a fraction *of*. Absent on every record written before a
+            # class compared more than one kind of sampled quantity, which is exactly the reading
+            # the aggregate surface gives an absent value.
+            record["resolution_of"] = self.resolution_of
         if self.resolution is not None:
             # Published beside the agreement rather than derivable from it: a reader who sees only
             # "the two ensembles agreed" cannot tell a comparison that would have caught a 2%
@@ -339,6 +353,137 @@ COBRAPY_ENGINE = "cobrapy"
 ROADRUNNER_SSA_ENGINE = "roadrunner-gillespie"
 
 
+def _require_first_order(
+    species: Sequence[str], reactions: Sequence[Reaction], *, comparing: str
+) -> None:
+    """Refuse a network the two samplers do not model the same way, naming the reaction.
+
+    Reprolith's propensity for ``2A → B`` is the stochastic mass action ``k·n(n−1)/2``;
+    libRoadRunner's Gillespie takes the SBML rate law as the propensity verbatim, so it runs
+    ``k·n²``. Measured on ``2A → B`` from four molecules the two give means of 0.64 and 0.80 — a
+    real 24% gap that is a difference of modelling convention, not of solver.
+
+    One implementation for every ensemble comparison: the mean and the noise statistic ask the same
+    two samplers the same question about the same network, and a scope rule enforced on one of them
+    would let the other publish exactly the disagreement this refuses.
+    """
+    higher_order = [
+        f"reaction {index} consumes {stoich} of {species[position]!r}"
+        for index, reaction in enumerate(reactions)
+        for position, stoich in reaction.reactants
+        if stoich > 1
+    ]
+    if higher_order:
+        raise ValueError(
+            f"cross-engine corroboration of {comparing} is scoped to reactions that are at "
+            "most first-order in each reactant, and " + "; ".join(higher_order) + ". Above first "
+            "order the two samplers do not model the same system — this one runs the stochastic "
+            "mass action k·n(n-1)/2 and libRoadRunner's Gillespie runs the rate law verbatim as "
+            "k·n^2 — so their disagreement would be published as engine sensitivity when it is a "
+            "difference of convention."
+        )
+
+
+def corroborate_ensemble_noise(
+    species: Sequence[str],
+    reactions: Sequence[Reaction],
+    initial: Sequence[int],
+    *,
+    observed: int,
+    duration: float,
+    trajectories: int,
+    seed: int,
+    sigmas: float = 3.0,
+) -> EngineCorroboration:
+    """Run one network under two Gillespie samplers and compare the **Fano factors** they report.
+
+    The sibling of :func:`corroborate_ensemble_mean`, for the quantity a noise claim rests on. It
+    is not the same comparison with a different number in it: a mean's error bar is
+    ``sqrt(variance/n)`` and a Fano factor's is a ratio of moments, so each side's error bar is
+    measured by the jackknife the certificate uses and the two are combined in quadrature. A
+    comparison that reused the mean's formula here would call two correct samplers
+    engine-sensitive, or two disagreeing ones independent, depending only on how much the spread
+    happened to differ from the mean.
+
+    Compares the Fano factor rather than both statistics because they are the same measurement:
+    the coefficient of variation is ``sqrt(Fano/mean)``, so two samplers that agree on the Fano
+    factor and the mean agree on the CV, and publishing both would be one check counted twice.
+
+    Needs the ``engine`` extra (python-libsbml) and the ``corroborate`` extra (libRoadRunner).
+    """
+    from .sbml import build_stochastic_sbml
+    from .stochastic import (
+        NoiseStatistic,
+        ensemble_final_counts,
+        noise_standard_error,
+        solver_pin,
+    )
+
+    _require_first_order(species, reactions, comparing="an ensemble's noise statistic")
+
+    mine = [
+        run[observed]
+        for run in ensemble_final_counts(
+            len(species), reactions, initial,
+            duration=duration, trajectories=trajectories, seed=seed,
+        )
+    ]
+    theirs, roadrunner_build = _roadrunner_ensemble(
+        build_stochastic_sbml(species, reactions, initial),
+        species[observed],
+        duration=duration,
+        trajectories=trajectories,
+        seed=seed,
+    )
+    pin = solver_pin()
+
+    def _fano(values: Sequence[float]) -> float | None:
+        mean = math.fsum(values) / len(values)
+        if mean == 0.0:
+            return None
+        return math.fsum((v - mean) ** 2 for v in values) / len(values) / mean
+
+    my_fano, their_fano = _fano(mine), _fano([float(v) for v in theirs])
+    if my_fano is None or their_fano is None:
+        raise ValueError(
+            "one of the two ensembles ended at zero copies everywhere, so its Fano factor is "
+            "undefined and there is nothing to compare; a comparison against an undefined "
+            "quantity would be reported as an agreement or a disagreement about the model"
+        )
+    my_error = noise_standard_error(mine, NoiseStatistic.FANO_FACTOR)
+    their_error = noise_standard_error(
+        [int(v) for v in theirs], NoiseStatistic.FANO_FACTOR
+    )
+    combined_error = math.sqrt((my_error or 0.0) ** 2 + (their_error or 0.0) ** 2)
+    if combined_error == 0.0:
+        # Neither ensemble has any spread to speak of, so there is no sampling error to
+        # standardize by and the two Fano factors either match or do not.
+        return EngineCorroboration(
+            quantity="ensemble Fano factor",
+            engines=(pin.engine, ROADRUNNER_SSA_ENGINE),
+            distance=0.0 if my_fano == their_fano else float("inf"),
+            stable=my_fano == their_fano,
+            versions=(_reprolith_build(pin), roadrunner_build),
+            comparison="exact-match",
+            criterion=sigmas,
+        )
+    result = EngineCorroboration(
+        quantity="ensemble Fano factor",
+        engines=(pin.engine, ROADRUNNER_SSA_ENGINE),
+        differing="ensemble Fano factors",
+        resolution_of="the Fano factor",
+        distance=abs(my_fano - their_fano) / combined_error,
+        stable=False,
+        versions=(_reprolith_build(pin), roadrunner_build),
+        comparison="monte-carlo-agreement",
+        criterion=sigmas,
+        # What this pass is worth: a true difference smaller than this, as a fraction of the Fano
+        # factor, would have been indistinguishable from sampling.
+        resolution=None if my_fano == 0.0 else sigmas * combined_error / abs(my_fano),
+    )
+    return replace(result, stable=result.distance_bound() <= sigmas)
+
+
 def corroborate_ensemble_mean(
     species: Sequence[str],
     reactions: Sequence[Reaction],
@@ -376,21 +521,7 @@ def corroborate_ensemble_mean(
     from .sbml import build_stochastic_sbml
     from .stochastic import ensemble_final_counts, solver_pin, species_mean_variance
 
-    higher_order = [
-        f"reaction {index} consumes {stoich} of {species[position]!r}"
-        for index, reaction in enumerate(reactions)
-        for position, stoich in reaction.reactants
-        if stoich > 1
-    ]
-    if higher_order:
-        raise ValueError(
-            "cross-engine corroboration of an ensemble mean is scoped to reactions that are at "
-            "most first-order in each reactant, and " + "; ".join(higher_order) + ". Above first "
-            "order the two samplers do not model the same system — this one runs the stochastic "
-            "mass action k·n(n-1)/2 and libRoadRunner's Gillespie runs the rate law verbatim as "
-            "k·n^2 — so their disagreement would be published as engine sensitivity when it is a "
-            "difference of convention."
-        )
+    _require_first_order(species, reactions, comparing="an ensemble mean")
 
     mine = ensemble_final_counts(
         len(species), reactions, initial, duration=duration, trajectories=trajectories, seed=seed

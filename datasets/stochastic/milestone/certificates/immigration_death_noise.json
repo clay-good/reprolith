@@ -1,0 +1,85 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": true,
+      "claim_id": "immigration_death_noise-fano",
+      "discrepancy": "relative error 0.0161",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "protocol": "SSA ensemble: 4000 trajectories to t=40, seed 20260907, read=fano-factor of species[0] (sampling noise: the statistic's jackknife standard error is 2.26% of the reported value, against a 5% pass threshold)",
+      "quantity": "Fano factor of the stationary distribution",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "closed-form",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": true,
+      "claim_id": "immigration_death_noise-cv",
+      "discrepancy": "relative error 0.0090",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "protocol": "SSA ensemble: 4000 trajectories to t=40, seed 20260907, read=coefficient-of-variation of species[0] (sampling noise: the statistic's jackknife standard error is 1.16% of the reported value, against a 5% pass threshold)",
+      "quantity": "coefficient of variation at stationarity",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "closed-form",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [
+    {
+      "alternatives": [
+        "a different seed",
+        "a larger ensemble"
+      ],
+      "attributed_to": "reprolith",
+      "author_can_close": false,
+      "basis": "a finite ensemble's estimate differs from the model's true value by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this claim's protocol line reports that estimate's standard error as a share of the reported value, against the threshold it is judged at",
+      "chosen": "SSA ensemble: 4000 trajectories to t=40, seed 20260907",
+      "description": "the noise statistic judged here is computed from an ensemble Reprolith sampled, not a number the paper's own run produced",
+      "id": "ssa-sampling-immigration_death_noise-fano",
+      "load_bearing": true,
+      "verification_item": null
+    },
+    {
+      "alternatives": [
+        "a different seed",
+        "a larger ensemble"
+      ],
+      "attributed_to": "reprolith",
+      "author_can_close": false,
+      "basis": "a finite ensemble's estimate differs from the model's true value by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this claim's protocol line reports that estimate's standard error as a share of the reported value, against the threshold it is judged at",
+      "chosen": "SSA ensemble: 4000 trajectories to t=40, seed 20260907",
+      "description": "the noise statistic judged here is computed from an ensemble Reprolith sampled, not a number the paper's own run produced",
+      "id": "ssa-sampling-immigration_death_noise-cv",
+      "load_bearing": true,
+      "verification_item": null
+    }
+  ],
+  "engine_pin": {
+    "algorithm": "gillespie-direct-method (rev a7ec4cb01f55)",
+    "engine": "reprolith-ssa",
+    "version": "0.0.1"
+  },
+  "gap_report": [],
+  "overall": "partially-reproduced",
+  "paper": {
+    "doi": "",
+    "pubmed_id": null,
+    "title": "Immigration-death process (k=10, \u03b3=1) \u2014 Poisson noise statistics"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

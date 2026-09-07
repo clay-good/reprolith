@@ -102,6 +102,21 @@ distributional comparison, so a stochastic verdict is judged honestly against sa
   abstains, because a mean over the trajectories that finished is the mean of a conditioned sample
   and is short by an amount the sample itself cannot bound
 
+#### Scenario: Noise-statistic reproduction
+
+- **WHEN** a claim is a reported noise statistic — the Fano factor or the coefficient of variation
+  of a species
+- **THEN** the oracle simulates the pinned ensemble, derives that statistic, and judges it by the
+  shared scalar comparison
+- **AND** the error bar it is judged against is the statistic's own, measured by resampling the
+  ensemble rather than taken from a mean's formula, because a ratio of moments does not have a
+  mean's sampling error and the closed forms that do exist assume the distribution the claim is
+  about
+- **AND** that resampling draws no random numbers of its own, so the verdict stays a deterministic
+  function of the claim's pinned seed
+- **AND** an ensemble whose statistic carries too large an error bar to decide the claim abstains,
+  as it does for a mean
+
 #### Scenario: Distribution reproduction
 
 - **WHEN** a claim is a reported distribution or percentile envelope of a species over time

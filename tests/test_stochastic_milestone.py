@@ -16,7 +16,10 @@ _MILESTONE = Path(__file__).parent.parent / "datasets" / "stochastic" / "milesto
 #: is unqualified — which is why the split matters less than it does for the spatial class.
 _MEANS = {"immigration_death_10", "immigration_death_4", "reversible_isomerization"}
 _EXTINCTION = {"death_extinction_time"}
-_EXPECTED = _MEANS | _EXTINCTION
+#: The noise entry: the Fano factor and the coefficient of variation of the same Poisson process
+#: the means above are read from, which are the quantities a stochastic model exists to describe.
+_NOISE = {"immigration_death_noise"}
+_EXPECTED = _MEANS | _EXTINCTION | _NOISE
 
 
 def test_agreement_report_shows_a_blind_full_agreement() -> None:

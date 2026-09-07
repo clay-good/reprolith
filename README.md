@@ -9,7 +9,7 @@ reproduced, partially, or not — for each result, with the reason.
 
 That is what it is *for*, and it is worth being exact about how much of it is done today.
 
-Of the thirty-seven published certificates, **four** check a reconstruction against numbers read
+Of the thirty-eight published certificates, **four** check a reconstruction against numbers read
 from one paper's own tables — one for each model that paper deposited. (Two more are checked
 against published numbers too, and the count below says which.) Between them they carry **one hundred and
 seventy claims**,
@@ -79,13 +79,13 @@ anything not committed: every reference value is quoted from the article in
 of this repository's life nothing did — one of the first two was recorded as 6.2, a number the
 paper does not contain.
 
-Thirty-one of the other thirty-three certificates check Reprolith's engine against an independent
+Thirty-two of the other thirty-four certificates check Reprolith's engine against an independent
 tool — COBRApy, libRoadRunner, CANA — or against closed-form mathematics, re-running the same model
 file. The other two are checked against published numbers like the four above: the E. coli core
 model's maximal growth rate of **0.873922**, which the publication that distributes that model
 reports, and the seven basin sizes Li et al. 2004 publish for the yeast cell-cycle network — how
 many initial states reach each of its steady states, all seven reproduced exactly. Six against a
-publication, then, and thirty-one against a tool or against mathematics —
+publication, then, and thirty-two against a tool or against mathematics —
 counted from the certificates themselves by `tests/test_reference_provenance.py`, because this
 division is the reader's whole guide to what the corpus reaches, and it was prose that was off by
 one. Each certificate says which on its own claim line. Getting a paper's claims out of its manuscript *at scale* is the piece that is not built.
@@ -238,7 +238,10 @@ guessing — just: *does the described model produce the shown result?*
   and 1.0 against a criterion of three — and each is published with the bias it could *not* have
   seen, 6.5%, 5.2% and 1.8% of the mean. The first of those is wider than the 5% that class's own
   verdict passes at, so on that model the second opinion is weaker than the verdict it stands
-  beside, and the record says so. The spatial class's 5 entries complete the set under scipy's
+  beside, and the record says so. A fourth compares the two samplers' **Fano factors** rather than
+  their means, over each side's own resampled error bar — 0.4 standard errors apart, resolving 9.6%
+  of the Fano factor — which is why that class's line now says "of each quantity compared" instead
+  of naming a mean it is only partly about. The spatial class's 5 entries complete the set under scipy's
   LSODA — its two *scalars* are compared on the quantity each certificate publishes, a fitted decay
   length and a measured front speed, and the front is the one place in this repository where two
   engines **disagree**: 1.9154 against 2.0100 over the same window, 4.7% apart, published as a
@@ -651,7 +654,7 @@ Gillespie simulator (deterministic under a pinned seed) feeds the same distribut
 population figures use, and the class is self-validated non-circularly against closed-form results —
 the immigration-death process's Poisson stationary mean and variance, a reversible reaction's
 binomial equilibrium, and a pure death process's **mean time to extinction** (`H(n₀)/k`) — with a
-4/4 [milestone blind run](datasets/stochastic/milestone/).
+5/5 [milestone blind run](datasets/stochastic/milestone/).
 
 That last one is a *first-passage* claim rather than a state at a fixed time: how long a small
 population, or a drug-resistant clone, survives before its last individual is gone. It is the one
@@ -660,7 +663,18 @@ observed no extinction time at all, so the claim abstains rather than taking the
 that finished — which is the mean of a conditioned sample, short by an amount the sample itself
 cannot bound. And it is the class's one certificate with no second engine behind it, since
 libRoadRunner's Gillespie gives a mean at a time rather than a first passage; every surface says
-so rather than counting three corroborated out of four as a clean sweep.
+so rather than counting four corroborated out of five as a clean sweep.
+
+**How noisy a model is can be certified too**, which is what a stochastic model is *for*: the Fano
+factor (variance over mean — 1 for constitutive expression, above 1 for bursty) and the coefficient
+of variation, both reproduced against the Poisson laws and both re-run under libRoadRunner's
+Gillespie. The interesting part is the error bar. A mean's is `sqrt(variance/n)`; a **ratio of
+moments** has a different one, and the closed forms that exist assume the very distribution the
+claim is about — so it is *resampled*, leave-one-out, which draws no random numbers and keeps the
+verdict a function of the one pinned seed. That measurement then says what the quantity costs: at
+the 400 trajectories this class certifies a *mean* at, a Fano factor's standard error is over 7% of
+its value against a 5% pass threshold, so the claim is abstained on rather than judged. The
+milestone entry uses 4,000, and its certificate prints the 2.3% it bought.
 
 **Population figures** — a median with outer percentiles across a virtual population, which is how
 a large slice of the PK/PD and QSP literature reports its results — are judged by the same

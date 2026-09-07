@@ -1,0 +1,29 @@
+REPRODUCTION CERTIFICATE — Immigration-death process (k=10, γ=1) — Poisson noise statistics
+Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev a7ec4cb01f55)
+
+OVERALL: partially-reproduced
+  claims by verdict: reproduced=2, partial=0, failed=0, not-evaluable=0
+  assumption-qualified claims: immigration_death_noise-fano, immigration_death_noise-cv
+
+CLAIMS
+  [immigration_death_noise-fano] Fano factor of the stationary distribution: reproduced [assumption-qualified] (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0161
+      protocol: SSA ensemble: 4000 trajectories to t=40, seed 20260907, read=fano-factor of species[0] (sampling noise: the statistic's jackknife standard error is 2.26% of the reported value, against a 5% pass threshold)
+  [immigration_death_noise-cv] coefficient of variation at stationarity: reproduced [assumption-qualified] (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
+      measured: relative error 0.0090
+      protocol: SSA ensemble: 4000 trajectories to t=40, seed 20260907, read=coefficient-of-variation of species[0] (sampling noise: the statistic's jackknife standard error is 1.16% of the reported value, against a 5% pass threshold)
+
+ASSUMPTIONS (supplied by Reprolith, not the paper)
+  [ssa-sampling-immigration_death_noise-fano] the noise statistic judged here is computed from an ensemble Reprolith sampled, not a number the paper's own run produced -> SSA ensemble: 4000 trajectories to t=40, seed 20260907 [load-bearing] [this engine's limit — no expert decision closes it]
+      basis: a finite ensemble's estimate differs from the model's true value by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this claim's protocol line reports that estimate's standard error as a share of the reported value, against the threshold it is judged at (attributed to reprolith)
+  [ssa-sampling-immigration_death_noise-cv] the noise statistic judged here is computed from an ensemble Reprolith sampled, not a number the paper's own run produced -> SSA ensemble: 4000 trajectories to t=40, seed 20260907 [load-bearing] [this engine's limit — no expert decision closes it]
+      basis: a finite ensemble's estimate differs from the model's true value by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this claim's protocol line reports that estimate's standard error as a share of the reported value, against the threshold it is judged at (attributed to reprolith)
+
+WHAT WAS MISSING
+  [immigration_death_noise-fano] Fano factor of the stationary distribution: reproduced only under an assumption Reprolith supplied, not a clean pass
+  [immigration_death_noise-cv] coefficient of variation at stationarity: reproduced only under an assumption Reprolith supplied, not a clean pass
+  the noise statistic judged here is computed from an ensemble Reprolith sampled, not a number the paper's own run produced — Reprolith assumed SSA ensemble: 4000 trajectories to t=40, seed 20260907 (a finite ensemble's estimate differs from the model's true value by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this claim's protocol line reports that estimate's standard error as a share of the reported value, against the threshold it is judged at)
+  the noise statistic judged here is computed from an ensemble Reprolith sampled, not a number the paper's own run produced — Reprolith assumed SSA ensemble: 4000 trajectories to t=40, seed 20260907 (a finite ensemble's estimate differs from the model's true value by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this claim's protocol line reports that estimate's standard error as a share of the reported value, against the threshold it is judged at)
+
+SCOPE
+  This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

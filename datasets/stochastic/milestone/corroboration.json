@@ -4,7 +4,7 @@
     "distance_at_most": 1.9,
     "engine_independent": true,
     "engine_versions": [
-      "gillespie-direct-method (rev 59c2e42997db)",
+      "gillespie-direct-method (rev a7ec4cb01f55)",
       "2.7.0"
     ],
     "engines": [
@@ -18,7 +18,7 @@
     "distance_at_most": 1.6,
     "engine_independent": true,
     "engine_versions": [
-      "gillespie-direct-method (rev 59c2e42997db)",
+      "gillespie-direct-method (rev a7ec4cb01f55)",
       "2.7.0"
     ],
     "engines": [
@@ -27,12 +27,27 @@
     ],
     "resolves_bias_above": 0.052
   },
+  "immigration_death_noise": {
+    "comparison": "monte-carlo-agreement",
+    "distance_at_most": 0.4,
+    "engine_independent": true,
+    "engine_versions": [
+      "gillespie-direct-method (rev a7ec4cb01f55)",
+      "2.7.0"
+    ],
+    "engines": [
+      "reprolith-ssa",
+      "roadrunner-gillespie"
+    ],
+    "resolution_of": "the Fano factor",
+    "resolves_bias_above": 0.096
+  },
   "reversible_isomerization": {
     "comparison": "monte-carlo-agreement",
     "distance_at_most": 1.0,
     "engine_independent": true,
     "engine_versions": [
-      "gillespie-direct-method (rev 59c2e42997db)",
+      "gillespie-direct-method (rev a7ec4cb01f55)",
       "2.7.0"
     ],
     "engines": [

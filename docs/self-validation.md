@@ -11,7 +11,7 @@ follow end to end, all regenerable from the repository alone.
 | **Constraint-based (FBA)** | **8/8** blind agreement across bacteria, a pathogen, and a eukaryote | E. coli core's documented growth rate; COBRApy references for the genome-scale set | [`datasets/constraint_based/milestone/`](../datasets/constraint_based/milestone/) |
 | **Generic-kinetic (ODE)** | **6/6** blind agreement across six network types | libRoadRunner (independent CVODE) reference trajectories | [`datasets/kinetic/milestone/`](../datasets/kinetic/milestone/) |
 | **Logical (Boolean)** | **10/10** blind agreement (incl. three 44–60-node models at scale, and one entry judged against a paper's own published basin sizes) | CANA attractor signatures — how many attractors and the period of each, which is what the reference records; not the attractor states themselves (small models) + the SHA-256 of the fixed-point **set** an independent SAT solver found (the large signalling networks). Every certificate states the update scheme its numbers were computed under | [`datasets/logical/milestone/`](../datasets/logical/milestone/) |
-| **Stochastic (SSA)** | **4/4** blind agreement, every one `partially-reproduced` | Closed-form Poisson / binomial means and a pure death process's mean first passage `H(n₀)/k` (analytical) | [`datasets/stochastic/milestone/`](../datasets/stochastic/milestone/) |
+| **Stochastic (SSA)** | **5/5** blind agreement, every one `partially-reproduced` | Closed-form Poisson / binomial means, a pure death process's mean first passage `H(n₀)/k`, and the Poisson noise laws (Fano = 1, CV = 1/√mean) — all analytical | [`datasets/stochastic/milestone/`](../datasets/stochastic/milestone/) |
 | **Spatial (reaction-diffusion)** | **5/5** blind agreement — three profiles `partially-reproduced`, a decay length and a front speed `reproduced` | Closed-form Gaussian diffusion, λ = √(D/k), and the Fisher-KPP speed 2√(rD) (analytical) | [`datasets/spatial/milestone/`](../datasets/spatial/milestone/) |
 
 Several entries read `partially-reproduced` where the profile or the mean matches its analytical
@@ -152,11 +152,11 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   spatial               5 model(s) on reprolith-fd, scipy-lsoda — 4 of 5 engine-independent
                           as reprolith-fd explicit-forward-euler-finite-difference (rev d8c327166196), scipy-lsoda 1.13.1
-  stochastic            3 model(s) on reprolith-ssa, roadrunner-gillespie — all engine-independent within 1.9 combined standard errors, resolving a bias above 6.5% of the mean
-                          as reprolith-ssa gillespie-direct-method (rev 59c2e42997db), roadrunner-gillespie 2.7.0
-                          1 of 4 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
+  stochastic            4 model(s) on reprolith-ssa, roadrunner-gillespie — all engine-independent within 1.9 combined standard errors, resolving a bias above 9.6% of each quantity compared
+                          as reprolith-ssa gillespie-direct-method (rev a7ec4cb01f55), roadrunner-gillespie 2.7.0
+                          1 of 5 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
 
-  overall: 6 of 6 classes re-run on a second engine — 170 claim(s), 31 model(s); 2 standing certificate(s) in those classes have none
+  overall: 6 of 6 classes re-run on a second engine — 170 claim(s), 32 model(s); 2 standing certificate(s) in those classes have none
 ```
 
 Three things about that output are deliberate.
@@ -189,7 +189,11 @@ criterion if they are small enough, so a bare "they agreed" is a claim whose str
 the ensembles happened to be. Three standard errors of the Poisson-mean-10 network's 400
 trajectories is 6.5% of its mean — *wider than the 5% that class's own scalar verdict passes at*,
 so this corroboration is weaker than the verdict it stands beside and the record says so. The
-reversible-isomerization entry, whose equilibrium spread is much tighter, resolves 1.8%.
+reversible-isomerization entry, whose equilibrium spread is much tighter, resolves 1.8%. The class
+line publishes the **weakest** of these, which is now the noise entry's 9.6% — and it is a bias in a
+*Fano factor*, not in a mean, which is why the sentence says "of each quantity compared": the class
+compares two kinds of sampled quantity, and naming one of them would put the other's blind spot
+under the wrong heading.
 
 The **spatial line's 1e-03 is not a distance from the truth**, and it is the number most likely to
 be quoted as one. scipy integrates the *semi-discrete* system essentially exactly, so what the two

@@ -297,7 +297,7 @@ def test_the_shipped_repository_names_the_certificate_with_no_second_engine(caps
     assert summary["overall"]["uncorroborated_certificates"] == 2
     assert run(["corroboration"]) == 0
     printed = capsys.readouterr().out
-    assert "1 of 4 standing certificate(s) in this class have no second engine" in printed
+    assert "1 of 5 standing certificate(s) in this class have no second engine" in printed
     # And a third route to the same rendering: the logical class's published-basin entry. CANA
     # reduces constant nodes out of its state graph, so it cannot count basins in the space that
     # certificate reports them in — nine of that class's ten are re-run and the tenth is named.

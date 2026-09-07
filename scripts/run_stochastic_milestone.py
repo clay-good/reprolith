@@ -16,6 +16,7 @@ Run from the repo root:  python scripts/run_stochastic_milestone.py
 from __future__ import annotations
 
 import json
+import math
 from collections import Counter
 from pathlib import Path
 
@@ -34,10 +35,15 @@ from reprolith import (
     render_human,
     run_test_set,
 )
-from reprolith.corroboration import corroborate_ensemble_mean
+from reprolith.corroboration import corroborate_ensemble_mean, corroborate_ensemble_noise
 from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import prune_certificate_directory
-from reprolith.stochastic import ExtinctionTimeClaim, solver_pin
+from reprolith.stochastic import (
+    ExtinctionTimeClaim,
+    NoiseClaim,
+    NoiseStatistic,
+    solver_pin,
+)
 
 REPO = Path(__file__).resolve().parents[1]
 STO = REPO / "datasets" / "stochastic"
@@ -137,6 +143,51 @@ def main() -> None:
         )],
     )
 
+    # The class's **noise** target, which is what a stochastic model is for: the Fano factor and
+    # the coefficient of variation of the same immigration-death process, whose stationary
+    # distribution is Poisson — so Fano = 1 and CV = 1/sqrt(mean) exactly, closed-form ground truth
+    # again. `fano_factor` and `coefficient_of_variation` had computed both since this class was
+    # written and no claim could carry one.
+    noise_key = "immigration_death_noise"
+    noise_mean = 10.0
+    catalog.add(
+        Identifiers(
+            title="Immigration-death process (k=10, γ=1) — Poisson noise statistics",
+            accession=noise_key,
+        ),
+        ModelClass.STOCHASTIC,
+        ground_truth=GroundTruth(
+            expected=OverallVerdict.PARTIALLY_REPRODUCED,  # qualified by sampling -> never clean
+            source=f"closed-form Poisson Fano factor 1 and CV 1/sqrt({noise_mean:g})",
+        ),
+    )
+    certified[noise_key] = certify_stochastic(
+        paper=PaperIdentity(
+            title="Immigration-death process (k=10, γ=1) — Poisson noise statistics", doi=""
+        ),
+        engine_pin=pin,
+        n_species=1, reactions=_immigration_death(10.0, 1.0), initial=[0],
+        noises=[
+            NoiseClaim(
+                claim_id=f"{noise_key}-fano", quantity="Fano factor of the stationary distribution",
+                species=0, statistic=NoiseStatistic.FANO_FACTOR, reported_value=1.0,
+                source_location="closed-form",
+                # Ten times the ensemble the *mean* of this same process is certified at, and the
+                # certificate says why in its own protocol line: a Fano factor's standard error is
+                # sqrt(2/n) of its value, so 400 trajectories leave it at 7% against a 5% pass
+                # threshold and the claim would be abstained on rather than judged. This is the
+                # cost of the quantity, measured, not a number picked to make it pass.
+                duration=40.0, trajectories=4000, seed=20260907,
+            ),
+            NoiseClaim(
+                claim_id=f"{noise_key}-cv", quantity="coefficient of variation at stationarity",
+                species=0, statistic=NoiseStatistic.COEFFICIENT_OF_VARIATION,
+                reported_value=1.0 / math.sqrt(noise_mean), source_location="closed-form",
+                duration=40.0, trajectories=4000, seed=20260907,
+            ),
+        ],
+    )
+
     certificates, report = run_test_set(catalog.entries, engine_pin=pin, certified=certified, advance=True)
 
     # The same networks under a second, independently-implemented Gillespie sampler
@@ -155,6 +206,14 @@ def main() -> None:
         ).record()
         for key in sorted(_SYSTEMS)
     }
+    # The noise entry's own second engine, and not the mean's record under another name: a Fano
+    # factor's error bar is not a mean's, so the two sides are compared over their own jackknife
+    # standard errors. Reusing the mean's agreement here would report one check twice and leave
+    # the quantity this certificate rests on unchecked.
+    corroboration[noise_key] = corroborate_ensemble_noise(
+        ["S0"], _immigration_death(10.0, 1.0), [0],
+        observed=0, duration=40.0, trajectories=4000, seed=20260907,
+    ).record()
 
     milestone = STO / "milestone"
     (milestone / "certificates").mkdir(parents=True, exist_ok=True)

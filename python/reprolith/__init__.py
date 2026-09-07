@@ -365,6 +365,8 @@ from .spatial import (
 )
 from .stochastic import (
     ExtinctionTimeClaim,
+    NoiseClaim,
+    NoiseStatistic,
     Reaction,
     StochasticClaim,
     certify_stochastic,
@@ -374,6 +376,7 @@ from .stochastic import (
     fano_factor,
     gillespie,
     gillespie_at_times,
+    noise_standard_error,
     species_mean_variance,
     stochastic_dossier,
     time_to_extinction,
@@ -529,6 +532,7 @@ __all__ = [
     "ExtractionConfidence",
     "FailureMode",
     "fano_factor",
+    "noise_standard_error",
     "Fault",
     "fba_solver_pin",
     "FbaModel",
@@ -719,6 +723,8 @@ __all__ = [
     "stochastic_solver_pin",
     "StochasticClaim",
     "ExtinctionTimeClaim",
+    "NoiseClaim",
+    "NoiseStatistic",
     "storable_content",
     "SubjectVariability",
     "synthetic_lethal_genes",

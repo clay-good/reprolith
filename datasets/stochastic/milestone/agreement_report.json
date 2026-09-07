@@ -1,8 +1,8 @@
 {
   "agreement_rate": 1.0,
-  "agreements": 4,
+  "agreements": 5,
   "confusion": {
-    "partially-reproduced->partially-reproduced": 4
+    "partially-reproduced->partially-reproduced": 5
   },
   "disagreements": 0,
   "per_entry": [
@@ -33,7 +33,14 @@
       "entry": "death_extinction_time",
       "expected": "partially-reproduced",
       "source": "closed-form mean first passage H(5)/k = 2.283333"
+    },
+    {
+      "actual": "partially-reproduced",
+      "agree": true,
+      "entry": "immigration_death_noise",
+      "expected": "partially-reproduced",
+      "source": "closed-form Poisson Fano factor 1 and CV 1/sqrt(10)"
     }
   ],
-  "total": 4
+  "total": 5
 }

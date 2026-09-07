@@ -208,6 +208,19 @@ def corroboration_summary(
         ]
         if resolutions:
             by_class[model_class]["resolves_bias_above"] = max(resolutions)
+            # …and what it is a fraction *of*. This said "of the mean" in three renderers, which
+            # was true while a mean was the only sampled quantity any class compared. A class that
+            # also compares a Fano factor would have published that factor's blind spot under the
+            # mean's name, so the subject is read off the records and a class comparing two kinds
+            # says so rather than naming one of them.
+            subjects = sorted({
+                str(row.get("resolution_of", "the mean"))
+                for row in record.values()
+                if row.get("resolves_bias_above") is not None
+            })
+            by_class[model_class]["resolution_of"] = (
+                subjects[0] if len(subjects) == 1 else "each quantity compared"
+            )
     runs: dict[str, int] = {}
     independent: dict[str, int] = {}
     for entry in by_class.values():
@@ -270,7 +283,8 @@ def corroboration_held(entry: Mapping[str, Any]) -> str:
         resolution = entry.get("resolves_bias_above")
         seen = (
             "" if resolution is None
-            else f", resolving a bias above {float(resolution):.1%} of the mean"
+            else f", resolving a bias above {float(resolution):.1%} of "
+            f"{entry.get('resolution_of', 'the mean')}"
         )
         return f"all engine-independent within {float(bound):.1f} combined standard errors{seen}"
     if bound is None:

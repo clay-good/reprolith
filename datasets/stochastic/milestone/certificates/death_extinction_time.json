@@ -26,7 +26,7 @@
       ],
       "attributed_to": "reprolith",
       "author_can_close": false,
-      "basis": "a finite ensemble's mean differs from the model's true mean by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this claim's protocol line reports the mean's standard error as a share of the reported value, against the threshold it is judged at",
+      "basis": "a finite ensemble's estimate differs from the model's true value by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this claim's protocol line reports that estimate's standard error as a share of the reported value, against the threshold it is judged at",
       "chosen": "SSA first passage: 2000 trajectories, seed 20260907, species[0] to zero, each capped at t=1000000.0",
       "description": "the mean extinction time judged here is the average of an ensemble Reprolith sampled, not a number the paper's own run produced",
       "id": "ssa-sampling-death_extinction_time-mean",
@@ -35,7 +35,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "gillespie-direct-method (rev 59c2e42997db)",
+    "algorithm": "gillespie-direct-method (rev a7ec4cb01f55)",
     "engine": "reprolith-ssa",
     "version": "0.0.1"
   },
