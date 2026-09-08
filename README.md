@@ -106,7 +106,7 @@ reports. That reader knows every class's units now, not just this one's — a fr
 a decay length in µm, a specific flux in mmol/gDW/h, a growth rate in 1/h. A unit it does not know
 is a result it cannot see, since the unit is what separates a stated quantity from a figure number
 or a year, so five sixths of what this engine can judge produced no candidate at all rather than a
-noisy one. On the same ten papers it now reads 116 numbers where it read 107.
+noisy one. On the same ten papers it now reads 113 numbers where it read 107.
 It is not a shipped command for exactly that reason — it buys nothing a curator does not already
 have.
 

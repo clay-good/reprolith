@@ -354,14 +354,14 @@
     },
     "PMC4026633": {
       "captions": {
-        "candidates": 3,
+        "candidates": 0,
         "inside_the_prose_sweep": 3,
         "naming_a_quantity": 0,
         "paragraphs": 3
       },
       "prose": {
         "attributed_to_a_model": 0,
-        "candidates": 4,
+        "candidates": 0,
         "naming_a_quantity": 0
       },
       "tables": [
@@ -381,14 +381,14 @@
     },
     "PMC5026379": {
       "captions": {
-        "candidates": 0,
+        "candidates": 1,
         "inside_the_prose_sweep": 17,
         "naming_a_quantity": 0,
         "paragraphs": 17
       },
       "prose": {
-        "attributed_to_a_model": 2,
-        "candidates": 4,
+        "attributed_to_a_model": 3,
+        "candidates": 6,
         "naming_a_quantity": 0
       },
       "tables": [
@@ -583,7 +583,7 @@
       },
       "prose": {
         "attributed_to_a_model": 3,
-        "candidates": 9,
+        "candidates": 8,
         "naming_a_quantity": 0
       },
       "tables": [

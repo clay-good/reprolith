@@ -5695,7 +5695,7 @@ in that list knew: an invasion front in µm/min, a morphogen's decay length in �
 in mmol/gDW/h, a growth rate in 1/h. Those sentences produced no candidate at all — not a noisy one
 a curator would delete, *nothing* — so the surface whose whole purpose is to turn "read the paper
 and type them in" into "delete the rows you do not mean" had no rows to offer for five sixths of
-what this engine can judge. On the ten open-access papers in the seeded set it now reads 116 numbers
+what this engine can judge. On the ten open-access papers in the seeded set it now reads 113 numbers
 where it read 107, and the papers it reaches are unchanged, because reach was never the unit list's
 to fix: seven of the ten put their results in figures.
 
@@ -5715,3 +5715,9 @@ oscillation *period* on the length of somebody's simulation run. "Period" in the
 of time names no metric, and the phrasings that mean it are removed before the vocabulary is
 matched. The measured claim in the README holds again, and it holds because the survey was re-run
 against real papers rather than because the sentence in it was left alone.
+
+The unit list then had to be re-read against the sentences it would newly admit, and one of the
+additions walked straight into the failure the rule exists to prevent. A bare "s" for seconds turns
+"data collected in the 1990s" into 1990 seconds and "Fig 2s" into two — a year and a figure
+reference, the two things the unit requirement is there to keep out. Seconds are spelled out and the
+abbreviation is left out, which is this module's answer everywhere a reading is not mechanical.

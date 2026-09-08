@@ -1407,6 +1407,12 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_claim_candidates.py"],
     ),
     (
+        "a bare second lets a year and a figure reference in as quantities",
+        "claim_candidates.py",
+        ('"h", "hours?", "min", "seconds?",', '"h", "hours?", "min", "seconds?", "s",'),
+        ["tests/test_claim_candidates.py"],
+    ),
+    (
         "a stretch of time is read as an oscillation period",
         "claim_candidates.py",
         ("    lowered = _PERIOD_OF_TIME.sub(\" \", sentence.casefold())",

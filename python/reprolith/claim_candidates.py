@@ -271,8 +271,12 @@ _PROSE_UNITS = (
     "µm/min", "um/min", "µm/h", "mm/h", "mm/day",
     # diffusivity (spatial)
     "µm²/s", "um2/s", "cm²/s", "cm2/s",
-    # time (every class)
-    "h", "hours?", "min", "s",
+    # time (every class). Spelled out for seconds, and the abbreviation deliberately left out: a
+    # bare "s" cannot be told from a plural or a panel label, so "data collected in the 1990s"
+    # reads as 1990 seconds and "Fig 2s" as two — a year and a figure reference, which are the two
+    # things this reader's unit rule exists to keep out. Found by re-reading the widened list
+    # against the sentences it would now admit.
+    "h", "hours?", "min", "seconds?",
 )
 _PROSE_VALUE = re.compile(
     r"(?<![\w.])([-+]?\d[\d ,]*(?:\.\d+)?)\s*"

@@ -290,6 +290,21 @@ def test_a_unit_is_not_read_out_of_the_front_of_a_longer_one() -> None:
     assert propose_claims_from_prose("Clearance was 3.5 mg/L/h in that run.")["candidates"] == []
 
 
+def test_a_year_is_not_a_number_of_seconds() -> None:
+    """The unit rule exists to keep years and figure references out, and a bare "s" lets both in.
+
+    "Data collected in the 1990s" reads as 1990 seconds and "Fig 2s" as two, so seconds are spelled
+    out in the vocabulary and the abbreviation is deliberately absent. Found by re-reading the
+    widened unit list against the sentences it would now admit, rather than by a paper.
+    """
+    from reprolith.claim_candidates import propose_claims_from_prose
+
+    assert propose_claims_from_prose("Data collected in the 1990s were used.")["candidates"] == []
+    assert propose_claims_from_prose("Values in Fig 2s are shown.")["candidates"] == []
+    (pulse,) = propose_claims_from_prose("The pulse lasted 40 seconds.")["candidates"]
+    assert (pulse["reported"], pulse["reported_units"]) == (40.0, "seconds")
+
+
 def test_a_stretch_of_time_is_not_an_oscillation_period() -> None:
     """The corpus corrected this vocabulary back, which is why the sentence is quoted verbatim.
 
