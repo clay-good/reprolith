@@ -5494,3 +5494,25 @@ line is derived from the claim's level when the certificate is *rendered*, so it
 and not in the stored `gap_report` — which is where the test now looks, because that is the surface
 a reader meets it on.
 
+**Auditing the day's own diffs, one metric over.** The period and peak-to-trough metrics went into
+the existing claim type deliberately, so that every surface reading a claim would carry them for
+free. Two surfaces carried them *wrongly*, and both are the same shape this repository keeps finding:
+a check that knew the metrics it was written for.
+
+`claim_units` composes the unit a claim's number is read in — a peak in the output's unit, an area
+in that times the clock, and a `tmax` in the clock alone, since what it reports is *when* the peak is
+rather than how high. That branch was keyed on the single name `tmax`, so a **period** — a length of
+time by construction — was composed as a *concentration*. Nothing had published such a claim yet, so
+nothing was wrong in the corpus; the check was wrong, and it is the check that found the metformin
+deposits' hundred-hour time unit. It is keyed on a set now, and the two members are named for why
+they belong to it.
+
+The prose reader has a docstring warning about exactly the second defect: "a term it cannot express
+still has to make a sentence ambiguous, or the ambiguity check only sees the half of the vocabulary
+it likes." A period became expressible and the vocabulary did not know the word, so "the period is
+24.2 h and the peak reaches 3.1" read as unambiguously a **peak** — the docstring's own example with
+a different term in it. `period` is recognised and expressible now; `amplitude` and `peak-to-trough`
+are recognised and deliberately not, because the field spells amplitude two ways that differ by a
+factor of two — and because "peak-to-trough" contains the word "peak", which without this proposed a
+Cmax.
+

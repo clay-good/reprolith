@@ -61,7 +61,14 @@ _WITH_SPREAD = re.compile(
 #: Column headings whose wording states how a number comes off a time course. Matched on the
 #: heading's first word only: "Cmax, nmol/mL" names a peak, and "Cmax measured-fitted, %" is a
 #: comparison between two numbers rather than one of them.
-_METRICS = {"cmax": "cmax", "auc": "auc", "auc24": "auc", "tmax": "tmax"}
+_METRICS = {
+    "cmax": "cmax", "auc": "auc", "auc24": "auc", "tmax": "tmax",
+    # A column headed "Period, h" is a claim this engine can express now; before it could, leaving
+    # the word out cost nothing, and after it did the heading would have been read as no metric at
+    # all. "Amplitude" is deliberately absent: the field spells it two ways that differ by a factor
+    # of two, so a heading naming it states no metric this can express.
+    "period": "period",
+}
 
 #: Column headings that are the row's *conditions* rather than a result — a dose, a time point.
 #: Proposed as a candidate's conditions, never as its value.
@@ -279,6 +286,15 @@ def _prose_metric(sentence: str) -> str:
             ("t1/2", ""), ("half-life", ""), ("half life", ""),
             ("tmax", "tmax"), ("time of maximal", "tmax"), ("time to peak", "tmax"),
             ("clearance", ""), ("volume of distribution", ""),
+            # An oscillation's period became an expressible metric the day this engine could
+            # certify one, and a vocabulary that did not know the word read "the period is 24.2 h
+            # and the peak reaches 3.1" as unambiguously a *peak* — which is this docstring's own
+            # example with a different term in it.
+            ("period", "period"), ("oscillation period", "period"),
+            # Recognised and deliberately not expressible: the field spells "amplitude" as
+            # peak-to-trough and as half of it, so a sentence naming one is ambiguous about which,
+            # and "peak-to-trough" contains "peak" — without this it proposed a Cmax.
+            ("amplitude", ""), ("peak-to-trough", ""), ("peak to trough", ""),
         )
         if phrase in lowered
     }

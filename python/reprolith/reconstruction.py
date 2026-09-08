@@ -106,11 +106,13 @@ class RecipeStep:
     #: arm, which is the defect `parameter_overrides` was added to this record to fix, one level
     #: up. Omitted at its default, so a recipe that states none is written exactly as before.
     schedule: tuple[tuple[float, tuple[tuple[str, float], ...]], ...] = ()
-    #: The interval of the run this step's ``auc`` is taken over, when the claim states one. A
+    #: The interval of the run this step's metric is taken over, when the claim states one. A
     #: multiple-dose paper's AUC24 is over one dosing day, and a recipe that omits it describes a
     #: run whose area is over the whole simulation — a different number, from the same model, with
     #: nothing in the record to say so. The metformin twice-daily model gives 84.3 over its second
-    #: day and 162.1 over both.
+    #: day and 162.1 over both. An oscillator's ``period`` and ``peak_to_trough`` carry one too, for
+    #: the same reason in different words: "after transients" is a window, and a period averaged
+    #: across the approach to the limit cycle is a different number from the settled one.
     window: tuple[float, float] | None = None
 
     def to_dict(self) -> dict[str, Any]:

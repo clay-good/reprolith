@@ -173,3 +173,61 @@ def test_the_crossing_level_is_the_windows_own_mean() -> None:
     _, level = _upward_crossings(times, values)
     assert level == pytest.approx(500.0, abs=0.1)
     assert _metric(times, values, "period") == pytest.approx(4.0, rel=1e-3)
+
+
+# --- the surfaces that knew only the metrics they were written for --------------------------------
+
+
+def test_a_period_is_read_in_the_run_s_clock_and_not_in_the_output_s_unit() -> None:
+    """The unit check knew `tmax` was a time and would have called a period a concentration.
+
+    That check is the one that found the metformin deposits' hundred-hour time unit, and it composes
+    a claim's unit from the model's own declarations: a peak in the output's unit, an area in that
+    times the clock, and a `tmax` — read entirely in the clock — as the clock alone. A period is the
+    same kind of quantity as a `tmax` and was falling into the first branch, so a number a paper
+    prints in hours would have been checked against a concentration.
+    """
+    from reprolith import claim_units
+
+    sbml = _UNIT_MODEL
+    assert claim_units(sbml, "C", "period") == claim_units(sbml, "C", "tmax") == "3600*second"
+    # And a peak-to-trough is *not* a time: it is a difference of two readings of the output.
+    assert claim_units(sbml, "C", "peak_to_trough") == claim_units(sbml, "C", "cmax")
+    assert claim_units(sbml, "C", "cmax") == "mole / litre"
+
+
+def test_the_prose_reader_knows_the_word_it_can_now_express() -> None:
+    """The seam its own docstring warns about: a term the engine can express, in a vocabulary that
+    does not know it, makes a sentence look unambiguous about something else."""
+    from reprolith.claim_candidates import _METRICS, _prose_metric
+
+    assert _prose_metric("The oscillation period was 24.2 h.") == "period"
+    # The sentence its docstring uses to explain the defect, with a period in it.
+    assert _prose_metric("The period is 24.2 h and the peak reaches 3.1 nM.") == ""
+    # "Amplitude" is recognised and deliberately inexpressible: the field spells it two ways that
+    # differ by a factor of two, and "peak-to-trough" contains the word "peak".
+    assert _prose_metric("The amplitude was 3.4 nM.") == ""
+    assert _prose_metric("The peak-to-trough height was 3.4 nM.") == ""
+    assert _METRICS["period"] == "period"
+    assert "amplitude" not in _METRICS
+
+
+#: A model that declares its units, so the composition is visible rather than "unstated".
+_UNIT_MODEL = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="m" timeUnits="hour" substanceUnits="mole" volumeUnits="litre">
+    <listOfUnitDefinitions>
+      <unitDefinition id="hour"><listOfUnits>
+        <unit kind="second" multiplier="3600" exponent="1" scale="0"/></listOfUnits></unitDefinition>
+      <unitDefinition id="mole"><listOfUnits>
+        <unit kind="mole" exponent="1" scale="0" multiplier="1"/></listOfUnits></unitDefinition>
+      <unitDefinition id="litre"><listOfUnits>
+        <unit kind="litre" exponent="1" scale="0" multiplier="1"/></listOfUnits></unitDefinition>
+    </listOfUnitDefinitions>
+    <listOfCompartments><compartment id="c" size="1" constant="true" units="litre"/></listOfCompartments>
+    <listOfSpecies><species id="C" compartment="c" substanceUnits="mole"
+      hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"
+      initialConcentration="1"/></listOfSpecies>
+  </model>
+</sbml>
+"""

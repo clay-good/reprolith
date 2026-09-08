@@ -123,8 +123,10 @@ class Claim:
     """A published scalar claim to check: a quantity, where to read it, and its reported value.
 
     ``species`` is the model output to read; ``metric`` derives the scalar from that output's
-    time course (``cmax`` peak, ``auc`` area, or ``final`` end value). ``parameter_overrides``
-    set the claim's protocol (e.g. a dose) before running. ``assumption_qualified`` marks a
+    time course: ``cmax`` peak, ``tmax`` the time of that peak, ``auc`` area, ``final`` end value,
+    ``period`` an oscillation's cycle length, and ``peak_to_trough`` its height. The last two are
+    what an oscillator's paper reports, because a curve comparison of a limit cycle is dominated by
+    phase. ``parameter_overrides`` set the claim's protocol (e.g. a dose) before running. ``assumption_qualified`` marks a
     claim whose reproduction rests on a load-bearing assumption; ``shortfall`` supplies the
     root cause a non-pass verdict requires.
     """

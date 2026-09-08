@@ -870,6 +870,14 @@ def _declared_output(model: Any, species: str) -> Any:
     raise ValueError(f"the model declares no species or parameter {species!r}")
 
 
+#: The metrics whose value is a length of time rather than a reading of the output, so their unit
+#: is the run's clock and not the output's. `tmax` has been here since the metformin table was
+#: checked; `period` joined it the day an oscillator's period became certifiable, and until it did
+#: this composed a *concentration* for a number a paper prints in hours — the same defect, one
+#: metric over, in a check written for the metrics that existed when it was written.
+_CLOCK_METRICS = frozenset({"tmax", "period"})
+
+
 def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
     """The unit a claim's value is read in, composed from the model's own declarations.
 
@@ -885,7 +893,9 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
     headers. A ``tmax`` is the extreme case — it is read entirely in the run's clock and not in the
     output's unit at all, since what it reports is *when* the peak is and not how high. Composed
     from the output's own unit it came out as a concentration, which made a claim printed in hours
-    read as a disagreement about substance.
+    read as a disagreement about substance. A **period** is the same statement about a different
+    quantity: it is a length of time, so it is read in the clock too. (A ``peak_to_trough`` is not —
+    it is a difference of two readings of the output, so it is in the output's own unit.)
 
     This describes how a **time course** is read — the ODE path, where the engine asks for
     concentration data. A class whose engine reports copy numbers reads the same species as an
@@ -897,10 +907,11 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
     parseable SBML or declares no such output.
     """
     model, definitions, level = _model_and_definitions(model_sbml)
-    if metric == "tmax":
-        # The run's own clock, whatever output the peak is read off. The output still has to exist
-        # — a claim naming a species the model does not declare is wrong about the model whichever
-        # metric it reads — so this is resolved after the lookup below rather than instead of it.
+    if metric in _CLOCK_METRICS:
+        # The run's own clock, whatever output the quantity is read off. The output still has to
+        # exist — a claim naming a species the model does not declare is wrong about the model
+        # whichever metric it reads — so this is resolved after the lookup below rather than
+        # instead of it.
         _declared_output(model, species)
         return _resolve_unit(model.get("timeUnits") or "", definitions, level)
     element = next(
