@@ -27,7 +27,6 @@ package exports rather than left to be remembered.
 
 from __future__ import annotations
 
-import math
 from typing import Callable
 
 import pytest
