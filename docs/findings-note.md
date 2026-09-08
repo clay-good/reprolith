@@ -5601,3 +5601,23 @@ carrying an envelope and no variability claim paired the envelope with nothing. 
 one claim away from attaching an assumption to the wrong verdict. The judgments are paired with
 their claims where they are made now, and a test certifies both kinds together.
 
+
+## The front end was on the surface and its arguments were not
+
+The method is the one that found the author-facing defects: write what a *consumer* writes on day
+one, using only what the package exports. `from reprolith import certify_constraint_based` works —
+and then nothing else that script needs does. `EssentialityClaim`, `FluxClaim`, `FluxRangeClaim`,
+`ReportedEssentialSet` and `EssentialKind` were all in `reprolith.constraint_based` and
+`reprolith.fba`, while every other class's claim types sit at the root beside their front end. A
+consumer could reach the function and could not build a single thing to pass it.
+
+They are exported now, and the guard is driven from the front ends themselves rather than from a
+list: `tests/test_public_api.py` reads each exported `certify_*` signature, finds the claim types in
+it, and requires the package to export them. The next class to add a claim type is covered without
+anybody remembering this test — which is the same rule the claim-type catalogue and the miss
+differential are built on, and the third place today it has caught something.
+
+Both of those checks then fired on this change, which is worth recording as the intended behaviour
+rather than as noise: the differential's coverage assertion failed because three claim types moved
+into `__all__` and its excuse list still said they were not there.
+

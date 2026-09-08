@@ -28,6 +28,18 @@ find is one this repository has shipped before.
 | `FluxRangeClaim` | the interval a reaction can carry at the optimum | its worse-matched bound | — |
 | an objective claim (in the dossier) | a maximal growth rate or other objective value | relative error | — |
 
+Every one of them, and the front end that judges it, imports from the package root:
+
+```python
+from reprolith import EssentialityClaim, certify_constraint_based, fba_solver_pin
+```
+
+That was not true until a modeller's day-one script was actually written: `certify_constraint_based`
+was on the surface and not one of the claim types it takes, so a consumer could reach the function
+and could not build anything to pass it. `tests/test_public_api.py` now reads each exported front
+end's own signature and requires the claim types in it to be exported too, so the next class to add
+one is covered without anybody remembering.
+
 ## Two things every row shares
 
 **A miss is published, not raised.** Each of these can produce the failure it earns, with a root

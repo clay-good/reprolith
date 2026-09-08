@@ -441,13 +441,11 @@ def test_this_matrix_covers_every_claim_type_the_package_exports() -> None:
         "PopulationClaim", "EstimationClaim", "VariabilityClaim",
         "SpatialClaim", "GradientClaim", "FrontSpeedClaim", "PatternClaim",
         # Covered too, behind the extra each needs — see `_BEHIND_AN_EXTRA`. The constraint-based
-        # claim types are not in this `__all__` at all (they live in `reprolith.constraint_based`)
-        # and are covered there as well.
+        # three joined this `__all__` the day a consumer's day-one script found that the front end
+        # was exported and its arguments were not; they were already driven here.
         "Claim", "CurveClaim",
+        "EssentialityClaim", "FluxClaim", "FluxRangeClaim",
     }
-    from reprolith.constraint_based import EssentialityClaim, FluxClaim, FluxRangeClaim
-
-    assert {EssentialityClaim, FluxClaim, FluxRangeClaim}  # named, so a rename fails here
     assert exported == covered, (
         "a claim type is exported that this differential neither covers nor excuses: "
         f"{sorted(exported - covered)}"

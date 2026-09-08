@@ -95,3 +95,35 @@ def test_a_family_of_entry_points_reaches_the_surface_together() -> None:
     # And the one the selection guide tells a reader to use, which lives in its own module.
     assert callable(R.derive_footprints)
 
+
+def test_a_front_end_on_the_surface_brings_the_claims_it_takes_with_it() -> None:
+    """Exporting a front end and not its arguments is the same defect one level up.
+
+    `certify_constraint_based` was on the surface and `EssentialityClaim`, `FluxClaim`,
+    `FluxRangeClaim`, `ReportedEssentialSet` and `EssentialKind` were not: a consumer could reach
+    the function and could not build a single thing to pass it, while every other class's claim
+    types were right there. Found by writing what a modeller writes on day one — `from reprolith
+    import certify_constraint_based` and then nothing else they need.
+
+    Driven from the front ends themselves, so the next class to add one is covered without anybody
+    remembering this test.
+    """
+    import inspect
+    import typing
+
+    for name in [n for n in R.__all__ if n.startswith("certify_")]:
+        signature = inspect.signature(getattr(R, name))
+        for parameter in signature.parameters.values():
+            annotation = parameter.annotation
+            # `Iterable[SomethingClaim]`, spelled as a string under `from __future__`.
+            for referenced in set(typing.get_args(annotation)) | {annotation}:
+                text = getattr(referenced, "__name__", str(referenced))
+                for claim in {
+                    part.strip("[]'\"() ") for part in text.replace("]", "[").split("[")
+                }:
+                    if claim.endswith("Claim") and claim not in {"DossierClaim"}:
+                        assert hasattr(R, claim), (
+                            f"{name} takes a {claim} and the package does not export one, so a "
+                            "consumer can reach the front end and cannot build its argument"
+                        )
+
