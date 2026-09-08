@@ -5587,3 +5587,17 @@ And the differential written the day before earned its place immediately: adding
 was checked. That is the check working — a claim type nobody adds to it is a claim type it does not
 cover, which is the state that let a front end publish only passes and tracebacks twice.
 
+**The artifacts those slices published were then read as their reader, and recomputed.** Every
+number in the four new ones comes back exactly: the population worked example's reference bands
+against the closed-form log-normal percentiles (worst difference 0), the estimation example's
+observations against the trajectory they were generated from (0), all seven of the logical entry's
+basin counts against the committed network's own basins, and the noise entry's Fano factor and CV
+against a re-run of its pinned ensemble (0.0161 and 0.0090, the relative errors the certificate
+prints). The data is what it says it is.
+
+The code was not quite. Pairing the variability claims with their assumptions sliced the last N
+assessments back off the list — and `assessments[-0:]` is the **whole list**, so a certificate
+carrying an envelope and no variability claim paired the envelope with nothing. Harmless there, and
+one claim away from attaching an assumption to the wrong verdict. The judgments are paired with
+their claims where they are made now, and a test certifies both kinds together.
+

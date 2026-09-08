@@ -170,3 +170,43 @@ def test_the_error_bar_shrinks_with_the_square_root_of_the_population() -> None:
     large = spread_standard_error(_subjects(0.3, n=400), SpreadStatistic.COEFFICIENT_OF_VARIATION)
     assert small is not None and large is not None
     assert small / large == pytest.approx(2.0, rel=0.15)
+
+
+def test_an_envelope_beside_a_variability_claim_keeps_its_own_assumption() -> None:
+    """The pairing defect this was written after finding in my own diff.
+
+    The assumptions were built by slicing the last N assessments back off the list to pair them
+    with the variability claims. `assessments[-0:]` is the *whole* list, so a certificate carrying
+    an envelope and no variability claim paired the envelope's assessment with nothing — harmless
+    there, and one claim away from pairing the wrong claim with the wrong verdict. Both kinds are
+    certified together here, and each assumption names its own claim.
+    """
+    from reprolith import PercentileBand, PopulationClaim
+
+    bands = tuple(
+        PercentileBand(percentile=p, curve=tuple(10.0 * f for f in (1.0, 0.8, 0.6)))
+        for p in (5.0, 50.0, 95.0)
+    )
+    certificate = certify_population(
+        paper=PaperIdentity(title="a population paper"), engine_pin=solver_pin(),
+        claims=[PopulationClaim(
+            claim_id="envelope", quantity="envelope", reported=bands, predicted=bands,
+            source_location="Fig 2", protocol=_PROTOCOL,
+        )],
+        variability=[VariabilityClaim(
+            claim_id="cv-of-auc", quantity="between-subject CV of AUC",
+            statistic=SpreadStatistic.COEFFICIENT_OF_VARIATION,
+            reported=0.3, values=_subjects(0.3), source_location="Table 4", protocol=_PROTOCOL,
+        )],
+    )
+    assert [a.claim_id for a in certificate.assessments] == ["envelope", "cv-of-auc"]
+    assert sorted(a.id for a in certificate.assumptions) == [
+        "population-sampling-cv-of-auc", "population-sampling-envelope",
+    ]
+
+
+def test_a_certificate_of_no_claims_is_refused() -> None:
+    """Certifying a paper this path judged nothing of would publish a verdict about no evidence —
+    the same refusal every other front end carries."""
+    with pytest.raises(ValueError, match="needs at least one claim"):
+        certify_population(paper=PaperIdentity(title="nothing"), engine_pin=solver_pin())

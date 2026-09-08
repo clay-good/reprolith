@@ -1606,9 +1606,12 @@ def certify_population(
     # reason: its spread is a property of the variability model Reprolith reconstructed as much as
     # of the model. One assumption per claim, as above, and only for a claim a verdict was drawn
     # from — an assumption on an abstention would describe a judgment nobody made.
+    # Judged first and paired with their claims here, rather than sliced back off the end of the
+    # assessment list: `assessments[-0:]` is the *whole* list, so an empty variability list paired
+    # every envelope claim with the wrong thing — a slice that reads as "the last N" and is not.
     spread_claims = tuple(variability)
-    for claim in spread_claims:
-        assessments.append(_judge_variability(claim))
+    spread_judged = [(claim, _judge_variability(claim)) for claim in spread_claims]
+    assessments.extend(assessment for _, assessment in spread_judged)
     spread_sampling = tuple(
         Assumption(
             id=f"population-sampling-{claim.claim_id}",
@@ -1626,7 +1629,7 @@ def certify_population(
             alternatives=("a different subject count", "a different sampling seed"),
             author_can_close=False,
         )
-        for claim, assessment in zip(spread_claims, assessments[-len(spread_claims):] or [])
+        for claim, assessment in spread_judged
         if claim.assumption_qualified and assessment.verdict is not Verdict.NOT_EVALUABLE
     )
     if not assessments:
