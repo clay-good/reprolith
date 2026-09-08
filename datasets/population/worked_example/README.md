@@ -9,7 +9,16 @@ bands somebody typed. They meet here, with nothing hand-written between the mode
 - [`certificate.json`](certificate.json) — the same certificate, machine-readable.
 - [`reference.json`](reference.json) — what it was judged **against**: the closed-form percentiles
   of `C(t)` for a one-compartment IV bolus whose volume is log-normal,
-  `(D/V)·exp(-k·t)·exp(omega·z_p)`.
+  `(D/V)·exp(-k·t)·exp(omega·z_p)`, and the peak's coefficient of variation, which is the volume's
+  since the peak is `D/V`.
+
+It carries **both** halves of a population claim, which is what these papers print: the envelope,
+and the between-subject **%CV** of the peak — a statistic of the subjects rather than of the bands.
+The population is 1,500 subjects rather than the 500 an envelope needs, because a 30% CV's own
+standard error is 3.6% of it at 500 against a 5% pass threshold; at that size the spread claim is
+abstained on rather than judged. Each claim's protocol line carries what *it* rests on: the
+envelope's says what the outermost band's sampling error is, and the CV's says what its own
+jackknife error bar is.
 
 ## What it is, and what it is not
 

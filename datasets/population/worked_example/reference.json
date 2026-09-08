@@ -46,7 +46,8 @@
       1.4702742491898138
     ]
   },
-  "description": "The envelope a paper would print if its population were exactly the one modelled: the closed-form percentiles of C(t) for a log-normal volume, which is what the committed certificate is judged against.",
+  "between_subject_cv_of_peak": 0.3,
+  "description": "The envelope a paper would print if its population were exactly the one modelled: the closed-form percentiles of C(t) for a log-normal volume, which is what the committed certificate is judged against \u2014 and the peak's coefficient of variation, which is the volume's, since the peak is D/V.",
   "model": "one-compartment IV bolus, D=100, V=10 (log-normal, CV 0.3), k=0.2",
   "times": [
     0.0,

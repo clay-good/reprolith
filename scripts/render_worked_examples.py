@@ -28,6 +28,7 @@ from reprolith import (
     PopulationClaim,
     RunMetadata,
     SubjectVariability,
+    VariabilityClaim,
     certificate_from_content,
     certify_estimation,
     certify_logical,
@@ -36,11 +37,13 @@ from reprolith import (
     refit_parameters,
     render_human,
     simulate_population,
+    subject_metrics,
 )
 from reprolith.constraint_based import certify_constraint_based
 from reprolith.fba import solver_pin as fba_pin
 from reprolith.logical import LogicalClaim
 from reprolith.logical import solver_pin as logical_pin
+from reprolith.oracle import SpreadStatistic
 from reprolith.persistence import dossier_from_dict
 
 ROOT = Path(__file__).parent.parent
@@ -142,7 +145,11 @@ _ONE_COMPARTMENT = """<?xml version="1.0" encoding="UTF-8"?>
 """
 _DOSE, _VOLUME, _RATE = 100.0, 10.0, 0.2
 _POPULATION_CV = 0.3
-_SUBJECTS = 500
+#: Three times the five hundred an envelope needs, because this certificate carries a **spread**
+#: claim as well: a 30% CV's own standard error is 3.6% of it at 500 subjects against a 5% pass
+#: threshold, so the claim would be abstained on rather than judged. Measured, not chosen — see
+#: `docs/population-and-estimation.md`.
+_SUBJECTS = 1500
 _POPULATION_SEED = 20260901
 _PERCENTILES = (5.0, 50.0, 95.0)
 _DURATION, _STEPS = 12.0, 12
@@ -186,6 +193,10 @@ def _population_certificate() -> tuple[Certificate, dict[str, Any]]:
         )
         for percentile in _PERCENTILES
     )
+    # The other half of a population figure, off the same subjects: a paper prints an envelope, a
+    # variability metric, or both, and until `subject_metrics` existed the second was unproducible
+    # because the simulator threw the subjects away after taking percentiles of them.
+    peaks = subject_metrics(run, "cmax")
     certificate = certify_population(
         paper=PaperIdentity(
             title=(
@@ -195,6 +206,23 @@ def _population_certificate() -> tuple[Certificate, dict[str, Any]]:
             doi="",
         ),
         engine_pin=engine_pin(),
+        variability=[VariabilityClaim(
+            claim_id="between-subject-cv",
+            quantity="between-subject coefficient of variation of the peak concentration",
+            statistic=SpreadStatistic.COEFFICIENT_OF_VARIATION,
+            # C(0) = D/V and V is log-normal with this CV, so the peak's CV is the volume's — the
+            # closed form again, and a different one from the envelope's percentiles.
+            reported=_POPULATION_CV,
+            values=peaks,
+            source_location=(
+                "closed form: the peak is D/V and V is log-normal with CV 0.3, so the population's "
+                "peak carries that CV — mathematics standing in for a reported %CV, not a number "
+                "read from a paper"
+            ),
+            # The sampling, without the envelope's own clauses: this claim is a statistic of the
+            # subjects and not of the bands, so the band's sampling error is not its precision.
+            protocol=run.sampling,
+        )],
         claims=[PopulationClaim(
             claim_id="population-envelope",
             quantity="5th/50th/95th percentile of C(t) across the population",
@@ -211,11 +239,13 @@ def _population_certificate() -> tuple[Certificate, dict[str, Any]]:
         "description": (
             "The envelope a paper would print if its population were exactly the one modelled: "
             "the closed-form percentiles of C(t) for a log-normal volume, which is what the "
-            "committed certificate is judged against."
+            "committed certificate is judged against — and the peak's coefficient of variation, "
+            "which is the volume's, since the peak is D/V."
         ),
         "model": "one-compartment IV bolus, D=100, V=10 (log-normal, CV 0.3), k=0.2",
         "times": list(run.times),
         "bands": {str(band.percentile): list(band.curve) for band in reported},
+        "between_subject_cv_of_peak": _POPULATION_CV,
     }
     return certificate, reference
 

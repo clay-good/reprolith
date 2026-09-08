@@ -47,6 +47,7 @@ def test_the_population_certificate_is_judged_against_the_committed_reference() 
     content = json.loads((_POPULATION / "certificate.json").read_text(encoding="utf-8"))
     assert set(reference["bands"]) == {"5.0", "50.0", "95.0"}
     assert len(reference["times"]) == 13  # duration 12, 12 steps
+    assert reference["between_subject_cv_of_peak"] == 0.3
     assessment = content["assessments"][0]
     assert assessment["method"] == "distribution-band-distance"
     assert assessment["verdict"] == "reproduced"
@@ -60,15 +61,35 @@ def test_the_population_certificate_is_judged_against_the_committed_reference() 
     assert "standing in for a published figure" in assessment["source_location"]
 
 
+def test_the_population_certificate_carries_both_halves_of_a_population_claim() -> None:
+    """An envelope and a variability metric, and each protocol line is about its own claim.
+
+    The band's sampling error is the envelope's precision and not the CV's; a spread claim handed
+    the full envelope line would state the precision of a quantity it is not about.
+    """
+    content = json.loads((_POPULATION / "certificate.json").read_text(encoding="utf-8"))
+    by_id = {a["claim_id"]: a for a in content["assessments"]}
+    assert set(by_id) == {"population-envelope", "between-subject-cv"}
+    assert by_id["between-subject-cv"]["method"] == "scalar-relative-error"
+    assert "jackknife standard error" in by_id["between-subject-cv"]["protocol"]
+    assert "of the band at" not in by_id["between-subject-cv"]["protocol"]
+    assert "of the band at" in by_id["population-envelope"]["protocol"]
+    # 1,500 subjects, because at 500 the spread claim would be abstained on rather than judged.
+    assert "1500 subjects" in by_id["between-subject-cv"]["protocol"]
+
+
 def test_the_population_verdict_is_qualified_and_names_what_qualifies_it() -> None:
     """A clean per-claim `reproduced` and a qualified certificate is the invariant, not a shortfall:
     the envelope rests on a variability model and a sampling Reprolith chose."""
     content = json.loads((_POPULATION / "certificate.json").read_text(encoding="utf-8"))
     assert content["overall"] == "partially-reproduced"
-    assumption = content["assumptions"][0]
-    assert assumption["load_bearing"] is True
-    assert assumption["author_can_close"] is False  # the sampling is this engine's, not the paper's
-    assert "500 subjects, seed 20260901" in assumption["chosen"]
+    assumptions = content["assumptions"]
+    assert len(assumptions) == 2  # one per claim, each naming the sampling it rests on
+    for assumption in assumptions:
+        assert assumption["load_bearing"] is True
+        # The sampling is this engine's, not the paper's: no wording closes it.
+        assert assumption["author_can_close"] is False
+        assert "1500 subjects, seed 20260901" in assumption["chosen"]
 
 
 def test_the_estimation_certificate_recovers_the_value_its_data_came_from() -> None:

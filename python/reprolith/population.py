@@ -83,6 +83,11 @@ class PopulationRun:
     #: envelope's verdict moves with its subject count and seed, so the bands are only evidence
     #: alongside them.
     protocol: str
+    #: The same run *without* the two clauses that are about the envelope — the percentile
+    #: definition and the outermost band's sampling error. What a claim about the **subjects**
+    #: rests on: a variability metric handed the full line would state the precision of a band it
+    #: is not about.
+    sampling: str = ""
 
 
 def _percentile(sorted_values: list[float], percentile: float) -> float:
@@ -271,21 +276,31 @@ def simulate_population(
         for percentile in percentiles
     )
     varied = ", ".join(f"{s.parameter} (CV {s.cv:g})" for s in variability)
+    # Two clause groups rather than one string, because two kinds of claim rest on this run and
+    # only one of them is about the bands. A variability metric is a statistic of the *subjects*,
+    # and handing it a protocol line ending "sampling error of the 5th band ~2% of the band" states
+    # the precision of a quantity that claim is not about — the "a rendering written for one
+    # quantity, used by another" shape this repository keeps finding.
+    drawn = (
+        f"{subjects} subjects, seed {seed}, log-normal between-subject variability on "
+        f"{varied}, median-preserving"
+    )
+    run = f"duration={duration!r}, steps={int(steps)}, read=[{species}]"
+    percentiles_clause = "percentiles linearly interpolated between order statistics"
+    # The band's own sampling error, from the widest-CV spec and the outermost band it reports: an
+    # envelope of twenty subjects and one of a thousand read identically without it, and are judged
+    # in the same tolerance.
+    band_error = (
+        f"sampling error of the {_outermost(percentiles):g}th band ~"
+        f"{percentile_sampling_error(cv=max(s.cv for s in variability), percentile=_outermost(percentiles), subjects=subjects):.0%} "
+        f"of the band at {subjects} subjects"
+    )
     return PopulationRun(
         times=times,
         bands=bands,
         trajectories=tuple(trajectories),
-        protocol=(
-            f"{subjects} subjects, seed {seed}, log-normal between-subject variability on "
-            f"{varied}, median-preserving; percentiles linearly interpolated between order "
-            f"statistics; duration={duration!r}, steps={int(steps)}, read=[{species}]; "
-            # The band's own sampling error, from the widest-CV spec and the outermost band it
-            # reports: an envelope of twenty subjects and one of a thousand read identically
-            # without it, and are judged in the same tolerance.
-            f"sampling error of the {_outermost(percentiles):g}th band ~"
-            f"{percentile_sampling_error(cv=max(s.cv for s in variability), percentile=_outermost(percentiles), subjects=subjects):.0%} "
-            f"of the band at {subjects} subjects"
-        ),
+        protocol="; ".join((drawn, percentiles_clause, run, band_error)),
+        sampling="; ".join((drawn, run)),
     )
 
 
