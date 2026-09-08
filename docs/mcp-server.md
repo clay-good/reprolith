@@ -75,6 +75,16 @@ call, `[]` or `null` reads as a fact about the paper rather than about the call.
 | `lint_stochastic` | `sbml`, `species`, `reported_mean`, `duration`, `trajectories`, `seed` | A deterministic verdict on an SBML reaction network's mean species count via a pinned Gillespie SSA (needs the engine extra) |
 | `lint_diffusion` | `initial`, `reference`, `diffusivity`, `dx`, `dt`, `steps`, `decay` (optional) | A deterministic verdict on a 1-D diffusion profile vs a reported one, by curve distance (pure, no extra) |
 
+**The inline surface is one quantity per class, and not every claim type has a lint.** Seven
+quantities can be checked inline; [seventeen kinds of claim](claim-types.md) can be *certified*. An
+oscillation's period, a basin of attraction, an essential set, a reported flux or flux range, a noise
+statistic and a population's variability metric all reach a certificate and none of them reaches a
+`lint_*` tool — so an agent that goes looking for `lint_basin` is not missing something, it is at
+the edge of this surface. The route for those is the library (`certify_logical`,
+`certify_constraint_based`, `certify_stochastic`, `certify_population`), which produces a
+certificate rather than a gate. Stated here because a reader meeting one lint per class reasonably
+infers there is one per claim type, and there is not.
+
 ## Effectful tools
 
 Kept separate from the read-only tools, and offered only when the server runs with a mutable

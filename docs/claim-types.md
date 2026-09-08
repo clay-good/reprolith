@@ -51,6 +51,15 @@ pass or a traceback and nothing in between.
 produces `not-evaluable` with a reason and the protocol of the run behind it — never a `failed`,
 which would blame a model for a question this engine could not ask.
 
+## What can be checked *inline*
+
+A certificate is the full answer; an agent gating a workflow often wants a faster one. The MCP
+server's `lint_*` tools give that for **seven** of the quantities above — a curve, an objective, a
+mean species count, a diffusion profile, a steady state, an estimate, and a percentile envelope.
+The rest reach a certificate and not a gate, which
+[`docs/mcp-server.md`](mcp-server.md) says in the same words, because a reader meeting one lint per
+class reasonably infers there is one per claim type.
+
 ## What is not here
 
 A claim type exists when a *spec* names the target. This engine computes several quantities no claim
