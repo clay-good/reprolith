@@ -51,6 +51,43 @@ pass or a traceback and nothing in between.
 produces `not-evaluable` with a reason and the protocol of the run behind it — never a `failed`,
 which would blame a model for a question this engine could not ask.
 
+## Certifying one, start to finish
+
+Nothing above is reachable without a pin and a front end, and a reader assembling those from three
+class documents is a reader who gives up. This is the whole thing for a Boolean network whose paper
+reports a basin — every other class is the same three steps with its own claim type:
+
+```python
+from reprolith import (
+    LogicalClaim, PaperIdentity, ReportedBasin, UpdateScheme,
+    RunMetadata, certify_logical, parse_boolean_network, render_human, solver_pin_for,
+)
+
+rules = {"A": "!B", "B": "!A"}                      # your network, node -> Boolean rule
+parse_boolean_network(rules).attractors()           # what the model has, if you want to look first
+attractor = [{"A": 0, "B": 1}]                      # the attractor your paper reports a basin for
+
+certificate = certify_logical(
+    paper=PaperIdentity(title="Your paper", doi="10.0/example"),
+    engine_pin=solver_pin_for(nodes=len(rules)),      # the path this size of network takes
+    claims=[LogicalClaim(
+        claim_id="fig-2-basin",
+        quantity="states reaching the A-off steady state",
+        rules=rules,
+        reported={},                                  # unused: this claim reports a basin
+        basin=ReportedBasin(attractor=attractor, states=1),   # your paper's number
+        source_location="Fig 2",
+        scheme=UpdateScheme.SYNCHRONOUS,              # omit it and the run says what that cost
+    )],
+)
+print(render_human(certificate, RunMetadata(created_at="", actor="you", tool_version="0.0.1")))
+```
+
+The pin is not decoration: it names the code that produced the verdict, and each class refuses one
+that describes a different path than the run took. `tests/test_claim_type_catalogue.py` runs this
+snippet as it is written here, so a signature that changes under it fails rather than leaving a
+reader with a page that no longer works.
+
 ## What can be checked *inline*
 
 A certificate is the full answer; an agent gating a workflow often wants a faster one. The MCP

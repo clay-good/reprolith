@@ -78,3 +78,30 @@ def test_the_front_page_states_the_number_this_page_lists() -> None:
     assert f"{words[rows]} kinds of result" in readme, (
         f"docs/claim-types.md lists {rows} kinds and the README says otherwise"
     )
+
+
+def test_the_walkthrough_on_the_page_runs_as_written() -> None:
+    """A page that teaches an API is a page that goes stale the first time a signature moves.
+
+    So the snippet is executed rather than read: it is compiled and run exactly as it appears, and
+    what it produces has to be the certificate it says it produces. This repository's own guides
+    are checked the same way — the selection guide prints the numbers the command prints — because
+    a reader who follows a broken example concludes the tool is broken.
+    """
+    from reprolith import Certificate
+
+    # Every Python block on the page, not only the long one: the short import example is the
+    # sentence a reader copies first, and it is exactly the thing that broke the day the front end
+    # was exported without its claim types.
+    blocks = [part.split("```", 1)[0] for part in _PAGE.split("```python")[1:]]
+    assert len(blocks) >= 2, "the page no longer carries the walkthrough this checks"
+    namespace: dict[str, object] = {}
+    for block in blocks:
+        exec(compile(block, "docs/claim-types.md", "exec"), namespace)  # noqa: S102 - our page
+    certificate = namespace["certificate"]
+    assert isinstance(certificate, Certificate)
+    assessment = certificate.assessments[0]
+    assert assessment.method == "basin-size-match"
+    # The snippet's claim is true of the toggle switch it builds: each fixed point attracts only
+    # itself. If that stops being true the page is teaching a failing example.
+    assert assessment.verdict.value == "reproduced"
