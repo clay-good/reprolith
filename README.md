@@ -760,7 +760,11 @@ configuration those are 16.0 and 15.24, five percent apart, which is the entire 
 tolerance.
 
 All six classes are measured blind against independently-established ground truth on the same
-machinery — [docs/self-validation.md](docs/self-validation.md) is the one-look evidence summary.
+machinery — [docs/self-validation.md](docs/self-validation.md) is the one-look evidence summary, and
+[docs/claim-types.md](docs/claim-types.md) is the one-look answer to "can it check the thing my
+paper reports?": every kind of result this engine certifies, what each is compared against, how each
+one abstains, and — stated rather than left to be noticed — the quantities it computes and
+deliberately does not certify.
 
 Reprolith gets better when people who know the science validate its judgment. When it isn't sure
 about a load-bearing value it records the value, marks the result as resting on it, and reports it
