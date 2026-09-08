@@ -15,7 +15,7 @@ python scripts/run_fba_milestone.py
 
 | Entry | Organism | Label source | Verdict | Agreement |
 |---|---|---|---|---|
-| `e_coli_core` | *E. coli* K-12 | documented growth rate 0.873922 (Orth 2010) | `reproduced` | ✓ |
+| `e_coli_core` | *E. coli* K-12 | documented growth rate 0.873922 (Orth 2010), plus COBRApy's essential sets, one flux and one flux range | `reproduced` | ✓ |
 | `iIT341` | *H. pylori* 26695 | COBRApy reference growth 0.692813 | `reproduced` | ✓ |
 | `iLJ478` | *T. maritima* MSB8 | COBRApy reference growth 0.228407 | `reproduced` | ✓ |
 | `iNF517` | *L. lactis* MG1363 | COBRApy reference growth 0.042635 | `reproduced` | ✓ |
@@ -32,6 +32,27 @@ the growth rate an independent implementation ([COBRApy](../cross_validation/)) 
 distributed model — non-circular in both cases. Every label's exact source is recorded on the
 entry.
 
+## The entry that carries every target this class can judge
+
+`e_coli_core` is certified on **four kinds of claim**, which is every reproduction target the class
+spec names, and the only entry here that is:
+
+| Claim | Reference | Compared by |
+|---|---|---|
+| maximal aerobic growth rate | the distributing publication's 0.873922 | relative error |
+| the set of essential **genes** (7) | COBRApy's single-gene deletion | exact set match |
+| the set of essential **reactions** (18) | COBRApy's single-reaction deletion | exact set match |
+| aconitase's flux at the optimum | COBRApy's flux-variability interval, which *pins* it | relative error |
+| succinate dehydrogenase's flux **range** | the same interval, which does *not* pin it | its worse-matched bound |
+
+The last two are the same analysis read two ways, and they are on one certificate on purpose:
+`R_SUCDi` is one of the two reactions this model does not pin, so a claim reporting a *value* for it
+is abstained on — the model permits that number rather than producing it — while a claim reporting
+its *range* reproduces, because the range is exactly what the model says.
+
+This certificate also mixes reference kinds — a publication's growth rate beside a tool's deletion
+sets — which is why `tests/test_reference_provenance.py` classifies per *claim* and names this one.
+
 ## What this demonstrates
 
 - **The class closes its self-validation loop on the shared machinery.** The same catalog
@@ -47,7 +68,7 @@ entry.
 | File | What it is |
 |---|---|
 | [`agreement_report.json`](agreement_report.json) | Per-entry and aggregate agreement with ground truth. |
-| [`certificates/e_coli_core.json`](certificates/) | The blind certificate's full content (verdict, scope, claim). |
+| [`certificates/e_coli_core.json`](certificates/) | The blind certificate's full content (verdict, scope, and its five claims). |
 | [`catalog.json`](catalog.json) | The catalog after the run, with the entry advanced to `certified`. |
 
 See also the [worked example](../worked_example/) for the full dossier → certificate walk, and

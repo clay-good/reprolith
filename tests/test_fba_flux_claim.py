@@ -187,3 +187,26 @@ def test_a_zero_bound_is_judged_against_the_range_s_own_width() -> None:
 def test_a_range_reported_upside_down_is_refused() -> None:
     with pytest.raises(ValueError, match="not a pair of numbers in an arbitrary order"):
         _range_certificate(reported_min=10.0, reported_max=1.0)
+
+
+def test_the_milestone_entry_carries_every_target_this_class_can_judge() -> None:
+    """The claim the milestone README makes about `e_coli_core`, held to the certificate.
+
+    It is the only entry in this class certified on all four of the spec's reproduction targets —
+    an objective value, an essential set, a reported flux, and a flux range — and a README saying
+    so is exactly the kind of sentence that goes stale when an entry changes.
+    """
+    content = json.loads(
+        (_CB / "milestone" / "certificates" / "e_coli_core.json").read_text(encoding="utf-8")
+    )
+    methods = {a["claim_id"]: a["method"] for a in content["assessments"]}
+    assert len(methods) == 5  # growth, two essential sets, a flux, a flux range
+    assert methods["growth-glucose-aerobic"] == "scalar-relative-error"
+    assert methods["e_coli_core-essential-genes"] == "essential-set-match"
+    assert methods["e_coli_core-essential-reactions"] == "essential-set-match"
+    assert methods["e_coli_core-aconitase-flux"] == "scalar-relative-error"
+    assert methods["e_coli_core-succinate-dehydrogenase-range"] == "scalar-relative-error"
+    readme = (_CB / "milestone" / "README.md").read_text(encoding="utf-8")
+    assert "four kinds of claim" in readme
+    # The pairing the entry exists to show: the same reaction, judged as a value and as a range.
+    assert "R_SUCDi" in readme
