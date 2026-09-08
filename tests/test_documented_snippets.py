@@ -15,7 +15,6 @@ actually happens. The blocks that can be run are run where they live
 from __future__ import annotations
 
 import ast
-import re
 from pathlib import Path
 
 import pytest
@@ -35,7 +34,9 @@ def test_every_python_snippet_parses(page: Path) -> None:
         try:
             ast.parse(snippet)
         except SyntaxError as broken:  # pragma: no cover - only when a page is wrong
-            raise AssertionError(f"{page.name} block {index + 1} is not valid Python: {broken}")
+            raise AssertionError(
+                f"{page.name} block {index + 1} is not valid Python: {broken}"
+            ) from broken
 
 
 @pytest.mark.parametrize("page", _PAGES, ids=lambda p: p.name)
