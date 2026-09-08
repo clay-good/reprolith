@@ -1,0 +1,40 @@
+{
+  "description": "The observations the fit was run against and the parameter they were generated from, so the recovered estimate has a right answer that is not Reprolith's.",
+  "model": "one-compartment IV bolus, D=100, V=10, k=0.2",
+  "observations": [
+    [
+      0.5,
+      9.048374180359595
+    ],
+    [
+      1.0,
+      8.187307530779819
+    ],
+    [
+      2.0,
+      6.703200460356394
+    ],
+    [
+      4.0,
+      4.493289641172216
+    ],
+    [
+      6.0,
+      3.01194211912202
+    ],
+    [
+      8.0,
+      2.018965179946554
+    ],
+    [
+      10.0,
+      1.353352832366127
+    ],
+    [
+      12.0,
+      0.9071795328941247
+    ]
+  ],
+  "start_k": 0.05,
+  "true_k": 0.2
+}

@@ -1,0 +1,22 @@
+REPRODUCTION CERTIFICATE — One-compartment IV bolus with log-normal volume — the population envelope its own mathematics predicts
+Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev d292b2714fa4)
+
+OVERALL: partially-reproduced
+  claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
+  assumption-qualified claims: population-envelope
+
+CLAIMS
+  [population-envelope] 5th/50th/95th percentile of C(t) across the population: reproduced [assumption-qualified] (source closed form: C(t) = (D/V)·exp(-k·t)·exp(omega·z_p) for a log-normal V — mathematics standing in for a published figure, not a number read from a paper via distribution-band-distance, tol=reproduced<=0.15, partial<=0.35 (class-default))
+      measured: worst band P50 normalized distance 0.0126, worst point 0.0261 of reference scale in P50 (pass budget 0.3500)
+      protocol: 500 subjects, seed 20260901, log-normal between-subject variability on V (CV 0.3), median-preserving; percentiles linearly interpolated between order statistics; duration=12.0, steps=12, read=[C]; sampling error of the 5th band ~3% of the band at 500 subjects
+
+ASSUMPTIONS (supplied by Reprolith, not the paper)
+  [population-sampling-population-envelope] the percentile bands judged here came from a virtual population Reprolith reconstructed and sampled, not from the paper's own run -> 500 subjects, seed 20260901, log-normal between-subject variability on V (CV 0.3), median-preserving; percentiles linearly interpolated between order statistics; duration=12.0, steps=12, read=[C]; sampling error of the 5th band ~3% of the band at 500 subjects [load-bearing] [this engine's limit — no expert decision closes it]
+      basis: an envelope's verdict moves with its subject count and seed, and the between-subject variability model behind it is a reconstruction choice a manuscript often under-specifies (attributed to reprolith)
+
+WHAT WAS MISSING
+  [population-envelope] 5th/50th/95th percentile of C(t) across the population: reproduced only under an assumption Reprolith supplied, not a clean pass
+  the percentile bands judged here came from a virtual population Reprolith reconstructed and sampled, not from the paper's own run — Reprolith assumed 500 subjects, seed 20260901, log-normal between-subject variability on V (CV 0.3), median-preserving; percentiles linearly interpolated between order statistics; duration=12.0, steps=12, read=[C]; sampling error of the 5th band ~3% of the band at 500 subjects (an envelope's verdict moves with its subject count and seed, and the between-subject variability model behind it is a reconstruction choice a manuscript often under-specifies)
+
+SCOPE
+  This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

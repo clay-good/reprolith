@@ -1,0 +1,54 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": true,
+      "claim_id": "population-envelope",
+      "discrepancy": "worst band P50 normalized distance 0.0126, worst point 0.0261 of reference scale in P50 (pass budget 0.3500)",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "distribution-band-distance",
+      "protocol": "500 subjects, seed 20260901, log-normal between-subject variability on V (CV 0.3), median-preserving; percentiles linearly interpolated between order statistics; duration=12.0, steps=12, read=[C]; sampling error of the 5th band ~3% of the band at 500 subjects",
+      "quantity": "5th/50th/95th percentile of C(t) across the population",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "closed form: C(t) = (D/V)\u00b7exp(-k\u00b7t)\u00b7exp(omega\u00b7z_p) for a log-normal V \u2014 mathematics standing in for a published figure, not a number read from a paper",
+      "tolerance": "reproduced<=0.15, partial<=0.35 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [
+    {
+      "alternatives": [
+        "a different subject count",
+        "a different sampling seed"
+      ],
+      "attributed_to": "reprolith",
+      "author_can_close": false,
+      "basis": "an envelope's verdict moves with its subject count and seed, and the between-subject variability model behind it is a reconstruction choice a manuscript often under-specifies",
+      "chosen": "500 subjects, seed 20260901, log-normal between-subject variability on V (CV 0.3), median-preserving; percentiles linearly interpolated between order statistics; duration=12.0, steps=12, read=[C]; sampling error of the 5th band ~3% of the band at 500 subjects",
+      "description": "the percentile bands judged here came from a virtual population Reprolith reconstructed and sampled, not from the paper's own run",
+      "id": "population-sampling-population-envelope",
+      "load_bearing": true,
+      "verification_item": null
+    }
+  ],
+  "engine_pin": {
+    "algorithm": "deterministic-lsoda (judge rev d292b2714fa4)",
+    "engine": "copasi",
+    "version": "4.46.300 (Source)"
+  },
+  "gap_report": [],
+  "overall": "partially-reproduced",
+  "paper": {
+    "doi": "",
+    "pubmed_id": null,
+    "title": "One-compartment IV bolus with log-normal volume \u2014 the population envelope its own mathematics predicts"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

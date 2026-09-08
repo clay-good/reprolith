@@ -176,6 +176,11 @@ _RENDERED_ELSEWHERE = {
     # render — no special case, and nothing skipped.
     "constraint_based/worked_example": ("constraint_based", None),
     "logical/worked_example": ("logical", None),
+    # The two deferred halves' first published artifacts. Both are ODE runs under the PK/PD pin —
+    # a population is that model simulated many times, and a re-fit is it simulated many times by
+    # an optimizer — so both expire when that class's judge revision moves, like any render.
+    "population/worked_example": ("ode-pkpd", None),
+    "estimation/worked_example": ("ode-pkpd", None),
 }
 
 

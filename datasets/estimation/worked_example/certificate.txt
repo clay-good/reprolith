@@ -1,0 +1,16 @@
+REPRODUCTION CERTIFICATE — One-compartment IV bolus — the elimination rate re-fitted from its own data
+Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev d292b2714fa4)
+
+OVERALL: reproduced
+  claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
+
+CLAIMS
+  [elimination-rate] elimination rate constant k (1/h): reproduced [estimation] (source the value the observations were generated from — mathematics standing in for a paper's reported estimate, not a number read from one via scalar-relative-error, tol=reproduced<=0.1, partial<=0.25 (class-default))
+      measured: relative error 0.0000
+      protocol: ordinary least squares over the model's own trajectory at k=0.2, standing in for a paper's raw data (8 observations), Nelder-Mead on the log scale from k=0.05; converged in 25 iterations (x_tolerance=1e-06, f_tolerance=1e-10); trajectory on a uniform grid over [0, 12.0] at 400 intervals, linearly interpolated to the observation times; read=[C]
+
+WHAT WAS MISSING
+  [elimination-rate] elimination rate constant k (1/h): reproduced at estimation level (parameters re-fit from data); simulation reproduction of this claim was not demonstrated
+
+SCOPE
+  This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.
