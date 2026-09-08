@@ -27,6 +27,7 @@ package exports rather than left to be remembered.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Callable
 
 import pytest
@@ -241,6 +242,134 @@ _MISSES: dict[str, Callable[[], Certificate]] = {
 }
 
 
+# --- the claim types behind an optional extra, driven the same way -------------------------------
+#
+# Excusing them to other test files is what the list above says it must not do: those files check
+# the claim type they were written for, and none of them asks the question this one asks. So they
+# are here, gated on the extra each needs rather than on a promise that somebody else checks them.
+
+_CB = Path(__file__).parent.parent / "datasets" / "constraint_based"
+
+
+def _fba_certificate(**kwargs) -> Certificate:
+    import json
+
+    from reprolith.constraint_based import certify_constraint_based
+    from reprolith.fba import solver_pin as fba_pin
+    from reprolith.persistence import dossier_from_dict
+
+    return certify_constraint_based(
+        dossier_from_dict(
+            json.loads((_CB / "worked_example" / "dossier.json").read_text(encoding="utf-8"))
+        ),
+        sbml=(_CB / "e_coli_core.xml").read_text(encoding="utf-8"),
+        paper=_PAPER, engine_pin=fba_pin(), **kwargs,
+    )
+
+
+def _fba_essentiality() -> Certificate:
+    from reprolith.constraint_based import EssentialityClaim
+    from reprolith.fba import EssentialKind, ReportedEssentialSet
+
+    return _fba_certificate(essentiality=[EssentialityClaim(
+        claim_id="miss", quantity="essential genes",
+        reported=ReportedEssentialSet(kind=EssentialKind.GENES, count=40),  # there are seven
+        source_location="Table 2",
+    )])
+
+
+def _fba_flux() -> Certificate:
+    from reprolith.constraint_based import FluxClaim
+
+    return _fba_certificate(fluxes=[FluxClaim(
+        claim_id="miss", quantity="aconitase flux", reaction_id="R_ACONTa",
+        reported=60.0,  # the interval pins it at about 6
+        source_location="Table 3",
+    )])
+
+
+def _fba_flux_range() -> Certificate:
+    from reprolith.constraint_based import FluxRangeClaim
+
+    return _fba_certificate(flux_ranges=[FluxRangeClaim(
+        claim_id="miss", quantity="SUCDi range", reaction_id="R_SUCDi",
+        reported_min=0.0, reported_max=5.0,  # it runs from 5.06 to 1000
+        source_location="Table 3",
+    )])
+
+
+def _pkpd_scalar() -> Certificate:
+    from reprolith import Claim, certify_model
+    from reprolith.engine import engine_pin
+
+    return certify_model(
+        _ONE_COMPARTMENT, paper=_PAPER, engine_pin=engine_pin(),
+        claims=[Claim(
+            claim_id="miss", quantity="peak concentration", species="C",
+            reported=1000.0,  # the model peaks at 10
+            source_location="Table 1", metric="cmax",
+        )],
+        duration=12.0, steps=12,
+    )
+
+
+def _pkpd_curve() -> Certificate:
+    from reprolith import CurveClaim, certify_curves
+    from reprolith.engine import engine_pin
+
+    return certify_curves(
+        _ONE_COMPARTMENT, paper=_PAPER, engine_pin=engine_pin(),
+        claims=[CurveClaim(
+            claim_id="miss", quantity="concentration time course", species="C",
+            reference=tuple(1000.0 for _ in range(13)),  # a flat line a hundred times too high
+            source_location="Fig 1", duration=12.0, steps=12,
+        )],
+    )
+
+
+#: A one-compartment IV bolus: C(0) = D/V = 10, eliminated at k = 0.2.
+_ONE_COMPARTMENT = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" level="3" version="2">
+  <model id="one_compartment">
+    <listOfCompartments><compartment id="c" size="1" constant="true"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="C" compartment="c" hasOnlySubstanceUnits="true"
+               boundaryCondition="false" constant="false" initialAmount="10"/>
+    </listOfSpecies>
+    <listOfParameters><parameter id="k" value="0.2" constant="true"/></listOfParameters>
+    <listOfRules>
+      <rateRule variable="C">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply><minus/><apply><times/><ci>k</ci><ci>C</ci></apply></apply>
+        </math>
+      </rateRule>
+    </listOfRules>
+  </model>
+</sbml>
+"""
+
+_BEHIND_AN_EXTRA: dict[str, tuple[str, Callable[[], Certificate]]] = {
+    "constraint-based essential set": ("scipy", _fba_essentiality),
+    "constraint-based flux": ("scipy", _fba_flux),
+    "constraint-based flux range": ("scipy", _fba_flux_range),
+    "pk/pd scalar metric": ("COPASI", _pkpd_scalar),
+    "pk/pd curve": ("COPASI", _pkpd_curve),
+}
+
+
+@pytest.mark.parametrize("name", sorted(_BEHIND_AN_EXTRA))
+def test_a_wrong_claim_publishes_a_verdict_behind_an_extra_too(name: str) -> None:
+    extra, build = _BEHIND_AN_EXTRA[name]
+    pytest.importorskip(extra, reason=f"{name} needs an optional extra that is not installed")
+    if extra == "scipy":
+        pytest.importorskip("libsbml", reason="the constraint-based path needs python-libsbml")
+    certificate = build()
+    assert certificate.overall is not OverallVerdict.REPRODUCED, name
+    assessment = certificate.assessments[-1]
+    assert assessment.root_cause, f"{name}: published with no root cause"
+    assert assessment.protocol, f"{name}: published with no protocol line"
+
+
 @pytest.mark.parametrize("name", sorted(_MISSES))
 def test_a_wrong_claim_publishes_a_verdict_rather_than_raising(name: str) -> None:
     """The contract, one claim type at a time. A miss is a result, not an exception."""
@@ -286,12 +415,14 @@ def test_this_matrix_covers_every_claim_type_the_package_exports() -> None:
         "LogicalClaim", "StochasticClaim", "ExtinctionTimeClaim", "NoiseClaim",
         "PopulationClaim", "EstimationClaim",
         "SpatialClaim", "GradientClaim", "FrontSpeedClaim", "PatternClaim",
-        # `Claim` and `CurveClaim` need the engine extra, so their misses are exercised where the
-        # extra is: `test_certify.py` and the kinetic tests. The constraint-based claim types are
-        # not in this `__all__` at all — they live in `reprolith.constraint_based` — and their
-        # misses are in `test_fba_essentiality_claim.py` and `test_fba_flux_claim.py`.
+        # Covered too, behind the extra each needs — see `_BEHIND_AN_EXTRA`. The constraint-based
+        # claim types are not in this `__all__` at all (they live in `reprolith.constraint_based`)
+        # and are covered there as well.
         "Claim", "CurveClaim",
     }
+    from reprolith.constraint_based import EssentialityClaim, FluxClaim, FluxRangeClaim
+
+    assert {EssentialityClaim, FluxClaim, FluxRangeClaim}  # named, so a rename fails here
     assert exported == covered, (
         "a claim type is exported that this differential neither covers nor excuses: "
         f"{sorted(exported - covered)}"

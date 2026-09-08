@@ -5541,3 +5541,16 @@ run the certificate does not describe. The other four classes attach the protoco
 this one attached it on one, in six places. One run description per claim kind now, used by the
 verdict and by the abstention, so the two cannot drift apart either.
 
+**And then the excuse in it was closed.** The first version of that differential covered the twelve
+claim types that need no optional extra and pointed at other test files for the five that do — which
+is the thing its own coverage assertion exists to prevent, written into the assertion. Those files
+check the claim type they were written for and none of them asks this question. All seventeen are
+driven here now, each behind the extra it needs rather than behind a promise that somebody else
+checks it.
+
+One smaller thing worth writing down because it is a process failure rather than a code one: the
+commit that added the differential **failed CI on a lint error I had already been shown**. The gate
+was a compound command that ran ruff and pytest and printed both, and I read the pytest half. The
+fix is one line and it is on main; the lesson is that a gate whose output you skim is a gate you did
+not run.
+
