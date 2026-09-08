@@ -1,0 +1,56 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": false,
+      "claim_id": "BIOMD0000000021-period",
+      "discrepancy": "relative error 0.0000",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "protocol": "duration=72.0, steps=200, read=[Cn] period; this metric moves 7.28e-05% between 200 and 400 samples, against the 5% that separates a pass from a failure here",
+      "quantity": "oscillation period of Cn (circadian)",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "BioModels https://www.ebi.ac.uk/biomodels/BIOMD0000000021 (curated); Leloup1999_CircClock \u2014 reference period and peak-to-trough read off the curve computed by libRoadRunner 2.7.0 (CVODE) re-running this model file, not numbers read from the paper",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "BIOMD0000000021-peak-to-trough",
+      "discrepancy": "relative error 0.0000",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "scalar-relative-error",
+      "protocol": "duration=72.0, steps=200, read=[Cn] peak_to_trough; this metric moves 0.131% between 200 and 400 samples, against the 5% that separates a pass from a failure here",
+      "quantity": "peak-to-trough height of Cn (circadian)",
+      "reference_kind": "numeric",
+      "root_cause": null,
+      "source_location": "BioModels https://www.ebi.ac.uk/biomodels/BIOMD0000000021 (curated); Leloup1999_CircClock \u2014 reference period and peak-to-trough read off the curve computed by libRoadRunner 2.7.0 (CVODE) re-running this model file, not numbers read from the paper",
+      "tolerance": "reproduced<=0.05, partial<=0.15 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": "deterministic-lsoda (judge rev d292b2714fa4)",
+    "engine": "copasi",
+    "version": "4.46.300 (Source)"
+  },
+  "gap_report": [],
+  "overall": "reproduced",
+  "paper": {
+    "doi": "",
+    "pubmed_id": null,
+    "title": "Leloup1999 circadian clock (Drosophila PER/TIM) \u2014 oscillation period and peak-to-trough"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

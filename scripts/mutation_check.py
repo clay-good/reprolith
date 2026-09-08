@@ -1219,6 +1219,29 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if sensitivity is None or sensitivity.get("agree"):', "    if True:"),
         ["tests/test_logical_scheme.py"],
     ),
+    # --- an oscillator's period can be certified, 2026-09-07 ------------------------------------
+    (
+        "noise at the mean crossing divides the period by however many times it chattered",
+        "certify.py",
+        ("        elif not armed and values[i + 1] < level - margin:",
+         "        elif not armed and values[i + 1] < level:"),
+        ["tests/test_kinetic_period_claim.py"],
+    ),
+    (
+        "a run that completes no cycle is given a period rather than abstained on",
+        "certify.py",
+        ("        if len(crossings) < 2:\n            raise NotOscillating(\n"
+         '                f"this run crosses its own mean upward',
+         "        if False:\n            raise NotOscillating(\n"
+         '                f"this run crosses its own mean upward'),
+        ["tests/test_kinetic_period_claim.py"],
+    ),
+    (
+        "a period is read across the transient a window was stated to exclude",
+        "certify.py",
+        ("            if self.metric not in _WINDOWED_METRICS:", "            if False:"),
+        ["tests/test_certify.py", "tests/test_kinetic_period_claim.py"],
+    ),
     # --- a reported flux RANGE can be certified, 2026-09-07 -------------------------------------
     (
         "a flux range is judged by the average of its bounds rather than the worse of them",

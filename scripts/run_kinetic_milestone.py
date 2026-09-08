@@ -26,6 +26,7 @@ from pathlib import Path
 from reprolith import (
     Attribution,
     Catalog,
+    Claim,
     CurveClaim,
     EnginePin,
     FailureMode,
@@ -36,15 +37,78 @@ from reprolith import (
     OverallVerdict,
     PaperIdentity,
     certify_curves,
+    certify_model,
     corroborate_curve,
     engine_pin,
     run_test_set,
 )
+from reprolith.certify import _metric
 from reprolith.mcp_server import write_json_atomically
 from reprolith.persistence import prune_certificate_directory
 
 REPO = Path(__file__).resolve().parents[1]
 KIN = REPO / "datasets" / "kinetic"
+
+
+#: The oscillator this milestone certifies a *period* for, and why this one: its reference curve is
+#: sampled 75 times per cycle, so the number is the model's rather than the grid's — which the
+#: run's own convergence check confirms rather than assumes. (The repressilator's reference spans
+#: 75 cycles at 200 samples, under three per cycle, and a period claim there is the grid's answer.)
+_PERIOD_ENTRY = "BIOMD0000000021"
+
+
+def _period_entry(spec: dict, pin: EnginePin) -> tuple[Identifiers, GroundTruth, object]:
+    """Certify the circadian clock's **period and peak-to-trough** against the reference curve's.
+
+    The class's second reproduction target. Five of the six models here oscillate, and the only
+    thing this class could certify about any of them was the curve — the one comparison a limit
+    cycle punishes, since a curve distance is dominated by phase and phase error accumulates with
+    every cycle. A model that reproduces the biology while drifting one percent in period reads as a
+    total failure, which is why these papers report a period.
+
+    Non-circular in the same way every other entry here is: both reference values are read off
+    **libRoadRunner's** committed trajectory, not off Reprolith's run.
+    """
+    steps, duration = spec["steps"], spec["duration"]
+    times = [duration * i / steps for i in range(steps + 1)]
+    cited = (
+        f"{spec['source']} — reference period and peak-to-trough read off the curve computed by "
+        f"{spec['reference_tool']} re-running this model file, not numbers read from the paper"
+    )
+    identifiers = Identifiers(
+        title=f"{spec['name']} — oscillation period and peak-to-trough",
+        accession=f"{spec['id']}_oscillation",
+    )
+    label = GroundTruth(
+        expected=OverallVerdict.REPRODUCED,
+        source=f"{spec['source']}; period and peak-to-trough of the {spec['reference_tool']} curve",
+    )
+    certificate = certify_model(
+        (KIN / f"{spec['id']}.xml").read_text(encoding="utf-8"),
+        paper=PaperIdentity(title=identifiers.title, doi=""),
+        engine_pin=pin,
+        claims=[
+            Claim(
+                claim_id=f"{spec['id']}-period",
+                quantity=f"oscillation period of {spec['species']} ({spec['network']})",
+                species=spec["species"],
+                reported=_metric(times, spec["curve"], "period"),
+                source_location=cited,
+                metric="period",
+            ),
+            Claim(
+                claim_id=f"{spec['id']}-peak-to-trough",
+                quantity=f"peak-to-trough height of {spec['species']} ({spec['network']})",
+                species=spec["species"],
+                reported=_metric(times, spec["curve"], "peak_to_trough"),
+                source_location=cited,
+                metric="peak_to_trough",
+            ),
+        ],
+        duration=duration,
+        steps=steps,
+    )
+    return identifiers, label, certificate
 
 
 def main() -> None:
@@ -90,6 +154,11 @@ def main() -> None:
                 ),
             )],
         )
+
+    oscillator = next(spec for spec in models if spec["id"] == _PERIOD_ENTRY)
+    identifiers, label, certificate = _period_entry(oscillator, pin)
+    catalog.add(identifiers, ModelClass.KINETIC, ground_truth=label)
+    certified[identifiers.accession] = certificate
 
     certificates, report = run_test_set(
         catalog.entries, engine_pin=pin, certified=certified, advance=True

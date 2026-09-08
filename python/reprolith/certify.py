@@ -26,6 +26,7 @@ from .engine import final_state, simulate
 from .model import (
     Assumption,
     Certificate,
+    ClaimAssessment,
     ClaimSelection,
     EnginePin,
     PaperIdentity,
@@ -176,13 +177,15 @@ class Claim:
             raise ValueError("every segment of a dosing schedule must run for a positive time")
         if self.window is not None:
             start, end = self.window
-            if self.metric != "auc":
+            if self.metric not in _WINDOWED_METRICS:
                 # A peak or an end value over part of a run is a different quantity, and a claim
                 # that states a window for one is describing something its metric cannot read.
                 raise ValueError(
                     f"claim '{self.claim_id}' states a window and reads '{self.metric}': only an "
-                    "area is integrated over an interval, so a window on any other metric names "
-                    "a quantity this claim does not compute"
+                    "area, a period and a peak-to-trough are read over an interval — the first is "
+                    "integrated over one and the other two are measured after the transients a "
+                    "window excludes — so a window on any other metric names a quantity this "
+                    "claim does not compute"
                 )
             if not end > start:
                 raise ValueError(
@@ -286,6 +289,99 @@ def _window_of(
     return [times[i] for i in kept], [values[i] for i in kept]
 
 
+#: The metrics a claim may state a window for. An area has one because a multiple-dose paper's
+#: AUC24 is over one dosing day; a **cycle** metric has one because "after transients" is how every
+#: oscillator paper states which part of the run its period was measured over, and reading a period
+#: across the approach to the limit cycle answers a different question. A peak height or an end
+#: value read over part of a run is a different quantity, not the same one measured more carefully,
+#: so stating a window there is still refused.
+_WINDOWED_METRICS = frozenset({"auc", "period", "peak_to_trough"})
+
+#: Metrics whose value is a property of the sampling grid as well as of the model, and are therefore
+#: measured against themselves at twice the resolution before a verdict is published. A period is
+#: here because its crossings are read off samples — interpolated, which removes most of the
+#: quantization a time-to-peak suffers, but not the question of whether the grid resolved the cycle
+#: at all: a run sampled ten times per period gives a different answer from one sampled a hundred.
+_CYCLE_METRICS = frozenset({"period", "peak_to_trough"})
+
+
+def _no_cycle(claim: Claim, exc: NotOscillating, protocol: str) -> ClaimAssessment:
+    """The abstention a cycle metric earns when the run completes no cycle.
+
+    One function because there are two ways to find that out — reading the metric, and re-reading
+    it at twice the resolution — and two spellings of one abstention is how the two come to
+    disagree about the same run.
+    """
+    return replace(
+        not_evaluable(
+            claim_id=claim.claim_id,
+            quantity=claim.quantity,
+            source_location=claim.cited_source,
+            reason=str(exc),
+            reference_kind=claim.reference_kind,
+        ),
+        protocol=protocol,
+    )
+
+
+class NotOscillating(ValueError):
+    """Raised when a cycle metric is asked of a trajectory that completes no cycle.
+
+    Not a failure of the model and not a wrong number: a run that settles to a steady state has no
+    period, and returning one — the run length, the first interval, anything — would publish a
+    quantity that does not exist. The certifying front end turns this into an abstention naming
+    what it saw, which is what the reader is owed.
+    """
+
+
+#: How far below its mean a trajectory must fall before another upward crossing counts as a new
+#: cycle, as a fraction of the window's own peak-to-trough height. Without it, a wiggle *at* the
+#: crossing — an integrator's last-place noise on a curve passing through its own mean — counts as
+#: several cycles and divides the period by however many times it chattered. Five percent is far
+#: below any real oscillation's shape (each of the five oscillators in this repository's kinetic
+#: corpus reads the same period with it as without) and far above solver noise, which is what the
+#: guard is separating.
+_CYCLE_HYSTERESIS = 0.05
+
+
+def _upward_crossings(
+    times: Sequence[float], values: Sequence[float]
+) -> tuple[tuple[float, ...], float]:
+    """The times the trajectory crosses its own mean going up, and that mean.
+
+    Peak-picking is the obvious way to find a period and the fragile one: an ODE solver's output
+    has small ripples, and every ripple near a maximum is a local maximum. A mean crossing is one
+    level for the whole window and a spurious wiggle has to cross it to count. The crossing time is
+    **interpolated** between the two samples that straddle it, which is what keeps a period from
+    being quantized to the sample spacing the way a time-to-peak is.
+
+    Crossings are counted with **hysteresis** (:data:`_CYCLE_HYSTERESIS`): after one is recorded the
+    trajectory has to fall clearly below the mean before the next counts. A curve passing through
+    its own mean with any noise on it crosses that level several times in a row, and each of those
+    would otherwise open a new cycle — which does not make the period slightly wrong, it divides it.
+
+    What this deliberately does *not* do is decide whether the oscillation is material. A settled
+    run with an integrator's ripple on it has crossings, and this returns them; whether they are the
+    model's dynamics or the grid's noise is answered where that question is already answered for
+    every other grid-dependent metric — by reading the number again at twice the resolution
+    (:func:`_metric_is_established`), where a noise-driven period does not survive and a real one
+    does not move.
+    """
+    level = math.fsum(values) / len(values)
+    margin = _CYCLE_HYSTERESIS * (max(values) - min(values))
+    crossings: list[float] = []
+    armed = True
+    for i in range(len(values) - 1):
+        if armed and values[i] < level <= values[i + 1]:
+            span = values[i + 1] - values[i]
+            weight = 0.0 if span == 0.0 else (level - values[i]) / span
+            crossings.append(times[i] + weight * (times[i + 1] - times[i]))
+            armed = False
+        elif not armed and values[i + 1] < level - margin:
+            armed = True
+    return tuple(crossings), level
+
+
 def _metric(
     times: Sequence[float],
     values: Sequence[float],
@@ -319,7 +415,39 @@ def _metric(
             (values[i] + values[i + 1]) / 2.0 * (times[i + 1] - times[i])
             for i in range(len(values) - 1)
         )
-    raise ValueError(f"unknown metric {metric!r} (use cmax, tmax, auc, or final)")
+    if metric == "period":
+        # What an oscillator paper reports, and the reason it does: a curve comparison of a limit
+        # cycle is dominated by *phase*, so a model that reproduces the biology exactly while
+        # drifting a few percent in period reads as a total failure against the reference curve.
+        # The period is the quantity that survives that, and this class certifies five oscillators.
+        crossings, _ = _upward_crossings(times, values)
+        if len(crossings) < 2:
+            raise NotOscillating(
+                f"this run crosses its own mean upward {len(crossings)} time(s) over the window "
+                "judged, so it completes no full cycle and has no period to read"
+            )
+        # The mean of the completed intervals, not the first one: a run that has not fully settled
+        # onto its limit cycle has a lengthening or shortening first cycle, and the average over
+        # what the window contains is the number a paper's "period" means.
+        return (crossings[-1] - crossings[0]) / (len(crossings) - 1)
+    if metric == "peak_to_trough":
+        # Named for what it is rather than "amplitude", because the field spells that both ways —
+        # peak-to-trough and half of it — and a claim judged under the wrong convention is out by
+        # exactly two. A reader of the certificate can see which one this is from the metric name.
+        crossings, _ = _upward_crossings(times, values)
+        if len(crossings) < 2:
+            raise NotOscillating(
+                "this run completes no full cycle over the window judged, so its spread is a "
+                "transient rather than an oscillation's peak-to-trough height"
+            )
+        # Over the completed cycles only. Including the approach to the limit cycle measures the
+        # transient's excursion, which is larger and is not what the paper reports.
+        first, last = crossings[0], crossings[-1]
+        cycle = [v for t, v in zip(times, values) if first <= t <= last]
+        return max(cycle) - min(cycle)
+    raise ValueError(
+        f"unknown metric {metric!r} (use cmax, tmax, auc, final, period, or peak_to_trough)"
+    )
 
 
 def _run_protocol(
@@ -700,7 +828,7 @@ def _run_schedule(
 #: the grid moves them only as far as the trajectory itself moves. An **area** is a trapezoidal sum
 #: over the samples, and a peak's **time** can only ever be one of the sample times — refining the
 #: grid moves it by up to one spacing whatever the model does.
-_GRID_DEPENDENT_METRICS = frozenset({"auc", "tmax"})
+_GRID_DEPENDENT_METRICS = frozenset({"auc", "tmax"}) | _CYCLE_METRICS
 
 
 def _metric_is_established(
@@ -866,7 +994,23 @@ def certify_model(
             )
             times, values = simulate(model, claim.species, duration=duration, steps=steps)
             claim_duration, claim_overrides = duration, claim.parameter_overrides
-        predicted = _metric(times, values, claim.metric, claim.window)
+        claim_protocol = _run_protocol(
+            duration=claim_duration,
+            steps=steps,
+            read=f"[{claim.species}] {claim.metric}",
+            overrides=claim_overrides,
+            overwritten=_events_overwriting(sbml, claim_overrides),
+            prior=claim.schedule[:-1] if claim.schedule else (),
+            window=claim.window,
+        )
+        try:
+            predicted = _metric(times, values, claim.metric, claim.window)
+        except NotOscillating as exc:
+            # Not a failure and not a wrong number: the run settled, and a settled run has no
+            # period. Publishing one would state a quantity that does not exist, and publishing a
+            # `failed` would blame the model for a question it was never asked.
+            assessments.append(_no_cycle(claim, exc, claim_protocol))
+            continue
         # None where the question does not arise: a peak height or an end value is read off the
         # trajectory rather than summed over it, so it is not a property of the sampling in the way
         # an area or a time-to-peak is, and reporting a convergence for it would invite reading the
@@ -890,11 +1034,18 @@ def certify_model(
                 abs(error - claim_tolerance.reproduced_within),
                 abs(error - claim_tolerance.partial_within),
             )
-            established, change = _metric_is_established(
-                model, claim.species, metric=claim.metric, duration=claim_duration, steps=steps,
-                within=pass_width, nearest_boundary=nearest,
-                schedule=claim.schedule, window=claim.window,
-            )
+            try:
+                established, change = _metric_is_established(
+                    model, claim.species, metric=claim.metric, duration=claim_duration,
+                    steps=steps, within=pass_width, nearest_boundary=nearest,
+                    schedule=claim.schedule, window=claim.window,
+                )
+            except NotOscillating as exc:
+                # One resolution reads a cycle and the other does not, which is the strongest
+                # statement this check can make about a grid: the number is not a property of the
+                # model at this sampling. Same abstention as above, since it is the same fact.
+                assessments.append(_no_cycle(claim, exc, claim_protocol))
+                continue
             # Kept for the protocol line whichever way the check goes. It was computed and then
             # discarded on the passing side, so a reader of a published AUC could not tell a grid
             # that was comfortably fine from one that had just cleared the check — the number that

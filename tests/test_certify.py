@@ -668,18 +668,24 @@ def test_an_area_is_taken_over_the_window_the_claim_states() -> None:
 
 
 def test_a_window_on_a_metric_that_has_no_interval_is_refused() -> None:
-    """A peak over part of a run is a different quantity, not the same one measured better."""
-    for metric in ("cmax", "final"):
-        with pytest.raises(ValueError, match="only an area is integrated over an interval"):
+    """A peak over part of a run is a different quantity, not the same one measured better.
+
+    Three metrics are read over an interval and the rest are not: an area is integrated over one,
+    and a period and a peak-to-trough are measured after the transients a window excludes — which
+    is how an oscillator paper states which part of the run it measured.
+    """
+    for metric in ("cmax", "tmax", "final"):
+        with pytest.raises(ValueError, match="names a quantity this claim does not compute"):
             Claim(claim_id="c", quantity="q", species="s", reported=1.0,
                   source_location="Table 1", metric=metric, window=(0.0, 1.0))
     with pytest.raises(ValueError, match="spans no time"):
         Claim(claim_id="c", quantity="q", species="s", reported=1.0,
               source_location="Table 1", metric="auc", window=(24.0, 24.0))
-    # And the ordinary windowed area is accepted.
-    claim = Claim(claim_id="c", quantity="q", species="s", reported=1.0,
-                  source_location="Table 1", metric="auc", window=(24.0, 48.0))
-    assert claim.window == (24.0, 48.0)
+    # And the ordinary windowed area is accepted, as are the two cycle metrics.
+    for metric in ("auc", "period", "peak_to_trough"):
+        claim = Claim(claim_id="c", quantity="q", species="s", reported=1.0,
+                      source_location="Table 1", metric=metric, window=(24.0, 48.0))
+        assert claim.window == (24.0, 48.0)
 
 
 def test_the_protocol_states_the_interval_the_area_was_taken_over() -> None:

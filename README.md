@@ -9,7 +9,7 @@ reproduced, partially, or not — for each result, with the reason.
 
 That is what it is *for*, and it is worth being exact about how much of it is done today.
 
-Of the thirty-eight published certificates, **four** check a reconstruction against numbers read
+Of the thirty-nine published certificates, **four** check a reconstruction against numbers read
 from one paper's own tables — one for each model that paper deposited. (Two more are checked
 against published numbers too, and the count below says which.) Between them they carry **one hundred and
 seventy claims**,
@@ -79,7 +79,7 @@ anything not committed: every reference value is quoted from the article in
 of this repository's life nothing did — one of the first two was recorded as 6.2, a number the
 paper does not contain.
 
-Thirty-two of the other thirty-four certificates check Reprolith's engine against an independent
+Thirty-three of the other thirty-five certificates check Reprolith's engine against an independent
 tool — COBRApy, libRoadRunner, CANA — or against closed-form mathematics, re-running the same model
 file. The other two are checked against published numbers like the four above: the E. coli core
 model's maximal growth rate of **0.873922**, which the publication that distributes that model
@@ -87,7 +87,7 @@ reports — that certificate also carries the **essential genes and reactions** 
 checked element for element against COBRApy's single-deletion answer — and the seven basin sizes
 Li et al. 2004 publish for the yeast cell-cycle network, how many initial states reach each of its
 steady states, all seven reproduced exactly. Six against a
-publication, then, and thirty-two against a tool or against mathematics — one certificate, the
+publication, then, and thirty-three against a tool or against mathematics — one certificate, the
 E. coli core one, in both counts, because its growth rate is a publication's number and its two
 essential sets are COBRApy's answers for the same file —
 counted from the certificates themselves by `tests/test_reference_provenance.py`, because this
@@ -612,9 +612,22 @@ third class. They reuse the PK/PD curve oracle unchanged — the reproducible re
 time-course — so adding them is mostly demonstrating the contract generalizes. The class is
 self-validated non-circularly against an independent simulator (libRoadRunner): curated BioModels
 networks spanning six dynamic regimes (signaling, gene-regulatory, metabolic, cell-cycle, circadian,
-calcium) reproduce, and the [milestone blind run](datasets/kinetic/milestone/) scores 6/6 through the
+calcium) reproduce, and the [milestone blind run](datasets/kinetic/milestone/) scores 7/7 through the
 same catalog and agreement machinery as the other classes. See
 [docs/kinetic-class.md](docs/kinetic-class.md).
+
+**Five of those six models oscillate, and a curve is the wrong comparison for a limit cycle.** A
+curve distance is dominated by *phase*, and phase error accumulates with every cycle: on the
+repressilator's 75-cycle run, stretching the clock by **1%** — every peak height and every shape
+identical — moves the curve distance to 0.395 against a 0.10 pass line, four times over. No
+tolerance can tell that from a model that is simply wrong, which is exactly why these papers report
+a **period** and an amplitude instead. A claim can state one now (`metric="period"`,
+`metric="peak_to_trough"`), read from the trajectory's own mean crossings with the crossing time
+interpolated, and the milestone publishes both for the Drosophila circadian clock against
+libRoadRunner's reference trajectory. A run that completes no cycle is abstained on rather than
+given a period it does not have — and so is one whose *grid* has not settled the number, which
+caught the cell-cycle model's peak height moving 8.7% between 200 and 400 samples the first time it
+ran.
 
 **Logical / Boolean network models** are the fourth class, and the sharpest generalization proof: a
 discrete oracle with no continuous trajectory and no optimization, where the reproducible result is

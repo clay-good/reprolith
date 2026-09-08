@@ -67,10 +67,11 @@ def test_every_certificate_is_checked_against_a_tool_mathematics_or_a_publicatio
 
     # One certificate is in two buckets, so the buckets hold one more name than there are
     # certificates — counted rather than assumed, because that is the arithmetic the README states.
-    assert len(sum(by_kind.values(), [])) == 38 + len(_MIXED)
-    # COBRApy 7 + libRoadRunner 6 + CANA 9, plus E. coli core's two essential sets, which are
-    # COBRApy's answers on a certificate whose growth rate is a publication's.
-    assert len(by_kind["tool"]) == 23
+    assert len(sum(by_kind.values(), [])) == 39 + len(_MIXED)
+    # COBRApy 7 + libRoadRunner 7 (six curves and one oscillator's period) + CANA 9, plus E. coli
+    # core's two essential sets, which are COBRApy's answers on a certificate whose growth rate is
+    # a publication's.
+    assert len(by_kind["tool"]) == 24
     # Five stochastic (three means, a first-passage time, and the Poisson noise laws), three
     # spatial profiles, and the spatial class's two scalars — a decay length against sqrt(D/k) and
     # a front speed against 2*sqrt(rD), which are mathematics for the same reason the Gaussian is.
@@ -88,7 +89,7 @@ def test_every_certificate_is_checked_against_a_tool_mathematics_or_a_publicatio
 
 def test_the_front_page_states_that_division_in_the_numbers_it_is() -> None:
     """The sentence a reader takes the corpus's reach from, held to the corpus."""
-    assert "thirty-two" in README, (
+    assert "thirty-three" in README, (
         "the README no longer says how many certificates are checked against a tool or against "
         "mathematics; that count is the reader's whole guide to what this corpus reaches"
     )

@@ -12,7 +12,7 @@ python scripts/run_kinetic_milestone.py
 
 ## The result in one line
 
-**All six kinetic entries were certified blind and agree with their label: 6/6.**
+**All seven kinetic entries were certified blind and agree with their label: 7/7.**
 
 | Entry | Network | Label source | Verdict |
 |---|---|---|---|
@@ -43,7 +43,7 @@ ratio, with both under 1e-3.
 ## Files
 
 Every entry is **engine-independent**: the same trajectory under both COPASI and libRoadRunner
-(6/6), so no verdict here rests on a single solver's quirk — see
+(6/6 curves), so no verdict here rests on a single solver's quirk — see
 [`corroboration.json`](corroboration.json). Note this is the certified comparison restated at a
 tighter tolerance, not a second independent one: the reference curve each certificate is judged
 against is itself a libRoadRunner trajectory.

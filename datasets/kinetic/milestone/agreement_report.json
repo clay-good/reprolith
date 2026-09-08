@@ -1,8 +1,8 @@
 {
   "agreement_rate": 1.0,
-  "agreements": 6,
+  "agreements": 7,
   "confusion": {
-    "reproduced->reproduced": 6
+    "reproduced->reproduced": 7
   },
   "disagreements": 0,
   "per_entry": [
@@ -47,7 +47,14 @@
       "entry": "BIOMD0000000058",
       "expected": "reproduced",
       "source": "BioModels https://www.ebi.ac.uk/biomodels/BIOMD0000000058 (curated); Bindschadler2001_coupled_Ca_oscillators; reference curve via libRoadRunner 2.7.0 (CVODE)"
+    },
+    {
+      "actual": "reproduced",
+      "agree": true,
+      "entry": "BIOMD0000000021_oscillation",
+      "expected": "reproduced",
+      "source": "BioModels https://www.ebi.ac.uk/biomodels/BIOMD0000000021 (curated); Leloup1999_CircClock; period and peak-to-trough of the libRoadRunner 2.7.0 (CVODE) curve"
     }
   ],
-  "total": 6
+  "total": 7
 }

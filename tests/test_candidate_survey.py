@@ -65,13 +65,20 @@ def test_the_kinetic_class_has_never_been_checked_against_a_paper_and_cannot_be(
     assert len(kinetic) == 6
     assert not any(entry["open_access"] for entry in kinetic)
     assert all(entry["metrics"] == [] for entry in kinetic)
-    # Its certificates exist; it is the papers that are out of reach, not the entries.
+    # Its certificates exist; it is the papers that are out of reach, not the entries. The
+    # oscillation entry is the same model as `BIOMD0000000021` certified on a second target — a
+    # period rather than a curve — so it is one more certificate about the same six papers, not a
+    # seventh candidate this survey could have reached.
     certificates = sorted(
         path.stem for path in
         (Path(__file__).parent.parent / "datasets" / "kinetic" / "milestone" / "certificates")
         .glob("*.json")
     )
-    assert sorted(entry["accession"] for entry in kinetic) == certificates
+    surveyed = sorted(entry["accession"] for entry in kinetic)
+    assert [name for name in certificates if not name.endswith("_oscillation")] == surveyed
+    assert [name for name in certificates if name.endswith("_oscillation")] == [
+        "BIOMD0000000021_oscillation"
+    ]
 
 
 def test_a_candidate_with_a_results_table_would_be_named() -> None:

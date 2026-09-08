@@ -294,7 +294,7 @@ def test_the_shipped_repository_names_the_certificate_with_no_second_engine(caps
     from reprolith.mcp_server import default_data_dir, load_repository
 
     summary = load_repository(default_data_dir(), aggregate=True)[0].corroboration()
-    assert summary["overall"]["uncorroborated_certificates"] == 2
+    assert summary["overall"]["uncorroborated_certificates"] == 3
     assert run(["corroboration"]) == 0
     printed = capsys.readouterr().out
     assert "1 of 5 standing certificate(s) in this class have no second engine" in printed

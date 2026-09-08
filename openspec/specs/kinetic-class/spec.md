@@ -25,6 +25,19 @@ oracle, so a kinetic verdict is produced by the same contract as a PK/PD curve v
 - **AND** the resulting assessment is the same `ClaimAssessment` the certificate consumes, carrying
   its method, discrepancy, tolerance, and the inescapable scope flag
 
+#### Scenario: An oscillator's period is the claim
+
+- **WHEN** a kinetic model oscillates and the claim is its reported period or peak-to-trough height
+- **THEN** the quantity is read off the run — the period from the mean crossings the trajectory
+  makes, interpolated between samples — and judged by the shared scalar comparison, because a curve
+  distance over a limit cycle is dominated by phase and a model reproducing the biology while
+  drifting a percent in period reads as a total failure
+- **AND** the window the claim states is honoured, since "after transients" is how a source says
+  which part of the run its period was measured over
+- **AND** a run that completes no cycle is abstained on rather than being given a period it does not
+  have, and a period the sampling grid has not settled is abstained on by the same convergence check
+  every grid-dependent metric passes
+
 #### Scenario: Solver tolerance and determinism are preserved
 
 - **WHEN** a kinetic time-course is reproduced

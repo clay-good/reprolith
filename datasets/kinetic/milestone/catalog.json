@@ -419,6 +419,76 @@
       "model_class": "kinetic",
       "sources": [],
       "state": "certified"
+    },
+    {
+      "attempts": [],
+      "difficulty": null,
+      "ground_truth": {
+        "expected": "reproduced",
+        "note": null,
+        "source": "BioModels https://www.ebi.ac.uk/biomodels/BIOMD0000000021 (curated); Leloup1999_CircClock; period and peak-to-trough of the libRoadRunner 2.7.0 (CVODE) curve"
+      },
+      "history": [
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "queued",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingesting"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingesting",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "ingested"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "ingested",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructing"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructing",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "reconstructed"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "reconstructed",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "verifying"
+        },
+        {
+          "actor": "reprolith",
+          "at": "blind-run",
+          "from_state": "verifying",
+          "missing_inputs": [],
+          "reason": "blind run",
+          "to_state": "certified"
+        }
+      ],
+      "identifiers": {
+        "accession": "BIOMD0000000021_oscillation",
+        "doi": null,
+        "pubmed_id": null,
+        "title": "Leloup1999 circadian clock (Drosophila PER/TIM) \u2014 oscillation period and peak-to-trough"
+      },
+      "lease_expires": null,
+      "leased_to": null,
+      "model_class": "kinetic",
+      "sources": [],
+      "state": "certified"
     }
   ]
 }

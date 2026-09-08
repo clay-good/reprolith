@@ -5407,3 +5407,57 @@ judged as a fraction of the reported range's own width** — the common case, si
 reaction's lower bound is usually zero. An absolute difference there would make the verdict depend
 on the flux unit, which is the defect `relative_error` already had to be fixed for once.
 
+
+## The comparison a limit cycle punishes, and the quantity its paper actually reports
+
+Five of the six models in the kinetic milestone oscillate, and until now the only thing this class
+could certify about any of them was the **curve**. That is the one comparison an oscillator is worst
+served by: a curve distance is dominated by *phase*, and phase error accumulates with every cycle.
+
+Measured on committed data rather than argued. The repressilator's reference run spans about 75
+cycles. Stretch its clock by **1%** — the same trajectory, every peak height and every shape
+identical — and the curve distance goes to **0.395 against a 0.10 pass line**, four times over. No
+tolerance can separate that from a model that is simply wrong, and no reader of that verdict would
+learn that the disagreement was one percent. Which is exactly why these papers report a period.
+
+`metric="period"` and `metric="peak_to_trough"` close it, through the claim type and the certifying
+front end that already existed — no new claim shape, so the tolerance provenance, the protocol line,
+the budget selection and the grid check all came for free. The milestone publishes both for the
+Drosophila circadian clock against libRoadRunner's own trajectory, and Reprolith's COPASI run agrees
+with it to four figures on both.
+
+Four decisions, and two of them are defects avoided rather than features:
+
+- **Mean crossings, not peaks.** Every ripple near a maximum is a local maximum. A mean crossing is
+  one level for the whole window, and the crossing time is *interpolated* between the samples that
+  straddle it — which is why a period does not inherit the grid quantization a time-to-peak does:
+  eight samples per cycle still reads a sine's period to a tenth of a percent.
+- **Hysteresis at the crossing.** A curve passing through its own mean with any wobble on it
+  crosses that level several times in a row, and counted naively each of those opens a new cycle.
+  That does not make the period slightly wrong — it *divides* it. A counted cycle has to fall
+  clearly below the mean first, by 5% of the window's own peak-to-trough, and the constant is
+  checked in both directions: all five oscillators in the corpus read exactly the same period with
+  it as without.
+
+  The **mutation checker caught the first test written for this**, which is the part worth
+  recording. A guard whose test passes without it is not a guard, and the first version of that
+  test — a sine with a ripple near its mean crossing — could not chatter at all: a sine moves
+  fastest exactly where it crosses its mean, so the ripple never wins. The shape that does chatter
+  is a *spiky* one, a long shallow trough and a brief peak, which is what a cell-cycle model looks
+  like: there the trough drifts through the mean slowly and the ripple crosses it over and over.
+  Without the margin, that signal reads a period of **0.66 against a true 10.0**, and reads it
+  confidently. The test is written on that shape now, and removing the guard turns it red.
+- **Materiality is the grid's question, not the metric's.** A settled run with an integrator's
+  ripple on it does have mean crossings, and the metric returns them. Whether they are the model's
+  dynamics or the solver's noise is answered where that question is already answered for every
+  grid-dependent metric — by reading the number again at twice the resolution. That check earned its
+  keep on its first run: the cell-cycle model's peak-to-trough moves 8.7% between 200 and 400
+  samples, so its spike height is a property of the sampling and no verdict is published for it.
+- **`peak_to_trough`, not `amplitude`.** The field spells amplitude both ways — peak-to-trough and
+  half of it — and a claim judged under the wrong convention is out by exactly two. The metric is
+  named for what it computes so the certificate cannot be misread.
+
+The window rule had to change with it, and the error message that enforced it was left saying "only
+an area is integrated over an interval" — true when it was written and false the moment a period
+could carry a window. Three metrics take one now, and the sentence says which and why.
+
