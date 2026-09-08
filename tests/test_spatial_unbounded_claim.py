@@ -5,12 +5,13 @@ could not have: "an unbounded domain (not implemented, so not measured)". It sat
 standing certificates whose reference is the closed-form Gaussian — a free-space solution — so the
 one domain those claims actually assert was the one the engine could not honour.
 
-An infinite grid cannot be run, so the claim is neither trusted nor refused. The two edge rules
+An infinite grid cannot be run, so the claim is neither trusted nor refused. Two of the edge rules
 this solver has **bracket** free space for a diffusive claim: a zero-flux wall reflects back
 everything that reaches it, a Dirichlet-at-zero wall absorbs it, and the free-space solution — which
-lets it leave and never return — lies between. The distance between those two runs therefore bounds
-how far either sits from the unbounded one, and the claim is judged only when that bound is a small
-fraction of its own pass tolerance.
+lets it leave and never return — lies between. The distance between those runs therefore bounds how
+far either sits from the unbounded one, and the claim is judged only when that bound is a small
+fraction of its own pass tolerance. The third wall this solver runs, periodic, brackets nothing and
+is measured anyway: a bound taken over more walls is only ever larger.
 
 The test that matters most here is the last one. The first version of this rule compared the wall's
 effect to the claim's own residual, and a domain small enough for the wall to reflect a third of
@@ -179,3 +180,23 @@ def test_free_space_is_what_the_reference_actually_is() -> None:
     elapsed = steps * claim.dt
     peak = max(claim.reference)
     assert peak == pytest.approx(10.0 / math.sqrt(2 * math.pi * (1.0 + 2 * _D * elapsed)), rel=1e-12)
+
+
+def test_a_wavelength_claim_cannot_state_an_unbounded_domain_and_says_why() -> None:
+    """The opposite case, and the refusal explains the difference rather than listing two names.
+
+    A wall far from the mass leaves a profile alone, which is why an unbounded profile claim can be
+    measured. A wavelength is the quantity the wall *creates*: the measurable values are 2L/m under
+    zero flux and L/m under periodicity, so a domain with no walls has no mode set for the reported
+    number to be one of. Refusing it is right; refusing it with only a list of accepted strings
+    would send somebody who read the profile page looking for a bug.
+    """
+    from reprolith import PatternClaim
+
+    with pytest.raises(ValueError, match="no mode set for the reported number to be one of"):
+        PatternClaim(
+            claim_id="w", quantity="Turing pattern wavelength", kinetics="schnakenberg",
+            reported=16.0, source_location="Fig 2", a=0.1, b=0.9, du=1.0, dv=40.0,
+            length=50.0, points=201, dt=1e-4, steps=6000, confirm_steps=2000,
+            boundary=UNBOUNDED,
+        )

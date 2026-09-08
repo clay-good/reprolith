@@ -740,7 +740,7 @@ zero-flux wall this engine imposed — while their reference was the free-space 
 domain they actually assert was the one the engine could not honour, and the verification queue
 listed it as "an unbounded domain (not implemented, so not measured)". An infinite grid still
 cannot be run. What changed is that the claim is no longer trusted or refused but *measured*: the
-two walls this solver runs **bracket** free space for a diffusive claim — one reflects everything
+two of the walls this solver runs **bracket** free space for a diffusive claim — one reflects everything
 that reaches it, the other absorbs it, and the solution that lets it leave and never return lies
 between — so the distance between those two runs bounds what standing a finite grid in for an
 infinite one costs. A claim stating `boundary="unbounded"` is judged only when that bound is under

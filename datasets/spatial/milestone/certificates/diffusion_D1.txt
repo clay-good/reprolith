@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — 1-D diffusion of a Gaussian (D=1)
-Engine pin: reprolith-fd 0.0.1 / explicit-forward-euler-finite-difference (rev ea54985852fb)
+Engine pin: reprolith-fd 0.0.1 / explicit-forward-euler-finite-difference (rev cb596f399711)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
@@ -7,7 +7,7 @@ OVERALL: reproduced
 CLAIMS
   [diffusion_D1-profile] diffused concentration profile: reproduced (source closed-form via curve-normalized-distance, tol=reproduced<=0.1, partial<=0.25 (class-default))
       measured: normalized distance 0.0000, worst point 0.0001 of reference scale (pass budget 0.2500)
-      protocol: 1-D finite difference: D=1.0, dx=0.2, dt=0.008000000000000002, 1000 steps, zero-flux (Neumann) boundaries on a grid whose edges the source's unbounded domain does not have (an unbounded domain, verified rather than assumed: this grid's two edge rules bracket the free-space solution and their answers differ by 2.224e-06, which bounds what standing in for an infinite domain costs here — against a budget of 1.000e-02, a tenth of the 0.10 that separates a pass from a failure)
+      protocol: 1-D finite difference: D=1.0, dx=0.2, dt=0.008000000000000002, 1000 steps, zero-flux (Neumann) boundaries on a grid whose edges the source's unbounded domain does not have (an unbounded domain, verified rather than assumed: this grid's edge rules bracket the free-space solution and their answers differ by 2.224e-06, which bounds what standing in for an infinite domain costs here — against a budget of 1.000e-02, a tenth of the 0.10 that separates a pass from a failure)
 
 SCOPE
   This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

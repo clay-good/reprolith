@@ -5659,7 +5659,7 @@ engine had recorded as unreachable, and the qualification was describing a wall 
 merely failed to state — it had stated its absence.
 
 An infinite grid still cannot be run. What the engine does instead is measure the substitution. For
-a diffusive claim the two edge rules this solver has **bracket** free space: a zero-flux wall
+a diffusive claim two of the edge rules this solver has **bracket** free space: a zero-flux wall
 reflects back everything that reaches it, a Dirichlet-at-zero wall absorbs it, and the solution
 that lets it leave and never return lies between them. Run the same discretization under both and
 the distance between the answers bounds how far either sits from the unbounded one. A claim stating

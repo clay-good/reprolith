@@ -31,7 +31,7 @@ def test_agreement_report_shows_a_blind_full_agreement() -> None:
         # imposed and their source did not state — while their reference was the free-space
         # Gaussian, which is the solution on a domain with no walls at all. They state that domain
         # now, and it is honoured by measurement rather than by trust: the claim is judged only
-        # once this grid's two edge rules are shown to bracket free space to within a tenth of the
+        # once this grid's edge rules are shown to bracket free space to within a tenth of the
         # pass tolerance. Both sides say `reproduced`, so a run that could no longer show it reads
         # as a disagreement rather than as a quietly better number.
         assert entry["expected"] == "reproduced", entry["entry"]

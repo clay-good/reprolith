@@ -8,7 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "curve-normalized-distance",
-      "protocol": "1-D finite difference: D=2.0, dx=0.2, dt=0.004000000000000001, 800 steps, zero-flux (Neumann) boundaries on a grid whose edges the source's unbounded domain does not have (an unbounded domain, verified rather than assumed: this grid's two edge rules bracket the free-space solution and their answers differ by 2.206e-07, which bounds what standing in for an infinite domain costs here \u2014 against a budget of 1.000e-02, a tenth of the 0.10 that separates a pass from a failure)",
+      "protocol": "1-D finite difference: D=2.0, dx=0.2, dt=0.004000000000000001, 800 steps, zero-flux (Neumann) boundaries on a grid whose edges the source's unbounded domain does not have (an unbounded domain, verified rather than assumed: this grid's edge rules bracket the free-space solution and their answers differ by 2.206e-07, which bounds what standing in for an infinite domain costs here \u2014 against a budget of 1.000e-02, a tenth of the 0.10 that separates a pass from a failure)",
       "quantity": "diffused concentration profile",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "explicit-forward-euler-finite-difference (rev ea54985852fb)",
+    "algorithm": "explicit-forward-euler-finite-difference (rev cb596f399711)",
     "engine": "reprolith-fd",
     "version": "0.0.1"
   },

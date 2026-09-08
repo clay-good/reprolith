@@ -1091,9 +1091,17 @@ class PatternClaim:
                 "perturbation the homogeneous state is a fixed point and no pattern can form"
             )
         if self.boundary is not None and self.boundary not in PATTERN_BOUNDARIES:
+            extra = (
+                ". A profile claim may state an unbounded domain and be measured against it, "
+                "because a wall far from the mass leaves the profile alone. A wavelength is the "
+                "opposite case: the wall sets which modes exist at all — 2L/m against L/m — so on "
+                "a domain with no walls there is no mode set for the reported number to be one of"
+                if self.boundary == UNBOUNDED
+                else ""
+            )
             raise ValueError(
                 f"claim {self.claim_id!r} names boundary {self.boundary!r}; a two-species run "
-                f"takes {', '.join(PATTERN_BOUNDARIES)}"
+                f"takes {', '.join(PATTERN_BOUNDARIES)}{extra}"
             )
 
     @property
@@ -2037,8 +2045,8 @@ def certify_spatial(
                                 "cannot be shown not to have mattered"
                                 if shown is None
                                 else (
-                                    "this grid's two edge rules bracket the free-space solution "
-                                    f"and their answers differ by {shown['wall_bracket']:.3e}, "
+                                    "this grid's edge rules bracket the free-space solution and "
+                                    f"their answers differ by {shown['wall_bracket']:.3e}, "
                                     f"against a budget of {shown['budget']:.3e} — a tenth of the "
                                     f"{shown['pass_within']:.2f} that separates a pass from a "
                                     "failure. A domain this size does not stand in for one with "
@@ -2282,11 +2290,18 @@ def wall_bracket(claim: SpatialClaim) -> float | None:
     """How far this run's answer moves when the edge rule changes — a bound on standing in for free
     space.
 
-    The two walls this solver runs **bracket** an unbounded domain for a diffusive claim: a
+    Two of the walls this solver runs **bracket** an unbounded domain for a diffusive claim: a
     zero-flux edge reflects everything that reaches it back into the domain, and a Dirichlet edge at
-    zero absorbs it. The free-space solution, which lets it leave and never return, lies between
-    them. So the distance between the two runs is an upper bound on how far either sits from the
-    unbounded one — computed, not assumed.
+    zero absorbs it. The free-space solution, which lets what reaches the edge leave and never
+    return, lies between them. So the distance between those two runs is an upper bound on how far
+    either sits from the unbounded one — computed, not assumed.
+
+    The third wall, periodic, is measured too and the widest disagreement is the one returned. It
+    does not bracket anything — it wraps what leaves one edge back in at the other — but a bound
+    taken over more walls is only ever larger, and this number exists to be small. Every alternative
+    is run with the absorbing value regardless of what the claim carries in ``boundary_value``: a
+    wall held at some other level is a third domain rather than a bracket, and an unbounded claim
+    runs under zero flux, which ignores the field entirely.
 
     Measured between the *runs*, never between a run and the reference. That is the whole
     correction this function exists for: keyed on the reference, the statistic is polluted by the
@@ -2301,8 +2316,7 @@ def wall_bracket(claim: SpatialClaim) -> float | None:
         try:
             return list(diffuse_1d(
                 claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
-                steps=claim.steps, decay=claim.decay, boundary=boundary,
-                boundary_value=claim.boundary_value,
+                steps=claim.steps, decay=claim.decay, boundary=boundary, boundary_value=0.0,
             ))
         except UnstableDiscretization:
             return None
@@ -2356,8 +2370,8 @@ def unbounded_is_honoured(claim: SpatialClaim) -> dict[str, Any] | None:
 def _unbounded_note(measured: dict[str, Any]) -> str:
     """What the run showed about the wall, for the protocol line of an honoured unbounded claim."""
     return (
-        f" (an unbounded domain, verified rather than assumed: this grid's two edge rules bracket "
-        f"the free-space solution and their answers differ by {measured['wall_bracket']:.3e}, which "
+        f" (an unbounded domain, verified rather than assumed: this grid's edge rules bracket the "
+        f"free-space solution and their answers differ by {measured['wall_bracket']:.3e}, which "
         f"bounds what standing in for an infinite domain costs here — against a budget of "
         f"{measured['budget']:.3e}, a tenth of the {measured['pass_within']:.2f} that separates a "
         "pass from a failure)"
