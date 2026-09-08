@@ -19,7 +19,6 @@ import math
 import random
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
-from enum import Enum
 
 from .certificate import build_certificate
 from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, Parameter
@@ -30,10 +29,13 @@ from .oracle import (
     ComparisonMethod,
     PercentileBand,
     ReferenceKind,
+    SpreadStatistic,
     Tolerance,
     default_tolerance,
     judge_scalar,
     not_evaluable,
+    spread_standard_error,
+    spread_statistic,
     undetermined_shortfall,
 )
 from .pins import algorithm_revision
@@ -978,75 +980,28 @@ def coefficient_of_variation(ensemble: Sequence[Sequence[int]], species: int) ->
     return math.sqrt(variance) / mean
 
 
-class NoiseStatistic(str, Enum):
-    """Which noise statistic a claim reports. Both divide by the mean, and neither is a mean."""
-
-    #: variance / mean — 1 for Poisson (constitutive) statistics, above 1 for bursty expression.
-    FANO_FACTOR = "fano-factor"
-    #: standard deviation / mean — the relative noise level, ``1/sqrt(mean)`` for Poisson.
-    COEFFICIENT_OF_VARIATION = "coefficient-of-variation"
+#: What a noise claim reports, which is a *spread* statistic — the same shape a population's
+#: inter-individual variability is, and computed by the same shared function so the two classes
+#: cannot disagree about what a coefficient of variation is. Kept under this class's own name
+#: because that is what its claims and its certificates say.
+NoiseStatistic = SpreadStatistic
 
 
-def _noise_statistic(values: Sequence[int], statistic: NoiseStatistic) -> float:
-    """One ensemble's Fano factor or coefficient of variation, from its raw counts.
+def _noise_statistic(values: Sequence[int], statistic: SpreadStatistic) -> float:
+    """This class's spelling of :func:`reprolith.oracle.spread_statistic`."""
+    return spread_statistic(values, statistic)
 
-    The two public functions take an ensemble of full states; this takes the one species' column,
-    which is what a jackknife needs to recompute the statistic without rebuilding the ensemble.
-    Raises for a zero mean, exactly as its public siblings do — both divide by it.
+
+def noise_standard_error(
+    values: Sequence[int], statistic: SpreadStatistic
+) -> float | None:
+    """This class's spelling of :func:`reprolith.oracle.spread_standard_error`.
+
+    Kept as a name because it is exported and because "the noise statistic's own error bar" is what
+    a stochastic certificate's protocol line calls it; the computation moved to the shared oracle
+    when the population class needed the same error bar for the same reason.
     """
-    n = len(values)
-    if n == 0:
-        raise ValueError("need at least one trajectory")
-    mean = math.fsum(values) / n
-    if mean == 0.0:
-        raise ValueError(f"{statistic.value} is undefined for a zero mean")
-    variance = math.fsum((v - mean) ** 2 for v in values) / n
-    if statistic is NoiseStatistic.FANO_FACTOR:
-        return variance / mean
-    return math.sqrt(variance) / mean
-
-
-def noise_standard_error(values: Sequence[int], statistic: NoiseStatistic) -> float | None:
-    """How far this ensemble's noise statistic would move on a different draw — by jackknife.
-
-    A mean's standard error is ``sqrt(variance/n)`` and needs nothing but the sample's first two
-    moments. A **Fano factor** and a **coefficient of variation** are ratios of moments, and their
-    sampling error is not that formula: the closed forms that exist assume a distribution, which is
-    the very thing the claim is about. So it is *resampled* rather than assumed — leave-one-out,
-    the statistic recomputed on each of the n subsamples, and the spread of those n values scaled
-    the jackknife way.
-
-    Leave-one-out rather than a bootstrap for one reason that matters to this class: it draws no
-    random numbers. This class's whole contract is that a verdict is a deterministic function of a
-    pinned seed, and an error bar that moved on its own would put a second, unpinned sampler inside
-    the number that decides whether to abstain.
-
-    ``None`` when the ensemble cannot support one — fewer than two trajectories, or a subsample
-    whose mean is zero, where the statistic itself is undefined.
-    """
-    n = len(values)
-    if n < 2:
-        return None
-    # Running sums, so each leave-one-out statistic is O(1) rather than a rescan: at 2,000
-    # trajectories the naive form is four million operations to produce one error bar.
-    total = sum(values)
-    total_squares = sum(v * v for v in values)
-    rest = n - 1
-    thetas: list[float] = []
-    for value in values:
-        mean = (total - value) / rest
-        if mean == 0.0:
-            return None
-        variance = (total_squares - value * value) / rest - mean * mean
-        # Cancellation can put an exactly-zero variance a hair below zero.
-        variance = max(variance, 0.0)
-        thetas.append(
-            variance / mean
-            if statistic is NoiseStatistic.FANO_FACTOR
-            else math.sqrt(variance) / mean
-        )
-    centre = math.fsum(thetas) / n
-    return math.sqrt((rest / n) * math.fsum((theta - centre) ** 2 for theta in thetas))
+    return spread_standard_error(values, statistic)
 
 
 @dataclass(frozen=True)

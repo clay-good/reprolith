@@ -5554,3 +5554,36 @@ was a compound command that ran ruff and pytest and printed both, and I read the
 fix is one line and it is on main; the lesson is that a gate whose output you skim is a gate you did
 not run.
 
+
+## The half of a population claim that could be judged and not produced
+
+The PK/PD class spec asks for both halves of a population figure: "a percentile envelope, prediction
+interval, or a reported inter-individual **variability metric**", judged as "a percentile envelope by
+its worst-matched band and a variability scalar by relative error". The envelope half has been built
+for a long time. The scalar half was judgeable from the day `judge_scalar` existed — and
+*unproducible*: `simulate_population` computed each subject's trajectory, took percentiles of them,
+and threw the subjects away. The one thing a "%CV of AUC" is a statistic **of** did not survive the
+run.
+
+`PopulationRun` keeps them, `subject_metrics` reads each subject's metric through the same function
+a single-subject claim uses — so a population's Cmax is that Cmax rather than a second definition
+that agrees today — and `VariabilityClaim` certifies the spread.
+
+**Two classes needed the same error bar, so there is now one.** A coefficient of variation is a
+ratio of moments whichever class computes it, and its sampling error is not a mean's. The jackknife
+written for the stochastic class's noise statistics moved into the shared oracle as
+`spread_standard_error`, gained the standard deviation as a third statistic, and the stochastic
+names became aliases of it. Two implementations would have disagreed about a zero mean, about the
+population-versus-sample variance, or about the jackknife's scaling — and all three decide a verdict.
+
+**What it measured is the population-class echo of the stochastic one.** At 500 subjects — the size
+this class simulates an *envelope* at — a 30% CV's standard error is 3.6% of it against a 5% pass
+threshold, which is the regime where a correct model misses routinely. It resolves at 1,500 (2.1%).
+A spread needs about three times the population its envelope does, exactly as a Fano factor needs
+ten times the ensemble its mean does.
+
+And the differential written the day before earned its place immediately: adding a claim type made
+`test_every_front_end_can_publish_a_miss` fail on its coverage assertion, before a single behaviour
+was checked. That is the check working — a claim type nobody adds to it is a claim type it does not
+cover, which is the state that let a front end publish only passes and tracebacks twice.
+

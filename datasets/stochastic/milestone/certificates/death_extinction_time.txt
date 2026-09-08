@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Pure death process — mean time to extinction
-Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev 458b726a5f73)
+Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev 20eac2d3b2ee)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

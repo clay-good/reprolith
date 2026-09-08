@@ -23,6 +23,7 @@ from typing import Any
 from .certificate import build_certificate
 from .digitization import DIGITIZED_BY
 from .engine import final_state, simulate
+from .enums import Verdict
 from .model import (
     Assumption,
     Certificate,
@@ -39,6 +40,7 @@ from .oracle import (
     Fault,
     PercentileBand,
     ReferenceKind,
+    SpreadStatistic,
     Tolerance,
     default_tolerance,
     judge_curve,
@@ -46,6 +48,8 @@ from .oracle import (
     judge_estimation,
     judge_scalar,
     not_evaluable,
+    spread_standard_error,
+    spread_statistic,
     undetermined_shortfall,
 )
 from .selection import Selection, stated_objective
@@ -1390,11 +1394,149 @@ class PopulationClaim:
             )
 
 
+@dataclass(frozen=True)
+class VariabilityClaim:
+    """A published **inter-individual variability metric**: how spread a population's metric is.
+
+    The other thing a population paper reports beside its envelope, and the one the class spec names
+    as "a variability scalar ... judged by relative error": the %CV of an exposure, the standard
+    deviation of a peak, across the virtual population rather than along it. An envelope is a
+    picture of the same population, and a paper prints one, the other, or both.
+
+    ``values`` are the metric's value for each subject — :func:`reprolith.subject_metrics` reads
+    them off a :class:`~reprolith.population.PopulationRun` with the same metric definition a
+    single-subject claim uses, so a population's Cmax is that Cmax and not a second definition.
+    ``protocol`` records the sampling they came from, for the reason a
+    :class:`PopulationClaim`'s does: a spread computed over twenty subjects and one over a thousand
+    are not the same evidence.
+
+    ``assumption_qualified`` defaults to ``True`` for the same reason: the spread of a simulated
+    population is a property of the variability model Reprolith reconstructed as much as of the
+    model itself.
+    """
+
+    claim_id: str
+    quantity: str
+    statistic: SpreadStatistic
+    reported: float
+    values: tuple[float, ...]
+    source_location: str
+    protocol: str
+    tolerance: Tolerance | None = None
+    reference_kind: ReferenceKind = ReferenceKind.NUMERIC
+    digitizer: str = ""
+    assumption_qualified: bool = True
+    shortfall: Attribution | None = field(default=None)
+
+    @property
+    def cited_source(self) -> str:
+        """The source a certificate cites for this claim, carrying the reading behind it."""
+        return _cited_source(self.source_location, self.reference_kind, self.digitizer)
+
+    def __post_init__(self) -> None:
+        _reading_required(
+            self.reference_kind, self.digitizer, f"claim '{self.claim_id}'",
+            source_location=self.source_location,
+        )
+        if len(self.values) < _SPREAD_NEEDS_SUBJECTS:
+            raise ValueError(
+                f"variability claim {self.claim_id!r} carries {len(self.values)} subject value(s): "
+                f"below {_SPREAD_NEEDS_SUBJECTS} the spread is the sampling rather than the "
+                "population, which the simulator refuses to draw for the same reason"
+            )
+        if self.reported <= 0.0:
+            raise ValueError(
+                f"variability claim {self.claim_id!r} reports {self.reported!r}: a spread is a "
+                "non-negative quantity, and a reported zero says the population has none — which "
+                "is a statement about the sampling rather than about the model"
+            )
+        if not self.protocol.strip():
+            raise ValueError(
+                f"variability claim {self.claim_id!r} states no protocol; a spread computed over "
+                "twenty subjects and one over a thousand are not the same evidence"
+            )
+
+
+#: The subject count below which a population's spread is the sampling rather than the population.
+#: The simulator refuses to draw an envelope below it (`population._SPREAD_IS_EVIDENCE`, measured on
+#: its own model), and a variability claim is a statistic of the same subjects, so it is refused at
+#: the same bar rather than at a second one somebody would have to keep in step.
+_SPREAD_NEEDS_SUBJECTS = 30
+
+
+def _judge_variability(claim: VariabilityClaim) -> ClaimAssessment:
+    """Judge a reported variability metric against the population's own, or say why it cannot be.
+
+    Two ways it abstains, and they are the two the stochastic class abstains on for the same
+    quantity: a sample whose mean is zero has no coefficient of variation or Fano factor to speak
+    of, and a sample whose statistic carries too large an error bar cannot tell a reproduction from
+    the draw. The error bar is measured by the same jackknife
+    (:func:`reprolith.oracle.spread_standard_error`) rather than by a mean's formula, because a
+    ratio of moments does not have a mean's sampling error.
+    """
+    try:
+        observed = spread_statistic(claim.values, claim.statistic)
+    except ValueError as exc:
+        return replace(
+            not_evaluable(
+                claim_id=claim.claim_id, quantity=claim.quantity,
+                source_location=claim.cited_source,
+                reason=(
+                    f"{exc}: every subject in this population read zero for the metric, so there "
+                    "is no centre to normalize the spread by"
+                ),
+                reference_kind=claim.reference_kind,
+            ),
+            protocol=claim.protocol,
+        )
+    error_bar = spread_standard_error(claim.values, claim.statistic)
+    tolerance = claim.tolerance or default_tolerance(
+        ComparisonMethod.SCALAR_RELATIVE_ERROR, claim.reference_kind
+    )
+    if error_bar is not None and error_bar > tolerance.reproduced_within * claim.reported / 2.0:
+        return replace(
+            not_evaluable(
+                claim_id=claim.claim_id, quantity=claim.quantity,
+                source_location=claim.cited_source,
+                reason=(
+                    f"this population cannot resolve the claim: the {claim.statistic.value}'s own "
+                    f"standard error is {error_bar / claim.reported:.1%} of the reported value, "
+                    f"against a {tolerance.reproduced_within:.0%} pass threshold; "
+                    f"{len(claim.values)} subjects is too few to tell a reproduction from the draw"
+                ),
+                reference_kind=claim.reference_kind,
+            ),
+            protocol=claim.protocol,
+        )
+    assessment = judge_scalar(
+        claim_id=claim.claim_id,
+        quantity=claim.quantity,
+        source_location=claim.cited_source,
+        reported=claim.reported,
+        predicted=observed,
+        reference_kind=claim.reference_kind,
+        tolerance=claim.tolerance,
+        attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
+        assumption_qualified=claim.assumption_qualified,
+    )
+    cost = (
+        ""
+        if error_bar is None
+        else (
+            f" (sampling noise: the statistic's jackknife standard error is "
+            f"{error_bar / claim.reported:.2%} of the reported value, against a "
+            f"{tolerance.reproduced_within:.0%} pass threshold)"
+        )
+    )
+    return replace(assessment, protocol=claim.protocol + cost)
+
+
 def certify_population(
     *,
     paper: PaperIdentity,
     engine_pin: EnginePin,
-    claims: Iterable[PopulationClaim],
+    claims: Iterable[PopulationClaim] = (),
+    variability: Iterable[VariabilityClaim] = (),
     assumptions: Iterable[Assumption] = (),
 ) -> Certificate:
     """Assemble a certificate of population-envelope verdicts (reported vs simulated bands).
@@ -1460,11 +1602,43 @@ def certify_population(
         )
         for claim in claims
     ]
+    # The variability claims, judged against the same population and qualified for the same
+    # reason: its spread is a property of the variability model Reprolith reconstructed as much as
+    # of the model. One assumption per claim, as above, and only for a claim a verdict was drawn
+    # from — an assumption on an abstention would describe a judgment nobody made.
+    spread_claims = tuple(variability)
+    for claim in spread_claims:
+        assessments.append(_judge_variability(claim))
+    spread_sampling = tuple(
+        Assumption(
+            id=f"population-sampling-{claim.claim_id}",
+            description=(
+                "the variability judged here is the spread of a virtual population Reprolith "
+                "reconstructed and sampled, not a number the paper's own run produced"
+            ),
+            chosen=claim.protocol,
+            basis=(
+                "a population's spread moves with its subject count and seed, and the "
+                "between-subject variability model behind it is a reconstruction choice a "
+                "manuscript often under-specifies"
+            ),
+            load_bearing=True,
+            alternatives=("a different subject count", "a different sampling seed"),
+            author_can_close=False,
+        )
+        for claim, assessment in zip(spread_claims, assessments[-len(spread_claims):] or [])
+        if claim.assumption_qualified and assessment.verdict is not Verdict.NOT_EVALUABLE
+    )
+    if not assessments:
+        raise ValueError(
+            "a population certificate needs at least one claim: certifying a paper this path "
+            "judged nothing of would publish a verdict about no evidence"
+        )
     return build_certificate(
         paper=paper,
         engine_pin=engine_pin,
         assessments=assessments,
-        assumptions=(*assumptions, *sampling),
+        assumptions=(*assumptions, *sampling, *spread_sampling),
     )
 
 
@@ -1473,6 +1647,7 @@ __all__ = [
     "CurveClaim",
     "EstimationClaim",
     "PopulationClaim",
+    "VariabilityClaim",
     "certify_curves",
     "certify_estimation",
     "certify_model",

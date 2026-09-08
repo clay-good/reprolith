@@ -907,6 +907,94 @@ def judge_distribution(
     )
 
 
+class SpreadStatistic(str, Enum):
+    """A statistic of a sample's *spread* rather than of its centre, and none of them is a mean.
+
+    Two classes report one. A stochastic model's noise is its Fano factor or its coefficient of
+    variation across an SSA ensemble; a population's inter-individual variability is the CV or the
+    standard deviation of a metric across subjects. The quantity is the same shape either way — a
+    function of the sample's first two moments — which is why the error bar below is shared rather
+    than written twice.
+    """
+
+    #: variance / mean — 1 for Poisson (constitutive) statistics, above 1 for bursty expression.
+    FANO_FACTOR = "fano-factor"
+    #: standard deviation / mean — the relative spread, ``1/sqrt(mean)`` for Poisson counts and the
+    #: "%CV" a population pharmacokinetics paper reports.
+    COEFFICIENT_OF_VARIATION = "coefficient-of-variation"
+    #: the standard deviation itself, in the quantity's own units — what a paper reports when its
+    #: spread is not naturally relative.
+    STANDARD_DEVIATION = "standard-deviation"
+
+
+def spread_statistic(values: Sequence[float], statistic: SpreadStatistic) -> float:
+    """One sample's Fano factor, coefficient of variation, or standard deviation.
+
+    Takes the one column a statistic is read off — a species' counts across an ensemble, a metric's
+    values across a population — which is what a jackknife needs to recompute the statistic without
+    rebuilding the sample. The two mean-normalized statistics raise for a zero mean, since both
+    divide by it; a standard deviation does not need one.
+    """
+    n = len(values)
+    if n == 0:
+        raise ValueError("need at least one sample")
+    mean = math.fsum(values) / n
+    variance = math.fsum((v - mean) ** 2 for v in values) / n
+    if statistic is SpreadStatistic.STANDARD_DEVIATION:
+        return math.sqrt(variance)
+    if mean == 0.0:
+        raise ValueError(f"{statistic.value} is undefined for a zero mean")
+    if statistic is SpreadStatistic.FANO_FACTOR:
+        return variance / mean
+    return math.sqrt(variance) / mean
+
+
+def spread_standard_error(
+    values: Sequence[float], statistic: SpreadStatistic
+) -> float | None:
+    """How far this sample's spread statistic would move on a different draw — by jackknife.
+
+    A mean's standard error is ``sqrt(variance/n)`` and needs nothing but the sample's first two
+    moments. A **Fano factor**, a **coefficient of variation** and a **standard deviation** are not
+    means, and the closed forms that exist for their sampling error assume a distribution — which is
+    the very thing a claim about spread is usually about. So it is *resampled* rather than assumed:
+    leave-one-out, the statistic recomputed on each of the n subsamples, and the spread of those n
+    values scaled the jackknife way.
+
+    Leave-one-out rather than a bootstrap for one reason that matters to both classes that use it:
+    it draws no random numbers. A stochastic verdict is a deterministic function of a pinned seed
+    and a population verdict of a pinned draw, and an error bar that moved on its own would put a
+    second, unpinned sampler inside the number that decides whether to abstain.
+
+    ``None`` when the sample cannot support one — fewer than two values, or a subsample whose mean
+    is zero, where a mean-normalized statistic is undefined.
+    """
+    n = len(values)
+    if n < 2:
+        return None
+    # Running sums, so each leave-one-out statistic is O(1) rather than a rescan: at 4,000
+    # trajectories the naive form is sixteen million operations to produce one error bar.
+    total = math.fsum(values)
+    total_squares = math.fsum(value * value for value in values)
+    rest = n - 1
+    thetas: list[float] = []
+    for value in values:
+        mean = (total - value) / rest
+        if mean == 0.0 and statistic is not SpreadStatistic.STANDARD_DEVIATION:
+            return None
+        variance = (total_squares - value * value) / rest - mean * mean
+        # Cancellation can put an exactly-zero variance a hair below zero.
+        variance = max(variance, 0.0)
+        if statistic is SpreadStatistic.STANDARD_DEVIATION:
+            thetas.append(math.sqrt(variance))
+        elif statistic is SpreadStatistic.FANO_FACTOR:
+            thetas.append(variance / mean)
+        else:
+            thetas.append(math.sqrt(variance) / mean)
+    centre = math.fsum(thetas) / n
+    return math.sqrt((rest / n) * math.fsum((theta - centre) ** 2 for theta in thetas))
+
+
 def assess_match(
     *,
     claim_id: str,
@@ -980,6 +1068,9 @@ def not_evaluable(
 
 
 __all__ = [
+    "SpreadStatistic",
+    "spread_statistic",
+    "spread_standard_error",
     "undetermined_shortfall",
     "worst_point_deviation",
     "Attribution",

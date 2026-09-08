@@ -49,6 +49,30 @@ every percentile band of a one-compartment model has a closed form. 500 subjects
 inside 10% of it at every grid point, where the empirical P5's own sampling error is about 3%
 (`tests/test_population_simulation.py`).
 
+**The other thing these papers report.** A population figure is an envelope; a population *table*
+is a variability metric — "%CV of AUC 31%" — and the class spec asks for both, judging "a percentile
+envelope by its worst-matched band and a variability scalar by relative error". The scalar half was
+judgeable from the day `judge_scalar` existed and **unproducible**: the simulator computed each
+subject's trajectory, took percentiles of them, and threw the subjects away, so the one thing a %CV
+of AUC is a statistic *of* did not survive the run.
+
+`PopulationRun` keeps them now, `subject_metrics` reads each subject's metric off its own trajectory
+— through the same function a single-subject claim uses, so a population's Cmax is that Cmax rather
+than a second definition — and `VariabilityClaim` certifies the spread through `certify_population`.
+
+Two things it inherits rather than reinvents. The **error bar** is the jackknife the stochastic
+class needed for the same shape of quantity, and it is now the same code in the shared oracle
+(`spread_standard_error`): a CV is a ratio of moments, so its sampling error is not a mean's, and
+the closed forms that exist assume the distribution the claim is about. And the **abstention** is
+the same rule: where the statistic's own error bar is more than half the pass threshold, the
+population cannot tell a reproduction from the draw.
+
+What that measured is worth stating on its own. At **500 subjects** — the size this class simulates
+an envelope at — a 30% CV's standard error is **3.6% of it against a 5% pass threshold**, so a claim
+there is abstained on. It resolves at 1,500 (2.1%). A spread needs about three times the population
+its envelope does, which is the population-class echo of the stochastic class's "a Fano factor needs
+ten times the ensemble its mean does".
+
 **And walked to a certificate.** The simulator and the certifier were both built and both tested,
 and nothing joined them: every test of the simulator stopped at its bands, and every test of the
 certifier started from bands somebody typed. `tests/test_population_end_to_end.py` runs the whole

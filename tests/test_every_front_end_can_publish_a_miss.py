@@ -213,6 +213,30 @@ def _population_envelope() -> Certificate:
     )
 
 
+def _population_variability() -> Certificate:
+    import math
+    from statistics import NormalDist
+
+    from reprolith import VariabilityClaim
+    from reprolith.oracle import SpreadStatistic
+
+    omega = math.sqrt(math.log(1.0 + 0.3**2))
+    normal = NormalDist()
+    values = tuple(
+        10.0 * math.exp(omega * normal.inv_cdf((index + 0.5) / 1500)) for index in range(1500)
+    )
+    return certify_population(
+        paper=_PAPER, engine_pin=stochastic_pin(),
+        variability=[VariabilityClaim(
+            claim_id="miss", quantity="between-subject CV of AUC",
+            statistic=SpreadStatistic.COEFFICIENT_OF_VARIATION,
+            reported=0.9,  # the population's own CV is 0.3
+            values=values, source_location="Table 4",
+            protocol="1500 subjects, seed 1, log-normal variability on V (CV 0.3)",
+        )],
+    )
+
+
 def _estimation() -> Certificate:
     return certify_estimation(
         paper=_PAPER, engine_pin=stochastic_pin(),
@@ -238,6 +262,7 @@ _MISSES: dict[str, Callable[[], Certificate]] = {
     "spatial front speed": _spatial_front,
     "spatial pattern": _spatial_pattern,
     "population envelope": _population_envelope,
+    "population variability metric": _population_variability,
     "parameter estimate": _estimation,
 }
 
@@ -413,7 +438,7 @@ def test_this_matrix_covers_every_claim_type_the_package_exports() -> None:
     }
     covered = {
         "LogicalClaim", "StochasticClaim", "ExtinctionTimeClaim", "NoiseClaim",
-        "PopulationClaim", "EstimationClaim",
+        "PopulationClaim", "EstimationClaim", "VariabilityClaim",
         "SpatialClaim", "GradientClaim", "FrontSpeedClaim", "PatternClaim",
         # Covered too, behind the extra each needs — see `_BEHIND_AN_EXTRA`. The constraint-based
         # claim types are not in this `__all__` at all (they live in `reprolith.constraint_based`)

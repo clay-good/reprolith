@@ -73,6 +73,12 @@ class PopulationRun:
 
     times: tuple[float, ...]
     bands: tuple[PercentileBand, ...]
+    #: One row per subject, in the order they were drawn. The bands are percentiles *of* these, and
+    #: they were computed and thrown away — which left the class able to reproduce an envelope and
+    #: unable to reproduce the other thing these papers report, an inter-individual **variability
+    #: metric**: a %CV of an exposure or a peak across the population, which is a statistic of the
+    #: subjects rather than of the envelope. Kept in memory only; no certificate serializes them.
+    trajectories: tuple[tuple[float, ...], ...]
     #: What was sampled and how, in the form :class:`reprolith.PopulationClaim` requires — an
     #: envelope's verdict moves with its subject count and seed, so the bands are only evidence
     #: alongside them.
@@ -268,6 +274,7 @@ def simulate_population(
     return PopulationRun(
         times=times,
         bands=bands,
+        trajectories=tuple(trajectories),
         protocol=(
             f"{subjects} subjects, seed {seed}, log-normal between-subject variability on "
             f"{varied}, median-preserving; percentiles linearly interpolated between order "
@@ -280,6 +287,30 @@ def simulate_population(
             f"of the band at {subjects} subjects"
         ),
     )
+
+
+def subject_metrics(
+    run: PopulationRun, metric: str, window: tuple[float, float] | None = None
+) -> tuple[float, ...]:
+    """Each subject's value of ``metric``, read off that subject's own trajectory.
+
+    The bands a population certificate is judged against are percentiles of these; a reported
+    **variability metric** — the "%CV of AUC" a population pharmacokinetics paper prints — is a
+    statistic of them directly, and is what the class spec asks to be judged "by relative error"
+    beside the envelope.
+
+    The metric is read by the same function that reads it for a single-subject claim
+    (:func:`reprolith.certify._metric`), so a population's Cmax is the same quantity as a
+    trajectory's Cmax rather than a second definition that happens to agree today.
+    """
+    from .certify import _metric  # local: certify imports this module's siblings at call time
+
+    if not run.trajectories:
+        raise ValueError(
+            "this run carries no per-subject trajectories, so a metric cannot be read off them; "
+            "it was produced before they were kept, and its bands cannot be un-averaged"
+        )
+    return tuple(_metric(run.times, values, metric, window) for values in run.trajectories)
 
 
 def _typical(sbml: str, parameter: str) -> float:

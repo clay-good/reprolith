@@ -71,6 +71,10 @@ present, so verdicts match how the field judges a model.
   worst-matched band and a variability scalar by relative error
 - **AND** the verdict is assumption-qualified to reflect its dependence on the variability
   model and sampling, per the simulation-oracle distributional contract
+- **AND** a variability scalar is read off the subjects themselves rather than off the envelope,
+  with the same metric definition a single-subject claim uses, and judged against a spread's own
+  resampled error bar rather than a mean's — a population too small to resolve the claim is
+  abstained on rather than judged
 
 ### Requirement: Class-default tolerances
 

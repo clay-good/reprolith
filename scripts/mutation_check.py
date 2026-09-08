@@ -1221,6 +1221,27 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if sensitivity is None or sensitivity.get("agree"):', "    if True:"),
         ["tests/test_logical_scheme.py"],
     ),
+    # --- a population's variability metric can be certified, 2026-09-07 -------------------------
+    (
+        "a population too small to resolve its own spread publishes a verdict anyway",
+        "certify.py",
+        ("    if error_bar is not None and error_bar > tolerance.reproduced_within * claim.reported / 2.0:",
+         "    if False:"),
+        ["tests/test_population_variability_claim.py"],
+    ),
+    (
+        "a spread claim is drawn from a population small enough to be its own sampling",
+        "certify.py",
+        ("        if len(self.values) < _SPREAD_NEEDS_SUBJECTS:", "        if False:"),
+        ["tests/test_population_variability_claim.py"],
+    ),
+    (
+        "a standard deviation is judged as though it divided by the mean",
+        "oracle.py",
+        ("    if statistic is SpreadStatistic.STANDARD_DEVIATION:\n        return math.sqrt(variance)",
+         "    if False:\n        return math.sqrt(variance)"),
+        ["tests/test_population_variability_claim.py"],
+    ),
     # --- every abstention says which run it is about, 2026-09-07 --------------------------------
     (
         "a spatial abstention states a conclusion about a run it does not describe",

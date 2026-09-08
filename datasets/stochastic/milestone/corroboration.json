@@ -4,7 +4,7 @@
     "distance_at_most": 1.9,
     "engine_independent": true,
     "engine_versions": [
-      "gillespie-direct-method (rev 458b726a5f73)",
+      "gillespie-direct-method (rev 20eac2d3b2ee)",
       "2.7.0"
     ],
     "engines": [
@@ -18,7 +18,7 @@
     "distance_at_most": 1.6,
     "engine_independent": true,
     "engine_versions": [
-      "gillespie-direct-method (rev 458b726a5f73)",
+      "gillespie-direct-method (rev 20eac2d3b2ee)",
       "2.7.0"
     ],
     "engines": [
@@ -32,7 +32,7 @@
     "distance_at_most": 0.4,
     "engine_independent": true,
     "engine_versions": [
-      "gillespie-direct-method (rev 458b726a5f73)",
+      "gillespie-direct-method (rev 20eac2d3b2ee)",
       "2.7.0"
     ],
     "engines": [
@@ -47,7 +47,7 @@
     "distance_at_most": 1.0,
     "engine_independent": true,
     "engine_versions": [
-      "gillespie-direct-method (rev 458b726a5f73)",
+      "gillespie-direct-method (rev 20eac2d3b2ee)",
       "2.7.0"
     ],
     "engines": [
