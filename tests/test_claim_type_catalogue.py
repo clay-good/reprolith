@@ -60,3 +60,21 @@ def test_the_boundary_is_stated_rather_than_left_to_be_noticed() -> None:
     what exists reads as a complete account of what the engine can do."""
     for quantity in ("synthetic lethal", "production envelope", "shadow price", "parsimonious"):
         assert quantity in _PAGE
+
+
+def test_the_front_page_states_the_number_this_page_lists() -> None:
+    """The README tells a reader how many kinds of result can be certified, and that is a count.
+
+    Every other count on that page is held to the repository — the certificates, the split between
+    a publication's numbers and a tool's — and this one is the newest.
+    """
+    import re
+
+    # Data rows: a claim type in backticks, or the one row for a claim a *dossier* states rather
+    # than a class front end (an objective value), which has no type of its own.
+    rows = len(re.findall(r"^\| (?:`\w*Claim`|an )", _PAGE, re.MULTILINE))
+    readme = (Path(__file__).parent.parent / "README.md").read_text(encoding="utf-8")
+    words = {15: "Fifteen", 16: "Sixteen", 17: "Seventeen", 18: "Eighteen", 19: "Nineteen"}
+    assert f"{words[rows]} kinds of result" in readme, (
+        f"docs/claim-types.md lists {rows} kinds and the README says otherwise"
+    )

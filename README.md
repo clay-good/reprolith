@@ -185,6 +185,14 @@ guessing — just: *does the described model produce the shown result?*
   missing value, the certificate says so. It never takes credit for its own guesses.
 - **A "what was missing" list.** When a paper can't be reproduced, you get the exact
   parameter, unit, or condition it left out — the thing the field actually needs to fix.
+- **An answer to "can it check the thing my paper reports?"** Seventeen kinds of result can be
+  certified: a curve, a peak or an area, an oscillation's period, a population's envelope *and* its
+  %CV, a re-fitted parameter, a Boolean network's steady states, attractors and basins, a growth
+  rate, an essential-gene set, a flux and the range a flux can take, a Fano factor, a mean time to
+  extinction, a diffusion profile, a decay length, a front speed, a Turing wavelength.
+  [`docs/claim-types.md`](docs/claim-types.md) lists every one with what it is compared against and
+  — for each — **how it refuses**, and states the quantities this engine computes and deliberately
+  does not certify, so the page is a boundary rather than a brochure.
 - **Standard, runnable artifacts.** The model ships as SBML and the engine is pinned by
   version, so anyone can re-run it. A paper that ships a COMBINE archive is read straight out of
   it — the manifest names the model and the experiment, and one file becomes a dossier with
