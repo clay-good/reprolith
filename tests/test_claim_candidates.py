@@ -243,6 +243,72 @@ def test_a_quantity_it_cannot_express_still_makes_a_sentence_ambiguous() -> None
     assert all(c["metric"] == "" for c in proposed)
 
 
+def test_the_prose_reader_knows_the_units_of_every_class_this_engine_certifies() -> None:
+    """It knew one class's units while the engine certified six, so five sixths of what it can
+    judge produced no candidate at all — not a noisy one, nothing.
+
+    A number's unit is what tells this reader a sentence states a result rather than a figure
+    number or a year, so a unit it does not know is a result it cannot see. Each of these is a
+    quantity a claim type in this repository judges: a front speed, a decay length, a specific
+    flux, a growth rate.
+    """
+    from reprolith.claim_candidates import propose_claims_from_prose
+
+    text = (
+        "The simulated invasion front advanced at 2.4 µm/min. The gradient's decay length was "
+        "120 µm. The model predicts a growth rate of 0.87 1/h and an acetate flux of "
+        "8.5 mmol/gDW/h."
+    )
+    proposed = propose_claims_from_prose(text)["candidates"]
+    assert [c["reported"] for c in proposed] == [2.4, 120.0, 0.87, 8.5]
+    assert [c["reported_units"] for c in proposed] == ["µm/min", "µm", "1/h", "mmol/gDW/h"]
+
+
+def test_a_wave_speed_is_not_proposed_as_a_peak_concentration() -> None:
+    """What the wider unit list would have cost without the wider vocabulary beside it.
+
+    "Peak speed" contains "peak", which is one of the words that names a Cmax. Before those five
+    classes' quantities were recognised, the sentence below produced a candidate labelled `cmax` —
+    a metric that says how a number comes off a *time course*, on a number read off a wavefront.
+    None of them is expressible, and that is the point: they are here to make a sentence ambiguous,
+    which is this module's word for "a curator decides".
+    """
+    from reprolith.claim_candidates import propose_claims_from_prose
+
+    (candidate,) = propose_claims_from_prose(
+        "The front reached a peak speed of 2.4 µm/min."
+    )["candidates"]
+    assert candidate["metric"] == ""
+
+
+def test_a_unit_is_not_read_out_of_the_front_of_a_longer_one() -> None:
+    """`mg/L` inside `mg/L/h`, `h` inside `h-1`: a prefix match would relabel the quantity."""
+    from reprolith.claim_candidates import propose_claims_from_prose
+
+    (rate,) = propose_claims_from_prose("The rate constant is 0.42 h-1.")["candidates"]
+    assert rate["reported_units"] == "h-1"
+    assert propose_claims_from_prose("Clearance was 3.5 mg/L/h in that run.")["candidates"] == []
+
+
+def test_a_stretch_of_time_is_not_an_oscillation_period() -> None:
+    """The corpus corrected this vocabulary back, which is why the sentence is quoted verbatim.
+
+    Widening the units made the reader see more of every paper, and re-running the survey put one
+    paper over the line this repository has measured and written down — that prose reaches no paper
+    the tables miss. The sentence responsible is below, from PMC5026379: "period" there is a stretch
+    of time, and the reader was proposing an oscillation period on the length of somebody's
+    simulation run.
+    """
+    from reprolith.claim_candidates import _prose_metric
+
+    assert _prose_metric(
+        "serum concentration versus time over a simulated 8 hour time period) we ran 50 "
+        "simulations with the same parameter set and compared the results."
+    ) == ""
+    # And the sense it exists for still reads.
+    assert _prose_metric("The oscillation period was 24.2 h.") == "period"
+
+
 def test_the_survey_records_that_prose_does_not_reach_what_tables_miss() -> None:
     """The measurement that decides whether prose extraction is worth pursuing for reach.
 

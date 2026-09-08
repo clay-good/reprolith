@@ -354,14 +354,14 @@
     },
     "PMC4026633": {
       "captions": {
-        "candidates": 0,
+        "candidates": 3,
         "inside_the_prose_sweep": 3,
         "naming_a_quantity": 0,
         "paragraphs": 3
       },
       "prose": {
         "attributed_to_a_model": 0,
-        "candidates": 0,
+        "candidates": 4,
         "naming_a_quantity": 0
       },
       "tables": [
@@ -444,14 +444,14 @@
         "paragraphs": 7
       },
       "prose": {
-        "attributed_to_a_model": 21,
-        "candidates": 40,
-        "naming_a_quantity": 3
+        "attributed_to_a_model": 25,
+        "candidates": 44,
+        "naming_a_quantity": 5
       },
       "tables": [
         {
           "candidates": 28,
-          "candidates_stating_a_metric": 20,
+          "candidates_stating_a_metric": 28,
           "caption": "Pharmacokinetic parameters for three models",
           "label": "Table 1"
         }
@@ -472,7 +472,7 @@
       "tables": [
         {
           "candidates": 144,
-          "candidates_stating_a_metric": 0,
+          "candidates_stating_a_metric": 54,
           "caption": "Metformin pharmacokinetic parameter comparison of experimental data [1] and model simulations in plasma, portal vein, in",
           "label": "Table 1"
         },
@@ -490,25 +490,25 @@
         },
         {
           "candidates": 48,
-          "candidates_stating_a_metric": 12,
+          "candidates_stating_a_metric": 18,
           "caption": "Metformin pharmacokinetic parameter comparison of experimental data and model simulations in plasma and red blood cells ",
           "label": "Table 4"
         },
         {
           "candidates": 64,
-          "candidates_stating_a_metric": 16,
+          "candidates_stating_a_metric": 24,
           "caption": "Validation results of plasma metformin concentration pharmacokinetic parameters\u2013a comparison of model predictions and ex",
           "label": "Table 5"
         },
         {
           "candidates": 180,
-          "candidates_stating_a_metric": 72,
+          "candidates_stating_a_metric": 108,
           "caption": "Metformin pharmacokinetic parameters for different tissues following a single 500mg, 1000mg, and 1500mg PO dose in human",
           "label": "Table 6"
         },
         {
           "candidates": 216,
-          "candidates_stating_a_metric": 72,
+          "candidates_stating_a_metric": 108,
           "caption": "Metformin pharmacokinetic parameters for different tissues following a twice-daily dosing regimen of 500mg, 1000mg, and ",
           "label": "Table 7"
         }
@@ -583,7 +583,7 @@
       },
       "prose": {
         "attributed_to_a_model": 3,
-        "candidates": 8,
+        "candidates": 9,
         "naming_a_quantity": 0
       },
       "tables": [

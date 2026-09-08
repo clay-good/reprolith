@@ -247,12 +247,36 @@ def propose_claims(
     return body
 
 
-#: A number followed by a unit, in prose. The unit is what separates a reported quantity from a
-#: figure number, a citation, a year, or a count of datasets — a bare number in a sentence is
-#: almost never a result, and admitting one buries the ones that are.
+#: The units a number can wear in the prose of a paper this engine certifies. The unit is what
+#: separates a reported quantity from a figure number, a citation, a year, or a count of datasets —
+#: a bare number in a sentence is almost never a result, and admitting one buries the ones that are.
+#:
+#: Ordered longest-first within each family, because the alternation is first-match: "nmol/mL"
+#: before "nM" or the reader takes a prefix and calls it the unit.
+#:
+#: This list was one class's for as long as one class had a manuscript reader. The engine certifies
+#: six, and a paper about any of the other five states its results in units nothing here knew: a
+#: front speed in µm/min, a decay length in µm, a flux in mmol/gDW/h, a growth rate in 1/h. Those
+#: sentences produced no candidate at all — not a noisy one a curator would delete, *nothing* — so
+#: the surface that exists to turn "read the paper and type them in" into "delete the rows you do
+#: not mean" had no rows to offer for five sixths of what this engine can judge.
+_PROSE_UNITS = (
+    # concentration and exposure (PK/PD, kinetic)
+    "nmol\\*h/mL", "nmol/mL", "µg/mL", "ug/mL", "mg/L", "ng/mL", "mmol/L", "µM", "nM",
+    # specific flux and growth rate (constraint-based)
+    "mmol/gDW/h", "mmol/gDW/hr", "mmol gDW-1 h-1", "1/h", "h-1", "h⁻¹",
+    # length (spatial: a decay length, a wavelength, a domain)
+    "µm", "um", "mm", "cm",
+    # speed (spatial: an invasion front)
+    "µm/min", "um/min", "µm/h", "mm/h", "mm/day",
+    # diffusivity (spatial)
+    "µm²/s", "um2/s", "cm²/s", "cm2/s",
+    # time (every class)
+    "h", "hours?", "min", "s",
+)
 _PROSE_VALUE = re.compile(
     r"(?<![\w.])([-+]?\d[\d ,]*(?:\.\d+)?)\s*"
-    r"(nmol\*h/mL|nmol/mL|µg/mL|ug/mL|mg/L|ng/mL|mmol/L|µM|nM|h|hours?|min)\b"
+    r"(" + "|".join(_PROSE_UNITS) + r")(?![\w/²µ-])"
 )
 
 #: Words that say whose number a sentence is quoting. Recorded, never acted on: a reproduction
@@ -261,6 +285,17 @@ _PROSE_VALUE = re.compile(
 #: sentence attached and the curator decides.
 _SIMULATED = ("simulat", "model predict", "model shows", "fitted", "predicted")
 _MEASURED = ("measured", "experimental", "observed", "reported in the")
+
+
+#: "Period" in its other sense: a stretch of time rather than an oscillation's. Removed before the
+#: vocabulary is matched, because in that sense it names no metric at all. Found in the corpus
+#: rather than imagined — "over a simulated 8 hour time period we ran 50 simulations" is a sentence
+#: from PMC5026379, and it was proposing a *period* claim on the length of somebody's simulation.
+#: A survey counted that paper as the one place text reaches a result a table does not.
+_PERIOD_OF_TIME = re.compile(
+    r"\b(?:time|study|dosing|sampling|observation|simulation|incubation|washout|treatment)\s+"
+    r"period\b|\bperiod\s+of\s+time\b"
+)
 
 
 def _prose_metric(sentence: str) -> str:
@@ -272,7 +307,7 @@ def _prose_metric(sentence: str) -> str:
     AUC…") names none, because which one a given number belongs to is exactly the reading this
     module refuses to make.
     """
-    lowered = sentence.casefold()
+    lowered = _PERIOD_OF_TIME.sub(" ", sentence.casefold())
     # Quantities this can *recognise*, which is a wider set than the ones it can express. A
     # half-life is not a metric here, and leaving it out of this vocabulary was a real error: the
     # sentence "T1/2 is measured at 0.50h while the AUC simulations show 0.9h" then looked
@@ -295,6 +330,22 @@ def _prose_metric(sentence: str) -> str:
             # peak-to-trough and as half of it, so a sentence naming one is ambiguous about which,
             # and "peak-to-trough" contains "peak" — without this it proposed a Cmax.
             ("amplitude", ""), ("peak-to-trough", ""), ("peak to trough", ""),
+            # The other five classes' quantities. None is expressible: `metric` says how a number
+            # comes off a *time course*, and a decay length, a flux or a basin is not read off one
+            # — those claims name their own quantity on their own claim type. They belong here
+            # anyway, and for the reason the half-life does: the ambiguity check only sees the half
+            # of the vocabulary it knows. "The front reached a peak speed of 2.4 µm/min" names a
+            # front speed and contains "peak", so without these the wider unit list would put a
+            # `cmax` on a wave speed — a candidate a curator has to know this engine to reject.
+            # Matched on the shortest wording that names one, because every one of them resolves
+            # to "" and the cost of over-matching is a blank metric — which is this module's own
+            # answer wherever a reading is not mechanical. "Peak speed" has to reach the check as a
+            # *speed*, and it says "front" and "speed" rather than the phrase "front speed".
+            ("decay length", ""), ("wavelength", ""), ("wave length", ""), ("gradient", ""),
+            ("front", ""), ("speed", ""), ("velocity", ""),
+            ("growth rate", ""), ("doubling time", ""), ("flux", ""), ("yield", ""),
+            ("fano factor", ""), ("coefficient of variation", ""), ("basin", ""),
+            ("steady state", ""), ("steady-state", ""), ("attractor", ""),
         )
         if phrase in lowered
     }

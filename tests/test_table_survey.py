@@ -155,13 +155,18 @@ def test_the_captions_beside_those_figures_were_read_too() -> None:
 
 
 def test_no_caption_states_a_model_result_worth_targeting() -> None:
-    """Ten candidates across ten papers, and not one of them names a quantity a model reports.
+    """Thirteen candidates across ten papers, and not one of them names a quantity a model reports.
 
     Captions do carry numbers — panel labels, doses, sample sizes — which is why the count is not
     zero. None is attributed to a model *and* names a metric, so reading captions as a separate
     surface would add a reader and reach no paper the tables miss. Measured, like prose before it.
+
+    The count was ten until the prose reader learned the other five classes' units; the three it
+    gained are numbers it could not previously see rather than a change of judgement about them.
+    What this test is actually pinned on is the second assertion, which has not moved: more numbers
+    read, and still not one caption stating a result a model should reproduce.
     """
-    assert sum(p["captions"]["candidates"] for p in _PAPERS.values()) == 10
+    assert sum(p["captions"]["candidates"] for p in _PAPERS.values()) == 13
     assert sum(p["captions"]["naming_a_quantity"] for p in _PAPERS.values()) == 0
     limits = " ".join(_SURVEY["limits"]).casefold()
     assert "inside_the_prose_sweep" in limits

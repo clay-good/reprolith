@@ -5680,3 +5680,38 @@ affected by the thing making it wrong.
 A statement about the domain has to be tested against the domain. Nothing about how well the claim
 reproduces may enter the criterion, and `wall_bracket` is measured strictly between two runs of the
 solver — a test replaces the reported profile with zeros and asserts the bound does not move.
+
+
+## One class's units, six classes of verdicts
+
+The manuscript prose reader proposes a candidate for every number a paper's text states with a unit
+beside it. The unit is load-bearing: a bare number in a sentence is a figure reference, a citation
+or a year far more often than a result, so a number without one is not proposed. Which makes the
+list of units it knows the list of results it can see — and that list was written when this
+repository certified one model class. It held concentrations, exposures and times.
+
+The engine certifies six. A paper about any of the other five states its results in units nothing
+in that list knew: an invasion front in µm/min, a morphogen's decay length in µm, a specific flux
+in mmol/gDW/h, a growth rate in 1/h. Those sentences produced no candidate at all — not a noisy one
+a curator would delete, *nothing* — so the surface whose whole purpose is to turn "read the paper
+and type them in" into "delete the rows you do not mean" had no rows to offer for five sixths of
+what this engine can judge. On the ten open-access papers in the seeded set it now reads 116 numbers
+where it read 107, and the papers it reaches are unchanged, because reach was never the unit list's
+to fix: seven of the ten put their results in figures.
+
+Widening the units without widening the vocabulary beside them would have been worse than leaving
+it alone. A candidate carries a `metric` — how a number comes off a time course — and the reader
+names one only where a sentence is unambiguous. "The front reached a peak speed of 2.4 µm/min"
+contains "peak", which names a Cmax. Every one of the five classes' quantities is therefore
+*recognised and deliberately inexpressible*: a decay length, a flux, a wavelength, a Fano factor, a
+basin. None of them is a metric — those claims name their quantity on their own claim type — and
+they are in the vocabulary for the reason the half-life is, which this module learned once already:
+the ambiguity check only ever sees the half of the vocabulary it knows.
+
+Then the corpus corrected the vocabulary back. Re-running the survey, one paper crossed the line
+this repository had measured and written down — that prose reaches no paper the tables miss — and
+the sentence behind it was "over a simulated 8 hour time period we ran 50 simulations", proposing an
+oscillation *period* on the length of somebody's simulation run. "Period" in the sense of a stretch
+of time names no metric, and the phrasings that mean it are removed before the vocabulary is
+matched. The measured claim in the README holds again, and it holds because the survey was re-run
+against real papers rather than because the sentence in it was left alone.

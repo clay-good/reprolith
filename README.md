@@ -101,7 +101,12 @@ reported model output in a table at all
 their results in figures — and that is about the pictures, not about unread text. Reading a
 paper's prose is built (`propose_claims_from_prose`) and measured to reach no paper the tables
 miss, and the figure *captions* were inside that same sweep all along: 87 of 87 caption paragraphs
-across the ten papers, carrying ten candidates and not one that names a quantity a model reports.
+across the ten papers, carrying thirteen candidates and not one that names a quantity a model
+reports. That reader knows every class's units now, not just this one's — a front speed in µm/min,
+a decay length in µm, a specific flux in mmol/gDW/h, a growth rate in 1/h. A unit it does not know
+is a result it cannot see, since the unit is what separates a stated quantity from a figure number
+or a year, so five sixths of what this engine can judge produced no candidate at all rather than a
+noisy one. On the same ten papers it now reads 116 numbers where it read 107.
 It is not a shipped command for exactly that reason — it buys nothing a curator does not already
 have.
 

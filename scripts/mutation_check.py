@@ -1392,6 +1392,27 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if (stated := sensitivity.get("basis")) is not None:', "    if False:"),
         ["tests/test_logical_basin_claim.py"],
     ),
+    # --- the prose reader knows every class's units, 2026-09-08 ---------------------------------
+    (
+        "a unit is read out of the front of a longer one, relabelling the quantity",
+        "claim_candidates.py",
+        (r'r"(" + "|".join(_PROSE_UNITS) + r")(?![\w/²µ-])"',
+         r'r"(" + "|".join(_PROSE_UNITS) + r")"'),
+        ["tests/test_claim_candidates.py"],
+    ),
+    (
+        "the other five classes' quantities leave a sentence looking unambiguous about a peak",
+        "claim_candidates.py",
+        ('("front", ""), ("speed", ""), ("velocity", ""),', ""),
+        ["tests/test_claim_candidates.py"],
+    ),
+    (
+        "a stretch of time is read as an oscillation period",
+        "claim_candidates.py",
+        ("    lowered = _PERIOD_OF_TIME.sub(\" \", sentence.casefold())",
+         "    lowered = sentence.casefold()"),
+        ["tests/test_claim_candidates.py"],
+    ),
     # --- an unbounded domain can be honoured, 2026-09-08 ----------------------------------------
     (
         "an unbounded claim is judged on a finite grid without showing the wall could not matter",
