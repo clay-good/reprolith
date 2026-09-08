@@ -25,28 +25,31 @@ def test_agreement_report_shows_a_blind_full_agreement() -> None:
     assert report["agreements"] == report["total"]
     assert report["agreement_rate"] == 1.0
     for entry in report["per_entry"]:
-        # `partially-reproduced` for a profile on both sides: it matches the closed form exactly,
-        # and the certificate is still downgraded because a claim that states no wall is run under
-        # a zero-flux boundary Reprolith imposes. The label says so too, so a run that dropped the
-        # qualification reads as a disagreement, not as a better number.
-        #
-        # And a clean `reproduced` for the two scalars, which is the counterpart: a gradient's
-        # walls are the model rather than a choice, so nothing qualifies it. A class whose every
-        # entry read `partially` would invite reading the qualification as a property of the class.
-        expected = "reproduced" if entry["entry"] in _SCALARS else "partially-reproduced"
-        assert entry["expected"] == expected, entry["entry"]
-        assert entry["actual"] == expected, entry["entry"]
+        # A clean `reproduced` on every entry, and each for its own reason. The scalars were never
+        # qualified: a gradient's walls are the model rather than a choice this engine made. The
+        # three profiles read `partially-reproduced` for a month, for a zero-flux wall Reprolith
+        # imposed and their source did not state — while their reference was the free-space
+        # Gaussian, which is the solution on a domain with no walls at all. They state that domain
+        # now, and it is honoured by measurement rather than by trust: the claim is judged only
+        # once this grid's two edge rules are shown to bracket free space to within a tenth of the
+        # pass tolerance. Both sides say `reproduced`, so a run that could no longer show it reads
+        # as a disagreement rather than as a quietly better number.
+        assert entry["expected"] == "reproduced", entry["entry"]
+        assert entry["actual"] == "reproduced", entry["entry"]
         assert entry["agree"] is True
 
 
 def test_every_certificate_is_a_reproduced_curve_verdict() -> None:
     for key in _PROFILES:
         content = json.loads((_MILESTONE / "certificates" / f"{key}.json").read_text(encoding="utf-8"))
-        # Every claim reproduces; the certificate is qualified by the class's own boundary
-        # assumption, which is load-bearing and named in the certificate.
-        assert content["overall"] == "partially-reproduced"
+        # Every claim reproduces, and nothing qualifies it: these claims state their domain
+        # (`unbounded`), and the run measured that this grid's walls could not have reached the
+        # profile. A wall that cannot be detected is not an assumption about the number.
+        assert content["overall"] == "reproduced"
         assert [a["verdict"] for a in content["assessments"]] == ["reproduced"]
-        assert [a["id"] for a in content["assumptions"]] == [f"spatial-boundary-{key}-profile"]
+        assert content["assumptions"] == []
+        # The measurement that let the qualification go is on the certificate, not just in a test.
+        assert "unbounded domain, verified rather than assumed" in content["assessments"][0]["protocol"]
         assert content["scope"]["machine"] == "reproducible-not-correct-not-clinical"
         # A spatial profile is judged by the shared curve oracle.
         assert content["assessments"][0]["method"] == "curve-normalized-distance"

@@ -4,9 +4,9 @@
       "attempts": [],
       "difficulty": null,
       "ground_truth": {
-        "expected": "partially-reproduced",
+        "expected": "reproduced",
         "note": null,
-        "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
+        "source": "closed-form Gaussian diffusion (free space; the finite grid's walls are measured not to reach the profile)"
       },
       "history": [
         {
@@ -74,9 +74,9 @@
       "attempts": [],
       "difficulty": null,
       "ground_truth": {
-        "expected": "partially-reproduced",
+        "expected": "reproduced",
         "note": null,
-        "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
+        "source": "closed-form Gaussian diffusion (free space; the finite grid's walls are measured not to reach the profile)"
       },
       "history": [
         {
@@ -144,9 +144,9 @@
       "attempts": [],
       "difficulty": null,
       "ground_truth": {
-        "expected": "partially-reproduced",
+        "expected": "reproduced",
         "note": null,
-        "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
+        "source": "closed-form Gaussian diffusion (free space; the finite grid's walls are measured not to reach the profile)"
       },
       "history": [
         {

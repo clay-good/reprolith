@@ -264,6 +264,16 @@ def _left_checked(values: Sequence[float], checked: tuple[float, float, float]) 
 #: distance moves with a choice the paper did not make" can only ever be asserted.
 BOUNDARIES = ("no-flux", "dirichlet", "periodic")
 
+#: What a source states when its domain has no walls at all — the free-space setting almost every
+#: analytical diffusion result is derived in, including the Gaussian this class's own profiles are
+#: judged against. It is **not** a member of :data:`BOUNDARIES`, because it is not an edge rule this
+#: solver can run: an infinite grid does not fit in memory. It is a statement about the *source*,
+#: honoured by running the claim on its own finite grid and then proving the wall could not have
+#: mattered (:func:`unbounded_is_honoured`). Until it existed the verification queue listed it as
+#: "an unbounded domain (not implemented, so not measured)" — an alternative a reader was told about
+#: and could not have.
+UNBOUNDED = "unbounded"
+
 #: How each wall is named on a certificate, where "no-flux" alone would not tell a reader which
 #: mathematical condition was imposed.
 _WALL_NAMES = {
@@ -724,21 +734,34 @@ class SpatialClaim:
     shortfall: Attribution | None = field(default=None)
 
     def __post_init__(self) -> None:
-        if self.boundary is not None and self.boundary not in BOUNDARIES:
+        if self.boundary is not None and self.boundary not in (*BOUNDARIES, UNBOUNDED):
             raise ValueError(
                 f"claim {self.claim_id!r} names boundary {self.boundary!r}; this solver runs "
-                f"{', '.join(BOUNDARIES)}"
+                f"{', '.join(BOUNDARIES)}, and honours {UNBOUNDED!r} as a statement about the "
+                "source rather than as a wall"
             )
 
     @property
     def wall(self) -> str:
-        """The boundary this claim is actually run under — its own, or this engine's default."""
-        return self.boundary or "no-flux"
+        """The boundary this claim is actually run under — its own, or this engine's default.
+
+        An ``unbounded`` claim runs under ``no-flux`` like any other, because a grid has edges
+        whatever its source says. What differs is what happens next: the run has to *show* the edge
+        never mattered before the claim is judged at all (:func:`unbounded_is_honoured`).
+        """
+        if self.boundary is None or self.boundary == UNBOUNDED:
+            return "no-flux"
+        return self.boundary
 
     @property
     def wall_is_reprolith_s(self) -> bool:
         """Whether the wall was Reprolith's choice rather than something the source stated."""
         return self.boundary is None
+
+    @property
+    def states_unbounded(self) -> bool:
+        """Whether the source states a domain with no walls — free space, not an edge rule."""
+        return self.boundary == UNBOUNDED
 
 
 @dataclass(frozen=True)
@@ -1241,7 +1264,7 @@ def boundary_sensitivity(claim: SpatialClaim) -> dict[str, Any] | None:
     the paper did not make" from a statement into a bound. It stays a *conditional* claim — it
     always was — and the condition is now checked for the run in hand rather than left to the
     reader. An unbounded domain is not among the alternatives because this solver cannot run one;
-    it stays listed on the assumption, unmeasured and said to be so.
+    a claim that states one is checked by :func:`unbounded_is_honoured` before it is judged at all.
     """
     def distance(boundary: str) -> float | None:
         try:
@@ -1571,7 +1594,13 @@ def _profile_run(claim: SpatialClaim) -> str:
         f"dt={claim.dt!r}, {claim.steps} steps"
         + (f", decay={claim.decay!r}" if claim.decay else "")
         + f", {_WALL_NAMES[claim.wall]}"
-        + ("" if claim.wall_is_reprolith_s else " stated by the source")
+        + (
+            # An unbounded claim runs under the same wall as any other and means something
+            # different by it: the grid's edges are an artefact of running at all, not the model.
+            " on a grid whose edges the source's unbounded domain does not have"
+            if claim.states_unbounded
+            else "" if claim.wall_is_reprolith_s else " stated by the source"
+        )
     )
 
 
@@ -1990,6 +2019,39 @@ def certify_spatial(
                 protocol=_profile_run(claim),
             ))
             continue
+        if claim.states_unbounded:
+            # The claim says its domain has no walls, and this grid has two. Before judging
+            # anything, show that the ones it has could not have reached the profile — measured on
+            # this run, not argued from the domain's size.
+            shown = unbounded_is_honoured(claim)
+            if shown is None or not shown["honoured"]:
+                assessments.append(replace(
+                    not_evaluable(
+                        claim_id=claim.claim_id,
+                        quantity=claim.quantity,
+                        source_location=claim.source_location,
+                        reason=(
+                            "this claim states an unbounded domain and this grid has edges: "
+                            + (
+                                "the wall's effect could not be measured on this run, so it "
+                                "cannot be shown not to have mattered"
+                                if shown is None
+                                else (
+                                    "this grid's two edge rules bracket the free-space solution "
+                                    f"and their answers differ by {shown['wall_bracket']:.3e}, "
+                                    f"against a budget of {shown['budget']:.3e} — a tenth of the "
+                                    f"{shown['pass_within']:.2f} that separates a pass from a "
+                                    "failure. A domain this size does not stand in for one with "
+                                    "no walls — run it on a wider grid, or state the wall the "
+                                    "source used"
+                                )
+                            )
+                        ),
+                        reference_kind=ReferenceKind.NUMERIC,
+                    ),
+                    protocol=_profile_run(claim),
+                ))
+                continue
         try:
             predicted = diffuse_1d(
                 claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
@@ -2087,7 +2149,7 @@ def certify_spatial(
                 "Dirichlet (fixed value)",
                 "absorbing (Dirichlet at zero)",
                 "periodic",
-                "an unbounded domain (not implemented, so not measured)",
+                "an unbounded domain (measured: see the unbounded-domain claims)",
             ),
             # True since `SpatialClaim.boundary` landed, and it was False for a day after that
             # — the flag outlived the sentence under it, which said "a claim carries no field
@@ -2097,8 +2159,8 @@ def certify_spatial(
             # flag means, and while it read False the queue filed this under "not waiting on
             # anyone" — the one distinction that surface exists to make.
             #
-            # The residue is named in the basis rather than hidden by the flag: an unbounded
-            # domain is not implemented, so that is the answer this cannot act on.
+            # The residue an unbounded domain used to be is gone: a claim may now state one, and
+            # the run measures whether this grid's walls could have mattered before judging it.
             author_can_close=True,
         )
         for claim in qualified
@@ -2165,8 +2227,10 @@ _BOUNDARY_BASIS = (
     "the wall it names, is run under it, and is not qualified for it. What the choice costs is no "
     "longer a caveat either: each claim's protocol line reports how far re-running the same "
     "discretization under the alternatives this solver implements moves the judged distance, "
-    "against the threshold it is judged at. An unbounded domain is not among those alternatives, "
-    "so a source that states one is the case this cannot be closed by"
+    "against the threshold it is judged at. A source that states an *unbounded* domain is honoured "
+    "too, by a stronger route than a caveat: this solver cannot run an infinite grid, so such a "
+    "claim is refused judgement until the run shows this grid's edge rules give the same profile "
+    "to within a tenth of its pass tolerance"
 )
 
 
@@ -2195,8 +2259,109 @@ def _rests_on_our_wall(claim: SpatialClaim) -> bool:
     mean. Read here rather than in two places, because the flag and the assumption below are one
     fact: setting them apart left a certificate carrying no assumptions and still reporting
     `partially-reproduced`, a qualification nothing on it named.
+
+    An **unbounded** claim is not qualified either, and for a stronger reason than a stated wall:
+    it did not merely name the edge rule this engine used, it was refused judgement until the run
+    showed that changing the edge rule barely changed the answer (:func:`unbounded_is_honoured`).
+    There is nothing left to qualify — every wall this solver has was measured to give the same
+    profile to within a tenth of the pass tolerance, so the choice among them is not a choice.
     """
     return claim.assumption_qualified and claim.wall_is_reprolith_s
+
+
+#: How much of a claim's pass budget an unbounded domain's *substitution* may account for. The
+#: bound below is on the error of standing a finite grid in for an infinite one; a tenth of the
+#: width that separates a pass from a failure is the most that error may be, so a verdict can never
+#: turn on the substitution. Measured on this class's own Gaussian at four domain sizes: the shipped
+#: half-width of 20 puts the bound at 2.2e-06 (three orders below the budget), and halving the
+#: domain to 10 puts it at 3.3e-02 — a third of the whole tolerance, which is not "no walls".
+UNBOUNDED_WALL_BUDGET = 0.1
+
+
+def wall_bracket(claim: SpatialClaim) -> float | None:
+    """How far this run's answer moves when the edge rule changes — a bound on standing in for free
+    space.
+
+    The two walls this solver runs **bracket** an unbounded domain for a diffusive claim: a
+    zero-flux edge reflects everything that reaches it back into the domain, and a Dirichlet edge at
+    zero absorbs it. The free-space solution, which lets it leave and never return, lies between
+    them. So the distance between the two runs is an upper bound on how far either sits from the
+    unbounded one — computed, not assumed.
+
+    Measured between the *runs*, never between a run and the reference. That is the whole
+    correction this function exists for: keyed on the reference, the statistic is polluted by the
+    very failure it should catch, because a wall that wrecks the profile inflates the residual it
+    would be compared against, and "the wall moved things less than the answer is wrong" is
+    satisfied by being very wrong. A domain a quarter the shipped width passed that test while its
+    wall was reflecting a third of the mass back.
+
+    ``None`` when the discretization does not run, which is the claim's own and not the wall's.
+    """
+    def profile(boundary: str) -> list[float] | None:
+        try:
+            return list(diffuse_1d(
+                claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
+                steps=claim.steps, decay=claim.decay, boundary=boundary,
+                boundary_value=claim.boundary_value,
+            ))
+        except UnstableDiscretization:
+            return None
+
+    judged = profile(claim.wall)
+    if judged is None:
+        return None
+    worst = 0.0
+    for name in BOUNDARIES:
+        if name == claim.wall:
+            continue
+        other = profile(name)
+        if other is not None:  # pragma: no branch - one grid runs every wall
+            worst = max(worst, normalized_curve_distance(judged, other))
+    return worst
+
+
+def unbounded_is_honoured(claim: SpatialClaim) -> dict[str, Any] | None:
+    """Whether this finite run can stand in for the unbounded domain its source states.
+
+    An infinite grid cannot be run, so the claim is neither taken on trust nor refused: it is
+    **measured**. :func:`wall_bracket` bounds how far this run can be from a free-space one, and
+    the claim is honoured when that bound is below :data:`UNBOUNDED_WALL_BUDGET` of the width that
+    separates a pass from a failure — so the substitution cannot be what a reader is looking at,
+    whatever the verdict turns out to be.
+
+    Deliberately independent of how well the claim reproduces. The first version of this compared
+    the wall's effect to the claim's own residual and to the distance from the nearest verdict line,
+    and both are polluted by the wall: on a domain a quarter the shipped width, where the edge
+    reflected a third of the mass back, the residual grew large enough that the wall's contribution
+    looked small against it and the claim was honoured. A statement about the domain has to be
+    tested against the domain.
+
+    ``None`` where the run itself does not happen, which the caller reports as the abstention it is.
+    """
+    bound = wall_bracket(claim)
+    if bound is None:
+        return None
+    tolerance = claim.tolerance or default_tolerance(
+        ComparisonMethod.CURVE_NORMALIZED_DISTANCE, ReferenceKind.NUMERIC
+    )
+    budget = UNBOUNDED_WALL_BUDGET * tolerance.reproduced_within
+    return {
+        "wall_bracket": bound,
+        "budget": budget,
+        "pass_within": tolerance.reproduced_within,
+        "honoured": bound < budget,
+    }
+
+
+def _unbounded_note(measured: dict[str, Any]) -> str:
+    """What the run showed about the wall, for the protocol line of an honoured unbounded claim."""
+    return (
+        f" (an unbounded domain, verified rather than assumed: this grid's two edge rules bracket "
+        f"the free-space solution and their answers differ by {measured['wall_bracket']:.3e}, which "
+        f"bounds what standing in for an infinite domain costs here — against a budget of "
+        f"{measured['budget']:.3e}, a tenth of the {measured['pass_within']:.2f} that separates a "
+        "pass from a failure)"
+    )
 
 
 def _boundary_cost(claim: SpatialClaim) -> str:
@@ -2207,6 +2372,10 @@ def _boundary_cost(claim: SpatialClaim) -> str:
     leaving the reader to guess whether the condition holds for the run in front of them. It holds
     or it does not, and the solver can now be asked.
     """
+    if claim.states_unbounded:
+        shown = unbounded_is_honoured(claim)
+        # A judged unbounded claim was verified before it was judged, so this cannot be None here.
+        return "" if shown is None else _unbounded_note(shown)
     measured = boundary_sensitivity(claim)
     if measured is None:  # pragma: no cover - a judged claim ran, so its alternatives run too
         return " (the boundary's cost was not measurable for this run)"

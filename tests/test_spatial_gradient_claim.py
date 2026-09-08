@@ -194,5 +194,6 @@ def test_a_wall_a_source_could_state_is_a_question_for_an_expert_and_not_an_engi
     (assumption,) = certificate.assumptions
     assert assumption.load_bearing
     assert assumption.author_can_close is True
-    # And what an answer still cannot buy is named rather than hidden by the flag.
-    assert "unbounded domain" in assumption.basis
+    # And the basis names the one domain no wall of this solver *is* — the unbounded one every
+    # closed form is derived in — because a claim may now state it and be measured against it.
+    assert "unbounded" in assumption.basis

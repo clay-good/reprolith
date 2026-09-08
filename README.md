@@ -729,14 +729,27 @@ length** of a morphogen gradient (`λ = √(D/k)`), the **speed of an invasion f
 pure-Python finite-difference solver feeds the same curve oracle for a profile and the scalar
 comparison for a length, a speed or a wavelength, self-validated non-circularly against closed
 forms — a Gaussian whose variance grows by 2·D·t, `λ = √(D/k)`, and `c = 2√(rD)` — with a 5/5
-[milestone blind run](datasets/spatial/milestone/). The three committed *profile* certificates read
-*partially* reproduced even where the profile matches the closed form exactly: they state no
-boundary, so the wall each run used is a choice Reprolith made rather than anything their source
-stated, and the verdict rests on it — the same qualification the stochastic class carries for its
-ensemble. A claim that *does* state its wall is run under it and can reach a clean pass, and so
-does a gradient, whose walls are the model rather than a choice: its milestone certificate is a
-clean `reproduced`, which is what keeps that qualification from reading as something the class
-cannot escape.
+[milestone blind run](datasets/spatial/milestone/). A claim that states no boundary is run under a
+wall Reprolith chose and is qualified for it — the same qualification the stochastic class carries
+for its ensemble — while a claim that *does* state its wall is run under it and can reach a clean
+pass, and so does a gradient, whose walls are the model rather than a choice.
+
+**The domain a closed form is derived in is free space, and that is now a domain a claim can
+state.** The three committed profile certificates read *partially* reproduced for a month, for a
+zero-flux wall this engine imposed — while their reference was the free-space Gaussian, so the one
+domain they actually assert was the one the engine could not honour, and the verification queue
+listed it as "an unbounded domain (not implemented, so not measured)". An infinite grid still
+cannot be run. What changed is that the claim is no longer trusted or refused but *measured*: the
+two walls this solver runs **bracket** free space for a diffusive claim — one reflects everything
+that reaches it, the other absorbs it, and the solution that lets it leave and never return lies
+between — so the distance between those two runs bounds what standing a finite grid in for an
+infinite one costs. A claim stating `boundary="unbounded"` is judged only when that bound is under
+a tenth of its own pass tolerance, and abstains with the number where it is not. On the shipped
+grid the bound is 2e-07 to 3e-05 against a budget of 1e-02, so all three now read a clean
+`reproduced` with no assumption at all — a wall that cannot be detected is not an assumption.
+Measured between the two *runs*, never against the reported profile: the first version of this rule
+compared the wall's effect to the claim's own residual, and a domain a quarter as wide passed it
+*because* the wall had wrecked the profile enough to make itself look small.
 
 **What that choice costs is measured, not asserted.** The solver runs three walls — zero-flux,
 Dirichlet (absorbing or held at a value), and periodic, each checked against the exact decay of an

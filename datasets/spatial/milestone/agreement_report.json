@@ -2,31 +2,30 @@
   "agreement_rate": 1.0,
   "agreements": 5,
   "confusion": {
-    "partially-reproduced->partially-reproduced": 3,
-    "reproduced->reproduced": 2
+    "reproduced->reproduced": 5
   },
   "disagreements": 0,
   "per_entry": [
     {
-      "actual": "partially-reproduced",
+      "actual": "reproduced",
       "agree": true,
       "entry": "diffusion_D1",
-      "expected": "partially-reproduced",
-      "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
+      "expected": "reproduced",
+      "source": "closed-form Gaussian diffusion (free space; the finite grid's walls are measured not to reach the profile)"
     },
     {
-      "actual": "partially-reproduced",
+      "actual": "reproduced",
       "agree": true,
       "entry": "diffusion_D2",
-      "expected": "partially-reproduced",
-      "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
+      "expected": "reproduced",
+      "source": "closed-form Gaussian diffusion (free space; the finite grid's walls are measured not to reach the profile)"
     },
     {
-      "actual": "partially-reproduced",
+      "actual": "reproduced",
       "agree": true,
       "entry": "diffusion_Dhalf",
-      "expected": "partially-reproduced",
-      "source": "closed-form Gaussian diffusion (under Reprolith's own boundary condition)"
+      "expected": "reproduced",
+      "source": "closed-form Gaussian diffusion (free space; the finite grid's walls are measured not to reach the profile)"
     },
     {
       "actual": "reproduced",

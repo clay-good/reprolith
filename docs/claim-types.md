@@ -19,7 +19,7 @@ find is one this repository has shipped before.
 | `StochasticClaim` | a mean species count from an SSA ensemble | relative error | the ensemble's noise is too large to tell a reproduction from a miss |
 | `ExtinctionTimeClaim` | a mean time to extinction — a first passage, not a state at a time | relative error | any trajectory reached its cap without going extinct, so the mean would be of a conditioned sample |
 | `NoiseClaim` | a Fano factor or coefficient of variation — what a stochastic model is *for* | relative error, against a jackknife error bar rather than a mean's | the ensemble cannot resolve the statistic, or every trajectory ended at zero |
-| `SpatialClaim` | a concentration profile after diffusion | normalized curve distance | the discretization is unstable, or the claim carries no reported profile |
+| `SpatialClaim` | a concentration profile after diffusion | normalized curve distance | the discretization is unstable, the claim carries no reported profile, or it states an *unbounded* domain this grid is too narrow to stand in for |
 | `GradientClaim` | a morphogen decay length | relative error | no exponential can be fitted over the stated window |
 | `FrontSpeedClaim` | an invasion front's asymptotic speed | relative error | the front reached the domain's wall, or the time step decides the verdict |
 | `PatternClaim` | a Turing pattern's wavelength | relative error | no pattern formed, or the domain cannot resolve the wavelengths in question |
@@ -66,7 +66,7 @@ finding, both measured on this repository's own models.
 | a steady state, an attractor set, a basin | exhaustive enumeration of 2ⁿ states, capped at 20 nodes; above that a **fixed point** is found by SAT instead and a cyclic attractor is out of reach |
 | a mean species count, a first passage | one SSA trajectory per ensemble member (400 and 2,000 in the milestone) |
 | a noise statistic | trajectories again — but **about ten times as many** as its mean: at 400 a Fano factor's standard error is 7.2% of its value against a 5% threshold, and 4,000 brings it to 2.3% |
-| a diffusion profile, a decay length, a pattern | one finite-difference run of the claim's own step count (a gradient runs to steady state; a pattern adds a confirmation window) |
+| a diffusion profile, a decay length, a pattern | one finite-difference run of the claim's own step count (a gradient runs to steady state; a pattern adds a confirmation window) — **plus one run per alternative wall**, since what the boundary costs is measured rather than asserted, and a claim stating an unbounded domain is judged only once those runs bracket free space to within a tenth of its tolerance |
 | a front speed | three windows of the same run, plus one more at half the time step to measure what the discretization is worth |
 | an essential set | **one LP per gene** (137 on *E. coli* core) or per reaction, and a second sweep at the literature's cutoff when the claim states none |
 | a flux, a flux range | two LPs for the reaction's interval — and, where that interval leaves the flux free, one mixed-integer solve to say whether the loop law would pin it |

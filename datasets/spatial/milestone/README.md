@@ -8,22 +8,32 @@ concentration profile over space, judged by the shared curve oracle.
 
 ## What is here
 
-- [`catalog.json`](catalog.json) — three entries, tagged `spatial`, each with a ground-truth label
-  withheld from the verdict path, advanced to `certified`.
-- [`certificates/`](certificates/) — one certificate per system, each certifying that the
-  finite-difference profile reproduces the analytical Gaussian.
-- [`agreement_report.json`](agreement_report.json) — **3/3** agreement.
+- [`catalog.json`](catalog.json) — five entries, tagged `spatial`, each with a ground-truth label
+  withheld from the verdict path, advanced to `certified`: three diffusion profiles, a morphogen
+  gradient's decay length, and an invasion front's speed.
+- [`certificates/`](certificates/) — one certificate per entry, each certifying that the
+  finite-difference result reproduces its closed form.
+- [`agreement_report.json`](agreement_report.json) — **5/5** agreement.
 
 ## Non-circular and honest
 
 The ground truth is closed-form mathematics: the diffusion of a Gaussian is exactly a Gaussian whose
 variance grows by `2·D·t`. Each certificate is produced from only the initial profile and the pinned
 discretization (spatial step, time step, diffusivity), never the label, and the pinned discretization
-makes it byte-reproducible. The verdicts are **partially-reproduced**, every one: the profile
-matches the analytical Gaussian to within 1e-3 of its own scale, but the solver imposes a zero-flux
-(Neumann) boundary that Reprolith chose rather than one the source stated, and that choice is
-recorded as a load-bearing assumption. A result resting on a choice Reprolith made is never
-published as a clean pass — which is why this class has no `reproduced` certificate at all.
+makes it byte-reproducible. A result resting on a choice Reprolith made is never published as a
+clean pass, and for a month every profile here read **partially-reproduced** on exactly that
+ground: the solver imposed a zero-flux (Neumann) wall the source had not stated.
+
+They read `reproduced` now, and the change is a measurement rather than a relaxation. The
+reference is the free-space Gaussian — the domain a closed form is derived in has no walls — so
+each claim states `boundary="unbounded"`, which this solver cannot run and therefore has to
+*check*: its two edge rules bracket free space (one reflects what reaches it, the other absorbs
+it), so the distance between those two runs bounds what the finite grid costs. Here that bound is
+2e-07 to 3e-05 against a budget of 1e-02, a tenth of the pass tolerance. A wall measured not to
+reach the profile is not an assumption about it, so nothing is qualified. Judged blind like
+everything else: a run that could no longer show this would disagree with its label rather than
+quietly publish a clean pass. A domain narrow enough for the walls to matter abstains instead, with
+the number that made it abstain (`tests/test_spatial_unbounded_claim.py`).
 
 One honest limit on how independent these three systems are: each picks its time step as a fixed
 fraction of the stability limit (`dt = 0.2·dx²/D`), so the reference variance `2·D·steps·dt` works

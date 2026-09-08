@@ -5642,3 +5642,41 @@ That is the difference between fixing a defect and closing the shape it came fro
 added to this engine is classified once, and the two surfaces that read it are right by
 construction rather than by somebody remembering.
 
+
+
+## The domain a closed form is derived in
+
+Three spatial certificates had been published as `partially-reproduced` for a month, and the
+qualification on each said the same true thing: the profile matched the analytical Gaussian
+exactly, and the wall its run used was Reprolith's own choice rather than something the source
+stated. The verification queue listed the alternative a reader could not have — "an unbounded
+domain (not implemented, so not measured)" — and being unable to run an infinite grid is not the
+kind of limit an expert decision closes, so it sat there.
+
+It sat there under three claims whose reference *is* the free-space Gaussian. The closed form is
+derived on a line with no ends. So the one domain those claims actually assert was the one the
+engine had recorded as unreachable, and the qualification was describing a wall the source had not
+merely failed to state — it had stated its absence.
+
+An infinite grid still cannot be run. What the engine does instead is measure the substitution. For
+a diffusive claim the two edge rules this solver has **bracket** free space: a zero-flux wall
+reflects back everything that reaches it, a Dirichlet-at-zero wall absorbs it, and the solution
+that lets it leave and never return lies between them. Run the same discretization under both and
+the distance between the answers bounds how far either sits from the unbounded one. A claim stating
+`boundary="unbounded"` is refused judgement until that bound comes in under a tenth of its own pass
+tolerance — so whatever verdict follows, the substitution cannot be what the reader is looking at.
+On the shipped grid the bound is 2e-07 to 3e-05 against a budget of 1e-02, and the three profiles
+now read a clean `reproduced` carrying no assumption at all.
+
+The first version of the rule was wrong in a way worth keeping on the page, because it looked
+right. It compared the wall's effect to the *claim's own residual* — the wall moved the judged
+distance by less than the distance itself, and by less than the gap to the nearest verdict line, so
+it could not have changed the answer. Both of those are polluted by the very failure they should
+catch. On a domain a quarter the shipped width, where the wall reflected a third of the mass back,
+the residual was enormous *because* the wall had wrecked the profile, and the wall's contribution
+looked small against it. The claim was honoured. Being very wrong satisfied the test for not being
+affected by the thing making it wrong.
+
+A statement about the domain has to be tested against the domain. Nothing about how well the claim
+reproduces may enter the criterion, and `wall_bracket` is measured strictly between two runs of the
+solver — a test replaces the reported profile with zeros and asserts the bound does not move.

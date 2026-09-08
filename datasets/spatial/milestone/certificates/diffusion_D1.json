@@ -1,14 +1,14 @@
 {
   "assessments": [
     {
-      "assumption_qualified": true,
+      "assumption_qualified": false,
       "claim_id": "diffusion_D1-profile",
       "discrepancy": "normalized distance 0.0000, worst point 0.0001 of reference scale (pass budget 0.2500)",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
       "method": "curve-normalized-distance",
-      "protocol": "1-D finite difference: D=1.0, dx=0.2, dt=0.008000000000000002, 1000 steps, zero-flux (Neumann) boundaries (that wall costs this claim 1.925e-08: the judged distance moves from 2.017e-05 to 2.019e-05 under dirichlet, against a pass threshold of 1.000e-01)",
+      "protocol": "1-D finite difference: D=1.0, dx=0.2, dt=0.008000000000000002, 1000 steps, zero-flux (Neumann) boundaries on a grid whose edges the source's unbounded domain does not have (an unbounded domain, verified rather than assumed: this grid's two edge rules bracket the free-space solution and their answers differ by 2.224e-06, which bounds what standing in for an infinite domain costs here \u2014 against a budget of 1.000e-02, a tenth of the 0.10 that separates a pass from a failure)",
       "quantity": "diffused concentration profile",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -18,30 +18,14 @@
       "verdict": "reproduced"
     }
   ],
-  "assumptions": [
-    {
-      "alternatives": [
-        "Dirichlet (fixed value)",
-        "absorbing (Dirichlet at zero)",
-        "periodic",
-        "an unbounded domain (not implemented, so not measured)"
-      ],
-      "attributed_to": "reprolith",
-      "basis": "this claim states no boundary, so the wall its run used is this engine's choice rather than anything its source stated \u2014 and a source that states one can be honoured: a claim carries the wall it names, is run under it, and is not qualified for it. What the choice costs is no longer a caveat either: each claim's protocol line reports how far re-running the same discretization under the alternatives this solver implements moves the judged distance, against the threshold it is judged at. An unbounded domain is not among those alternatives, so a source that states one is the case this cannot be closed by",
-      "chosen": "zero-flux (Neumann) boundaries",
-      "description": "the profile judged here was evolved under zero-flux (Neumann) boundaries; Reprolith did not check what boundary the source specifies",
-      "id": "spatial-boundary-diffusion_D1-profile",
-      "load_bearing": true,
-      "verification_item": null
-    }
-  ],
+  "assumptions": [],
   "engine_pin": {
-    "algorithm": "explicit-forward-euler-finite-difference (rev f5c66d63f7cd)",
+    "algorithm": "explicit-forward-euler-finite-difference (rev ea54985852fb)",
     "engine": "reprolith-fd",
     "version": "0.0.1"
   },
   "gap_report": [],
-  "overall": "partially-reproduced",
+  "overall": "reproduced",
   "paper": {
     "doi": "",
     "pubmed_id": null,

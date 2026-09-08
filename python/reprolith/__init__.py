@@ -348,8 +348,10 @@ from .selection import (
     stated_objective,
 )
 from .spatial import (
+    BOUNDARIES,
     PATTERN_BOUNDARIES,
     TURING_KINETICS,
+    UNBOUNDED,
     FrontSpeedClaim,
     GradientClaim,
     PatternClaim,
@@ -370,7 +372,9 @@ from .spatial import (
     react_diffuse_1d,
     react_diffuse_2species,
     spatial_dossier,
+    unbounded_is_honoured,
     validate_spatial,
+    wall_bracket,
 )
 from .spatial import (
     solver_pin as spatial_solver_pin,
@@ -734,7 +738,11 @@ __all__ = [
     "FrontSpeedClaim",
     "PatternClaim",
     "TURING_KINETICS",
+    "BOUNDARIES",
     "PATTERN_BOUNDARIES",
+    "UNBOUNDED",
+    "unbounded_is_honoured",
+    "wall_bracket",
     "mode_amplitudes",
     "mode_wavelength",
     "pattern_boundary_sensitivity",

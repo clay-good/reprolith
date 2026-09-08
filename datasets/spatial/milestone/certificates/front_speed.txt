@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Fisher-KPP invasion front speed (D=1, r=1)
-Engine pin: reprolith-fd 0.0.1 / explicit-forward-euler-finite-difference (rev f5c66d63f7cd)
+Engine pin: reprolith-fd 0.0.1 / explicit-forward-euler-finite-difference (rev ea54985852fb)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0

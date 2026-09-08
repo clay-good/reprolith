@@ -134,6 +134,14 @@ for reported profiles and the scalar comparison for the length scales papers sta
 - **WHEN** a claim is a reported concentration profile over space at a stated time
 - **THEN** the oracle simulates the reconstructed model to that time and compares the predicted
   spatial profile to the reference with the shared curve-distance comparison and its tolerance
+- **AND** a claim whose source states an *unbounded* domain — the domain every closed-form
+  diffusion result is derived in — is honoured rather than refused or trusted: the solver cannot
+  run an infinite grid, so the claim is judged only once the run shows the finite grid's edge rules
+  bracket the free-space solution to within a small fraction of the claim's own pass tolerance,
+  and abstains with that measurement where they do not
+- **AND** that bound is measured between the runs under different walls and never against the
+  reported profile, because a wall that wrecks a profile also inflates the residual it would be
+  compared against, and a domain too narrow would then qualify by being wrong
 
 ### Requirement: Self-validation against an analytically known spatial result
 

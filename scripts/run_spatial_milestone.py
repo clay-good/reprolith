@@ -21,6 +21,7 @@ from collections import Counter
 from pathlib import Path
 
 from reprolith import (
+    UNBOUNDED,
     Catalog,
     FrontSpeedClaim,
     GradientClaim,
@@ -166,15 +167,19 @@ def main() -> None:
         catalog.add(
             Identifiers(title=s["title"], accession=key),
             ModelClass.SPATIAL,
-            # `partially-reproduced`, not `reproduced`: the profile matches the closed form
-            # exactly, and the certificate is still downgraded because this class runs every claim
-            # under a zero-flux boundary Reprolith imposes and the paper did not state — the same
-            # load-bearing qualification the stochastic class carries for its ensemble. The label
-            # states what an honest verdict here looks like, so a run that dropped the
-            # qualification would show up as a disagreement rather than as a better number.
+            # `reproduced`, and it reads that way for a reason worth stating, because it read
+            # `partially-reproduced` for a month: the reference is the free-space Gaussian, which
+            # is the solution on a domain with no walls at all. So these claims *state* their
+            # domain — `boundary=UNBOUNDED` below — and the qualification they used to carry, for
+            # a zero-flux wall Reprolith imposed and the paper did not state, is not a caveat any
+            # more but a question the run answers: on this grid the two edge rules bracket the
+            # free-space solution and their profiles differ by ~1e-6, three orders below the
+            # tenth-of-tolerance budget. A wall that cannot be detected is not an assumption.
+            # Judged blind, so a run that could no longer show that would fail this entry rather
+            # than quietly publishing a clean pass.
             ground_truth=GroundTruth(
-                expected=OverallVerdict.PARTIALLY_REPRODUCED,
-                source="closed-form Gaussian diffusion (under Reprolith's own boundary condition)",
+                expected=OverallVerdict.REPRODUCED,
+                source="closed-form Gaussian diffusion (free space; the finite grid's walls are measured not to reach the profile)",
             ),
         )
         certified[key] = certify_spatial(
@@ -183,7 +188,7 @@ def main() -> None:
             claims=[SpatialClaim(
                 claim_id=f"{key}-profile", quantity="diffused concentration profile",
                 initial=initial, reference=reference, source_location="closed-form",
-                diffusivity=s["D"], dx=_DX, dt=dt, steps=s["steps"],
+                diffusivity=s["D"], dx=_DX, dt=dt, steps=s["steps"], boundary=UNBOUNDED,
             )],
         )
 

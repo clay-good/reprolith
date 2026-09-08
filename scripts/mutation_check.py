@@ -1392,6 +1392,33 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if (stated := sensitivity.get("basis")) is not None:', "    if False:"),
         ["tests/test_logical_basin_claim.py"],
     ),
+    # --- an unbounded domain can be honoured, 2026-09-08 ----------------------------------------
+    (
+        "an unbounded claim is judged on a finite grid without showing the wall could not matter",
+        "spatial.py",
+        ("        if claim.states_unbounded:\n            # The claim says its domain has no walls",
+         "        if False:\n            # The claim says its domain has no walls"),
+        ["tests/test_spatial_unbounded_claim.py"],
+    ),
+    (
+        "the wall's effect is measured against the reported profile, so a wrecked one qualifies",
+        "spatial.py",
+        ("        worst = max(worst, normalized_curve_distance(judged, other))",
+         "        worst = min(worst, normalized_curve_distance(judged, other))"),
+        ["tests/test_spatial_unbounded_claim.py"],
+    ),
+    (
+        "the substitution may account for the whole pass tolerance rather than a tenth of it",
+        "spatial.py",
+        ("UNBOUNDED_WALL_BUDGET = 0.1", "UNBOUNDED_WALL_BUDGET = 1000.0"),
+        ["tests/test_spatial_unbounded_claim.py"],
+    ),
+    (
+        "an unbounded claim's protocol line does not say what the wall was measured to cost",
+        "spatial.py",
+        ('        return "" if shown is None else _unbounded_note(shown)', '        return ""'),
+        ["tests/test_spatial_unbounded_claim.py"],
+    ),
     # --- a class can be partly corroborated, 2026-09-06 -----------------------------------------
     (
         "a class re-run on fewer certificates than it published reads as fully corroborated",

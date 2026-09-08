@@ -1,22 +1,13 @@
 REPRODUCTION CERTIFICATE — 1-D diffusion of a Gaussian (D=2)
-Engine pin: reprolith-fd 0.0.1 / explicit-forward-euler-finite-difference (rev f5c66d63f7cd)
+Engine pin: reprolith-fd 0.0.1 / explicit-forward-euler-finite-difference (rev ea54985852fb)
 
-OVERALL: partially-reproduced
+OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
-  assumption-qualified claims: diffusion_D2-profile
 
 CLAIMS
-  [diffusion_D2-profile] diffused concentration profile: reproduced [assumption-qualified] (source closed-form via curve-normalized-distance, tol=reproduced<=0.1, partial<=0.25 (class-default))
+  [diffusion_D2-profile] diffused concentration profile: reproduced (source closed-form via curve-normalized-distance, tol=reproduced<=0.1, partial<=0.25 (class-default))
       measured: normalized distance 0.0000, worst point 0.0001 of reference scale (pass budget 0.2500)
-      protocol: 1-D finite difference: D=2.0, dx=0.2, dt=0.004000000000000001, 800 steps, zero-flux (Neumann) boundaries (that wall costs this claim 2.370e-10: the judged distance moves from 2.181e-05 to 2.181e-05 under dirichlet, against a pass threshold of 1.000e-01)
-
-ASSUMPTIONS (supplied by Reprolith, not the paper)
-  [spatial-boundary-diffusion_D2-profile] the profile judged here was evolved under zero-flux (Neumann) boundaries; Reprolith did not check what boundary the source specifies -> zero-flux (Neumann) boundaries [load-bearing] [unverified — pending review]
-      basis: this claim states no boundary, so the wall its run used is this engine's choice rather than anything its source stated — and a source that states one can be honoured: a claim carries the wall it names, is run under it, and is not qualified for it. What the choice costs is no longer a caveat either: each claim's protocol line reports how far re-running the same discretization under the alternatives this solver implements moves the judged distance, against the threshold it is judged at. An unbounded domain is not among those alternatives, so a source that states one is the case this cannot be closed by (attributed to reprolith)
-
-WHAT WAS MISSING
-  [diffusion_D2-profile] diffused concentration profile: reproduced only under an assumption Reprolith supplied, not a clean pass
-  the profile judged here was evolved under zero-flux (Neumann) boundaries; Reprolith did not check what boundary the source specifies — Reprolith assumed zero-flux (Neumann) boundaries (this claim states no boundary, so the wall its run used is this engine's choice rather than anything its source stated — and a source that states one can be honoured: a claim carries the wall it names, is run under it, and is not qualified for it. What the choice costs is no longer a caveat either: each claim's protocol line reports how far re-running the same discretization under the alternatives this solver implements moves the judged distance, against the threshold it is judged at. An unbounded domain is not among those alternatives, so a source that states one is the case this cannot be closed by) — awaiting expert confirmation
+      protocol: 1-D finite difference: D=2.0, dx=0.2, dt=0.004000000000000001, 800 steps, zero-flux (Neumann) boundaries on a grid whose edges the source's unbounded domain does not have (an unbounded domain, verified rather than assumed: this grid's two edge rules bracket the free-space solution and their answers differ by 2.206e-07, which bounds what standing in for an infinite domain costs here — against a budget of 1.000e-02, a tenth of the 0.10 that separates a pass from a failure)
 
 SCOPE
   This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.
