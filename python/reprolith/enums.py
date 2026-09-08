@@ -10,6 +10,39 @@ from __future__ import annotations
 from enum import Enum
 
 
+class MetricDimension(str, Enum):
+    """What kind of quantity a metric read off a trajectory *is*.
+
+    Three modules have to agree about this and used to state it three times. The unit a claim's
+    number is read in is composed from it (`reprolith.claim_units`); which of a paper's table
+    columns names that unit is matched with it; and the engine dispatches on the metric name
+    itself. A metric classified in one place and not another is the defect this exists to prevent:
+    an oscillation's **period** was added to the dispatcher and left out of the unit rule, which
+    then composed a *concentration* for a number a paper prints in hours.
+    """
+
+    #: Read entirely in the run's own clock — a time to peak, an oscillation's period.
+    TIME = "time"
+    #: The output's own unit times the clock — an area under a curve.
+    OUTPUT_TIMES_TIME = "output-times-time"
+    #: The output's own unit — a peak, an end value, a peak-to-trough height.
+    OUTPUT = "output"
+
+
+#: Every metric a claim may read off a trajectory, and what kind of quantity each one is. The
+#: single source of truth: `reprolith.certify._metric` computes exactly these names,
+#: `reprolith.claim_units` composes a unit from the dimension, and the table-column vocabulary in
+#: `reprolith.claim_candidates` proposes only names that appear here.
+METRIC_DIMENSIONS: dict[str, MetricDimension] = {
+    "cmax": MetricDimension.OUTPUT,
+    "tmax": MetricDimension.TIME,
+    "auc": MetricDimension.OUTPUT_TIMES_TIME,
+    "final": MetricDimension.OUTPUT,
+    "period": MetricDimension.TIME,
+    "peak_to_trough": MetricDimension.OUTPUT,
+}
+
+
 class Verdict(str, Enum):
     """A per-claim judgment from the simulation oracle."""
 

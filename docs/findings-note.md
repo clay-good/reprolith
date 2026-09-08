@@ -5621,3 +5621,24 @@ Both of those checks then fired on this change, which is worth recording as the 
 rather than as noise: the differential's coverage assertion failed because three claim types moved
 into `__all__` and its excuse list still said they were not there.
 
+
+## One classification of a metric, three readers
+
+The two defects the period found on the day it landed were the same defect twice: the engine
+computes a set of metric names, and two other modules each kept their own list of what those names
+*are*. `claim_units` knew that a `tmax` is read in the run's clock and composed a concentration for
+a period; the prose reader's vocabulary did not know the word and read a sentence naming a period as
+naming a peak.
+
+Both were fixed one list at a time, which leaves the same seam for the next metric. There is one
+classification now — `METRIC_DIMENSIONS` in `reprolith.enums`, beside the verdict vocabularies,
+where it has no dependencies and every reader can reach it. It says what kind of quantity each
+metric *is*: a length of time, the output's unit times the clock, or the output's own unit. The unit
+rule composes from the dimension rather than from a name; the dispatcher's error message lists the
+same table; and a test asserts that every classified metric is one the engine actually computes and
+that the table-column vocabulary proposes only names it knows.
+
+That is the difference between fixing a defect and closing the shape it came from. The next metric
+added to this engine is classified once, and the two surfaces that read it are right by
+construction rather than by somebody remembering.
+

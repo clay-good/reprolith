@@ -46,6 +46,7 @@ from typing import Any
 
 # The unit vocabulary, from the module that resolves units on the artifact path: one spelling of
 # "unstated", and one Level 2 default table, so the two readers cannot drift apart on either.
+from .enums import METRIC_DIMENSIONS, MetricDimension
 from .ingest import _L2_PREDEFINED_UNITS, UNSTATED_UNIT
 
 #: A table's label as a claim would cite it: "Table 6", "Table S2", "table 4".
@@ -871,11 +872,18 @@ def _declared_output(model: Any, species: str) -> Any:
 
 
 #: The metrics whose value is a length of time rather than a reading of the output, so their unit
-#: is the run's clock and not the output's. `tmax` has been here since the metformin table was
-#: checked; `period` joined it the day an oscillator's period became certifiable, and until it did
-#: this composed a *concentration* for a number a paper prints in hours — the same defect, one
-#: metric over, in a check written for the metrics that existed when it was written.
-_CLOCK_METRICS = frozenset({"tmax", "period"})
+#: is the run's clock and not the output's. Read off the shared table rather than listed here: this
+#: was a literal `metric == "tmax"` when an oscillator's **period** became certifiable, and it then
+#: composed a *concentration* for a number a paper prints in hours. A metric classified in the
+#: engine and not here is exactly that defect, so there is one classification and three readers.
+_CLOCK_METRICS = frozenset(
+    name for name, dimension in METRIC_DIMENSIONS.items() if dimension is MetricDimension.TIME
+)
+#: The metrics that carry the clock *as well as* the output's unit — an area, and nothing else.
+_AREA_METRICS = frozenset(
+    name for name, dimension in METRIC_DIMENSIONS.items()
+    if dimension is MetricDimension.OUTPUT_TIMES_TIME
+)
 
 
 def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
@@ -939,9 +947,9 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
             raise ValueError(f"the model declares no species or parameter {species!r}")
         own = _resolve_unit(parameter.get("units") or "", definitions, level)
         time = _resolve_unit(model.get("timeUnits") or "", definitions, level)
-        if own == UNSTATED_UNIT or (metric == "auc" and time == UNSTATED_UNIT):
+        if own == UNSTATED_UNIT or (metric in _AREA_METRICS and time == UNSTATED_UNIT):
             return UNSTATED_UNIT
-        return f"{own} * {time}" if metric == "auc" else own
+        return f"{own} * {time}" if metric in _AREA_METRICS else own
     compartment = next(
         (
             child
@@ -965,10 +973,10 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
         level,
     )
     time = _resolve_unit(model.get("timeUnits") or "", definitions, level)  # the run's own clock
-    parts = (substance, volume) + ((time,) if metric == "auc" else ())
+    parts = (substance, volume) + ((time,) if metric in _AREA_METRICS else ())
     if UNSTATED_UNIT in parts:
         return UNSTATED_UNIT
-    over = f"{substance} * {time}" if metric == "auc" else substance
+    over = f"{substance} * {time}" if metric in _AREA_METRICS else substance
     return f"{over} / {volume}"
 
 

@@ -23,7 +23,7 @@ from typing import Any
 from .certificate import build_certificate
 from .digitization import DIGITIZED_BY
 from .engine import final_state, simulate
-from .enums import Verdict
+from .enums import METRIC_DIMENSIONS, Verdict
 from .model import (
     Assumption,
     Certificate,
@@ -452,7 +452,7 @@ def _metric(
         cycle = [v for t, v in zip(times, values) if first <= t <= last]
         return max(cycle) - min(cycle)
     raise ValueError(
-        f"unknown metric {metric!r} (use cmax, tmax, auc, final, period, or peak_to_trough)"
+        f"unknown metric {metric!r} (use " + ", ".join(sorted(METRIC_DIMENSIONS)) + ")"
     )
 
 

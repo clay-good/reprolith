@@ -430,7 +430,7 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         "an area under the curve is read in the unit of the peak, with no time in it",
         "manuscript_values.py",
         (
-            '    over = f"{substance} * {time}" if metric == "auc" else substance',
+            '    over = f"{substance} * {time}" if metric in _AREA_METRICS else substance',
             "    over = substance",
         ),
         ["tests/test_claim_units.py"],

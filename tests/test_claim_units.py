@@ -543,3 +543,33 @@ def test_the_time_unit_assumption_states_counts_its_own_certificates_hold() -> N
     assert f"{reproduced} of the {len(peaks)} Tmax claims" in basis, (reproduced, len(peaks))
     # And it does not cite the column that turned out to be no evidence at all.
     assert "T1/2 column is not evidence" in basis
+
+
+def test_every_metric_the_engine_computes_is_classified_once() -> None:
+    """One classification, three readers — the seam that produced a period in concentration units.
+
+    `_metric` computes a set of names; the unit rule composes from a *dimension*; the table-column
+    vocabulary proposes a subset of the same names. When those were three lists, adding a metric to
+    the first and not the second published a length of time as a concentration, and adding it to the
+    first and not the third made a sentence naming it read as unambiguously a peak.
+    """
+    import math
+
+    from reprolith.certify import NotOscillating, _metric
+    from reprolith.claim_candidates import _METRICS
+    from reprolith.enums import METRIC_DIMENSIONS
+
+    # An oscillation, so the cycle metrics have something to read and the others still work.
+    times = tuple(i / 4.0 for i in range(41))
+    values = tuple(10.0 + math.sin(2 * math.pi * t / 2.5) for t in times)
+    for name in METRIC_DIMENSIONS:
+        # Every classified metric is one the engine actually computes.
+        try:
+            _metric(times, values, name)
+        except NotOscillating as exc:  # pragma: no cover - only if the fixture stops oscillating
+            raise AssertionError(f"{name} could not be read off an oscillation: {exc}") from exc
+    with pytest.raises(ValueError, match="unknown metric"):
+        _metric(times, values, "not-a-metric")
+    # And the column vocabulary proposes only names the engine computes; "auc24" is a *heading*
+    # spelling of one of them, which is what that mapping is for.
+    assert set(_METRICS.values()) <= set(METRIC_DIMENSIONS)
