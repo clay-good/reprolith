@@ -162,7 +162,9 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         "a time to peak is read in the output's unit rather than in the model's clock",
         "manuscript_values.py",
         (
-            '    if metric == "tmax":',
+            # A set since `period` joined it: both metrics are lengths of time, and keying the
+            # branch on one name composed a *concentration* for the other.
+            "    if metric in _CLOCK_METRICS:",
             "    if False:",
         ),
         ["tests/test_claim_units.py"],
@@ -944,8 +946,8 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "a window no exponential can be fitted over publishes a slope as a length",
         "spatial.py",
-        ("    except ValueError as unfittable:\n        return not_evaluable(",
-         "    except ValueError as unfittable:\n        raise unfittable from None\n    if False:\n        return not_evaluable("),
+        ("    except ValueError as unfittable:\n        return replace(",
+         "    except ValueError as unfittable:\n        raise unfittable from None\n    if False:\n        return replace("),
         ["tests/test_spatial_gradient_claim.py"],
     ),
     (
@@ -957,8 +959,8 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "the fitting window a decay length depends on is left off the certificate",
         "spatial.py",
-        ('f"[{claim.fit_from}, {claim.fit_to}); Dirichlet source at x=0 and a zero-flux far "',
-         'f"[a window); Dirichlet source at x=0 and a zero-flux far "'),
+        # The window moved into `_gradient_run`, which the abstention shares with the verdict.
+        ('f"[{claim.fit_from}, {claim.fit_to})"', 'f"[a window)"'),
         ["tests/test_spatial_gradient_claim.py"],
     ),
     (
@@ -1218,6 +1220,13 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         "logical.py",
         ('    if sensitivity is None or sensitivity.get("agree"):', "    if True:"),
         ["tests/test_logical_scheme.py"],
+    ),
+    # --- every abstention says which run it is about, 2026-09-07 --------------------------------
+    (
+        "a spatial abstention states a conclusion about a run it does not describe",
+        "spatial.py",
+        ("            protocol=_front_run(claim),", "            protocol=None,"),
+        ["tests/test_every_front_end_can_publish_a_miss.py"],
     ),
     # --- an oscillator's period can be certified, 2026-09-07 ------------------------------------
     (

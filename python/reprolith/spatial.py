@@ -1314,21 +1314,27 @@ def _judge_gradient(claim: GradientClaim) -> ClaimAssessment:
             dx=claim.dx, points=claim.points, dt=claim.dt, steps=claim.steps,
         )
     except UnstableDiscretization as unstable:
-        return not_evaluable(
-            claim_id=claim.claim_id, quantity=claim.quantity,
-            source_location=claim.source_location, reason=str(unstable),
-            reference_kind=ReferenceKind.NUMERIC,
+        return replace(
+            not_evaluable(
+                claim_id=claim.claim_id, quantity=claim.quantity,
+                source_location=claim.source_location, reason=str(unstable),
+                reference_kind=ReferenceKind.NUMERIC,
+            ),
+            protocol=_gradient_run(claim),
         )
     try:
         measured = gradient_decay_length(
             profile, dx=claim.dx, start=claim.fit_from, end=claim.fit_to
         )
     except ValueError as unfittable:
-        return not_evaluable(
-            claim_id=claim.claim_id, quantity=claim.quantity,
-            source_location=claim.source_location,
-            reason=f"no decay length could be fitted over this window: {unfittable}",
-            reference_kind=ReferenceKind.NUMERIC,
+        return replace(
+            not_evaluable(
+                claim_id=claim.claim_id, quantity=claim.quantity,
+                source_location=claim.source_location,
+                reason=f"no decay length could be fitted over this window: {unfittable}",
+                reference_kind=ReferenceKind.NUMERIC,
+            ),
+            protocol=_gradient_run(claim),
         )
     assessment = judge_scalar(
         claim_id=claim.claim_id, quantity=claim.quantity,
@@ -1339,12 +1345,9 @@ def _judge_gradient(claim: GradientClaim) -> ClaimAssessment:
     return replace(
         assessment,
         protocol=(
-            f"1-D morphogen gradient to steady state: source={claim.source!r}, "
-            f"D={claim.diffusivity!r}, k={claim.decay!r}, dx={claim.dx!r}, dt={claim.dt!r}, "
-            f"{claim.steps} steps over {claim.points} points; decay length fitted over grid "
-            f"[{claim.fit_from}, {claim.fit_to}); Dirichlet source at x=0 and a zero-flux far "
-            f"wall, which is the model rather than a choice; the continuum length is "
-            f"{claim.analytical_length:.6g}"
+            _gradient_run(claim)
+            + "; Dirichlet source at x=0 and a zero-flux far wall, which is the model rather "
+            + f"than a choice; the continuum length is {claim.analytical_length:.6g}"
         ),
     )
 
@@ -1454,10 +1457,17 @@ def _judge_front_speed(claim: FrontSpeedClaim) -> ClaimAssessment:
         )
 
     def abstain(reason: str) -> ClaimAssessment:
-        return not_evaluable(
-            claim_id=claim.claim_id, quantity=claim.quantity,
-            source_location=claim.source_location, reason=reason,
-            reference_kind=ReferenceKind.NUMERIC,
+        # Carrying the run, as the judged path does. An abstention that says "the front reached the
+        # end of the domain" without saying at what dx, dt or step count states a conclusion about
+        # a run the certificate does not describe — and this class was the only one of the five
+        # attaching a protocol on one path and not the other.
+        return replace(
+            not_evaluable(
+                claim_id=claim.claim_id, quantity=claim.quantity,
+                source_location=claim.source_location, reason=reason,
+                reference_kind=ReferenceKind.NUMERIC,
+            ),
+            protocol=_front_run(claim),
         )
 
     try:
@@ -1535,14 +1545,61 @@ def _judge_front_speed(claim: FrontSpeedClaim) -> ClaimAssessment:
     return replace(
         assessment,
         protocol=(
-            f"1-D Fisher-KPP front: D={claim.diffusivity!r}, r={claim.growth!r}, "
-            f"dx={claim.dx!r}, dt={claim.dt!r}, {claim.settle_steps} settling steps then "
-            f"{claim.measure_steps} measured, front read at u={claim.level!r}; the asymptotic "
+            _front_run(claim)
+            + (
+            f"; the asymptotic "
             f"speed of the continuum equation is {claim.analytical_speed:.6g}; over the next "
             f"identical window this speed still changes by {drift:.3e} "
             f"({drift / speed:.2%} of it), which is how far the front is from having settled"
+            )
             + _front_step_cost(moved)
         ),
+    )
+
+
+def _profile_run(claim: SpatialClaim) -> str:
+    """The run behind a profile claim, in the form a reader can re-run.
+
+    Extracted so an **abstention** carries it too. Every judged assessment in this class recorded
+    its discretization and every abstention recorded none, which leaves a reader told that "the
+    front reached the end of the domain (199.5)" with no way to know at what dx, dt or step count —
+    a conclusion about a run the certificate does not describe. The other four classes attach the
+    protocol on both paths; this one did it on one.
+    """
+    return (
+        f"1-D finite difference: D={claim.diffusivity!r}, dx={claim.dx!r}, "
+        f"dt={claim.dt!r}, {claim.steps} steps"
+        + (f", decay={claim.decay!r}" if claim.decay else "")
+        + f", {_WALL_NAMES[claim.wall]}"
+        + ("" if claim.wall_is_reprolith_s else " stated by the source")
+    )
+
+
+def _gradient_run(claim: GradientClaim) -> str:
+    """The run behind a gradient claim — see :func:`_profile_run` for why an abstention has one."""
+    return (
+        f"1-D morphogen gradient to steady state: source={claim.source!r}, "
+        f"D={claim.diffusivity!r}, k={claim.decay!r}, dx={claim.dx!r}, dt={claim.dt!r}, "
+        f"{claim.steps} steps over {claim.points} points; decay length fitted over grid "
+        f"[{claim.fit_from}, {claim.fit_to})"
+    )
+
+
+def _front_run(claim: FrontSpeedClaim) -> str:
+    """The run behind a front-speed claim — see :func:`_profile_run`."""
+    return (
+        f"1-D Fisher-KPP front: D={claim.diffusivity!r}, r={claim.growth!r}, "
+        f"dx={claim.dx!r}, dt={claim.dt!r}, {claim.settle_steps} settling steps then "
+        f"{claim.measure_steps} measured, front read at u={claim.level!r}"
+    )
+
+
+def _pattern_run(claim: PatternClaim) -> str:
+    """The run behind a pattern claim — see :func:`_profile_run`."""
+    return (
+        f"1-D {claim.kinetics} reaction-diffusion: a={claim.a!r}, b={claim.b!r}, "
+        f"Du={claim.du!r}, Dv={claim.dv!r}, L={claim.length!r} over {claim.points} points, "
+        f"dt={claim.dt!r}, {claim.steps} steps then {claim.confirm_steps} confirming"
     )
 
 
@@ -1798,10 +1855,13 @@ def _judge_pattern(claim: PatternClaim) -> ClaimAssessment:
     kinetics = TURING_KINETICS[claim.kinetics]
     measurement = _measure_pattern(claim)
     if measurement.wavelength is None:
-        return not_evaluable(
-            claim_id=claim.claim_id, quantity=claim.quantity,
-            source_location=claim.source_location, reason=str(measurement.reason),
-            reference_kind=ReferenceKind.NUMERIC,
+        return replace(
+            not_evaluable(
+                claim_id=claim.claim_id, quantity=claim.quantity,
+                source_location=claim.source_location, reason=str(measurement.reason),
+                reference_kind=ReferenceKind.NUMERIC,
+            ),
+            protocol=_pattern_run(claim),
         )
     assessment = judge_scalar(
         claim_id=claim.claim_id, quantity=claim.quantity,
@@ -1916,15 +1976,18 @@ def certify_spatial(
             # caller's bug and must still raise, and checking the reference first turned a
             # malformed claim into a published abstention — the same "a bug published as an honest
             # abstention" shape `UnstableDiscretization` exists to prevent.
-            assessments.append(not_evaluable(
-                claim_id=claim.claim_id,
-                quantity=claim.quantity,
-                source_location=claim.source_location,
-                reason=(
-                    "no reported profile for this claim: there is nothing to compare the "
-                    "simulated profile against"
+            assessments.append(replace(
+                not_evaluable(
+                    claim_id=claim.claim_id,
+                    quantity=claim.quantity,
+                    source_location=claim.source_location,
+                    reason=(
+                        "no reported profile for this claim: there is nothing to compare the "
+                        "simulated profile against"
+                    ),
+                    reference_kind=ReferenceKind.NUMERIC,
                 ),
-                reference_kind=ReferenceKind.NUMERIC,
+                protocol=_profile_run(claim),
             ))
             continue
         try:
@@ -1940,12 +2003,15 @@ def certify_spatial(
             # break the grid was un-certifiable rather than not-reproduced). "This protocol cannot
             # decide this claim" is an abstention, which is what the stochastic class already does
             # when its sampling cannot resolve a mean.
-            assessments.append(not_evaluable(
-                claim_id=claim.claim_id,
-                quantity=claim.quantity,
-                source_location=claim.source_location,
-                reason=str(unstable),
-                reference_kind=ReferenceKind.NUMERIC,
+            assessments.append(replace(
+                not_evaluable(
+                    claim_id=claim.claim_id,
+                    quantity=claim.quantity,
+                    source_location=claim.source_location,
+                    reason=str(unstable),
+                    reference_kind=ReferenceKind.NUMERIC,
+                ),
+                protocol=_profile_run(claim),
             ))
             continue
         assessments.append(
@@ -1978,11 +2044,7 @@ def certify_spatial(
                 # number has to get the number that was run, and a stability-derived dt is rarely
                 # six significant figures (0.0026666666666666674 printed as 0.00266667).
                 protocol=(
-                    f"1-D finite difference: D={claim.diffusivity!r}, dx={claim.dx!r}, "
-                    f"dt={claim.dt!r}, {claim.steps} steps"
-                    + (f", decay={claim.decay!r}" if claim.decay else "")
-                    + f", {_WALL_NAMES[claim.wall]}"
-                    + ("" if claim.wall_is_reprolith_s else " stated by the source")
+                    _profile_run(claim)
                     # What that wall costs *this* claim. It belongs here rather than in the
                     # assumption's basis: the assumption is one fact about this engine, and
                     # putting a per-claim number in its wording gave three claims three different

@@ -5516,3 +5516,28 @@ are recognised and deliberately not, because the field spells amplitude two ways
 factor of two — and because "peak-to-trough" contains the word "peak", which without this proposed a
 Cmax.
 
+
+## The differential nobody had written down, and what it found on its first run
+
+Two of this repository's front ends have been caught publishing *nothing* where they should have
+published a failure. A non-pass verdict must carry a root cause — the oracle refuses one without it
+— so a front end that supplies no fallback cause raises when a claim misses, and the effect is worse
+than a wrong number: the path can publish a reproduction or a traceback, and its class's agreement
+rate could not have come out any other way. Both were found one front end at a time, after the fact,
+and the second was found because somebody happened to write a test with a wrong number in it.
+
+`tests/test_every_front_end_can_publish_a_miss.py` is the differential: **every claim type this
+engine has**, driven through its own front end with a reported value that is wrong, asserting that
+what comes back is a certificate carrying a root cause. Twelve of them need no optional extra, and
+the list is held against the package's own exports rather than against memory — a claim type added
+without an entry is a claim type this check does not cover, which is the state that let the defect
+happen twice.
+
+It found one on its first run, and not the one it was written for. Every *judged* spatial assessment
+records its discretization — D, dx, dt, the step count, the wall — and every spatial **abstention**
+recorded none. So a reader met "the front reached the end of the domain (199.5) and saturated it"
+with no way to know at what step size, over how many steps, or on what grid: a conclusion about a
+run the certificate does not describe. The other four classes attach the protocol on both paths;
+this one attached it on one, in six places. One run description per claim kind now, used by the
+verdict and by the abstention, so the two cannot drift apart either.
+
