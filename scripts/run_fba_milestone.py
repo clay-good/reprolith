@@ -39,7 +39,7 @@ from reprolith import (
     constraint_based_dossier,
     run_test_set,
 )
-from reprolith.constraint_based import EssentialityClaim, FluxClaim
+from reprolith.constraint_based import EssentialityClaim, FluxClaim, FluxRangeClaim
 from reprolith.corroboration import corroborate_objective
 from reprolith.fba import EssentialKind, ReportedEssentialSet, solver_pin
 from reprolith.mcp_server import write_json_atomically
@@ -76,7 +76,7 @@ def _e_coli_core() -> tuple[Identifiers, GroundTruth, object, str]:
         source=(
             "BiGG / Orth, Fleming & Palsson (2010): known maximal growth rate 0.873922; "
             "essential genes and reactions from COBRApy's single-deletion analysis; the aconitase "
-            "flux from its flux-variability interval"
+            "flux and the succinate-dehydrogenase range from its flux-variability intervals"
         ),
     )
     dossier = dossier_from_dict(
@@ -212,6 +212,32 @@ def _flux_claims() -> list[FluxClaim]:
     )]
 
 
+def _flux_range_claims() -> list[FluxRangeClaim]:
+    """The interval `SUCDi` can carry at the optimum — a claim about the range, not a value in it.
+
+    The counterpart of the flux claim above, on the reaction that shows why the two are different
+    targets: `SUCDi` is one of the two reactions this model does *not* pin, so a reported value
+    inside its interval is abstained on, while the interval itself is exactly what the model says.
+    """
+    reference = json.loads((CROSS / "e_coli_core_fva.json").read_text(encoding="utf-8"))
+    lo, hi = reference["intervals"]["SUCDi"]
+    if lo == hi:
+        raise AssertionError(
+            "the reference now pins SUCDi, so this entry no longer demonstrates a range claim"
+        )
+    return [FluxRangeClaim(
+        claim_id="e_coli_core-succinate-dehydrogenase-range",
+        quantity="the flux range R_SUCDi can carry at maximal growth",
+        reaction_id="R_SUCDi",
+        reported_min=lo,
+        reported_max=hi,
+        source_location=(
+            f"{reference['reference_tool']} flux variability of this model file — reference "
+            "interval computed by that tool, not a number read from the paper"
+        ),
+    )]
+
+
 def main() -> None:
     catalog = Catalog()
     reference = json.loads((CROSS / "reference_growth.json").read_text(encoding="utf-8"))["models"]
@@ -236,6 +262,9 @@ def main() -> None:
                 _essentiality_claims(sbml) if identifiers.accession == "e_coli_core" else ()
             ),
             fluxes=_flux_claims() if identifiers.accession == "e_coli_core" else (),
+            flux_ranges=(
+                _flux_range_claims() if identifiers.accession == "e_coli_core" else ()
+            ),
         )
 
     certificates, report = run_test_set(

@@ -40,6 +40,7 @@ from .fba import (
     flux_variability,
     judge_essentiality,
     judge_flux,
+    judge_flux_range,
     judge_objective,
     loopless_flux_variability,
 )
@@ -270,6 +271,33 @@ class FluxClaim:
     shortfall: Attribution | None = None
 
 
+@dataclass(frozen=True)
+class FluxRangeClaim:
+    """A published flux-variability *range* to reproduce: what a reaction can carry at the optimum.
+
+    The last of the three targets the class spec's flux scenario names. A paper reporting "this
+    reaction carries 2 to 5 mmol/gDW/h at the optimum" is reporting the interval itself rather than
+    a value in it, and judging that as a flux would abstain on it forever — the interval does not
+    pin a value, which is the whole content of the claim.
+
+    ``loopless`` says the source's analysis removed thermodynamically infeasible internal loops, and
+    is the claim's property for the reason it is on :class:`FluxClaim`: the loop law changes the
+    interval, so running it where the source did not compares the reported range against a
+    different analysis than the one that produced it.
+    """
+
+    claim_id: str
+    quantity: str
+    reaction_id: str
+    reported_min: float
+    reported_max: float
+    source_location: str
+    loopless: bool = False
+    tolerance: Tolerance | None = None
+    assumption_qualified: bool = False
+    shortfall: Attribution | None = None
+
+
 def _flux_interval(model: FbaModel, index: int, *, loopless: bool) -> tuple[float, float]:
     """This reaction's feasible interval at the optimum, by the analysis the claim states."""
     if loopless:
@@ -319,6 +347,7 @@ def certify_constraint_based(
     shortfalls: Mapping[str, Attribution] | None = None,
     essentiality: Iterable[EssentialityClaim] = (),
     fluxes: Iterable[FluxClaim] = (),
+    flux_ranges: Iterable[FluxRangeClaim] = (),
 ) -> Certificate:
     """Certify a constraint-based dossier end to end and assemble its certificate.
 
@@ -455,6 +484,38 @@ def certify_constraint_based(
                 ),
             )
         )
+    for reported_range in tuple(flux_ranges):
+        if reported_range.reaction_id not in model.reaction_ids:
+            raise ValueError(
+                f"claim {reported_range.claim_id!r} names reaction "
+                f"{reported_range.reaction_id!r}, which this model does not have"
+            )
+        index = model.reaction_index(reported_range.reaction_id)
+        interval = _flux_interval(model, index, loopless=reported_range.loopless)
+        analysis = (
+            "loopless flux variability" if reported_range.loopless else "flux variability"
+        )
+        assessments.append(
+            replace(
+                judge_flux_range(
+                    claim_id=reported_range.claim_id,
+                    quantity=reported_range.quantity,
+                    source_location=reported_range.source_location,
+                    reported=(reported_range.reported_min, reported_range.reported_max),
+                    interval=interval,
+                    tolerance=reported_range.tolerance,
+                    attribution=(
+                        reported_range.shortfall
+                        or undetermined_shortfall(reported_range.quantity)
+                    ),
+                    assumption_qualified=reported_range.assumption_qualified or rests_on_a_gap,
+                ),
+                protocol=(
+                    f"{protocol}; {analysis} of {reported_range.reaction_id} at the optimum: "
+                    f"[{interval[0]:.6g}, {interval[1]:.6g}]"
+                ),
+            )
+        )
     return build_certificate(
         paper=paper,
         engine_pin=engine_pin,
@@ -468,6 +529,7 @@ __all__ = [
     "FLUX_UNIT",
     "EssentialityClaim",
     "FluxClaim",
+    "FluxRangeClaim",
     "certify_constraint_based",
     "constraint_based_dossier",
     "validate_constraint_based",

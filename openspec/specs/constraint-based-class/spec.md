@@ -61,6 +61,9 @@ using the field's standard analyses.
 - **THEN** the oracle reproduces it with the corresponding standard analysis (flux-balance,
   flux-variability, or systematic deletion) and compares within tolerance
 - **AND** the analysis used is recorded so the comparison is auditable
+- **AND** a reported flux-variability *range* is judged by its worse-matched bound rather than by
+  the average of the two, and a bound reported as zero is judged as a fraction of the reported
+  range's own width rather than by an absolute difference that would depend on the flux unit
 - **AND** an essential set reported as the set itself is compared element for element, while one
   reported only as a count is compared as a count and named as the weaker comparison it is, since
   two models can agree on how many deletions are lethal while disagreeing about every one of them

@@ -142,7 +142,7 @@ $ reprolith corroboration
 CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   reported beside the verdicts, never gating them
   constraint-based      8 model(s) on cobrapy, scipy-linprog — all engine-independent to 1e-08
-                          as cobrapy 0.31.1, scipy-linprog highs (reprolith-fba rev ed4ea43cf392)
+                          as cobrapy 0.31.1, scipy-linprog highs (reprolith-fba rev 14cde61225df)
   kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   logical               9 model(s) on cana, reprolith-logical, sympy-sat — all agree exactly

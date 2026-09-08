@@ -23,7 +23,11 @@ pytest.importorskip("libsbml", reason="the optional 'engine' extra (python-libsb
 pytest.importorskip("scipy", reason="the optional 'fba' extra (scipy) is not installed")
 
 from reprolith import PaperIdentity, ingest_fbc_sbml  # noqa: E402
-from reprolith.constraint_based import FluxClaim, certify_constraint_based  # noqa: E402
+from reprolith.constraint_based import (  # noqa: E402
+    FluxClaim,
+    FluxRangeClaim,
+    certify_constraint_based,
+)
 from reprolith.enums import OverallVerdict, Verdict  # noqa: E402
 from reprolith.fba import flux_variability, solver_pin  # noqa: E402
 from reprolith.persistence import dossier_from_dict  # noqa: E402
@@ -128,3 +132,58 @@ def test_flux_variability_computes_only_the_reactions_asked_for() -> None:
     assert len(subset) == 1
     full = flux_variability(model.stoichiometry, model.objective, model.lower, model.upper)
     assert subset[0] == pytest.approx(full[index])
+
+
+# --- the range itself, which is a different claim from a value inside it --------------------------
+
+
+def _range_certificate(**kw):
+    base = dict(
+        claim_id="succinate-range", quantity="SUCDi flux range at maximal growth",
+        reaction_id="R_SUCDi", reported_min=_FVA["SUCDi"][0], reported_max=_FVA["SUCDi"][1],
+        source_location="COBRApy flux variability of this model file",
+    )
+    base.update(kw)
+    return certify_constraint_based(
+        dossier_from_dict(
+            json.loads((_CB / "worked_example" / "dossier.json").read_text(encoding="utf-8"))
+        ),
+        sbml=(_CB / "e_coli_core.xml").read_text(encoding="utf-8"),
+        paper=PaperIdentity(title="E. coli core"),
+        engine_pin=solver_pin(),
+        flux_ranges=[FluxRangeClaim(**base)],
+    )
+
+
+def test_a_reported_range_reproduces_where_a_value_inside_it_would_abstain() -> None:
+    # The same reaction, the same run, and the opposite verdict — because the two claims say
+    # different things. "SUCDi carries 5.06" is not determined by this model; "SUCDi can carry
+    # 5.06 to 1000" is exactly what the model says.
+    assessment = _range_certificate().assessments[-1]
+    assert assessment.verdict is Verdict.REPRODUCED
+    assert "worst-matched bound" in assessment.discrepancy
+
+
+def test_the_worse_matched_bound_governs_rather_than_the_average() -> None:
+    # A range whose lower bound is right and whose upper bound is out by 40% is not a
+    # 20%-disagreeing range. Averaging the two would publish this as a partial match.
+    certificate = _range_certificate(reported_max=_FVA["SUCDi"][1] * 0.6)
+    assessment = certificate.assessments[-1]
+    assert assessment.verdict is Verdict.FAILED
+    assert "the upper one" in assessment.discrepancy
+
+
+def test_a_zero_bound_is_judged_against_the_range_s_own_width() -> None:
+    # FRD7 runs from 0 to 994.9 here. A relative error against a reported zero has no magnitude to
+    # normalize by, and an absolute one would make the verdict depend on the flux unit — so the
+    # scale is the range the claim itself states.
+    certificate = _range_certificate(
+        claim_id="frd7-range", reaction_id="R_FRD7",
+        reported_min=_FVA["FRD7"][0], reported_max=_FVA["FRD7"][1],
+    )
+    assert certificate.assessments[-1].verdict is Verdict.REPRODUCED
+
+
+def test_a_range_reported_upside_down_is_refused() -> None:
+    with pytest.raises(ValueError, match="not a pair of numbers in an arbitrary order"):
+        _range_certificate(reported_min=10.0, reported_max=1.0)

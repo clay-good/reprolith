@@ -1219,6 +1219,20 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if sensitivity is None or sensitivity.get("agree"):', "    if True:"),
         ["tests/test_logical_scheme.py"],
     ),
+    # --- a reported flux RANGE can be certified, 2026-09-07 -------------------------------------
+    (
+        "a flux range is judged by the average of its bounds rather than the worse of them",
+        "fba.py",
+        ("    worst = max(errors, key=lambda item: item[0])",
+         "    worst = min(errors, key=lambda item: item[0])"),
+        ["tests/test_fba_flux_claim.py"],
+    ),
+    (
+        "a range reported upside down is judged as though its bounds were in order",
+        "fba.py",
+        ("    if reported_high < reported_low:", "    if False:"),
+        ["tests/test_fba_flux_claim.py"],
+    ),
     # --- a reported flux can be certified, 2026-09-07 -------------------------------------------
     (
         "a flux claim is judged against a different analysis than the one its source used",

@@ -15,7 +15,7 @@ it is imported lazily, so the core stays dependency-free.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Any, TypeVar, Union
 
@@ -28,6 +28,7 @@ from .oracle import (
     assess_match,
     judge_scalar,
     not_evaluable,
+    relative_error,
 )
 from .pins import algorithm_revision
 
@@ -1313,6 +1314,78 @@ def judge_essentiality(
     )
 
 
+def judge_flux_range(
+    *,
+    claim_id: str,
+    quantity: str,
+    source_location: str,
+    reported: tuple[float, float],
+    interval: tuple[float, float],
+    tolerance: Tolerance | None = None,
+    reference_kind: ReferenceKind = ReferenceKind.NUMERIC,
+    attribution: Attribution | None = None,
+    assumption_qualified: bool = False,
+) -> ClaimAssessment:
+    """Judge a reported flux-variability *range* against the interval this model has.
+
+    The third of the three reproduction targets the spec's flux scenario names, and the one that
+    was left when :func:`judge_flux` became reachable: a paper reporting "this reaction can carry
+    2 to 5 mmol/gDW/h at the optimum" is reporting the interval itself, not a value inside it.
+
+    **The worse-matched bound governs**, the way the worst band governs a population envelope: a
+    range whose lower bound agrees perfectly and whose upper bound is out by half is not a
+    half-reproduced range, and averaging the two would publish it as one. The discrepancy reports
+    both bounds either way, so a reader can see which end moved.
+
+    A reported bound of **zero** — the common case, since an irreversible reaction's lower bound is
+    usually zero — has no magnitude for a relative error to mean anything against, so it is judged
+    as a fraction of the reported range's own width. That is the scale the claim is about: a lower
+    bound reported as 0 against a model that gives 0.3, on a range 10 wide, is a 3% disagreement
+    about this interval, and calling it infinite (or absolute, which makes the verdict depend on
+    the units) would be the wrong sentence about the same two numbers.
+    """
+    reported_low, reported_high = reported
+    if reported_high < reported_low:
+        raise ValueError(
+            f"claim {claim_id!r} reports the range [{reported_low}, {reported_high}], whose upper "
+            "bound is below its lower one; a range is not a pair of numbers in an arbitrary order"
+        )
+    observed_low, observed_high = interval
+    # The width the claim itself states. A zero-width reported range (a paper reporting a pinned
+    # flux as a range) falls back to the magnitude of the bound, and where that is zero too both
+    # sides are zero and the comparison is exact without needing a scale at all.
+    width = reported_high - reported_low or max(abs(reported_low), abs(reported_high))
+    errors = [
+        (relative_error(rep, obs, zero_scale=width or None), name, rep, obs)
+        for rep, obs, name in (
+            (reported_low, observed_low, "lower"), (reported_high, observed_high, "upper")
+        )
+    ]
+    worst = max(errors, key=lambda item: item[0])
+    assessment = judge_scalar(
+        claim_id=claim_id,
+        quantity=quantity,
+        source_location=source_location,
+        reported=worst[2],
+        predicted=worst[3],
+        zero_scale=width or None,
+        tolerance=tolerance,
+        reference_kind=reference_kind,
+        attribution=attribution,
+        assumption_qualified=assumption_qualified,
+    )
+    if assessment.discrepancy is None:
+        return assessment
+    return replace(
+        assessment,
+        discrepancy=(
+            f"worst-matched bound: the {worst[1]} one, relative error {worst[0]:.4f} "
+            f"(reported [{reported_low:.6g}, {reported_high:.6g}] against "
+            f"[{observed_low:.6g}, {observed_high:.6g}])"
+        ),
+    )
+
+
 _Element = TypeVar("_Element")
 
 
@@ -1355,6 +1428,7 @@ __all__ = [
     "gene_essentiality",
     "judge_fingerprint",
     "judge_flux",
+    "judge_flux_range",
     "judge_objective",
     "parsimonious_fluxes",
     "production_envelope",

@@ -35,12 +35,22 @@ happens to land on.
 | `loopless_flux_variability` | Same interval, but with thermodynamically infeasible internal loops removed | it adds the loop law (Schellenberger 2011) so a spurious internal cycle can't inflate the interval |
 | `production_envelope` | What is the feasible range of a byproduct's flux at each growth rate? | it returns the whole growth-vs-product Pareto front (Varma & Palsson 1994), not one point |
 | `judge_flux` | Does a reported reaction flux reproduce? | it judges against the variability interval, and abstains when the model leaves the flux free |
+| `judge_flux_range` | Does a reported flux-variability *range* reproduce? | it compares the interval itself, judged by its worse-matched bound |
 | `essential_set` / `judge_essentiality` | Does a reported essential set — genes or reactions, by the model's own ids — reproduce? | essentiality is an objective property, and the set is compared element for element rather than by size |
 
-`judge_flux` and `judge_essentiality` are both reachable from `certify_constraint_based` now
-(`FluxClaim`, `EssentialityClaim`), which judged objective values and nothing else for most of this
-class's life. The *E. coli* core certificate carries all four kinds: its growth rate, both essential
-sets, and a reported flux.
+All three targets the spec's flux scenario names are reachable from `certify_constraint_based` now
+— a reported flux (`FluxClaim`), a reported variability range (`FluxRangeClaim`), and an essential
+set (`EssentialityClaim`) — where for most of this class's life it judged objective values and
+nothing else. The *E. coli* core certificate carries all of them: its growth rate, both essential
+sets, a pinned flux, and the range of a reaction the model leaves free.
+
+That last pairing is the clearest statement of what the two flux targets mean. `SUCDi` is one of
+two reactions this model does not pin, so a claim reporting a *value* for it is abstained on — the
+model permits that number rather than producing it — while a claim reporting its *range* reproduces,
+because the range is exactly what the model says. The worse-matched bound governs the range verdict
+(a bound right and a bound out by half is not a half-right range), and a bound reported as zero is
+judged as a fraction of the reported range's own width, since an absolute difference there would
+make the verdict depend on the flux unit.
 
 ### `judge_essentiality` — the set a paper validates against knockout data
 

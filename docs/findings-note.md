@@ -5391,3 +5391,19 @@ derived from the claims that *were* judged, which is why a certificate with noth
 `blocked` rather than `not-reproduced`. The abstention is visible on the claim line, in the counts,
 and in the gap report; it does not pretend the rest of the certificate did not happen.
 
+**And the third target, which the second one made obvious.** The spec's flux scenario names three
+things a paper can report — a flux, a variability *range*, and an essential set — and with the first
+and third reachable the middle one was conspicuous. `FluxRangeClaim` closes it, and the pairing on
+one certificate is the clearest statement of what the two flux targets mean: `SUCDi` is one of the
+two reactions this model does not pin, so a claim reporting a *value* for it abstains — the model
+permits that number rather than producing it — while a claim reporting its *range* reproduces,
+because the range is exactly what the model says. Same reaction, same run, opposite verdicts, and
+both honest.
+
+Two decisions inside it. **The worse-matched bound governs**, as the worst band governs a population
+envelope: a range whose lower bound is right and whose upper bound is out by 40% is not a
+20%-disagreeing range, and averaging would publish it as one. And **a bound reported as zero is
+judged as a fraction of the reported range's own width** — the common case, since an irreversible
+reaction's lower bound is usually zero. An absolute difference there would make the verdict depend
+on the flux unit, which is the defect `relative_error` already had to be fixed for once.
+
