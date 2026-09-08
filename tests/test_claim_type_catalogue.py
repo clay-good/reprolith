@@ -32,6 +32,23 @@ def _exported() -> set[str]:
     return (package | module) - _NOT_TARGETS
 
 
+def _catalogue_rows() -> int:
+    """How many kinds of result the catalogue table lists.
+
+    Read as a contiguous block from its header, because the page carries more than one table and a
+    check keyed on "a line starting with `| an`" counted the cost table's rows as claim types the
+    moment that table was written.
+    """
+    lines = _PAGE.splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith("| Claim type |"))
+    block = 0
+    for line in lines[start + 2:]:  # skip the header and its rule
+        if not line.startswith("|"):
+            break
+        block += 1
+    return block
+
+
 def test_every_claim_type_has_a_row() -> None:
     missing = sorted(name for name in _exported() if f"`{name}`" not in _PAGE)
     assert not missing, (
@@ -68,11 +85,10 @@ def test_the_front_page_states_the_number_this_page_lists() -> None:
     Every other count on that page is held to the repository — the certificates, the split between
     a publication's numbers and a tool's — and this one is the newest.
     """
-    import re
-
-    # Data rows: a claim type in backticks, or the one row for a claim a *dossier* states rather
-    # than a class front end (an objective value), which has no type of its own.
-    rows = len(re.findall(r"^\| (?:`\w*Claim`|an )", _PAGE, re.MULTILINE))
+    # The rows of the *catalogue* table, not of every table on the page: a second table whose rows
+    # happen to start the same way is not a claim type, and the cost table's "an essential set" row
+    # is exactly that. Scoped to the block that begins with the catalogue's own header.
+    rows = _catalogue_rows()
     readme = (Path(__file__).parent.parent / "README.md").read_text(encoding="utf-8")
     words = {15: "Fifteen", 16: "Sixteen", 17: "Seventeen", 18: "Eighteen", 19: "Nineteen"}
     assert f"{words[rows]} kinds of result" in readme, (

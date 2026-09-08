@@ -51,6 +51,32 @@ pass or a traceback and nothing in between.
 produces `not-evaluable` with a reason and the protocol of the run behind it — never a `failed`,
 which would blame a model for a question this engine could not ask.
 
+## What each one costs
+
+The second question, after "can it check this?". Stated as the work rather than as seconds, because
+the work is what does not change with the machine — with the two places where a *size* is the
+finding, both measured on this repository's own models.
+
+| Claim | The work it does |
+|---|---|
+| a scalar metric, a curve | one run of the model; a **grid-dependent** metric (an area, a time to peak, a period, a peak-to-trough) runs it again at twice the resolution and abstains if the number moves more than the verdict can absorb |
+| a percentile envelope | one run **per subject**, and at least thirty before the spread is the population rather than the sampling |
+| a variability metric | the same subjects — but **about three times as many**: at 500, the size an envelope is drawn at, a 30% CV's own standard error is 3.6% of it against a 5% pass threshold, so the claim is abstained on; it resolves at 1,500 |
+| a parameter estimate | one run per optimizer iteration (the worked example's re-fit converges in 25) |
+| a steady state, an attractor set, a basin | exhaustive enumeration of 2ⁿ states, capped at 20 nodes; above that a **fixed point** is found by SAT instead and a cyclic attractor is out of reach |
+| a mean species count, a first passage | one SSA trajectory per ensemble member (400 and 2,000 in the milestone) |
+| a noise statistic | trajectories again — but **about ten times as many** as its mean: at 400 a Fano factor's standard error is 7.2% of its value against a 5% threshold, and 4,000 brings it to 2.3% |
+| a diffusion profile, a decay length, a pattern | one finite-difference run of the claim's own step count (a gradient runs to steady state; a pattern adds a confirmation window) |
+| a front speed | three windows of the same run, plus one more at half the time step to measure what the discretization is worth |
+| an essential set | **one LP per gene** (137 on *E. coli* core) or per reaction, and a second sweep at the literature's cutoff when the claim states none |
+| a flux, a flux range | two LPs for the reaction's interval — and, where that interval leaves the flux free, one mixed-integer solve to say whether the loop law would pin it |
+| an objective value | one LP |
+
+A FROG fingerprint is the one published artifact whose cost is worth stating in seconds, because it
+decides what is published: a couple of LPs per reaction plus one per gene is 0.8s on the 95-reaction
+core model and 145s on the 1,226-reaction iEK1008, which is why it is published for the core model
+and the rest is a measurement rather than a silence.
+
 ## Certifying one, start to finish
 
 Nothing above is reachable without a pin and a front end, and a reader assembling those from three
