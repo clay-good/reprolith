@@ -81,6 +81,29 @@ def test_infeasible_problem_raises() -> None:
         solve_objective(_S, _OBJECTIVE, [0.0, 20.0], [8.0, None])
 
 
+def test_an_infeasible_program_abstains_rather_than_taking_the_run_down() -> None:
+    """The one FBA outcome that produced no assessment at all.
+
+    `solve_objective` raises on an infeasible program — correctly, it has no optimum — and that
+    exception travelled straight out of `judge_objective`, so a model whose adopted bounds admit no
+    flux distribution took the certifying run down instead of being reported. There is nothing to
+    compare, so this is an abstention rather than a `failed`, and it names its cause: an abstention
+    that does not say why is the shape this engine refuses everywhere else.
+    """
+    from reprolith import Verdict, judge_objective
+
+    assessment = judge_objective(
+        claim_id="growth", quantity="maximal growth rate", source_location="Table 1",
+        reported=1.0, stoichiometry=_S, objective=_OBJECTIVE,
+        lower=[0.0, 20.0], upper=[8.0, None],
+    )
+    assert assessment.verdict is Verdict.NOT_EVALUABLE
+    assert "not solvable" in assessment.root_cause
+    # And the abstention carries no attribution to a model or an engine: nothing was measured, so
+    # there is nothing to attribute a shortfall to.
+    assert assessment.implicated is None
+
+
 def test_both_reactions_are_essential() -> None:
     # In v_in -> A -> v_out, knocking out either reaction starves the objective, so both
     # reactions are essential.

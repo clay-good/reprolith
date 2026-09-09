@@ -1392,6 +1392,20 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if (stated := sensitivity.get("basis")) is not None:', "    if False:"),
         ["tests/test_logical_basin_claim.py"],
     ),
+    # --- an unsolvable program is reported, not thrown, 2026-09-08 ------------------------------
+    (
+        "an infeasible program takes the certifying run down instead of abstaining",
+        "fba.py",
+        ("    except InfeasibleFba as unsolvable:", "    except ZeroDivisionError as unsolvable:"),
+        ["tests/test_fba.py"],
+    ),
+    (
+        "an inline objective abstains on an infeasible program while naming an overflow",
+        "linter.py",
+        ('                    "the flux-balance program is not solvable under these bounds, so it has no "',
+         '                    "the run produced non-finite output, so it has no "'),
+        ["tests/test_linter.py"],
+    ),
     # --- every inline verdict states what it ran, 2026-09-08 ------------------------------------
     (
         "an inline curve verdict hides the window and the grid it was sampled on",

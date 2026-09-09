@@ -90,12 +90,19 @@ def _all_finite(*series: Sequence[float]) -> bool:
     return all(math.isfinite(v) for values in series for v in values)
 
 
-def _not_evaluable(method: ComparisonMethod, tolerance: Tolerance) -> LintResult:
-    """Abstain: the run produced nothing comparable, which is not the same as producing a wrong value."""
+def _not_evaluable(
+    method: ComparisonMethod, tolerance: Tolerance, reason: str = "",
+) -> LintResult:
+    """Abstain: the run produced nothing comparable, which is not the same as producing a wrong value.
+
+    ``reason`` says *why* where the default does not fit. An abstention that names the wrong cause
+    is worse than a vague one: "the run produced non-finite output" on an infeasible linear program
+    sends a caller looking at their numbers for an overflow that is not there.
+    """
     return LintResult(
         verdict=Verdict.NOT_EVALUABLE,
         method=method.value,
-        discrepancy="the run produced non-finite output; there is no comparable value to judge",
+        discrepancy=reason or "the run produced non-finite output; there is no comparable value to judge",
         tolerance=tolerance.label(),
     )
 
@@ -255,7 +262,7 @@ def lint_objective(
     solver), both imported lazily. A ``medium`` entry naming a reaction the model does not contain
     raises, so a typo is surfaced rather than silently ignored.
     """
-    from .fba import solve_objective
+    from .fba import InfeasibleFba, solve_objective
     from .sbml import ingest_fbc_sbml
 
     model = ingest_fbc_sbml(sbml)
@@ -266,7 +273,6 @@ def lint_objective(
                 f"medium names reaction {reaction_id!r}, which the model does not contain"
             )
         lower[model.reaction_index(reaction_id)] = -abs(uptake)
-    predicted = solve_objective(model.stoichiometry, model.objective, lower, model.upper)
     tol = _checked(
         tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind),
         ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind,
@@ -282,6 +288,24 @@ def lint_objective(
         f"{rid}<={abs(uptake)!r}" for rid, uptake in sorted((medium or {}).items())
     ) or "the model's own distributed bounds (none supplied)"
     protocol = f"linear program — medium: {stated}; maximize: {maximized}"
+    try:
+        predicted = solve_objective(model.stoichiometry, model.objective, lower, model.upper)
+    except InfeasibleFba as unsolvable:
+        # The certificate path's rule, on the surface an agent gates on: an infeasible program has
+        # no optimum, so there is nothing to judge — and this used to leave the exception to travel
+        # out through the MCP boundary as a server error, which is a broken tool rather than a
+        # verdict. The abstention names the program that could not be solved, since a medium a
+        # caller supplied is the likeliest reason it could not be.
+        return replace(
+            _not_evaluable(
+                ComparisonMethod.SCALAR_RELATIVE_ERROR, tol,
+                reason=(
+                    "the flux-balance program is not solvable under these bounds, so it has no "
+                    f"optimum to compare: {unsolvable}"
+                ),
+            ),
+            protocol=protocol,
+        )
     if not _all_finite((reported, predicted)):
         return replace(
             _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol), protocol=protocol

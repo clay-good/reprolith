@@ -116,6 +116,32 @@ def test_the_linter_judges_an_envelope_by_its_worst_point_too() -> None:
     assert "worst point" in result.discrepancy
 
 
+def test_lint_objective_abstains_on_an_infeasible_program_rather_than_raising() -> None:
+    """An exception here is a broken tool, not a verdict: it leaves the MCP boundary as a server
+    error, which is exactly what `lint_stochastic`'s zero-reported case was fixed for.
+
+    The medium a caller supplies is the likeliest reason a program stops being solvable, so this is
+    reachable from ordinary use rather than from a malformed model.
+    """
+    pytest.importorskip("scipy", reason="the fba extra (scipy) is not installed")
+    from pathlib import Path
+
+    from reprolith import Verdict, lint_objective
+
+    sbml = (
+        Path(__file__).parent.parent / "datasets" / "constraint_based" / "e_coli_core.xml"
+    ).read_text(encoding="utf-8")
+    result = lint_objective(
+        sbml, reported=0.8739, medium={"R_EX_glc__D_e": 0.0, "R_EX_o2_e": 0.0},
+    )
+    assert result.verdict is Verdict.NOT_EVALUABLE
+    assert "not solvable" in result.discrepancy
+    # Not the canned non-finite reason: an abstention naming the wrong cause sends a caller looking
+    # at their numbers for an overflow that is not there.
+    assert "non-finite" not in result.discrepancy
+    assert result.protocol is not None and "maximize:" in result.protocol
+
+
 def test_every_inline_verdict_states_the_protocol_it_rests_on() -> None:
     """Four of the seven said what they ran and three said nothing, which is the same defect the
     spatial one was fixed for: an inline result has no certificate around it, so a bare verdict

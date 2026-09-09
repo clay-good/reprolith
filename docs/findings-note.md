@@ -5775,3 +5775,22 @@ The test that keeps this true is driven from `reprolith.__all__` rather than fro
 names, so the next linter added is covered without anybody remembering the rule — which is how the
 claim-type catalogue, the miss differential and the exported-argument guard are all built, and the
 fourth place that shape has caught something.
+
+
+## The outcome that produced no verdict at all
+
+`solve_objective` raises on an infeasible linear program, which is right — an infeasible program has
+no optimum. What was wrong is what happened next: the exception travelled straight out of
+`judge_objective` and out of `lint_objective`, so a model whose adopted bounds admit no flux
+distribution took the certifying run down on one surface and left the MCP boundary as a server error
+on the other. Every other FBA outcome has a verdict. This one had a traceback.
+
+It is an abstention rather than a `failed`, because nothing was measured: there is no number that
+missed. Both surfaces name the cause, and the certificate's protocol line already states the medium,
+which is the likeliest reason a program stops being solvable — a caller's own supplied uptake bounds
+reach this from ordinary use, not from a malformed model.
+
+The inline abstention needed one more thing to be honest. `_not_evaluable` carried a single canned
+reason — "the run produced non-finite output" — and an abstention naming the wrong cause is worse
+than a vague one: it sends a caller looking through their numbers for an overflow that is not there.
+It takes a reason now, and the default stands where it fits.

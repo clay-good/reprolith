@@ -282,7 +282,26 @@ def judge_objective(
     Uses the oracle's scalar comparison and honesty invariants, so a partial or failed verdict
     still requires an attribution and a load-bearing assumption still qualifies the result.
     """
-    predicted = solve_objective(stoichiometry, objective, lower, upper)
+    try:
+        predicted = solve_objective(stoichiometry, objective, lower, upper)
+    except InfeasibleFba as unsolvable:
+        # The one FBA outcome that produced no assessment at all: the exception travelled out of
+        # the certifying call, so a model whose adopted bounds admit no flux distribution took the
+        # whole run down instead of being reported. There is no number to judge — an infeasible
+        # program has no optimum — so this is an abstention and not a `failed`, and it names its
+        # reason the way every abstention in this engine does. The medium is the likeliest cause
+        # and the certificate's protocol line states it, so the reason points there rather than
+        # guessing which bound is wrong.
+        return not_evaluable(
+            claim_id=claim_id,
+            quantity=quantity,
+            source_location=source_location,
+            reason=(
+                "the flux-balance program is not solvable under the bounds this claim was "
+                f"reproduced with, so there is no optimum to compare: {unsolvable}"
+            ),
+            reference_kind=reference_kind,
+        )
     return judge_scalar(
         claim_id=claim_id,
         quantity=quantity,
