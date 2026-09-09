@@ -980,6 +980,19 @@ def logical_dossier(
     return dossier
 
 
+#: Why a fixed-point verdict does not depend on the update scheme, in the words both surfaces use.
+#:
+#: The engine has always *acted* on this — an unstated scheme is qualified only where it could
+#: change the answer, and a fixed point is never that case — and only the inline linter ever said
+#: it. A reader of a logical certificate saw a pin naming synchronous updating over a verdict about
+#: a network whose paper may update asynchronously, with nothing on the page to tell them the two
+#: agree here. The linter's caller was told; the certificate's reader had to know.
+SCHEME_INDEPENDENT = (
+    "a fixed point is a fixed point under every scheme, so this verdict does not rest on the "
+    "synchronous updating the pin names"
+)
+
+
 def search_protocol(nodes: int) -> str:
     """How much of the state space a logical verdict rests on.
 
@@ -1300,7 +1313,17 @@ def certify_logical(
                 # The judge's own clause, where it has one, is appended rather than overwritten: a
                 # basin is counted in a state space whose size only the judge knows, and dropping
                 # it leaves two percentages taken of different wholes looking comparable.
-                part for part in (search_protocol(len(claim.rules)), a.protocol) if part
+                part for part in (
+                    search_protocol(len(claim.rules)),
+                    a.protocol,
+                    # Only for a claim judged as a fixed point. A cyclic attractor is *not*
+                    # scheme-independent — it is the case the assumption below exists for — and
+                    # printing this beside one would say the opposite of what that assumption says
+                    # three lines down.
+                    SCHEME_INDEPENDENT
+                    if claim.attractors is None and claim.basin is None
+                    else "",
+                ) if part
             ),
         )
         for a, claim in zip(assessments, claims)

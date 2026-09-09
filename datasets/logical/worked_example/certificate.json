@@ -8,7 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "attractor-set-match",
-      "protocol": "2 nodes, exhaustive enumeration of all 2^2 states",
+      "protocol": "2 nodes, exhaustive enumeration of all 2^2 states \u2014 a fixed point is a fixed point under every scheme, so this verdict does not rest on the synchronous updating the pin names",
       "quantity": "A-ON steady state",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -25,7 +25,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "attractor-set-match",
-      "protocol": "2 nodes, exhaustive enumeration of all 2^2 states",
+      "protocol": "2 nodes, exhaustive enumeration of all 2^2 states \u2014 a fixed point is a fixed point under every scheme, so this verdict does not rest on the synchronous updating the pin names",
       "quantity": "A-OFF steady state",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -37,7 +37,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "synchronous-update, exhaustive-state-enumeration (rev 61121602da0a)",
+    "algorithm": "synchronous-update, exhaustive-state-enumeration (rev 339be2bfd62e)",
     "engine": "reprolith-logical",
     "version": "0.0.1"
   },

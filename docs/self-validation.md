@@ -147,7 +147,7 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
                           1 of 7 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
   logical               9 model(s) on cana, reprolith-logical, sympy-sat — all agree exactly
-                          as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 61121602da0a), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 61121602da0a), sympy-sat 1.14.0
+                          as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 339be2bfd62e), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 339be2bfd62e), sympy-sat 1.14.0
                           1 of 10 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
   ode-pkpd            170 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0

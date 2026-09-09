@@ -555,7 +555,7 @@ def lint_steady_state(
     state is checked for membership — a dependency-free, deterministic gate an agent can rely on.
     The comparison is an exact attractor-set match, so there is no numeric tolerance to declare.
     """
-    from .logical import parse_boolean_network
+    from .logical import SCHEME_INDEPENDENT, parse_boolean_network
 
     network = parse_boolean_network(rules)
     if set(reported) != set(network.nodes):
@@ -587,10 +587,11 @@ def lint_steady_state(
         # asynchronously would read a green verdict about a different model. A fixed point happens
         # to be scheme-independent — which is *why* this check can be exact — and that is a fact a
         # reader should be told rather than one they have to know.
+        # The certificate's own sentence about scheme-independence, so the two surfaces cannot
+        # come to word it differently — this one said it first, and the certificate said nothing.
         protocol=(
             f"synchronous update over {len(network.nodes)} nodes, fixed points enumerated exactly "
-            "(a fixed point is a fixed point under every scheme; a cyclic attractor is not, and is "
-            "not what this checks)"
+            f"({SCHEME_INDEPENDENT}; a cyclic attractor is not, and is not what this checks)"
         ),
     )
 

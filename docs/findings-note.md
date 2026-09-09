@@ -6341,3 +6341,24 @@ names both thresholds; the linter's named the budget alone, so an agent reading 
 thing had been verified than had been. It calls the certificate's own sentence now rather than a
 shorter one written beside it, which is the only version of this fix that a future rewording cannot
 undo on one surface and not the other.
+
+Finishing the sweep across every `lint_*` turned up one running the other way, which is the reason
+to do it in both directions rather than auditing the linter against the certificate. `lint_steady_state`
+tells its caller that a fixed point is scheme-independent — "a fact a reader should be told rather
+than one they have to know", in its own comment — and the certificate said nothing. So a reader of a
+logical certificate saw a pin naming *synchronous* updating, over a verdict about a network whose
+paper may well update asynchronously, with nothing on the page saying the two agree here.
+
+The engine had always acted on the fact: an unstated scheme is qualified only where it could change
+the answer, and a fixed-point claim is never that case, which is stated in a comment beside the code
+that decides it. Acting on a fact and publishing it are different, and only one surface did both.
+
+The sentence is shared now and appears on fixed-point claims only — a cyclic attractor is not
+scheme-independent, and printing it beside one would contradict the assumption three lines further
+down the same certificate.
+
+Three of the seven `lint_*` functions had nothing to fix, and the reason is worth recording so the
+sweep is not re-run hopefully: `lint_curve`, `lint_estimation` and `lint_distribution` take fewer
+inputs than their certifying counterparts (no window, no overrides, no optimizer record, no subject
+count), so there is no fact they are withholding. A divergence needs both surfaces to *have* the
+thing.

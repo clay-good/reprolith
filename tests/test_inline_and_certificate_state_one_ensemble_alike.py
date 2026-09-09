@@ -120,3 +120,41 @@ def test_the_spatial_linter_reports_the_whole_wall_check_it_gated_on() -> None:
     # And it is the shared sentence, not a paraphrase that happens to contain those words.
     assert unbounded_note.__doc__ is not None
     assert result.protocol.endswith(")")
+
+
+# --- and the same differential running the other way ----------------------------------------------
+
+
+def test_the_logical_certificate_says_what_the_linter_already_said() -> None:
+    """The divergence runs both directions, and this one had the surfaces the other way round.
+
+    `lint_steady_state` told its caller that a fixed point is scheme-independent — "a fact a reader
+    should be told rather than one they have to know", as its own comment puts it. The certificate
+    said nothing, so a reader saw a pin naming *synchronous* updating over a verdict about a network
+    whose paper may update asynchronously, with nothing on the page saying the two agree here.
+
+    The engine had always acted on the fact — an unstated scheme is qualified only where it could
+    change the answer, and a fixed point is never that case — and only one of the two surfaces
+    passed it on.
+    """
+    from reprolith.logical import SCHEME_INDEPENDENT
+
+    root = Path(__file__).resolve().parents[1] / "datasets" / "logical"
+    fixed_point = (root / "worked_example" / "certificate.txt").read_text(encoding="utf-8")
+    assert SCHEME_INDEPENDENT in fixed_point
+
+    # And **not** on a claim it would be false about: a cyclic attractor is not scheme-independent,
+    # which is the case the scheme assumption exists for. Printing it there would contradict the
+    # assumption three lines below it on the same certificate.
+    basin = (root / "milestone" / "certificates" / "budding_yeast_basins.txt").read_text(
+        encoding="utf-8"
+    )
+    assert SCHEME_INDEPENDENT not in basin
+
+
+def test_the_two_logical_surfaces_share_that_sentence() -> None:
+    from reprolith.linter import lint_steady_state
+    from reprolith.logical import SCHEME_INDEPENDENT
+
+    result = lint_steady_state({"A": "!B", "B": "!A"}, {"A": 1, "B": 0})
+    assert SCHEME_INDEPENDENT in result.protocol
