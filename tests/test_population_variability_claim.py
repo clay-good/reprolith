@@ -101,9 +101,15 @@ def test_the_protocol_carries_the_sampling_and_what_it_cost() -> None:
 
 def test_a_population_too_noisy_to_decide_the_claim_abstains() -> None:
     # Five hundred subjects is the size this class simulates an *envelope* at, and it is not enough
-    # for a spread: the CV's own standard error is 3.6% of it against a 5% pass threshold, which is
-    # the regime where a correct model misses routinely and a wrong one passes. The honest verdict
-    # is that this population cannot decide the claim, not that the model is wrong.
+    # for a spread: the CV's own standard error is 3.6% of it against a 5% pass threshold. The
+    # honest verdict is that this population cannot decide the claim, not that the model is wrong.
+    #
+    # This fixture is a deterministic inverse-CDF quantile grid, so it shows that the check *fires*
+    # and can show nothing about where the bar belongs — it has no draw-to-draw variation at all.
+    # `tests/test_population_variability_bar.py` measures that on genuinely random draws, and what
+    # it finds is stronger than the sentence that used to sit here: at 500 subjects the check
+    # abstains on 100% of correct populations, so the regime a correct model would routinely miss
+    # in is one this bar keeps it out of rather than one it survives.
     certificate = _certificate(values=_subjects(0.3, n=500))
     assessment = certificate.assessments[0]
     assert assessment.verdict is Verdict.NOT_EVALUABLE

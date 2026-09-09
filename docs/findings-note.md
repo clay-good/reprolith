@@ -6079,3 +6079,31 @@ changed is that the clause promises an estimate — "is the size at which that e
 to** fall under half the threshold" — instead of an outcome, and the docstring carries the
 measurement beside the derivation rather than the derivation alone. A run at the named size coming
 back abstained is now the documented behaviour rather than a surprise.
+
+
+## A fixture with no draws cannot say where a sampling bar belongs
+
+The correction two sections up came from a fixture that agrees with anything: the population class's
+`_subjects` builds its sample by inverse CDF at evenly spaced quantiles, which is a deterministic
+grid with the right spread and **no draw-to-draw variation at all**. That is the right fixture for a
+test that wants a known CV and no RNG, and it is the wrong one for every question about sampling —
+and one such question was resting on it. The variability abstention's bar (half the pass threshold)
+was justified in a docstring as covering "the regime where a correct model misses routinely and a
+wrong one passes", and nothing had ever drawn twice to check.
+
+Measured now, on genuinely random populations, 1,000 draws per size across five seeds: at 500
+subjects the check abstains on 100% of correct populations; at 1,000 it abstains on 59% and falsely
+accuses 2.5%; at 1,500 — the worked example's size — 6.8% and 1.6%; at 3,000, none and 0.2%. The
+sentence it replaces was right about the danger and wrong about the mechanism: below a thousand
+subjects the bar keeps the check *out of* that regime rather than carrying it through, and where it
+does let a verdict through, a correct model passes two orders of magnitude more often than it fails.
+
+The bar is not moved. 1.6% at the size this class actually publishes at is the same order as the 1%
+the stochastic class accepted for its own guard, and moving a threshold on one afternoon's
+measurement is how a number nobody can re-derive gets into a verdict.
+
+One detail about the test rather than the finding: it aggregates five seeds rather than pinning one,
+because a single seed's false-miss count at 1,500 ranges from 2 to 12 across seeds. A bound tight
+enough to say anything about one of them fails on another, which is a CI flake dressed as a
+measurement — and the assertions are written about the shape that holds under every seed, not about
+the counts in the table.

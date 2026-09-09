@@ -73,6 +73,25 @@ there is abstained on. It resolves at 1,500 (2.1%). A spread needs about three t
 its envelope does, which is the population-class echo of the stochastic class's "a Fano factor needs
 ten times the ensemble its mean does".
 
+**What the bar is worth, measured.** The abstention fires where the statistic's own error bar
+exceeds half the pass threshold, and that half was declared. On genuinely random draws — 1,000 per
+size, five seeds, a log-normal whose true CV is known — a *correct* model is published as:
+
+| subjects | abstained | judged pass | false miss |
+|---------:|----------:|------------:|-----------:|
+|      500 |      100% |          0% |         0% |
+|    1,000 |     59.1% |       38.4% |       2.5% |
+|    1,500 |      6.8% |       91.6% |       1.6% |
+|    3,000 |        0% |       99.8% |       0.2% |
+
+Below a thousand subjects the check never reaches a verdict, so the regime a correct model would
+routinely miss in is one the bar keeps it *out of* rather than one it survives. At the 1,500 the
+worked example uses, a correct model is falsely accused on 1.6% of draws — the same order as the 1%
+the stochastic class accepted for the same guard. The bar is not moved on the strength of it; it is
+recorded. The measurement matters because the only test of this rule drew its population from a
+deterministic quantile grid, which has no draw-to-draw variation and so confirms whatever it is
+asked about sampling.
+
 **A judged claim says what would settle it too.** The stochastic class tells a claim its ensemble
 *did* resolve how large one would put the sampling error out of the verdict's way; this class shared
 that class's abstention rule and its jackknife error bar and never got that sentence. It does now,
