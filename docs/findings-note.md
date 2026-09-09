@@ -6007,3 +6007,30 @@ row-span inference this command refuses everywhere else, and relaxing it for a s
 be relaxing it. That restraint costs real coverage: the metformin tables write "Liver" once and the
 curator's own claims come off the "Fitted" row beneath it, which carries no label and gets no
 suggestion. The honest version is worth more than the complete one here.
+
+
+## The parameter half of the same join, built and thrown away
+
+The claims join has an obvious sibling: `params-propose` says in its own docstring that "a curator
+has both sides of the pairing in front of them and makes the join, which is the one thing neither
+can do", which is the sentence the claims half had just made false. So it was built.
+
+A parameter needs a different rule, because the same-word match finds nothing: the paper prints
+"Liver" and the model calls it `Ktp_Liver`. What the model states instead is a **family** — ten ids
+sharing the prefix `Ktp_`, whose remainders are the tissues — and a prefix every member carries
+distinguishes none of them, so reading it cannot pair a label with the wrong member. Against the
+hand-typed `datasets/pkpd_parameters.json` that rule scored 8 correct, 2 silent, 0 wrong, which
+looked like the claims half's result.
+
+It is not, and the number that says so is a different one: **115 of 169 candidates carried a
+suggestion**, and most were nonsense — `Ktp_Liver` proposed for the liver's *Cmax*. The family rule
+can tell a Liver from a Heart and cannot tell a partition coefficient from a peak. Gating on the
+paper's own metric wording cut it to 79, of which 59 were still result columns the metric vocabulary
+does not recognize ("T1/2. h", "AUC measured-fitted, %").
+
+So it was deleted rather than shipped. The precision on the answer key was the wrong measurement to
+stop at: the answer key contains only the rows a curator did pair, and says nothing about the rows a
+suggester volunteers where the curator would pair nothing. **Measure what a suggester offers, not
+only what it gets right about what was asked.** The claims half survives that second measurement
+because a claim is a result and a table's result rows are what it reads; the parameter half does not,
+and no gate available here separates a quantity from a quantity that shares its row.
