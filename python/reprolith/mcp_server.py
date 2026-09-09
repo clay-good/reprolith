@@ -1020,10 +1020,11 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
         initial = _bounded_length(arguments["initial"], name="initial")
         steps = _bounded_count(arguments["steps"], name="steps", ceiling=_MAX_LINT_ITERATIONS)
         # An unbounded claim runs the grid under every wall to bound what standing in for free
-        # space costs, so it is three runs and not one. Charged for what it runs: a ceiling that
-        # counted one would let a caller ask for three times the work it was checked against.
+        # space costs, and once more for the margin test — so it is one run per wall plus two, not
+        # one. Charged for what it runs: a ceiling that counted one would let a caller ask for
+        # several times the work it was checked against.
         from .spatial import BOUNDARIES
-        runs = len(BOUNDARIES) if arguments.get("boundary") == "unbounded" else 1
+        runs = len(BOUNDARIES) + 2 if arguments.get("boundary") == "unbounded" else 1
         _bounded_work(len(initial) * steps * runs, name="grid points × steps")
         return lint_diffusion(
             initial,
