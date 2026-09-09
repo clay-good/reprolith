@@ -29,7 +29,12 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .certify import Claim
-from .claim_candidates import propose_claims, propose_parameters
+from .claim_candidates import (
+    merge_proposals,
+    propose_claims,
+    propose_claims_from_prose,
+    propose_parameters,
+)
 from .claims_template import claims_template, unfilled_claims
 from .digitization import (
     AmbiguousPanel,
@@ -1187,16 +1192,32 @@ def _tables_file(path: Path) -> dict[str, Any]:
 
 
 def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
-    """Propose candidate claims from the tables the paper prints."""
-    # Through the shared reader, like `params-propose`: this command kept its own copy of the
-    # same check, and the two had already drifted — one prefixed the refusal with "cannot read the
-    # tables" and the other did not, so the same unusable file read as two different faults
-    # depending on which proposer the author reached for.
-    try:
-        tables = _tables_file(Path(args.tables))
-    except (OSError, UnicodeDecodeError, ValueError) as unusable:
-        print(f"cannot read the tables: {unusable}", file=sys.stderr)
+    """Propose candidate claims from the tables the paper prints, and from its running text."""
+    if args.tables is None and args.prose is None:
+        print(
+            "give --tables, --prose, or both: this reads your paper, and with neither there is "
+            "nothing to read",
+            file=sys.stderr,
+        )
         return 1
+    tables = None
+    if args.tables is not None:
+        # Through the shared reader, like `params-propose`: this command kept its own copy of the
+        # same check, and the two had already drifted — one prefixed the refusal with "cannot read
+        # the tables" and the other did not, so the same unusable file read as two different faults
+        # depending on which proposer the author reached for.
+        try:
+            tables = _tables_file(Path(args.tables))
+        except (OSError, UnicodeDecodeError, ValueError) as unusable:
+            print(f"cannot read the tables: {unusable}", file=sys.stderr)
+            return 1
+    prose = None
+    if args.prose is not None:
+        try:
+            prose = Path(args.prose).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as unreadable:
+            print(f"cannot read the text: {unreadable}", file=sys.stderr)
+            return 1
 
     outputs: list[dict[str, str]] = []
     if args.model is not None:
@@ -1213,7 +1234,22 @@ def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
             print(f"cannot read the model: {unreadable}", file=sys.stderr)
             return 1
 
-    proposed = propose_claims(tables, accession=args.accession, outputs=outputs)
+    from_tables = (
+        propose_claims(tables, outputs=outputs) if tables is not None else None
+    )
+    from_prose = propose_claims_from_prose(prose) if prose is not None else None
+    if from_prose is not None and outputs:
+        # Said rather than left to be noticed: the suggestion matches a row's own *label* against
+        # the model's words, and a sentence has no label. A curator who passed --model and saw
+        # suggestions on the table half would otherwise read their absence on the prose half as
+        # "no output matches" instead of "nothing was asked".
+        from_prose["notes"].insert(
+            0,
+            "a model was supplied and no candidate from the text carries 'species_suggested': "
+            "the suggestion is a row label matched against your model's words, and a sentence "
+            "has no label",
+        )
+    proposed = merge_proposals(from_tables, from_prose, accession=args.accession)
     rendered = json.dumps(proposed, indent=2, sort_keys=True) + "\n"
     if args.out is None:
         print(rendered, end="")
@@ -1224,8 +1260,14 @@ def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"cannot write the candidates: {unwritable}", file=sys.stderr)
         return 1
     body = proposed["entries"][args.accession] if args.accession is not None else proposed
+    read = ", ".join(
+        part for part in (
+            ", ".join(body["tables_read"]),
+            f"the text of {Path(args.prose).name}" if args.prose is not None else "",
+        ) if part
+    )
     print(f"wrote {args.out}{replaced}")
-    print(f"  {len(body['candidates'])} candidate(s) from {', '.join(body['tables_read'])}")
+    print(f"  {len(body['candidates'])} candidate(s) from {read}")
     for note in body["notes"]:
         print(f"  note: {note}")
     return 0
@@ -2037,11 +2079,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser(
         "claims-propose",
-        help="propose candidate claims from the tables your paper prints (you pick)",
+        help="propose candidate claims from the tables your paper prints, and from its text "
+             "(you pick)",
     )
     p.add_argument(
-        "--tables", required=True,
+        "--tables", default=None,
         help="the paper's table rows as JSON — the shape datasets/manuscripts/ uses",
+    )
+    p.add_argument(
+        "--prose", default=None, metavar="FILE",
+        help="your paper's running text as a plain-text file; every number with a unit beside it "
+             "is proposed with the whole sentence it came from. Noisier than a table — a sentence "
+             "may be quoting an experiment — so read the sentence before you keep a candidate",
     )
     p.add_argument(
         "--accession", default=None,
@@ -2052,7 +2101,8 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "your SBML model; with it, a candidate whose row label is the same word as one model "
-            "output carries 'species_suggested' beside the blank field you still fill in"
+            "output carries 'species_suggested' beside the blank field you still fill in. Only a "
+            "table row has a label, so nothing read from the text carries one"
         ),
     )
     p.add_argument("--out", default=None, help="write here instead of to standard output")

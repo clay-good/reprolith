@@ -585,4 +585,84 @@ def propose_claims_from_prose(
     return body
 
 
-__all__ = ["propose_claims", "propose_claims_from_prose", "propose_parameters"]
+def merge_proposals(
+    from_tables: Mapping[str, Any] | None,
+    from_prose: Mapping[str, Any] | None,
+    *,
+    accession: str | None = None,
+) -> dict[str, Any]:
+    """The two readings of one paper as one file, because a curator edits one file.
+
+    A paper states some of its results in tables and some only in the text, and the two readers
+    answer about the same paper. Handing back two files would make the curator merge them, which is
+    the one step in this bracket that is purely clerical — and the step where a candidate gets lost.
+
+    Nothing is de-duplicated. A value a paper prints in a table *and* restates in a sentence is
+    proposed twice, with the table cell on one and the whole sentence on the other, because which
+    of those a claim should cite is the same judgment this module refuses everywhere else: the two
+    source locations are not interchangeable, and picking one would be choosing the curator's
+    citation for them. The note says so rather than leaving them to notice.
+
+    ``tables_read`` is present either way, empty when only the text was read, so a consumer of this
+    file sees one shape whichever readings produced it.
+    """
+    if from_tables is None and from_prose is None:
+        raise ValueError("merge_proposals needs at least one reading; it merges, it does not read")
+    tables_notes = [
+        note for note in (from_tables or {}).get("notes", ()) if note != _PICK_YOUR_OWN
+    ]
+    candidates = list((from_tables or {}).get("candidates", ())) + list(
+        (from_prose or {}).get("candidates", ())
+    )
+    notes = [*tables_notes, *(from_prose or {}).get("notes", ())]
+    if from_tables is not None and from_prose is not None:
+        notes.append(
+            f"{len(from_tables.get('candidates', ()))} candidate(s) came from the tables and "
+            f"{len(from_prose.get('candidates', ()))} from the running text. A value your paper "
+            "prints in a table and restates in a sentence appears twice, once cited to each: "
+            "which of the two a claim should cite is your judgment, so neither was dropped"
+        )
+    if from_tables is not None:
+        # The closing sentence is about what a *table* prints side by side, so it is here only
+        # where a table was read. A prose-only file carries the prose reader's own closing note,
+        # which says what is noisy about a sentence; ending it with a paragraph about columns
+        # would describe a reading this file does not contain.
+        notes.append(_PICK_YOUR_OWN)
+    read = " and ".join(
+        part for part in (
+            "the tables it prints" if from_tables is not None else "",
+            "the running text" if from_prose is not None else "",
+        ) if part
+    )
+    # What to run next, and it differs: `claims-check` compares a reported value against the table
+    # the claim cites, and a value read from a sentence cites none — so telling a prose-only
+    # curator to check their values would send them to a report that says "not checked" on every
+    # row. What that command *can* answer about one is whether the model declares the output they
+    # named and reads it in the unit their paper stated, which is what --model does.
+    check = (
+        "check the result with: reprolith claims-check --claims <file> --tables <tables>"
+        if from_tables is not None else
+        "check the outputs you named with: reprolith claims-check --claims <file> --tables "
+        "<tables> --model <model> — a value read from a sentence cites no table, so its number "
+        "comes back unchecked and what that command answers about it is the output and its unit"
+    )
+    body: dict[str, Any] = {
+        "description": (
+            f"Candidate claims read from this paper: {read}. Delete the ones your model is not "
+            f"asked to reproduce, fill in 'species' on the ones that are left, and {check}"
+        ),
+        "candidates": candidates,
+        "tables_read": sorted((from_tables or {}).get("tables_read", ())),
+        "notes": notes,
+    }
+    if accession is not None:
+        return {"description": body["description"], "entries": {accession: body}}
+    return body
+
+
+__all__ = [
+    "merge_proposals",
+    "propose_claims",
+    "propose_claims_from_prose",
+    "propose_parameters",
+]

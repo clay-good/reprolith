@@ -76,7 +76,9 @@ a change under `openspec/changes/`.
   is), which took the corpus from one certified-against-a-paper entry to four — every model that
   paper deposited, with the engine's pass, failure and abstention paths all exercised on real
   published numbers for the first time. Reading results out
-  of manuscript **prose** is still not built. Measured on this set: reading tables reaches three
+  of manuscript **prose** is built and on the terminal too (`claims-propose --prose`, merged into
+  the same candidates file), though it moves this corpus's reach by nothing — see below. Measured
+  on this set: reading tables reaches three
   papers in ten of the open-access subset, and the rest state their results in figures —
   `datasets/manuscripts/table_survey.json`.)*
 - **Why (value):** When a paper ships an executable simulation recipe and archive, reproduction
@@ -173,7 +175,10 @@ a change under `openspec/changes/`.
   candidate reader (`propose_claims_from_prose`) reaches two of the ten open-access papers and
   both already state their results in a table — the seven figure-only papers state none in their
   text either. It broadens what can be read from a paper already reachable and moves the
-  corpus's reach by nothing. **And the figure captions were inside that sweep all along**
+  corpus's reach by nothing — which is why it is not a seeding lift, and why it is still shipped
+  (2026-09-09): the author whose peak is stated only in a sentence has no other reader, and leaving
+  a measured, tested reader importable-but-unrunnable made a fact about *this corpus* read as a
+  verdict on the reader. **And the figure captions were inside that sweep all along**
   (2026-08-30): 87 of 87 caption paragraphs across the ten papers, now counted rather than
   assumed, and none of the ten candidates they carry is attributed to a model while naming a
   metric — so "the results are in the figures" is a statement about the pictures, not about

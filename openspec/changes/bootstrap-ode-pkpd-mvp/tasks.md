@@ -30,8 +30,11 @@ a phase done until its verification holds.
     retained non-targetable (`enumerate_sedml_claims`), verified against a manual read of the
     BioModels SED-ML for Kholodenko — four curves, two figures. Reference *data* is not there:
     the document says what to plot, not what the figure showed, so every claim is
-    figure-referenced. Reading claims from manuscript *prose* is still not built — but reading
-    them from the paper's own **tables** is: `propose_claims` / `reprolith claims-propose` turns
+    figure-referenced. Reading claims from manuscript *prose* is built and on the terminal
+    (`reprolith claims-propose --prose`), measured to reach no paper this corpus's tables miss
+    and kept for the paper whose result is stated only in a sentence — but reading
+    them from the paper's own **tables** is what seeded this set: `propose_claims` /
+    `reprolith claims-propose` turns
     every number a table prints into a candidate with the row and column that name it, and
     rediscovers the two metformin claims a human extracted by hand. Which candidate is a claim,
     and which model output it reads, is left to the curator by design. Reference data for a

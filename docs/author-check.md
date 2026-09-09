@@ -222,6 +222,37 @@ so a claim you never confirmed is still refused — and the refusal names the su
 beside the blank field, so it reads as an instruction rather than as the finding restated. Measured against the four metformin deposits'
 hand-written claims, the rule agrees on 22 rows, is silent on 12, and is wrong on none.
 
+### When your results are in the text, not a table
+
+Many papers state a peak or an exposure in a sentence and never tabulate it. `--prose` reads the
+running text of your paper, as a plain-text file, under the same rule:
+
+```bash
+reprolith claims-propose --prose my_paper.txt --out candidates.json
+```
+
+Give both and you get one file to edit:
+
+```bash
+reprolith claims-propose --tables my_tables.json --prose my_paper.txt --out candidates.json
+```
+
+Every number with a **unit** beside it becomes a candidate carrying the whole sentence it came
+from, and `attribution` records which words the sentence used — `measured`, `simulated`, both, or
+neither. That is there because "the measured value is 26.1 nmol*h/mL, and the simulated value is
+91.4" needs you to see which half is which, and deciding it is the reading this refuses to make. A
+bare number is not proposed at all: in prose it is a figure reference, a citation, or a year far
+more often than it is a result.
+
+Prose is noisier than a table, and two things follow. A value you print in a table *and* restate in
+a sentence is proposed **twice**, cited to each, because which of the two your claim should cite is
+your judgment. And nothing read from a sentence carries `species_suggested` even with `--model`:
+the suggestion matches a row's *label* against your model's words, and a sentence has no label.
+Your values also come back `not checked` from `claims-check`, since that comparison is against the
+table a claim cites and a sentence cites none — what it can still answer about a promoted prose
+candidate is whether your model declares the output you named and reads it in the unit you stated,
+which is `claims-check --model`.
+
 The same reading, in the parameters file's shape, is `params-propose`:
 
 ```bash

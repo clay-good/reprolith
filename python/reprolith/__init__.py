@@ -34,6 +34,7 @@ from .certify import (
     plan_under_budget,
 )
 from .claim_candidates import (
+    merge_proposals,
     propose_claims,
     propose_claims_from_prose,
     propose_parameters,
@@ -654,6 +655,7 @@ __all__ = [
     "VariabilityClaim",
     "PopulationRun",
     "presubmission_report",
+    "merge_proposals",
     "propose_claims",
     "propose_claims_from_prose",
     "propose_parameters",

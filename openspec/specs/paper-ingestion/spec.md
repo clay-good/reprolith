@@ -139,6 +139,35 @@ never an extraction presented as decided.
 - **THEN** nothing is proposed from it and the reason is stated, because putting a value under a
   column by position across a span reports a number under the wrong heading
 
+### Requirement: Candidate claims can be read from the paper's running text
+
+Most papers state some result only in a sentence, and a curator working from such a paper has no
+table to read. Reprolith SHALL be able to propose candidates from the text as well as the tables,
+on the same surface and into the same file, under the same rule that a candidate is a proposal.
+
+#### Scenario: What a sentence has to state to be proposed
+
+- **WHEN** the running text of a paper is read for candidate claims
+- **THEN** a number carrying a unit becomes one candidate, and a bare number becomes none, since
+  in prose a number with no unit is a figure reference, a citation, a year or a count far more
+  often than it is a result
+- **AND** the candidate carries the whole sentence it came from as its source location, together
+  with which of "measured" and "simulated" the sentence's own wording used, because a sentence
+  reporting an experiment and one reporting the model are different statements and telling them
+  apart is the curator's reading
+
+#### Scenario: Both readings of one paper
+
+- **WHEN** a paper's tables and its text are both read
+- **THEN** the candidates are returned as one file, in one shape whichever readings produced it,
+  saying how many came from each
+- **AND** a value the paper prints in a table and restates in a sentence is proposed twice, cited
+  to each, because the two source locations are not interchangeable and choosing between them is
+  the curator's judgment
+- **AND** nothing read from the text carries a suggested model output even where the model is
+  supplied, and the file says so, since the suggestion matches a row's label against the model's
+  words and a sentence has no label
+
 ### Requirement: A curator's figure digitization can supply a claim's reference values
 
 Most papers state their results in figures, and a claim whose values live in one has nothing to
