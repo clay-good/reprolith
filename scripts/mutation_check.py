@@ -1420,6 +1420,13 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          '                    "the run produced non-finite output, so it has no "'),
         ["tests/test_linter.py"],
     ),
+    (
+        "an unsolvable program hands an author the solver's status and nothing to do",
+        "fba.py",
+        ('                "reproduced with, so there is no optimum to compare — check that the medium your "',
+         '                "reproduced with, so there is no optimum to compare. "'),
+        ["tests/test_fba.py"],
+    ),
     # --- every inline verdict states what it ran, 2026-09-08 ------------------------------------
     (
         "an inline curve verdict hides the window and the grid it was sampled on",

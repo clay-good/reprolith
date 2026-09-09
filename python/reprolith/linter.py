@@ -301,7 +301,8 @@ def lint_objective(
                 ComparisonMethod.SCALAR_RELATIVE_ERROR, tol,
                 reason=(
                     "the flux-balance program is not solvable under these bounds, so it has no "
-                    f"optimum to compare: {unsolvable}"
+                    "optimum to compare — check the medium against the network it has to feed: "
+                    f"{unsolvable}"
                 ),
             ),
             protocol=protocol,

@@ -99,6 +99,14 @@ def test_an_infeasible_program_abstains_rather_than_taking_the_run_down() -> Non
     )
     assert assessment.verdict is Verdict.NOT_EVALUABLE
     assert "not solvable" in assessment.root_cause
+    # The reason is also the author's fix line, and the pre-submission spec asks a fix to be an
+    # instruction rather than the finding restated: an author handed "HiGHS Status 8: model_status
+    # is Infeasible" under a heading reading FIX BEFORE YOU SUBMIT has nothing to do. The solver's
+    # message stays, as evidence, after something to act on.
+    from reprolith.presubmission import _claim_issue_and_fix
+
+    _, fix = _claim_issue_and_fix(assessment)
+    assert "check that the medium" in fix
     # And the abstention carries no attribution to a model or an engine: nothing was measured, so
     # there is nothing to attribute a shortfall to.
     assert assessment.implicated is None

@@ -5844,3 +5844,25 @@ margin budget of 1.0e-02.
 
 The alternative was to weaken the sentence. Making it true was about twenty lines, and the sentence
 is the whole reason a reader would accept a finite grid standing in for an infinite one.
+
+
+## A fix an author can act on
+
+The pre-submission spec asks that every fix-list item be an instruction, "never the issue restated:
+a finding handed back under a heading that says to fix it gives them nothing to do". The new
+infeasible-program abstention broke that the day it landed. Its reason is also its fix line, and an
+author whose model came back with *FIX BEFORE YOU SUBMIT — the flux-balance program is not solvable
+… HiGHS Status 8: model_status is Infeasible* has been handed a solver's return code.
+
+The reason now says what to check before it says what the solver said: whether the medium the paper
+states admits a feasible flux distribution at all — an exchange bound of zero on a required nutrient
+makes a program infeasible rather than zero-growth, which is the single most common way this
+happens — and whether two bounds the artifact carries contradict each other. The solver's message
+stays, after something to act on, because it is the evidence.
+
+Worth recording about the *routing* rather than the wording: the abstention branch of the fix list
+knows only two cases, a limit of Reprolith's method and everything else, and everything else hands
+back the reason verbatim. That is fine only for as long as every reason is written to be actionable.
+The unbounded-domain abstention already was — "run it on a wider grid, or state the wall the source
+used" — and it is deliberately *not* filed under Reprolith's own limits, because that heading says
+"nothing here is yours to fix" and one of those two routes is the author's.

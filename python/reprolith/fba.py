@@ -298,7 +298,11 @@ def judge_objective(
             source_location=source_location,
             reason=(
                 "the flux-balance program is not solvable under the bounds this claim was "
-                f"reproduced with, so there is no optimum to compare: {unsolvable}"
+                "reproduced with, so there is no optimum to compare — check that the medium your "
+                "paper states admits a feasible flux distribution (an exchange bound of zero on a "
+                "nutrient the network requires makes the program infeasible rather than "
+                "zero-growth), and that no bound the artifact carries contradicts another: "
+                f"{unsolvable}"
             ),
             reference_kind=reference_kind,
         )
