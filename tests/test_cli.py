@@ -1516,7 +1516,11 @@ def test_figure_check_json_shape_is_pinned(tmp_path, capsys):
     assert set(reading) == {"claim", "curve", "figure", "digitizer", "points", "x_axis", "y_axis",
                             "resolution", "interpolation"}
     assert set(reading["resolution"]) == {"points", "span", "widest_gap", "widest_gap_fraction"}
-    assert set(reading["interpolation"]) == {"points", "window", "measurable", "worst_at",
+    # `unmeasurable_because` names which of the two unmeasurable cases a reading hit — too few
+    # points, or a judged window with nothing inside it — and is None where the cost was measured.
+    # One shape for all three, so a consumer does not have to know which branch produced its dict.
+    assert set(reading["interpolation"]) == {"points", "window", "measurable",
+                                             "unmeasurable_because", "worst_at",
                                              "worst_read", "worst_interpolated", "worst_residual",
                                              "normalized", "budget_share"}
     assert set(payload["pairing"]) == {"checked_against", "faults", "curves_not_read", "runs",

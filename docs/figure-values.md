@@ -204,6 +204,21 @@ certificate cites it. A claim with **no** reference is untouched: the band is ne
 there is nothing to consult it against, and a document's plotted curve with no values is the
 abstention this repository publishes rather than a reading nobody took.
 
+## When the cost cannot be measured, which of the two reasons it is
+
+A reading's interpolation cost is unmeasurable for two unrelated reasons, and the citation line the
+certificate carries used to state them as one: *N points, too few to measure what its interpolation
+costs*. That is right for a reading of two points, which is one straight line with nothing interior
+to check it against. It is false for the other case — a reading of any length judged over a window
+that happens to fall between two of its points — where the curator is told their five points are too
+few, when five is not the problem and reading a sixth somewhere else would not fix it.
+
+They are separated now, on the citation line and in `interpolation_cost`'s own result
+(`unmeasurable_because`), and each says what to do: read more of the curve (three points are the
+fewest that can check a join), or read a point inside the stretch the run is judged over. The
+`figure-check` command says the same two things, and the comment there claiming the two-point case
+was "the only unmeasurable case a series can reach" was false about the function directly above it.
+
 ## What a flawless reading costs
 
 The reference between two read points is a straight line, so a reading is not free even when it is

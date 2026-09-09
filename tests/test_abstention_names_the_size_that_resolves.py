@@ -157,3 +157,38 @@ def test_a_domain_too_coarse_to_judge_says_how_much_longer_would_do_it() -> None
     assert 1.0 / (19 + 1) <= 0.05 < 1.0 / (18 + 1)
     # Nothing is claimed where the arithmetic has nothing to say, and the direction survives there.
     assert _domain_to_resolve(short, 0, 0.05) == "a longer domain holds more modes and measures finer"
+
+
+# --- the digitized reading ------------------------------------------------------------------------
+
+
+def test_a_reading_with_no_interior_point_in_the_window_is_not_called_too_few() -> None:
+    """Two different facts were reported under one sentence, and one of them was false.
+
+    A reading's interpolation cost is unmeasurable for two unrelated reasons: fewer than three
+    points, which is a reading too coarse to check itself anywhere; and a judged window that falls
+    between two read points, which a reading of any length can hit. The citation line said "N
+    points, too few to measure what its interpolation costs" for both — telling the curator of a
+    five-point reading that five is too few, when five is not the problem and reading a sixth
+    somewhere else would not fix it.
+    """
+    from reprolith.digitization import interpolation_cost
+    from test_digitization import _series
+
+    fine = _series([[0, 0.0], [2, 5.0], [6, 8.0], [12, 4.0], [24, 2.0]])
+    # Judged over 12-24, whose only read points are its own endpoints: nothing interior to check.
+    narrow = interpolation_cost(fine, window=(12.0, 24.0))
+    assert narrow["measurable"] is False
+    assert narrow["unmeasurable_because"] == "window-holds-no-interior-point"
+    line = fine.source_line(window=(12.0, 24.0))
+    assert "too few" not in line
+    assert "none of them strictly inside the 12-24 window" in line
+    assert "read a point inside that stretch" in line
+
+    # The genuinely under-read case keeps its own sentence, and gains the bar it is measured against.
+    coarse = _series([[0, 0.0], [24, 2.0]])
+    assert interpolation_cost(coarse)["unmeasurable_because"] == "under-read"
+    assert "three read points are the fewest" in coarse.source_line()
+
+    # And a measurable reading carries the key too, so a consumer sees one shape rather than two.
+    assert interpolation_cost(fine)["unmeasurable_because"] is None

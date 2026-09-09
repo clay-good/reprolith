@@ -1547,16 +1547,25 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
                       f"figure tolerance before the model is consulted: add points near "
                       f"{cost['worst_at']:g} {reading.x_axis.unit}, where it bends most")
         else:
-            # Two points, which is the only unmeasurable case a series can reach: one straight line
-            # over the whole span, with no interior reading to check it against. This used to be
-            # guarded by the widest-gap threshold, which cannot discriminate here — a two-point
-            # reading's one gap *is* the span, so the condition was true whenever it was reached
-            # and read as a test that could fail.
+            # Two causes, not one. A two-point reading is one straight line over the whole span
+            # with nothing interior to check it against; and `_best_cost` right above reaches the
+            # other, where a reading of any length is judged over a window narrower than one of its
+            # gaps. This comment claimed the first was "the only unmeasurable case a series can
+            # reach" while its own sibling in this file produced the second — the shape of claim
+            # this project keeps finding in its own comments. The printed sentence was already
+            # window-aware and stays; what it gained is the instruction, which differs between the
+            # two: read more of the curve, or read inside the stretch being judged.
             print(f"      {cost['points']} readings leave no interior point between "
                   f"{cost['window'][0]:g} and {cost['window'][1]:g} {reading.x_axis.unit} to check "
                   "the straight lines over it against, and nothing here can say what they cost. A "
                   "flawless five-point reading of an oral PK curve already misses it by 0.25 "
                   "against a 0.20 budget, and this is coarser than that")
+            print("      " + (
+                f"read a point between {cost['window'][0]:g} and {cost['window'][1]:g} "
+                f"{reading.x_axis.unit} — the reading covers that stretch but says nothing inside it"
+                if cost["unmeasurable_because"] == "window-holds-no-interior-point"
+                else "read more of the curve: three points are the fewest that can check a join"
+            ))
         # The thing a curator cannot see in their own file: a curve is judged on the run's own
         # samples, so a reading of three points against a run of a thousand is judged almost
         # entirely against the straight lines between them. Stated, never judged — the wider

@@ -214,12 +214,26 @@ class DigitizedSeries:
         of the comparison it published rather than of the file it was read from.
         """
         cost = interpolation_cost(self, window=window)
-        spent = (
-            f"{cost['points']} points, its own interpolation spending "
-            f"{cost['budget_share']:.0%} of the pass budget"
-            if cost["measurable"]
-            else f"{cost['points']} points, too few to measure what its interpolation costs"
-        )
+        if cost["measurable"]:
+            spent = (
+                f"{cost['points']} points, its own interpolation spending "
+                f"{cost['budget_share']:.0%} of the pass budget"
+            )
+        elif cost["unmeasurable_because"] == "window-holds-no-interior-point":
+            # Not "too few points", which is what this line used to say here and is false of a
+            # reading that may be forty points long. The window is what has nothing in it, and the
+            # curator's fix is to read a point inside the stretch the run is judged over.
+            low, high = cost["window"]
+            spent = (
+                f"{cost['points']} points, none of them strictly inside the {low:g}-{high:g} window "
+                "it is judged over, so what its interpolation costs there cannot be measured — "
+                "read a point inside that stretch"
+            )
+        else:
+            spent = (
+                f"{cost['points']} points, too few to measure what its interpolation costs — three "
+                "read points are the fewest that can check a join against a reading"
+            )
         return (
             f"{self.figure}, {self.curve} "
             f"({DIGITIZED_BY}{self.digitizer}; {spent})"
@@ -417,6 +431,12 @@ def interpolation_cost(
         "points": len(read),
         "window": [low, high],
         "measurable": False,
+        # Why it is not measurable, because the two causes are different facts about the reading
+        # and the citation line reported them as one. A reading of two points is too coarse to
+        # check itself anywhere; a reading of forty whose judged window happens to fall between two
+        # of them is a fine reading judged over a stretch it says nothing inside — and telling that
+        # curator their forty points are "too few" is false as well as useless.
+        "unmeasurable_because": None,
         "worst_at": None,
         "worst_read": None,
         "worst_interpolated": None,
@@ -428,7 +448,7 @@ def interpolation_cost(
         # Two points are one straight line with no interior reading to check it against. Reported
         # as not measurable rather than as zero: a reading with nothing to disagree with is not a
         # reading that agrees.
-        return blank
+        return {**blank, "unmeasurable_because": "under-read"}
 
     xs = [series.x_axis.transform(x) for x, _ in series.points]
     ys = [series.y_axis.transform(y) for _, y in series.points]
@@ -446,7 +466,7 @@ def interpolation_cost(
         i for i in range(1, len(read) - 1) if low < series.points[i][0] < high
     ]
     if not measured:
-        return blank
+        return {**blank, "unmeasurable_because": "window-holds-no-interior-point"}
     # The scale is the reference over the judged window and nothing else: the two ends, sampled the
     # way the join samples them, and every reading between. With no window given these are exactly
     # the curator's own points, so the whole-reading number is unchanged.
@@ -470,6 +490,7 @@ def interpolation_cost(
         "points": len(read),
         "window": [low, high],
         "measurable": True,
+        "unmeasurable_because": None,
         "worst_at": series.points[worst][0],
         "worst_read": read[worst],
         "worst_interpolated": rejoined[worst],

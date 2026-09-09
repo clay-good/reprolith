@@ -5955,3 +5955,24 @@ is where the number came from being checked rather than trusted.
 The sentence is now the concrete clause **or** the direction, not both: the generic half survives
 only where the arithmetic has nothing to say, which is a mode of zero. Keeping both would have left
 the reader the same guess with a number beside it.
+
+
+## Two facts under one sentence, and one of them false
+
+Sweeping the same shape through the figure-reading path turned up a variant that is worse than an
+unhelpful sentence: a wrong one. A reading's interpolation cost is unmeasurable for two unrelated
+reasons — fewer than three points, and a judged window that falls between two read points — and the
+citation line that reaches the certificate reported both as *N points, too few to measure what its
+interpolation costs*. For the second, that tells the curator of a five-point reading that five is
+too few. Five is not the problem, and reading a sixth point somewhere else would not fix it.
+
+The `figure-check` command printed the window-aware sentence for both, which is right, under a
+comment asserting that the two-point case "is the only unmeasurable case a series can reach" — while
+`_best_cost`, thirty lines above it in the same file, exists precisely to handle the case where every
+covered window is narrower than one gap of the reading. A comment claiming a property the code does
+not have is a shape this project keeps finding in itself; this one was three feet from its own
+counterexample.
+
+`interpolation_cost` now says which case it hit (`unmeasurable_because`), all three results carry the
+key so a consumer sees one shape, and each sentence ends in the instruction that differs between
+them: read more of the curve, or read a point inside the stretch the run is judged over.
