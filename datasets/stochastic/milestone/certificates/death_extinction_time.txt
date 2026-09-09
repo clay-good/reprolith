@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — Pure death process — mean time to extinction
-Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev 20eac2d3b2ee)
+Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev c69f1ee946cc)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
@@ -8,7 +8,7 @@ OVERALL: partially-reproduced
 CLAIMS
   [death_extinction_time-mean] mean time to extinction: reproduced [assumption-qualified] (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0157
-      protocol: SSA first passage: 2000 trajectories, seed 20260907, species[0] to zero, each capped at t=1000000.0 (sampling noise: the mean's standard error is 1.17% of the reported value, against a 5% pass threshold)
+      protocol: SSA first passage: 2000 trajectories, seed 20260907, species[0] to zero, each capped at t=1000000.0 (sampling noise: the mean's standard error is 1.17% of the reported value, against a 5% pass threshold; this answer sits 3.43% from the nearest verdict line, so ~23,414 trajectories — 12x this ensemble — would put the sampling error a tenth of the way to it)
 
 ASSUMPTIONS (supplied by Reprolith, not the paper)
   [ssa-sampling-death_extinction_time-mean] the mean extinction time judged here is the average of an ensemble Reprolith sampled, not a number the paper's own run produced -> SSA first passage: 2000 trajectories, seed 20260907, species[0] to zero, each capped at t=1000000.0 [load-bearing] [this engine's limit — no expert decision closes it]

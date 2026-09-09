@@ -8,7 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "SSA ensemble: 1600 trajectories to t=40, seed 11, read=species[0] (sampling noise: the mean's standard error is 1.26% of the reported value, against a 5% pass threshold)",
+      "protocol": "SSA ensemble: 1600 trajectories to t=40, seed 11, read=species[0] (sampling noise: the mean's standard error is 1.26% of the reported value, against a 5% pass threshold; this answer sits 2.70% from the nearest verdict line, so ~34,490 trajectories \u2014 22x this ensemble \u2014 would put the sampling error a tenth of the way to it)",
       "quantity": "mean copy number",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -35,7 +35,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "gillespie-direct-method (rev 20eac2d3b2ee)",
+    "algorithm": "gillespie-direct-method (rev c69f1ee946cc)",
     "engine": "reprolith-ssa",
     "version": "0.0.1"
   },

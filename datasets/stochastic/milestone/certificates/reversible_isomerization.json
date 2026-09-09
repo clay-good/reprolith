@@ -35,7 +35,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "gillespie-direct-method (rev 20eac2d3b2ee)",
+    "algorithm": "gillespie-direct-method (rev c69f1ee946cc)",
     "engine": "reprolith-ssa",
     "version": "0.0.1"
   },

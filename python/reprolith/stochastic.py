@@ -34,6 +34,7 @@ from .oracle import (
     default_tolerance,
     judge_scalar,
     not_evaluable,
+    relative_error,
     spread_standard_error,
     spread_statistic,
     undetermined_shortfall,
@@ -410,7 +411,75 @@ _SAMPLING_BASIS = (
 )
 
 
-def _sampling_cost(claim: StochasticClaim, variance: float, trajectories: int) -> str:
+#: How much of the distance between a claim's answer and its nearest verdict line the sampling
+#: error may account for before the ensemble is reported as able to decide the verdict. The same
+#: tenth the spatial class holds a finite grid to for an unbounded domain
+#: (:data:`reprolith.spatial.UNBOUNDED_WALL_BUDGET`), and for the same reason — a bound that is a
+#: tenth of what a verdict turns on cannot be what turned it. Advisory here: nothing gates on it,
+#: because unlike a wall, an ensemble's error is not something a curator can measure away without
+#: re-running the claim. What it buys is a number in place of "a larger ensemble".
+SAMPLING_MARGIN_BUDGET = 0.1
+
+
+def ensemble_to_settle(
+    *, relative_error: float, relative_sem: float, trajectories: int, tolerance: Tolerance
+) -> tuple[int, float] | None:
+    """How large an ensemble would put this claim's sampling noise out of the verdict's way.
+
+    The queue's alternative to a sampled ensemble reads "a larger ensemble", which is true of every
+    ensemble ever drawn and tells a reader nothing. This answers *how much* larger: the standard
+    error falls as 1/√n, so reaching a tenth of the margin between this claim's answer and its
+    nearest verdict line takes ``n × (sem / (0.1 × margin))²`` trajectories.
+
+    Returns ``(trajectories, margin)``, or ``None`` when the claim already sits far enough from
+    both lines — there is nothing to buy — or when the margin is zero, where no finite ensemble
+    settles a claim landing exactly on its threshold.
+    """
+    margin = min(
+        abs(relative_error - tolerance.reproduced_within),
+        abs(relative_error - tolerance.partial_within),
+    )
+    if margin <= 0.0:
+        return None
+    target = SAMPLING_MARGIN_BUDGET * margin
+    if relative_sem <= target:
+        return None
+    return math.ceil(trajectories * (relative_sem / target) ** 2), margin
+
+
+def _settling_clause(
+    *, reported: float, observed: float, relative_sem: float, trajectories: int,
+    tolerance: Tolerance,
+) -> str:
+    """The "and this is what would settle it" half of a sampling-cost clause, or ``""``.
+
+    Written once for the three kinds of ensemble claim this class judges. The first version of this
+    reached only the mean, which is three of the five queue items it exists to answer — and a rule
+    that covers every case it was written for but one is a shape this repository has caught in
+    itself before.
+    """
+    settle = ensemble_to_settle(
+        relative_error=relative_error(reported, observed),
+        relative_sem=relative_sem,
+        trajectories=trajectories,
+        tolerance=tolerance,
+    )
+    if settle is None:
+        return ""
+    needed, margin = settle
+    return (
+        f"; this answer sits {margin:.2%} from the nearest verdict line, so ~{needed:,} "
+        f"trajectories — {needed / trajectories:.0f}x this ensemble — would put the sampling "
+        "error a tenth of the way to it"
+    )
+
+
+def _sampling_cost(
+    claim: StochasticClaim,
+    variance: float,
+    trajectories: int,
+    observed_mean: float | None = None,
+) -> str:
     """What this ensemble's size buys the claim, as a clause for the protocol line.
 
     The assumption behind every stochastic certificate says the verdict "moves with the count and
@@ -429,10 +498,19 @@ def _sampling_cost(claim: StochasticClaim, variance: float, trajectories: int) -
     if measured is None:
         return ""
     relative_sem, threshold = measured
-    return (
+    clause = (
         f" (sampling noise: the mean's standard error is {relative_sem:.2%} of the reported value, "
-        f"against a {threshold:.0%} pass threshold)"
+        f"against a {threshold:.0%} pass threshold"
     )
+    if observed_mean is not None:
+        clause += _settling_clause(
+            reported=claim.reported_mean, observed=observed_mean, relative_sem=relative_sem,
+            trajectories=trajectories,
+            tolerance=claim.tolerance or default_tolerance(
+                ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+            ),
+        )
+    return clause + ")"
 
 
 def _protocol(claim: StochasticClaim) -> str:
@@ -623,8 +701,12 @@ def _judge_extinction(
     n_species: int,
     reactions: Sequence[Reaction],
     initial: Sequence[int],
-) -> tuple[ClaimAssessment, float]:
+) -> tuple[ClaimAssessment, float, float | None]:
     """Run the claim's ensemble of first passages and judge the mean, or say why it cannot be.
+
+    Returns the assessment, the ensemble's variance, and the mean it measured — the last so the
+    caller's cost clause can say how far this answer sits from its verdict line. ``None`` where no
+    mean was formed, which is every abstention here.
 
     Returns the assessment and the ensemble's variance, which the protocol line reports as the
     sampling cost exactly as it does for a mean count.
@@ -674,6 +756,7 @@ def _judge_extinction(
                 reference_kind=ReferenceKind.NUMERIC,
             ),
             0.0,
+            None,
         )
     mean = sum(times) / len(times)
     variance = sum((value - mean) ** 2 for value in times) / (len(times) - 1)
@@ -689,6 +772,7 @@ def _judge_extinction(
                 reference_kind=ReferenceKind.NUMERIC,
             ),
             variance,
+            None,
         )
     return (
         judge_scalar(
@@ -702,6 +786,7 @@ def _judge_extinction(
             assumption_qualified=claim.assumption_qualified,
         ),
         variance,
+        mean,
     )
 
 
@@ -785,7 +870,9 @@ def certify_stochastic(
                 assessment,
                 # The judged claims are the ones this was invisible on: the abstention rule reports
                 # the ensemble's noise only when it is too large to decide anything.
-                protocol=_protocol(claim) + _sampling_cost(claim, variance, len(ensemble)),
+                protocol=_protocol(claim) + _sampling_cost(
+                    claim, variance, len(ensemble), observed_mean=mean,
+                ),
             )
         )
         judged.append(claim)
@@ -815,14 +902,16 @@ def certify_stochastic(
     extinction_claims = tuple(extinctions)
     extinction_sampling: list[Assumption] = []
     for extinction in extinction_claims:
-        assessment, variance = _judge_extinction(extinction, n_species, reactions, initial)
+        assessment, variance, observed = _judge_extinction(
+            extinction, n_species, reactions, initial
+        )
         # The cost clause goes on a *judged* assessment only, as it does for a mean count. On an
         # abstention the reason already carries the ensemble's noise, and printing it again from a
         # second formatter gave one number two roundings — 20.1% in the reason and 20.08% in the
         # protocol — which is this repository's "two accounts of one computation" in miniature.
         protocol = _extinction_protocol(extinction)
         if assessment.verdict is not Verdict.NOT_EVALUABLE:
-            protocol += _extinction_cost(extinction, variance)
+            protocol += _extinction_cost(extinction, variance, observed_mean=observed)
         assessments.append(replace(assessment, protocol=protocol))
         if assessment.assumption_qualified:
             extinction_sampling.append(
@@ -893,7 +982,9 @@ def _extinction_protocol(claim: ExtinctionTimeClaim) -> str:
     )
 
 
-def _extinction_cost(claim: ExtinctionTimeClaim, variance: float) -> str:
+def _extinction_cost(
+    claim: ExtinctionTimeClaim, variance: float, observed_mean: float | None = None
+) -> str:
     """What this ensemble's size buys the first-passage claim, measured as it is for a mean."""
     measured = ensemble_headroom(
         reported_mean=claim.reported_mean,
@@ -904,10 +995,19 @@ def _extinction_cost(claim: ExtinctionTimeClaim, variance: float) -> str:
     if measured is None:
         return ""
     relative_sem, threshold = measured
-    return (
+    clause = (
         f" (sampling noise: the mean's standard error is {relative_sem:.2%} of the reported "
-        f"value, against a {threshold:.0%} pass threshold)"
+        f"value, against a {threshold:.0%} pass threshold"
     )
+    if observed_mean is not None:
+        clause += _settling_clause(
+            reported=claim.reported_mean, observed=observed_mean, relative_sem=relative_sem,
+            trajectories=claim.trajectories,
+            tolerance=claim.tolerance or default_tolerance(
+                ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+            ),
+        )
+    return clause + ")"
 
 
 def time_to_extinction(
@@ -1150,7 +1250,13 @@ def _judge_noise(
         protocol += (
             f" (sampling noise: the statistic's jackknife standard error is "
             f"{standard_error / claim.reported_value:.2%} of the reported value, against a "
-            f"{tol.reproduced_within:.0%} pass threshold)"
+            f"{tol.reproduced_within:.0%} pass threshold"
+            + _settling_clause(
+                reported=claim.reported_value, observed=observed,
+                relative_sem=abs(standard_error / claim.reported_value),
+                trajectories=len(values), tolerance=tol,
+            )
+            + ")"
         )
     return replace(assessment, protocol=protocol)
 

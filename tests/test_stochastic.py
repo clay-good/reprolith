@@ -758,3 +758,121 @@ def test_every_committed_stochastic_certificate_states_its_sampling_noise() -> N
             assert protocol.startswith(("SSA ensemble:", "SSA first passage:")), protocol
             assert "standard error is" in protocol, f"{path.name} states no sampling noise"
             assert "pass threshold" in protocol
+
+
+def test_a_sampling_cost_says_how_large_an_ensemble_would_settle_the_claim() -> None:
+    """"A larger ensemble" is true of every ensemble ever drawn and tells a reader nothing.
+
+    It was the alternative on all five of this class's queue items — the half of the verification
+    queue that says no expert decision closes it — so the only route out of that half was a number
+    nobody had computed. The standard error falls as 1/sqrt(n), and the distance from this claim's
+    answer to its nearest verdict line is measured, so the count is arithmetic.
+    """
+    import math
+
+    from reprolith import Tolerance, ToleranceSource
+    from reprolith.stochastic import SAMPLING_MARGIN_BUDGET, ensemble_to_settle
+
+    tolerance = Tolerance(0.05, 0.15, ToleranceSource.CLASS_DEFAULT)
+    settle = ensemble_to_settle(
+        relative_error=0.0227, relative_sem=0.0153, trajectories=400, tolerance=tolerance,
+    )
+    assert settle is not None
+    needed, margin = settle
+    assert margin == pytest.approx(0.05 - 0.0227)
+    # 1/sqrt(n): reaching a tenth of a 2.73% margin from 1.53% takes (0.0153/0.00273)^2 as many.
+    assert needed == math.ceil(400 * (0.0153 / (SAMPLING_MARGIN_BUDGET * margin)) ** 2)
+    assert needed > 400
+
+
+def test_an_ensemble_already_clear_of_its_verdict_line_is_offered_nothing_to_buy() -> None:
+    """The claim it does not fire on, which is the honest half: a claim whose sampling error is
+    already a tenth of its margin has nothing to gain from more trajectories, and a sentence
+    telling its reader to draw more would be noise dressed as advice."""
+    from reprolith import Tolerance, ToleranceSource
+    from reprolith.stochastic import ensemble_to_settle
+
+    tolerance = Tolerance(0.05, 0.15, ToleranceSource.CLASS_DEFAULT)
+    assert ensemble_to_settle(
+        relative_error=0.001, relative_sem=0.0001, trajectories=400, tolerance=tolerance,
+    ) is None
+    # And a claim sitting exactly on a verdict line: no finite ensemble settles it, so nothing is
+    # promised rather than an enormous number being printed.
+    assert ensemble_to_settle(
+        relative_error=0.05, relative_sem=0.01, trajectories=400, tolerance=tolerance,
+    ) is None
+
+
+_SETTLES = "would put the sampling error a tenth of the way to it"
+
+
+def test_every_kind_of_ensemble_claim_carries_the_settling_count() -> None:
+    """A mean, a first passage and a noise statistic — the three the queue's five items are.
+
+    The first version of this reached the mean alone, which is three of those five. A rule that
+    covers every case it was written for but one is a shape this repository has caught in itself
+    before, and the omitted case is where it tends to matter.
+
+    Run here rather than read off the committed certificates. The first version of *this test* read
+    the artifacts, which cannot see a change to the code that wrote them: the mutation checker
+    disabled the first-passage clause and the test shrugged, because a JSON file on disk says what
+    it said yesterday whatever the engine does today.
+    """
+    from reprolith import (
+        ExtinctionTimeClaim,
+        NoiseClaim,
+        NoiseStatistic,
+        PaperIdentity,
+        StochasticClaim,
+        certify_stochastic,
+    )
+    from reprolith.stochastic import solver_pin
+
+    immigration_death = [Reaction(10.0, (), ((0, 1),)), Reaction(1.0, ((0, 1),), ())]
+    certificate = certify_stochastic(
+        paper=PaperIdentity(title="an immigration-death process"), engine_pin=solver_pin(),
+        n_species=1, reactions=immigration_death, initial=[0],
+        claims=[StochasticClaim(
+            claim_id="mean", quantity="mean copy number", species=0, reported_mean=10.0,
+            source_location="closed-form", duration=40.0, trajectories=400, seed=20260807,
+        )],
+        noises=[NoiseClaim(
+            claim_id="fano", quantity="Fano factor", species=0,
+            statistic=NoiseStatistic.FANO_FACTOR, reported_value=1.0,
+            # 4,000 rather than 400: a Fano factor's error bar is ~10x a mean's, and at 400 this
+            # claim *abstains* — which is the class's own documented measurement, and would make
+            # this check pass by having nothing to check.
+            source_location="closed-form", duration=40.0, trajectories=4000, seed=20260907,
+        )],
+    )
+    death = certify_stochastic(
+        paper=PaperIdentity(title="a pure death process"), engine_pin=solver_pin(),
+        n_species=1, reactions=[Reaction(1.0, ((0, 1),), ())], initial=[8],
+        extinctions=[ExtinctionTimeClaim(
+            claim_id="extinction", quantity="mean time to extinction", species=0,
+            reported_mean=sum(1.0 / i for i in range(1, 9)), source_location="closed-form",
+            trajectories=400, seed=7, max_time=1e6,
+        )],
+    )
+    judged = [
+        a for cert in (certificate, death) for a in cert.assessments
+        if a.verdict is not Verdict.NOT_EVALUABLE
+    ]
+    assert len(judged) == 3, [a.claim_id for a in judged]
+    for assessment in judged:
+        assert assessment.protocol is not None
+        assert _SETTLES in assessment.protocol, assessment.claim_id
+
+
+def test_the_shipped_certificates_carry_it_too() -> None:
+    """And the artifacts a reader actually opens say it, which the live check above cannot show."""
+    import json
+    from pathlib import Path
+
+    milestone = Path(__file__).parent.parent / "datasets" / "stochastic" / "milestone"
+    for name in ("immigration_death_10", "death_extinction_time", "immigration_death_noise"):
+        content = json.loads((milestone / "certificates" / f"{name}.json").read_text(encoding="utf-8"))
+        judged = [a for a in content["assessments"] if a["verdict"] != "not-evaluable"]
+        assert judged, name
+        for assessment in judged:
+            assert _SETTLES in assessment["protocol"], (name, assessment["claim_id"])

@@ -8,7 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "SSA first passage: 2000 trajectories, seed 20260907, species[0] to zero, each capped at t=1000000.0 (sampling noise: the mean's standard error is 1.17% of the reported value, against a 5% pass threshold)",
+      "protocol": "SSA first passage: 2000 trajectories, seed 20260907, species[0] to zero, each capped at t=1000000.0 (sampling noise: the mean's standard error is 1.17% of the reported value, against a 5% pass threshold; this answer sits 3.43% from the nearest verdict line, so ~23,414 trajectories \u2014 12x this ensemble \u2014 would put the sampling error a tenth of the way to it)",
       "quantity": "mean time to extinction",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -35,7 +35,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "gillespie-direct-method (rev 20eac2d3b2ee)",
+    "algorithm": "gillespie-direct-method (rev c69f1ee946cc)",
     "engine": "reprolith-ssa",
     "version": "0.0.1"
   },

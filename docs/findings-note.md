@@ -5866,3 +5866,37 @@ back the reason verbatim. That is fine only for as long as every reason is writt
 The unbounded-domain abstention already was — "run it on a wider grid, or state the wall the source
 used" — and it is deliberately *not* filed under Reprolith's own limits, because that heading says
 "nothing here is yours to fix" and one of those two routes is the author's.
+
+
+## "A larger ensemble" is not an alternative
+
+Every one of the five items in the verification queue's engine half — the half that says no expert
+decision closes it — offered the same alternative: *a larger ensemble*. That is true of every
+ensemble ever drawn, and it left the only route out of that half a number nobody had computed.
+
+It is arithmetic. A standard error falls as 1/√n, the distance from a claim's answer to its nearest
+verdict line is already measured, and a tenth of that margin is the same budget the spatial class
+holds a finite grid to for an unbounded domain. So each judged ensemble claim now says what would
+settle it: the mean count 32× its 400 trajectories (~12,700), the first passage 12× (~23,400), the
+Fano factor 44× its 4,000 (~177,500) and the coefficient of variation 8× (~31,800). The numbers
+differ by an order of magnitude across claims that all looked identical under "a larger ensemble",
+which is the argument for computing them.
+
+Nothing gates on it, and that is deliberate: unlike a wall, an ensemble's error is not something a
+reader can measure away without re-running the claim, so the verdicts and their qualification stand
+exactly as they were. What changed is that the queue's answer to "what would close this?" is a
+number instead of a shrug.
+
+Two things kept it honest. The clause is *not* printed for a claim already clear of its line — a
+sentence telling that reader to draw more trajectories would be noise dressed as advice — and it
+promises nothing for a claim sitting exactly on a threshold, where no finite ensemble settles
+anything. And it reaches all three kinds of ensemble claim: the first version reached the mean
+alone, which is three of the five items it exists to answer, and a rule that covers every case it
+was written for but one is a shape this repository has caught in itself before.
+
+The mutation checker then caught this slice's test rather than its code, and the shape is worth
+naming because it will recur: the first version of "every kind of claim carries the settling count"
+read the three committed certificates. A JSON file on disk says what it said yesterday whatever the
+engine does today, so disabling the first-passage clause left the test green. It runs the three
+kinds now, and the committed artifacts are checked separately — the live check cannot see what a
+reader opens, and the artifact check cannot see the code.

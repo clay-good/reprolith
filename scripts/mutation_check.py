@@ -1406,6 +1406,21 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          '"left unsaid — the wall the spatial solver ran under — so no expert "'),
         ["tests/test_readme_claims.py"],
     ),
+    # --- what would settle a sampled ensemble is a number, 2026-09-09 ---------------------------
+    (
+        "the ensemble that would settle a claim is offered without the 1/sqrt(n) it rests on",
+        "stochastic.py",
+        ("    return math.ceil(trajectories * (relative_sem / target) ** 2), margin",
+         "    return math.ceil(trajectories * (relative_sem / target)), margin"),
+        ["tests/test_stochastic.py"],
+    ),
+    (
+        "a first passage and a noise statistic are left out of the settling count",
+        "stochastic.py",
+        ("    if observed_mean is not None:\n        clause += _settling_clause(\n            reported=claim.reported_mean, observed=observed_mean, relative_sem=relative_sem,\n            trajectories=claim.trajectories,",
+         "    if False:\n        clause += _settling_clause(\n            reported=claim.reported_mean, observed=observed_mean, relative_sem=relative_sem,\n            trajectories=claim.trajectories,"),
+        ["tests/test_stochastic.py"],
+    ),
     # --- an unsolvable program is reported, not thrown, 2026-09-08 ------------------------------
     (
         "an infeasible program takes the certifying run down instead of abstaining",
