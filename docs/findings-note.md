@@ -6107,3 +6107,25 @@ because a single seed's false-miss count at 1,500 ranges from 2 to 12 across see
 enough to say anything about one of them fails on another, which is a CI flake dressed as a
 measurement — and the assertions are written about the shape that holds under every seed, not about
 the counts in the table.
+
+
+## Why one sampled quantity names a count and its neighbour does not
+
+Reading the population worked example as its reader, rather than as its author, put two protocol
+lines three lines apart in front of me. The variability claim's ends with a subject count that would
+settle it. The envelope's, for a quantity drawn from the very same run, reports its sampling error
+and stops. Nothing on the certificate said whether that was a refusal or an omission, and a reader
+cannot tell those apart.
+
+It is a refusal, and the two reasons kill the arithmetic rather than the idea. The band's error is a
+fraction **of the band**, while the verdict is a normalized curve distance — different units, and
+converting between them is precisely where this repository has already published a figure inverted
+once. And `percentile_sampling_error` is an asymptotic quantile form its own docstring holds only to
+within a factor of two; a count is quadratic in the error, so that becomes a factor of four, and a
+subject count wrong by four times is worse advice than no count.
+
+The clause says so now: *a scale and not a bound, in units of the band rather than of the judged
+distance, so no subject count is derived from it here*. Nothing else changed. What the pass is worth
+recording for is the reading technique rather than the fix — an asymmetry between two lines of one
+artifact is invisible from inside the function that writes either of them, and shows up in the first
+minute of reading the finished thing straight through.

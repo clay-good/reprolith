@@ -295,3 +295,26 @@ def test_the_allowance_is_a_floor_and_the_docstring_says_which() -> None:
     # Several times the 3.2% the allowance assumes at this size. The exact figure is not pinned —
     # it is a property of the statistic, not of this code — but the order of it is the finding.
     assert spread > 3.0 * (1.0 / math.sqrt(2 * 500))
+
+
+def test_the_envelope_says_why_it_names_no_subject_count() -> None:
+    """Reading the population certificate as its reader is what found this.
+
+    Two sampled quantities sit on one certificate. The variability claim's protocol now names the
+    subject count that would settle it; the envelope's, three lines above, reports its sampling
+    error and stops. A reader is left to guess whether the count was forgotten or refused, and it is
+    refused — for two reasons that kill the arithmetic rather than the idea. The band's error is a
+    fraction *of the band* while the verdict is a normalized curve distance, so converting between
+    them is where a published figure comes out inverted; and the formula behind it is asymptotic and
+    good to within a factor of two, which a count, being quadratic in the error, turns into four.
+    """
+    from pathlib import Path
+
+    text = (
+        Path(__file__).resolve().parents[1]
+        / "datasets" / "population" / "worked_example" / "certificate.txt"
+    ).read_text(encoding="utf-8")
+    assert "a scale and not a bound" in text
+    assert "no subject count is derived from it here" in text
+    # And the claim that *does* name one still does, so the pair reads as a deliberate difference.
+    assert "would put the sampling error a tenth of the way to it" in text

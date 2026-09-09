@@ -290,10 +290,20 @@ def simulate_population(
     # The band's own sampling error, from the widest-CV spec and the outermost band it reports: an
     # envelope of twenty subjects and one of a thousand read identically without it, and are judged
     # in the same tolerance.
+    #
+    # And why it stops at a scale where a variability claim on the same certificate names a subject
+    # count that would settle it. Two reasons, both fatal to the arithmetic rather than to the idea:
+    # this number is a fraction *of the band* while the verdict is a normalized curve distance, so
+    # the two are not in the same units and converting between them is where a published figure
+    # comes out inverted; and `percentile_sampling_error` is an asymptotic form its own docstring
+    # holds only to within a factor of two, which a count — quadratic in the error — would turn into
+    # a factor of four. A reader comparing the two protocol lines would otherwise be left to guess
+    # whether the envelope's count was forgotten or refused.
     band_error = (
         f"sampling error of the {_outermost(percentiles):g}th band ~"
         f"{percentile_sampling_error(cv=max(s.cv for s in variability), percentile=_outermost(percentiles), subjects=subjects):.0%} "
-        f"of the band at {subjects} subjects"
+        f"of the band at {subjects} subjects — a scale and not a bound, in units of the band rather "
+        "than of the judged distance, so no subject count is derived from it here"
     )
     return PopulationRun(
         times=times,
