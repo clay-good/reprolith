@@ -178,3 +178,47 @@ def test_what_it_volunteers_is_measured_too_not_only_what_it_gets_right() -> Non
         for label, species in pairs
     )
     assert (len(pairs), volunteered) == (8, 359)
+
+
+def test_the_refusal_that_sends_an_author_back_to_the_field_names_the_suggestion() -> None:
+    """The two halves of this session's work, joined.
+
+    `claims-propose --model` writes `species_suggested` beside the blank field precisely because
+    filling it in is the author's judgment. The check that refuses an unfilled claim is the one
+    place that has to name the answer sitting next to it — otherwise the suggestion helps only the
+    author who noticed it unaided, and the refusal is the finding restated rather than an
+    instruction, which is the shape this repository spent the day removing elsewhere.
+    """
+    from reprolith.claims_template import unfilled_claims
+
+    (with_one,) = unfilled_claims([{
+        "claim_id": "Table1-r1c2", "reported": 1.0, "source_location": "Table 1",
+        "species": "", "species_suggested": "mLiver",
+    }])
+    assert "'species' is blank" in with_one
+    assert "suggests 'mLiver'" in with_one
+    assert "copy it across if you agree" in with_one
+
+    # A record with no suggestion says exactly what it said before: nothing is invented for a claim
+    # whose row named no output, which is the silence the matching rule exists to keep.
+    (without,) = unfilled_claims([{
+        "claim_id": "x", "reported": 1.0, "source_location": "Table 1", "species": "",
+    }])
+    assert without.endswith("the model output the number is read from")
+
+
+def test_a_parameters_file_says_nothing_about_species() -> None:
+    """A rendering written for one quantity, used by another — the shape this repository keeps
+    catching. `propose_parameters` shares the table reader with `propose_claims`, and its notes are
+    inherited from it; a note about species suggestions in a file whose field is `parameter` would
+    describe work that was never done for it."""
+    from reprolith.claim_candidates import propose_parameters
+
+    tables = json.loads(
+        (_ROOT / "datasets" / "manuscripts" / "BIOMD0000001027_tables.json").read_text(
+            encoding="utf-8"
+        )
+    )["tables"]
+    proposed = propose_parameters(tables)
+    assert not any("species" in note for note in proposed["notes"])
+    assert not any("species_suggested" in record for record in proposed["parameters"])

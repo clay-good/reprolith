@@ -218,7 +218,8 @@ model's outputs — its id, its name, or the compartment it lives in — up to c
 Nothing is stemmed, no prefix is stripped, and there is no synonym list, so "Plasma" gets no
 suggestion against `mPlasmaVenous` and a row your model names differently gets none either. You
 copy a suggestion into `species` once you agree with it; nothing downstream reads the suggestion,
-so a claim you never confirmed is still refused. Measured against the four metformin deposits'
+so a claim you never confirmed is still refused — and the refusal names the suggestion sitting
+beside the blank field, so it reads as an instruction rather than as the finding restated. Measured against the four metformin deposits'
 hand-written claims, the rule agrees on 22 rows, is silent on 12, and is wrong on none.
 
 The same reading, in the parameters file's shape, is `params-propose`:

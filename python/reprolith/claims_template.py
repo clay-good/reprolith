@@ -319,8 +319,21 @@ def unfilled_claims(records: Sequence[Mapping[str, Any]]) -> tuple[str, ...]:
                 f"{claim_id}: 'source_location' is blank — where in the paper the number is"
             )
         if not str(record.get("species") or "").strip():
+            # And the suggestion, where the record already carries one. `claims-propose --model`
+            # writes `species_suggested` beside this field precisely because filling it in is the
+            # author's judgment — so the refusal that sends them back to the field is the one place
+            # that has to name the answer sitting next to it, or the suggestion helps only the
+            # author who noticed it unaided.
+            suggested = str(record.get("species_suggested") or "").strip()
+            beside = (
+                f"; this candidate suggests {suggested!r}, which is the one model output whose "
+                "name matches the row's own label — copy it across if you agree"
+                if suggested
+                else ""
+            )
             unfilled.append(
                 f"{claim_id}: 'species' is blank — the model output the number is read from"
+                + beside
             )
     return tuple(unfilled)
 
