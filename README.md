@@ -283,7 +283,9 @@ guessing — just: *does the described model produce the shown result?*
   held. `reprolith corroboration` still prints an unchecked class in the same list as the checked
   ones, because a class can lose an engine and a table of only the corroborated ones would read
   as a whole-repository pass — and it now says the same thing about a *partly* corroborated class,
-  since a count of what has a record cannot see a certificate that has none. It is reachable from the terminal and over MCP, not only from the
+  since a count of what has a record cannot see a certificate that has none. A class short of a clean
+sweep also names the run that cost it and how far it went — the spatial front speed, at most 1e-01 —
+because that line used to say less the worse its news was. It is reachable from the terminal and over MCP, not only from the
   published page ([`docs/self-validation.md`](docs/self-validation.md)).
 
 ## What it is *not*

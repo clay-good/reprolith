@@ -18,7 +18,7 @@ from pathlib import Path
 
 from reprolith.cli import build_parser, run
 from reprolith.mcp_server import milestone_certificate_dirs, milestone_corroboration_records
-from reprolith.query import corroboration_summary
+from reprolith.query import corroboration_held, corroboration_summary
 
 _ROOT = Path(__file__).parent.parent
 
@@ -304,3 +304,82 @@ def test_the_shipped_repository_names_the_certificate_with_no_second_engine(caps
     assert "1 of 10 standing certificate(s) in this class have no second engine" in printed
     assert "an absence, not a pass" in printed
     assert "4 of 5 engine-independent" in printed
+
+
+# The line that says least when the news is worst. Every class that fully agrees publishes the
+# distance it agreed to; the one class with a disagreement published "4 of 5 engine-independent"
+# — no name, no number — so a reader could not tell which of the five runs to distrust.
+
+
+def _record(**rows: dict) -> dict[str, dict]:
+    return {"spatial": rows}
+
+
+def test_a_disagreeing_run_is_named_and_its_distance_published() -> None:
+    summary = corroboration_summary(_record(
+        gradient_length={
+            "engine_independent": True, "distance_at_most": 1e-10,
+            "engines": ["reprolith-fd", "scipy-lsoda"], "engine_versions": ["a", "b"],
+        },
+        front_speed={
+            "engine_independent": False, "distance_at_most": 0.1,
+            "engines": ["reprolith-fd", "scipy-lsoda"], "engine_versions": ["a", "b"],
+        },
+    ))["by_class"]["spatial"]
+    assert summary["engine_sensitive"] == ["front_speed"]
+    # The worst bound among the *disagreeing* rows, which is what explains the shortfall.
+    # `distance_at_most` is the class's worst overall and answers a different question.
+    assert summary["sensitive_distance_at_most"] == 0.1
+    assert corroboration_held(summary) == (
+        "1 of 2 engine-independent (front_speed differs by at most 1e-01)"
+    )
+
+
+def test_a_class_that_fully_agrees_carries_the_same_keys_empty() -> None:
+    """One shape for a consumer: the fields appear whether or not anything disagreed."""
+    summary = corroboration_summary(_record(
+        gradient_length={
+            "engine_independent": True, "distance_at_most": 1e-10,
+            "engines": ["reprolith-fd", "scipy-lsoda"], "engine_versions": ["a", "b"],
+        },
+    ))["by_class"]["spatial"]
+    assert summary["engine_sensitive"] == []
+    assert summary["sensitive_distance_at_most"] is None
+    assert corroboration_held(summary) == "all engine-independent to 1e-10"
+
+
+def test_a_discrete_comparison_that_disagrees_publishes_no_distance() -> None:
+    """Two attractor sets that differ do not "differ by at most 0e+00".
+
+    An exact-match record carries no distance, and a number invented for it would put a discrete
+    disagreement on the curve classes' scale — the error `corroboration_held` already exists to
+    avoid in the other direction.
+    """
+    summary = corroboration_summary({"logical": {
+        "a": {"engine_independent": True, "comparison": "exact-match", "engines": ["cana"]},
+        "b": {"engine_independent": False, "comparison": "exact-match", "engines": ["cana"]},
+    }})["by_class"]["logical"]
+    assert corroboration_held(summary) == "1 of 2 engine-independent (b does not agree)"
+
+
+def test_many_disagreements_are_counted_rather_than_all_listed() -> None:
+    """A class re-running every claim can disagree on dozens; a list of dozens is not a report."""
+    rows = {
+        f"ACC:{i}": {
+            "engine_independent": i < 2, "distance_at_most": 0.2,
+            "engines": ["copasi", "roadrunner"],
+        }
+        for i in range(8)
+    }
+    held = corroboration_held(corroboration_summary({"ode-pkpd": rows})["by_class"]["ode-pkpd"])
+    assert held == (
+        "2 of 8 engine-independent (ACC:2, ACC:3, ACC:4 and 3 more differ by at most 2e-01)"
+    )
+
+
+def test_the_terminal_and_the_public_page_both_name_the_disagreeing_run(capsys) -> None:
+    """The committed record has one: the spatial front speed. Both surfaces read one phrase."""
+    assert run(["corroboration"]) == 0
+    assert "front_speed differs by at most" in capsys.readouterr().out
+    page = (_ROOT / "datasets" / "registry.html").read_text(encoding="utf-8")
+    assert "front_speed differs by at most" in page

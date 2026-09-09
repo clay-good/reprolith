@@ -151,7 +151,7 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
                           1 of 10 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
   ode-pkpd            170 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
-  spatial               5 model(s) on reprolith-fd, scipy-lsoda — 4 of 5 engine-independent
+  spatial               5 model(s) on reprolith-fd, scipy-lsoda — 4 of 5 engine-independent (front_speed differs by at most 1e-01)
                           as reprolith-fd explicit-forward-euler-finite-difference (rev 652b79ad3bee), scipy-lsoda 1.13.1
   stochastic            4 model(s) on reprolith-ssa, roadrunner-gillespie — all engine-independent within 1.9 combined standard errors, resolving a bias above 9.6% of each quantity compared
                           as reprolith-ssa gillespie-direct-method (rev 0e0873ebe9ed), roadrunner-gillespie 2.7.0
@@ -160,7 +160,7 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   overall: 6 of 6 classes re-run on a second engine — 170 claim(s), 32 model(s); 3 standing certificate(s) in those classes have none
 ```
 
-Three things about that output are deliberate.
+Four things about that output are deliberate.
 
 **Every class is listed, including any with nothing to report.** All six carry a second engine
 today; for most of this project's life two did not, and the reason they now do is worth keeping
@@ -175,6 +175,15 @@ for a reason its class's line names: the stochastic first-passage entry (libRoad
 gives a mean at a time, not a first passage) and the logical published-basin entry, since CANA
 reduces constant nodes out of its state graph and a reduced graph cannot be counted for basins in
 the space this certificate reports them in.
+
+**A class short of a clean sweep names the run that cost it.** This was the one line in the report
+that said *less* the worse its news was: every class that fully agreed published the distance it
+agreed to, and the class with a disagreement published `4 of 5 engine-independent` — no name and no
+number — so a reader could not tell which of the five runs to distrust. It is the Fisher-KPP front
+speed, and it differs by at most 1e-01, which is the same scale the agreeing classes publish on.
+The bound reported is the worst among the *disagreeing* rows rather than the class's worst overall,
+because that is the number that explains the shortfall. A discrete comparison that disagrees says
+so and publishes no distance, for the reason the next paragraph gives about the stochastic line.
 
 And **the stochastic line does not say "to 1.9"**, because it is not a distance. Two engines that
 solve an ODE or a linear program agree to their last digits; two Gillespie *ensembles* of the same

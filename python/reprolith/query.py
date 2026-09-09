@@ -190,6 +190,26 @@ def corroboration_summary(
             "comparison": sorted({
                 str(row.get("comparison", "normalized-distance")) for row in record.values()
             }),
+            # *Which* runs did not survive the second engine, and how far they went. The count
+            # alone — "4 of 5 engine-independent" — was the whole statement, and it is the one
+            # class-level line in this report that says less the worse the news is: every class
+            # that fully agrees publishes the distance it agreed to, and the class with a
+            # disagreement published no number and no name. A reader could not tell which of the
+            # five runs to distrust, and the record's own key is that name.
+            "engine_sensitive": sorted(
+                key for key, row in record.items() if not row.get("engine_independent")
+            ),
+            # The worst bound among *those* rows, which is what explains the shortfall.
+            # `distance_at_most` is the class's worst overall and answers a different question.
+            "sensitive_distance_at_most": max(
+                (
+                    float(row["distance_at_most"])
+                    for row in record.values()
+                    if not row.get("engine_independent")
+                    and row.get("distance_at_most") is not None
+                ),
+                default=None,
+            ),
         }
         if published is not None and model_class in published:
             covered = len({key.split(":", 1)[0] for key in record})
@@ -272,7 +292,26 @@ def corroboration_held(entry: Mapping[str, Any]) -> str:
     checked = int(entry["checked"])
     independent = int(entry["engine_independent"])
     if independent != checked:
-        return f"{independent} of {checked} engine-independent"
+        # Named, not just counted. Three or fewer are listed; beyond that the list stops being a
+        # thing a reader can act on and the count carries it.
+        sensitive = list(entry.get("engine_sensitive", ()))
+        named = (
+            ", ".join(sensitive) if len(sensitive) <= 3
+            else f"{', '.join(sensitive[:3])} and {len(sensitive) - 3} more"
+        )
+        bound = entry.get("sensitive_distance_at_most")
+        # A discrete comparison has no distance to report, and a disagreeing set is a disagreement
+        # of a different shape — saying it "differs by at most 0e+00" would be a number about
+        # nothing.
+        verb = "differs" if len(sensitive) == 1 else "differ"
+        differ = (
+            f" {verb} by at most {float(bound):.0e}" if bound is not None
+            else (" does not agree" if len(sensitive) == 1 else " do not agree")
+        )
+        return (
+            f"{independent} of {checked} engine-independent"
+            + (f" ({named}{differ})" if named else "")
+        )
     comparison = entry.get("comparison")
     if comparison == ["exact-match"]:
         return "all agree exactly"

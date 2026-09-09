@@ -62,7 +62,7 @@ call, `[]` or `null` reads as a fact about the paper rather than about the call.
 | `certificates_for` | `title`/`doi`/… | Digests of every certificate for a paper, newest first |
 | `backlog_health` | — | Backlog depth by state, class, and difficulty, the labelled mix, and `blocked_on` — what each blocked entry is waiting on, counted and ranked by how many entries the capability would release. `parked` names the entries repeated fruitless claims took out of the offered pool, each with its diagnosis: a parked entry is still `queued`, so without it `by_state` and `claimable` disagree with nothing to explain them |
 | `self_validation` | — | The blind track record per class: matched / abstained / other, aggregate only |
-| `corroboration` | — | What a second, independent simulator said about these verdicts, per class — and which classes have no second engine, where nothing was checked. Reported beside the certificates, never gating them; an absence is not a pass |
+| `corroboration` | — | What a second, independent simulator said about these verdicts, per class — which runs disagreed and by how far, and which classes have no second engine, where nothing was checked. Reported beside the certificates, never gating them; an absence is not a pass |
 | `version` | — | This server's package version and each class's judge revision — the digest over the code that computes a verdict. A lint verdict carries no revision of its own, so an agent recording one records what produced it with this |
 | `dossier` | `accession` | The ingested dossier — extracted model structure |
 | `bundle` | `accession` | The reconstruction bundle — model, recipe, assumptions |
