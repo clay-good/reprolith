@@ -250,6 +250,18 @@ def _population_certificate() -> tuple[Certificate, dict[str, Any]]:
     return certificate, reference
 
 
+#: What a reader must not conclude from a relative error of zero on generated data. The number that
+#: governs a real re-fit is the assay noise rather than the optimizer, and this repository measured
+#: it — so the artifact that would otherwise read as a flawless recovery says which of the two it
+#: exercised.
+_NOISELESS = (
+    "; the observations carry no assay noise, so this measures the optimizer and not what a re-fit "
+    "of real data costs — at a 20% assay CV a re-fit correct in every respect misses this 10% "
+    "budget about half the time, and at 5% essentially never "
+    "(tests/test_estimation_noise_floor.py)"
+)
+
+
 def _estimation_certificate() -> tuple[Certificate, dict[str, Any]]:
     """Data -> re-fit -> certificate, the same walk for the other deferred half.
 
@@ -257,6 +269,12 @@ def _estimation_certificate() -> tuple[Certificate, dict[str, Any]]:
     right answer that is not Reprolith's: a fit that recovers `k` has recovered the number the data
     was generated from. Like the population render, mathematics standing in for a paper, because
     no shipped dataset in this corpus is a paper's raw data.
+
+    They also carry **no assay noise**, and the dataset description says so on the certificate. Read
+    straight through, this artifact says "relative error 0.0000, reproduced" with nothing to tell a
+    reader that the exercise had no noise in it to survive — and the thing that governs a real
+    re-fit is the noise rather than the optimizer, which this repository has measured and could not
+    otherwise have shown here.
     """
     observations = tuple(
         (time, (_DOSE / _VOLUME) * math.exp(-_RATE * time))
@@ -283,7 +301,11 @@ def _estimation_certificate() -> tuple[Certificate, dict[str, Any]]:
                 "the value the observations were generated from — mathematics standing in for a "
                 "paper's reported estimate, not a number read from one"
             ),
-            protocol=result.protocol,
+            # Appended by the caller rather than folded into `dataset`, which the optimizer
+            # prints mid-sentence: this is a fact about *these* observations and about what the
+            # reader should not conclude from the number above them, and it belongs at the end
+            # where a reader arrives after the method.
+            protocol=result.protocol + _NOISELESS,
         )],
     )
     reference = {

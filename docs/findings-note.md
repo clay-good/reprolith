@@ -6129,3 +6129,28 @@ distance, so no subject count is derived from it here*. Nothing else changed. Wh
 recording for is the reading technique rather than the fix — an asymmetry between two lines of one
 artifact is invisible from inside the function that writes either of them, and shows up in the first
 minute of reading the finished thing straight through.
+
+
+## A perfect score with nothing to survive
+
+The estimation worked example publishes *relative error 0.0000, reproduced*. Its observations are
+the model's own trajectory, generated at the very rate the fit is asked to recover, and the
+certificate said so — but it said it as provenance ("the value the observations were generated
+from"), never as the thing a reader should take away, which is that the data carries **no assay
+noise at all**.
+
+That matters because this repository has already measured which of the two governs a re-fit, and it
+is not the optimizer. At a 20% assay CV a fit that is right about everything — correct model,
+closed-form least-squares optimum — misses the same 10% pass budget about half the time; at a 5% CV
+it essentially never does. So a zero here is a statement about the optimizer, and the artifact was
+letting itself be read as a statement about estimation.
+
+The protocol line carries that now, at the end where a reader arrives after the method rather than
+folded into the dataset name mid-sentence, and it cites the test the numbers come from so the claim
+is checkable rather than asserted. Nothing about the verdict changes: the fit is correct and the
+example is the right one to ship. What changed is that it no longer overstates itself by omission.
+
+Both of this pass's findings came from the same act — opening a finished artifact and reading it
+straight through, as the scientist it is addressed to, rather than checking the function that wrote
+each line. Neither is visible from inside those functions: one is an asymmetry between two lines,
+and the other is a sentence that is true and lands as something stronger.

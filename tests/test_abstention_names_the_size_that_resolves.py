@@ -318,3 +318,24 @@ def test_the_envelope_says_why_it_names_no_subject_count() -> None:
     assert "no subject count is derived from it here" in text
     # And the claim that *does* name one still does, so the pair reads as a deliberate difference.
     assert "would put the sampling error a tenth of the way to it" in text
+
+
+def test_the_estimation_example_says_its_perfect_score_had_no_noise_to_survive() -> None:
+    """The same reading, on the certificate next door.
+
+    It publishes `relative error 0.0000, reproduced` for a re-fit whose observations are the model's
+    own trajectory — noiseless by construction. Read straight through there was nothing to tell a
+    reader that the exercise had no noise in it, while the thing that governs a real re-fit is the
+    noise and not the optimizer: this repository has measured that a re-fit correct in every respect
+    misses the same 10% budget about half the time at a 20% assay CV.
+    """
+    from pathlib import Path
+
+    text = (
+        Path(__file__).resolve().parents[1]
+        / "datasets" / "estimation" / "worked_example" / "certificate.txt"
+    ).read_text(encoding="utf-8")
+    assert "relative error 0.0000" in text
+    assert "the observations carry no assay noise" in text
+    # And it cites where the number comes from, so the claim is checkable rather than asserted.
+    assert "tests/test_estimation_noise_floor.py" in text
