@@ -73,6 +73,16 @@ there is abstained on. It resolves at 1,500 (2.1%). A spread needs about three t
 its envelope does, which is the population-class echo of the stochastic class's "a Fano factor needs
 ten times the ensemble its mean does".
 
+**The abstention now says how large a population would settle it** — `~1,100 subjects — 2x as many`
+— rather than leaving the author to guess whether the next run needs twice the draw or two hundred
+times it. It is sized against the check's own bar (half the pass threshold) and never against the
+claim's residual: a check abstaining because its answer is not trustworthy cannot use that answer as
+a ruler. The count carries an allowance of one standard error *of the error bar itself*, because the
+bar is estimated from the very sample that is too small — the bare `1/sqrt(n)` figure here is 1,034,
+where the error bar reads 2.54% against a 2.5% target, and an author who followed it would be
+abstained on a second time. The stochastic ensemble's abstention says the same thing in
+trajectories, through the same function.
+
 **And walked to a certificate.** The simulator and the certifier were both built and both tested,
 and nothing joined them: every test of the simulator stopped at its bands, and every test of the
 certifier started from bands somebody typed. `tests/test_population_end_to_end.py` runs the whole

@@ -5900,3 +5900,35 @@ read the three committed certificates. A JSON file on disk says what it said yes
 engine does today, so disabling the first-passage clause left the test green. It runs the three
 kinds now, and the committed artifacts are checked separately — the live check cannot see what a
 reader opens, and the artifact check cannot see the code.
+
+
+## "Too few" is not an instruction
+
+Two checks in this package refuse to judge a claim because its sample is too noisy: the stochastic
+ensemble, and the population class's variability draw. Both ended the same way — *N trajectories is
+too few to tell a reproduction from sampling noise*, *500 subjects is too few to tell a reproduction
+from the draw* — and both left the author with the finding restated and nothing to do. Twice the
+sample and two hundred times it are different decisions, and the sentence did not distinguish them.
+
+The arithmetic was already here for the *judged* case. `ensemble_to_settle` sizes a run against the
+margin from a claim's answer to its nearest verdict line. An abstention cannot borrow it: it is
+abstaining precisely because that answer is not trustworthy, so sizing the next run by it would size
+it by the number under suspicion. The abstention is sized against the **check's own bar** instead —
+the half-threshold at which each of these two stops abstaining — which is a property of the check
+and not of the claim.
+
+Writing the test that re-runs the check at the size it names is what made this correct rather than
+plausible. The bare `1/sqrt(n)` count for the population case is 1,034, and at 1,034 subjects the
+error bar reads 2.54% against a 2.5% target: an author who did exactly what the sentence said would
+be abstained on a second time. The cause is that the error bar being extrapolated is *itself* an
+estimate made from the too-small sample, known to about `1/sqrt(2n)` of itself, so a count sized to
+land exactly on the bar lands under it about half the time. The count carries that one standard
+error as an allowance now, which says 1,100 — the size that actually resolves — and shrinks as the
+sample grows, since a larger sample knows its own error bar better. It can only ever raise a count.
+
+Two things the shape of this repeats. The rule reaches **both** branches of the ensemble abstention,
+including the zero-spread one, where the 1/√n arithmetic does not apply and the bar itself is the
+answer ("at 30 trajectories or more a zero spread is a measurement") — a rule that covers every case
+it was written for but one is the shape this project keeps catching in itself. And it is one
+function, so the certificate path, the inline linter an agent gates on, and the population certifier
+cannot come to word the same arithmetic differently.

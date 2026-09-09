@@ -48,6 +48,7 @@ from .oracle import (
     judge_estimation,
     judge_scalar,
     not_evaluable,
+    resolving_sample_clause,
     spread_standard_error,
     spread_statistic,
     undetermined_shortfall,
@@ -1502,7 +1503,14 @@ def _judge_variability(claim: VariabilityClaim) -> ClaimAssessment:
                     f"this population cannot resolve the claim: the {claim.statistic.value}'s own "
                     f"standard error is {error_bar / claim.reported:.1%} of the reported value, "
                     f"against a {tolerance.reproduced_within:.0%} pass threshold; "
-                    f"{len(claim.values)} subjects is too few to tell a reproduction from the draw"
+                    f"{len(claim.values)} subjects is too few to tell a reproduction from the "
+                    "draw"
+                    + resolving_sample_clause(
+                        relative_error_bar=error_bar / claim.reported,
+                        size=len(claim.values),
+                        pass_threshold=tolerance.reproduced_within,
+                        noun="subjects",
+                    )
                 ),
                 reference_kind=claim.reference_kind,
             ),

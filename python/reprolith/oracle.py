@@ -995,6 +995,72 @@ def spread_standard_error(
     return math.sqrt((rest / n) * math.fsum((theta - centre) ** 2 for theta in thetas))
 
 
+#: The share of a claim's pass threshold a sample's own error bar may take up before the sample is
+#: reported as unable to decide the claim. Half: at more than that, the draw's noise is the same
+#: order as the whole band a reproduction has to land in, and a pass and a miss are one reseed
+#: apart. Both classes that abstain on a sample size hold to it — the stochastic ensemble and the
+#: population draw — which is why the number lives here rather than in either of them.
+RESOLVING_ERROR_SHARE = 0.5
+
+
+def sample_to_resolve(
+    *, relative_error_bar: float, size: int, pass_threshold: float
+) -> int | None:
+    """How large a sample would bring its own error bar under the bar this check abstains at.
+
+    An abstention that says "N is too few" states the finding and leaves the author nothing to do;
+    the pre-submission spec asks every fix line to be an instruction. This is the instruction. A
+    standard error falls as 1/√n, so reaching a target of ``RESOLVING_ERROR_SHARE × threshold``
+    takes ``n × (bar / target)²`` draws.
+
+    It is keyed on the *check's own threshold* and never on the claim's residual: the sample is
+    abstaining precisely because its answer is not trustworthy, so sizing the next run by the
+    distance from that answer to a verdict line would size it by the number under suspicion. (The
+    judged-claim counterpart, :func:`reprolith.stochastic.ensemble_to_settle`, may read a residual
+    because it is only ever offered for a claim the ensemble *did* resolve.)
+
+    The error bar is inflated by one of *its own* standard errors before the extrapolation, and
+    that is not caution for its own sake — it is the defect the first version shipped with. An
+    error bar is itself an estimate made from the very sample that is too small, known to about
+    ``1/sqrt(2n)`` of itself, and a count sized to land exactly on the bar therefore lands under it
+    only about half the time. Measured: the population class's 30% CV reads a 3.59% error bar at
+    500 subjects, whose naive extrapolation is 1,034 — where the bar is 2.54% against a 2.5%
+    target, so the author who followed the advice would be abstained on a second time. With the
+    allowance it says 1,100, which resolves. The correction shrinks as the sample grows, since a
+    larger sample knows its own error bar better, and it can only ever raise the count.
+
+    Returns ``None`` when there is nothing to buy — the error bar is already under the bar — or
+    when the inputs cannot support the arithmetic.
+    """
+    if size <= 0 or pass_threshold <= 0.0 or relative_error_bar <= 0.0:
+        return None
+    target = RESOLVING_ERROR_SHARE * pass_threshold
+    if relative_error_bar <= target:
+        return None
+    known_to = 1.0 + 1.0 / math.sqrt(2.0 * size)
+    return math.ceil(size * (relative_error_bar * known_to / target) ** 2)
+
+
+def resolving_sample_clause(
+    *, relative_error_bar: float, size: int, pass_threshold: float, noun: str
+) -> str:
+    """The "and this many would resolve it" half of an abstention, or ``""``.
+
+    Written once so the two abstentions that share the rule cannot come to state it differently —
+    the same reason :func:`~reprolith.stochastic.unresolvable_ensemble_reason` is one function for
+    two surfaces.
+    """
+    needed = sample_to_resolve(
+        relative_error_bar=relative_error_bar, size=size, pass_threshold=pass_threshold
+    )
+    if needed is None:
+        return ""
+    return (
+        f"; ~{needed:,} {noun} — {needed / size:.0f}x as many — would bring that error bar "
+        "under half the threshold, which is where this check stops abstaining"
+    )
+
+
 def assess_match(
     *,
     claim_id: str,

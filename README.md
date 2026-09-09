@@ -704,7 +704,10 @@ claim is about — so it is *resampled*, leave-one-out, which draws no random nu
 verdict a function of the one pinned seed. That measurement then says what the quantity costs: at
 the 400 trajectories this class certifies a *mean* at, a Fano factor's standard error is over 7% of
 its value against a 5% pass threshold, so the claim is abstained on rather than judged. The
-milestone entry uses 4,000, and its certificate prints the 2.3% it bought.
+milestone entry uses 4,000, and its certificate prints the 2.3% it bought. And an abstention says
+what would lift it: `~216 trajectories — 22x as many`, sized against the bar this check abstains at
+rather than against the claim's own residual, which is the number under suspicion. The population
+class's variability abstention answers in subjects through the same function.
 
 **Population figures** — a median with outer percentiles across a virtual population, which is how
 a large slice of the PK/PD and QSP literature reports its results — are judged by the same

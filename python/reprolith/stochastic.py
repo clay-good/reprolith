@@ -35,6 +35,7 @@ from .oracle import (
     judge_scalar,
     not_evaluable,
     relative_error,
+    resolving_sample_clause,
     spread_standard_error,
     spread_statistic,
     undetermined_shortfall,
@@ -611,7 +612,9 @@ def unresolvable_ensemble_reason(
         return (
             f"this ensemble cannot resolve the claim: {trajectories} trajector"
             f"{'y' if trajectories == 1 else 'ies'} produced no spread at all, which at that size "
-            "is as likely an accident as a measurement, so it cannot tell a reproduction from noise"
+            "is as likely an accident as a measurement, so it cannot tell a reproduction from "
+            f"noise; at {_SPREAD_IS_EVIDENCE} trajectories or more a zero spread is a measurement "
+            "and this check reads it as one"
         )
     if reported_mean == 0.0:
         return None
@@ -649,6 +652,12 @@ def unresolvable_ensemble_reason(
         f"{relative_sem:.1%} of the {quantity_noun}, against a "
         f"{tol.reproduced_within:.0%} pass threshold; "
         f"{trajectories} trajectories is too few to tell a reproduction from sampling noise"
+        + resolving_sample_clause(
+            relative_error_bar=relative_sem,
+            size=trajectories,
+            pass_threshold=tol.reproduced_within,
+            noun="trajectories",
+        )
     )
 
 
