@@ -4,7 +4,7 @@
   "deletion_agrees": true,
   "disagreements": [],
   "engine_versions": [
-    "highs (reprolith-fba rev e66b29e2fa85)",
+    "highs (reprolith-fba rev df9807eb541a)",
     "0.31.1"
   ],
   "engines": [

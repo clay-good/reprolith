@@ -968,6 +968,22 @@ def spread_standard_error(
 
     ``None`` when the sample cannot support one — fewer than two values, or a subsample whose mean
     is zero, where a mean-normalized statistic is undefined.
+
+    **How well it estimates what it claims to** is measured, not assumed
+    (``tests/test_jackknife_is_calibrated.py``): against the spread the statistic actually shows
+    across independent draws of the same population, it agrees to within about a tenth for all three
+    statistics, biased slightly **low** — 0.89 to 0.99 of the truth at 200 subjects across four
+    independent seed families, closing as the sample grows. The direction is the part worth knowing
+    and the reason it is recorded here: a bar that under-reports noise is a bar that lets a claim
+    through where the check should have abstained.
+
+    Two tests already stood over this function and neither could see a wrong constant — one compares
+    the stochastic and population implementations to *each other*, the other checks the bar shrinks
+    as ``1/sqrt(n)``. An implementation off by a fixed factor passes both perfectly while every
+    abstention and settling count it produces is wrong by that factor. Nothing is re-scaled on the
+    strength of the measurement: the end-to-end consequence is measured separately and is small
+    (``tests/test_population_variability_bar.py``: a correct model falsely accused on 1.6% of draws
+    at the size this class publishes at).
     """
     n = len(values)
     if n < 2:

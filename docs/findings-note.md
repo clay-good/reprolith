@@ -6275,3 +6275,34 @@ and the exact failure `recertification-due` had to be taught about once already.
 Two of this pass's three findings were the same shape at different strengths: an assertion nobody
 ran (the FBA objective's uniqueness, load-bearing for eight certificates) and an argument nobody
 compared (this). Both were true. Neither was checked, and "true" is not the property a gate has.
+
+
+## Two tests over one function, neither able to see a wrong constant
+
+`spread_standard_error` decides whether a claim is abstained on and, since this pass, how large a
+sample would settle it. Two tests stood over it. One compares the stochastic and the population
+implementations **to each other**; the other checks the bar shrinks as `1/sqrt(n)`.
+
+Neither can see a wrong constant. An implementation off by a fixed factor — the jackknife's
+`(n-1)/n` scaling dropped, a population variance where a sample one belongs — agrees with itself
+perfectly, obeys the square-root law exactly, and produces an abstention threshold and a settling
+count that are wrong by that factor everywhere. A floor that cannot see what it never counted, over
+a function two classes now rest on.
+
+Counted now, the only way it can be: draw the same population many times, measure how far the
+statistic actually moves between draws, and compare that against what the jackknife says from a
+single draw. It agrees to within about a tenth for all three statistics — 0.89 to 0.99 of the truth
+at 200 subjects across four independent seed families — and it is biased **low**, closing as the
+sample grows.
+
+Low is the direction worth recording, because it is the unsafe one: a bar that under-reports noise
+lets a claim through where the check should have abstained. Nothing is re-scaled on the strength of
+it, for two reasons. The bias is the jackknife's known behaviour on a ratio of moments rather than a
+defect in this implementation, and a correction fitted to one afternoon's Monte Carlo would be a
+number nobody could re-derive sitting inside a verdict. And the end-to-end consequence was already
+measured from the other end: at the size this class publishes at, a correct model is falsely accused
+on 1.6% of draws.
+
+The reason to write it down at all is that the next person to read "the error bar is measured by
+jackknife" will take it for a bound. It is an estimate, it runs about 5% light, and that is now on
+the function rather than in somebody's head.
