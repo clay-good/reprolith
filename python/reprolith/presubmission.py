@@ -903,20 +903,41 @@ def archive_report(
         # this curve is the published value". The route for that is the one this command already
         # takes, and it went unmentioned exactly where it was the only answer.
         retained = len(dossier.claims) - len(targetable)
+        # An author who follows this item's own instruction — pass your claims file — re-runs the
+        # check and reads the identical headline, telling them to do the thing they have just
+        # done. It is the top item, so that is the first sentence of the second run. What is still
+        # true then is narrower and worth saying on its own: their results were checked *here*,
+        # from a file the archive does not carry, so a stranger who downloads the archive alone
+        # still has nothing. What is no longer true is that they should go and pass a claims file.
+        supplied = int(found.get("manuscript_claims_checked", 0))
         actions.append({
             "priority": _ARCHIVE_NO_CLAIM_PRIORITY, "kind": "claims", "claim_id": None,
             "quantity": None, "source_location": experiment,
             "issue": (
-                f"the archive states no published result — its {retained} report data set(s) are "
-                "an export format, not a statement that your paper published those values — so a "
-                "reproducer can run it but has nothing to check it against"
-                if retained
-                else "the archive states no published result, so a reproducer can run it but has "
-                     "nothing to check it against"
+                (
+                    f"the archive states no published result — its {retained} report data set(s) "
+                    "are an export format, not a statement that your paper published those "
+                    "values — so a reproducer can run it but has nothing to check it against"
+                    if retained
+                    else "the archive states no published result, so a reproducer can run it but "
+                         "has nothing to check it against"
+                )
+                + (
+                    f". The {supplied} result(s) you passed were checked against it here, and "
+                    "they travel in your file rather than in the archive"
+                    if supplied else ""
+                )
             ),
-            "fix": "ship a SED-ML document whose plots are the curves your paper shows; for a "
-                   "result your paper prints as a number rather than plots, no document can say "
-                   "it — pass your claims file to `reprolith archive-check --claims` instead",
+            "fix": (
+                "nothing inside a SED-ML document can state a number your paper prints, so this "
+                "one cannot be closed in the archive: ship those results beside it — the file you "
+                "passed to --claims, or the table they came from — and a reproducer has what "
+                "this check had"
+                if supplied else
+                "ship a SED-ML document whose plots are the curves your paper shows; for a "
+                "result your paper prints as a number rather than plots, no document can say "
+                "it — pass your claims file to `reprolith archive-check --claims` instead"
+            ),
         })
 
     # Gaps are reported, and deliberately *not* as things for the author to fix. A dossier's

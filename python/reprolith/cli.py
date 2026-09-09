@@ -820,6 +820,18 @@ def _cmd_export(query: ReprolithQuery, args: argparse.Namespace) -> int:
         return 0
     print(f"wrote {out} ({len(archive)} bytes){replaced}")
     print(f"claims expressed: {', '.join(experiment.expressed)}")
+    # What "expressed" does *not* mean, said here rather than discovered later. This document
+    # reports its columns and plots none, deliberately — SED-ML's vocabulary for "my paper
+    # published this" is a plot, and emitting one would manufacture a published result per state
+    # variable (see `reprolith.export`). The consequence is real and belongs beside the success
+    # line: `archive-check` on this very file answers NOT YET READY, because a reproducer reading
+    # the archive alone finds a runnable experiment and nothing to check it against.
+    if experiment.expressed:
+        print(f"  the document records those {len(experiment.expressed)} column(s) and plots "
+              "none, so an archive-check of this file alone reports no targetable claim: SED-ML "
+              "says how to run a model, not which numbers your paper printed. Pass your claims "
+              f"file to `reprolith archive-check {out} --claims <file>` to check the two against "
+              "each other")
     for line in experiment.unexpressed:
         # Printed, never swallowed: an archive short of a claim reads as a reconstruction that
         # never had one, and the terminal is where the person exporting it finds out.
