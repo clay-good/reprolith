@@ -528,7 +528,12 @@ archive built from another model packages a run the certificate never judged.
 
 `certificates-for` takes `--by title|doi|pubmed-id|accession`, and it is how you reach the classes
 the catalog does not list: the catalog is the PK/PD work queue, while the ledger carries all six
-classes' published certificates. The certificate and verdict commands take the digest it returns.
+classes' published certificates. All four routes work — an accession resolves through the published
+milestone entries where the work queue does not hold it, which for three of the four routes it never
+did and for that one, until 2026-09-09, meant a published entry answered "unknown paper". Those
+entries are searched as a fallback and never merged into the queue: every backlog count is over the
+queue, and a certified entry is not work. `catalog` says how many it is not listing. The certificate
+and verdict commands take the digest it returns.
 
 Add `--json` to any read command to get the exact object an agent receives over MCP. Run
 `reprolith --help` for the full command list, and `reprolith --version` for this copy's version

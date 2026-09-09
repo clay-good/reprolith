@@ -49,7 +49,7 @@ call, `[]` or `null` reads as a fact about the paper rather than about the call.
 
 | Tool | Arguments | Returns |
 |---|---|---|
-| `list_catalog` | — | Catalog entries as blind views (no ground-truth label) |
+| `list_catalog` | — | Catalog entries as blind views (no ground-truth label). This is the work queue, one class deep; the other five classes' published entries are reachable by accession through `status` and `certificates_for`, and counted by `self_validation` |
 | `status` | `title`/`doi`/`pubmed_id`/`accession` | A paper's lifecycle state and recorded history |
 | `certificate` | `digest` | The full certificate: content, verdicts, scope, gaps |
 | `verdict` | `digest` | The scope-qualified verdict (overall + per-claim + counts, with the assumptions that withheld a clean pass) |

@@ -1531,6 +1531,32 @@ def milestone_corroboration_records() -> dict[str, dict[str, Any]]:
     return records
 
 
+def milestone_catalogs() -> dict[str, Catalog]:
+    """Each class's committed milestone catalog, keyed by its model-class label.
+
+    The third sibling of :func:`milestone_certificate_dirs`, and the one that was missing. The
+    aggregated read surface loaded every class's *certificates* and only the PK/PD class's
+    *entries*, so a reader who took an accession off a class's milestone listing and asked this
+    repository about it was told "unknown paper" — for an entry with a published certificate. The
+    README's own route to the other five classes says to use ``certificates-for``, which resolves
+    an accession through the catalog and therefore could not follow it.
+
+    A missing file is an error, as it is for the agreement reports and for the same reason: the
+    surface would go on answering, with a whole class's entries quietly unreachable.
+    """
+    catalogs: dict[str, Catalog] = {}
+    for label, certs_dir in milestone_certificate_dirs().items():
+        path = certs_dir.parent / "catalog.json"
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"no milestone catalog for the {label!r} class at {path} — every entry in that "
+                "class would be unreachable by accession while its certificates stayed queryable; "
+                "run that class's milestone script"
+            )
+        catalogs[label] = Catalog.from_dict(json.loads(path.read_text(encoding="utf-8")))
+    return catalogs
+
+
 def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[ReprolithQuery, Catalog]:
     """Load the persisted catalog, certificates, dossiers, and bundles into a read surface.
 
@@ -1571,6 +1597,7 @@ def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[R
     agreement_reports: dict[str, dict[str, Any]] = {}
     corroboration: dict[str, dict[str, Any]] = {}
     model_classes: dict[str, str] = {}
+    published_catalogs: dict[str, Catalog] = {}
     if aggregate:
         # Idempotent by digest, so re-loading data_dir's own certificates here is harmless.
         for label, certs_dir in milestone_certificate_dirs().items():
@@ -1587,6 +1614,12 @@ def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[R
             load_certificates(ledger, certs_dir)
         agreement_reports = milestone_agreement_reports()
         corroboration = milestone_corroboration_records()
+        # The published entries of every class, read-only and kept apart from the catalog above.
+        # They are not merged into it because that catalog is the work queue the effectful surface
+        # leases from and counts, and a certified milestone entry is not work — merging would
+        # change every backlog count and offer six classes' finished entries to an agent asking
+        # for something to do. What they are for is resolving an identifier.
+        published_catalogs = milestone_catalogs()
     dossiers = load_dossiers(directory / "dossiers")
     bundles = load_dossiers(directory / "bundles")
     query = ReprolithQuery(
@@ -1598,6 +1631,7 @@ def load_repository(data_dir: Path | str, *, aggregate: bool = False) -> tuple[R
         corroboration=corroboration,
         decisions=repository_decisions(),
         model_classes=model_classes,
+        published_catalogs=published_catalogs,
     )
     return query, catalog
 

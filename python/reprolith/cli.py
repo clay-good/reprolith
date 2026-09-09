@@ -126,11 +126,22 @@ def _cmd_catalog(query: ReprolithQuery, args: argparse.Namespace) -> int:
         return 0
     if not entries:
         print("(no matching catalog entries)")
-        return 0
-    for e in entries:
-        ident = e["identifiers"]
-        print(f"{ident['accession'] or '-':<18} {e['model_class']:<16} {e['state']:<12} {ident['title']}")
-    print(f"\n{len(entries)} entr{'y' if len(entries) == 1 else 'ies'}")
+    else:
+        for e in entries:
+            ident = e["identifiers"]
+            print(f"{ident['accession'] or '-':<18} {e['model_class']:<16} {e['state']:<12} "
+                  f"{ident['title']}")
+        print(f"\n{len(entries)} entr{'y' if len(entries) == 1 else 'ies'}")
+    # What this listing is not showing, and it prints hardest where the listing is empty: the
+    # catalog is one class's work queue while the ledger holds six classes' published verdicts, so
+    # `--model-class spatial` answered "(no matching catalog entries)" for a class with five
+    # certificates on the public page. A reader counting this list against `self-validation`'s
+    # sixty-six labelled entries was comparing two populations with nothing saying so.
+    published = query.published_entry_count()
+    if published > len(query.list_catalog()):
+        print(f"  this is the work queue; {published} entries are published across every class "
+              "(reprolith self-validation), each reachable by accession through status and "
+              "certificates-for")
     return 0
 
 

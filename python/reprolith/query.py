@@ -348,6 +348,7 @@ class ReprolithQuery:
         corroboration: dict[str, dict[str, Any]] | None = None,
         decisions: Sequence[RecordedDecision] = (),
         model_classes: Mapping[str, str] | None = None,
+        published_catalogs: Mapping[str, Catalog] | None = None,
     ) -> None:
         self._catalog = catalog
         self._ledger = ledger
@@ -370,6 +371,13 @@ class ReprolithQuery:
         # loaded record, the way they already do for certificates. Empty when none are loaded,
         # which the queue reports as "nobody has decided anything" rather than hiding.
         self._decisions = tuple(decisions)
+        # Every class's published milestone entries, keyed by class label, read-only. Deliberately
+        # not merged into the catalog above: that one is the work queue the effectful surface
+        # leases from and every backlog count is over it, while these are finished entries. They
+        # are searched only when the working catalog does not hold an identifier, which is what
+        # lets `status` and `certificates-for` reach the five classes it does not list. Empty when
+        # none are loaded, and the fallback then simply never fires.
+        self._published_catalogs = dict(published_catalogs or {})
         # Which model class each certificate belongs to, keyed by digest. The class is a property
         # of the entry, not of the certificate — nothing in a certificate says which pathway
         # produced it — so the registry page has always labelled its cards from outside the
@@ -435,7 +443,7 @@ class ReprolithQuery:
         ``certificates``: the digests issued for this paper, newest first, bridging catalog
         browsing to the certificate a reader actually wants.
         """
-        entry = self._catalog.find(
+        entry = self._find_entry(
             Identifiers(title=title or "", doi=doi, pubmed_id=pubmed_id, accession=accession)
         )
         if entry is None:
@@ -446,6 +454,31 @@ class ReprolithQuery:
             title=ids.title, doi=ids.doi, pubmed_id=ids.pubmed_id
         )
         return view
+
+    def _find_entry(self, identifiers: Identifiers) -> CatalogEntry | None:
+        """The entry for these identifiers: the working catalog first, then what is published.
+
+        The working catalog holds one class's queue and the ledger holds six classes' verdicts,
+        which is the asymmetry that made an accession from any other class read as an unknown
+        paper. Order matters and is not arbitrary: an entry being worked on is the live record of
+        it, and a milestone snapshot of the same accession is a copy taken when it was certified.
+        """
+        entry = self._catalog.find(identifiers)
+        if entry is not None:
+            return entry
+        for _label, catalog in sorted(self._published_catalogs.items()):
+            found = catalog.find(identifiers)
+            if found is not None:
+                return found
+        return None
+
+    def published_entry_count(self) -> int:
+        """How many entries the published milestone catalogs hold, across every class.
+
+        What the catalog listing is *not* showing. Zero when none are loaded, which is the honest
+        answer for a repository pointed at one directory.
+        """
+        return sum(len(catalog) for catalog in self._published_catalogs.values())
 
     def backlog_health(self, at: float | None = None) -> dict[str, Any]:
         """Report backlog depth by state, class, and difficulty, and the labelled mix.
@@ -813,7 +846,7 @@ class ReprolithQuery:
         it, under a heading that promises newest first.
         """
         if accession is not None and not (title or doi or pubmed_id):
-            entry = self._catalog.find(Identifiers(title="", accession=accession))
+            entry = self._find_entry(Identifiers(title="", accession=accession))
             if entry is None:
                 return []
             ids = entry.identifiers
