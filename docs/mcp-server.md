@@ -73,7 +73,7 @@ call, `[]` or `null` reads as a fact about the paper rather than about the call.
 | `lint_estimation` | `reported`, `recovered` | A deterministic verdict on a re-derived parameter estimate vs a reported one, at the estimation tolerance (pure, no extra) |
 | `lint_distribution` | `reported`, `predicted`, `reference_kind` (optional) | A deterministic verdict on a simulated percentile envelope vs a reported one, worst-band governed (pure, no extra) |
 | `lint_stochastic` | `sbml`, `species`, `reported_mean`, `duration`, `trajectories`, `seed` | A deterministic verdict on an SBML reaction network's mean species count via a pinned Gillespie SSA (needs the engine extra) |
-| `lint_diffusion` | `initial`, `reference`, `diffusivity`, `dx`, `dt`, `steps`, `decay` (optional) | A deterministic verdict on a 1-D diffusion profile vs a reported one, by curve distance (pure, no extra) |
+| `lint_diffusion` | `initial`, `reference`, `diffusivity`, `dx`, `dt`, `steps`, `decay`, `boundary`, `boundary_value` (optional) | A deterministic verdict on a 1-D diffusion profile vs a reported one, by curve distance (pure, no extra). `boundary` carries the wall the source states — including `unbounded`, which is measured rather than trusted: the run abstains unless this grid's edge rules agree to well inside the tolerance |
 
 **The inline surface is one quantity per class, and not every claim type has a lint.** Seven
 quantities can be checked inline; [seventeen kinds of claim](claim-types.md) can be *certified*. An

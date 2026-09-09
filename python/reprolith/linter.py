@@ -387,6 +387,8 @@ def lint_diffusion(
     dt: float,
     steps: int,
     decay: float = 0.0,
+    boundary: str | None = None,
+    boundary_value: float = 0.0,
     tolerance: Tolerance | None = None,
     reference_kind: ReferenceKind = ReferenceKind.NUMERIC,
 ) -> LintResult:
@@ -401,11 +403,24 @@ def lint_diffusion(
     confident verdict when the run diverges to a non-finite profile — the same rule the certifying
     oracle applies.
     """
-    from .spatial import diffuse_1d
+    from .spatial import _WALL_NAMES, SpatialClaim, diffuse_1d, unbounded_is_honoured
 
     if steps < 1:
         raise ValueError("steps must be at least 1: a zero-step run returns the initial profile")
-    predicted = diffuse_1d(initial, diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, decay=decay)
+    # Built rather than inlined so the boundary rules are the certifying oracle's own: the claim
+    # validates the boundary name, `wall` decides what the stepper runs, and an unbounded domain is
+    # honoured by the same measurement. A second copy of that rule on the surface an agent reaches
+    # *first* is how the two come to disagree about what a verdict means.
+    claim = SpatialClaim(
+        claim_id="lint", quantity="diffused concentration profile",
+        initial=tuple(initial), reference=tuple(reference), source_location="inline",
+        diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, decay=decay,
+        boundary=boundary, boundary_value=boundary_value, tolerance=tolerance,
+    )
+    predicted = diffuse_1d(
+        initial, diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, decay=decay,
+        boundary=claim.wall, boundary_value=boundary_value,
+    )
     tol = _checked(
         tolerance or default_tolerance(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind),
         ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind,
@@ -417,8 +432,34 @@ def lint_diffusion(
     protocol = (
         f"1-D finite difference: D={diffusivity!r}, dx={dx!r}, dt={dt!r}, {steps} steps"
         + (f", decay={decay!r}" if decay else "")
-        + ", zero-flux (Neumann) boundaries"
+        + f", {_WALL_NAMES[claim.wall]}"
+        + (
+            " on a grid whose edges the source's unbounded domain does not have"
+            if claim.states_unbounded else ""
+        )
     )
+    if claim.states_unbounded:
+        # The wall an unbounded claim runs under has to be shown not to have reached the profile
+        # before the distance means anything — the same order the certificate uses, and for the
+        # same reason: a number judged under a wall the source does not have is a number about a
+        # different model. An inline verdict has no assumption block to carry that in, so this
+        # surface either measures it or abstains.
+        shown = unbounded_is_honoured(claim)
+        if shown is None or not shown["honoured"]:
+            return replace(
+                _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol),
+                protocol=protocol + (
+                    " (the wall's effect could not be measured on this run)"
+                    if shown is None else
+                    f" (this grid's edge rules differ by {shown['wall_bracket']:.3e} against a "
+                    f"budget of {shown['budget']:.3e}, so it does not stand in for a domain with "
+                    "no walls — run it on a wider grid, or state the wall the source used)"
+                ),
+            )
+        protocol += (
+            f" (verified rather than assumed: this grid's edge rules differ by "
+            f"{shown['wall_bracket']:.3e}, under a budget of {shown['budget']:.3e})"
+        )
     if not _all_finite(reference, predicted):
         return replace(
             _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol), protocol=protocol

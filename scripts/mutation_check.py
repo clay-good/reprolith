@@ -1392,6 +1392,21 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if (stated := sensitivity.get("basis")) is not None:', "    if False:"),
         ["tests/test_logical_basin_claim.py"],
     ),
+    # --- the inline surface honours a stated wall too, 2026-09-08 -------------------------------
+    (
+        "the inline linter judges under its own wall whatever the source stated",
+        "linter.py",
+        ("        boundary=claim.wall, boundary_value=boundary_value,",
+         "        boundary=\"no-flux\", boundary_value=boundary_value,"),
+        ["tests/test_spatial.py"],
+    ),
+    (
+        "an inline unbounded verdict is published without measuring what the wall did",
+        "linter.py",
+        ("    if claim.states_unbounded:\n        # The wall an unbounded claim runs under",
+         "    if False:\n        # The wall an unbounded claim runs under"),
+        ["tests/test_spatial.py"],
+    ),
     # --- the prose reader knows every class's units, 2026-09-08 ---------------------------------
     (
         "a unit is read out of the front of a longer one, relabelling the quantity",

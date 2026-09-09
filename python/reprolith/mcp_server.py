@@ -344,6 +344,20 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                 "dt": {"type": "number"},
                 "steps": {"type": "integer"},
                 "decay": {"type": "number", "description": "optional first-order decay rate"},
+                "boundary": {
+                    "type": "string",
+                    "description": (
+                        "the wall the source states: no-flux, dirichlet, periodic — or 'unbounded' "
+                        "for the free-space domain a closed form is derived in, which is measured "
+                        "rather than assumed: the run abstains unless this grid's edge rules agree "
+                        "to well inside the pass tolerance. Omitted, the run uses zero flux and "
+                        "the protocol says so."
+                    ),
+                },
+                "boundary_value": {
+                    "type": "number",
+                    "description": "the level a Dirichlet wall is held at; ignored for the others",
+                },
             },
             "required": ["initial", "reference", "diffusivity", "dx", "dt", "steps"],
         },
@@ -1005,7 +1019,12 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
 
         initial = _bounded_length(arguments["initial"], name="initial")
         steps = _bounded_count(arguments["steps"], name="steps", ceiling=_MAX_LINT_ITERATIONS)
-        _bounded_work(len(initial) * steps, name="grid points × steps")
+        # An unbounded claim runs the grid under every wall to bound what standing in for free
+        # space costs, so it is three runs and not one. Charged for what it runs: a ceiling that
+        # counted one would let a caller ask for three times the work it was checked against.
+        from .spatial import BOUNDARIES
+        runs = len(BOUNDARIES) if arguments.get("boundary") == "unbounded" else 1
+        _bounded_work(len(initial) * steps * runs, name="grid points × steps")
         return lint_diffusion(
             initial,
             _bounded_length(arguments["reference"], name="reference"),
@@ -1013,6 +1032,8 @@ def dispatch_tool(query: ReprolithQuery, name: str, arguments: dict[str, Any]) -
             dx=arguments["dx"], dt=arguments["dt"],
             steps=steps,
             decay=arguments.get("decay", 0.0),
+            boundary=arguments.get("boundary"),
+            boundary_value=arguments.get("boundary_value", 0.0),
         ).to_dict()
     if name == "lint_stochastic":
         from .linter import lint_stochastic

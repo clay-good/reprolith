@@ -5721,3 +5721,33 @@ additions walked straight into the failure the rule exists to prevent. A bare "s
 "data collected in the 1990s" into 1990 seconds and "Fig 2s" into two — a year and a figure
 reference, the two things the unit requirement is there to keep out. Seconds are spelled out and the
 abbreviation is left out, which is this module's answer everywhere a reading is not mechanical.
+
+
+## The gate an agent reaches first
+
+`certify_spatial` has taken a claim's own boundary for weeks, and now measures an unbounded domain
+before judging one. `lint_diffusion` — the same judgment, served inline over MCP, and the surface an
+agent hits *before* it ever builds a certificate — had one wall, no way to say the source used
+another, and no way to state the domain a closed form is actually derived in. It answered a
+free-space Gaussian with a bare distance computed against a wall the source does not have.
+
+It takes `boundary` now, including `unbounded`, and it runs the certificate's own rule rather than a
+second copy of it: the linter builds a `SpatialClaim`, so the boundary name is validated by the
+claim, the wall the stepper runs is `claim.wall`, and the unbounded case is `unbounded_is_honoured`.
+Two surfaces with two implementations of one judgment is how they come to disagree about what a
+verdict means, and this repository has that failure written down twice already.
+
+Two differences from the certificate are deliberate. An inline result has no assumption block, so
+where the certificate would qualify, the linter abstains and says by how much the grid missed. And
+the MCP work ceiling charges for three runs rather than one when a claim states an unbounded domain,
+because bracketing runs the grid under every wall — a ceiling that counted one would let a caller
+ask for three times the work it was checked against.
+
+The mutation checker then caught the test rather than the code, which is what it is for. The first
+version of the "it runs the wall the source states" assertion read the protocol string — and the
+protocol is built from the claim, so hardcoding the wall in the stepper left the name printed
+correctly beside a number from a different model. The guard survived. The assertion compares two
+runs now. Its second version was wrong too, and more quietly: it compared a periodic wall against a
+reflecting one on a Gaussian centred in its domain, where those two are the *same run*, so it would
+have passed against any wall at all. Comparing against the absorbing wall is what makes it a
+measurement.

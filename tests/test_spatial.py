@@ -152,6 +152,73 @@ def test_lint_diffusion_inline_verdict_and_mcp_registration() -> None:
     assert result.scope.machine == "reproducible-not-correct-not-clinical"
 
 
+def _gaussian_case(half_width: float, points: int, *, steps: int = 1000):
+    """A Gaussian diffusing on a domain of the given width, against its free-space solution."""
+    from reprolith import gaussian_profile
+
+    dx = 2 * half_width / (points - 1)
+    centers = [-half_width + i * dx for i in range(points)]
+    dt = 0.2 * dx * dx
+    return {
+        "initial": gaussian_profile(centers, mass=10.0, variance=1.0),
+        "reference": gaussian_profile(centers, mass=10.0, variance=1.0 + 2 * steps * dt),
+        "diffusivity": 1.0, "dx": dx, "dt": dt, "steps": steps,
+    }
+
+
+def test_lint_diffusion_runs_the_wall_a_source_states() -> None:
+    """The inline surface had one wall and no way to say the source used another.
+
+    An agent reaches this check *before* it reaches a certificate, and `certify_spatial` has taken
+    a claim's own boundary for weeks. A judgment served on two surfaces that disagree about which
+    model was run is worse than one surface.
+    """
+    from reprolith import lint_diffusion
+
+    case = _gaussian_case(3.0, 31)
+    result = lint_diffusion(**case, boundary="dirichlet")
+    assert result.protocol is not None and "Dirichlet (fixed-value) boundaries" in result.protocol
+    # And the *run* used it, not just the sentence describing it. Asserting the protocol alone let
+    # a mutation that hardcoded the wall survive with the name still printed beside a number from a
+    # different model — an annotation standing in for a check, which is the failure this repository
+    # keeps finding in itself.
+    #
+    # The wall compared against is absorbing rather than periodic, and that is not a detail: on a
+    # symmetric profile centred in the domain, a reflecting wall and a periodic one produce the
+    # *same* run, so the first version of this assertion compared two identical numbers and would
+    # have passed against any wall at all.
+    assert result.discrepancy != lint_diffusion(**case, boundary="no-flux").discrepancy
+
+
+def test_lint_diffusion_measures_an_unbounded_domain_rather_than_trusting_it() -> None:
+    """The same rule the certificate applies, and deliberately the same code.
+
+    A closed form is derived in free space, so a claim judged against one states a domain this
+    solver cannot run. On a wide grid the edge rules agree to orders inside the tolerance and the
+    verdict stands; on a narrow one the run abstains and says by how much it missed. An inline
+    verdict carries no assumption block, so this surface either measures it or declines.
+    """
+    from reprolith import Verdict, lint_diffusion
+
+    wide = lint_diffusion(**_gaussian_case(20.0, 201), boundary="unbounded")
+    assert wide.verdict is Verdict.REPRODUCED
+    assert wide.protocol is not None
+    assert "verified rather than assumed" in wide.protocol
+    assert "unbounded domain does not have" in wide.protocol
+
+    narrow = lint_diffusion(**_gaussian_case(3.0, 31), boundary="unbounded")
+    assert narrow.verdict is Verdict.NOT_EVALUABLE
+    assert narrow.protocol is not None
+    assert "does not stand in for a domain with no walls" in narrow.protocol
+
+
+def test_lint_diffusion_refuses_a_wall_it_cannot_run() -> None:
+    from reprolith import lint_diffusion
+
+    with pytest.raises(ValueError, match="this solver runs"):
+        lint_diffusion(**_gaussian_case(3.0, 31), boundary="reflecting")
+
+
 def test_fisher_kpp_reproduces_the_analytical_front_speed() -> None:
     # The Fisher-KPP equation u_t = D u_xx + r u(1-u) — the canonical invasion/growth-front model —
     # develops a traveling wave whose asymptotic speed is c = 2*sqrt(rD), a closed-form ground truth.
