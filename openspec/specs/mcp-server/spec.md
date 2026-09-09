@@ -138,6 +138,14 @@ returning a fast, deterministic pass/fail an agentic workflow can gate on.
   tolerance used
 - **AND** the same submission yields the same verdict, so the agent can treat it as a
   deterministic gate
+- **AND** the verdict states the protocol it rests on — the discretization, the ensemble, the wall —
+  since an inline result carries no certificate around it, and a bare pass tells a reader nothing
+  about what was run
+- **AND** where a claim states something about its source that this engine had to choose in the
+  absence of one — the boundary a spatial run used, the domain a closed form was derived in — the
+  inline check honours the statement rather than substituting its own, and abstains with the
+  measurement where it cannot: an inline result has no assumption block to qualify a verdict with,
+  so the choice is measured or the verdict is withheld
 
 ### Requirement: One caller's bad request never denies service to the next
 

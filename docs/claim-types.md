@@ -123,6 +123,12 @@ The rest reach a certificate and not a gate, which
 [`docs/mcp-server.md`](mcp-server.md) says in the same words, because a reader meeting one lint per
 class reasonably infers there is one per claim type.
 
+An inline verdict is the *same judgment*, not a looser one. It states the protocol it rests on, it
+runs the wall a spatial claim states — `unbounded` included — and where the certificate would carry
+a load-bearing assumption it abstains instead, because there is no assumption block on a result this
+shape. The rule is the certifying oracle's own code rather than a second copy of it: two
+implementations of one judgment is how two surfaces come to disagree about what a verdict means.
+
 ## What is not here
 
 A claim type exists when a *spec* names the target. This engine computes several quantities no claim
