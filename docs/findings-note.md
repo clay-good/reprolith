@@ -6246,3 +6246,32 @@ well-defined, and a tolerance there would be conceding that it drifts.
 
 No certificate changed. The class's cost line is still "there is nothing to report", and the
 difference is that somebody has now checked.
+
+
+## A parity argued from shared source, now compared
+
+Sweeping the package for the same shape — a sentence carrying weight that nothing runs — turned up
+one more, and it is the milder and more common form. `ReprolithQuery` carries a digest-to-class map
+under this comment:
+
+> Same source as the page (`milestone_certificate_dirs`), so the browser and the terminal cannot
+> disagree about which class a verdict came from.
+
+The argument is sound today and it is an argument, not a check. `model_classes` is a constructor
+argument; what actually prevents the drift is that both callers happen to derive it from that one
+function, and a caller that stopped would leave the sentence standing while the two surfaces
+disagreed. A comment claiming a parity the code does not enforce is this repository's most frequent
+self-inflicted finding, and this is the version of it where the code does enforce the parity — for
+now, by convention.
+
+The two are compared to each other now, digest by digest, over every card the committed page
+publishes. There is no third source to arbitrate: the class is genuinely outside the certificate,
+nothing in one says which pathway produced it, and the page has always labelled from the directory a
+certificate was found in. That is the reason the check has to be a comparison rather than each
+surface against a spec. The test also asserts the terminal knows every class the page publishes, so
+agreement is not agreement about an empty set — which is what a label falling through would produce,
+and the exact failure `recertification-due` had to be taught about once already.
+
+Two of this pass's three findings were the same shape at different strengths: an assertion nobody
+ran (the FBA objective's uniqueness, load-bearing for eight certificates) and an argument nobody
+compared (this). Both were true. Neither was checked, and "true" is not the property a gate has.

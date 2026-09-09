@@ -336,7 +336,10 @@ class ReprolithQuery:
         # produced it — so the registry page has always labelled its cards from outside the
         # certificate while the two queried surfaces could not answer the question at all. Same
         # source as the page (`milestone_certificate_dirs`), so the browser and the terminal
-        # cannot disagree about which class a verdict came from. Empty for a repository loaded
+        # cannot disagree about which class a verdict came from — checked rather than argued
+        # (`tests/test_class_label_parity.py`), because what actually prevents the drift is that
+        # both callers happen to derive this from that function, and a caller that stopped would
+        # leave this sentence standing while the two surfaces disagreed. Empty for a repository loaded
         # from an arbitrary `--data-dir`, where the directory carries no class; the views say
         # `None` there rather than guessing from the paper.
         self._model_classes = dict(model_classes or {})
