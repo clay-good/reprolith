@@ -192,3 +192,67 @@ def test_a_reading_with_no_interior_point_in_the_window_is_not_called_too_few() 
 
     # And a measurable reading carries the key too, so a consumer sees one shape rather than two.
     assert interpolation_cost(fine)["unmeasurable_because"] is None
+
+
+# --- the judged claim, which is the other half of the same question --------------------------------
+
+
+def test_a_judged_population_says_what_would_settle_it_as_the_ensemble_does() -> None:
+    """The stochastic class tells a *judged* claim how large a sample would settle it. The
+    population class shared that class's abstention rule and its jackknife error bar, and never got
+    this — the "covers every case it was written for but one" shape, across two modules instead of
+    two branches.
+
+    The two questions need different rulers and both are legitimate here. An abstention is sized
+    against the check's own bar because its answer is not trustworthy; a judged claim is sized
+    against the margin from its answer to the nearest verdict line, because that answer *is* a
+    measurement and the margin is what the reader wants to know is safe.
+    """
+    from reprolith.oracle import sample_to_settle
+    from test_population_variability_claim import _certificate, _subjects
+
+    protocol = _certificate().assessments[0].protocol
+    assert "from the nearest verdict line" in protocol
+    assert "subjects" in protocol.split("so ~")[1]
+
+    # A claim sitting closer to its line needs a much larger population, which is the whole reason
+    # for computing it rather than saying "a larger sample": these two differ by an order of
+    # magnitude and read identically under the old sentence.
+    near = _certificate(values=_subjects(0.31)).assessments[0].protocol
+    assert int(protocol.split("so ~")[1].split()[0].replace(",", "")) < int(
+        near.split("so ~")[1].split()[0].replace(",", "")
+    )
+
+    # Nothing is offered where there is nothing to buy, and no finite sample settles a claim
+    # landing exactly on its threshold.
+    tol = _certificate().assessments[0]
+    del tol
+    from reprolith.oracle import ComparisonMethod, ReferenceKind, default_tolerance
+
+    tolerance = default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC)
+    assert sample_to_settle(
+        relative_error=0.0, relative_error_bar=0.0001, size=100, tolerance=tolerance
+    ) is None
+    assert sample_to_settle(
+        relative_error=tolerance.reproduced_within, relative_error_bar=0.02, size=100,
+        tolerance=tolerance,
+    ) is None
+
+
+def test_the_two_classes_compute_the_settling_count_with_one_function() -> None:
+    """One implementation, so a stochastic ensemble and a population draw cannot come to size the
+    same question differently — the inline-vs-certificate differential, across classes."""
+    from reprolith.oracle import (
+        ComparisonMethod,
+        ReferenceKind,
+        default_tolerance,
+        sample_to_settle,
+    )
+    from reprolith.stochastic import ensemble_to_settle
+
+    tolerance = default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC)
+    assert ensemble_to_settle(
+        relative_error=0.02, relative_sem=0.01, trajectories=400, tolerance=tolerance
+    ) == sample_to_settle(
+        relative_error=0.02, relative_error_bar=0.01, size=400, tolerance=tolerance
+    )

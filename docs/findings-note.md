@@ -6034,3 +6034,24 @@ suggester volunteers where the curator would pair nothing. **Measure what a sugg
 only what it gets right about what was asked.** The claims half survives that second measurement
 because a claim is a result and a table's result rows are what it reads; the parameter half does not,
 and no gate available here separates a quantity from a quantity that shares its row.
+
+
+## The same sentence, one class short
+
+Two questions can be asked of a sample, and this repository had been answering only one of them per
+class. *An abstention* asks how large a sample would let the check decide at all, and is sized
+against the check's own bar. *A judged claim* asks how large a sample would put its noise out of the
+verdict's way, and is sized against the margin from its answer to the nearest verdict line — a ruler
+that is legitimate there and only there, because a judged answer is a measurement rather than the
+number under suspicion.
+
+The stochastic class had the second and the population class did not, though the two share the
+abstention rule, the jackknife error bar, and the quantity being judged. It is the "covers every
+case it was written for but one" shape again, this time across two modules rather than two branches
+of one function — which is why it survived the pass that found the branch version on the same day.
+
+Both live in the oracle now and the stochastic name delegates, so the two classes cannot come to size
+the same question differently. On the population worked example the sentence reads: this answer sits
+4.90% from its nearest verdict line, so about 28,053 subjects — 19x the sample — would put the
+sampling error a tenth of the way to it. A claim sitting 1.78% out needs 231,045. Those two read
+identically under the sentence they replace.

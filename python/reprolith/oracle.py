@@ -1003,6 +1003,66 @@ def spread_standard_error(
 RESOLVING_ERROR_SHARE = 0.5
 
 
+#: How much of the distance between a claim's answer and its nearest verdict line a sample's own
+#: error may account for before that sample is reported as able to decide the verdict. A tenth: a
+#: bound that is a tenth of what a verdict turns on cannot be what turned it. The same tenth the
+#: spatial class holds a finite grid to for an unbounded domain, and the same one
+#: :func:`reprolith.stochastic.ensemble_to_settle` was written with — which is why it lives here now
+#: rather than in one class that shares the rule with two others.
+SAMPLING_MARGIN_BUDGET = 0.1
+
+
+def sample_to_settle(
+    *, relative_error: float, relative_error_bar: float, size: int, tolerance: Tolerance
+) -> tuple[int, float] | None:
+    """How large a sample would put a *judged* claim's sampling noise out of its verdict's way.
+
+    The counterpart of :func:`sample_to_resolve`, and the difference between them is which ruler is
+    legitimate. This one is offered only for a claim the sample **did** resolve, so its residual is
+    a measurement rather than the number under suspicion, and the useful target is the margin from
+    that answer to its nearest verdict line: reaching a tenth of it takes
+    ``n x (bar / (0.1 x margin))^2`` draws.
+
+    Returns ``(size, margin)``, or ``None`` when the claim already sits far enough from both lines —
+    there is nothing to buy — or when the margin is zero, where no finite sample settles a claim
+    landing exactly on its threshold.
+    """
+    margin = min(
+        abs(relative_error - tolerance.reproduced_within),
+        abs(relative_error - tolerance.partial_within),
+    )
+    if margin <= 0.0 or size <= 0:
+        return None
+    target = SAMPLING_MARGIN_BUDGET * margin
+    if relative_error_bar <= target:
+        return None
+    return math.ceil(size * (relative_error_bar / target) ** 2), margin
+
+
+def settling_sample_clause(
+    *, relative_error: float, relative_error_bar: float, size: int, tolerance: Tolerance, noun: str
+) -> str:
+    """The "and this is what would settle it" half of a judged claim's cost line, or ``""``.
+
+    Advisory, and nothing gates on it: unlike a discretization wall, a sample's error is not
+    something a reader can measure away without re-running the claim, so the verdicts stand exactly
+    as computed. What it buys is a number in place of "a larger sample".
+    """
+    settle = sample_to_settle(
+        relative_error=relative_error,
+        relative_error_bar=relative_error_bar,
+        size=size,
+        tolerance=tolerance,
+    )
+    if settle is None:
+        return ""
+    needed, margin = settle
+    return (
+        f"; this answer sits {margin:.2%} from the nearest verdict line, so ~{needed:,} {noun} — "
+        f"{needed / size:.0f}x this sample — would put the sampling error a tenth of the way to it"
+    )
+
+
 def sample_to_resolve(
     *, relative_error_bar: float, size: int, pass_threshold: float
 ) -> int | None:

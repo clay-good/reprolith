@@ -48,7 +48,9 @@ from .oracle import (
     judge_estimation,
     judge_scalar,
     not_evaluable,
+    relative_error,
     resolving_sample_clause,
+    settling_sample_clause,
     spread_standard_error,
     spread_statistic,
     undetermined_shortfall,
@@ -1527,15 +1529,28 @@ def _judge_variability(claim: VariabilityClaim) -> ClaimAssessment:
         attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
         assumption_qualified=claim.assumption_qualified,
     )
-    cost = (
-        ""
-        if error_bar is None
-        else (
+    if error_bar is None:
+        cost = ""
+    else:
+        # And what a larger one would buy, on the rule the stochastic class already states for the
+        # same kind of quantity: this class shared that class's abstention and its error bar, and
+        # not the one sentence a reader of a *judged* claim wants — how far this population's own
+        # noise sits from the verdict. A claim already clear of both lines is told nothing, since a
+        # sentence recommending more subjects to a reader who does not need them is noise dressed
+        # as advice.
+        cost = (
             f" (sampling noise: the statistic's jackknife standard error is "
             f"{error_bar / claim.reported:.2%} of the reported value, against a "
-            f"{tolerance.reproduced_within:.0%} pass threshold)"
+            f"{tolerance.reproduced_within:.0%} pass threshold"
+            + settling_sample_clause(
+                relative_error=relative_error(claim.reported, observed),
+                relative_error_bar=error_bar / claim.reported,
+                size=len(claim.values),
+                tolerance=tolerance,
+                noun="subjects",
+            )
+            + ")"
         )
-    )
     return replace(assessment, protocol=claim.protocol + cost)
 
 

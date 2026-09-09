@@ -73,6 +73,15 @@ there is abstained on. It resolves at 1,500 (2.1%). A spread needs about three t
 its envelope does, which is the population-class echo of the stochastic class's "a Fano factor needs
 ten times the ensemble its mean does".
 
+**A judged claim says what would settle it too.** The stochastic class tells a claim its ensemble
+*did* resolve how large one would put the sampling error out of the verdict's way; this class shared
+that class's abstention rule and its jackknife error bar and never got that sentence. It does now,
+through the same function: the worked example's protocol reads `this answer sits 4.90% from the
+nearest verdict line, so ~28,053 subjects — 19x this sample — would put the sampling error a tenth of
+the way to it`, and a claim sitting 1.78% from its line needs 231,045 — an order of magnitude apart
+under a sentence that used to read the same for both. Nothing gates on it, and a claim already clear
+of both lines is told nothing.
+
 **The abstention now says how large a population would settle it** — `~1,100 subjects — 2x as many`
 — rather than leaving the author to guess whether the next run needs twice the draw or two hundred
 times it. It is sized against the check's own bar (half the pass threshold) and never against the

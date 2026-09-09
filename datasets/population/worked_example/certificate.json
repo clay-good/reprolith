@@ -25,7 +25,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "1500 subjects, seed 20260901, log-normal between-subject variability on V (CV 0.3), median-preserving; duration=12.0, steps=12, read=[C] (sampling noise: the statistic's jackknife standard error is 1.90% of the reported value, against a 5% pass threshold)",
+      "protocol": "1500 subjects, seed 20260901, log-normal between-subject variability on V (CV 0.3), median-preserving; duration=12.0, steps=12, read=[C] (sampling noise: the statistic's jackknife standard error is 1.90% of the reported value, against a 5% pass threshold; this answer sits 4.22% from the nearest verdict line, so ~30,372 subjects \u2014 20x this sample \u2014 would put the sampling error a tenth of the way to it)",
       "quantity": "between-subject coefficient of variation of the peak concentration",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -66,7 +66,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "deterministic-lsoda (judge rev 72b445125369)",
+    "algorithm": "deterministic-lsoda (judge rev 937b51d059b8)",
     "engine": "copasi",
     "version": "4.46.300 (Source)"
   },

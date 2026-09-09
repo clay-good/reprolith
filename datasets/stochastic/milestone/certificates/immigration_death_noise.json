@@ -8,7 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "SSA ensemble: 4000 trajectories to t=40, seed 20260907, read=fano-factor of species[0] (sampling noise: the statistic's jackknife standard error is 2.26% of the reported value, against a 5% pass threshold; this answer sits 3.39% from the nearest verdict line, so ~177,498 trajectories \u2014 44x this ensemble \u2014 would put the sampling error a tenth of the way to it)",
+      "protocol": "SSA ensemble: 4000 trajectories to t=40, seed 20260907, read=fano-factor of species[0] (sampling noise: the statistic's jackknife standard error is 2.26% of the reported value, against a 5% pass threshold; this answer sits 3.39% from the nearest verdict line, so ~177,498 trajectories \u2014 44x this sample \u2014 would put the sampling error a tenth of the way to it)",
       "quantity": "Fano factor of the stationary distribution",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -25,7 +25,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "SSA ensemble: 4000 trajectories to t=40, seed 20260907, read=coefficient-of-variation of species[0] (sampling noise: the statistic's jackknife standard error is 1.16% of the reported value, against a 5% pass threshold; this answer sits 4.10% from the nearest verdict line, so ~31,844 trajectories \u2014 8x this ensemble \u2014 would put the sampling error a tenth of the way to it)",
+      "protocol": "SSA ensemble: 4000 trajectories to t=40, seed 20260907, read=coefficient-of-variation of species[0] (sampling noise: the statistic's jackknife standard error is 1.16% of the reported value, against a 5% pass threshold; this answer sits 4.10% from the nearest verdict line, so ~31,844 trajectories \u2014 8x this sample \u2014 would put the sampling error a tenth of the way to it)",
       "quantity": "coefficient of variation at stationarity",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -66,7 +66,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "gillespie-direct-method (rev b581069d4925)",
+    "algorithm": "gillespie-direct-method (rev b87a82bb6490)",
     "engine": "reprolith-ssa",
     "version": "0.0.1"
   },

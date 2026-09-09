@@ -25,6 +25,9 @@ from .dossier import Dossier, DossierClaim, Equation, Gap, GapKind, Parameter
 from .enums import Verdict
 from .model import Assumption, Certificate, ClaimAssessment, EnginePin, PaperIdentity
 from .oracle import (
+    SAMPLING_MARGIN_BUDGET as _SAMPLING_MARGIN_BUDGET,
+)
+from .oracle import (
     Attribution,
     ComparisonMethod,
     PercentileBand,
@@ -36,6 +39,8 @@ from .oracle import (
     not_evaluable,
     relative_error,
     resolving_sample_clause,
+    sample_to_settle,
+    settling_sample_clause,
     spread_standard_error,
     spread_statistic,
     undetermined_shortfall,
@@ -412,14 +417,11 @@ _SAMPLING_BASIS = (
 )
 
 
-#: How much of the distance between a claim's answer and its nearest verdict line the sampling
-#: error may account for before the ensemble is reported as able to decide the verdict. The same
-#: tenth the spatial class holds a finite grid to for an unbounded domain
-#: (:data:`reprolith.spatial.UNBOUNDED_WALL_BUDGET`), and for the same reason — a bound that is a
-#: tenth of what a verdict turns on cannot be what turned it. Advisory here: nothing gates on it,
-#: because unlike a wall, an ensemble's error is not something a curator can measure away without
-#: re-running the claim. What it buys is a number in place of "a larger ensemble".
-SAMPLING_MARGIN_BUDGET = 0.1
+#: Re-exported: the budget and the arithmetic moved to :mod:`reprolith.oracle` when the population
+#: class needed the same sentence about the same kind of sample. The names stay here because they
+#: are this class's published API and because a reader of the stochastic protocol line looks for
+#: them here first.
+SAMPLING_MARGIN_BUDGET = _SAMPLING_MARGIN_BUDGET
 
 
 def ensemble_to_settle(
@@ -427,25 +429,16 @@ def ensemble_to_settle(
 ) -> tuple[int, float] | None:
     """How large an ensemble would put this claim's sampling noise out of the verdict's way.
 
-    The queue's alternative to a sampled ensemble reads "a larger ensemble", which is true of every
-    ensemble ever drawn and tells a reader nothing. This answers *how much* larger: the standard
-    error falls as 1/√n, so reaching a tenth of the margin between this claim's answer and its
-    nearest verdict line takes ``n × (sem / (0.1 × margin))²`` trajectories.
-
-    Returns ``(trajectories, margin)``, or ``None`` when the claim already sits far enough from
-    both lines — there is nothing to buy — or when the margin is zero, where no finite ensemble
-    settles a claim landing exactly on its threshold.
+    This class's name for :func:`reprolith.oracle.sample_to_settle`, which two classes now share:
+    the queue's alternative to a sampled ensemble read "a larger ensemble", which is true of every
+    ensemble ever drawn, and a population draw's read the same way.
     """
-    margin = min(
-        abs(relative_error - tolerance.reproduced_within),
-        abs(relative_error - tolerance.partial_within),
+    return sample_to_settle(
+        relative_error=relative_error,
+        relative_error_bar=relative_sem,
+        size=trajectories,
+        tolerance=tolerance,
     )
-    if margin <= 0.0:
-        return None
-    target = SAMPLING_MARGIN_BUDGET * margin
-    if relative_sem <= target:
-        return None
-    return math.ceil(trajectories * (relative_sem / target) ** 2), margin
 
 
 def _settling_clause(
@@ -459,19 +452,12 @@ def _settling_clause(
     that covers every case it was written for but one is a shape this repository has caught in
     itself before.
     """
-    settle = ensemble_to_settle(
+    return settling_sample_clause(
         relative_error=relative_error(reported, observed),
-        relative_sem=relative_sem,
-        trajectories=trajectories,
+        relative_error_bar=relative_sem,
+        size=trajectories,
         tolerance=tolerance,
-    )
-    if settle is None:
-        return ""
-    needed, margin = settle
-    return (
-        f"; this answer sits {margin:.2%} from the nearest verdict line, so ~{needed:,} "
-        f"trajectories — {needed / trajectories:.0f}x this ensemble — would put the sampling "
-        "error a tenth of the way to it"
+        noun="trajectories",
     )
 
 

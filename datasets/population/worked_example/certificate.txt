@@ -1,5 +1,5 @@
 REPRODUCTION CERTIFICATE — One-compartment IV bolus with log-normal volume — the population envelope its own mathematics predicts
-Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev 72b445125369)
+Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev 937b51d059b8)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=2, partial=0, failed=0, not-evaluable=0
@@ -11,7 +11,7 @@ CLAIMS
       protocol: 1500 subjects, seed 20260901, log-normal between-subject variability on V (CV 0.3), median-preserving; percentiles linearly interpolated between order statistics; duration=12.0, steps=12, read=[C]; sampling error of the 5th band ~2% of the band at 1500 subjects
   [between-subject-cv] between-subject coefficient of variation of the peak concentration: reproduced [assumption-qualified] (source closed form: the peak is D/V and V is log-normal with CV 0.3, so the population's peak carries that CV — mathematics standing in for a reported %CV, not a number read from a paper via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0078
-      protocol: 1500 subjects, seed 20260901, log-normal between-subject variability on V (CV 0.3), median-preserving; duration=12.0, steps=12, read=[C] (sampling noise: the statistic's jackknife standard error is 1.90% of the reported value, against a 5% pass threshold)
+      protocol: 1500 subjects, seed 20260901, log-normal between-subject variability on V (CV 0.3), median-preserving; duration=12.0, steps=12, read=[C] (sampling noise: the statistic's jackknife standard error is 1.90% of the reported value, against a 5% pass threshold; this answer sits 4.22% from the nearest verdict line, so ~30,372 subjects — 20x this sample — would put the sampling error a tenth of the way to it)
 
 ASSUMPTIONS (supplied by Reprolith, not the paper)
   [population-sampling-population-envelope] the percentile bands judged here came from a virtual population Reprolith reconstructed and sampled, not from the paper's own run -> 1500 subjects, seed 20260901, log-normal between-subject variability on V (CV 0.3), median-preserving; percentiles linearly interpolated between order statistics; duration=12.0, steps=12, read=[C]; sampling error of the 5th band ~2% of the band at 1500 subjects [load-bearing] [this engine's limit — no expert decision closes it]
