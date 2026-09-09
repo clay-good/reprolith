@@ -491,9 +491,12 @@ def queue_report(
             "they rest on a choice this engine had to make rather than on anything the paper "
             "left unsaid — the ensemble the stochastic class drew for itself — so no expert "
             "decision closes one. They withhold a clean pass exactly as the others do; what they "
-            "wait on is this engine, not a person. What waits here can leave: the wall the spatial "
-            "solver ran under was one of these until a claim could state its own boundary and a "
-            "claim stating an unbounded domain could be measured against the grid it ran on"
+            "wait on is this engine, not a person, and each dependent certificate's protocol line "
+            "says how large an ensemble would put the sampling error out of its verdict's way — a "
+            "count rather than the \"a larger ensemble\" listed as the alternative, which is true "
+            "of every ensemble ever drawn. What waits here can leave: the wall the spatial solver "
+            "ran under was one of these until a claim could state its own boundary and a claim "
+            "stating an unbounded domain could be measured against the grid it ran on"
         ),
         "ranked_by": (
             "impact — the number of standing certificates resting on the value. Margin is not "
