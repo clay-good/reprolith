@@ -862,8 +862,17 @@ def render_registry(
                 f"{len(unattempted_claims(cert))} not attempted under a budget)"
             )
         digest = content_hash(cert.content())
+        # One bullet per *distinct* shortfall. This card listed one per claim and named none of
+        # them — the twice-daily metformin entry rendered forty-three consecutive bullets reading
+        # "reproduced only under an assumption Reprolith supplied", with the three findings that
+        # actually differ underneath them and no claim id on any line to tell them apart. The
+        # count in the summary is still of items, since that is what the certificate holds.
+        by_need: dict[str, int] = {}
+        for item in gap_items(cert):
+            by_need[str(item["needs"])] = by_need.get(str(item["needs"]), 0) + 1
         gaps = "".join(
-            f"<li>{html.escape(item['needs'])}</li>" for item in gap_items(cert)
+            f"<li>{f'{count} claims: ' if count > 1 else ''}{html.escape(need)}</li>"
+            for need, count in by_need.items()
         )
         gap_block = (
             f'<details class="gaps"><summary>what was missing '

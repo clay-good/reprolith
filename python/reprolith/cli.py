@@ -354,10 +354,33 @@ def _cmd_gaps(query: ReprolithQuery, args: argparse.Namespace) -> int:
         # when a correction has already replaced the verdict it belongs to.
         print("(no gaps — nothing was missing)")
     else:
-        print("WHAT WAS MISSING")
+        # One line per *distinct* shortfall, not per claim. The twice-daily metformin entry has
+        # fifty-four items and three distinct facts in them: thirty-four claims say the identical
+        # sentence about one assumption, and the three findings that differ — a protocol the
+        # artifact runs less of, a table this engine believes is wrong, a set of unstated units —
+        # sat underneath them, at the bottom of a fifty-seven-line page. That is the rule the
+        # neighbouring `presubmission` fix list already follows in the spec's own words: one fix
+        # that blocks many claims is one item naming all of them, since repeating it per claim
+        # buries the fixes that differ among the rows that do not. Only *identical* text collapses,
+        # so two claims that missed by different amounts stay two lines. The JSON is untouched:
+        # a machine consumer wants the per-claim items, and a reader wants the distinct facts.
+        grouped: dict[str, list[str]] = {}
         for g in items:
-            where = f"[{g['claim_id']}] {g['quantity']}: " if g["claim_id"] else ""
-            print(f"  {where}{g['needs']}")
+            grouped.setdefault(str(g["needs"]), []).append(str(g["claim_id"] or ""))
+        print(f"WHAT WAS MISSING — {len(items)} item(s), {len(grouped)} distinct")
+        for g in items:
+            claims = grouped.get(str(g["needs"]))
+            if claims is None:
+                continue  # already printed with the first claim that said it
+            del grouped[str(g["needs"])]
+            named = [claim for claim in claims if claim]
+            if len(claims) == 1:
+                where = f"[{g['claim_id']}] {g['quantity']}: " if g["claim_id"] else ""
+                print(f"  {where}{g['needs']}")
+                continue
+            print(f"  {len(claims)} claim(s): {g['needs']}")
+            if named:
+                print(f"      claims: {', '.join(named)}")
     print(f"  scope: {report['scope']['human']}")
     if report["superseded_by"]:
         print(f"  superseded by: {report['superseded_by']}")
