@@ -56,6 +56,7 @@ from .manuscript_values import (
     check_claim_values,
     check_parameter_values,
     claims_in_another_unit,
+    claims_naming_unknown_outputs,
     compared_parameters,
     disagreeing_parameters,
     parameters_template,
@@ -920,9 +921,16 @@ def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     # can see it — the reproduction runs the model's own numbers and reproduces its own curve — so
     # it is checked here, where the claim is, and only when a model is given to check against.
     units: tuple[Any, ...] = ()
+    unknown: tuple[Any, ...] = ()
     if args.model is not None:
         try:
-            units = check_claim_units(Path(args.model).read_text(encoding="utf-8"), records)
+            model_text = Path(args.model).read_text(encoding="utf-8")
+            units = check_claim_units(model_text, records)
+            # A finding of its own, and one this report used to bury: a claim naming an output the
+            # model does not declare came back as a *unit* that could not be checked, so a curator
+            # who mistyped a species learned their unit was not compared rather than that their
+            # claim can never be reproduced.
+            unknown = claims_naming_unknown_outputs(records, model_text)
         except (OSError, UnicodeDecodeError, ValueError) as unusable:
             print(f"cannot read the model: {unusable}", file=sys.stderr)
             return 1
@@ -931,6 +939,7 @@ def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
             "checks": [c.to_dict() for c in checks],
             "units": [c.to_dict() for c in units],
             "units_in_tables": [c.to_dict() for c in printed_units],
+            "unknown_outputs": [c.to_dict() for c in unknown],
         })
     else:
         print(f"CLAIMS CHECKED AGAINST {len(rows)} TABLE(S): {', '.join(sorted(rows))}")
@@ -955,15 +964,36 @@ def _cmd_claims_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
                 if printed.agrees is not True:
                     mark = "ANOTHER UNIT" if printed.agrees is False else "not checked"
                     print(f"  [{printed.claim_id}] {mark}: {printed.detail}")
+        if unknown:
+            # Before the units, because it is the larger fact: a claim naming an output the model
+            # does not have cannot be reproduced at all, and what its number is *in* stops
+            # mattering.
+            print(f"OUTPUTS THIS MODEL DOES NOT DECLARE: {len(unknown)}")
+            for missing in unknown:
+                print(f"  [{missing.claim_id}] NOT IN THE MODEL: {missing.detail}")
         if units:
             print(f"UNITS CHECKED AGAINST {Path(args.model).name}")
+            named_nothing = {missing.claim_id for missing in unknown}
             for unit in units:
+                if unit.claim_id in named_nothing:
+                    # Its unit line says the same absence in the smaller frame, and the section
+                    # above says it in the frame that matters. Two accounts of one fact is how a
+                    # reader comes to think they are two facts.
+                    continue
                 mark = {True: "ok", False: "ANOTHER UNIT", None: "not checked"}[unit.agrees]
                 print(f"  [{unit.claim_id}] {mark}: {unit.detail}")
     # Non-zero for a value the cited table does not print, and for a claim in a unit the model does
     # not read that output in. An unchecked claim is not a finding either way, so it must not fail
     # a pre-submission hook.
-    return 1 if unsupported_claims(checks) or claims_in_another_unit(units) or mislabelled else 0
+    # An output the model does not declare joins the two findings that already fail this: unlike an
+    # unchecked unit — which is an absence of evidence and must not fail a pre-submission hook —
+    # this is a claim that can never be reproduced, and it is unambiguous, since a claims file
+    # holding several papers is refused unless `--accession` names the one this model belongs to.
+    return (
+        1
+        if unsupported_claims(checks) or claims_in_another_unit(units) or mislabelled or unknown
+        else 0
+    )
 
 
 def _model_from_archive_or_file(args: argparse.Namespace) -> tuple[str, str]:

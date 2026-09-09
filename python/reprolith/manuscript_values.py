@@ -1125,6 +1125,80 @@ def check_claim_units_in_tables(
     return tuple(results)
 
 
+@dataclass(frozen=True)
+class UnknownOutput:
+    """A claim naming a model element the model does not declare."""
+
+    claim_id: str
+    named: str
+    detail: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"claim_id": self.claim_id, "named": self.named, "detail": self.detail}
+
+
+def claims_naming_unknown_outputs(
+    claims: Sequence[Mapping[str, Any]], model_sbml: str
+) -> tuple[UnknownOutput, ...]:
+    """Claims whose ``species`` is not a species or parameter this model declares.
+
+    A finding of its own, because it was being reported as a *unit* that could not be checked —
+    true, and the smaller half of the truth. A curator who mistypes ``mLiver`` as ``mLivver`` read
+    "not checked: the model declares no species or parameter 'mLivver'" under a units heading and
+    learned their unit was not compared. What they needed to learn is that the claim can never be
+    reproduced at all: nothing will ever read a number off an output the model does not have.
+
+    It is unambiguous here, which is what makes it reportable. ``claims-check`` refuses a claims
+    file holding several papers unless ``--accession`` names one, so every claim it checks belongs
+    to the entry whose model was supplied — a name the model does not declare is an error in the
+    file, or the wrong model was given, and both are worth stopping for.
+
+    The detail is an instruction rather than the finding restated, and the strongest evidence
+    available is used before the weakest: where exactly one declared name differs only in case, it
+    is named, because a case slip is the one correction that can be made with certainty. Otherwise
+    it says how many outputs the model does declare and which command lists them. Nothing is
+    matched fuzzily — "did you mean" over an edit distance is how a curator is talked into a
+    plausible wrong species, and this module refuses that everywhere else.
+    """
+    declared = _declared_element_ids(model_sbml)
+    by_lowercase: dict[str, list[str]] = {}
+    for name in declared:
+        by_lowercase.setdefault(name.lower(), []).append(name)
+    unknown: list[UnknownOutput] = []
+    for record in claims:
+        named = str(record.get("species") or "")
+        if not named or named in declared:
+            continue
+        same_but_for_case = by_lowercase.get(named.lower(), ())
+        if len(same_but_for_case) == 1:
+            detail = (
+                f"this model declares no {named!r}; it declares {same_but_for_case[0]!r}, which "
+                "differs only in case — nothing here is matched by guesswork, and that one is the "
+                "same name"
+            )
+        else:
+            detail = (
+                f"this model declares no {named!r}, so no number can be read off it and this claim "
+                f"cannot be reproduced. The model declares {len(declared)} output(s); "
+                "`reprolith claims-template --model <your model>` lists them"
+            )
+        unknown.append(UnknownOutput(str(record.get("claim_id") or ""), named, detail))
+    return tuple(unknown)
+
+
+def _declared_element_ids(model_sbml: str) -> set[str]:
+    """Every species and parameter id this model declares — what a claim's ``species`` may name."""
+    root = ET.fromstring(model_sbml)
+    model = next((c for c in root if _localname(c.tag) == "model"), None)
+    return {
+        str(child.get("id"))
+        for container in (model if model is not None else ())
+        if _localname(container.tag) in {"listOfSpecies", "listOfParameters"}
+        for child in container
+        if child.get("id")
+    }
+
+
 def claims_in_another_unit(checks: Sequence[UnitCheck]) -> tuple[UnitCheck, ...]:
     """The checks that came back false, and never the ones that could not be made."""
     return tuple(check for check in checks if check.agrees is False)

@@ -255,6 +255,13 @@ guessed would accuse correct claims. A claim citing a figure panel or a sentence
 did not supply, is reported as **not checked**, never as wrong, and never fails the command: an
 absence of evidence is not evidence of absence.
 
+With `--model` it also asks whether each claim names an output your model actually has. A claim
+naming one it does not — a mistyped species, or the wrong model passed — **fails** the command, and
+that is not the same kind of thing as an unchecked unit: a missing unit is an absence of evidence,
+while an output the model does not declare is a claim nothing can ever read a number off. Where
+exactly one of your model's own names differs only in case, it is named; nothing else is guessed at,
+because talking you into a plausible wrong species is worse than telling you to go and look.
+
 It also asks a question of the table itself, whenever your claims state a unit: does the column
 your claim's metric names print that unit? A value read out of a µmol column and labelled nmol
 passes every other check here — the number *is* printed, and your model's unit is whatever it is —

@@ -6362,3 +6362,36 @@ sweep is not re-run hopefully: `lint_curve`, `lint_estimation` and `lint_distrib
 inputs than their certifying counterparts (no window, no overrides, no optimizer record, no subject
 count), so there is no fact they are withholding. A divergence needs both surfaces to *have* the
 thing.
+
+
+## The check that noticed, and filed it under the wrong heading
+
+`claims-check --model` already caught a mistyped species. It reported it like this:
+
+```
+UNITS CHECKED AGAINST Zake2021_Metformin_Mice_PO.xml
+  [c1] not checked: the model declares no species or parameter 'mLivver'
+```
+
+Every word true, and the smaller half of the truth. A curator reads that and learns their *unit* was
+not compared. What they need to learn is that nothing will ever read a number off an output the
+model does not declare, so this claim cannot be reproduced at all — the unit it would have been in
+stopped mattering some time ago.
+
+And it passed. The command exits non-zero for a value the cited table does not print and for a claim
+in a unit the model does not read that output in, and deliberately not for an unchecked claim,
+because "an absence of evidence is not evidence of absence". That rule is right about a missing unit
+and wrong about a missing output, and the two had been folded into one branch — so a typo went
+through a pre-submission hook green.
+
+Reported as its own finding now, above the units because it is the larger fact, and failing the
+command. It is unambiguous, which is what makes that safe: `claims-check` refuses a claims file
+holding several papers unless `--accession` names one, so every claim it checks belongs to the entry
+whose model was supplied, and a name that model does not declare is an error in the file or the
+wrong model on the command line. Both are worth stopping for.
+
+The detail is an instruction, and it spends the strongest evidence it has before the weakest. Where
+exactly one declared name differs only in case, it says so — a case slip is the single correction
+that can be made with certainty. Otherwise it says how many outputs the model declares and which
+command lists them. Nothing is matched by edit distance: "did you mean" is how a curator is talked
+into a plausible wrong species, which is the failure this whole module is built to avoid.

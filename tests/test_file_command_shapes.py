@@ -39,8 +39,12 @@ def test_claims_check_shape(capsys) -> None:
         "claims-check", "--claims", _CLAIMS, "--accession", _ACCESSION,
         "--tables", _TABLES, "--json",
     ])
-    assert set(payload) == {"checks", "units", "units_in_tables"}
+    # `unknown_outputs` is a finding of its own — a claim naming a model output the model does not
+    # declare — reported apart from the units, which is where it used to be folded in as a check
+    # that could not be made. Present (empty) with no `--model`, so a consumer sees one shape.
+    assert set(payload) == {"checks", "units", "units_in_tables", "unknown_outputs"}
     assert {"claim_id", "reported", "found", "detail"} <= set(payload["checks"][0])
+    assert payload["unknown_outputs"] == []
 
 
 def test_params_check_shape(capsys) -> None:
