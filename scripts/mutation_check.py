@@ -1435,6 +1435,13 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          '        protocol=(\n            f"{len(network.nodes)} nodes'),
         ["tests/test_linter.py"],
     ),
+    (
+        "the boundary gap tells an author what is missing and not what would close it",
+        "spatial.py",
+        ('                "or say the result is derived on an unbounded domain, as a closed form is: a claim "',
+         '                "" '),
+        ["tests/test_spatial.py"],
+    ),
     # --- the inline surface honours a stated wall too, 2026-09-08 -------------------------------
     (
         "the inline linter judges under its own wall whatever the source stated",

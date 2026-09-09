@@ -166,6 +166,26 @@ def _gaussian_case(half_width: float, points: int, *, steps: int = 1000):
     }
 
 
+def test_the_boundary_gap_tells_an_author_what_an_answer_looks_like() -> None:
+    """A gap's detail is written for the person who has to close it.
+
+    This one said what was missing and not what would close it, and there are four answers now —
+    three walls and, less obviously, an unbounded domain, which a solver cannot run and therefore
+    measures. An author reading "the paper does not state the boundary conditions" of a result
+    derived in free space would reasonably conclude Reprolith had no way to hear that.
+    """
+    from reprolith import GapKind, spatial_dossier
+
+    dossier = spatial_dossier(
+        entry="e", species=["u"], diffusivities={"u": 1.0},
+        source_location="Fig 1", claims=(), boundary_stated=False,
+    )
+    (gap,) = [g for g in dossier.gaps if g.kind is GapKind.BOUNDARY]
+    assert gap.load_bearing
+    for answer in ("zero-flux", "fixed value", "periodic", "unbounded domain"):
+        assert answer in gap.detail, answer
+
+
 def test_lint_diffusion_runs_the_wall_a_source_states() -> None:
     """The inline surface had one wall and no way to say the source used another.
 

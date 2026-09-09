@@ -2440,7 +2440,18 @@ def spatial_dossier(
         gaps = (Gap(
             element="domain/boundary condition",
             kind=GapKind.BOUNDARY,
-            detail="the paper does not state the spatial domain or its boundary conditions",
+            # Written for the author who has to close it, which is what a gap's detail is for: it
+            # said what was missing and not what an answer looks like, and there are four of them
+            # now. The fourth is the one nobody would guess is available, because a solver cannot
+            # run an infinite grid — a claim stating an unbounded domain is measured against the
+            # grid it ran on rather than qualified for it.
+            detail=(
+                "the paper does not state the spatial domain or its boundary conditions — say "
+                "which wall the model used (zero-flux, a wall held at a fixed value, or periodic), "
+                "or say the result is derived on an unbounded domain, as a closed form is: a claim "
+                "stating one is run on a finite grid and judged only once that grid's edge rules "
+                "are measured to agree well inside the claim's own tolerance"
+            ),
             load_bearing=True,
         ),)
     dossier = Dossier(
