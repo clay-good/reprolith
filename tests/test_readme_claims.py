@@ -154,3 +154,44 @@ def test_the_front_page_claims_no_clean_pass_while_no_certificate_is_one() -> No
     for overstatement in ("clean, unqualified pass", "first in this class to come back"):
         assert overstatement not in _README, overstatement
     assert "Not one of the four is a clean pass" in _README
+
+
+_WORDED = {
+    3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven", 8: "Eight", 9: "Nine", 10: "Ten",
+}
+
+
+def test_the_front_pages_account_of_the_queue_is_the_queue() -> None:
+    """Two numbers on the front page were stale, and one of them went stale the day it was written.
+
+    "three values under 4 of the 33 standing certificates" outlived six new certificates, and "six
+    of the eight load-bearing assumptions are this engine's limits" stopped being true the moment a
+    spatial claim could state its own domain — which also retired the *example* the sentence gave,
+    the wall the spatial solver ran under. All three are derived on every call, so none of them had
+    to be believed. Held here for the reason the registry's copy is held: the page and the surfaces
+    answer from one derivation, and a page that overstates what is unreviewed is the worst thing
+    this repository could publish about itself, in the direction that flatters it least.
+    """
+    from reprolith.mcp_server import default_data_dir, load_repository
+
+    query, _ = load_repository(default_data_dir(), aggregate=True)
+    report = query.verification_queue()
+    total = report["pending_count"] + report["engine_limits_count"]
+
+    assert (
+        f"under **{report['certificates_affected']} of the {report['standing_certificates']}**"
+        in _README
+    )
+    assert f"{_WORDED[report['engine_limits_count']]} of the {_WORDED[total].lower()}" in _README
+    # And the example it gives is one of the items actually in that half today.
+    engine_classes = {item["question"] for item in report["engine_limits"]}
+    assert all("ensemble" in question or "sampled" in question for question in engine_classes), (
+        "the engine-limit half is no longer all about sampled ensembles; the README names that as "
+        "its example"
+    )
+    # The derived note gives an example too, and it named the spatial wall for a day after that
+    # wall stopped being one of these. Only the part describing *today's* items is checked: the
+    # note also says what left this half, which is the sentence that keeps a reader from taking it
+    # for a permanent property of the engine.
+    today, _, _ = report["engine_limits_note"].partition("What waits here can leave")
+    assert "ensemble" in today and "spatial" not in today

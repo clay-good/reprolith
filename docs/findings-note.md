@@ -5801,3 +5801,24 @@ unbounded-domain abstention put its measurement in the protocol and left the *di
 happened, on a grid that was perfectly finite. A reader of the verdict saw the wrong cause. This is
 the shape this repository keeps finding in its own last diff, and the answer is the same each time:
 re-audit the fix, not just the bug.
+
+
+## The front page's account of its own queue
+
+Two numbers on the README were wrong, and one of them was made wrong by the change that preceded
+it. "Three values under **4 of the 33** standing certificates" had outlived six new certificates.
+"Six of the eight load-bearing assumptions are this engine's limits" stopped being true the moment a
+spatial claim could state its own domain — and so did the example the sentence gave, the wall the
+spatial solver ran under, which is no longer in that half at all. The engine's own
+`engine_limits_note` gave the same retired example, on the terminal, the agent surface and the
+public registry.
+
+Every one of those numbers is derived on every call, so none of them had to be believed. They are
+held to the derivation now, the way the registry page's copies already were — including the note's
+example, which is checked against the questions actually in that half today.
+
+The note says one more thing than it used to, because the correction is the interesting part: what
+waits in the engine's half can leave it. The spatial wall sat there as a limit no expert decision
+could close, and it left — not by being reclassified, but because the engine learned to measure what
+it costs. A reader who takes that half for a permanent property of the work is reading it wrong, and
+a count written into prose here would go stale the same way this one did.

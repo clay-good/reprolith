@@ -630,16 +630,17 @@ def _verification_banner(
 
     Each card already names the load-bearing assumptions behind its own certificate, and that is
     the per-paper honesty payload. It is not the page-level one. A reader who wants to know what
-    *this registry* is resting on had to open thirty-three cards and merge the answers by eye — and
+    *this registry* is resting on had to open every card and merge the answers by eye — and
     would still not learn that one of those questions carries four of the certificates, which is
     the only number that says which one to look at first.
 
-    Two sections, not one, and the second is what earns this. Six of the eight load-bearing
-    assumptions on this repository's certificates are *this engine's* limits rather than anything
-    a paper left out — the wall the spatial solver ran under, the ensemble the stochastic
-    class drew — and no expert confirming anything closes one. Under a single "awaiting expert
-    review" heading they read as five of seven questions waiting on a person, which is the shape
-    of overstatement the rest of this page exists to avoid.
+    Two sections, not one, and the second is what earns this. Most of the load-bearing assumptions
+    on this repository's certificates are *this engine's* limits rather than anything a paper left
+    out — the ensemble the stochastic class drew for itself — and no expert confirming anything
+    closes one. Under a single "awaiting expert review" heading they would read as questions
+    waiting on a person, which is the shape of overstatement the rest of this page exists to avoid.
+    The split is not written down here as a count, because it moves: it was six of eight until a
+    spatial claim could state its own domain, and the surfaces report what they derive.
 
     Derived by :func:`reprolith.verification.queue_report`, the same function the terminal's
     `reprolith verification-queue` and the agent surface's `verification_queue` tool answer from,

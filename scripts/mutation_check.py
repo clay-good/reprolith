@@ -1399,6 +1399,13 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          '                _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol),'),
         ["tests/test_spatial.py"],
     ),
+    (
+        "the engine-limit half names an example that left it",
+        "verification.py",
+        ('"left unsaid — the ensemble the stochastic class drew for itself — so no expert "',
+         '"left unsaid — the wall the spatial solver ran under — so no expert "'),
+        ["tests/test_readme_claims.py"],
+    ),
     # --- an unsolvable program is reported, not thrown, 2026-09-08 ------------------------------
     (
         "an infeasible program takes the certifying run down instead of abstaining",

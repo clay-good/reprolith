@@ -489,9 +489,11 @@ def queue_report(
         ),
         "engine_limits_note": (
             "they rest on a choice this engine had to make rather than on anything the paper "
-            "left unsaid — the wall the spatial solver ran under, the ensemble the stochastic "
-            "class drew — so no expert decision closes one. They withhold a clean pass exactly as "
-            "the others do; what they wait on is this engine, not a person"
+            "left unsaid — the ensemble the stochastic class drew for itself — so no expert "
+            "decision closes one. They withhold a clean pass exactly as the others do; what they "
+            "wait on is this engine, not a person. What waits here can leave: the wall the spatial "
+            "solver ran under was one of these until a claim could state its own boundary and a "
+            "claim stating an unbounded domain could be measured against the grid it ran on"
         ),
         "ranked_by": (
             "impact — the number of standing certificates resting on the value. Margin is not "

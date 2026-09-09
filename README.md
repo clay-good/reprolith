@@ -807,15 +807,18 @@ That last number is the ranking, so the value four published results rest on is 
 you see and not the twentieth.
 
 It says how much of the corpus each value reaches, because a count of unreviewed values read
-against the size of the repository is its own overstatement: three values under **4 of the 33**
+against the size of the repository is its own overstatement: three values under **4 of the 39**
 standing certificates, not under all of them.
 
-It prints in two parts, and the second is the one worth reading first. Six of the eight
+It prints in two parts, and the second is the one worth reading first. Five of the eight
 load-bearing assumptions on today's certificates are **this engine's** limits rather than
-anything a paper left out — the wall the spatial solver ran under, the stochastic
-class judges an ensemble it drew itself — and no expert confirming anything closes one. They
-withhold a clean pass exactly as the others do; what they wait on is this engine, not a person,
-and they say so under their own heading. Three questions are actually open to you. It exists because a certificate could cite a queue item nobody had
+anything a paper left out — the stochastic class judges an ensemble it drew itself — and no
+expert confirming anything closes one. They withhold a clean pass exactly as the others do; what
+they wait on is this engine, not a person, and they say so under their own heading. Three
+questions are actually open to you. That split moves as the engine changes rather than standing
+as a property of the work: it was six of eight until the spatial wall left this half, because a
+claim can now state its own boundary and a claim stating an unbounded domain is measured against
+the grid it ran on. It exists because a certificate could cite a queue item nobody had
 built: four metformin certificates named `verify:time-unit-of-the-Zake2021-deposits`, and until
 this landed, following that citation found nothing. The queue is *derived* from the certificates
 on every call rather than stored beside them, so it cannot drift from what it describes, and a
