@@ -461,6 +461,46 @@ def _settling_clause(
     )
 
 
+def sampling_cost_clause(
+    *,
+    reported: float,
+    variance: float,
+    trajectories: int,
+    tolerance: Tolerance | None = None,
+    observed: float | None = None,
+) -> str:
+    """What an ensemble's size buys a judged claim, as a parenthesised clause — or ``""``.
+
+    Written claim-free so the inline linter can say what the certificate says. It could not before:
+    the certificate reported this ensemble's standard error and the count that would settle the
+    claim, while :func:`reprolith.linter.lint_stochastic` published a bare verdict for the very same
+    ensemble. The two surfaces already share the *abstention* rule, for the reason that one states —
+    whether an ensemble can resolve a claim is a property of the ensemble and not of which surface
+    asked — and the same argument reaches the claims it can resolve. It reaches them harder, in
+    fact: a certificate's reader is a person who can go and look, and a linter's caller is an agent
+    that acts on the answer immediately.
+    """
+    measured = ensemble_headroom(
+        reported_mean=reported, variance=variance, trajectories=trajectories, tolerance=tolerance
+    )
+    if measured is None:
+        return ""
+    relative_sem, threshold = measured
+    clause = (
+        f" (sampling noise: the mean's standard error is {relative_sem:.2%} of the reported value, "
+        f"against a {threshold:.0%} pass threshold"
+    )
+    if observed is not None:
+        clause += _settling_clause(
+            reported=reported, observed=observed, relative_sem=relative_sem,
+            trajectories=trajectories,
+            tolerance=tolerance or default_tolerance(
+                ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+            ),
+        )
+    return clause + ")"
+
+
 def _sampling_cost(
     claim: StochasticClaim,
     variance: float,
@@ -476,28 +516,13 @@ def _sampling_cost(
     basis states one fact about this engine, and a per-claim number there splits one question into
     several (the spatial class learned that the expensive way).
     """
-    measured = ensemble_headroom(
-        reported_mean=claim.reported_mean,
+    return sampling_cost_clause(
+        reported=claim.reported_mean,
         variance=variance,
         trajectories=trajectories,
         tolerance=claim.tolerance,
+        observed=observed_mean,
     )
-    if measured is None:
-        return ""
-    relative_sem, threshold = measured
-    clause = (
-        f" (sampling noise: the mean's standard error is {relative_sem:.2%} of the reported value, "
-        f"against a {threshold:.0%} pass threshold"
-    )
-    if observed_mean is not None:
-        clause += _settling_clause(
-            reported=claim.reported_mean, observed=observed_mean, relative_sem=relative_sem,
-            trajectories=trajectories,
-            tolerance=claim.tolerance or default_tolerance(
-                ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
-            ),
-        )
-    return clause + ")"
 
 
 def _protocol(claim: StochasticClaim) -> str:

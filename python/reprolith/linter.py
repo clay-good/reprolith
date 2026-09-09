@@ -422,12 +422,23 @@ def lint_stochastic(
             protocol=protocol,
         )
     error = relative_error(reported_mean, mean)
+    # What this ensemble's size buys the claim, on the surface an agent gates on. The certificate
+    # for the identical ensemble reported both numbers — the standard error and the count that
+    # would settle the claim — and this published a bare verdict. The two already share the
+    # abstention rule for the reason that rule states, and the argument reaches a claim the
+    # ensemble *can* resolve too: a certificate's reader is a person who can go and look, and this
+    # caller is an agent that acts on the answer immediately.
+    from .stochastic import sampling_cost_clause
+
     return LintResult(
         verdict=verdict_for(error, tol),
         method=ComparisonMethod.SCALAR_RELATIVE_ERROR.value,
         discrepancy=f"relative error {error:.4f} (mean {mean:.4g} vs reported {reported_mean:.4g})",
         tolerance=tol.label(),
-        protocol=protocol,
+        protocol=protocol + sampling_cost_clause(
+            reported=reported_mean, variance=variance, trajectories=trajectories,
+            tolerance=tol, observed=mean,
+        ),
     )
 
 

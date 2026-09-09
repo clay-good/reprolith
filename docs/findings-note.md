@@ -6306,3 +6306,29 @@ on 1.6% of draws.
 The reason to write it down at all is that the next person to read "the error bar is measured by
 jackknife" will take it for a bound. It is an estimate, it runs about 5% light, and that is now on
 the function rather than in somebody's head.
+
+
+## The surface that most needed the number was the one without it
+
+The inline linter and the certificate path share the abstention rule, and the reason recorded for
+sharing it is general: whether an ensemble can resolve a claim is a property of the ensemble and the
+threshold, not of which surface asked. That argument reaches a claim the ensemble *can* resolve too,
+and there the two had quietly diverged. For one identical ensemble at one identical seed, the
+certificate said
+
+> sampling noise: the mean's standard error is 1.53% of the reported value, against a 5% pass
+> threshold; this answer sits 2.73% from the nearest verdict line, so ~12,674 trajectories — 32x
+> this sample — would put the sampling error a tenth of the way to it
+
+and `lint_stochastic` said nothing at all beyond the verdict.
+
+The asymmetry runs the wrong way round. A certificate's reader is a person, holding a document that
+names its own seed and count, who can go and re-run it. A linter's caller is an agent gating a
+workflow, acting on the answer in the same breath as receiving it, with no document to consult. The
+surface where "how much of this verdict is sampling noise" is most consequential was the one that
+did not answer it.
+
+Both build the sentence with one function now, so they cannot come to word it differently, and the
+test says so the only way that means anything: it drives that function with the ensemble's own
+numbers and finds its output verbatim inside what the linter published. Two independently formatted
+strings compared for equality would agree until somebody reworded one of them.
