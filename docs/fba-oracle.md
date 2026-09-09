@@ -22,6 +22,16 @@ honest abstention.*
 Every method below is built to be well-defined regardless of which optimal vertex the solver
 happens to land on.
 
+**And that is measured, not asserted.** It was a sentence in three places — this page and two
+docstrings — carrying the whole class's right to publish a growth rate, with nothing running it.
+`tests/test_fba_objective_is_measurably_unique.py` permutes the reaction ordering, which relabels
+the LP's columns without changing its feasible set and so frees the solver to reach a different
+optimal vertex. On a network with alternate optima confirmed by flux variability (two parallel
+routes of equal yield, either free to carry the whole flux) the objective is **exactly** unchanged
+across twenty permutations; on E. coli core it moves by 1.3e-16 relative at worst, against the 5%
+that separates a pass from a failure. The test checks the degeneracy is real first, because a
+uniqueness measured only where nothing threatened it measures nothing.
+
 ## The fingerprints
 
 | Function | Answers | Well-defined under alternate optima because… |

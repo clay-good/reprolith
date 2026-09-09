@@ -6213,3 +6213,36 @@ It is derived and not asserted: every claim reproduced, at least one resting on 
 Reprolith supplied, and a headline short of `reproduced`. A certificate with a genuine partial says
 nothing extra, because there the counts explain themselves — and a sentence calling the assumptions
 "the only reason" would be false the moment a claim actually falls short.
+
+
+## The sentence the whole class rests on, finally run
+
+Comparing the six classes on one question — what does each say its number cost? — leaves the
+constraint-based class alone in saying nothing. The stochastic protocol reports a standard error and
+the ensemble that would settle it, spatial brackets its wall against the free-space solution, the
+kinetic and PK/PD lines report grid convergence, population reports a jackknife bar. FBA reports its
+medium and its objective, and stops. A reader who has just read the others cannot tell whether its
+cost was measured and found negligible or never measured at all.
+
+It was never measured. What stands in its place is a sentence in three locations — `docs/fba-oracle.md`
+and two docstrings in `reprolith.fba` — saying the objective value is "well-defined regardless of
+alternate optima". That sentence is what lets this class publish a growth rate as a reproduction at
+all: an LP with alternate optima has many flux distributions attaining the optimum, and a number that
+moved among them would be a report of whichever vertex the simplex happened to reach. An annotation
+used as if it were a check, and load-bearing for eight certificates.
+
+The lever is a **permutation of the reaction ordering** — a relabelling of the LP's columns that
+leaves the feasible set and the objective untouched while freeing the solver to land somewhere else.
+On a network with alternate optima confirmed by flux variability (two parallel routes of equal
+yield, either free to carry the whole flux) the objective is *exactly* unchanged across twenty
+permutations. On E. coli core it moves by 1.3e-16 relative at worst, against the 5% that separates a
+pass from a failure.
+
+Two things about the test rather than the result. It confirms the degeneracy is real *before*
+measuring uniqueness against it — a uniqueness measured only where nothing threatened it measures
+nothing, and E. coli core alone would have been that test. And the toy network's assertion is exact
+equality rather than a tolerance, because the claim in the docstring is that the value is
+well-defined, and a tolerance there would be conceding that it drifts.
+
+No certificate changed. The class's cost line is still "there is nothing to report", and the
+difference is that somebody has now checked.

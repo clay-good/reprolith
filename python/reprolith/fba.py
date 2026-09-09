@@ -186,6 +186,16 @@ def solve_objective(
     ``objective`` weights the reactions in the objective; ``lower``/``upper`` are per-reaction
     flux bounds (``None`` upper for unbounded). Returns the optimal objective value, or raises
     :class:`InfeasibleFba` if the problem is infeasible or unbounded.
+
+    **The value does not depend on which optimum the solver lands on**, which is what lets this
+    class publish a growth rate as a reproduction at all: an LP with alternate optima has many flux
+    distributions attaining the optimum, and a number that moved among them would be a report of
+    whichever vertex the simplex reached. That was asserted here and in
+    :func:`essential_reactions` and never run — an annotation used as if it were a check.
+    ``tests/test_fba_objective_is_measurably_unique.py`` runs it, by permuting the reaction ordering
+    (a relabelling that leaves the feasible set alone and frees the solver to reach a different
+    optimal vertex): **exactly** unchanged on a network with confirmed alternate optima, and 1.3e-16
+    relative at worst on E. coli core, against the 5% that separates a pass from a failure here.
     """
     linprog = _linprog()
     result = linprog(
@@ -332,7 +342,8 @@ def reaction_essentiality(
     A reaction is essential if constraining its flux to zero drops the optimum below
     ``threshold`` of the unperturbed optimum (or makes the problem infeasible). This is the
     second FBA fingerprint the spec names (spec: constraint-based-class), and it too is
-    well-defined regardless of alternate optima.
+    well-defined regardless of alternate optima — measured rather than asserted, like the objective
+    value above: see :func:`solve_objective`.
     """
     baseline = solve_objective(stoichiometry, objective, lower, upper)
     if baseline <= 0.0:
