@@ -19,6 +19,13 @@ must not move with it.
 from __future__ import annotations
 
 import random
+
+import pytest
+
+# Solves linear programs and ingests SBML-fbc: the core CI job installs neither extra, and a test
+# that imports through `reprolith.fba` without them fails on the import rather than skipping.
+pytest.importorskip("scipy", reason="the optional 'fba' extra (scipy) is not installed")
+pytest.importorskip("libsbml", reason="the 'engine' extra (python-libsbml) is not installed")
 from pathlib import Path
 
 from reprolith.fba import flux_variability, solve_objective

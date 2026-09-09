@@ -15,6 +15,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
+#: The core CI job installs no extras. Gated per test rather than for the module: the artifact check
+#: below reads a committed certificate and needs nothing, and it is the one that guards what a
+#: reader actually opens — skipping it wherever scipy is absent would leave the published file
+#: unchecked in the job that runs everywhere.
+_NEEDS_SOLVER = pytest.mark.skipif(
+    __import__("importlib").util.find_spec("scipy") is None,
+    reason="the optional 'fba' extra (scipy) is not installed",
+)
+
 _ROOT = Path(__file__).resolve().parents[1]
 _WORKED = _ROOT / "datasets" / "constraint_based" / "worked_example" / "certificate.txt"
 
@@ -28,6 +39,7 @@ def test_the_certificate_states_the_bound_it_actually_applied() -> None:
     assert "R_EX_glc__D_e<=" not in text
 
 
+@_NEEDS_SOLVER
 def test_both_surfaces_state_it_the_same_way() -> None:
     """The inline linter an agent gates on and the certificate path, differentially.
 
@@ -64,6 +76,7 @@ def test_both_surfaces_state_it_the_same_way() -> None:
     assert 'uptake<={abs(uptake)!r} (flux>={-abs(uptake)!r})' in rendered
 
 
+@_NEEDS_SOLVER
 def test_a_negative_entry_reads_the_same_as_its_magnitude() -> None:
     """Both surfaces already applied `-abs(value)`, so a caller writing -10 and one writing 10 set
     up the same program. The line they publish now says so too, rather than printing one of them
