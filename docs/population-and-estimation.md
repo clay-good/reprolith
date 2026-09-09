@@ -89,7 +89,11 @@ claim's residual: a check abstaining because its answer is not trustworthy canno
 a ruler. The count carries an allowance of one standard error *of the error bar itself*, because the
 bar is estimated from the very sample that is too small — the bare `1/sqrt(n)` figure here is 1,034,
 where the error bar reads 2.54% against a 2.5% target, and an author who followed it would be
-abstained on a second time. The stochastic ensemble's abstention says the same thing in
+abstained on a second time. That allowance is a **floor, not a guarantee**: `1/sqrt(2n)` is how well
+a *mean's* standard error knows itself, and a resampled statistic's does far worse — the jackknife
+bar of a 30% CV varies by 17% of itself at 500 subjects against the 3.2% assumed. So the sentence
+says the size at which the bar *is estimated to* fall under the threshold, and a run there can still
+come back abstained. The stochastic ensemble's abstention says the same thing in
 trajectories, through the same function.
 
 **And walked to a certificate.** The simulator and the certifier were both built and both tested,

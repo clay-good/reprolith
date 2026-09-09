@@ -1079,15 +1079,23 @@ def sample_to_resolve(
     judged-claim counterpart, :func:`reprolith.stochastic.ensemble_to_settle`, may read a residual
     because it is only ever offered for a claim the ensemble *did* resolve.)
 
-    The error bar is inflated by one of *its own* standard errors before the extrapolation, and
-    that is not caution for its own sake — it is the defect the first version shipped with. An
-    error bar is itself an estimate made from the very sample that is too small, known to about
-    ``1/sqrt(2n)`` of itself, and a count sized to land exactly on the bar therefore lands under it
-    only about half the time. Measured: the population class's 30% CV reads a 3.59% error bar at
-    500 subjects, whose naive extrapolation is 1,034 — where the bar is 2.54% against a 2.5%
-    target, so the author who followed the advice would be abstained on a second time. With the
-    allowance it says 1,100, which resolves. The correction shrinks as the sample grows, since a
-    larger sample knows its own error bar better, and it can only ever raise the count.
+    The error bar is inflated by ``1/sqrt(2n)`` of itself before the extrapolation, and that is not
+    caution for its own sake — it is the defect the first version shipped with. An error bar is
+    itself an estimate made from the very sample that is too small, so a count sized to land exactly
+    *on* the bar lands under it only about half the time. Measured: the population class's 30% CV
+    reads a 3.59% error bar at 500 subjects, whose naive extrapolation is 1,034 — where the bar is
+    2.54% against a 2.5% target, so the author who followed that advice would be abstained on a
+    second time. With the allowance it says 1,100, which resolves.
+
+    **The allowance is a floor, not a guarantee, and the difference is measured.** ``1/sqrt(2n)`` is
+    how well a *mean's* standard error knows itself; a resampled statistic's does far worse. Across
+    200 independent log-normal draws the jackknife error bar of a 30% coefficient of variation
+    varies by 19% of itself at n=200, 17% at n=500 and 10% at n=1,500, against the 5.0%, 3.2% and
+    1.8% this allowance uses. So a run at the size named here can still come back abstained, and
+    that is the estimate being an estimate rather than a defect. Sizing for the worst statistic
+    would multiply every count for every caller by the noisiest one, and this function is handed a
+    number rather than the statistic that produced it, so it cannot tell them apart — the clause it
+    feeds says "would bring", not "will bring", for exactly that reason.
 
     Returns ``None`` when there is nothing to buy — the error bar is already under the bar — or
     when the inputs cannot support the arithmetic.
@@ -1116,8 +1124,8 @@ def resolving_sample_clause(
     if needed is None:
         return ""
     return (
-        f"; ~{needed:,} {noun} — {needed / size:.0f}x as many — would bring that error bar "
-        "under half the threshold, which is where this check stops abstaining"
+        f"; ~{needed:,} {noun} — {needed / size:.0f}x as many — is the size at which that error bar "
+        "is estimated to fall under half the threshold, which is where this check stops abstaining"
     )
 
 

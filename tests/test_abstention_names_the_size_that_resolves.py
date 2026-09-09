@@ -51,7 +51,10 @@ def test_a_noisy_ensemble_says_how_many_trajectories_would_resolve_it() -> None:
         reported_mean=10.0, variance=9.0, trajectories=needed
     ) is None
     # And it is not extravagant: within half again of the bare 1/sqrt(n) figure, which is the whole
-    # allowance the count carries for an error bar that is itself an estimate.
+    # allowance the count carries for an error bar that is itself an estimate. That allowance is a
+    # floor rather than a guarantee — a resampled statistic's error bar knows itself far worse than
+    # `1/sqrt(2n)` (measured in `sample_to_resolve`) — so this test asserts the arithmetic, and the
+    # population test below asserts the one thing that matters: re-running at the named size works.
     assert needed <= 1.5 * 10 * (0.0949 / 0.025) ** 2
 
 
@@ -127,7 +130,7 @@ def test_the_two_abstentions_state_the_rule_the_same_way() -> None:
     # the inline-vs-certificate differential this repository runs on every shared rule.
     ensemble = unresolvable_ensemble_reason(reported_mean=10.0, variance=9.0, trajectories=10)
     population = _certificate(values=_subjects(0.3, n=500)).assessments[0].root_cause
-    tail = "would bring that error bar under half the threshold, which is where this check stops"
+    tail = "is estimated to fall under half the threshold, which is where this check stops"
     assert ensemble is not None and tail in ensemble
     assert tail in population
 
@@ -256,3 +259,39 @@ def test_the_two_classes_compute_the_settling_count_with_one_function() -> None:
     ) == sample_to_settle(
         relative_error=0.02, relative_error_bar=0.01, size=400, tolerance=tolerance
     )
+
+
+def test_the_allowance_is_a_floor_and_the_docstring_says_which() -> None:
+    """The correction to this pass's own first version, and the measurement that forced it.
+
+    `sample_to_resolve` inflates the error bar by `1/sqrt(2n)` of itself, which is how well a
+    *mean's* standard error knows itself. It was applied to a jackknife error bar of a coefficient
+    of variation — a resampled ratio of moments — on the strength of that derivation and one
+    agreeing data point. The derivation does not carry: measured across independent draws, the
+    jackknife bar varies by several times the allowance, so a run at the named size can still come
+    back abstained.
+
+    Nothing is re-sized for it, deliberately. This function is handed a number and not the statistic
+    that produced it, so sizing for the noisiest would multiply every count for every caller. What
+    changed is that the sentence promises an estimate ("is estimated to fall under") rather than an
+    outcome, and the docstring carries the measurement instead of the derivation alone.
+    """
+    import math
+    import random
+    import statistics
+
+    from reprolith.oracle import SpreadStatistic, spread_standard_error
+
+    cv = 0.3
+    omega = math.sqrt(math.log(1.0 + cv * cv))
+    rng = random.Random(7)
+    bars = []
+    for _ in range(200):
+        values = [10.0 * math.exp(rng.gauss(0.0, omega)) for _ in range(500)]
+        bar = spread_standard_error(values, SpreadStatistic.COEFFICIENT_OF_VARIATION)
+        if bar:
+            bars.append(bar)
+    spread = statistics.stdev(bars) / statistics.fmean(bars)
+    # Several times the 3.2% the allowance assumes at this size. The exact figure is not pinned —
+    # it is a property of the statistic, not of this code — but the order of it is the finding.
+    assert spread > 3.0 * (1.0 / math.sqrt(2 * 500))

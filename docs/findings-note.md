@@ -6055,3 +6055,27 @@ the same question differently. On the population worked example the sentence rea
 4.90% from its nearest verdict line, so about 28,053 subjects — 19x the sample — would put the
 sampling error a tenth of the way to it. A claim sitting 1.78% out needs 231,045. Those two read
 identically under the sentence they replace.
+
+
+## The allowance that knew a mean's error bar and not this one
+
+Re-reading this pass's own first slice for sentences stronger than the code found one, and it was
+the sentence the slice was proudest of. The resolving count inflates a sample's error bar by
+`1/sqrt(2n)` of itself before extrapolating, on the reasoning that an error bar estimated from a
+too-small sample is known only to about that much — and it was shipped on that derivation plus one
+agreeing data point, the population case where the corrected count of 1,100 resolves and the naive
+1,034 does not.
+
+`1/sqrt(2n)` is how well a **mean's** standard error knows itself. The bar it was applied to is a
+jackknife estimate of a coefficient of variation, a resampled ratio of moments, and it does far
+worse: across 200 independent log-normal draws it varies by 19% of itself at n=200, 17% at n=500 and
+10% at n=1,500, against the 5.0%, 3.2% and 1.8% the allowance assumes. The one data point agreed
+because the sample it was measured on is a deterministic quantile grid with no draw-to-draw variation
+at all — which is exactly the kind of fixture that confirms whatever it is asked.
+
+Nothing was re-sized. The function is handed a number, not the statistic that produced it, so sizing
+for the noisiest would multiply every count for every caller by a factor earned by one of them. What
+changed is that the clause promises an estimate — "is the size at which that error bar **is estimated
+to** fall under half the threshold" — instead of an outcome, and the docstring carries the
+measurement beside the derivation rather than the derivation alone. A run at the named size coming
+back abstained is now the documented behaviour rather than a surprise.
