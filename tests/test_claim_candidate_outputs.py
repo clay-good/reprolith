@@ -140,3 +140,41 @@ def test_a_spanned_label_cell_is_not_read_from_the_row_above() -> None:
     by_id = {c["claim_id"]: c for c in propose_claims(tables, outputs=outputs)["candidates"]}
     assert by_id["Table9-r1c2"]["species_suggested"] == "mLiver"
     assert "species_suggested" not in by_id["Table9-r2c2"]
+
+
+def test_what_it_volunteers_is_measured_too_not_only_what_it_gets_right() -> None:
+    """Precision on the answer key is the wrong place to stop, and the parameter join proved it.
+
+    That key holds only the rows a curator *did* pair, so it says nothing about the rows a suggester
+    volunteers where the curator would pair nothing — which is where the parameter version of this
+    join died (`Ktp_Liver` offered for the liver's Cmax, on 115 of 169 candidates, at a precision of
+    8/8 on the key). This is the second measurement, on the half that shipped.
+
+    Every suggestion the four deposits produce comes off a `Tissue` row and names the species of
+    that tissue. There are 8 distinct pairings and each recurs once per metric column, which is
+    right rather than redundant: a claim's species does not change with the column it is read from.
+    """
+    pairs: set[tuple[str, str]] = set()
+    volunteered = 0
+    for accession, model in _DEPOSITS.items():
+        tables = json.loads(
+            (_ROOT / "datasets" / "manuscripts" / f"{accession}_tables.json").read_text(
+                encoding="utf-8"
+            )
+        )["tables"]
+        for candidate in propose_claims(tables, outputs=_outputs(model))["candidates"]:
+            suggestion = candidate.get("species_suggested")
+            if not suggestion:
+                continue
+            volunteered += 1
+            label = candidate["source_location"].split(", ")[1]
+            pairs.add((label, suggestion))
+    # No suggestion comes off a row labelled anything but a tissue: a "Type Measured" row, whose
+    # word names no model element, is left alone rather than reached for.
+    assert all(label.startswith("Tissue ") for label, _ in pairs)
+    # The tissue and the species are the same word, on every pairing offered anywhere.
+    assert all(
+        label.replace("Tissue ", "").replace(" ", "").lower() == species[1:].lower()
+        for label, species in pairs
+    )
+    assert (len(pairs), volunteered) == (8, 359)
