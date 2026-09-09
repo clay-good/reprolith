@@ -174,7 +174,16 @@ def _medium_protocol(medium: Sequence[Parameter], model: FbaModel) -> str:
     stated = (
         # Full precision for the same reason the ODE protocol uses it: the bound printed here is
         # the bound the LP was solved under, and a re-run from a rounded one is a different run.
-        ", ".join(f"{p.name}<={p.value!r} {p.unit}" for p in medium)
+        #
+        # And the *direction* is spelled out rather than left to a `<=`. A medium entry is a
+        # maximum uptake, applied as a lower flux bound of its negation (uptake runs negative, the
+        # COBRA convention). Printed as `R_EX_glc__D_e<=10.0` it stated the opposite of the program
+        # that was solved — read as a flux bound that caps secretion and leaves uptake unlimited —
+        # and a reader re-running the model from this line would build a different LP. The solver
+        # was always right, which is why the cross-validation against COBRApy could not see it.
+        ", ".join(
+            f"{p.name} uptake<={abs(p.value)!r} {p.unit} (flux>={-abs(p.value)!r})" for p in medium
+        )
         if medium
         else "the model's own distributed bounds (none stated by the paper)"
     )

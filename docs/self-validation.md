@@ -142,7 +142,7 @@ $ reprolith corroboration
 CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   reported beside the verdicts, never gating them
   constraint-based      8 model(s) on cobrapy, scipy-linprog — all engine-independent to 1e-08
-                          as cobrapy 0.31.1, scipy-linprog highs (reprolith-fba rev 071b00528f5e)
+                          as cobrapy 0.31.1, scipy-linprog highs (reprolith-fba rev 7f89fa01c8ee)
   kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
                           1 of 7 standing certificate(s) in this class have no second engine behind them — an absence, not a pass

@@ -8,7 +8,7 @@
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "medium: R_EX_glc__D_e<=10.0 mmol/gDW/h, R_EX_o2_e<=1000.0 mmol/gDW/h; maximize: R_BIOMASS_Ecoli_core_w_GAM",
+      "protocol": "medium: R_EX_glc__D_e uptake<=10.0 mmol/gDW/h (flux>=-10.0), R_EX_o2_e uptake<=1000.0 mmol/gDW/h (flux>=-1000.0); maximize: R_BIOMASS_Ecoli_core_w_GAM",
       "quantity": "maximal aerobic growth rate, glucose minimal medium (R_BIOMASS_Ecoli_core_w_GAM, maximize)",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -20,7 +20,7 @@
   ],
   "assumptions": [],
   "engine_pin": {
-    "algorithm": "highs (reprolith-fba rev 071b00528f5e)",
+    "algorithm": "highs (reprolith-fba rev 7f89fa01c8ee)",
     "engine": "scipy-linprog",
     "version": "1.13.1"
   },

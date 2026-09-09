@@ -1,6 +1,6 @@
 REPRODUCTION CERTIFICATE — E. coli core metabolic model (Orth, Fleming & Palsson 2010)
   doi=10.1128/ecosalplus.10.2.1
-Engine pin: scipy-linprog 1.13.1 / highs (reprolith-fba rev 071b00528f5e)
+Engine pin: scipy-linprog 1.13.1 / highs (reprolith-fba rev 7f89fa01c8ee)
 
 OVERALL: reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
@@ -8,7 +8,7 @@ OVERALL: reproduced
 CLAIMS
   [growth-glucose-aerobic] maximal aerobic growth rate, glucose minimal medium (R_BIOMASS_Ecoli_core_w_GAM, maximize): reproduced (source Orth, Fleming & Palsson (2010), EcoSal Plus; BiGG e_coli_core via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))
       measured: relative error 0.0000
-      protocol: medium: R_EX_glc__D_e<=10.0 mmol/gDW/h, R_EX_o2_e<=1000.0 mmol/gDW/h; maximize: R_BIOMASS_Ecoli_core_w_GAM
+      protocol: medium: R_EX_glc__D_e uptake<=10.0 mmol/gDW/h (flux>=-10.0), R_EX_o2_e uptake<=1000.0 mmol/gDW/h (flux>=-1000.0); maximize: R_BIOMASS_Ecoli_core_w_GAM
 
 SCOPE
   This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.

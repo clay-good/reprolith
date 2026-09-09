@@ -284,8 +284,12 @@ def lint_objective(
     maximized = ", ".join(
         model.reaction_ids[i] for i, c in enumerate(model.objective) if c
     ) or "no reaction"
+    # Spelled the way the certificate path spells it, and for the reason given there: a medium
+    # entry is a maximum *uptake*, applied as a lower flux bound of its negation, so a bare `<=`
+    # against a reaction id states the opposite of the program that was solved.
     stated = ", ".join(
-        f"{rid}<={abs(uptake)!r}" for rid, uptake in sorted((medium or {}).items())
+        f"{rid} uptake<={abs(uptake)!r} (flux>={-abs(uptake)!r})"
+        for rid, uptake in sorted((medium or {}).items())
     ) or "the model's own distributed bounds (none supplied)"
     protocol = f"linear program — medium: {stated}; maximize: {maximized}"
     try:

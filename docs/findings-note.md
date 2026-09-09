@@ -6154,3 +6154,34 @@ Both of this pass's findings came from the same act — opening a finished artif
 straight through, as the scientist it is addressed to, rather than checking the function that wrote
 each line. Neither is visible from inside those functions: one is an asymmetry between two lines,
 and the other is a sentence that is true and lands as something stronger.
+
+
+## The medium, published in the opposite direction
+
+Still reading finished artifacts as their reader, the constraint-based worked example says:
+
+> medium: R_EX_glc__D_e<=10.0 mmol/gDW/h
+
+A medium entry in this package is a maximum **uptake**, and applying it sets that exchange
+reaction's *lower* flux bound to its negation — uptake runs negative, the COBRA convention, which
+`_apply_medium` and the inline linter both implement correctly and which the cross-validation against
+COBRApy exercises on every model in the corpus. But a reaction id followed by `<=` in a flux context
+reads as a flux bound, and as a flux bound that line says the opposite of the program that was
+solved: secretion capped at +10, uptake unlimited. The model file's own parameter is
+`R_EX_glc__D_e_lower_bound = -10`.
+
+The certificate exists so a reader can re-derive the number, and this class names the medium as its
+own first failure mode. A reader following the protocol literally would have built a different linear
+program from the one it reports on. The solver was never wrong, which is exactly why nothing caught
+it: a cross-validation compares numbers against bounds, and this was a sentence about them.
+
+It reads `R_EX_glc__D_e uptake<=10.0 mmol/gDW/h (flux>=-10.0)` now — the quantity being bounded and
+the constraint actually applied, on both surfaces, since the certificate path and the inline linter
+had rendered the same defect identically. That identity is the good half of it: one fix reached both,
+where a fix reaching one would have been the drift the inline-vs-certificate differential exists to
+catch.
+
+Three findings this pass, all from opening a finished artifact and reading it straight through, and
+none visible from inside the function that wrote the line. It is the cheapest audit in this
+repository and the one easiest to skip, because every line of it was written deliberately by
+somebody who was looking at something else at the time.
