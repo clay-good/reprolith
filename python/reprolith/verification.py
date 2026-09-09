@@ -13,6 +13,7 @@ judgments are preserved, never silently resolved to one.
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -618,6 +619,25 @@ def issue_for_item(item: dict[str, Any], *, model_classes: Sequence[str] = ()) -
             "assumption id instead: " + ", ".join(item.get("assumption_ids", ()))
         )
     )
+    # The record an expert has to write, with the two fields only this repository can fill already
+    # filled. The issue used to publish the fingerprint alone and name the file, leaving the shape
+    # of a decision to be found in CONTRIBUTING.md — so the one thing a reader of this issue could
+    # not do without leaving it was the thing it is asking them to do. `kind` is blank rather than
+    # defaulted to `confirm`: a default here would be a nudge to agree with the estimate above, and
+    # the loader refuses every blank field by name.
+    record = json.dumps(
+        {
+            "item_id": item["id"],
+            "question_fingerprint": item["question_fingerprint"],
+            "kind": "",
+            "expert": "",
+            "rationale": "",
+            "decided_on": "",
+            "source": "",
+            "corrected_value": None,
+        },
+        indent=2,
+    )
     body = f"""### The specific question
 
 {item['question']}
@@ -647,12 +667,23 @@ source location, an assumption carries the basis above, which is a reason rather
 ### How to answer
 
 Confirm, correct (with the right value and a source), or reject (with why) in a comment. To make
-your decision the record, add it to `datasets/verification_decisions.json` in a pull request that
-references this issue, with this fingerprint so it stays attached to the question as you read it:
+your decision the record, add this to the `decisions` list in
+`datasets/verification_decisions.json`, in a pull request that references this issue. The item and
+its fingerprint are filled in; the rest is yours:
 
+```json
+{record}
 ```
-{item['question_fingerprint']}
-```
+
+`kind` is one of `confirm`, `correct` or `reject`. A `correct` must supply `corrected_value` and
+the other two must leave it `null`. `decided_on` is ISO `YYYY-MM-DD`, so two decisions on one item
+order the way they were made, and `source` is where you made it — this issue, a pull request, a
+publication — because an attributed record whose origin cannot be looked up is a name in a file.
+Every field is refused while it is blank rather than filled with a default.
+
+The fingerprint is what keeps your name off a question you never read: it pins the wording, the
+basis and the alternatives as they stood when you answered, and if any of them change your decision
+is reported as *stale* and the item returns to pending instead of reading as settled.
 
 Answering does not re-issue anything: the certificates above keep resting on the value as
 unreviewed until they are re-run and superseded.

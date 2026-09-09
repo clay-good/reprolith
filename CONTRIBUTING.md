@@ -59,10 +59,14 @@ depends on it. If you know the modeling, you can decide.
   stops asking the question on every surface at once. Add it in the same pull request that
   resolves the issue:
 
+  `reprolith verification-issue <item-id>` prints this block with the item and its fingerprint
+  already filled in, inside the issue body it writes, so you can copy it out of the issue you are
+  answering rather than assembling it here:
+
   ```json
   {
     "item_id": "verify:time-unit-of-the-Zake2021-deposits",
-    "question_fingerprint": "<the item's fingerprint from `reprolith verification-queue --json`>",
+    "question_fingerprint": "<the item's fingerprint — `verification-issue` fills this in>",
     "kind": "confirm",
     "expert": "Your Name",
     "rationale": "why, in a sentence someone else can check",

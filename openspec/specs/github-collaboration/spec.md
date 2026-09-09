@@ -25,6 +25,14 @@ request — but the *issue* half of this capability is carried by people, not ma
   because a command that reads this repository and exists on only one of them is how the two
   drift. **Nothing files the issue** — that half is still uncarried.
 
+  Since 2026-09-09 it also prints the decision record itself — the `datasets/verification_decisions.json`
+  entry with `item_id` and `question_fingerprint` filled and the human fields blank. The gap it
+  closes is small and exact: the issue asked an expert to write a record and the record's shape
+  lived in `CONTRIBUTING.md`, so the one thing a reader of the issue could not do without leaving it
+  was the thing it asks them to do. `kind` is blank rather than defaulted to `confirm`, which in an
+  issue that has just argued for an estimate would be a nudge to agree with it, and every blank
+  field is refused by name by the loader rather than filled with a default.
+
   One field is answered by saying it cannot be: the template requires the section, equation, table
   or figure a value comes from, and Reprolith records that for a *claim* and not for an
   *assumption*, whose basis is a reason rather than a place. The generated body says so and gives
