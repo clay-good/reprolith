@@ -173,6 +173,16 @@ def _plot_stubs(
     return stubs, notes
 
 
+def readable_outputs(model: str) -> list[dict[str, str]]:
+    """The model elements a claim's ``species`` field can name, read from SBML text.
+
+    The public form of what a claims template already lists, so a second command can be given the
+    same model and reach the same answer rather than parsing SBML again with its own rules.
+    :func:`reprolith.claim_candidates.propose_claims` takes exactly this.
+    """
+    return _readable_outputs(ET.fromstring(model))
+
+
 def _readable_outputs(root: ET.Element) -> list[dict[str, str]]:
     """Every model element a claim's ``species`` field can name, with what the model calls it."""
     model = next((c for c in root if _localname(c.tag) == "model"), None)
@@ -189,6 +199,12 @@ def _readable_outputs(root: ET.Element) -> list[dict[str, str]]:
                 "id": element_id,
                 "name": element.get("name") or "",
                 "declared": _READABLE_CONTAINERS[container_name],
+                # The compartment a species lives in, which is very often the word the paper's own
+                # table puts down the side ("Liver", "Portal vein") where the species id wears a
+                # prefix. It is what the model itself states, not a synonym anybody supplied, and
+                # `claim_candidates.propose_claims` matches a table's row label against it.
+                # Empty for a parameter, which lives in no compartment.
+                "compartment": element.get("compartment") or "",
             })
     return sorted(outputs, key=lambda o: o["id"])
 

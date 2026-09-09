@@ -201,11 +201,25 @@ Delete the ones your model is not asked to reproduce — a table carries measure
 values, percentage differences and doses side by side — and name the model output each survivor
 reads.
 
-It never proposes the model output. Matching a table's "Plasma" to your `mPlasmaVenous` is a
+It never *fills in* the model output. Matching a table's "Plasma" to your `mPlasmaVenous` is a
 judgment, and a wrong match checks a real number against the wrong species, which is worse than no
 candidate at all. It also refuses a table whose rows are not all the width of its header: a cell
 spanning rows is written once, and reading the rest positionally puts a value under the wrong
 column.
+
+Give it your model as well and it will **suggest** one, beside the blank field rather than in it:
+
+```bash
+reprolith claims-propose --tables my_tables.json --model my_model.xml --out candidates.json
+```
+
+A candidate carries `species_suggested` when its row label is the **same word** as one of your
+model's outputs — its id, its name, or the compartment it lives in — up to case and punctuation.
+Nothing is stemmed, no prefix is stripped, and there is no synonym list, so "Plasma" gets no
+suggestion against `mPlasmaVenous` and a row your model names differently gets none either. You
+copy a suggestion into `species` once you agree with it; nothing downstream reads the suggestion,
+so a claim you never confirmed is still refused. Measured against the four metformin deposits'
+hand-written claims, the rule agrees on 22 rows, is silent on 12, and is wrong on none.
 
 The same reading, in the parameters file's shape, is `params-propose`:
 

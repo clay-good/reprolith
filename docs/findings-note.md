@@ -5976,3 +5976,34 @@ counterexample.
 `interpolation_cost` now says which case it hit (`unmeasurable_because`), all three results carry the
 key so a consumer sees one shape, and each sentence ends in the instruction that differs between
 them: read more of the curve, or read a point inside the stretch the run is judged over.
+
+
+## The word the paper and the model both use
+
+`loop-status` has one answer to "what is next": 27 entries blocked, all on the same input — a claims
+file somebody has to write. Two commands each supply half of one. `claims-template` reads the model
+and lists the outputs a claim can name, value blank. `claims-propose` reads the paper's tables and
+lists every number they print, output blank. Nothing joined them, so a curator held two files and
+matched them by eye, which is the step the whole corpus sits behind.
+
+The join is one rule and it refuses to be clever: a row label and a model output match when they are
+the **same word**, up to case and the punctuation a table's typography adds, against the output's
+id, its name, or the compartment it lives in. The compartment is what does the work — a paper writes
+"Liver" where the model writes `mLiver` in a compartment called `Liver` — and no prefix is stripped,
+nothing is stemmed, and no synonym list exists. "Plasma" therefore does not name `mPlasmaVenous`, and
+that silence is the feature rather than a shortfall: a wrong species is a certificate checking a real
+number against the wrong trajectory, which costs more than the lookup it saves.
+
+What makes it shippable is that the corpus already contains an independent answer key. The four
+metformin deposits' claims were written by hand, long before this code, and each cites the table row
+it came from. Run against them the rule agrees on 22 rows, is silent on 12, and is wrong on none. A
+suggestion is worth having only if that last number is zero, and it was measurable rather than
+arguable.
+
+Two restraints keep it from drifting into the guess it replaced. It writes `species_suggested`
+beside the blank field and never into `species`, so a claim nobody confirmed is still refused by the
+loader; and it will not read a label from the row above when the paper spans a cell — that is the
+row-span inference this command refuses everywhere else, and relaxing it for a suggestion only would
+be relaxing it. That restraint costs real coverage: the metformin tables write "Liver" once and the
+curator's own claims come off the "Fitted" row beneath it, which carries no label and gets no
+suggestion. The honest version is worth more than the complete one here.

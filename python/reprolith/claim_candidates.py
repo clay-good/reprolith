@@ -41,7 +41,7 @@ Nothing here is guessed:
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 #: A cell that is a number and nothing else. A cell reading "5.7 (2.1)" states two things and
@@ -132,8 +132,62 @@ _PICK_YOUR_OWN = (
 )
 
 
+#: The characters a name can differ by without being a different name: case, spaces, and the
+#: punctuation a table's typography adds. Nothing else — no stemming, no synonyms, no prefix
+#: stripping. A match this survives is the *same word*, which is the only evidence about a model
+#: this module is willing to act on.
+_NAME_NOISE = re.compile(r"[^a-z0-9]")
+
+
+def _same_word(text: str) -> str:
+    return _NAME_NOISE.sub("", text.lower())
+
+
+def _output_index(outputs: Sequence[Mapping[str, Any]]) -> dict[str, set[str]]:
+    """The words this model calls its own outputs, mapped to the outputs wearing them.
+
+    Three fields, because a paper's table names a tissue and a model may carry that word in any of
+    them: the output's id, its name, and — the one that does most of the work here — the
+    compartment a species lives in, where an id like ``mLiver`` wears a prefix the paper does not.
+    """
+    index: dict[str, set[str]] = {}
+    for output in outputs:
+        identifier = str(output.get("id") or "")
+        if not identifier:
+            continue
+        for field in ("id", "name", "compartment"):
+            word = _same_word(str(output.get(field) or ""))
+            if word:
+                index.setdefault(word, set()).add(identifier)
+    return index
+
+
+def suggested_output(labels: Sequence[str], index: Mapping[str, set[str]]) -> str:
+    """The one model output this row's own labels name, or ``""`` where that is not one output.
+
+    The rule, in full: a row label and a model output match when they are the **same word** up to
+    case and punctuation, and a suggestion is made only when every label that matches anything
+    matches exactly one output between them. Nothing is stemmed, no prefix is stripped, and no
+    synonym table exists — "Plasma" does not name ``mPlasmaVenous`` here, and that silence is the
+    point. A model's naming is the modeller's, and guessing at it is how a certificate comes to
+    check a real number against the wrong species.
+
+    Measured on the paper this corpus is built on: of the nine tissues Table 1 puts down the side,
+    six get a suggestion and all six are the output the curator chose by hand
+    (``tests/test_claim_candidate_outputs.py``). The three silences — Plasma, Kidney, Intestine —
+    are exactly the rows where the model's word is not the paper's.
+    """
+    matched: set[str] = set()
+    for label in labels:
+        matched |= index.get(_same_word(str(label)), set())
+    return next(iter(matched)) if len(matched) == 1 else ""
+
+
 def propose_claims(
-    tables: Mapping[str, Mapping[str, Any]], *, accession: str | None = None
+    tables: Mapping[str, Mapping[str, Any]],
+    *,
+    accession: str | None = None,
+    outputs: Sequence[Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
     """Candidate claims for every number the supplied tables print.
 
@@ -144,7 +198,14 @@ def propose_claims(
     Returns a claims-file skeleton: ``candidates`` in the claims-file record shape with
     ``species`` blank, ``notes`` for anything not proposed, and the tables it read. ``accession``
     wraps it in the ``entries`` shape a multi-paper claims file uses.
+
+    ``outputs`` are the model's readable elements as ``claims_template`` lists them (id, name,
+    compartment). Given them, a candidate whose row label is the *same word* as one model output
+    carries ``species_suggested`` — never ``species``, which stays blank so the loader still
+    refuses an unconfirmed claim and the curator still makes the judgment. See
+    :func:`suggested_output` for the rule and what it deliberately will not match.
     """
+    output_index = _output_index(outputs)
     candidates: list[dict[str, Any]] = []
     notes: list[str] = []
     seen: set[str] = set()
@@ -175,9 +236,11 @@ def propose_claims(
             or not any(_value_and_spread(str(row[i])) for row in rows[1:])
         ]
         for index, row in enumerate(rows[1:], start=1):
+            labels = [str(row[i]) for i in label_columns if str(row[i]).strip()]
             conditions = ", ".join(
                 f"{header[i]} {row[i]}" for i in label_columns if str(row[i]).strip()
             )
+            suggestion = suggested_output(labels, output_index)
             # A table may put the quantity in a row label instead of a column heading — "AUC" and
             # "Cmax" down the side, the models across the top — and that wording states a metric
             # exactly as a heading does. Taken only when the heading states none and the row names
@@ -218,6 +281,12 @@ def propose_claims(
                     "reported_units": _unit_for(heading),
                     "parameter_overrides": {},
                 }
+                if suggestion:
+                    # Beside the blank field, never in it. The curator copies it across after
+                    # agreeing; nothing downstream reads this key, so a suggestion nobody confirmed
+                    # cannot reach a certificate — which is what keeps a name match from becoming a
+                    # verdict about a species.
+                    record["species_suggested"] = suggestion
                 if spread:
                     # Carried, not consumed: the oracle here compares scalars, so nothing reads
                     # this yet — and dropping a stated spread on the way past would lose the one
@@ -227,6 +296,21 @@ def propose_claims(
                 candidates.append(record)
     if not candidates and not notes:
         notes.append("no table printed a number on its own in a cell, so nothing was proposed")
+    if outputs:
+        proposed = sum(1 for c in candidates if c.get("species_suggested"))
+        notes.append(
+            f"a model was supplied, and {proposed} of {len(candidates)} candidate(s) carry "
+            "'species_suggested': the one output whose id, name or compartment is the same word as "
+            "the row's own label, up to case and punctuation. Nothing is stemmed and no synonym is "
+            "known, so a row your model names differently carries no suggestion — copy it into "
+            "'species' yourself once you agree, since nothing reads the suggestion"
+        )
+        notes.append(
+            "a row whose label cell is empty because the paper spans it over several rows carries "
+            "no suggestion: reading the label from the row above is the row-span inference this "
+            "command refuses everywhere else, and it is refused here too rather than for a "
+            "suggestion only"
+        )
     # Last, and last on purpose: everything before it is a *refusal* — a table this could not read
     # positionally, a cell it would not split — and a caller reshaping these candidates into
     # another file's vocabulary keeps those and replaces this one.

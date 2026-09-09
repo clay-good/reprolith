@@ -1168,7 +1168,22 @@ def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"cannot read the tables: {unusable}", file=sys.stderr)
         return 1
 
-    proposed = propose_claims(tables, accession=args.accession)
+    outputs: list[dict[str, str]] = []
+    if args.model is not None:
+        # The same model the author would pass to `claims-template`, read through the same
+        # function, so the outputs a candidate is matched against are the outputs that command
+        # lists rather than a second reading of the file with its own rules.
+        from xml.etree import ElementTree
+
+        from .claims_template import readable_outputs
+
+        try:
+            outputs = readable_outputs(Path(args.model).read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, ElementTree.ParseError) as unreadable:
+            print(f"cannot read the model: {unreadable}", file=sys.stderr)
+            return 1
+
+    proposed = propose_claims(tables, accession=args.accession, outputs=outputs)
     rendered = json.dumps(proposed, indent=2, sort_keys=True) + "\n"
     if args.out is None:
         print(rendered, end="")
@@ -2001,6 +2016,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--accession", default=None,
         help="wrap the result under this accession, the shape a multi-paper claims file uses",
+    )
+    p.add_argument(
+        "--model",
+        default=None,
+        help=(
+            "your SBML model; with it, a candidate whose row label is the same word as one model "
+            "output carries 'species_suggested' beside the blank field you still fill in"
+        ),
     )
     p.add_argument("--out", default=None, help="write here instead of to standard output")
     p.set_defaults(func=_cmd_claims_propose)

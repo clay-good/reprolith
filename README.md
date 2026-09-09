@@ -94,7 +94,10 @@ counted from the certificates themselves by `tests/test_reference_provenance.py`
 division is the reader's whole guide to what the corpus reaches, and it was prose that was off by
 one. Each certificate says which on its own claim line. Getting a paper's claims out of its manuscript *at scale* is the piece that is not built.
 `claims-propose` reads candidates out of a paper's **tables**, which is how those sixty-three
-arrived — but a curator still chooses which candidate is a claim and which model output it reads,
+arrived — and given the model as well it now *suggests* which output each row names, where the
+paper's word and the model's are the same word (measured against the four metformin deposits'
+hand-written claims: 22 rows agreed, 12 silent, none wrong). A curator still chooses which candidate
+is a claim and confirms every suggestion,
 and measured on this test set, only **three papers in ten** of the open-access subset print a
 reported model output in a table at all
 ([`datasets/manuscripts/table_survey.json`](datasets/manuscripts/table_survey.json)). The rest put
@@ -346,7 +349,7 @@ reprolith archive-check \             # ...or the two files loose, unpackaged
 reprolith claims-template \           # write the claims file archive-check reads
   --model <model.xml> [--sedml <exp.sedml>] [--out <claims.json>]
 reprolith claims-propose \            # candidate claims from the tables your paper prints
-  --tables <tables.json> [--out <candidates.json>]
+  --tables <tables.json> [--model <model.xml>] [--out <candidates.json>]
 reprolith claims-check \              # is each value printed in the table it cites?
   --claims <claims.json> --tables <tables.json> [--model <model.xml>]
 reprolith params-propose \            # candidate parameter values from the tables your paper prints
