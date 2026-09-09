@@ -19,7 +19,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 from .decisions import RecordedDecision
-from .enums import ReproductionLevel, Verdict
+from .enums import OverallVerdict, ReproductionLevel, Verdict
 from .ingest import UNSTATED_UNIT
 from .model import Certificate, RunMetadata
 from .oracle import ReferenceKind
@@ -42,6 +42,27 @@ def claim_counts(cert: Certificate) -> dict[str, int]:
     for a in cert.assessments:
         counts[a.verdict.value] += 1
     return counts
+
+
+def qualification_is_the_whole_downgrade(cert: Certificate) -> bool:
+    """Whether this certificate's headline is short of a clean pass *only* because of assumptions.
+
+    A reader's first check of an ``OVERALL: partially-reproduced`` is the counts line under it, and
+    on six of the certificates this repository publishes that line reads ``partial=0, failed=0,
+    not-evaluable=0`` — every claim reproduced, and the headline says otherwise. The reconciliation
+    is one line further down (``assumption-qualified claims: ...``) and never says it is the
+    reconciliation, so the reader is left to infer that the two are connected.
+
+    Derived from the same fields the summary already carries rather than asserted, so it cannot
+    outlive the state it describes: every claim reproduced, at least one of them resting on an
+    assumption Reprolith supplied, and a headline short of ``reproduced``.
+    """
+    counts = claim_counts(cert)
+    if cert.overall is OverallVerdict.REPRODUCED:
+        return False
+    if any(count for verdict, count in counts.items() if verdict != Verdict.REPRODUCED.value):
+        return False
+    return any(a.assumption_qualified for a in cert.assessments)
 
 
 def unattempted_claims(cert: Certificate) -> list[dict[str, Any]]:
@@ -237,6 +258,9 @@ def render_machine(cert: Certificate, run: RunMetadata) -> dict[str, Any]:
         "summary": {
             "overall": cert.overall.value,
             "claim_counts": claim_counts(cert),
+            # Both renderings read it, so the text and the page cannot come to explain the same
+            # headline differently.
+            "qualification_is_the_whole_downgrade": qualification_is_the_whole_downgrade(cert),
             "assumption_qualified_claims": [
                 a.claim_id for a in cert.assessments if a.assumption_qualified
             ],
@@ -364,7 +388,17 @@ def render_human(cert: Certificate, run: RunMetadata) -> str:
     lines.append("  claims by verdict: " + ", ".join(f"{k}={counts[k]}" for k in counts))
     if summary["assumption_qualified_claims"]:
         joined = ", ".join(summary["assumption_qualified_claims"])
-        lines.append(f"  assumption-qualified claims: {joined}")
+        # Says that it *is* the reconciliation where it is the whole of it. Without this the two
+        # lines above read as a contradiction — a headline short of a clean pass over a count line
+        # in which nothing fell short — and a reader is left to connect them. The same reasoning as
+        # the selection line below: stated next to the counts rather than left to be worked out
+        # from a section further down the page.
+        because = (
+            " — the only reason this is not a clean pass"
+            if summary.get("qualification_is_the_whole_downgrade")
+            else ""
+        )
+        lines.append(f"  assumption-qualified claims: {joined}{because}")
     if "selection" in summary:
         # The verdict counts sum to what was *attempted*, so under a budget they are a share of
         # the paper and read as the whole of it. Stated here, next to them, rather than left for a
@@ -816,6 +850,10 @@ def render_registry(
             if cert.paper.to_dict().get(k)
         )
         count_line = ", ".join(f"{k}={counts[k]}" for k in counts if counts[k])
+        if qualification_is_the_whole_downgrade(cert):
+            # The card is the one place a reader sees a verdict with no way to ask a follow-up
+            # question, which is the reason the selection note below is here too.
+            count_line += " — short of a clean pass only for an assumption Reprolith supplied"
         if cert.selection is not None:
             # The card's counts are of what was *attempted*, and this is the one page where a
             # reader sees a verdict with no way to ask the certificate a follow-up question.
@@ -1059,6 +1097,7 @@ def render_bundle_human(view: Mapping[str, Any]) -> str:
 
 __all__ = [
     "claim_counts",
+    "qualification_is_the_whole_downgrade",
     "gap_items",
     "render_badge",
     "render_bundle_human",

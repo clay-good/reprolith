@@ -3,7 +3,7 @@ Engine pin: reprolith-ssa 0.0.1 / gillespie-direct-method (rev 02119c46c148)
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
-  assumption-qualified claims: immigration_death_10-mean
+  assumption-qualified claims: immigration_death_10-mean — the only reason this is not a clean pass
 
 CLAIMS
   [immigration_death_10-mean] mean copy number: reproduced [assumption-qualified] (source closed-form via scalar-relative-error, tol=reproduced<=0.05, partial<=0.15 (class-default))

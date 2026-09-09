@@ -6185,3 +6185,31 @@ Three findings this pass, all from opening a finished artifact and reading it st
 none visible from inside the function that wrote the line. It is the cheapest audit in this
 repository and the one easiest to skip, because every line of it was written deliberately by
 somebody who was looking at something else at the time.
+
+
+## A headline nothing in the counts explains
+
+Six of the certificates in this repository open like this:
+
+```
+OVERALL: partially-reproduced
+  claims by verdict: reproduced=1, partial=0, failed=0, not-evaluable=0
+```
+
+A reader's first check of a headline is the line under it, and that line says every claim reproduced.
+The reconciliation is real and sits one line further down — `assumption-qualified claims: ...` — and
+it never said it *was* the reconciliation. Two adjacent lines that read as a contradiction, with the
+resolution present and unlabelled, is worse than either an unexplained headline or a missing one: the
+reader who does connect them is guessing, and the reader who does not concludes the counts are wrong.
+
+The renderer had already met this exact problem once and solved it the same way. The selection line
+exists because verdict counts "sum to what was *attempted*, so under a budget they read as the whole
+of it", and its own comment says it is stated "next to them, rather than left for a reader to work
+out from a section further down the page". The qualified-claims line now finishes with *— the only
+reason this is not a clean pass*, and the registry card says the same thing, since a card is the one
+place a reader sees a verdict with no way to ask a follow-up question.
+
+It is derived and not asserted: every claim reproduced, at least one resting on an assumption
+Reprolith supplied, and a headline short of `reproduced`. A certificate with a genuine partial says
+nothing extra, because there the counts explain themselves — and a sentence calling the assumptions
+"the only reason" would be false the moment a claim actually falls short.

@@ -3,7 +3,7 @@ Engine pin: copasi 4.46.300 (Source) / deterministic-lsoda (judge rev c806ccc84c
 
 OVERALL: partially-reproduced
   claims by verdict: reproduced=2, partial=0, failed=0, not-evaluable=0
-  assumption-qualified claims: population-envelope, between-subject-cv
+  assumption-qualified claims: population-envelope, between-subject-cv — the only reason this is not a clean pass
 
 CLAIMS
   [population-envelope] 5th/50th/95th percentile of C(t) across the population: reproduced [assumption-qualified] (source closed form: C(t) = (D/V)·exp(-k·t)·exp(omega·z_p) for a log-normal V — mathematics standing in for a published figure, not a number read from a paper via distribution-band-distance, tol=reproduced<=0.15, partial<=0.35 (class-default))
