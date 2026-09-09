@@ -494,15 +494,23 @@ def lint_diffusion(
         # surface either measures it or abstains.
         shown = unbounded_is_honoured(claim)
         if shown is None or not shown["honoured"]:
+            # The reason goes in the *discrepancy*, not only in the protocol. This abstention said
+            # "the run produced non-finite output" for an hour after it was written — the canned
+            # default, describing an overflow that had not happened, while the real cause sat in a
+            # field beside it. The same defect the infeasible program had, in code written to fix
+            # that one.
+            why = (
+                "this claim states an unbounded domain and the wall's effect could not be measured "
+                "on this run, so it cannot be shown not to have mattered"
+                if shown is None else
+                f"this claim states an unbounded domain and this grid's edge rules differ by "
+                f"{shown['wall_bracket']:.3e} against a budget of {shown['budget']:.3e}, so it "
+                "does not stand in for a domain with no walls — run it on a wider grid, or state "
+                "the wall the source used"
+            )
             return replace(
-                _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol),
-                protocol=protocol + (
-                    " (the wall's effect could not be measured on this run)"
-                    if shown is None else
-                    f" (this grid's edge rules differ by {shown['wall_bracket']:.3e} against a "
-                    f"budget of {shown['budget']:.3e}, so it does not stand in for a domain with "
-                    "no walls — run it on a wider grid, or state the wall the source used)"
-                ),
+                _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol, reason=why),
+                protocol=protocol,
             )
         protocol += (
             f" (verified rather than assumed: this grid's edge rules differ by "

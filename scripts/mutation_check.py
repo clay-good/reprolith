@@ -1392,6 +1392,13 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if (stated := sensitivity.get("basis")) is not None:', "    if False:"),
         ["tests/test_logical_basin_claim.py"],
     ),
+    (
+        "an inline unbounded abstention reports an overflow that did not happen",
+        "linter.py",
+        ('                _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol, reason=why),',
+         '                _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol),'),
+        ["tests/test_spatial.py"],
+    ),
     # --- an unsolvable program is reported, not thrown, 2026-09-08 ------------------------------
     (
         "an infeasible program takes the certifying run down instead of abstaining",

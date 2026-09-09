@@ -5794,3 +5794,10 @@ The inline abstention needed one more thing to be honest. `_not_evaluable` carri
 reason — "the run produced non-finite output" — and an abstention naming the wrong cause is worse
 than a vague one: it sends a caller looking through their numbers for an overflow that is not there.
 It takes a reason now, and the default stands where it fits.
+
+The sweep then found the same defect in code written an hour earlier to fix it. The inline
+unbounded-domain abstention put its measurement in the protocol and left the *discrepancy* reading
+"the run produced non-finite output" — the canned default, describing an overflow that had not
+happened, on a grid that was perfectly finite. A reader of the verdict saw the wrong cause. This is
+the shape this repository keeps finding in its own last diff, and the answer is the same each time:
+re-audit the fix, not just the bug.

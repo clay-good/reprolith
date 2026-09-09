@@ -208,8 +208,10 @@ def test_lint_diffusion_measures_an_unbounded_domain_rather_than_trusting_it() -
 
     narrow = lint_diffusion(**_gaussian_case(3.0, 31), boundary="unbounded")
     assert narrow.verdict is Verdict.NOT_EVALUABLE
-    assert narrow.protocol is not None
-    assert "does not stand in for a domain with no walls" in narrow.protocol
+    # The *reason* says what happened, not just the protocol beside it: this abstention carried the
+    # canned "the run produced non-finite output" while the grid was perfectly finite.
+    assert "does not stand in for a domain with no walls" in narrow.discrepancy
+    assert "non-finite" not in narrow.discrepancy
 
 
 def test_lint_diffusion_refuses_a_wall_it_cannot_run() -> None:
