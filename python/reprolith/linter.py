@@ -220,9 +220,19 @@ def lint_curve(
         tolerance or default_tolerance(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind),
         ComparisonMethod.CURVE_NORMALIZED_DISTANCE, reference_kind,
     )
+    # What the certificate says about the same judgment, on the surface that has no certificate
+    # around it to say it. A curve distance is a function of the window it was run over, how finely
+    # it was sampled and which observable was read — two calls differing in any of the three are
+    # otherwise identical here while disagreeing about the answer.
+    protocol = (
+        f"simulated [{species}] over [0, {duration!r}] at {steps} intervals "
+        f"({steps + 1} points) under the pinned engine"
+    )
     if not _all_finite(reference, predicted):
-        return _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol)
-    return _curve_lint(reference, predicted, tol)
+        return replace(
+            _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol), protocol=protocol
+        )
+    return replace(_curve_lint(reference, predicted, tol), protocol=protocol)
 
 
 def lint_objective(
@@ -261,19 +271,33 @@ def lint_objective(
         tolerance or default_tolerance(ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind),
         ComparisonMethod.SCALAR_RELATIVE_ERROR, reference_kind,
     )
+    # An FBA optimum is a function of its medium, which is this class's own first failure mode: a
+    # growth rate reported without the uptake bounds it was solved under cannot be re-derived. The
+    # certificate says exactly this; a caller passing `medium={}` and one passing nothing get the
+    # same number here and had different questions in mind.
+    maximized = ", ".join(
+        model.reaction_ids[i] for i, c in enumerate(model.objective) if c
+    ) or "no reaction"
+    stated = ", ".join(
+        f"{rid}<={abs(uptake)!r}" for rid, uptake in sorted((medium or {}).items())
+    ) or "the model's own distributed bounds (none supplied)"
+    protocol = f"linear program — medium: {stated}; maximize: {maximized}"
     if not _all_finite((reported, predicted)):
-        return _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol)
+        return replace(
+            _not_evaluable(ComparisonMethod.SCALAR_RELATIVE_ERROR, tol), protocol=protocol
+        )
     unscaled_zero = _reported_zero_lint(
         reported, predicted, ComparisonMethod.SCALAR_RELATIVE_ERROR, tol
     )
     if unscaled_zero is not None:
-        return unscaled_zero
+        return replace(unscaled_zero, protocol=protocol)
     error = relative_error(reported, predicted)
     return LintResult(
         verdict=verdict_for(error, tol),
         method=ComparisonMethod.SCALAR_RELATIVE_ERROR.value,
         discrepancy=f"relative error {error:.4f} (optimum {predicted:.6g} vs reported {reported:.6g})",
         tolerance=tol.label(),
+        protocol=protocol,
     )
 
 
@@ -506,6 +530,16 @@ def lint_steady_state(
         method=ComparisonMethod.ATTRACTOR_SET_MATCH.value,
         discrepancy=discrepancy,
         tolerance="exact (attractor-set-match)",
+        # The update scheme is not a detail here, it is the question: a state can be a synchronous
+        # fixed point and not an asynchronous attractor, and a caller checking a paper that updates
+        # asynchronously would read a green verdict about a different model. A fixed point happens
+        # to be scheme-independent — which is *why* this check can be exact — and that is a fact a
+        # reader should be told rather than one they have to know.
+        protocol=(
+            f"synchronous update over {len(network.nodes)} nodes, fixed points enumerated exactly "
+            "(a fixed point is a fixed point under every scheme; a cyclic attractor is not, and is "
+            "not what this checks)"
+        ),
     )
 
 

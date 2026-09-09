@@ -1392,6 +1392,21 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if (stated := sensitivity.get("basis")) is not None:', "    if False:"),
         ["tests/test_logical_basin_claim.py"],
     ),
+    # --- every inline verdict states what it ran, 2026-09-08 ------------------------------------
+    (
+        "an inline curve verdict hides the window and the grid it was sampled on",
+        "linter.py",
+        ('    return replace(_curve_lint(reference, predicted, tol), protocol=protocol)\n\n\ndef lint_objective(',
+         '    return _curve_lint(reference, predicted, tol)\n\n\ndef lint_objective('),
+        ["tests/test_linter.py"],
+    ),
+    (
+        "an inline Boolean verdict does not say which update scheme produced it",
+        "linter.py",
+        ('        protocol=(\n            f"synchronous update over {len(network.nodes)} nodes',
+         '        protocol=(\n            f"{len(network.nodes)} nodes'),
+        ["tests/test_linter.py"],
+    ),
     # --- the inline surface honours a stated wall too, 2026-09-08 -------------------------------
     (
         "the inline linter judges under its own wall whatever the source stated",

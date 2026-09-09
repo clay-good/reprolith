@@ -5751,3 +5751,27 @@ runs now. Its second version was wrong too, and more quietly: it compared a peri
 reflecting one on a Gaussian centred in its domain, where those two are the *same run*, so it would
 have passed against any wall at all. Comparing against the absorbing wall is what makes it a
 measurement.
+
+
+## Four of the seven said what they ran
+
+Writing the inline gate's requirement into the spec — that a verdict states the protocol it rests
+on — turned out to be a claim about three functions that did not. `lint_stochastic`,
+`lint_diffusion`, `lint_estimation` and `lint_distribution` state their sampling, their
+discretization, their optimizer. `lint_curve`, `lint_objective` and `lint_steady_state` returned a
+verdict, a distance and a tolerance, and nothing about what produced them.
+
+Each was the same defect in its own class's vocabulary. A curve distance is a function of the window
+it was run over, how finely it was sampled and which observable was read; two calls differing in any
+of the three are otherwise identical in the result and disagree about the answer. An FBA optimum is
+a function of its medium, which is the constraint-based class's own first failure mode — a growth
+rate reported without its uptake bounds cannot be re-derived by anyone. And a Boolean fixed point
+was answered with no statement of the update scheme, which is not a detail but the question: a state
+can be a synchronous fixed point and not an asynchronous attractor. That check is exact *because* a
+fixed point is scheme-independent, and the protocol now says so rather than leaving a reader to know
+it.
+
+The test that keeps this true is driven from `reprolith.__all__` rather than from a list of seven
+names, so the next linter added is covered without anybody remembering the rule — which is how the
+claim-type catalogue, the miss differential and the exported-argument guard are all built, and the
+fourth place that shape has caught something.

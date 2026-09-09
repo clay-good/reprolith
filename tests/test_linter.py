@@ -116,6 +116,53 @@ def test_the_linter_judges_an_envelope_by_its_worst_point_too() -> None:
     assert "worst point" in result.discrepancy
 
 
+def test_every_inline_verdict_states_the_protocol_it_rests_on() -> None:
+    """Four of the seven said what they ran and three said nothing, which is the same defect the
+    spatial one was fixed for: an inline result has no certificate around it, so a bare verdict
+    leaves a reader with no way to know what produced it.
+
+    Driven from the exported linters rather than a list, so the next one added is covered without
+    anybody remembering this test — the rule the claim-type catalogue and the miss differential are
+    built on.
+    """
+    import inspect
+
+    import reprolith
+    from reprolith import linter
+
+    exported = sorted(n for n in reprolith.__all__ if n.startswith("lint_"))
+    assert len(exported) >= 7
+    silent = [
+        name for name in exported
+        if "protocol" not in inspect.getsource(getattr(linter, name))
+    ]
+    assert silent == [], silent
+
+
+def test_lint_curve_names_the_window_and_the_grid_it_sampled() -> None:
+    from reprolith import lint_curve
+
+    result = lint_curve(ONE_COMPARTMENT_SBML, "A", reference=_TRUE_CURVE, duration=10.0, steps=10)
+    assert result.protocol is not None
+    assert "[A]" in result.protocol
+    assert "10.0" in result.protocol and "10 intervals" in result.protocol
+
+
+def test_lint_steady_state_names_the_update_scheme_its_verdict_assumes() -> None:
+    """A state can be a synchronous fixed point and not an asynchronous attractor.
+
+    The check is exact *because* a fixed point is scheme-independent, and a reader should be told
+    that rather than have to know it — this surface answered a Boolean question with no statement
+    about which network semantics produced the answer.
+    """
+    from reprolith import lint_steady_state
+
+    result = lint_steady_state({"A": "!B", "B": "!A"}, {"A": 1, "B": 0})
+    assert result.protocol is not None
+    assert "synchronous update" in result.protocol
+    assert "fixed point is a fixed point under every scheme" in result.protocol
+
+
 def test_lint_diffusion_states_the_protocol_its_verdict_rests_on() -> None:
     """The inline spatial check published a bare verdict with neither grid nor boundary.
 
