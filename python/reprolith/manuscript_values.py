@@ -40,7 +40,7 @@ import math
 import re
 import xml.etree.ElementTree as ET
 from collections import Counter
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -639,9 +639,19 @@ def check_parameter_values(
             continue
         reported = float(raw)
         if identifier not in values:
+            # The same hint `claims_naming_unknown_outputs` gives, through the same function, so
+            # the two file checks cannot come to help a curator differently about one kind of
+            # mistake. This surface reported the absence correctly and failed the command for it
+            # from the start — what it did not do was say the one thing that can be said with
+            # certainty when the slip is a capital letter.
+            case_slip = same_name_but_for_case(identifier, values)
             results.append(ParameterCheck(
                 identifier, reported, None, False,
-                f"the model declares no parameter, compartment or species {identifier!r}",
+                f"the model declares no parameter, compartment or species {identifier!r}"
+                + (
+                    f"; it declares {case_slip!r}, which differs only in case"
+                    if case_slip else ""
+                ),
             ))
             continue
         kind, carried, units = values[identifier]
@@ -1125,6 +1135,19 @@ def check_claim_units_in_tables(
     return tuple(results)
 
 
+def same_name_but_for_case(named: str, declared: Iterable[str]) -> str:
+    """The one declared name differing from ``named`` only in case, or ``""``.
+
+    The strongest correction that is not a guess, and the only one either surface offers. Nothing is
+    matched by edit distance: "did you mean" over a near-miss is how a curator is talked into a
+    plausible *wrong* element, which is the failure this module refuses everywhere else. A case slip
+    is the single case where the right answer is certain — and only when exactly one name matches,
+    since two differing only in case is a model naming two things nearly alike and no help at all.
+    """
+    matches = [name for name in declared if name.lower() == named.lower() and name != named]
+    return matches[0] if len(matches) == 1 else ""
+
+
 @dataclass(frozen=True)
 class UnknownOutput:
     """A claim naming a model element the model does not declare."""
@@ -1161,18 +1184,14 @@ def claims_naming_unknown_outputs(
     plausible wrong species, and this module refuses that everywhere else.
     """
     declared = _declared_element_ids(model_sbml)
-    by_lowercase: dict[str, list[str]] = {}
-    for name in declared:
-        by_lowercase.setdefault(name.lower(), []).append(name)
     unknown: list[UnknownOutput] = []
     for record in claims:
         named = str(record.get("species") or "")
         if not named or named in declared:
             continue
-        same_but_for_case = by_lowercase.get(named.lower(), ())
-        if len(same_but_for_case) == 1:
+        if same_but_for_case := same_name_but_for_case(named, declared):
             detail = (
-                f"this model declares no {named!r}; it declares {same_but_for_case[0]!r}, which "
+                f"this model declares no {named!r}; it declares {same_but_for_case!r}, which "
                 "differs only in case — nothing here is matched by guesswork, and that one is the "
                 "same name"
             )

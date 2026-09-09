@@ -6395,3 +6395,12 @@ exactly one declared name differs only in case, it says so — a case slip is th
 that can be made with certainty. Otherwise it says how many outputs the model declares and which
 command lists them. Nothing is matched by edit distance: "did you mean" is how a curator is talked
 into a plausible wrong species, which is the failure this whole module is built to avoid.
+
+Sweeping that shape to the sibling command found the counterexample rather than another instance,
+which is worth as much. `params-check` reports an absent element as a MISMATCH and exits non-zero
+for it, and has since it was written — so `claims-check` was the outlier and not the convention. What
+`params-check` did *not* do was offer the one correction that can be made with certainty, and after
+the claims side gained it the two file checks were helping a curator differently about one kind of
+mistake. One function now, and deliberately the weakest matcher there is: exactly one declared name
+differing only in case, never an edit distance, and nothing at all where two names differ only in
+case, since a model naming two things nearly alike is no help.

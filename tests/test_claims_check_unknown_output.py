@@ -93,3 +93,34 @@ def test_a_parameter_is_a_legal_output_too(tmp_path: Path) -> None:
     """The unit check reads species *and* parameters, so this must not accuse a claim reading one."""
     model = _MODEL.read_text(encoding="utf-8")
     assert claims_naming_unknown_outputs([{"claim_id": "c", "species": "Ktp_Liver"}], model) == ()
+
+
+def test_both_file_checks_offer_the_same_help_about_a_case_slip() -> None:
+    """`params-check` had this half right from the start and the other half missing.
+
+    It reported an absent element correctly — MISMATCH, and a non-zero exit — which is what makes
+    it the counterexample that says `claims-check` was the outlier rather than the rule. What it did
+    not do was say the one thing that can be said with certainty when the slip is a capital letter,
+    and after the claims side gained that, the two file checks helped a curator differently about
+    one kind of mistake.
+
+    One function now (`same_name_but_for_case`), so they cannot drift again — and it is deliberately
+    the weakest possible matcher: exactly one declared name differing only in case, never an edit
+    distance. Two names differing only in case is a model naming two things nearly alike, and no
+    help at all.
+    """
+    from reprolith.manuscript_values import check_parameter_values, same_name_but_for_case
+
+    model = _MODEL.read_text(encoding="utf-8")
+    (slipped, mistyped) = check_parameter_values(model, [
+        {"parameter": "ktp_liver", "reported": 5.5, "source_location": "Table 3"},
+        {"parameter": "Ktp_Livver", "reported": 5.5, "source_location": "Table 3"},
+    ])
+    assert "differs only in case" in slipped.detail and "'Ktp_Liver'" in slipped.detail
+    # And nothing is invented for a name that is not a case slip.
+    assert "differs only in case" not in mistyped.detail
+
+    # The matcher itself refuses an ambiguous case, and refuses to be an edit distance.
+    assert same_name_but_for_case("abc", ["ABC", "Abc"]) == ""
+    assert same_name_but_for_case("mLivver", ["mLiver"]) == ""
+    assert same_name_but_for_case("mliver", ["mLiver"]) == "mLiver"
