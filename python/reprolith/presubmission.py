@@ -304,6 +304,16 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
                        "directly, so a reproducer need not re-fit it",
             }
         )
+    # An assumption is a *value*, and the certificate records one per claim that rests on it: the
+    # stochastic noise entry carries `ssa-sampling-…-cv` and `ssa-sampling-…-fano`, two ids for one
+    # ensemble, whose rows come out identical word for word. This surface's own rule — one fix that
+    # blocks many claims is one item, since repeating it buries the fixes that differ — was applied
+    # to the claims and not to the assumptions. It is the distinction the verification queue draws
+    # by keying an item on the question rather than on the assumption's own id.
+    #
+    # Only a byte-identical row collapses. Two assumptions with different chosen values are two
+    # things to state, and `dose-salt-form` appears twice in this corpus with different doses in it.
+    emitted: list[dict[str, Any]] = []
     for asm in cert.assumptions:
         # An assumption awaiting expert confirmation withholds the clean pass exactly as a
         # load-bearing one does (derive_overall consults both), so it belongs on the fix list too.
@@ -355,6 +365,10 @@ def presubmission_report(cert: Certificate) -> dict[str, Any]:
                 ),
             }
         )
+        if actions[-1] in emitted:
+            actions.pop()
+        else:
+            emitted.append(actions[-1])
     for note in cert.gap_report:
         actions.append(
             {

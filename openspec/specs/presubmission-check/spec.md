@@ -49,6 +49,9 @@ an author knows what to fix first rather than reading an unordered list.
 - **AND** one fix that blocks many claims is one item naming all of them, not one item per claim:
   an assumption is a value, and repeating it per claim buries the fixes that differ among the rows
   that do not
+- **AND** the same holds of the value itself: a certificate records an assumption per claim that
+  rests on it, and two records stating the identical value are one item, since an author reading
+  one instruction twice cannot tell whether it is one thing to write down or two
 - **AND** a fully reproduced certificate produces an empty fix list
 
 #### Scenario: A shortfall of Reprolith's own is ranked and worded as its own
