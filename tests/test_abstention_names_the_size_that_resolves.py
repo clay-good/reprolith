@@ -130,3 +130,30 @@ def test_the_two_abstentions_state_the_rule_the_same_way() -> None:
     tail = "would bring that error bar under half the threshold, which is where this check stops"
     assert ensemble is not None and tail in ensemble
     assert tail in population
+
+
+# --- the spatial domain ---------------------------------------------------------------------------
+
+
+def test_a_domain_too_coarse_to_judge_says_how_much_longer_would_do_it() -> None:
+    """The third abstention of this shape, and the one that stated a *direction* rather than nothing.
+
+    "A longer domain holds more modes and measures finer" is true of every domain ever discretized,
+    exactly as "a larger ensemble" is true of every ensemble. The arithmetic is simpler here than
+    for a sample: the finest gap near mode `m` is `1/(m+1)` of the wavelength under either wall, so
+    a pass width of `w` needs a mode of at least `ceil(1/w) - 1`, and a fixed physical wavelength
+    reaches that mode in a domain longer by the ratio of the two.
+    """
+    from reprolith.spatial import _domain_to_resolve
+    from test_spatial_pattern_claim import _claim, _judge_pattern
+
+    short = _claim(length=40.0, points=201, dt=0.24 * (40.0 / 200) ** 2 / 40.0, steps=100,
+                   confirm_steps=100)
+    reason = _judge_pattern(short).root_cause
+    assert "needs mode 19 or higher" in reason
+    assert "about 3.8x as long" in reason
+    # And the count is the one the rule implies rather than a number pasted into a sentence: mode 19
+    # is the first whose 1/(m+1) spacing is inside a 5% pass width, and mode 18's is not.
+    assert 1.0 / (19 + 1) <= 0.05 < 1.0 / (18 + 1)
+    # Nothing is claimed where the arithmetic has nothing to say, and the direction survives there.
+    assert _domain_to_resolve(short, 0, 0.05) == "a longer domain holds more modes and measures finer"

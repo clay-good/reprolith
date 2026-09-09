@@ -783,7 +783,10 @@ against a 5% pass width. That is more useful than a number would have been.
 measurable at all is set by the domain — on a zero-flux domain of length `L` only `2L/m` — so the
 claim reports the finest distinction its own domain can make and abstains when that is coarser than
 the width it would be judged at: agreeing to 1% where the measurable values are 16.7% apart — a
-domain holding five wavelengths — is agreement nobody measured. It also reads the pattern twice
+domain holding five wavelengths — is agreement nobody measured. That abstention says how much
+longer a domain would do it (`needs mode 19 or higher, ... about 3.8x as long`) rather than only
+which way to go, on the same rule the two sample-size abstentions follow: sized against the bar the
+check abstains at, never against the measurement it does not trust. It also reads the pattern twice
 and abstains if the dominant mode moved between them, because the selected mode changes while the
 pattern is still growing (measured on Schnakenberg: mode 22, then 21, then 20 as it saturates). And it judges the wavelength the
 *nonlinear run* selects while reporting the one linear stability predicts beside it — on that same

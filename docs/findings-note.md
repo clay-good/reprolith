@@ -5932,3 +5932,26 @@ answer ("at 30 trajectories or more a zero spread is a measurement") — a rule 
 it was written for but one is the shape this project keeps catching in itself. And it is one
 function, so the certificate path, the inline linter an agent gates on, and the population certifier
 cannot come to word the same arithmetic differently.
+
+
+## The third one said which way, but not how far
+
+Sweeping the "too few is not an instruction" shape across the rest of this package found a third
+abstention of the same family and a variant worth naming. The spatial pattern check refuses a claim
+whose domain quantizes wavelengths too coarsely to tell a pass from a fail, and it ended: *a longer
+domain holds more modes and measures finer*. That is a **direction** rather than nothing, which
+makes it the more comfortable version of the defect and not a different one — it is true of every
+domain ever discretized, exactly as "a larger ensemble" is true of every ensemble.
+
+The arithmetic is easier here than for a sample, and needs no allowance. The finest gap near mode
+`m` is `1/(m+1)` of the wavelength under either wall — the same rule the check already computes to
+decide whether to abstain — so a pass width of `w` needs a mode of at least `ceil(1/w) - 1`, exactly.
+A physical wavelength is fixed by the model rather than by the box, and the mode it occupies scales
+with the length, so that mode is reached at a domain longer by the ratio of the two. On the short
+self-validation domain that is mode 19 and about 3.8x the length, and the test file that has
+described this domain as "four times longer than the pattern it measures needs" since it was written
+is where the number came from being checked rather than trusted.
+
+The sentence is now the concrete clause **or** the direction, not both: the generic half survives
+only where the arithmetic has nothing to say, which is a mode of zero. Keeping both would have left
+the reader the same guess with a number beside it.

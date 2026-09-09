@@ -1673,6 +1673,39 @@ def _mode_resolution(claim: PatternClaim, mode: int) -> float:
     return min(abs(measured - neighbour) for neighbour in neighbours) / measured
 
 
+def _domain_to_resolve(claim: PatternClaim, mode: int, within: float) -> str:
+    """What would resolve a pattern claim this domain cannot: a length, not a direction.
+
+    "A longer domain holds more modes and measures finer" is true of every domain ever discretized,
+    and it is the spatial analogue of the "a larger ensemble" this project has already replaced with
+    a number twice. It is arithmetic here too, and simpler than the ensembles': the finest gap near
+    mode ``m`` is ``1/(m+1)`` of the wavelength under either wall, so resolving a claim at
+    ``within`` needs a mode of at least ``ceil(1/within) - 1``. A physical wavelength is fixed by the
+    model rather than by the box, and the mode a given wavelength occupies scales with the length, so
+    that mode is reached at a domain longer by the ratio of the two modes.
+
+    Sized against the *tolerance* — the bar this check abstains at — and never against how far the
+    measured wavelength sits from the reported one, for the reason
+    :func:`reprolith.oracle.sample_to_resolve` is: a domain that cannot resolve the claim has no
+    trustworthy measurement to size the next one by.
+
+    The length is stated as a factor rather than a number of units because a claim's length carries
+    the model's own units, and this function has no business naming them. It falls back to the
+    direction alone where the arithmetic has nothing to say — a mode of zero, which is no wavelength
+    at all — rather than dropping the sentence.
+    """
+    generic = "a longer domain holds more modes and measures finer"
+    if within <= 0.0 or mode <= 0:
+        return generic
+    needed = math.ceil(1.0 / within) - 1
+    if needed <= mode:
+        return generic
+    return (
+        f"resolving it at all needs mode {needed} or higher, which at this wavelength is a domain "
+        f"about {needed / mode:.1f}x as long"
+    )
+
+
 def pattern_boundary_sensitivity(
     claim: PatternClaim, *, judged: _PatternMeasurement | None = None
 ) -> dict[str, Any] | None:
@@ -1799,8 +1832,8 @@ def _measure_pattern(claim: PatternClaim) -> _PatternMeasurement:
             f"this domain cannot resolve the claim: the wavelength is quantized to "
             f"{_measurable_as(claim.wall)}, so even at the mode linear stability predicts "
             f"(m={predicted_mode}) the nearest measurable values are {predicted_resolution:.2%} "
-            f"away while a pass is {tolerance.reproduced_within:.2%} — a longer domain holds more "
-            "modes and measures finer"
+            f"away while a pass is {tolerance.reproduced_within:.2%} — "
+            + _domain_to_resolve(claim, predicted_mode, tolerance.reproduced_within)
         ))
     dx = claim.dx
     seed = [
@@ -1872,8 +1905,8 @@ def _measure_pattern(claim: PatternClaim) -> _PatternMeasurement:
             f"this domain cannot resolve the claim: the wavelength is quantized to "
             f"{_measurable_as(claim.wall)}, so the nearest measurable values to {measured:.6g} "
             f"(mode {dominant}) are {resolution:.2%} away while a pass is "
-            f"{tolerance.reproduced_within:.2%} — a longer domain holds more modes and measures "
-            "finer"
+            f"{tolerance.reproduced_within:.2%} — "
+            + _domain_to_resolve(claim, dominant, tolerance.reproduced_within)
         ))
     return _PatternMeasurement(
         wavelength=measured, mode=dominant, predicted_mode=predicted_mode, resolution=resolution
