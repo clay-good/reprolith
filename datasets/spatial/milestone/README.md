@@ -29,8 +29,10 @@ reference is the free-space Gaussian — the domain a closed form is derived in 
 each claim states `boundary="unbounded"`, which this solver cannot run and therefore has to
 *check*: two of its edge rules bracket free space (one reflects what reaches it, the other absorbs
 it), so the distance between those two runs bounds what the finite grid costs. Here that bound is
-2e-07 to 3e-05 against a budget of 1e-02, a tenth of the pass tolerance. A wall measured not to
-reach the profile is not an assumption about it, so nothing is qualified. Judged blind like
+2e-07 to 3e-05 against a budget of 1e-02 — a tenth of the pass tolerance, and it must also come
+in under a tenth of the distance each claim's own answer sits from its nearest verdict line, so a
+claim landing a hair from its threshold cannot be decided by the substitution either. A wall
+measured not to reach the profile is not an assumption about it, so nothing is qualified. Judged blind like
 everything else: a run that could no longer show this would disagree with its label rather than
 quietly publish a clean pass. A domain narrow enough for the walls to matter abstains instead, with
 the number that made it abstain (`tests/test_spatial_unbounded_claim.py`).

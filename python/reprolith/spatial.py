@@ -2046,12 +2046,14 @@ def certify_spatial(
                                 if shown is None
                                 else (
                                     "this grid's edge rules bracket the free-space solution and "
-                                    f"their answers differ by {shown['wall_bracket']:.3e}, "
-                                    f"against a budget of {shown['budget']:.3e} — a tenth of the "
+                                    f"their answers differ by {shown['wall_bracket']:.3e}, against "
+                                    f"a budget of {shown['budget']:.3e} — a tenth of the "
                                     f"{shown['pass_within']:.2f} that separates a pass from a "
-                                    "failure. A domain this size does not stand in for one with "
-                                    "no walls — run it on a wider grid, or state the wall the "
-                                    "source used"
+                                    f"failure — and a tenth of the {shown['margin_to_a_verdict_line']:.3e} "
+                                    "this claim's own distance sits from the nearest verdict line. "
+                                    "A grid that does not stand in for a domain with no walls, or "
+                                    "a claim the substitution could decide — run it on a wider "
+                                    "grid, or state the wall the source used"
                                 )
                             )
                         ),
@@ -2278,9 +2280,12 @@ def _rests_on_our_wall(claim: SpatialClaim) -> bool:
 
 
 #: How much of a claim's pass budget an unbounded domain's *substitution* may account for. The
-#: bound below is on the error of standing a finite grid in for an infinite one; a tenth of the
-#: width that separates a pass from a failure is the most that error may be, so a verdict can never
-#: turn on the substitution. Measured on this class's own Gaussian at four domain sizes: the shipped
+#: bound below is on the error of standing a finite grid in for an infinite one, and it is applied
+#: twice: a tenth of the width that separates a pass from a failure, *and* a tenth of the distance
+#: this claim's own answer sits from the nearest verdict line. The first alone left the sentence
+#: this comment wanted to write — that a verdict can never turn on the substitution — an
+#: overstatement, since a claim landing a hair from its threshold is decided by an error far under
+#: a tenth of the whole tolerance. With both, the sentence is true. Measured on this class's own Gaussian at four domain sizes: the shipped
 #: half-width of 20 puts the bound at 2.2e-06 (three orders below the budget), and halving the
 #: domain to 10 puts it at 3.3e-02 — a third of the whole tolerance, which is not "no walls".
 UNBOUNDED_WALL_BUDGET = 0.1
@@ -2350,21 +2355,55 @@ def unbounded_is_honoured(claim: SpatialClaim) -> dict[str, Any] | None:
     looked small against it and the claim was honoured. A statement about the domain has to be
     tested against the domain.
 
+    Two conditions, and the second closes a gap the first leaves. A bound under a tenth of the pass
+    *width* still sits beside a claim whose own distance lands a hair from a verdict line, and there
+    the substitution is small and decisive at once — which is precisely what this is supposed to
+    make impossible. So the bound must also be under a tenth of the distance from this claim's
+    judged distance to the nearest verdict line. That second test *does* read the claim's residual,
+    and it is safe where the first version was not, because the two are required together: a wall
+    that wrecks a profile inflates the residual and sails through the margin test, and is stopped by
+    the budget test it cannot touch. Both are one-directional — each can only refuse.
+
     ``None`` where the run itself does not happen, which the caller reports as the abstention it is.
     """
     bound = wall_bracket(claim)
     if bound is None:
         return None
+    judged = _judged_distance(claim)
+    if judged is None:  # pragma: no cover - the bracket ran, so the judged wall ran
+        return None
     tolerance = claim.tolerance or default_tolerance(
         ComparisonMethod.CURVE_NORMALIZED_DISTANCE, ReferenceKind.NUMERIC
     )
     budget = UNBOUNDED_WALL_BUDGET * tolerance.reproduced_within
+    margin = min(
+        abs(judged - tolerance.reproduced_within), abs(judged - tolerance.partial_within)
+    )
     return {
         "wall_bracket": bound,
         "budget": budget,
         "pass_within": tolerance.reproduced_within,
-        "honoured": bound < budget,
+        "margin_to_a_verdict_line": margin,
+        "margin_budget": UNBOUNDED_WALL_BUDGET * margin,
+        "honoured": bound < budget and bound < UNBOUNDED_WALL_BUDGET * margin,
     }
+
+
+def _judged_distance(claim: SpatialClaim) -> float | None:
+    """The distance this claim would be judged at, for the margin test only.
+
+    Never the criterion on its own — see :func:`unbounded_is_honoured` for why a rule keyed on this
+    number alone passed a domain whose wall had reflected a third of the mass back.
+    """
+    try:
+        predicted = diffuse_1d(
+            claim.initial, diffusivity=claim.diffusivity, dx=claim.dx, dt=claim.dt,
+            steps=claim.steps, decay=claim.decay, boundary=claim.wall,
+            boundary_value=claim.boundary_value,
+        )
+    except UnstableDiscretization:
+        return None
+    return normalized_curve_distance(claim.reference, predicted)
 
 
 def _unbounded_note(measured: dict[str, Any]) -> str:
@@ -2372,9 +2411,11 @@ def _unbounded_note(measured: dict[str, Any]) -> str:
     return (
         f" (an unbounded domain, verified rather than assumed: this grid's edge rules bracket the "
         f"free-space solution and their answers differ by {measured['wall_bracket']:.3e}, which "
-        f"bounds what standing in for an infinite domain costs here — against a budget of "
+        f"bounds what standing in for an infinite domain costs here — under a budget of "
         f"{measured['budget']:.3e}, a tenth of the {measured['pass_within']:.2f} that separates a "
-        "pass from a failure)"
+        f"pass from a failure, and under a tenth of the "
+        f"{measured['margin_to_a_verdict_line']:.3e} this claim's distance sits from the nearest "
+        "verdict line, so the substitution cannot be what decided it)"
     )
 
 

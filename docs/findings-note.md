@@ -5822,3 +5822,25 @@ waits in the engine's half can leave it. The spatial wall sat there as a limit n
 could close, and it left — not by being reclassified, but because the engine learned to measure what
 it costs. A reader who takes that half for a permanent property of the work is reading it wrong, and
 a count written into prose here would go stale the same way this one did.
+
+
+## Small and decisive at once
+
+Re-reading the unbounded-domain rule for sentences stronger than the code, one of them was mine: "a
+verdict can never turn on the substitution". The rule bounded the wall's effect at a tenth of the
+width separating a pass from a failure — which says nothing about a claim whose own distance lands a
+hair from that line. There an error far under a tenth of the whole tolerance is exactly what decides
+the verdict. Small and decisive at once is what the rule exists to prevent, and the single test did
+not prevent it.
+
+The bound is applied twice now: under a tenth of the pass width, *and* under a tenth of the distance
+from this claim's judged distance to the nearest verdict line. The second reads the claim's own
+residual, which is the quantity that made the first version of this rule circular — and it is safe
+here only because the two are required together. A wall that wrecks a profile inflates the residual
+and would sail through a margin test; it is stopped by the budget test, which is measured between
+runs and cannot be touched by the residual. Each condition can only refuse, so the change is
+one-directional, and no shipped verdict moves: the three profiles' bracket is 2.2e-06 against a
+margin budget of 1.0e-02.
+
+The alternative was to weaken the sentence. Making it true was about twenty lines, and the sentence
+is the whole reason a reader would accept a finite grid standing in for an infinite one.

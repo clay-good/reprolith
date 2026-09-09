@@ -152,7 +152,7 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   ode-pkpd            170 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   spatial               5 model(s) on reprolith-fd, scipy-lsoda — 4 of 5 engine-independent
-                          as reprolith-fd explicit-forward-euler-finite-difference (rev 8b8592288442), scipy-lsoda 1.13.1
+                          as reprolith-fd explicit-forward-euler-finite-difference (rev ab1e915e9109), scipy-lsoda 1.13.1
   stochastic            4 model(s) on reprolith-ssa, roadrunner-gillespie — all engine-independent within 1.9 combined standard errors, resolving a bias above 9.6% of each quantity compared
                           as reprolith-ssa gillespie-direct-method (rev 20eac2d3b2ee), roadrunner-gillespie 2.7.0
                           1 of 5 standing certificate(s) in this class have no second engine behind them — an absence, not a pass

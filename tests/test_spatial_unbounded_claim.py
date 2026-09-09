@@ -153,6 +153,56 @@ def test_a_narrow_domain_reproduces_when_it_states_its_wall_instead() -> None:
     assert _certify(stated).content()["assessments"][0]["verdict"] != Verdict.NOT_EVALUABLE.value
 
 
+def test_a_claim_sitting_on_its_verdict_line_is_not_honoured_by_a_small_bound() -> None:
+    """The gap a single budget leaves, and the sentence it made an overstatement.
+
+    A bound under a tenth of the pass *width* is not a bound under a tenth of what separates *this*
+    claim from its threshold. A claim landing a hair from the line is decided by an error far under
+    the whole tolerance — small and decisive at once, which is exactly what this rule exists to
+    prevent. So the bound is tested against the margin as well.
+
+    Built by shifting the reference until the judged distance lands microscopically past the pass
+    line: the grid is the shipped one, the bracket is the shipped 2.2e-06, and only the margin
+    moves.
+    """
+    from reprolith.spatial import diffuse_1d
+
+    base = _claim(20.0, 201)
+    predicted = list(diffuse_1d(
+        base.initial, diffusivity=base.diffusivity, dx=base.dx, dt=base.dt, steps=base.steps,
+    ))
+    peak = max(predicted)
+    comfortable = unbounded_is_honoured(
+        replace(base, reference=tuple(v + 0.05 * peak for v in predicted))
+    )
+    on_the_line = unbounded_is_honoured(
+        replace(base, reference=tuple(v + 0.100002 * peak for v in predicted))
+    )
+    assert comfortable is not None and on_the_line is not None
+    # Same grid, same wall, same bracket — only the claim's distance from its threshold differs.
+    assert comfortable["wall_bracket"] == on_the_line["wall_bracket"]
+    assert comfortable["honoured"] and not on_the_line["honoured"]
+    assert on_the_line["wall_bracket"] > on_the_line["margin_budget"]
+
+
+def test_the_budget_test_is_what_stops_a_wrecked_profile() -> None:
+    """The two conditions are required together, which is what makes reading the residual safe.
+
+    The margin test reads the claim's own distance, which is the quantity that made the first
+    version of this rule circular — so it is never the whole test. What refuses a domain whose wall
+    has reflected a third of the mass back is the budget, measured between runs and untouchable by
+    the residual. Both are checked here, on the narrowest grid: the wall's effect is orders above
+    the budget, and it is the budget the verdict turns on.
+    """
+    narrow = unbounded_is_honoured(_claim(3.0, 31))
+    assert narrow is not None
+    assert narrow["wall_bracket"] > narrow["budget"]
+    assert not narrow["honoured"]
+    # And the margin the residual offers is no defence: on this grid it is large *because* the wall
+    # wrecked the profile, and it buys nothing, because both tests must pass.
+    assert narrow["margin_to_a_verdict_line"] > 1.0
+
+
 def test_the_budget_is_a_fraction_of_the_pass_tolerance_and_not_a_free_number() -> None:
     measured = unbounded_is_honoured(_claim(20.0, 201))
     assert measured["budget"] == pytest.approx(UNBOUNDED_WALL_BUDGET * measured["pass_within"])

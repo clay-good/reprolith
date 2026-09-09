@@ -1442,6 +1442,13 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          '                "" '),
         ["tests/test_spatial.py"],
     ),
+    (
+        "a claim a hair from its verdict line is honoured on a bound that could decide it",
+        "spatial.py",
+        ('        "honoured": bound < budget and bound < UNBOUNDED_WALL_BUDGET * margin,',
+         '        "honoured": bound < budget,'),
+        ["tests/test_spatial_unbounded_claim.py"],
+    ),
     # --- the inline surface honours a stated wall too, 2026-09-08 -------------------------------
     (
         "the inline linter judges under its own wall whatever the source stated",

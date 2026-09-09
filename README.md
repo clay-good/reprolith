@@ -749,7 +749,9 @@ two of the walls this solver runs **bracket** free space for a diffusive claim �
 that reaches it, the other absorbs it, and the solution that lets it leave and never return lies
 between — so the distance between those two runs bounds what standing a finite grid in for an
 infinite one costs. A claim stating `boundary="unbounded"` is judged only when that bound is under
-a tenth of its own pass tolerance, and abstains with the number where it is not. On the shipped
+a tenth of its own pass tolerance *and* under a tenth of the distance its answer sits from the
+nearest verdict line — so neither a generous tolerance nor a claim landing on its threshold lets
+the substitution decide anything — and abstains with the number where it is not. On the shipped
 grid the bound is 2e-07 to 3e-05 against a budget of 1e-02, so all three now read a clean
 `reproduced` with no assumption at all — a wall that cannot be detected is not an assumption.
 Measured between the two *runs*, never against the reported profile: the first version of this rule
