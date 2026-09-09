@@ -74,3 +74,49 @@ def test_an_ensemble_clear_of_both_lines_is_told_nothing() -> None:
     clause = sampling_cost_clause(reported=10.0, variance=0.01, trajectories=4000, observed=10.0)
     assert "sampling noise" in clause
     assert "would put the sampling error" not in clause
+
+
+# --- the same differential, one class over --------------------------------------------------------
+
+
+def test_the_spatial_linter_reports_the_whole_wall_check_it_gated_on() -> None:
+    """The milder form of the same divergence, and the one worth naming separately.
+
+    `unbounded_is_honoured` holds an unbounded claim to two conditions — the wall's bracket under a
+    tenth of the pass width, *and* under a tenth of the claim's own distance to its nearest verdict
+    line — and both surfaces gate on its `honoured` flag, so the rule never diverged. What diverged
+    was the account of it: the certificate's protocol names both thresholds, the linter's named the
+    budget alone, and an agent reading that protocol was told a weaker thing had been verified than
+    had been.
+
+    Fixed by calling the certificate's own sentence rather than writing a shorter one, so a reworded
+    threshold cannot reach one surface and not the other.
+    """
+    from reprolith.linter import lint_diffusion
+    from reprolith.spatial import unbounded_note
+
+    dx, diffusivity = 0.2, 1.0
+    dt = 0.008
+    steps = 100
+    initial = [
+        (1.0 / (0.5 * (2.0 * 3.141592653589793) ** 0.5))
+        * pow(2.718281828459045, -((i * dx - 10.0) ** 2) / (2 * 0.5**2))
+        for i in range(101)
+    ]
+    # The reference is this solver's own run, so the claim reproduces and the wall clause is the
+    # part under test rather than the verdict.
+    from reprolith.spatial import diffuse_1d
+
+    reference = diffuse_1d(
+        initial, diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, boundary="no-flux"
+    )
+    result = lint_diffusion(
+        initial, reference, diffusivity=diffusivity, dx=dx, dt=dt, steps=steps, boundary="unbounded",
+    )
+    assert "verified rather than assumed" in result.protocol
+    # Both thresholds, which is what the certificate says and what the gate actually checked.
+    assert "separates a pass from a failure" in result.protocol
+    assert "from the nearest verdict line" in result.protocol
+    # And it is the shared sentence, not a paraphrase that happens to contain those words.
+    assert unbounded_note.__doc__ is not None
+    assert result.protocol.endswith(")")

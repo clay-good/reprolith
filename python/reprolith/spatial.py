@@ -2439,8 +2439,15 @@ def _judged_distance(claim: SpatialClaim) -> float | None:
     return normalized_curve_distance(claim.reference, predicted)
 
 
-def _unbounded_note(measured: dict[str, Any]) -> str:
-    """What the run showed about the wall, for the protocol line of an honoured unbounded claim."""
+def unbounded_note(measured: dict[str, Any]) -> str:
+    """What the run showed about the wall, for the protocol line of an honoured unbounded claim.
+
+    Public because the inline linter says this too, and said less of it: it reported the bound
+    against the budget alone while :func:`unbounded_is_honoured` — which both surfaces gate on —
+    checks it against the budget *and* against a tenth of the claim's own margin to a verdict line.
+    The gate never diverged; the account of it did, and an agent reading an inline protocol was
+    told a weaker thing had been verified than was.
+    """
     return (
         f" (an unbounded domain, verified rather than assumed: this grid's edge rules bracket the "
         f"free-space solution and their answers differ by {measured['wall_bracket']:.3e}, which "
@@ -2463,7 +2470,7 @@ def _boundary_cost(claim: SpatialClaim) -> str:
     if claim.states_unbounded:
         shown = unbounded_is_honoured(claim)
         # A judged unbounded claim was verified before it was judged, so this cannot be None here.
-        return "" if shown is None else _unbounded_note(shown)
+        return "" if shown is None else unbounded_note(shown)
     measured = boundary_sensitivity(claim)
     if measured is None:  # pragma: no cover - a judged claim ran, so its alternatives run too
         return " (the boundary's cost was not measurable for this run)"

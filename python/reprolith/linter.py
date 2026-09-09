@@ -528,10 +528,14 @@ def lint_diffusion(
                 _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol, reason=why),
                 protocol=protocol,
             )
-        protocol += (
-            f" (verified rather than assumed: this grid's edge rules differ by "
-            f"{shown['wall_bracket']:.3e}, under a budget of {shown['budget']:.3e})"
-        )
+        # The certificate's own sentence, not a shorter paraphrase of it. This reported the bound
+        # against the budget alone, while `unbounded_is_honoured` — which both surfaces gate on —
+        # checks it against the budget *and* against a tenth of the claim's margin to a verdict
+        # line. The gate never diverged; the account of it did, and an agent reading this protocol
+        # was told a weaker thing had been verified than was.
+        from .spatial import unbounded_note
+
+        protocol += unbounded_note(shown)
     if not _all_finite(reference, predicted):
         return replace(
             _not_evaluable(ComparisonMethod.CURVE_NORMALIZED_DISTANCE, tol), protocol=protocol

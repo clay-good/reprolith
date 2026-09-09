@@ -6332,3 +6332,12 @@ Both build the sentence with one function now, so they cannot come to word it di
 test says so the only way that means anything: it drives that function with the ensemble's own
 numbers and finds its output verbatim inside what the linter published. Two independently formatted
 strings compared for equality would agree until somebody reworded one of them.
+
+The same differential, one class over, found the milder version. `unbounded_is_honoured` holds an
+unbounded spatial claim to two conditions — the wall's bracket under a tenth of the pass width, and
+under a tenth of the claim's own distance to its nearest verdict line — and both surfaces gate on
+its `honoured` flag, so the *rule* never diverged. The account of it did. The certificate's protocol
+names both thresholds; the linter's named the budget alone, so an agent reading it was told a weaker
+thing had been verified than had been. It calls the certificate's own sentence now rather than a
+shorter one written beside it, which is the only version of this fix that a future rewording cannot
+undo on one surface and not the other.
