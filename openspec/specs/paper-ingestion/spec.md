@@ -168,6 +168,15 @@ on the same surface and into the same file, under the same rule that a candidate
   supplied, and the file says so, since the suggestion matches a row's label against the model's
   words and a sentence has no label
 
+#### Scenario: The paper's inputs are in its sentences too
+
+- **WHEN** candidate *parameter values* are proposed for a paper
+- **THEN** its running text is read on the same terms as its tables, since a paper states a model
+  input in a sentence as readily as it prints one in a cell
+- **AND** a value read from a sentence carries the attribution its sentence used, because whether a
+  paper called a number fitted or measured distinguishes a value its authors chose for the model
+  from one they observed, which a parameter rests on more than a result does
+
 ### Requirement: A curator's figure digitization can supply a claim's reference values
 
 Most papers state their results in figures, and a claim whose values live in one has nothing to

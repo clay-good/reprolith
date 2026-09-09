@@ -1275,14 +1275,30 @@ def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
 
 
 def _cmd_params_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
-    """Propose candidate parameter values from the tables the paper prints."""
-    try:
-        tables = _tables_file(Path(args.tables))
-    except (OSError, UnicodeDecodeError, ValueError) as unusable:
-        print(f"cannot read the tables: {unusable}", file=sys.stderr)
+    """Propose candidate parameter values from the tables the paper prints, and from its text."""
+    if args.tables is None and args.prose is None:
+        print(
+            "give --tables, --prose, or both: this reads your paper, and with neither there is "
+            "nothing to read",
+            file=sys.stderr,
+        )
         return 1
+    tables = None
+    if args.tables is not None:
+        try:
+            tables = _tables_file(Path(args.tables))
+        except (OSError, UnicodeDecodeError, ValueError) as unusable:
+            print(f"cannot read the tables: {unusable}", file=sys.stderr)
+            return 1
+    prose = None
+    if args.prose is not None:
+        try:
+            prose = Path(args.prose).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as unreadable:
+            print(f"cannot read the text: {unreadable}", file=sys.stderr)
+            return 1
 
-    proposed = propose_parameters(tables, accession=args.accession)
+    proposed = propose_parameters(tables, prose=prose, accession=args.accession)
     rendered = json.dumps(proposed, indent=2, sort_keys=True) + "\n"
     if args.out is None:
         print(rendered, end="")
@@ -2131,11 +2147,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser(
         "params-propose",
-        help="propose candidate parameter values from the tables your paper prints (you pair them)",
+        help="propose candidate parameter values from the tables your paper prints, and from its "
+             "text (you pair them)",
     )
     p.add_argument(
-        "--tables", required=True,
+        "--tables", default=None,
         help="the paper's table rows as JSON — the shape datasets/manuscripts/ uses",
+    )
+    p.add_argument(
+        "--prose", default=None, metavar="FILE",
+        help="your paper's running text as a plain-text file; every number with a unit beside it "
+             "is proposed with the whole sentence it came from, and with whether that sentence "
+             "called it fitted or measured",
     )
     p.add_argument(
         "--accession", default=None,

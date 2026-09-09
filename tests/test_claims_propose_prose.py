@@ -8,9 +8,12 @@ worth. Per *paper* the commit that built it says the opposite in its own words �
 what can be read from a paper already reachable" — and an author whose Cmax is in a sentence rather
 than a table had no way to run it that did not begin with `import reprolith`.
 
-So `claims-propose` reads both halves of a paper now. What the merge deliberately does not do is
-de-duplicate: a value printed in a table and restated in a sentence is proposed twice, cited to
-each, because which of the two a claim should cite is the same judgment this whole module refuses.
+So `claims-propose` reads both halves of a paper now, and so does `params-propose` — a paper states
+its model's *inputs* in sentences as readily as its results, and shipping the reader on one of the
+two commands that read a paper would have left the other half of the bracket unable to see what the
+first half now proposes. What the merge deliberately does not do is de-duplicate: a value printed in
+a table and restated in a sentence is proposed twice, cited to each, because which of the two a
+claim should cite is the same judgment this whole module refuses.
 """
 
 from __future__ import annotations
@@ -23,6 +26,7 @@ from reprolith.claim_candidates import (
     merge_proposals,
     propose_claims,
     propose_claims_from_prose,
+    propose_parameters,
 )
 from reprolith.cli import run
 
@@ -198,3 +202,78 @@ def test_a_prose_candidate_reaches_the_check_the_file_names(tmp_path, capsys) ->
         "--accession", "ACC1",
     ]) == 0
     assert "cites no table" in capsys.readouterr().out
+
+
+# The other command that reads a paper. `params-propose` reshapes the same reading into the file
+# `params-check` reads, and it was left able to see only the half of a paper that is in tables.
+
+
+def test_the_parameters_reader_reads_the_text_too() -> None:
+    """A paper states a model input in a sentence as readily as it prints one in a cell."""
+    proposed = propose_parameters(prose="Clearance was fixed at 0.42 h-1 in every subject.")
+    (row,) = proposed["parameters"]
+    assert row["reported"] == 0.42 and row["reported_units"] == "h-1"
+    # Never guessed, here as everywhere: which model element a sentence names is the pairing.
+    assert row["parameter"] == ""
+    assert row["source_location"].startswith("Clearance was fixed")
+
+
+def test_a_prose_parameter_keeps_whether_the_sentence_called_it_fitted() -> None:
+    """The reshape dropped every key the parameters file does not use, and this one it needs.
+
+    Whether a sentence called a number *fitted* or *measured* is the difference between a value the
+    authors chose for the model and one they went out and observed — a distinction a parameter
+    needs more than a result does. The prose reader's own closing note tells a curator to read the
+    field, and this file carried the note while dropping the field.
+    """
+    proposed = propose_parameters(
+        prose="The fitted absorption rate was 1.2 h-1. The measured clearance was 0.42 h-1."
+    )
+    assert {row["attribution"] for row in proposed["parameters"]} == {"simulated", "measured"}
+    assert any("'attribution'" in note for note in proposed["notes"])
+    # A table row has no such field, and inventing one for it would state an attribution the
+    # heading never made.
+    assert not any("attribution" in row for row in propose_parameters(_tables())["parameters"])
+
+
+def test_the_parameters_description_names_the_readings_it_made() -> None:
+    both = propose_parameters(_tables(), prose=_PROSE)["description"]
+    prose_only = propose_parameters(prose=_PROSE)["description"]
+    assert "the tables a paper prints and its running text" in both
+    assert "read from the running text of a paper" in prose_only
+
+
+def test_proposing_parameters_from_nothing_is_refused() -> None:
+    with pytest.raises(ValueError, match="at least one reading"):
+        propose_parameters()
+
+
+def test_the_parameters_command_reads_a_papers_text(tmp_path, capsys) -> None:
+    assert run(["params-propose", "--prose", str(_prose_file(tmp_path))]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert [row["reported"] for row in payload["parameters"]] == [6.1, 3.0]
+
+
+def test_the_parameters_command_with_neither_reading_names_both_flags(capsys) -> None:
+    assert run(["params-propose"]) == 1
+    err = capsys.readouterr().err
+    assert "--tables" in err and "--prose" in err
+
+
+def test_a_prose_parameter_row_reaches_the_check_it_is_written_for(tmp_path, capsys) -> None:
+    """The end of this bracket too: what it writes is a file `params-check` reads.
+
+    An unpaired row is reported as not compared rather than as a mismatch — the rule that reader
+    already followed for an unedited proposal — and the extra `attribution` key does not make the
+    file unreadable.
+    """
+    out = tmp_path / "proposed_parameters.json"
+    assert run([
+        "params-propose", "--prose", str(_prose_file(tmp_path)), "--accession", "ACC1",
+        "--out", str(out),
+    ]) == 0
+    capsys.readouterr()
+    assert run([
+        "params-check", "--parameters", str(out), "--model", str(_MODEL), "--accession", "ACC1",
+    ]) == 0
+    assert "names no model element yet" in capsys.readouterr().out

@@ -264,6 +264,17 @@ and a results table are both numbers in cells — so it offers the same candidat
 it buys is the shape: `params-template` lists your model's ids with the values blank, this lists
 your paper's values with the ids blank, and the pairing between them is yours.
 
+It reads `--prose` on the same terms, because a paper states a parameter in a sentence as readily
+as it prints one in a cell — "clearance was fixed at 0.42 h⁻¹" is a model input no table carries:
+
+```bash
+reprolith params-propose --tables my_tables.json --prose my_paper.txt --out proposed_parameters.json
+```
+
+A row read from a sentence keeps its `attribution`, which matters more for a parameter than for a
+result: whether your paper called a number *fitted* or *measured* is the difference between a value
+you chose for the model and one you went out and observed.
+
 ## Checking your claims against your own paper
 
 The claims file says what your paper reports. Nothing checked that it does — and in this

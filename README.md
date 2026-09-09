@@ -113,9 +113,10 @@ noisy one. On the same ten papers it now reads 113 numbers where it read 107.
 That measurement is about which *papers* become reachable, and it was read for a while as a verdict
 on the reader itself, which left it importable and unrunnable. Per paper it does the opposite: it
 broadens what can be read from a paper the tables already reach, and for an author whose peak is in
-a sentence it is the only reader there is. So it ships as `claims-propose --prose`, beside the
-tables it merges with — and what it does not do is de-duplicate, since a value printed in a table
-and restated in a sentence is two citations and choosing between them is the curator's judgment.
+a sentence it is the only reader there is. So it ships as `--prose` on both commands that read a
+paper — `claims-propose` for its results and `params-propose` for its inputs — merged into the
+tables' own candidates file. What it does not do is de-duplicate: a value printed in a table and
+restated in a sentence is two citations, and choosing between them is the curator's judgment.
 
 For those figures, the **intake** half is now built and the reading half is not, and the split is
 deliberate. Reprolith digitizes nothing: a curator reads the curve off the picture with a plot

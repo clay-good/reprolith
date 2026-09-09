@@ -451,9 +451,12 @@ def _sentences(text: str) -> list[str]:
 
 
 def propose_parameters(
-    tables: Mapping[str, Mapping[str, Any]], *, accession: str | None = None
+    tables: Mapping[str, Mapping[str, Any]] | None = None,
+    *,
+    prose: str | None = None,
+    accession: str | None = None,
 ) -> dict[str, Any]:
-    """The same table reading, written into the file `params-check` reads.
+    """The same reading of a paper, written into the file `params-check` reads.
 
     A paper's tables carry its model's **inputs** as well as its results — the metformin paper's
     Table 3 is ten tissue-plasma partition coefficients, and the committed
@@ -466,10 +469,21 @@ def propose_parameters(
     ids with the values blank; this writes the paper's values with the ids blank. A curator has
     both sides of the pairing in front of them and makes the join, which is the one thing neither
     can do.
+
+    It reads the paper's ``prose`` on the same terms as :func:`propose_claims_from_prose`, because
+    a paper states parameters in sentences as readily as it states results in them — "clearance was
+    fixed at 0.42 h-1" is a model input and no table prints it. A prose row keeps its
+    ``attribution``: whether the sentence said *fitted* or *measured* is the difference between a
+    value the authors chose and one they observed, which is a distinction a parameter needs more
+    than a result does.
     """
-    proposed = propose_claims(tables)
-    candidates = [
-        {
+    proposed = merge_proposals(
+        propose_claims(tables) if tables is not None else None,
+        propose_claims_from_prose(prose) if prose is not None else None,
+    )
+    candidates = []
+    for candidate in proposed["candidates"]:
+        record = {
             # The model id this value belongs to is never guessed, for the reason the claim reader
             # gives about outputs: a wrong pairing checks a real number against the wrong element.
             "parameter": "",
@@ -478,11 +492,25 @@ def propose_parameters(
             "source_location": candidate["source_location"],
             "quantity": candidate["quantity"],
         }
-        for candidate in proposed["candidates"]
-    ]
+        if "attribution" in candidate:
+            # Carried across rather than dropped in the reshape, and it matters more here than it
+            # does on a claim: whether a sentence called a number *fitted* or *measured* is the
+            # difference between a value the authors chose for the model and one they went out and
+            # observed. The prose reader's own closing note tells a curator to read this field, and
+            # a file that told them to read a field it had dropped would be sending them nowhere.
+            record["attribution"] = candidate["attribution"]
+        candidates.append(record)
+    read = " and ".join(
+        part for part in (
+            "the tables a paper prints" if tables is not None else "",
+            (
+                "its running text" if tables is not None else "the running text of a paper"
+            ) if prose is not None else "",
+        ) if part
+    )
     body: dict[str, Any] = {
         "description": (
-            "Candidate parameter values read from the tables a paper prints. Nothing here knows "
+            f"Candidate parameter values read from {read}. Nothing here knows "
             "an input from an output — a results table and a parameter table are both numbers in "
             "cells — so delete the ones your model does not carry, then name the model element "
             "each survivor is, which `reprolith params-template` lists for you."
@@ -607,7 +635,10 @@ def merge_proposals(
     file sees one shape whichever readings produced it.
     """
     if from_tables is None and from_prose is None:
-        raise ValueError("merge_proposals needs at least one reading; it merges, it does not read")
+        raise ValueError(
+            "a proposal needs at least one reading of the paper — its tables, its text, or both; "
+            "this merges what was read and reads nothing itself"
+        )
     tables_notes = [
         note for note in (from_tables or {}).get("notes", ()) if note != _PICK_YOUR_OWN
     ]
