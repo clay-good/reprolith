@@ -44,11 +44,7 @@ dev = ["pytest>=7.0", "ruff>=0.4", "mypy>=1.8"]
 # with 4.46"): every simulation raises `TypeError: CCopasiTask_initialize, argument 2 of type
 # 'int'`, and the process aborts on `std::bad_alloc` under load. A yank is not always enough — CI
 # resolved it anyway on one interpreter after the yank — so it is named here.
-# 4.48.309 is excluded because installing it breaks libsbml in the same process: once it is
-# imported, libsbml hands back AST node types as unhashable SWIG objects and loses kinetic-law
-# math, so every qual, stochastic and spatial ingest test failed on all three engine jobs. Isolated
-# by elimination in CI: libsbml 5.21.1 fails beside it (run 35896303241) and passes beside 4.46.300.
-engine = ["python-copasi>=4.42,!=4.47.309,!=4.48.309", "python-libsbml>=5.20"]
+engine = ["python-copasi>=4.42,!=4.47.309", "python-libsbml>=5.20"]
 # The constraint-based (FBA) oracle's linear-programming solver. Optional, like the engine.
 fba = ["scipy>=1.7", "numpy>=1.20"]  # numpy is imported directly, not only through scipy
 # The scalable fixed-point solver for the logical class: a SAT solver (z3) that finds a large
@@ -62,7 +58,13 @@ sat = ["z3-solver>=4.12"]
 # everywhere else. libSEDML caught it. libCombine covers the layer above — the archive's manifest,
 # which nothing but `ingest_omex` had ever read back. Optional, and needed only by the export
 # tests' validation checks.
-validate = ["python-libsedml>=2.0", "python-libcombine>=0.2"]
+# python-libsedml 2.0.34 is excluded because its Linux wheel breaks libsbml in the same process:
+# once a test has imported it, libsbml hands back AST node types as unhashable SWIG objects and
+# loses kinetic-law math, and 23 ingest tests (every one ordered after test_export.py) fail on all
+# three engine jobs. It is the only package common to three failing CI runs that paired each of
+# libsbml 5.21.1/5.21.2 with each of copasi 4.46.300/4.48.309; the last green run had 2.0.33.
+# The macOS wheel does not reproduce it.
+validate = ["python-libsedml>=2.0,!=2.0.34", "python-libcombine>=0.2"]
 # A second registered engine (libRoadRunner) for cross-engine corroboration — run a curve under
 # both COPASI and libRoadRunner and report whether the verdict is engine-independent. Optional.
 # The second registered engine for each class that has one: libRoadRunner for the two ODE
