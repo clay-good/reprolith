@@ -1,9 +1,10 @@
 """Choosing *which* claims to reproduce when the budget will not cover them all.
 
-Nothing in Reprolith reproduces a paper's claims selectively today: :func:`~reprolith.certify.
-certify_model` and its siblings take the claims they are handed and check every one. The choosing
-happens outside the engine — by hand, when a claims dataset is written — and it has no surface to
-be explainable or contestable at. This module is that surface.
+:func:`~reprolith.certify.certify_model` and its siblings check every claim they are handed. This
+module decides which claims to hand them when a budget will not cover all of a paper's, and
+:func:`~reprolith.certify.plan_under_budget` carries that decision onto the certificate, which names
+every claim it left unattempted and the objective that chose against it. Without this surface the
+choosing happened by hand, when a claims dataset was written, with nothing to explain or contest.
 
 The problem it solves is not "pick the best claims", it is **pick the best set**. A paper's
 claims are not independent evidence: two panels of the same figure driven by the same rate
@@ -20,11 +21,20 @@ model components, and upstream assumptions each one's verdict rests on — measu
 ratio, so a claim that shares nothing costs nothing and a pair of exact duplicates cancels the
 cheaper one out entirely.
 
-Footprints are supplied by the caller, never guessed. A claim's ``quantity`` and ``conditions``
-are free text; matching parameter names out of them would invent a dependency graph and then
-select against it, and a selection defended by a fabricated overlap is worse than an unexplained
-one. What a claim rests on is a modelling judgment, and this module records it rather than
-deriving it.
+What a claim rests on comes from two recorded sources, and never from its free text:
+
+* its **footprint** — the model elements its value is computed from, derived from the model file
+  by :func:`reprolith.footprints.derive_footprints` or stated by a curator, and marked as one or
+  the other (:class:`~reprolith.dossier.FootprintOrigin`);
+* the **recorded assumptions** it rests on — an unstated time unit, a dose's salt form — which no
+  model walk can see, because they live in how the model is run or read rather than in what it
+  computes. :func:`claim_selection_pool` adds each one to the claim's footprint as an
+  ``assumption:<id>`` element, so claims resting on one reading of the paper overlap on it exactly
+  as claims resting on one rate constant do.
+
+A claim's ``quantity`` and ``conditions`` are never read for either: matching parameter names out
+of them would invent a dependency graph and then select against it, and a selection defended by a
+fabricated overlap is worse than an unexplained one.
 """
 
 from __future__ import annotations
@@ -42,6 +52,10 @@ from .dossier import Dossier, FootprintOrigin
 #: choosing four of twenty claims is three thousand subsets, so the exact answer is the normal
 #: case for one paper and the heuristic is the tail where the budget covers nearly everything.
 _EXACT_SUBSET_LIMIT = 200_000
+
+#: How a recorded assumption appears in a pooled footprint. Namespaced so an assumption id can never
+#: collide with a model element of the same name and be counted as sharing machinery it does not.
+ASSUMPTION_PREFIX = "assumption:"
 
 
 @dataclass(frozen=True)
@@ -177,7 +191,20 @@ def claim_selection_pool(
     values: Mapping[str, float] | None = None,
     costs: Mapping[str, float] | None = None,
 ) -> tuple[EvidenceItem, ...]:
-    """The candidate pool for one paper: its targetable claims, with their recorded footprints.
+    """The candidate pool for one paper: its targetable claims, with what each rests on.
+
+    Each item's footprint is the claim's model footprint plus one ``assumption:<id>`` element per
+    recorded assumption the claim rests on. Leaving the assumptions out is not neutral: every claim
+    with a time dimension in the metformin corpus rests on one reading of the deposit's time unit,
+    and a pool that could not see it would count a hundred of them as independent of that reading.
+
+    The assumptions are added **only to a claim whose model footprint was measured**. Jaccard is a
+    ratio, and on a claim whose machinery nobody walked the assumptions would be its whole
+    footprint: two such claims resting on one reading would score as exact duplicates and one would
+    be dropped, on the strength of everything about them that was *not* measured. An
+    uncharacterized claim stays uncharacterized — charged no overlap, and named as such in the
+    report — which is the one-directional choice: it can leave a redundancy uncharged, never invent
+    one.
 
     Only targetable claims are candidates. A schematic figure the oracle cannot check is retained
     in the dossier but is not something a budget can be spent on, so offering it as a candidate
@@ -202,7 +229,12 @@ def claim_selection_pool(
         EvidenceItem(
             id=claim.id,
             value=values.get(claim.id, 1.0),
-            footprint=claim.footprint,
+            footprint=claim.footprint
+            | (
+                frozenset(ASSUMPTION_PREFIX + name for name in claim.rests_on_assumptions)
+                if claim.footprint
+                else frozenset()
+            ),
             cost=costs.get(claim.id, 1.0),
         )
         for claim in dossier.targetable_claims()
@@ -311,6 +343,9 @@ def claim_selection_report(
     joint = select_jointly(pool, budget=budget, redundancy=redundancy)
     greedy = select_greedily(pool, budget=budget, redundancy=redundancy)
     characterized = sum(1 for item in pool if item.footprint)
+    on_assumptions = sum(
+        1 for claim in dossier.targetable_claims() if claim.footprint and claim.rests_on_assumptions
+    )
     origins = footprint_origins(dossier)
     limits: list[str] = []
     if not pool:
@@ -332,6 +367,9 @@ def claim_selection_report(
         "budget": budget,
         "candidates": len(pool),
         "characterized_candidates": characterized,
+        # How many candidates were charged for an assumption they rest on — overlap a model walk
+        # cannot measure. Only characterized claims are: see `claim_selection_pool`.
+        "assumption_linked_candidates": on_assumptions,
         # How each footprint was arrived at, which is what a reader needs to weigh the answer:
         # a derived footprint is re-derivable from the model file, a curator-stated one is a
         # judgment about the model that nothing re-checks. Always present, so "all derived" is
@@ -467,6 +505,7 @@ def _moves(
 
 
 __all__ = [
+    "ASSUMPTION_PREFIX",
     "EMPTY_POOL_NOTE",
     "SET_OBJECTIVE",
     "EvidenceItem",

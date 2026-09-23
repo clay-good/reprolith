@@ -6404,3 +6404,40 @@ the claims side gained it the two file checks were helping a curator differently
 mistake. One function now, and deliberately the weakest matcher there is: exactly one declared name
 differing only in case, never an edit distance, and nothing at all where two names differ only in
 case, since a model naming two things nearly alike is no help.
+
+## One reading of a clock, bought three times
+
+Claim selection scores a set as its value minus what its claims share, and what they share was
+read off the model: reactions, rules, compartments, out to depth two. The spec's own sentence lists
+a third thing, upstream assumptions, and nothing put one into a footprint. That mattered on the
+three metformin entries: every area and every time to peak there rests on Reprolith's reading of
+a deposit that declares its time unit as a hundred hours (`time-unit-of-the-deposit`), and no peak
+height does.
+
+Blind to that reading, a budget of three bought three areas on all three entries. It was not a
+judgment about areas. An area and a peak of one tissue have the same model footprint, the tie
+breaks on ids, and `AUC…` sorts before `Cmax…`. So the budgeted certificate rested entirely on the
+one assumption that qualifies every claim it ran. Each claim now records the assumptions it rests
+on, and the selector charges a shared one as it charges a shared rate constant. On the same budget
+it now takes one area and two peaks on every entry.
+
+The ids are curated, so each is checked against something other than its curator. A claim rests on
+the clock exactly when the unit the *model* reads its output in carries that clock, on the salt form
+exactly when it runs a converted dose, and on anything at all exactly when its certificate marks it
+assumption-qualified. All 170 claims agreed on the first run.
+
+Two ways this could have turned into the defect the gaps section already measured were each
+checked with numbers rather than argued away:
+
+- **A dependency every claim shares only pulls pairs together.** This one does not. The spread
+  between the single-dose paper's most and least overlapping pairs widens from 0.955 to 0.958, and
+  no budget from one to eight returns a smaller set than before.
+- **A ratio over a footprint nobody measured.** The first version added assumptions to every claim,
+  and a test caught what that does to one with no model footprint. The assumption becomes its whole
+  footprint, so two such claims score as exact duplicates and one is dropped. The assumption is now
+  charged only where the model walk ran.
+
+Rendering the new budgeted certificate turned up an older defect. The line that reconciles a
+partial headline with all-reproduced counts ("the only reason this is not a clean pass") ignored
+the budget. It printed on any budgeted certificate that attempted a qualified claim, while eleven
+unattempted claims were also a reason. It now requires that no claim went unattempted.

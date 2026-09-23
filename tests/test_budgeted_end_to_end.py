@@ -6,10 +6,9 @@ and this is the walk that joins them on a published model: the dossier's footpri
 of fourteen claims, the engine runs exactly those three, and the certificate says which eleven it
 did not attempt. Nothing is hand-written in between.
 
-The subject is chosen for what it costs Reprolith. BIOMD0000001027 is the only entry in this
-corpus whose certificate reads an unqualified ``reproduced`` — fourteen claims, all clean. Under a
-budget of three it stops being one, which is the whole point of the qualification rule: three
-passes out of fourteen claims is a weaker result than fourteen, and the word has to say so.
+The subject is BIOMD0000001027, fourteen claims. Under a budget of three its certificate is
+qualified by the eleven it did not attempt, which is the whole point of the qualification rule:
+three passes out of fourteen claims is a weaker result than fourteen, and the word has to say so.
 
 Needs the optional ``engine`` extra; skips without it.
 """
@@ -25,6 +24,7 @@ pytest.importorskip("COPASI", reason="the optional 'engine' extra is not install
 pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
 
 from reprolith import (  # noqa: E402
+    ASSUMPTION_PREFIX,
     Claim,
     EnginePin,
     OverallVerdict,
@@ -147,6 +147,10 @@ def test_the_selection_guide_shows_what_a_budgeted_certificate_actually_prints()
     pool = claim_selection_pool(dossier)
     joint = select_jointly(pool, budget=_BUDGET)
     greedy = select_greedily(pool, budget=_BUDGET)
-    assert f"score {joint.score:.3f}, witnessing {len(joint.covered)} model elements" in page
-    assert f"({greedy.score:.3f}, {len(greedy.covered)} elements)" in page
+    # Model elements only: a recorded assumption is witnessed too, and is not part of the model.
+    def model(covered: tuple[str, ...]) -> int:
+        return sum(1 for element in covered if not element.startswith(ASSUMPTION_PREFIX))
+
+    assert f"score {joint.score:.3f}, witnessing {model(joint.covered)} model elements" in page
+    assert f"({greedy.score:.3f}, {model(greedy.covered)} elements)" in page
     assert record.objective.endswith("(exact)")

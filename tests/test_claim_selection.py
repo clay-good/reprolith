@@ -8,10 +8,12 @@ of the surfaces that publish the answer.
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 from reprolith import (
+    ASSUMPTION_PREFIX,
     EMPTY_POOL_NOTE,
     UNCHARACTERIZED_NOTE,
     Dossier,
@@ -293,3 +295,118 @@ def test_both_surfaces_show_the_same_footprint_origins(tmp_path, capsys) -> None
     query = ReprolithQuery(Catalog(), CertificateLedger(), dossiers={"ACC1": _PAPER.to_dict()})
     answer = dispatch_tool(query, "select_claims", {"accession": "ACC1", "budget": 3})
     assert answer["footprint_origins"] == {"derived-from-model": 5, "curator-stated": 0}
+
+
+# --- what claims share without sharing machinery ---------------------------------------
+
+# Three tissues, disjoint machinery. The two areas rest on one reading of the deposit's clock; the
+# peak does not, because a peak height has no time dimension.
+_CLOCK = "time-unit-of-the-deposit"
+
+
+def _timed(claim_id: str, footprint: frozenset[str], *assumptions: str) -> DossierClaim:
+    return replace(_claim(claim_id, footprint), rests_on_assumptions=frozenset(assumptions))
+
+
+_ON_ONE_CLOCK = Dossier(
+    entry="ACC6",
+    claims=(
+        _timed("auc_liver", frozenset({"Liver", "Kp_liver"}), _CLOCK),
+        _timed("auc_muscle", frozenset({"Muscle", "Kp_muscle"}), _CLOCK),
+        _timed("cmax_brain", frozenset({"Brain", "Kp_brain"})),
+    ),
+)
+
+
+def test_claims_resting_on_one_assumption_are_not_counted_as_independent() -> None:
+    # The model walk sees three disjoint claims, so without the assumption the areas look like the
+    # best pair on the page. They are one reading of the clock reported twice: if the reading is
+    # wrong, both verdicts move together.
+    report = claim_selection_report(_ON_ONE_CLOCK, budget=2)
+    assert report["selection"]["chosen"] == ["auc_liver", "cmax_brain"]
+    assert report["greedy_baseline"]["chosen"] == ["auc_liver", "auc_muscle"]
+    assert report["selection"]["score"] > report["greedy_baseline"]["score"]
+    assert report["assumption_linked_candidates"] == 2
+    assert report["characterized_candidates"] == 3
+
+
+def test_it_is_the_assumption_that_moves_the_answer() -> None:
+    # The control: the same claims with the assumption forgotten share nothing, and the selection
+    # falls back to the ranking — so the difference above is the assumption and nothing else.
+    forgotten = replace(
+        _ON_ONE_CLOCK,
+        claims=tuple(replace(c, rests_on_assumptions=frozenset()) for c in _ON_ONE_CLOCK.claims),
+    )
+    report = claim_selection_report(forgotten, budget=2)
+    assert report["selection"]["chosen"] == ["auc_liver", "auc_muscle"]
+    assert not report["differs_from_greedy"]
+
+
+def test_an_assumption_is_witnessed_apart_from_the_model() -> None:
+    covered = claim_selection_report(_ON_ONE_CLOCK, budget=2)["selection"]["covered"]
+    assert ASSUMPTION_PREFIX + _CLOCK in covered
+    # And never offered as a model element nothing in the dossier records.
+    assert claim_selection_report(_ON_ONE_CLOCK, budget=2)["unanchored_footprint_elements"] == [
+        "Brain", "Kp_brain", "Kp_liver", "Kp_muscle", "Liver", "Muscle",
+    ]
+
+
+def test_an_assumption_never_collides_with_a_model_element_of_the_same_name() -> None:
+    # A parameter that happens to share an assumption's id is not the assumption, and counting the
+    # two as one would charge an overlap nothing measured.
+    pool = claim_selection_pool(
+        Dossier(
+            entry="ACC7",
+            claims=(
+                _claim("a", frozenset({"dose-salt-form"})),
+                _timed("b", frozenset({"other"}), "dose-salt-form"),
+            ),
+        )
+    )
+    a, b = sorted(pool, key=lambda item: item.id)
+    assert not a.footprint & b.footprint
+
+
+def test_an_uncharacterized_claim_is_not_made_a_duplicate_by_its_assumptions() -> None:
+    # Nobody walked these claims' machinery, so the shared reading would be their whole footprint
+    # and they would score as exact duplicates — one dropped for everything about them that was not
+    # measured. They stay uncharacterized instead, and the budget buys both.
+    paper = Dossier(
+        entry="ACC8",
+        claims=(_timed("a", frozenset(), _CLOCK), _timed("b", frozenset(), _CLOCK)),
+    )
+    report = claim_selection_report(paper, budget=2)
+    assert report["selection"]["chosen"] == ["a", "b"]
+    assert report["selection"]["overlap_penalty"] == 0.0
+    assert report["assumption_linked_candidates"] == 0
+    assert UNCHARACTERIZED_NOTE in report["limits"]
+
+
+def test_the_assumptions_a_claim_rests_on_survive_the_json_round_trip() -> None:
+    restored = dossier_from_dict(json.loads(json.dumps(_ON_ONE_CLOCK.to_dict())))
+    assert {c.id: c.rests_on_assumptions for c in restored.claims} == {
+        c.id: c.rests_on_assumptions for c in _ON_ONE_CLOCK.claims
+    }
+
+
+def test_a_claim_resting_on_nothing_writes_the_same_bytes_as_before_the_field_existed() -> None:
+    assert "rests_on_assumptions" not in _claim("c", _CENTRAL).to_dict()
+
+
+def test_a_blank_assumption_id_is_refused() -> None:
+    with pytest.raises(ValueError, match="must be named by its id"):
+        _timed("c", _CENTRAL, " ")
+
+
+def test_the_cli_counts_assumptions_apart_from_model_elements(tmp_path, capsys) -> None:
+    (tmp_path / "catalog.json").write_text(
+        json.dumps(Catalog().to_dict(), sort_keys=True), encoding="utf-8"
+    )
+    (tmp_path / "dossiers").mkdir()
+    (tmp_path / "dossiers" / "ACC6.json").write_text(
+        json.dumps(_ON_ONE_CLOCK.to_dict(), sort_keys=True), encoding="utf-8"
+    )
+    assert run(["--data-dir", str(tmp_path), "select-claims", "ACC6", "--budget", "2"]) == 0
+    out = capsys.readouterr().out
+    assert "witnesses 4 distinct model element(s) and 1 recorded assumption(s)" in out
+    assert "2 of 3 candidate(s) rest on a recorded assumption" in out

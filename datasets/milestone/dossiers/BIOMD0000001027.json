@@ -283,6 +283,9 @@
         105.3
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 1, Plasma row, Fitted (the paper simulates 105.3 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
       "targetable": true
     },
@@ -318,6 +321,9 @@
         142.9
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 1, Portal vein row, Fitted (the paper simulates 142.9 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
       "targetable": true
     },
@@ -348,6 +354,9 @@
         768.7
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 1, Liver row, Fitted (the paper simulates 768.7 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
       "targetable": true
     },
@@ -373,6 +382,9 @@
         263.2
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 1, Heart row, Fitted (the paper simulates 263.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
       "targetable": true
     },
@@ -398,6 +410,9 @@
         431.2
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 1, Muscle row, Fitted (the paper simulates 431.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
       "targetable": true
     },
@@ -423,6 +438,9 @@
         76.8
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 1, Adipose row, Fitted (the paper simulates 76.8 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
       "targetable": true
     },
@@ -448,6 +466,9 @@
         84.2
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 1, Brain row, Fitted (the paper simulates 84.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
       "targetable": true
     }

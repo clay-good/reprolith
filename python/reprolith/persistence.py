@@ -262,6 +262,7 @@ def dossier_from_dict(record: dict[str, Any]) -> Dossier:
                     if c.get("footprint_origin")
                     else None
                 ),
+                rests_on_assumptions=frozenset(c.get("rests_on_assumptions", ())),
             )
             for c in record["claims"]
         ),

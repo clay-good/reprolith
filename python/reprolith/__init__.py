@@ -331,6 +331,7 @@ from .sedml import (
 )
 from .seed import SeedingReport, load_test_set, seed_candidates, seed_catalog
 from .selection import (
+    ASSUMPTION_PREFIX,
     EMPTY_POOL_NOTE,
     MIXED_ORIGIN_NOTE,
     PARTIAL_NOTE,
@@ -551,6 +552,7 @@ __all__ = [
     "estimation_default_tolerance",
     "EstimationClaim",
     "EstimationResult",
+    "ASSUMPTION_PREFIX",
     "EMPTY_POOL_NOTE",
     "MIXED_ORIGIN_NOTE",
     "EvidenceItem",

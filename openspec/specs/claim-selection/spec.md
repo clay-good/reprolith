@@ -74,6 +74,34 @@ the claim's own free-text description.
   structure in the artifact — and the report names the unanchored elements, so a reader can tell a
   footprint anchored in recorded structure from a bare assertion
 
+### Requirement: A shared upstream assumption is shared evidence
+
+A claim SHALL record the ids of the reconstruction's recorded assumptions its verdict rests on, and
+selection SHALL charge two characterized claims resting on one assumption for sharing it, as it
+charges them for sharing a model element. An assumption lives in how the model is run or read, so
+no walk of the model can see it.
+
+#### Scenario: Claims resting on one reading are not counted as independent
+
+- **WHEN** two claims rest on disjoint model machinery and on the same recorded assumption, and a
+  third rests on neither
+- **THEN** the selection prefers the pair that does not repeat the assumption over the pair that
+  does, and the report counts the assumption apart from the model elements witnessed
+
+#### Scenario: An assumption never makes an uncharacterized claim a duplicate
+
+- **WHEN** a claim records the assumptions it rests on but no model footprint
+- **THEN** it is charged no overlap for them, because the ratio would be taken over nothing but
+  the assumption and would score two such claims as exact duplicates on the strength of what was
+  not measured
+
+#### Scenario: An assumption id is checked against something other than its curator
+
+- **WHEN** a committed claim names an assumption it rests on
+- **THEN** its entry records that assumption, the claim's certificate marks it assumption-qualified,
+  and the assumption's own stated scope holds on the model — a claim rests on the deposit's time
+  unit exactly when the unit the model reads its output in carries that clock
+
 ### Requirement: A selection reports what it could not do
 
 The selection report SHALL state the limits of the answer it gives, so a selection can never be

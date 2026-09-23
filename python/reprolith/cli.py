@@ -80,6 +80,7 @@ from .presubmission import (
 )
 from .query import ReprolithQuery, corroboration_held
 from .render import plural, render_bundle_human, render_dossier_human, render_human
+from .selection import ASSUMPTION_PREFIX
 
 # render_human derives its text from the certificate content and never reads the run block, so a
 # placeholder is correct here: run metadata is deliberately excluded from stored content (it is not
@@ -700,6 +701,17 @@ def _cmd_dossier(query: ReprolithQuery, args: argparse.Namespace) -> int:
     return 0
 
 
+def _witnessed(covered: list[str]) -> str:
+    """What a selected set witnesses, with recorded assumptions counted apart from the model.
+
+    An assumption is not a model element, and counting ``assumption:time-unit-of-the-deposit`` as
+    one would report a set as covering more of the model than it does.
+    """
+    assumptions = sum(1 for element in covered if element.startswith(ASSUMPTION_PREFIX))
+    said = f"{len(covered) - assumptions} distinct model element(s)"
+    return said + (f" and {assumptions} recorded assumption(s)" if assumptions else "")
+
+
 def _cmd_select_claims(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Which claims a budget should be spent reproducing — a plan, never a verdict."""
     if args.budget <= 0:
@@ -726,7 +738,7 @@ def _cmd_select_claims(query: ReprolithQuery, args: argparse.Namespace) -> int:
         f"(gross {selected['gross_value']:.4g} less {selected['overlap_penalty']:.4g} overlap)"
     )
     print(f"  spends {selected['cost']:.4g} of a {view['budget']:.4g} budget")
-    print(f"  witnesses {len(selected['covered'])} distinct model element(s)")
+    print(f"  witnesses {_witnessed(selected['covered'])}")
     # Where the overlap this answer rests on came from. A derived footprint is re-derivable from
     # the model file; a curator-stated one is a judgment nothing re-checks. Printed for every
     # report, including the all-derived case, so a reader never has to assume which they have.
@@ -741,11 +753,15 @@ def _cmd_select_claims(query: ReprolithQuery, args: argparse.Namespace) -> int:
     if view["differs_from_greedy"]:
         print(f"  ranking one at a time would have taken: {', '.join(baseline['chosen'])}")
         print(
-            f"  and scored {baseline['score']:.4g} over "
-            f"{len(baseline['covered'])} distinct model element(s)"
+            f"  and scored {baseline['score']:.4g}, witnessing {_witnessed(baseline['covered'])}"
         )
     else:
         print("  ranking one at a time would have chosen the same set")
+    if view["assumption_linked_candidates"]:
+        print(
+            f"  {view['assumption_linked_candidates']} of {view['candidates']} candidate(s) rest "
+            "on a recorded assumption, charged as overlap like shared machinery"
+        )
     for limit in view["limits"]:
         print(f"  limit: {limit}")
     if view["unanchored_footprint_elements"]:

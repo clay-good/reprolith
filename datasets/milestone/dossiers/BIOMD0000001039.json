@@ -61,6 +61,9 @@
         91.4
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 2, Plasma row, Fitted (the paper simulates 91.4 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
       "targetable": true
     },
@@ -86,6 +89,9 @@
         529.5
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 2, Stomach row, Fitted (the paper simulates 529.5 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
       "targetable": true
     },
@@ -116,6 +122,9 @@
         523.5
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 2, Liver row, Fitted (the paper simulates 523.5 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
       "targetable": true
     }

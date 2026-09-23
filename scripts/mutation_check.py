@@ -242,6 +242,35 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_claim_selection.py"],
     ),
     (
+        "claims resting on one recorded assumption are counted as independent of it",
+        "selection.py",
+        (
+            "                frozenset(ASSUMPTION_PREFIX + name for name in claim.rests_on_assumptions)",
+            "                frozenset()",
+        ),
+        ["tests/test_claim_selection.py", "tests/test_assumption_overlap.py"],
+    ),
+    (
+        "two uncharacterized claims become exact duplicates for sharing one assumption",
+        "selection.py",
+        ("                if claim.footprint\n                else frozenset()",
+         "                if True\n                else frozenset()"),
+        ["tests/test_claim_selection.py"],
+    ),
+    (
+        "the assumptions a claim rests on are dropped when a dossier is loaded",
+        "persistence.py",
+        ('                rests_on_assumptions=frozenset(c.get("rests_on_assumptions", ())),\n', ""),
+        ["tests/test_claim_selection.py"],
+    ),
+    (
+        "a budgeted certificate says its assumptions are the only reason it is not a clean pass",
+        "render.py",
+        ("    if cert.selection is not None and cert.selection.unattempted:\n        return False\n",
+         ""),
+        ["tests/test_certificate_headline_reconciles.py"],
+    ),
+    (
         "an LP bound is published at the machine's own last places",
         "corroboration.py",
         ("    distance = max(measured, _LP_NOISE_FLOOR)", "    distance = measured"),

@@ -1,5 +1,5 @@
 {
-  "description": "Verified targetable claims extracted from the manuscripts of test-set entries, keyed by BioModels accession. Each entry drives certify_model to produce a certificate in the blind run. A claim's reference value is a number the paper itself prints (cited in source_location), not one from re-running the model here. It may be a value the paper measured or one the paper's own model produced \u2014 the source_location says which, and the two differ: for BIOMD0000001028 the measured plasma Cmax values are 5.7 and 12.9 nmol/mL and the simulated ones 6.1 and 11.2, and it is the simulated ones a reproduction targets. datasets/manuscripts/ quotes the cited rows so the values can be checked against the paper offline. Entries are added only after a claim has been extracted and its reproduction verified by hand; the rest of the test set is honestly blocked until then. Each claim also states the unit the paper prints it in (reported_units), which is checked against the unit the model reads that output in: a number compared against a model output in another unit is a verdict about arithmetic, and nothing downstream can see it.",
+  "description": "Verified targetable claims extracted from the manuscripts of test-set entries, keyed by BioModels accession. Each entry drives certify_model to produce a certificate in the blind run. A claim's reference value is a number the paper itself prints (cited in source_location), not one from re-running the model here. It may be a value the paper measured or one the paper's own model produced \u2014 the source_location says which, and the two differ: for BIOMD0000001028 the measured plasma Cmax values are 5.7 and 12.9 nmol/mL and the simulated ones 6.1 and 11.2, and it is the simulated ones a reproduction targets. datasets/manuscripts/ quotes the cited rows so the values can be checked against the paper offline. Entries are added only after a claim has been extracted and its reproduction verified by hand; the rest of the test set is honestly blocked until then. Each claim also states the unit the paper prints it in (reported_units), which is checked against the unit the model reads that output in: a number compared against a model output in another unit is a verdict about arithmetic, and nothing downstream can see it. A claim that rests on one of its entry's recorded assumptions names it in rests_on_assumptions, which claim selection charges as shared evidence: every claim with a time dimension rests on one reading of the deposit's time unit, and a selection that could not see that would count them as independent of it.",
   "entries": {
     "BIOMD0000001028": {
       "model_file": "worked_examples/Zake2021_metformin_human_single_PO.xml",
@@ -30,7 +30,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-250mg-Chung",
@@ -54,7 +57,10 @@
               }
             }
           ],
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-750mg-Wen",
@@ -78,7 +84,10 @@
               }
             }
           ],
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-500mg-El-Messaoudi",
@@ -132,7 +141,10 @@
               }
             }
           ],
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-red-blood-cells-500mg",
@@ -226,7 +238,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-adipose-1000mg",
@@ -239,7 +254,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-brain-1000mg",
@@ -252,7 +270,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-remainder-1000mg",
@@ -265,7 +286,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-muscle-1000mg",
@@ -278,7 +302,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-lungs-1000mg",
@@ -291,7 +318,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-stomach-1000mg",
@@ -304,7 +334,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-heart-1000mg",
@@ -317,7 +350,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-liver-1000mg",
@@ -330,7 +366,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-plasma-1500mg",
@@ -343,7 +382,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-red-blood-cells-1500mg",
@@ -356,7 +398,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-adipose-1500mg",
@@ -369,7 +414,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-brain-1500mg",
@@ -382,7 +430,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-remainder-1500mg",
@@ -395,7 +446,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-muscle-1500mg",
@@ -408,7 +462,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-lungs-1500mg",
@@ -421,7 +478,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-stomach-1500mg",
@@ -434,7 +494,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-heart-1500mg",
@@ -447,7 +510,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-liver-1500mg",
@@ -460,7 +526,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "AUC24-500mg",
@@ -470,7 +539,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 6, plasma row, 500 mg single PO dose (the paper simulates 42.2 nmol*h/mL over 24 h)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-1000mg",
@@ -483,7 +555,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-red-blood-cells-500mg",
@@ -493,7 +569,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 6, Red blood cells row, 500 mg single PO dose (the paper simulates 19.3 nmol*h/mL over 24 h)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-adipose-500mg",
@@ -503,7 +582,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 6, Adipose row, 500 mg single PO dose (the paper simulates 30.2 nmol*h/mL over 24 h)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-brain-500mg",
@@ -513,7 +595,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 6, Brain row, 500 mg single PO dose (the paper simulates 33.2 nmol*h/mL over 24 h)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-remainder-500mg",
@@ -523,7 +608,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 6, Remainder row, 500 mg single PO dose (the paper simulates 33.1 nmol*h/mL over 24 h)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-muscle-500mg",
@@ -533,7 +621,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 6, Muscle row, 500 mg single PO dose (the paper simulates 168.4 nmol*h/mL over 24 h)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-lungs-500mg",
@@ -543,7 +634,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 6, Lungs row, 500 mg single PO dose (the paper simulates 124.3 nmol*h/mL over 24 h)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-stomach-500mg",
@@ -553,7 +647,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 6, Stomach row, 500 mg single PO dose (the paper simulates 132.6 nmol*h/mL over 24 h)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-heart-500mg",
@@ -563,7 +660,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 6, Heart row, 500 mg single PO dose (the paper simulates 103.6 nmol*h/mL over 24 h)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-liver-500mg",
@@ -573,7 +673,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 6, Liver row, 500 mg single PO dose (the paper simulates 346.6 nmol*h/mL over 24 h)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-red-blood-cells-1000mg",
@@ -586,7 +689,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-adipose-1000mg",
@@ -599,7 +706,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-brain-1000mg",
@@ -612,7 +723,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-remainder-1000mg",
@@ -625,7 +740,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-muscle-1000mg",
@@ -638,7 +757,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-lungs-1000mg",
@@ -651,7 +774,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-stomach-1000mg",
@@ -664,7 +791,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-heart-1000mg",
@@ -677,7 +808,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-liver-1000mg",
@@ -690,7 +825,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-plasma-1500mg",
@@ -703,7 +842,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-red-blood-cells-1500mg",
@@ -716,7 +859,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-adipose-1500mg",
@@ -729,7 +876,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-brain-1500mg",
@@ -742,7 +893,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-remainder-1500mg",
@@ -755,7 +910,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-muscle-1500mg",
@@ -768,7 +927,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-lungs-1500mg",
@@ -781,7 +944,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-stomach-1500mg",
@@ -794,7 +961,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-heart-1500mg",
@@ -807,7 +978,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-liver-1500mg",
@@ -820,7 +995,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-500mg",
@@ -830,7 +1009,10 @@
           "reported_units": "h",
           "source_location": "Table 6, plasma row, 500 mg single PO dose (the paper simulates a peak at 2.0 h)",
           "metric": "tmax",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-1000mg",
@@ -843,7 +1025,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-red-blood-cells-500mg",
@@ -853,7 +1039,10 @@
           "reported_units": "h",
           "source_location": "Table 6, Red blood cells row, 500 mg single PO dose (the paper simulates a peak at 11.1 h)",
           "metric": "tmax",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-adipose-500mg",
@@ -863,7 +1052,10 @@
           "reported_units": "h",
           "source_location": "Table 6, Adipose row, 500 mg single PO dose (the paper simulates a peak at 2.8 h)",
           "metric": "tmax",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-brain-500mg",
@@ -873,7 +1065,10 @@
           "reported_units": "h",
           "source_location": "Table 6, Brain row, 500 mg single PO dose (the paper simulates a peak at 2.0 h)",
           "metric": "tmax",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-remainder-500mg",
@@ -883,7 +1078,10 @@
           "reported_units": "h",
           "source_location": "Table 6, Remainder row, 500 mg single PO dose (the paper simulates a peak at 2.2 h)",
           "metric": "tmax",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-muscle-500mg",
@@ -893,7 +1091,10 @@
           "reported_units": "h",
           "source_location": "Table 6, Muscle row, 500 mg single PO dose (the paper simulates a peak at 4.1 h)",
           "metric": "tmax",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-lungs-500mg",
@@ -903,7 +1104,10 @@
           "reported_units": "h",
           "source_location": "Table 6, Lungs row, 500 mg single PO dose (the paper simulates a peak at 1.9 h)",
           "metric": "tmax",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-stomach-500mg",
@@ -913,7 +1117,10 @@
           "reported_units": "h",
           "source_location": "Table 6, Stomach row, 500 mg single PO dose (the paper simulates a peak at 2.1 h)",
           "metric": "tmax",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-heart-500mg",
@@ -923,7 +1130,10 @@
           "reported_units": "h",
           "source_location": "Table 6, Heart row, 500 mg single PO dose (the paper simulates a peak at 2.0 h)",
           "metric": "tmax",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-liver-500mg",
@@ -933,7 +1143,10 @@
           "reported_units": "h",
           "source_location": "Table 6, Liver row, 500 mg single PO dose (the paper simulates a peak at 1.4 h)",
           "metric": "tmax",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-red-blood-cells-1000mg",
@@ -946,7 +1159,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-adipose-1000mg",
@@ -959,7 +1176,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-brain-1000mg",
@@ -972,7 +1193,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-remainder-1000mg",
@@ -985,7 +1210,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-muscle-1000mg",
@@ -998,7 +1227,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-lungs-1000mg",
@@ -1011,7 +1244,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-stomach-1000mg",
@@ -1024,7 +1261,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-heart-1000mg",
@@ -1037,7 +1278,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-liver-1000mg",
@@ -1050,7 +1295,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-plasma-1500mg",
@@ -1063,7 +1312,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-red-blood-cells-1500mg",
@@ -1076,7 +1329,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-adipose-1500mg",
@@ -1089,7 +1346,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-brain-1500mg",
@@ -1102,7 +1363,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-remainder-1500mg",
@@ -1115,7 +1380,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-muscle-1500mg",
@@ -1128,7 +1397,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-lungs-1500mg",
@@ -1141,7 +1414,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-stomach-1500mg",
@@ -1154,7 +1431,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-heart-1500mg",
@@ -1167,7 +1448,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "Tmax-liver-1500mg",
@@ -1180,7 +1465,11 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         }
       ],
       "assumptions": [
@@ -1255,7 +1544,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-1500mg-twice-daily",
@@ -1268,7 +1560,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-red-blood-cells-500mg-twice-daily",
@@ -1377,7 +1672,10 @@
             "mode": "artifact-runs-less-of-the-protocol-than-the-paper-states",
             "implicated": "the four dose events the model carries, against the eight its own name states",
             "fault": "reconstruction"
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-adipose-1000mg-twice-daily",
@@ -1390,7 +1688,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-brain-1000mg-twice-daily",
@@ -1408,7 +1709,10 @@
             "mode": "apparent-manuscript-error",
             "implicated": "Table 7's Brain Cmax, which equals plasma's while its AUC24 and Cmean are 0.80 of plasma's",
             "fault": "manuscript"
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-remainder-1000mg-twice-daily",
@@ -1421,7 +1725,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-muscle-1000mg-twice-daily",
@@ -1434,7 +1741,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-lungs-1000mg-twice-daily",
@@ -1447,7 +1757,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-stomach-1000mg-twice-daily",
@@ -1460,7 +1773,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-heart-1000mg-twice-daily",
@@ -1473,7 +1789,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-liver-1000mg-twice-daily",
@@ -1486,7 +1805,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-red-blood-cells-1500mg-twice-daily",
@@ -1504,7 +1826,10 @@
             "mode": "artifact-runs-less-of-the-protocol-than-the-paper-states",
             "implicated": "the four dose events the model carries, against the eight its own name states",
             "fault": "reconstruction"
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-adipose-1500mg-twice-daily",
@@ -1517,7 +1842,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-brain-1500mg-twice-daily",
@@ -1535,7 +1863,10 @@
             "mode": "apparent-manuscript-error",
             "implicated": "Table 7's Brain Cmax, which equals plasma's while its AUC24 and Cmean are 0.80 of plasma's",
             "fault": "manuscript"
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-remainder-1500mg-twice-daily",
@@ -1548,7 +1879,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-muscle-1500mg-twice-daily",
@@ -1561,7 +1895,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-lungs-1500mg-twice-daily",
@@ -1574,7 +1911,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-stomach-1500mg-twice-daily",
@@ -1587,7 +1927,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-heart-1500mg-twice-daily",
@@ -1600,7 +1943,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "Cmax-liver-1500mg-twice-daily",
@@ -1613,7 +1959,10 @@
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
           },
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "dose-salt-form"
+          ]
         },
         {
           "claim_id": "AUC24-500mg-twice-daily",
@@ -1627,7 +1976,10 @@
             24.0,
             48.0
           ],
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-1000mg-twice-daily",
@@ -1644,7 +1996,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-1500mg-twice-daily",
@@ -1661,7 +2017,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-red-blood-cells-500mg-twice-daily",
@@ -1680,7 +2040,10 @@
             "mode": "artifact-runs-less-of-the-protocol-than-the-paper-states",
             "implicated": "the four dose events the model carries, against the eight its own name states",
             "fault": "reconstruction"
-          }
+          },
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-adipose-500mg-twice-daily",
@@ -1694,7 +2057,10 @@
             24.0,
             48.0
           ],
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-brain-500mg-twice-daily",
@@ -1708,7 +2074,10 @@
             24.0,
             48.0
           ],
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-remainder-500mg-twice-daily",
@@ -1722,7 +2091,10 @@
             24.0,
             48.0
           ],
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-muscle-500mg-twice-daily",
@@ -1736,7 +2108,10 @@
             24.0,
             48.0
           ],
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-lungs-500mg-twice-daily",
@@ -1750,7 +2125,10 @@
             24.0,
             48.0
           ],
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-stomach-500mg-twice-daily",
@@ -1764,7 +2142,10 @@
             24.0,
             48.0
           ],
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-heart-500mg-twice-daily",
@@ -1778,7 +2159,10 @@
             24.0,
             48.0
           ],
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-liver-500mg-twice-daily",
@@ -1792,7 +2176,10 @@
             24.0,
             48.0
           ],
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-red-blood-cells-1000mg-twice-daily",
@@ -1814,7 +2201,11 @@
             "mode": "artifact-runs-less-of-the-protocol-than-the-paper-states",
             "implicated": "the four dose events the model carries, against the eight its own name states",
             "fault": "reconstruction"
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-adipose-1000mg-twice-daily",
@@ -1831,7 +2222,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-brain-1000mg-twice-daily",
@@ -1848,7 +2243,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-remainder-1000mg-twice-daily",
@@ -1865,7 +2264,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-muscle-1000mg-twice-daily",
@@ -1882,7 +2285,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-lungs-1000mg-twice-daily",
@@ -1899,7 +2306,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-stomach-1000mg-twice-daily",
@@ -1916,7 +2327,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-heart-1000mg-twice-daily",
@@ -1933,7 +2348,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-liver-1000mg-twice-daily",
@@ -1950,7 +2369,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 779.9
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-red-blood-cells-1500mg-twice-daily",
@@ -1972,7 +2395,11 @@
             "mode": "artifact-runs-less-of-the-protocol-than-the-paper-states",
             "implicated": "the four dose events the model carries, against the eight its own name states",
             "fault": "reconstruction"
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-adipose-1500mg-twice-daily",
@@ -1989,7 +2416,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-brain-1500mg-twice-daily",
@@ -2006,7 +2437,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-remainder-1500mg-twice-daily",
@@ -2023,7 +2458,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-muscle-1500mg-twice-daily",
@@ -2040,7 +2479,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-lungs-1500mg-twice-daily",
@@ -2057,7 +2500,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-stomach-1500mg-twice-daily",
@@ -2074,7 +2521,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-heart-1500mg-twice-daily",
@@ -2091,7 +2542,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-liver-1500mg-twice-daily",
@@ -2108,7 +2563,11 @@
           "assumption_qualified": true,
           "parameter_overrides": {
             "Metformin_Dose_in_Lumen_in_mg": 1169.79
-          }
+          },
+          "rests_on_assumptions": [
+            "dose-salt-form",
+            "time-unit-of-the-deposit"
+          ]
         }
       ]
     },
@@ -2192,7 +2651,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Plasma row, Fitted (the paper simulates 105.3 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-portal-vein",
@@ -2202,7 +2664,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Portal vein row, Fitted (the paper simulates 142.9 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-liver",
@@ -2212,7 +2677,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Liver row, Fitted (the paper simulates 768.7 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-heart",
@@ -2222,7 +2690,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Heart row, Fitted (the paper simulates 263.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-muscle",
@@ -2232,7 +2703,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Muscle row, Fitted (the paper simulates 431.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-adipose",
@@ -2242,7 +2716,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Adipose row, Fitted (the paper simulates 76.8 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-brain",
@@ -2252,7 +2729,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 1, Brain row, Fitted (the paper simulates 84.2 nmol*h/mL over 24 h after a single 50 mg/kg PO dose)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         }
       ],
       "assumptions": [
@@ -2287,7 +2767,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 2, Plasma row, Fitted (the paper simulates 91.4 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-stomach",
@@ -2297,7 +2780,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 2, Stomach row, Fitted (the paper simulates 529.5 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         },
         {
           "claim_id": "AUC24-liver",
@@ -2307,7 +2793,10 @@
           "reported_units": "nmol*h/mL",
           "source_location": "Table 2, Liver row, Fitted (the paper simulates 523.5 nmol*h/mL over 24 h after a single 50 mg/kg IV dose)",
           "metric": "auc",
-          "assumption_qualified": true
+          "assumption_qualified": true,
+          "rests_on_assumptions": [
+            "time-unit-of-the-deposit"
+          ]
         }
       ],
       "assumptions": [

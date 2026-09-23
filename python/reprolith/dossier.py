@@ -245,10 +245,12 @@ class DossierClaim:
     targetable: bool = True
     reference_kind: ReferenceKind | None = None
     reference_data: tuple[float, ...] = ()
-    #: The parameters, model components, and upstream assumptions this claim's verdict rests on —
-    #: what two claims can *share*, and so the only thing that makes a set of claims more or less
-    #: independent evidence than the sum of its members
-    #: (see :mod:`reprolith.selection`). Empty means **not characterized**, which is why it is not
+    #: The parameters and model components this claim's verdict rests on — what two claims can
+    #: *share*, and so the only thing that makes a set of claims more or less independent evidence
+    #: than the sum of its members (see :mod:`reprolith.selection`). The upstream assumptions a
+    #: claim rests on are recorded apart, in :attr:`rests_on_assumptions`, because they are not
+    #: model elements and a footprint's origin says how *model* machinery was read.
+    #: Empty means **not characterized**, which is why it is not
     #: derived from the claim's own free text: matching parameter names out of a ``quantity``
     #: string would invent a dependency and then let a selection be defended by it. Naming what a
     #: claim depends on is a modelling judgment, recorded here like every other extracted element.
@@ -259,10 +261,19 @@ class DossierClaim:
     #: down. ``None`` only for a claim with no footprint at all, which is the ordinary case and
     #: keeps every dossier written before this field byte-identical.
     footprint_origin: FootprintOrigin | None = None
+    #: The ids of the reconstruction's recorded assumptions this claim's verdict rests on — an
+    #: unstated time unit, a dose's salt form. Two claims resting on one assumption share it as
+    #: surely as they share a rate constant: if the reading is wrong, both verdicts move together.
+    #: A model walk cannot see these, because the assumption lives in how the model is *run* or
+    #: *read*, not in what it computes; so they are recorded beside the footprint, by the same
+    #: curator who recorded the assumption, and never inferred from the claim's text.
+    rests_on_assumptions: frozenset[str] = frozenset()
 
     def __post_init__(self) -> None:
         if not self.id.strip():
             raise ValueError("claim id is required")
+        if any(not assumption.strip() for assumption in self.rests_on_assumptions):
+            raise ValueError(f"{self.id}: an assumption a claim rests on must be named by its id")
         if not self.source_location.strip():
             raise ValueError("every claim must cite its source location")
         if any(not element.strip() for element in self.footprint):
@@ -299,6 +310,9 @@ class DossierClaim:
             record["footprint_origin"] = (
                 self.footprint_origin.value if self.footprint_origin else None
             )
+        if self.rests_on_assumptions:
+            # Omitted when empty, for the same reason and with the same effect on digests.
+            record["rests_on_assumptions"] = sorted(self.rests_on_assumptions)
         return record
 
 

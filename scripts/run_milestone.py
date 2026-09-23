@@ -123,6 +123,17 @@ def main() -> None:
         # of its own prose. See `reprolith.footprints`.
         targets = [record["species"] for record in entry["claims"]]
         footprints = derive_footprints(sbml, targets)
+        # And the recorded assumptions each claim rests on, which no walk of the model can see —
+        # the deposit's time unit is in how the model's clock is *read*. An id naming no assumption
+        # this entry records would be an overlap charged against nothing a reader can look up.
+        recorded = {assumption["id"] for assumption in entry.get("assumptions", ())}
+        for record in entry["claims"]:
+            unrecorded = sorted(set(record.get("rests_on_assumptions", ())) - recorded)
+            if unrecorded:
+                raise ValueError(
+                    f"{accession} {record['claim_id']} rests on assumptions the entry does not "
+                    f"record: {', '.join(unrecorded)}"
+                )
         dossier = replace(dossier, claims=tuple(
             DossierClaim(
                 id=record["claim_id"],
@@ -137,6 +148,7 @@ def main() -> None:
                 footprint_origin=(
                     FootprintOrigin.DERIVED if footprints[record["species"]] else None
                 ),
+                rests_on_assumptions=frozenset(record.get("rests_on_assumptions", ())),
             )
             for record in entry["claims"]
         ))

@@ -124,6 +124,9 @@
         12.8
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, plasma row, 1000 mg twice-daily regimen (the paper simulates 12.8 nmol/mL)",
       "targetable": true
     },
@@ -184,6 +187,9 @@
         18.5
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, plasma row, 1500 mg twice-daily regimen (the paper simulates 18.5 nmol/mL)",
       "targetable": true
     },
@@ -431,6 +437,9 @@
         5.9
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Red blood cells row, 1000 mg twice-daily regimen (the paper simulates 5.9 nmol/mL)",
       "targetable": true
     },
@@ -456,6 +465,9 @@
         8.6
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Adipose row, 1000 mg twice-daily regimen (the paper simulates 8.6 nmol/mL)",
       "targetable": true
     },
@@ -481,6 +493,9 @@
         12.8
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Brain row, 1000 mg twice-daily regimen (the paper simulates 12.8 nmol/mL)",
       "targetable": true
     },
@@ -506,6 +521,9 @@
         10.1
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Remainder row, 1000 mg twice-daily regimen (the paper simulates 10.1 nmol/mL)",
       "targetable": true
     },
@@ -531,6 +549,9 @@
         39.5
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Muscle row, 1000 mg twice-daily regimen (the paper simulates 39.5 nmol/mL)",
       "targetable": true
     },
@@ -556,6 +577,9 @@
         38.3
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Lungs row, 1000 mg twice-daily regimen (the paper simulates 38.3 nmol/mL)",
       "targetable": true
     },
@@ -581,6 +605,9 @@
         40.7
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Stomach row, 1000 mg twice-daily regimen (the paper simulates 40.7 nmol/mL)",
       "targetable": true
     },
@@ -606,6 +633,9 @@
         31.9
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Heart row, 1000 mg twice-daily regimen (the paper simulates 31.9 nmol/mL)",
       "targetable": true
     },
@@ -636,6 +666,9 @@
         143.8
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Liver row, 1000 mg twice-daily regimen (the paper simulates 143.8 nmol/mL)",
       "targetable": true
     },
@@ -657,6 +690,9 @@
         8.4
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Red blood cells row, 1500 mg twice-daily regimen (the paper simulates 8.4 nmol/mL)",
       "targetable": true
     },
@@ -682,6 +718,9 @@
         12.3
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Adipose row, 1500 mg twice-daily regimen (the paper simulates 12.3 nmol/mL)",
       "targetable": true
     },
@@ -707,6 +746,9 @@
         18.7
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Brain row, 1500 mg twice-daily regimen (the paper simulates 18.7 nmol/mL)",
       "targetable": true
     },
@@ -732,6 +774,9 @@
         14.7
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Remainder row, 1500 mg twice-daily regimen (the paper simulates 14.7 nmol/mL)",
       "targetable": true
     },
@@ -757,6 +802,9 @@
         56.6
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Muscle row, 1500 mg twice-daily regimen (the paper simulates 56.6 nmol/mL)",
       "targetable": true
     },
@@ -782,6 +830,9 @@
         55.6
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Lungs row, 1500 mg twice-daily regimen (the paper simulates 55.6 nmol/mL)",
       "targetable": true
     },
@@ -807,6 +858,9 @@
         59.0
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Stomach row, 1500 mg twice-daily regimen (the paper simulates 59.0 nmol/mL)",
       "targetable": true
     },
@@ -832,6 +886,9 @@
         46.3
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Heart row, 1500 mg twice-daily regimen (the paper simulates 46.3 nmol/mL)",
       "targetable": true
     },
@@ -862,6 +919,9 @@
         210.1
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form"
+      ],
       "source_location": "Table 7, Liver row, 1500 mg twice-daily regimen (the paper simulates 210.1 nmol/mL)",
       "targetable": true
     },
@@ -922,6 +982,9 @@
         84.2
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, plasma row, 500 mg twice-daily regimen (the paper simulates 84.2 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -982,6 +1045,10 @@
         154.6
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, plasma row, 1000 mg twice-daily regimen (the paper simulates 154.6 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1042,6 +1109,10 @@
         221.4
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, plasma row, 1500 mg twice-daily regimen (the paper simulates 221.4 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1063,6 +1134,9 @@
         90.3
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Red blood cells row, 500 mg twice-daily regimen (the paper simulates 90.3 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1088,6 +1162,9 @@
         61.4
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Adipose row, 500 mg twice-daily regimen (the paper simulates 61.4 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1113,6 +1190,9 @@
         67.4
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Brain row, 500 mg twice-daily regimen (the paper simulates 67.4 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1138,6 +1218,9 @@
         67.3
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Remainder row, 500 mg twice-daily regimen (the paper simulates 67.3 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1163,6 +1246,9 @@
         334.7
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Muscle row, 500 mg twice-daily regimen (the paper simulates 334.7 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1188,6 +1274,9 @@
         252.6
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Lungs row, 500 mg twice-daily regimen (the paper simulates 252.6 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1213,6 +1302,9 @@
         269.4
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Stomach row, 500 mg twice-daily regimen (the paper simulates 269.4 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1238,6 +1330,9 @@
         210.5
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Heart row, 500 mg twice-daily regimen (the paper simulates 210.5 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1268,6 +1363,9 @@
         700.4
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Liver row, 500 mg twice-daily regimen (the paper simulates 700.4 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1289,6 +1387,10 @@
         166.1
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Red blood cells row, 1000 mg twice-daily regimen (the paper simulates 166.1 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1314,6 +1416,10 @@
         112.8
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Adipose row, 1000 mg twice-daily regimen (the paper simulates 112.8 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1339,6 +1445,10 @@
         123.7
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Brain row, 1000 mg twice-daily regimen (the paper simulates 123.7 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1364,6 +1474,10 @@
         123.8
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Remainder row, 1000 mg twice-daily regimen (the paper simulates 123.8 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1389,6 +1503,10 @@
         633.1
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Muscle row, 1000 mg twice-daily regimen (the paper simulates 633.1 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1414,6 +1532,10 @@
         463.9
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Lungs row, 1000 mg twice-daily regimen (the paper simulates 463.9 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1439,6 +1561,10 @@
         494.8
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Stomach row, 1000 mg twice-daily regimen (the paper simulates 494.8 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1464,6 +1590,10 @@
         386.6
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Heart row, 1000 mg twice-daily regimen (the paper simulates 386.6 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1494,6 +1624,10 @@
         1285.8
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Liver row, 1000 mg twice-daily regimen (the paper simulates 1 285.8 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1515,6 +1649,10 @@
         238.7
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Red blood cells row, 1500 mg twice-daily regimen (the paper simulates 238.7 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1540,6 +1678,10 @@
         161.6
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Adipose row, 1500 mg twice-daily regimen (the paper simulates 161.6 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1565,6 +1707,10 @@
         177.2
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Brain row, 1500 mg twice-daily regimen (the paper simulates 177.2 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1590,6 +1736,10 @@
         177.1
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Remainder row, 1500 mg twice-daily regimen (the paper simulates 177.1 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1615,6 +1765,10 @@
         906.7
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Muscle row, 1500 mg twice-daily regimen (the paper simulates 906.7 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1640,6 +1794,10 @@
         664.3
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Lungs row, 1500 mg twice-daily regimen (the paper simulates 664.3 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1665,6 +1823,10 @@
         708.6
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Stomach row, 1500 mg twice-daily regimen (the paper simulates 708.6 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1690,6 +1852,10 @@
         553.6
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Heart row, 1500 mg twice-daily regimen (the paper simulates 553.6 nmol*h/mL over 24 h)",
       "targetable": true
     },
@@ -1720,6 +1886,10 @@
         1840.6
       ],
       "reference_kind": "numeric",
+      "rests_on_assumptions": [
+        "dose-salt-form",
+        "time-unit-of-the-deposit"
+      ],
       "source_location": "Table 7, Liver row, 1500 mg twice-daily regimen (the paper simulates 1 840.6 nmol*h/mL over 24 h)",
       "targetable": true
     }

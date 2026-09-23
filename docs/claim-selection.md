@@ -13,19 +13,22 @@ and this never pretends otherwise.
 ```
 $ reprolith select-claims BIOMD0000001028 --budget 3
 SELECTED 3 OF 93 TARGETABLE CLAIMS
-  AUC24-1000mg
   AUC24-red-blood-cells-1000mg
-  AUC24-stomach-1000mg
-  independent evidential value: 2.733 (gross 3 less 0.2666 overlap)
+  Cmax-500mg
+  Cmax-stomach-500mg
+  independent evidential value: 2.746 (gross 3 less 0.254 overlap)
   spends 3 of a 3 budget
-  witnesses 54 distinct model element(s)
+  witnesses 54 distinct model element(s) and 2 recorded assumption(s)
+  footprints: 0 curator-stated, 93 derived-from-model
   ranking one at a time would have taken: AUC24-1000mg, AUC24-500mg, AUC24-adipose-1000mg
-  and scored 1.673 over 49 distinct model element(s)
+  and scored 1.648, witnessing 49 distinct model element(s) and 2 recorded assumption(s)
+  83 of 93 candidate(s) rest on a recorded assumption, charged as overlap like shared machinery
 ```
 
 The baseline line is the point. Reading down a ranking one claim at a time takes plasma twice over
-and one more tissue, scoring **1.673** once their overlap is charged and witnessing 49 model
-elements. Choosing as a *set* takes three different tissues, scores 2.733, and witnesses 54.
+and one more tissue, all three of them areas resting on the same two readings of the deposit, and
+scores **1.648** once that overlap is charged. Choosing as a *set* takes three different tissues,
+only one of them an area, scores 2.746, and witnesses 54 model elements to the ranking's 49.
 Same budget, same candidates, same objective.
 
 The greedy ranking is reported beside the answer on purpose. A selection is a decision about what
@@ -75,6 +78,51 @@ independent pieces of evidence. This is not hypothetical: walking the *dossier's
 equations rather than the model file produced exactly that for 77 of the 80 claims, because these
 models' dynamics are 33 reactions that `ingest_sbml` declines to carry and records as a gap. That
 is why the derivation reads the model file.
+
+## What a claim rests on that the model does not say
+
+Some of what a verdict rests on is not in the model at all. All four metformin deposits declare
+their time unit as one hundred hours, and Reprolith reads it as hours — a recorded, load-bearing
+assumption (`time-unit-of-the-deposit`). Every area and every time to peak rests on that reading
+and no peak height does. If the reading is wrong, a hundred verdicts move together; they are not
+a hundred independent pieces of evidence about it. The same goes for `dose-salt-form`, which every
+claim run at a converted dose rests on.
+
+A model walk cannot see either one, because each lives in how the model is *run* or *read*, not in
+what it computes. So each claim records the ids of the assumptions it rests on
+(`rests_on_assumptions`, in `datasets/pkpd_claims.json` and carried into the dossier), and the
+selector adds each one to the claim's footprint as an `assumption:<id>` element. Two claims resting
+on one reading then overlap on it the way two claims sharing a rate constant do. The ids are
+curated, and `tests/test_assumption_overlap.py` holds every one to something that is not the
+curator: a claim rests on the time unit exactly when the unit the *model* reads its output in
+carries that clock, on the salt form exactly when it runs a converted dose, and on anything at all
+exactly when its certificate marks it assumption-qualified.
+
+What it changed, measured on the corpus:
+
+| entry | budget 3, blind to assumptions | budget 3, seeing them |
+| --- | --- | --- |
+| BIOMD0000001027 (mouse, oral) | 3 areas | 1 area, 2 peaks |
+| BIOMD0000001028 (human, single dose) | 3 areas | 1 area, 2 peaks |
+| BIOMD0000001029 (human, twice daily) | 3 areas | 1 area, 2 peaks |
+
+Blind, the budget went entirely to areas. They did not win on merit: an area and a peak of one
+tissue have the same model footprint, and ids break the tie alphabetically, so `AUC…` came before
+`Cmax…` every time. The budgeted certificate then rested wholly on the one reading of the clock
+that qualifies every claim it ran.
+
+Two choices keep this from becoming the defect described in the next section:
+
+- **An assumption is charged only where some claims rest on it and others do not.** That is what
+  separates it from the model-wide gaps below, which every claim shares. Measured on the
+  single-dose paper, the spread between its most and least overlapping pairs *widens*
+  (0.955 to 0.958) where the gaps narrowed it, and no budget of one to eight returns a smaller set
+  than it did before.
+- **It is charged only on a claim whose model footprint was measured.** Jaccard is a ratio. On a
+  claim whose machinery nobody walked, the assumption would be the whole footprint, so two such
+  claims resting on one reading would score as exact duplicates and one would be dropped for
+  everything about them that was not measured. They stay uncharacterized instead: charged no
+  overlap, and named in `limits`.
 
 ## What is deliberately *not* in a footprint
 
@@ -159,18 +207,18 @@ So a budgeted certificate carries the budget, the objective that spent it, and *
 not attempt, by id** — and the overall verdict is qualified for as long as one of them stands, the
 same way a load-bearing assumption qualifies it.
 
-The demonstration is the corpus's own clean pass. BIOMD0000001027 — metformin in mice, single oral
-dose — is the only published certificate here reading an unqualified `reproduced`: fourteen claims,
-all of them clean. Under a budget of three it stops being one:
+The demonstration is BIOMD0000001027, metformin in mice after a single oral dose, fourteen claims.
+Under a budget of three:
 
 ```
 OVERALL: partially-reproduced
   claims by verdict: reproduced=3, partial=0, failed=0, not-evaluable=0
+  assumption-qualified claims: AUC24-adipose
   claims: 14 in the paper, 3 attempted, 11 left unattempted under a budget
 ...
 NOT ATTEMPTED (chosen against by a budget, not judged)
   budget 3, objective: independent evidential value: set value less footprint overlap (exact)
-  [Cmax-plasma] Plasma Cmax after a single 50 mg/kg oral dose in mice (source Table 1, ...)
+  [Cmax-liver] Liver Cmax after a single 50 mg/kg oral dose in mice (source Table 1, ...)
   ... 10 more ...
   These claims were neither reproduced nor unreproduced — nothing was run for them.
 ```
@@ -195,8 +243,13 @@ of the rest, and hands both to `certify_model`. Doing it in one place is what ke
 "not attempted" list the exact complement of what it ran, and a selection made over some *other*
 paper's claims is refused rather than quietly certifying whatever matched. The walk from dossier
 footprints to certificate is `tests/test_budgeted_end_to_end.py`; on this paper the set-level
-objective takes plasma, portal vein and adipose — score 2.592, witnessing 62 model elements —
-where the ranking would have taken adipose, brain and heart (2.118, 23 elements).
+objective takes the adipose area and the plasma and portal-vein peaks —
+score 2.602, witnessing 62 model elements — where the ranking would have taken the adipose, brain
+and heart areas (2.000, 23 elements).
+
+The qualified-claims line above carries no "the only reason this is not a clean pass". An
+unbudgeted certificate whose counts show nothing but reproduced claims says that, because there
+it is true. Here it would be false: eleven claims chose against are a reason of their own.
 
 ## What it reaches today
 
