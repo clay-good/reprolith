@@ -23,7 +23,7 @@ _ROOT = Path(__file__).parent.parent
 _PAGE = (_ROOT / "docs" / "self-validation.md").read_text(encoding="utf-8")
 #: The README repeats the same summary in one line, and repeated numbers drift apart. It is
 #: checked against the same record here rather than in a second place with its own idea of it.
-_README = (_ROOT / "README.md").read_text(encoding="utf-8")
+_README = (_ROOT / "docs" / "in-depth.md").read_text(encoding="utf-8")  # the full account the README links to
 #: And the loop record's prose account of the same run, which drifted the same way and by the same
 #: mechanism: a number written down once, beside data that kept moving.
 _LOOP = (_ROOT / "docs" / "discipline-loop.md").read_text(encoding="utf-8")

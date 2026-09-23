@@ -20,7 +20,7 @@ import json
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-README = (REPO / "README.md").read_text(encoding="utf-8")
+README = (REPO / "docs" / "in-depth.md").read_text(encoding="utf-8")  # the full account the README links to
 
 #: The tools this repository re-runs a model under. Each names itself in the source it cites.
 _TOOLS = ("COBRApy", "libRoadRunner", "CANA")

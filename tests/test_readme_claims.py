@@ -17,7 +17,9 @@ from pathlib import Path
 from reprolith.cli import build_parser
 
 _ROOT = Path(__file__).parent.parent
-_README = (_ROOT / "README.md").read_text(encoding="utf-8")
+#: The README is short now and sends readers to `docs/in-depth.md` for the full account, so the
+#: counts and the command reference it used to carry are held to that page.
+_README = (_ROOT / "docs" / "in-depth.md").read_text(encoding="utf-8")
 
 
 def _subcommands() -> set[str]:

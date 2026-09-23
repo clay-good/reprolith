@@ -89,7 +89,7 @@ def test_the_front_page_states_the_number_this_page_lists() -> None:
     # happen to start the same way is not a claim type, and the cost table's "an essential set" row
     # is exactly that. Scoped to the block that begins with the catalogue's own header.
     rows = _catalogue_rows()
-    readme = (Path(__file__).parent.parent / "README.md").read_text(encoding="utf-8")
+    readme = (Path(__file__).parent.parent / "docs" / "in-depth.md").read_text(encoding="utf-8")
     words = {15: "Fifteen", 16: "Sixteen", 17: "Seventeen", 18: "Eighteen", 19: "Nineteen"}
     assert f"{words[rows]} kinds of result" in readme, (
         f"docs/claim-types.md lists {rows} kinds and the README says otherwise"
