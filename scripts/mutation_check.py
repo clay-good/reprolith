@@ -1438,9 +1438,11 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     # --- what would settle a sampled ensemble is a number, 2026-09-09 ---------------------------
     (
         "the ensemble that would settle a claim is offered without the 1/sqrt(n) it rests on",
-        "stochastic.py",
-        ("    return math.ceil(trajectories * (relative_sem / target) ** 2), margin",
-         "    return math.ceil(trajectories * (relative_sem / target)), margin"),
+        # The arithmetic moved to `oracle.sample_to_settle` when the population class came to
+        # share it.
+        "oracle.py",
+        ("    return math.ceil(size * (relative_error_bar / target) ** 2), margin",
+         "    return math.ceil(size * (relative_error_bar / target)), margin"),
         ["tests/test_stochastic.py"],
     ),
     (
@@ -1566,7 +1568,7 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "an unbounded claim's protocol line does not say what the wall was measured to cost",
         "spatial.py",
-        ('        return "" if shown is None else _unbounded_note(shown)', '        return ""'),
+        ('        return "" if shown is None else unbounded_note(shown)', '        return ""'),
         ["tests/test_spatial_unbounded_claim.py"],
     ),
     # --- a class can be partly corroborated, 2026-09-06 -----------------------------------------
