@@ -12,7 +12,7 @@ selection line in the same renderer already had this problem and already solved 
 state it beside the counts rather than leave it to a section further down the page.
 
 Derived, never asserted: every claim reproduced, at least one resting on an assumption Reprolith
-supplied, and a headline short of `reproduced`. A certificate with a genuine partial or a failure
+supplied, no claim left unattempted by a budget, and a headline short of `reproduced`. A certificate with a genuine partial or a failure
 says nothing extra, because there the counts explain themselves.
 """
 
@@ -93,6 +93,39 @@ def test_a_genuine_partial_says_nothing_extra() -> None:
         assumptions=[assumption],
     )
     assert not qualification_is_the_whole_downgrade(with_a_real_partial)
+
+
+def test_a_budgeted_certificate_never_blames_the_assumptions_alone() -> None:
+    """Every attempted claim reproduced, one of them qualified, and eleven left unattempted: the
+    budget is a reason of its own, so "the only reason this is not a clean pass" would be false.
+
+    Reached on the corpus's own budgeted walk — BIOMD0000001027 at a budget of three attempts one
+    AUC claim, which rests on the deposit's time unit — and printed there until this held.
+    """
+    from reprolith import Assumption, PaperIdentity, RunMetadata, render_human
+    from reprolith.certificate import build_certificate
+    from reprolith.enums import Verdict
+    from reprolith.model import ClaimAssessment, ClaimSelection, EnginePin, UnattemptedClaim
+
+    cert = build_certificate(
+        paper=PaperIdentity(title="t"),
+        engine_pin=EnginePin(engine="e", version="1", algorithm="a"),
+        assessments=[
+            ClaimAssessment(
+                claim_id="ran", quantity="q", verdict=Verdict.REPRODUCED,
+                source_location="Table 1", discrepancy="d", assumption_qualified=True,
+            )
+        ],
+        assumptions=[Assumption(id="a1", description="d", chosen="v", basis="b", load_bearing=True)],
+        selection=ClaimSelection(
+            budget=1.0, objective="o",
+            unattempted=(UnattemptedClaim(claim_id="skipped", quantity="q", source_location="T2"),),
+        ),
+    )
+    assert not qualification_is_the_whole_downgrade(cert)
+    rendered = render_human(cert, RunMetadata(created_at="", actor="", tool_version=""))
+    assert _CLEAN_PASS not in rendered
+    assert "assumption-qualified claims: ran" in rendered
 
 
 def test_the_page_says_it_too() -> None:

@@ -55,10 +55,15 @@ def qualification_is_the_whole_downgrade(cert: Certificate) -> bool:
 
     Derived from the same fields the summary already carries rather than asserted, so it cannot
     outlive the state it describes: every claim reproduced, at least one of them resting on an
-    assumption Reprolith supplied, and a headline short of ``reproduced``.
+    assumption Reprolith supplied, no claim left unattempted by a budget, and a headline short of
+    ``reproduced``. The budget clause is not a corner case: a budgeted certificate is qualified by
+    the claims it chose against whatever the ones it ran say, so "the only reason" was false on
+    every budgeted certificate that attempted a qualified claim.
     """
     counts = claim_counts(cert)
     if cert.overall is OverallVerdict.REPRODUCED:
+        return False
+    if cert.selection is not None and cert.selection.unattempted:
         return False
     if any(count for verdict, count in counts.items() if verdict != Verdict.REPRODUCED.value):
         return False
