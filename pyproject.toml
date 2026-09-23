@@ -44,7 +44,11 @@ dev = ["pytest>=7.0", "ruff>=0.4", "mypy>=1.8"]
 # with 4.46"): every simulation raises `TypeError: CCopasiTask_initialize, argument 2 of type
 # 'int'`, and the process aborts on `std::bad_alloc` under load. A yank is not always enough — CI
 # resolved it anyway on one interpreter after the yank — so it is named here.
-engine = ["python-copasi>=4.42,!=4.47.309", "python-libsbml>=5.20"]
+# python-libsbml 5.21.2 is excluded because it segfaults on Python 3.9, in `getMath().deepCopy()`
+# while building events (tests/test_twice_daily_shortfalls.py): two of two 3.9 engine runs with it
+# crashed and neither with 5.21.1 did. 3.11 and 3.12 pass with it, but one patch release is a
+# cheaper exclusion than an interpreter-specific marker.
+engine = ["python-copasi>=4.42,!=4.47.309", "python-libsbml>=5.20,!=5.21.2"]
 # The constraint-based (FBA) oracle's linear-programming solver. Optional, like the engine.
 fba = ["scipy>=1.7", "numpy>=1.20"]  # numpy is imported directly, not only through scipy
 # The scalable fixed-point solver for the logical class: a SAT solver (z3) that finds a large
