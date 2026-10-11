@@ -62,6 +62,14 @@ a phase done until its verification holds.
     that pairs with nothing, which is what a reproducer rebuilding from the paper would have to
     take from the deposit or guess. It also carries the unit the model declares for each, since a
     published litre agreeing with a deposited millilitre is a pass nothing downstream can catch.
+    **A pairing-free version was measured and rejected (2026-10-10):** searching the paper's
+    tables and text for each unpaired quantity's declared value, to split "printed somewhere" from
+    "printed nowhere" without a curator. On the human metformin model's ten unpaired non-zero
+    values it reports four as printed and one of them is right (`Kidney_Coefficient`, "320 for the
+    elimination"); the other three are the lumen volumes 500 and 1000 matched to the *doses* in
+    Table 6. It also misses what is there: `Intestine_Coefficient` is "0.7 for the absorption", one
+    significant figure, and body weight is 70 kg in the paper and 70000 in the model. A number
+    matching a number is not a parameter being stated, so the pairing stays a curator's.
 - [x] 2.4 Support reviewer correction as a tracked revision → verify: a correction is applied and the original remains retrievable
 
 ## 3. Reconstruction (PK/PD)
