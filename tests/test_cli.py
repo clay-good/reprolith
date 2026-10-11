@@ -694,6 +694,9 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
         # server has no credentials to fetch and no path to. It is here rather than on the query
         # surface for that reason, written up in docs/mcp-server.md like the rest.
         "issue-reconcile",
+        # `issue-file` reads the same two things, and with `--apply` opens the issues the queue is
+        # owed. Acting on GitHub is the last thing a read-only query surface should grow.
+        "issue-file",
     }
     file_based = {name for name in subcommands if name in named}
     assert file_based == named

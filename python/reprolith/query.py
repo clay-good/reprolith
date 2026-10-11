@@ -35,6 +35,7 @@ from .render import claim_counts, gap_items, plural
 from .selection import claim_selection_report
 from .supersession import CertificateLedger
 from .verification import (
+    filing_plan,
     issue_for_item,
     queue_report,
     recertification_due,
@@ -810,12 +811,30 @@ class ReprolithQuery:
         pending item would be filed under today, which are a property of the catalog entry rather
         than of the certificate and so can only be computed here.
         """
+        return self._reconcile(issues)[0]
+
+    def issue_filing_plan(self, issues: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+        """The issues this repository's queue is still owed, given the ones already filed.
+
+        The same comparison as :meth:`issue_reconciliation` over the same ``issues``, read for its
+        other use: every pending item no issue asks about, as the title, labels and body
+        :meth:`verification_issue` prints for it. It files nothing — see
+        :func:`reprolith.filing_plan` for why a re-run cannot ask a question twice.
+        """
+        reconciliation, built = self._reconcile(issues)
+        return filing_plan(reconciliation, built)
+
+    def _reconcile(
+        self, issues: Sequence[Mapping[str, Any]]
+    ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+        """The reconciliation, and the issue each pending item would be filed as today."""
         report = self.verification_queue()
-        expected = {
-            str(item["id"]): issue_for_item(item, model_classes=self._classes_for(item))["labels"]
+        built = {
+            str(item["id"]): issue_for_item(item, model_classes=self._classes_for(item))
             for item in report.get("pending", ())
         }
-        return reconcile_issues(report, issues, expected_labels=expected)
+        expected = {item_id: issue["labels"] for item_id, issue in built.items()}
+        return reconcile_issues(report, issues, expected_labels=expected), built
 
     def _classes_for(self, item: Mapping[str, Any]) -> list[str]:
         """The model classes an item's dependent certificates belong to, for its issue labels."""

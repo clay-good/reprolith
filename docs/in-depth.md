@@ -345,6 +345,7 @@ reprolith loop-status                # is there publishable work — and if not,
 reprolith verification-queue         # what every standing certificate rests on, awaiting review
 reprolith verification-issue <id>    # one of those as the filled GitHub issue to open
 reprolith issue-reconcile <issues>   # where the filed issues and that queue disagree
+reprolith issue-file <issues>        # the issues that queue is still owed (--apply opens them)
 reprolith recertification-due        # which standing certificates owe a re-run, and why
 reprolith self-validation            # the blind track record, per class and overall
 reprolith corroboration              # what a second engine said — and where none was asked
@@ -892,8 +893,7 @@ goes back to pending, rather than attributing an answer to somebody for a questi
 read. The repository records no decision today, and the queue says so from the file rather than
 from a sentence that could outlive it.
 
-Questions are still raised as issues **by hand** — nothing files one for you — but nobody fills one
-in by hand any more: `reprolith verification-issue <item-id>` prints the title, the body with every
+Nobody fills an issue in by hand: `reprolith verification-issue <item-id>` prints the title, the body with every
 field the template asks for, and the three labels the `github-collaboration` spec names, which the
 template file itself left empty. It refuses one of the engine's own limits rather than filing it,
 since no expert answer closes one. And it answers the
@@ -910,7 +910,21 @@ certificates are superseded while its issue goes on asking; and an issue can be 
 duplicated or never opened at all with nothing in this repository noticing. It matches on the
 question fingerprint the generated body carries rather than on a title anyone can edit, and it
 **changes neither side**: a divergence is a question about which one is wrong, not a fact about
-which one loses. See [CONTRIBUTING.md](../CONTRIBUTING.md).
+which one loses.
+
+And nobody opens them one by one: `reprolith issue-file --apply` opens an issue for every pending
+item no issue asks about. It is the one command in the package that reaches the network, and it
+does so through `gh`, so the credentials and the repository are the ones the person running it
+already chose. Three properties are what make it safe to run twice. **A question is asked once** —
+an item counts as unfiled only while its fingerprint is on no issue at all, open *or closed*, so an
+issue a maintainer closed is a divergence for a person to read and never a reason for a second
+one. **It reads the issues itself** — `--apply` refuses a file, because a file is a snapshot and
+an issue opened since it was written would be opened again; and it refuses a fetch that came back
+full, since `gh issue list` stops at its limit without saying so and every issue past the cut
+would read as never filed. **It stops at the first failure** and says a re-run is safe, which it
+is for the first reason. Without `--apply` it takes the issues file and prints what it would open.
+It opens issues and creates labels; it closes, reopens and relabels nothing. See
+[CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Licensing
 

@@ -917,6 +917,52 @@ def _reconciliation_note(
     return "; ".join(parts)
 
 
+def filing_plan(
+    reconciliation: Mapping[str, Any], issues_for: Mapping[str, Mapping[str, Any]]
+) -> dict[str, Any]:
+    """Which issues the queue is still owed, as the issues to open (spec: github-collaboration).
+
+    ``reconciliation`` is :func:`reconcile_issues`'s output and ``issues_for`` maps a pending
+    item's id to what :func:`issue_for_item` makes of it. The plan is exactly the reconciliation's
+    ``unfiled`` list, in the queue's own rank order, and it is derived from that list rather than
+    from the queue for the one property filing has to have: **a question is asked once**. An item
+    is unfiled only while its fingerprint is on no issue at all — open *or closed* — so an issue a
+    maintainer closed while its question is still pending is a divergence for a person to read and
+    never a reason to open a second one, and running the plan twice files nothing the second time.
+
+    It opens issues and does nothing else. A divergent issue is not closed, reopened or relabelled
+    here: that is still a question about which side is wrong. An engine-limit or already-decided
+    item is never in the plan, because neither is in ``unfiled``.
+    """
+    to_file = [
+        {
+            "item_id": item["id"],
+            "impact": item["impact"],
+            "question_fingerprint": item["question_fingerprint"],
+            "title": issues_for[str(item["id"])]["title"],
+            "labels": list(issues_for[str(item["id"])]["labels"]),
+            "body": issues_for[str(item["id"])]["body"],
+        }
+        for item in reconciliation["unfiled"]
+    ]
+    asked = sum(1 for record in reconciliation["issues"] if record["group"] == "pending")
+    parts = [f"{len(to_file)} pending item(s) have no issue yet"]
+    if asked:
+        parts.append(f"{asked} issue(s) already ask a pending question and are left as they are")
+    if reconciliation["divergent_count"]:
+        parts.append(
+            f"{reconciliation['divergent_count']} filed issue(s) diverge from the queue, which "
+            "filing does not touch — `reprolith issue-reconcile` says how"
+        )
+    return {
+        "to_file": to_file,
+        "labels": sorted({label for issue in to_file for label in issue["labels"]}),
+        "already_asked": asked,
+        "divergent_count": reconciliation["divergent_count"],
+        "note": "; ".join(parts),
+    }
+
+
 def reverify_dependents(
     item: VerificationItem,
     ledger: CertificateLedger,
@@ -1141,6 +1187,7 @@ __all__ = [
     "VerificationItem",
     "VerificationQueue",
     "certificates_needing_review",
+    "filing_plan",
     "issue_for_item",
     "question_fingerprint",
     "queue_from_certificates",

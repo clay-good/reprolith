@@ -10,12 +10,36 @@ judgment and keep the dataset fresh, with every contribution attributed and revi
 
 ## What carries each requirement today
 
-No code in this repository touches the GitHub API. The gates are real — CI runs `ruff`, `mypy`,
-`pytest`, and `openspec validate` on every push, and every contribution goes through a pull
-request — but the *issue* half of this capability is carried by people, not machinery:
+One module in this repository reaches GitHub — `reprolith.issue_filing`, through the `gh` command
+and only when a person asks it to. The gates are real — CI runs `ruff`, `mypy`, `pytest`, and
+`openspec validate` on every push, and every contribution goes through a pull request — and the
+*issue* half of this capability is now machinery a person starts, rather than work a person does:
 
-- *Verification-queue items are GitHub issues.* Still opened by hand, and the issue template says
-  so in its own text. What a person opening one has to write, though, is now nothing:
+- *Verification-queue items are GitHub issues.* Carried since 2026-10-10 by
+  `reprolith issue-file --apply`, which opens an issue for every pending item that no issue asks
+  about and creates the labels it needs. Three things it is held to, each by a test in
+  `tests/test_issue_filing.py`, because filing is the first thing here that acts on somebody
+  else's record and the harmful direction is a second issue for a question already asked. **A
+  question is asked once:** the plan is the reconciliation's own `unfiled` list, and an item is
+  unfiled only while its fingerprint is on no issue at all, open *or closed* — so an issue a
+  maintainer closed stays a divergence for a person to read, and a second run files nothing.
+  **It reads the issues itself:** `--apply` refuses a file, which is a snapshot, and refuses a
+  fetch that came back full, since `gh issue list` stops at its limit silently (at thirty, by
+  default — the fetch this section and `CONTRIBUTING.md` documented until now asked for no more)
+  and every issue past the cut would read as never filed. **It stops at the first failure** and a
+  re-run is safe for the first reason. It opens and labels; it closes, reopens and relabels
+  nothing, so reconciling still does not resolve. Without `--apply` it is a dry run over a file
+  and touches no network.
+
+  What it does **not** do is run by itself. The scenario below says an issue is opened "when the
+  verification queue creates an item"; the queue is derived on every call and creates nothing, so
+  the moment is a person's — the command, or the *Verification issues* workflow, which has no
+  trigger but a click and is a dry run unless told otherwise. That is deliberate rather than
+  unfinished: an issue asks a stranger for their time, and a push that reworded an assumption
+  would otherwise be what asked. **As of 2026-10-10 no issue has been filed in this repository**;
+  `reprolith issue-file` names the pending items that are owed one.
+
+  What a person opening one by hand has to write is nothing either:
   `reprolith verification-issue <item-id>` prints the whole issue — the title, the body with every
   field the template asks for, and the three labels the requirement names (model class, impact
   rank, pending-verification status), which the template file itself left empty. It refuses an
@@ -23,7 +47,7 @@ request — but the *issue* half of this capability is carried by people, not ma
   for a judgment that cannot help. It touches no network: it prints, and a person or
   `gh issue create --body-file -` files it. It is on both surfaces (MCP: `verification_issue`),
   because a command that reads this repository and exists on only one of them is how the two
-  drift. **Nothing files the issue** — that half is still uncarried.
+  drift.
 
   Since 2026-09-09 it also prints the decision record itself — the `datasets/verification_decisions.json`
   entry with `item_id` and `question_fingerprint` filled and the human fields blank. The gap it
@@ -52,8 +76,8 @@ request — but the *issue* half of this capability is carried by people, not ma
   or edits the queue, because a divergence is a question about which side is wrong and both sides
   are somebody's record. And it is keyed on the label *or* the fingerprint, since keying on the
   label alone would let a relabelled issue — the drift it exists to report — disappear from the
-  report by having drifted. It is the one command on the terminal that reads this repository and
-  has no MCP tool: the server holds no GitHub credentials and no issue list, so the tool would
+  report by having drifted. With `issue-file` it is one of two commands on the terminal that read
+  this repository and have no MCP tool: the server holds no GitHub credentials and no issue list, so the tool would
   have to be handed the same file, and `docs/mcp-server.md` says so in its own row.
 - *An expert's decision is the record.* Carried since 2026-09-06:
   `datasets/verification_decisions.json` holds the decision, its author, its rationale and where it
@@ -68,9 +92,10 @@ request — but the *issue* half of this capability is carried by people, not ma
   landed — the sentence is here rather than deleted because the gap it describes was real, and a
   spec that quietly drops what it once admitted is worth less than one that says when it closed.
 
-The remaining gap — nothing files an issue — cannot produce a wrong certificate — an unescalated uncertainty still travels
-as a load-bearing assumption, which downgrades the verdict on its own — but a reader should not
-take the issue-filing requirement below as implemented machinery.
+The remaining gap is the trigger, not the machinery: an item nobody has run `issue-file` for has no
+issue. That cannot produce a wrong certificate — an unescalated uncertainty still travels as a
+load-bearing assumption, which downgrades the verdict on its own — and `issue-reconcile` reports
+every such item by name.
 
 ## Requirements
 

@@ -54,6 +54,10 @@ _NO_TOOL = {
     # issue list, so a tool for it would have to be handed the same file the terminal is given,
     # and the fetch that produces that file is a person's or a workflow's `gh` call either way.
     "issue-reconcile",
+    # `issue-file` reads the same two things and, with `--apply`, opens issues through `gh`. The
+    # query surface is read-only and holds no credentials, so it has no tool for the same reason
+    # and a second one besides.
+    "issue-file",
     "export", "archive-check", "claims-template", "claims-propose", "claims-check",
     "params-template", "params-propose", "params-check", "figure-template", "figure-check",
 }

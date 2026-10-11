@@ -20,9 +20,8 @@ results. It gets better in two ways, and **both need people who know the science
    Reprolith chose, why, the alternatives, and the papers that would have to be re-certified if
    you corrected it. Add `--json` for the same object an agent gets over MCP.
 
-   **You still open the issue by hand** — nothing files one for you — but you no longer
-   fill it in by hand: `reprolith verification-issue <item-id>` prints the title, the labels, and
-   a body with every field the template asks for.
+   **Nobody fills an issue in by hand:** `reprolith verification-issue <item-id>` prints the
+   title, the labels, and a body with every field the template asks for.
 
    ```bash
    reprolith verification-issue verify:time-unit-of-the-Zake2021-deposits
@@ -31,6 +30,21 @@ results. It gets better in two ways, and **both need people who know the science
    Asking it for one of the engine's own limits is refused rather than filed, since no answer of
    yours closes one.
 
+   **And a maintainer does not open them one by one:** `reprolith issue-file --apply` fetches the
+   repository's issues through `gh`, and opens one for every pending item that no issue — open or
+   closed — already asks about, creating the labels it needs. A question is asked once: an issue
+   somebody closed is reported by `issue-reconcile` below and never re-filed, and running it
+   twice files nothing the second time. Give it a file instead of `--apply` and it only prints
+   what it would open. The *Verification issues* workflow runs the same two steps from the
+   Actions tab; it has no trigger but a person's click, and is a dry run unless told otherwise.
+
+   ```bash
+   gh issue list --state all --limit 1000 \
+     --json number,title,state,labels,body > issues.json
+   reprolith issue-file issues.json     # what would be filed; nothing is
+   reprolith issue-file --apply         # fetch again, and file
+   ```
+
    **`reprolith issue-reconcile` keeps the two sides honest.** Fetch the issues and compare them
    against the queue — it names an issue that was closed while its question is still pending, one
    still asking a question no standing certificate rests on any more, one that lost a label, two
@@ -38,7 +52,7 @@ results. It gets better in two ways, and **both need people who know the science
    either side: which one is wrong is your call.
 
    ```bash
-   gh issue list --label verification --state all \
+   gh issue list --state all --limit 1000 \
      --json number,title,state,labels,body > issues.json
    reprolith issue-reconcile issues.json
    ```

@@ -1,0 +1,49 @@
+name: Verification issues
+
+# The filing half of the github-collaboration spec: open an issue for every pending
+# verification-queue item that no issue asks about yet.
+#
+# It has no trigger but a person's click, and it is a dry run unless that person says otherwise.
+# Opening a public issue asks a stranger for their time, so a push to main must never be what
+# does it — the queue is derived from the certificates on every call, and a certificate re-issued
+# with a reworded assumption is a new question the moment it lands.
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Open the issues. Unchecked, this only prints what would be opened."
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  file:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: What would be filed, and where the filed issues have drifted
+        run: |
+          gh issue list --state all --limit 1000 \
+            --json number,title,state,labels,body > "$RUNNER_TEMP/issues.json"
+          reprolith issue-file "$RUNNER_TEMP/issues.json"
+          reprolith issue-reconcile "$RUNNER_TEMP/issues.json"
+
+      # `--apply` fetches the issues again itself rather than reading the file above: a file is a
+      # snapshot, and an issue opened since it was written would be opened twice.
+      - name: File them
+        if: ${{ inputs.apply }}
+        run: reprolith issue-file --apply

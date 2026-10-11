@@ -7,7 +7,9 @@ the same :class:`~reprolith.query.ReprolithQuery`, so the terminal view and the 
 never disagree ("Parity with the human surface"). The CLI computes no verdict of its own; it
 formats what the query returns.
 
-Every command reads; one writes. ``export`` is the exception and the only one — it turns a
+Every command reads; two act. ``issue-file --apply`` opens the GitHub issues the verification
+queue is owed, through the ``gh`` command and only when asked to (without ``--apply`` it reads a
+file and prints what it would open). ``export`` is the one that writes a file — it turns a
 published reconstruction bundle into a COMBINE archive on disk, because a reconstruction nobody
 can run without Reprolith is not a published artifact. It computes nothing: the bundle it exports
 is the one the query returns, and the file it writes is what :func:`reprolith.build_bundle_sedml`
@@ -28,6 +30,7 @@ from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from . import issue_filing
 from .certify import Claim
 from .claim_candidates import (
     merge_proposals,
@@ -600,8 +603,8 @@ def _cmd_issue_reconcile(query: ReprolithQuery, args: argparse.Namespace) -> int
 
     `verification-issue` writes an issue; nothing until now could tell you what happened to it.
     The `github-collaboration` spec asks for both halves and its carrier section named this one as
-    missing. The fetch stays outside — `gh issue list --label verification --state all --json
-    number,title,state,labels,body > issues.json` — because this package touches no network, and
+    missing. The fetch stays outside — `gh issue list --state all --limit 1000 --json
+    number,title,state,labels,body > issues.json` — because this command touches no network, and
     a reconciliation that quietly filed or closed something would be resolving a disagreement it
     exists to report.
     """
@@ -639,6 +642,68 @@ def _cmd_issue_reconcile(query: ReprolithQuery, args: argparse.Namespace) -> int
         print(f"(no issue) {item['question']}")
         print(f"  item: {item['id']}  impact: {item['impact']}")
         print(f"  write it with: reprolith verification-issue {item['id']}")
+    return 0
+
+
+def _cmd_issue_file(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Open the issue for every pending item nobody has asked about yet — or say which it would.
+
+    The half of the `github-collaboration` spec nothing carried: `verification-issue` writes an
+    issue and `issue-reconcile` reports the items with none, and between the two a person still
+    ran one `gh issue create` per item. Given a file it is a dry run that touches no network.
+    With `--apply` it fetches the issues itself rather than trusting a file, because a file is a
+    snapshot and an issue opened since it was written would be opened again.
+    """
+    if args.apply == (args.issues is not None):
+        print(
+            "give the issues file to see what would be filed (`gh issue list --state all "
+            "--limit 1000 --json number,title,state,labels,body > issues.json`), or --apply "
+            "alone to fetch the issues and file — not both: --apply reads the issues itself so "
+            "that nothing opened since a file was written is opened twice",
+            file=sys.stderr,
+        )
+        return 1
+    try:
+        if args.apply:
+            issues = issue_filing.fetch_issues(issue_filing.run_gh, repo=args.repo)
+        else:
+            issues = json.loads(Path(args.issues).read_text(encoding="utf-8"))
+            if not isinstance(issues, list):
+                raise ValueError(
+                    "the issues file must be the JSON array `gh issue list --json ...` prints, "
+                    f"not {type(issues).__name__}"
+                )
+        plan = query.issue_filing_plan(issues)
+    except (OSError, UnicodeDecodeError, ValueError, issue_filing.GhError) as unusable:
+        print(f"cannot read the issues: {unusable}", file=sys.stderr)
+        return 1
+    outcome = (
+        issue_filing.file_issues(plan, issue_filing.run_gh, repo=args.repo) if args.apply else None
+    )
+    if args.json:
+        _print_json({**plan, "applied": outcome})
+    else:
+        print(plan["note"])
+        if outcome is None:
+            for issue in plan["to_file"]:
+                print()
+                print(f"would file: {issue['title']}")
+                print(f"  item: {issue['item_id']}  impact: {issue['impact']}")
+                print(f"  labels: {', '.join(issue['labels'])}")
+            if plan["to_file"]:
+                print()
+                print("nothing was filed. `reprolith issue-file --apply` files them through `gh`")
+        else:
+            for label in outcome["labels_created"]:
+                print(f"created label: {label}")
+            for issue in outcome["filed"]:
+                print(f"filed: {issue['url']}  {issue['title']}")
+            for issue in outcome["not_filed"]:
+                print(f"NOT filed: {issue['title']}")
+    if outcome is not None and outcome["failure"]:
+        print(f"stopped: {outcome['failure']}", file=sys.stderr)
+        print("run it again once that is fixed: what was filed above is not filed twice", file=sys.stderr)
+        return 1
     return 0
 
 
@@ -1930,14 +1995,16 @@ def build_parser() -> argparse.ArgumentParser:
             "recertification-due, "
             "certificates-for, "
             "dossier, bundle, select-claims\n"
-            "checking your own files: issue-reconcile, archive-check, claims-template, "
+            "checking your own files: issue-reconcile, issue-file, archive-check, claims-template, "
             "claims-propose, "
             "claims-check, params-template, params-propose, params-check, figure-template, "
             "figure-check\n"
             "writing: export — the one command whose whole job is to create a file\n\n"
             "issue-reconcile is in the second group because it needs a file the MCP server has no\n"
             "path to — the GitHub issues — but it reads this repository's verification queue too,\n"
-            "and reports where the two disagree without changing either.\n\n"
+            "and reports where the two disagree without changing either. issue-file reads the same\n"
+            "two things and prints the issues the queue is still owed; with --apply it is the one\n"
+            "command here that reaches the network, opening them through `gh`.\n\n"
             "Each of the template and propose commands writes one too when you give it --out "
             "(figure-template --out-dir writes one per panel), and every command here that "
             "writes says when it replaced a file that was already there — filling a template in "
@@ -2057,11 +2124,32 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "issues",
-        help="the issues as JSON: `gh issue list --label verification --state all "
+        help="the issues as JSON: `gh issue list --state all --limit 1000 "
              "--json number,title,state,labels,body`",
     )
     add_json(p)
     p.set_defaults(func=_cmd_issue_reconcile)
+
+    p = sub.add_parser(
+        "issue-file",
+        help="open the GitHub issue for every pending item that has none (a dry run without "
+             "--apply)",
+    )
+    p.add_argument(
+        "issues",
+        nargs="?",
+        help="for a dry run, the issues as JSON: `gh issue list --state all --limit 1000 "
+             "--json number,title,state,labels,body`",
+    )
+    p.add_argument(
+        "--apply",
+        action="store_true",
+        help="fetch the issues with `gh` and open the missing ones (creating the labels they "
+             "need); takes no issues file",
+    )
+    p.add_argument("--repo", help="OWNER/REPO for `gh`, when not the checkout's own")
+    add_json(p)
+    p.set_defaults(func=_cmd_issue_file)
 
     p = sub.add_parser("certificates-for", help="every certificate digest issued for a paper")
     add_identifier(p)

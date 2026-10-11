@@ -1048,6 +1048,27 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if not item.get("author_can_close", True):', "    if False:"),
         ["tests/test_verification_issue.py"],
     ),
+    # --- filing the queue's issues, 2026-10-10 --------------------------------------------------
+    # The first code here that acts on somebody else's record. Each guard is against the one
+    # direction that does harm: a second issue for a question already asked.
+    (
+        "a fetch cut short at its limit is trusted, and every issue past the cut is filed again",
+        "issue_filing.py",
+        ("    if len(issues) >= FETCH_LIMIT:", "    if False:"),
+        ["tests/test_issue_filing.py"],
+    ),
+    (
+        "a label GitHub already has under another case is created again, and the run dies on it",
+        "issue_filing.py",
+        ('str(label["name"]).casefold() for label', 'str(label["name"]) for label'),
+        ["tests/test_issue_filing.py"],
+    ),
+    (
+        "filing trusts a snapshot of the issues, and opens again what was opened since",
+        "cli.py",
+        ("    if args.apply == (args.issues is not None):", "    if False:"),
+        ["tests/test_issue_filing.py"],
+    ),
     (
         "repeated fruitless claims never take an entry out of the offered pool",
         "catalog.py",

@@ -43,7 +43,7 @@ def test_every_documented_tool_exists() -> None:
 #: The page also documents the *terminal* commands beside the tools they pair with, and one command
 #: that deliberately has no tool. They are not tools and are checked as commands by
 #: `tests/test_cli.py`, so they are named here rather than silently allowed through the check above.
-_COMMANDS = {"issue_reconcile", "issue-reconcile"}
+_COMMANDS = {"issue_reconcile", "issue-reconcile", "issue_file", "issue-file"}
 
 
 def test_the_inline_surface_says_what_it_does_not_cover() -> None:

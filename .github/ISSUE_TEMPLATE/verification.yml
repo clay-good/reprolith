@@ -1,8 +1,9 @@
 name: Verification request
 description: >-
   A load-bearing value Reprolith is not confident about. Confirm, correct, or reject it.
-  (Opened by hand — nothing files these automatically. You do not have to fill this in by hand
-  though: `reprolith verification-issue <item-id>` prints the whole thing, title and labels
+  (A maintainer files these with `reprolith issue-file --apply`, one per pending item, so check
+  the open issues before opening one here. You do not have to fill this in by hand either:
+  `reprolith verification-issue <item-id>` prints the whole thing, title and labels
   included, from the item in `reprolith verification-queue`. The items under that command's
   second heading are limits of Reprolith's own engine and are not questions for you — asking for
   one is refused rather than filed.)

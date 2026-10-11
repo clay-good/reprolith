@@ -177,8 +177,9 @@ returns.
 
 ### What the CLI has that the server does not
 
-Eleven commands need a **file** the server has no path to, and have no MCP tool. Ten of them
-work on that file alone; `issue-reconcile` is the exception and says so in its own row.
+Twelve commands need a **file** the server has no path to, and have no MCP tool. Ten of them
+work on that file alone; `issue-reconcile` and `issue-file` are the exceptions and say so in their
+own rows.
 
 | Command | Why it is not a tool |
 | --- | --- |
@@ -192,9 +193,12 @@ work on that file alone; `issue-reconcile` is the exception and says so in its o
 | `reprolith figure-template` | It writes the digitization file out of the author's own simulation document, for a figure only they can read. Like `claims-template`, its output exists to be filled in by hand before it is used again, which is a file on disk and not a JSON-RPC result. |
 | `reprolith figure-check` | It reads a plot digitizer's output for one of the author's own figures — a file that exists on their machine before any of this reaches a repository, and which pairs each curve to a claim by the curator's own judgment. There is no repository state that could supply it, and the reading it checks is a measurement of a picture the server has never seen. |
 | `reprolith issue-reconcile` | The only one here that reads repository state too: it compares the derived verification queue against the GitHub issues filed from it. The server holds no GitHub credentials and no issue list, so a tool for it would have to be handed the same JSON the terminal is given — and the `gh issue list` that produces it is a person's or a workflow's call either way. What an agent *can* read over MCP is the queue side, through `verification_queue`. |
+| `reprolith issue-file` | The same two inputs as `issue-reconcile`, read for the other use: every pending item no issue asks about, as the issue to open. Given the issues file it is a dry run and touches no network. With `--apply` it is the one command in the package that does — it fetches the issues through `gh`, creates the labels the new ones need, and opens them. The server is read-only and holds no GitHub credentials, so there is no tool: an agent that could open public issues by calling a query tool is not a query surface. What it opens is exactly what the `verification_issue` tool returns for the item. |
 | `reprolith archive-check` | Same shape: the archive is a file the server has no path to. It also needs libSBML to read the model, and the inline lint tools are dependency-free by contract — a tool that worked only where an optional extra happened to be installed would answer differently on two servers reading the same state, which is the one thing this surface exists to prevent. |
 
 This is an absence, not a divergence: none of them reports anything about a paper that the query
 surface also reports, so the two cannot disagree. `issue-reconcile` reads the queue the server
 already serves and adds only the issues' side of it, which the server cannot see at all.
-`tests/test_cli.py` pins the set, so adding a twelfth without deciding this question fails.
+`issue-file` adds nothing a reader sees here at all: it opens on GitHub the issue the
+`verification_issue` tool already returns.
+`tests/test_cli.py` pins the set, so adding a thirteenth without deciding this question fails.
