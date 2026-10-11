@@ -33,7 +33,13 @@ a phase done until its verification holds.
     ranges the paper gives (`datasets/manuscripts/table_survey.json`). It proposes and does not
     decide: which model input a dose sets, the salt-to-free-base conversion, and the schedule
     itself are left blank, so this element still cites a source location only once a curator has
-    kept the candidate.
+    kept the candidate. **Locating compartments by name was measured and not built (2026-10-10):**
+    matching the words of each compartment id against the paper's sentences finds a sentence for
+    all 21 human and all 20 mouse compartments of the metformin models — which is the problem.
+    Several are co-occurrence rather than a statement of structure (`StomachLumen` lands on
+    "Stomach measurements were excluded from the PO data file"), and this repository holds no
+    model-and-paper pair in which a compartment goes unnamed, so the check cannot be shown to
+    fail. A locator that has only ever said yes is not evidence of a source location.
 - [ ] 2.2 Enumerate targetable claims (curves and reported metrics) with reference data or figure-reference marking → verify: claim count and types match a manual read
   - Partly done: a shipped SED-ML document's plots are enumerated as claims and its reports are
     retained non-targetable (`enumerate_sedml_claims`), verified against a manual read of the
