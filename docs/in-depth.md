@@ -903,7 +903,9 @@ than a place — so the body gives the basis and the assumption id to grep for i
 location.
 
 Once an issue is filed, `reprolith issue-reconcile <issues.json>` says where the two sides have
-drifted apart — reading what `gh issue list --json number,title,state,labels,body` prints, since
+drifted apart — reading what `gh issue list --state all --limit 1000 --json
+number,title,state,labels,body` prints (without the first two flags `gh` returns thirty open
+issues and a closed one reads as never filed), since
 nothing here touches the network. Both directions drift, and neither side could see it: the queue
 is derived from the standing certificates on every call, so an item vanishes the moment its
 certificates are superseded while its issue goes on asking; and an issue can be closed, relabelled,

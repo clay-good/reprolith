@@ -19,6 +19,12 @@ permissions:
   contents: read
   issues: write
 
+# One at a time. Two runs that both fetched before either filed would each see the same items as
+# unasked, and the one thing this must not do is ask a question twice.
+concurrency:
+  group: verification-issues
+  cancel-in-progress: false
+
 jobs:
   file:
     runs-on: ubuntu-latest

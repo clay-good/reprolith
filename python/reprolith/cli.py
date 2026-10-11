@@ -2148,7 +2148,11 @@ def build_parser() -> argparse.ArgumentParser:
              "need); takes no issues file",
     )
     p.add_argument("--repo", help="OWNER/REPO for `gh`, when not the checkout's own")
-    add_json(p)
+    # Not `add_json`: that flag promises "the raw JSON an agent receives", and no agent receives
+    # this — the command has no MCP tool, by decision.
+    p.add_argument(
+        "--json", action="store_true", help="emit the plan, and what applying it did, as JSON"
+    )
     p.set_defaults(func=_cmd_issue_file)
 
     p = sub.add_parser("certificates-for", help="every certificate digest issued for a paper")

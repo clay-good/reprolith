@@ -63,7 +63,8 @@ and only when a person asks it to. The gates are real — CI runs `ruff`, `mypy`
   the basis and the assumption id to grep for, rather than filling a required field with a
   plausible location.
 - *Queue and issue stay in sync.* Carried since 2026-09-06: `reprolith issue-reconcile <issues>`
-  reads what `gh issue list --json number,title,state,labels,body` prints and reports where the
+  reads what `gh issue list --state all --limit 1000 --json number,title,state,labels,body`
+  prints and reports where the
   two sides disagree. Before it, the drift was invisible in both directions and each direction
   had its own cause: the queue is *derived* from the standing certificates on every call, so an
   item disappears the moment its certificates are superseded and its issue keeps asking a
