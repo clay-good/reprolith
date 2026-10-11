@@ -43,6 +43,7 @@ from fetch_manuscript_tables import _grid, _localname, _text  # noqa: E402
 sys.path.insert(0, str(REPO / "python"))
 from reprolith import propose_claims  # noqa: E402
 from reprolith.claim_candidates import propose_claims_from_prose  # noqa: E402
+from reprolith.dosing_candidates import propose_dosing_from_prose  # noqa: E402
 
 _BIOMODELS = "https://www.ebi.ac.uk/biomodels/{accession}?format=json"
 _SEARCH = "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query={query}&format=json&pageSize=100"
@@ -138,6 +139,10 @@ def main() -> None:
         ]
         paragraphs = [_text(paragraph) for paragraph in paragraphs_elements]
         prose = propose_claims_from_prose(" ".join(paragraphs))["candidates"]
+        # The other thing a dossier needs from the text, and the one the text does carry: the
+        # doses the paper's results were produced at. Counted beside the results so the two
+        # reaches can be read against each other.
+        dosing = propose_dosing_from_prose(" ".join(paragraphs))["candidates"]
         # And the figure captions on their own. They are already inside the prose sweep — a JATS
         # caption is `<fig><caption><p>`, and the paragraph walk above is over the whole tree — so
         # the prose result already answered this question and nothing said so out loud. A reader
@@ -161,6 +166,17 @@ def main() -> None:
                     1 for c in captions
                     if c["metric"] and c["attribution"] in ("simulated", "both")
                 ),
+            },
+            "dosing": {
+                "candidates": len(dosing),
+                "distinct_amounts": len(
+                    {(str(c["amount"]), str(c["amount_range"]), c["amount_units"], c["bound"])
+                     for c in dosing}
+                ),
+                "attributed_to_a_model": sum(
+                    1 for c in dosing if c["attribution"] in ("simulated", "both")
+                ),
+                "naming_one_route": sum(1 for c in dosing if c["route"]),
             },
             "prose": {
                 "candidates": len(prose),
@@ -203,6 +219,12 @@ def main() -> None:
             "measured, it does not. The papers that state results in a table state them in prose "
             "as well, and the ones that do not state them in neither — their results are in the "
             "figures.",
+            "The dosing counts are the same sweep read for the other thing a dossier needs from "
+            "the text: an amount written beside a word that makes it a dose. Measured, the text "
+            "carries what was given far more often than what came out. A candidate is a dose the "
+            "paper states — the therapeutic range and doses quoted from other work among them — "
+            "not the protocol a result was produced at; which is which is read from the sentence "
+            "each candidate carries.",
             "Figure captions are counted separately and are also inside the prose sweep, which "
             "is what the per-paper 'inside_the_prose_sweep' count establishes rather than "
             "assumes: a JATS caption is a paragraph inside a <fig>, and the prose walk is over "
@@ -239,6 +261,8 @@ def main() -> None:
     print(f"  {len(papers)} distinct papers; {with_results} print a results table")
     print(f"  {prose_reaching} state a model's result in prose naming the quantity")
     print(f"  {caption_reaching} state one in a figure caption (all captions are inside the prose)")
+    dosed = sum(1 for p in papers.values() if p["dosing"]["candidates"])
+    print(f"  {dosed} state a dose in prose beside a word that makes it one")
     print(f"  {curated_sbml} of {len(records)} entries ship a curated SBML model")
 
 

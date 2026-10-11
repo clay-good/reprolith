@@ -81,6 +81,7 @@ from .digitization import (
     value_unit_notes,
     window_faults,
 )
+from .dosing_candidates import propose_dosing_from_prose
 from .dossier import (
     Dossier,
     DossierClaim,
@@ -661,6 +662,7 @@ __all__ = [
     "merge_proposals",
     "propose_claims",
     "propose_claims_from_prose",
+    "propose_dosing_from_prose",
     "propose_parameters",
     "production_envelope",
     "ProductionEnvelope",

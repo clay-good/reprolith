@@ -1069,6 +1069,33 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ("    if args.apply == (args.issues is not None):", "    if False:"),
         ["tests/test_issue_filing.py"],
     ),
+    # --- doses read from a paper's text, 2026-10-10 ---------------------------------------------
+    # A proposer's harm is what it volunteers: each guard keeps out an amount that is not a dose,
+    # or a dose the paper did not write.
+    (
+        "every mass in a paper is proposed as a dose, whether or not a dose word stands beside it",
+        "dosing_candidates.py",
+        ("if _is_a_dose(sentence, group)", "if True"),
+        ["tests/test_dosing_candidates.py"],
+    ),
+    (
+        "what was excreted is proposed as what was given",
+        "dosing_candidates.py",
+        (" and not _SHARE_OF.search(before[: found.start()]):", ":"),
+        ["tests/test_dosing_candidates.py"],
+    ),
+    (
+        "a range printed across two units is given one of them",
+        "dosing_candidates.py",
+        ('            and previous["units"] == member["units"]\n', ""),
+        ["tests/test_dosing_candidates.py"],
+    ),
+    (
+        "a figure panel label is read as a dose in grams",
+        "dosing_candidates.py",
+        ("        if _REFERENCE.search(sentence[:start] if start else preceding):", "        if False:"),
+        ["tests/test_dosing_candidates.py"],
+    ),
     (
         "repeated fruitless claims never take an entry out of the offered pool",
         "catalog.py",

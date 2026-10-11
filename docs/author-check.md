@@ -244,6 +244,23 @@ neither. That is there because "the measured value is 26.1 nmol*h/mL, and the si
 bare number is not proposed at all: in prose it is a figure reference, a citation, or a year far
 more often than it is a result.
 
+### The doses your results were produced at
+
+A deposited model carries one default dose; the doses behind your tables and figures are usually
+only in your text. The same file read for those:
+
+```bash
+reprolith dosing-propose --prose my_paper.txt --out dosing.json
+```
+
+Every amount written beside a word that makes it a dose — "a single PO dose of 500mg", "8 mg/kg
+intravenous dose", "600 mg four times a day" — becomes a candidate with its sentence. A list is
+every dose in it, a range stays a range, and "doses >250 mg" is marked as a limit (`bound`) rather
+than as a dose. `route` is filled only when the sentence names exactly one, and `schedule_words`
+quotes the sentence ("pre-dose", "12 hours before") without assembling a schedule. Three things
+are yours: deleting the doses quoted from other work, naming the model input each survivor sets
+(`parameter` is blank), and converting a salt to the free base if that is what your model takes.
+
 Prose is noisier than a table, and two things follow. A value you print in a table *and* restate in
 a sentence is proposed **twice**, cited to each, because which of the two your claim should cite is
 your judgment. And nothing read from a sentence carries `species_suggested` even with `--model`:

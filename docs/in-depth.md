@@ -121,6 +121,15 @@ paper — `claims-propose` for its results and `params-propose` for its inputs �
 tables' own candidates file. What it does not do is de-duplicate: a value printed in a table and
 restated in a sentence is two citations, and choosing between them is the curator's judgment.
 
+The same sweep read for what was *given* rather than what came out goes the other way.
+`reprolith dosing-propose --prose` proposes every amount a paper writes beside a word that makes it
+a dose, and nine of those ten papers state one — against two that state a result. On the metformin
+paper it returns the seven doses the worked example was built from by hand, and each candidate
+carries its sentence — among them the one giving the hydrochloride doses as their metformin
+equivalents, which is what one of this repository's open verification items asks about. It leaves blank what is a reading: which model
+input a dose sets, the salt conversion, and the schedule, whose words it quotes and does not
+assemble. A text that states no dose yields no candidate — a gap, not a default.
+
 For those figures, the **intake** half is now built and the reading half is not, and the split is
 deliberate. Reprolith digitizes nothing: a curator reads the curve off the picture with a plot
 digitizer, and what arrives is that tool's output. What Reprolith does is the part the digitizer
@@ -361,6 +370,8 @@ reprolith claims-template \           # write the claims file archive-check read
   --model <model.xml> [--sedml <exp.sedml>] [--out <claims.json>]
 reprolith claims-propose \            # candidate claims from the tables your paper prints
   --tables <tables.json> [--model <model.xml>] [--out <candidates.json>]
+reprolith dosing-propose \            # candidate doses from the text of your paper
+  --prose <paper.txt> [--out <dosing.json>]
 reprolith claims-check \              # is each value printed in the table it cites?
   --claims <claims.json> --tables <tables.json> [--model <model.xml>]
 reprolith params-propose \            # candidate parameter values from the tables your paper prints

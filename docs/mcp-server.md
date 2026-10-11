@@ -177,14 +177,15 @@ returns.
 
 ### What the CLI has that the server does not
 
-Twelve commands need a **file** the server has no path to, and have no MCP tool. Ten of them
-work on that file alone; `issue-reconcile` and `issue-file` are the exceptions and say so in their
+Thirteen commands need a **file** the server has no path to, and have no MCP tool. Eleven of
+them work on that file alone; `issue-reconcile` and `issue-file` are the exceptions and say so in their
 own rows.
 
 | Command | Why it is not a tool |
 | --- | --- |
 | `reprolith export` | The server holds catalogs, certificates, dossiers, and bundles — never model bytes. An agent would have to send the model over JSON-RPC and take an archive back as base64. The bundle it exports is already readable through the `bundle` tool, and the same library the CLI calls is importable. |
 | `reprolith claims-propose` | It reads the tables an author's *paper* prints, and with `--prose` its running text — files the server does not hold, for a paper that has no entry here yet — and its output is meant to be edited by hand before it is used, which is a file on disk. |
+| `reprolith dosing-propose` | It reads the running text of an author's own paper for the doses it states, like `claims-propose --prose` for what was given rather than what came out. Same two reasons: a file the server does not hold, and output meant to be edited by hand — which candidate is the protocol, and which model input it sets, are left blank for the author. |
 | `reprolith claims-check` | It compares a claims file against the rows of the tables a paper prints — two files supplied by the caller, neither of which the server holds. The server has certificates, not the manuscripts behind them, and a tool that answered from repository state would be answering a different question. |
 | `reprolith claims-template` | It writes the claims file `archive-check` reads, out of the author's own model and simulation document — two files the server has no path to, for an author who has no entry in this repository yet. It is also the one command whose output is meant to be edited by hand before it is used again, which is a file on disk, not a JSON-RPC result. |
 | `reprolith params-check` | It compares an author's own model file against the parameter values their paper reports for it — again two caller-supplied files, and again a question about a paper the server has no entry for. The pairing of a table row to a parameter id is the author's judgment and travels in the file they supply; nothing in repository state could stand in for it. |
@@ -201,4 +202,4 @@ surface also reports, so the two cannot disagree. `issue-reconcile` reads the qu
 already serves and adds only the issues' side of it, which the server cannot see at all.
 `issue-file` adds nothing a reader sees here at all: it opens on GitHub the issue the
 `verification_issue` tool already returns.
-`tests/test_cli.py` pins the set, so adding a thirteenth without deciding this question fails.
+`tests/test_cli.py` pins the set, so adding a fourteenth without deciding this question fails.

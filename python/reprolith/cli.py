@@ -53,6 +53,7 @@ from .digitization import (
     value_unit_notes,
     window_faults,
 )
+from .dosing_candidates import propose_dosing_from_prose
 from .export import (
     build_bundle_sedml,
     build_omex_archive,
@@ -1318,6 +1319,40 @@ def _tables_file(path: Path) -> dict[str, Any]:
     return tables
 
 
+def _cmd_dosing_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
+    """Propose candidate dosing statements from the paper's running text.
+
+    The doses a paper's results were produced at are the one element of a dossier a deposited
+    model routinely does not carry, and until now they were found by reading. This is
+    `claims-propose --prose` for what was *given* rather than what came out, under the same rule:
+    every candidate carries its sentence, and nothing here decides which is the protocol.
+    """
+    try:
+        prose = Path(args.prose).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as unreadable:
+        print(f"cannot read the text: {unreadable}", file=sys.stderr)
+        return 1
+    proposed = propose_dosing_from_prose(prose, accession=args.accession)
+    rendered = json.dumps(proposed, indent=2, sort_keys=True) + "\n"
+    if args.out is None:
+        print(rendered, end="")
+        return 0
+    try:
+        replaced = _wrote(Path(args.out), rendered)
+    except OSError as unwritable:
+        print(f"cannot write the candidates: {unwritable}", file=sys.stderr)
+        return 1
+    body = proposed["entries"][args.accession] if args.accession is not None else proposed
+    print(f"wrote {args.out}{replaced}")
+    print(
+        f"  {plural(len(body['candidates']), 'candidate', 'candidates')} from the text of "
+        f"{Path(args.prose).name}"
+    )
+    for note in body["notes"]:
+        print(f"  note: {note}")
+    return 0
+
+
 def _cmd_claims_propose(query: ReprolithQuery, args: argparse.Namespace) -> int:
     """Propose candidate claims from the tables the paper prints, and from its running text."""
     if args.tables is None and args.prose is None:
@@ -1996,7 +2031,7 @@ def build_parser() -> argparse.ArgumentParser:
             "certificates-for, "
             "dossier, bundle, select-claims\n"
             "checking your own files: issue-reconcile, issue-file, archive-check, claims-template, "
-            "claims-propose, "
+            "claims-propose, dosing-propose, "
             "claims-check, params-template, params-propose, params-check, figure-template, "
             "figure-check\n"
             "writing: export — the one command whose whole job is to create a file\n\n"
@@ -2277,6 +2312,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--out", default=None, help="write here instead of to standard output")
     p.set_defaults(func=_cmd_claims_propose)
+
+    p = sub.add_parser(
+        "dosing-propose",
+        help="propose candidate dosing statements from your paper's text (you pick)",
+    )
+    p.add_argument(
+        "--prose", required=True, metavar="FILE",
+        help="your paper's running text as a plain-text file; every amount written beside a "
+             "word that makes it a dose is proposed with the whole sentence it came from",
+    )
+    p.add_argument(
+        "--accession", default=None,
+        help="wrap the result under this accession, the shape a multi-paper file uses",
+    )
+    p.add_argument("--out", default=None, help="write here instead of to standard output")
+    p.set_defaults(func=_cmd_dosing_propose)
 
     p = sub.add_parser(
         "claims-template",

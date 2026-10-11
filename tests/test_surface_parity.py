@@ -58,7 +58,7 @@ _NO_TOOL = {
     # query surface is read-only and holds no credentials, so it has no tool for the same reason
     # and a second one besides.
     "issue-file",
-    "export", "archive-check", "claims-template", "claims-propose", "claims-check",
+    "export", "archive-check", "claims-template", "claims-propose", "claims-check", "dosing-propose",
     "params-template", "params-propose", "params-check", "figure-template", "figure-check",
 }
 

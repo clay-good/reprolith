@@ -284,6 +284,7 @@
   "limits": [
     "A paper is reached through the identifier the model repository records, by PubMed id or by DOI. An entry naming no paper cannot be reached, and several entries name the same paper, so the entry count is a floor and not a paper count.",
     "The prose counts answer whether text reaches the papers whose tables do not: measured, it does not. The papers that state results in a table state them in prose as well, and the ones that do not state them in neither \u2014 their results are in the figures.",
+    "The dosing counts are the same sweep read for the other thing a dossier needs from the text: an amount written beside a word that makes it a dose. Measured, the text carries what was given far more often than what came out. A candidate is a dose the paper states \u2014 the therapeutic range and doses quoted from other work among them \u2014 not the protocol a result was produced at; which is which is read from the sentence each candidate carries.",
     "Figure captions are counted separately and are also inside the prose sweep, which is what the per-paper 'inside_the_prose_sweep' count establishes rather than assumes: a JATS caption is a paragraph inside a <fig>, and the prose walk is over the whole document. So 'the results are in the figures' is a statement about the pictures, not about unread text beside them.",
     "'A results table' is read off propose_claims: a table whose candidates state a metric is naming quantities a reproduction targets. That is a signal, not a proof, so the per-table counts are kept.",
     "Each entry's model format and curation status travel beside its paper, because a paper stating reproducible results is only half of what a certificate needs: an entry shipping an R script or a non-curated hybrid cannot be run whatever its paper says."
@@ -295,6 +296,12 @@
         "inside_the_prose_sweep": 10,
         "naming_a_quantity": 0,
         "paragraphs": 10
+      },
+      "dosing": {
+        "attributed_to_a_model": 0,
+        "candidates": 0,
+        "distinct_amounts": 0,
+        "naming_one_route": 0
       },
       "prose": {
         "attributed_to_a_model": 0,
@@ -317,6 +324,12 @@
         "naming_a_quantity": 0,
         "paragraphs": 6
       },
+      "dosing": {
+        "attributed_to_a_model": 2,
+        "candidates": 4,
+        "distinct_amounts": 2,
+        "naming_one_route": 2
+      },
       "prose": {
         "attributed_to_a_model": 0,
         "candidates": 1,
@@ -338,6 +351,12 @@
         "naming_a_quantity": 0,
         "paragraphs": 6
       },
+      "dosing": {
+        "attributed_to_a_model": 1,
+        "candidates": 7,
+        "distinct_amounts": 4,
+        "naming_one_route": 1
+      },
       "prose": {
         "attributed_to_a_model": 0,
         "candidates": 0,
@@ -358,6 +377,12 @@
         "inside_the_prose_sweep": 3,
         "naming_a_quantity": 0,
         "paragraphs": 3
+      },
+      "dosing": {
+        "attributed_to_a_model": 8,
+        "candidates": 23,
+        "distinct_amounts": 8,
+        "naming_one_route": 0
       },
       "prose": {
         "attributed_to_a_model": 0,
@@ -385,6 +410,12 @@
         "inside_the_prose_sweep": 17,
         "naming_a_quantity": 0,
         "paragraphs": 17
+      },
+      "dosing": {
+        "attributed_to_a_model": 4,
+        "candidates": 6,
+        "distinct_amounts": 2,
+        "naming_one_route": 5
       },
       "prose": {
         "attributed_to_a_model": 3,
@@ -443,6 +474,12 @@
         "naming_a_quantity": 0,
         "paragraphs": 7
       },
+      "dosing": {
+        "attributed_to_a_model": 5,
+        "candidates": 9,
+        "distinct_amounts": 3,
+        "naming_one_route": 8
+      },
       "prose": {
         "attributed_to_a_model": 25,
         "candidates": 44,
@@ -463,6 +500,12 @@
         "inside_the_prose_sweep": 10,
         "naming_a_quantity": 0,
         "paragraphs": 10
+      },
+      "dosing": {
+        "attributed_to_a_model": 20,
+        "candidates": 63,
+        "distinct_amounts": 9,
+        "naming_one_route": 37
       },
       "prose": {
         "attributed_to_a_model": 9,
@@ -521,6 +564,12 @@
         "naming_a_quantity": 0,
         "paragraphs": 8
       },
+      "dosing": {
+        "attributed_to_a_model": 8,
+        "candidates": 12,
+        "distinct_amounts": 8,
+        "naming_one_route": 0
+      },
       "prose": {
         "attributed_to_a_model": 0,
         "candidates": 6,
@@ -547,6 +596,12 @@
         "inside_the_prose_sweep": 8,
         "naming_a_quantity": 0,
         "paragraphs": 8
+      },
+      "dosing": {
+        "attributed_to_a_model": 5,
+        "candidates": 14,
+        "distinct_amounts": 6,
+        "naming_one_route": 0
       },
       "prose": {
         "attributed_to_a_model": 0,
@@ -580,6 +635,12 @@
         "inside_the_prose_sweep": 12,
         "naming_a_quantity": 0,
         "paragraphs": 12
+      },
+      "dosing": {
+        "attributed_to_a_model": 3,
+        "candidates": 8,
+        "distinct_amounts": 3,
+        "naming_one_route": 5
       },
       "prose": {
         "attributed_to_a_model": 3,

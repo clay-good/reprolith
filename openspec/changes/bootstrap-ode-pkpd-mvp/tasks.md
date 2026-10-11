@@ -22,9 +22,18 @@ a phase done until its verification holds.
   - Partly done: `ingest_sbml` / `ingest_omex` produce this from a *shipped artifact*, every
     element citing the file it came from — including, since the reaction carry, a reaction-based
     model's own laws of motion (stoichiometry and rate law) where a rebuild reproduces the model
-    as itself, and a named reason where it would not. Reading compartment structure, the PD link,
-    and the dosing protocol out of manuscript prose is not built; the metformin worked example did
-    it by hand.
+    as itself, and a named reason where it would not. Reading compartment structure and the PD
+    link out of manuscript prose is not built; the metformin worked example did it by hand. The
+    **dosing** it read by hand has a reader now (`propose_dosing_from_prose` /
+    `reprolith dosing-propose`): every amount a paper's text writes beside a word that makes it a
+    dose, with its whole sentence, the route when the sentence names exactly one, and the
+    scheduling words quoted. Measured on the ten open-access papers of the seeded set it finds a
+    stated dose in nine — where the same text states a *result* in two — and on the metformin
+    paper its distinct amounts are the seven the worked example was built with, plus the two
+    ranges the paper gives (`datasets/manuscripts/table_survey.json`). It proposes and does not
+    decide: which model input a dose sets, the salt-to-free-base conversion, and the schedule
+    itself are left blank, so this element still cites a source location only once a curator has
+    kept the candidate.
 - [ ] 2.2 Enumerate targetable claims (curves and reported metrics) with reference data or figure-reference marking → verify: claim count and types match a manual read
   - Partly done: a shipped SED-ML document's plots are enumerated as claims and its reports are
     retained non-targetable (`enumerate_sedml_claims`), verified against a manual read of the

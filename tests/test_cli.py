@@ -327,7 +327,7 @@ def test_every_command_that_writes_a_file_writes_only_where_the_caller_says() ->
     }
     assert writing == {
         "export", "claims-template", "claims-propose", "params-template", "params-propose",
-        "figure-template",
+        "figure-template", "dosing-propose",
     }, sorted(writing)
     # And every one of them takes the path from the caller rather than choosing one: no default.
     for name in writing:
@@ -689,6 +689,7 @@ def test_only_the_file_commands_sit_outside_the_query_surface():
     ).choices
     named = {
         "export", "archive-check", "claims-template", "claims-check", "claims-propose",
+        "dosing-propose",
         "params-check", "params-template", "params-propose", "figure-check", "figure-template",
         # `issue-reconcile` reads this repository *and* a file: the GitHub issues, which the MCP
         # server has no credentials to fetch and no path to. It is here rather than on the query
@@ -1820,7 +1821,10 @@ def _second_write_argv(tmp_path: Path, repo: Path, model: Path) -> dict[str, lis
         ["Tissue", "Dose, mg", "Cmax, nmol/mL"],
         ["Plasma", "500", "6.1"],
     ]}}}), encoding="utf-8")
+    prose = tmp_path / "sweep-paper.txt"
+    prose.write_text("A single PO dose of 500mg was simulated.", encoding="utf-8")
     return {
+        "dosing-propose": ["dosing-propose", "--prose", str(prose)],
         "claims-template": ["claims-template", "--model", str(sbml), "--sedml", str(sedml)],
         "params-template": ["params-template", "--model", str(sbml)],
         "figure-template": ["figure-template", "--sedml", str(sedml)],
@@ -1831,7 +1835,7 @@ def _second_write_argv(tmp_path: Path, repo: Path, model: Path) -> dict[str, lis
 
 
 def test_every_command_that_writes_says_when_it_replaced_a_file(tmp_path, capsys):
-    """The rule `export` and `figure-template --out-dir` already followed, on all six.
+    """The rule `export` and `figure-template --out-dir` already followed, on every writer.
 
     The other four replaced a file the caller had already filled in and printed `wrote <path>` —
     the same success line as the first time. That is the worst place in this surface for silence:
