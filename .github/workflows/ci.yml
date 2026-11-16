@@ -11,7 +11,9 @@ on:
 # human PRs and the autonomous build loop meet the identical bar.
 jobs:
   python:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04 (2026-11), which has no Python 3.9 build, and the 3.9
+    # leg of this matrix failed at setup before running a line. 24.04 still carries it.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -46,7 +48,7 @@ jobs:
   # caught the exported document declaring the wrong SED-ML level was local-only, so the guard that
   # found that defect was not running anywhere it could catch the next one.
   engine:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # see the python job: 3.9 is not on 26.04
     strategy:
       fail-fast: false
       matrix:
