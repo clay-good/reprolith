@@ -966,6 +966,7 @@ def certify_model(
     selection: ClaimSelection | None = None,
     duration: float,
     steps: int = 480,
+    curve_claims: Iterable[CurveClaim] = (),
 ) -> Certificate:
     """Run each claim under the pin, judge it, and assemble the certificate.
 
@@ -985,6 +986,11 @@ def certify_model(
     one did not — so the metformin dossier's load-bearing units gap (45 of 69 extracted values
     state no unit) reached neither the "what was missing" report nor the author's fix list, which
     told that author there were two things to fix where Reprolith's own records held three.
+
+    ``curve_claims`` are whole time courses the same paper shows, judged after the scalar claims by
+    the curve path :func:`certify_curves` uses, so one certificate can carry a table's numbers and a
+    figure's curves for one model. Each states its own window and sample count, since a curve is
+    judged point against point on the grid its reference was put on.
     """
     assessments = []
     for claim in claims:
@@ -1133,6 +1139,7 @@ def certify_model(
                 ),
             )
         )
+    assessments.extend(_judge_curve_claim(sbml, claim) for claim in curve_claims)
     return build_certificate(
         paper=paper,
         engine_pin=engine_pin,
@@ -1181,6 +1188,55 @@ class CurveClaim:
         )
 
 
+def _judge_curve_claim(sbml: str, claim: CurveClaim) -> ClaimAssessment:
+    """Run one curve claim under the pin and judge its whole trajectory.
+
+    Shared by :func:`certify_curves` and :func:`certify_model`, so a curve published beside a
+    paper's scalar claims is judged by exactly the path a curve published alone is.
+
+    A claim whose ``reference`` is empty abstains rather than being run and judged: there is
+    nothing to compare against. That is the ordinary shape of a claim read off a shipped SED-ML
+    document, which says which curve the paper plots and never what the figure showed — and running
+    the model anyway against an empty reference used to raise, turning "no data" into a crash at the
+    front-end most likely to meet it (spec: simulation-oracle — "Abstention").
+    """
+    if not claim.reference:
+        return not_evaluable(
+            claim_id=claim.claim_id,
+            quantity=claim.quantity,
+            source_location=claim.cited_source,
+            reason=(
+                "no reference values for this curve: the source states which curve is "
+                "plotted but not the values it showed, so there is nothing to compare "
+                "the run against"
+            ),
+            reference_kind=claim.reference_kind,
+        )
+    model = _apply_overrides(sbml, claim.parameter_overrides) if claim.parameter_overrides else sbml
+    _, values = simulate(model, claim.species, duration=claim.duration, steps=claim.steps)
+    assessment = judge_curve(
+        claim_id=claim.claim_id,
+        quantity=claim.quantity,
+        source_location=claim.cited_source,
+        reference=claim.reference,
+        predicted=values,
+        reference_kind=claim.reference_kind,
+        tolerance=claim.tolerance,
+        attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
+        assumption_qualified=claim.assumption_qualified,
+    )
+    return replace(
+        assessment,
+        protocol=_run_protocol(
+            duration=claim.duration,
+            steps=claim.steps,
+            read=f"[{claim.species}] curve",
+            overrides=claim.parameter_overrides,
+            overwritten=_events_overwriting(sbml, claim.parameter_overrides),
+        ),
+    )
+
+
 def certify_curves(
     sbml: str,
     *,
@@ -1203,54 +1259,7 @@ def certify_curves(
     nothing to compare against. That is the ordinary shape of a claim read off a shipped SED-ML
     document, which says which curve the paper plots and never what the figure showed.
     """
-    assessments = []
-    for claim in claims:
-        if not claim.reference:
-            # A claim with no reference values has nothing to compare against, so it abstains
-            # rather than guessing a pass or a fail (spec: simulation-oracle — "Abstention").
-            # This is the ordinary shape of a claim read off a shipped SED-ML document: the
-            # document says which curve the paper plots, never what the figure showed. Running
-            # the model anyway and judging it against an empty reference used to raise, which
-            # turned "no data" into a crash at the one front-end most likely to meet it.
-            assessments.append(not_evaluable(
-                claim_id=claim.claim_id,
-                quantity=claim.quantity,
-                source_location=claim.cited_source,
-                reason=(
-                    "no reference values for this curve: the source states which curve is "
-                    "plotted but not the values it showed, so there is nothing to compare "
-                    "the run against"
-                ),
-                reference_kind=claim.reference_kind,
-            ))
-            continue
-        model = _apply_overrides(sbml, claim.parameter_overrides) if claim.parameter_overrides else sbml
-        _, values = simulate(model, claim.species, duration=claim.duration, steps=claim.steps)
-        assessment = (
-            judge_curve(
-                claim_id=claim.claim_id,
-                quantity=claim.quantity,
-                source_location=claim.cited_source,
-                reference=claim.reference,
-                predicted=values,
-                reference_kind=claim.reference_kind,
-                tolerance=claim.tolerance,
-                attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
-                assumption_qualified=claim.assumption_qualified,
-            )
-        )
-        assessments.append(
-            replace(
-                assessment,
-                protocol=_run_protocol(
-                    duration=claim.duration,
-                    steps=claim.steps,
-                    read=f"[{claim.species}] curve",
-                    overrides=claim.parameter_overrides,
-                    overwritten=_events_overwriting(sbml, claim.parameter_overrides),
-                ),
-            )
-        )
+    assessments = [_judge_curve_claim(sbml, claim) for claim in claims]
     return build_certificate(
         paper=paper,
         engine_pin=engine_pin,

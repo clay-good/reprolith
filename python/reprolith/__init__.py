@@ -306,6 +306,7 @@ from .run import (
     advance_to_outcome,
     blocked_certificate,
     certified_from_claims,
+    figure_claims,
     load_claims_dataset,
     run_test_set,
 )
@@ -465,6 +466,7 @@ __all__ = [
     "CertificateLedger",
     "certificates_needing_review",
     "certified_from_claims",
+    "figure_claims",
     "EssentialityClaim",
     "FluxClaim",
     "FluxRangeClaim",

@@ -166,7 +166,11 @@ def test_the_published_bundle_can_re_run_the_claims_it_describes() -> None:
         c["claim_id"]: c["reported"]
         for c in claims["entries"]["BIOMD0000001028"]["claims"]
     }
-    assert set(reported) == {s.claim_id for s in bundle.recipe}
+    # The figure's curves are steps too, judged as whole curves rather than one number each; they
+    # are re-run against their readings in test_figure_reading_zake2021.py, and here only counted.
+    curves = {c["claim_id"] for c in claims["entries"]["BIOMD0000001028"]["figure_claims"]}
+    assert {s.claim_id for s in bundle.recipe if s.metric == "curve"} == curves
+    assert set(reported) == {s.claim_id for s in bundle.recipe if s.metric != "curve"}
 
     # The claims this entry's certificate does not judge are not re-checked against a tolerance
     # here either: four of its Tmax claims abstain because the run's own sampling could move them
@@ -180,6 +184,8 @@ def test_the_published_bundle_can_re_run_the_claims_it_describes() -> None:
     }
 
     for step in bundle.recipe:
+        if step.metric == "curve":
+            continue
         duration = float(step.time_span.split("-")[-1])
         if step.schedule:
             # A step with prior administrations is re-run the way it was certified: the same

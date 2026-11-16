@@ -235,3 +235,29 @@ def test_the_verdicts_are_not_vacuous() -> None:
     declared_clock = _certify(_claims(clock=0.01))
     for assessment in declared_clock.assessments:
         assert assessment.verdict is Verdict.FAILED, assessment.claim_id
+
+
+def test_the_published_certificate_carries_every_curve_read() -> None:
+    """The thirty readings are claims on the entry's certificate, each as a figure reading.
+
+    Read from the committed certificate, so it runs where the engine is not installed: a figure
+    claim dropped from the dataset, or a certificate regenerated without them, shows up here rather
+    than as a quieter headline.
+    """
+    read = {s["claim"] for panel in _MANIFEST["panels"] for s in panel["series"]}
+    stated = {record["claim_id"] for record in _ENTRY["figure_claims"]}
+    assert stated == read
+
+    certificate = json.loads(
+        (_REPO / "datasets" / "milestone" / "certificates" / "BIOMD0000001028.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    published = {
+        a["claim_id"]: a for a in certificate["assessments"] if a["claim_id"] in read
+    }
+    assert set(published) == read
+    for assessment in published.values():
+        assert assessment["reference_kind"] == ReferenceKind.DIGITIZED_FIGURE.value
+        assert assessment["verdict"] == Verdict.REPRODUCED.value
+        assert "digitized from the figure with" in assessment["source_location"]

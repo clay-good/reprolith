@@ -377,7 +377,7 @@ ready" for it would tell almost every honest author their work is broken. See
 
 ## The limit that remains
 
-**One published figure is in this corpus now, and none is on a published certificate yet.**
+**One published figure is in this corpus now, and its curves are on a published certificate.**
 Figure 5 of Zake et al. 2021 is read: thirty curves, the paper's own model simulations of ten
 tissues at three doses (`datasets/figures/Zake2021_figure5/`). The reading is a curator's, taken
 with `scripts/digitize_figure_panels.py`, which locates the frame, ticks and lines in the image and
@@ -388,5 +388,8 @@ that curve. Then the deposited model reproduces all thirty, at normalized distan
 the deposit declares (`tests/test_figure_reading_zake2021.py`, and the findings note's
 "The first published figure, read and judged").
 
-What remains: these are judged in a test and are not yet claims on the entry's certificate, and the
-other papers whose results are only in figures are still unread.
+All thirty are claims on the BIOMD0000001028 certificate now, beside the table's numbers. An entry
+states them as `figure_claims` in `datasets/pkpd_claims.json`, each naming its digitization file
+and the window it is judged on, and `reprolith.figure_claims` turns one into a curve claim with
+`digitized-figure` pinned as its reference kind. What remains is the other papers whose results
+are only in figures, which are still unread.

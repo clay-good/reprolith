@@ -97,6 +97,7 @@ def main() -> None:
         ReconstructionBundle,
         ReferenceKind,
         estimate_difficulty,
+        figure_claims,
         ingest_sbml,
     )
     from reprolith.dossier import FootprintOrigin
@@ -121,13 +122,18 @@ def main() -> None:
         # And each one's footprint is derived from the model that produces it — what the claim's
         # verdict rests on, read off the reactions, rules and compartments rather than matched out
         # of its own prose. See `reprolith.footprints`.
-        targets = [record["species"] for record in entry["claims"]]
+        # Curves read off the paper's figures, judged beside its table's numbers on one
+        # certificate. Built once here so the dossier, the bundle and the corroboration all carry
+        # the reference the certificate was judged against, resampled onto the claim's own grid.
+        curve_records = entry.get("figure_claims", [])
+        curves = figure_claims(curve_records, base_dir=DATASETS)
+        targets = [record["species"] for record in entry["claims"] + curve_records]
         footprints = derive_footprints(sbml, targets)
         # And the recorded assumptions each claim rests on, which no walk of the model can see —
         # the deposit's time unit is in how the model's clock is *read*. An id naming no assumption
         # this entry records would be an overlap charged against nothing a reader can look up.
         recorded = {assumption["id"] for assumption in entry.get("assumptions", ())}
-        for record in entry["claims"]:
+        for record in entry["claims"] + curve_records:
             unrecorded = sorted(set(record.get("rests_on_assumptions", ())) - recorded)
             if unrecorded:
                 raise ValueError(
@@ -151,6 +157,19 @@ def main() -> None:
                 rests_on_assumptions=frozenset(record.get("rests_on_assumptions", ())),
             )
             for record in entry["claims"]
+        ) + tuple(
+            DossierClaim(
+                id=curve.claim_id,
+                quantity=curve.quantity,
+                conditions=f"curve of {curve.species}",
+                source_location=curve.cited_source,
+                reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+                reference_data=curve.reference,
+                footprint=footprints[curve.species],
+                footprint_origin=FootprintOrigin.DERIVED if footprints[curve.species] else None,
+                rests_on_assumptions=frozenset(record.get("rests_on_assumptions", ())),
+            )
+            for curve, record in zip(curves, curve_records)
         ))
         (dossier_dir / f"{accession}.json").write_text(
             json.dumps(dossier.to_dict(), indent=2, sort_keys=True) + "\n",
@@ -177,6 +196,12 @@ def main() -> None:
                        parameter_overrides=c.parameter_overrides, metric=c.metric,
                        schedule=c.schedule, window=c.window)
             for rec in entry["claims"]
+        ) + tuple(
+            RecipeStep(claim_id=curve.claim_id, protocol=curve.cited_source,
+                       output=f"[{curve.species}]", time_span=f"0-{curve.duration:g}",
+                       steps=curve.steps, parameter_overrides=curve.parameter_overrides,
+                       metric="curve")
+            for curve in curves
         )
         bundle = ReconstructionBundle(
             entry=accession,

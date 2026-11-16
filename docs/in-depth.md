@@ -14,15 +14,18 @@ That is what it is *for*, and it is worth being exact about how much of it is do
 
 Of the thirty-nine published certificates, **four** check a reconstruction against numbers read
 from one paper's own tables — one for each model that paper deposited. (Two more are checked
-against published numbers too, and the count below says which.) Between them they carry **one hundred and
-seventy claims**,
-every one a number the paper's own model reports: ten tissues at 500, 1000 and 1500 mg after a
+against published numbers too, and the count below says which.) Between them they carry **two
+hundred claims**. One hundred and seventy are
+numbers the paper's own model reports in its tables: ten tissues at 500, 1000 and 1500 mg after a
 single human dose, each by peak, by the time of that peak, and by 24-hour exposure; those same ten
 tissues by peak and by exposure again
 under twice-daily dosing, where the exposure is over the final dosing day and not the whole run;
 seven tissues in mice by peak and by 24-hour exposure;
 three validation arms that each follow an earlier dose, and the intravenous mouse model's
-three exposures.
+three exposures. The other thirty are **whole curves read off the paper's Figure 5**, its own
+simulation of ten tissues at the three single human doses, judged point against point over
+29 hours (39 for red blood cells) rather than at one number per curve. Their reading agrees with the
+peaks Table 6 prints to within 2.2% before any model runs, and all thirty reproduce.
 
 **Not one of the four is a clean pass, and the reason is a unit.** All four of this paper's
 deposited models declare their time unit as 3600·10² seconds — one hundred hours. An area read off
@@ -41,7 +44,7 @@ AUC claims and a front page announcing a clean pass before the check that finds 
 at more than one entry. It is pointed at every one now
 ([`tests/test_claim_units.py`](../tests/test_claim_units.py)).
 
-**One hundred and fifty-five reproduce, ten do not, and five cannot be evaluated — each with its reason.** Six because the
+**One hundred and eighty-five reproduce, ten do not, and five cannot be evaluated — each with its reason.** Six because the
 deposited model runs four of the eight administrations its own name states — which matters only for
 a tissue slow enough to still be accumulating, and shows there on *both* metrics: red blood cells
 miss on peak by 15% and on exposure by 37%, at each of three doses. The cause is recorded per claim
@@ -185,8 +188,8 @@ results as figures is what papers do. And it has met a real figure: Figure 5 of 
 paper, thirty curves read off the published image (`datasets/figures/Zake2021_figure5/`), whose
 peaks agree with the paper's own Table 6 to within 2.2% before any model runs, and which the
 deposited model then reproduces at normalized distances of 0.006 to 0.027 against a 0.20 band.
-The same readings fail at the wrong dose and under the deposit's declared clock. They are judged
-in a test and not yet on a published certificate. See [`docs/figure-values.md`](figure-values.md).
+The same readings fail at the wrong dose and under the deposit's declared clock. All thirty are
+claims on the single-dose entry's published certificate, marked `[figure-reading]`. See [`docs/figure-values.md`](figure-values.md).
 [`docs/findings-note.md`](findings-note.md) and [`openspec/`](../openspec/) say so in detail. Where a paper ships a **SED-ML** document, the half of that
 job the document already did is read from it: its plots say which curves the paper shows, and those
 become the dossier's claims. Their *values* are still not there, so such a claim is figure-referenced

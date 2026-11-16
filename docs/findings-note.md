@@ -6490,6 +6490,8 @@ clock is read as hours. `figure-check` still prints UNITS DISAGREE for every ser
 The evidence is now stronger, but the question is an expert's to close, and the claims stay
 assumption-qualified.
 
-What is not done yet: these readings are judged in `tests/test_figure_reading_zake2021.py` and are
-not yet claims on the published certificate. Publishing them moves the corpus's headline counts,
-which a separate change should do on its own.
+**And they are published.** The same day, the thirty curves became claims on the single-dose
+entry's certificate, through a new `figure_claims` list on its claims record. `certify_model` judges
+them with the same curve path `certify_curves` uses, now one shared function. The corpus carries 200
+claims where it carried 170, and 185 reproduce where 155 did. The certificate is still not a clean
+pass, for the reason every other claim on it is not: the clock.

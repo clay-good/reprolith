@@ -21,9 +21,11 @@ from typing import Any
 from .agreement import AgreementReport, build_agreement_report
 from .catalog import CatalogEntry
 from .certificate import build_certificate
-from .certify import Claim, certify_model
+from .certify import Claim, CurveClaim, certify_model
+from .digitization import curve_reference, read_digitized_figure
 from .enums import LifecycleState, OverallVerdict
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
+from .oracle import ReferenceKind
 
 # Says what actually happened, and who owns the missing input. It used to read "no
 # machine-checkable claims extracted from the shipped model artifact", which named a source and an
@@ -199,6 +201,7 @@ def certified_from_claims(
     for accession, entry in claims_dataset["entries"].items():
         sbml = (base / entry["model_file"]).read_text(encoding="utf-8")
         claims = [Claim.from_record(record) for record in entry["claims"]]
+        curves = figure_claims(entry.get("figure_claims", ()), base_dir=base)
         assumptions = [Assumption(**record) for record in entry.get("assumptions", [])]
         certificates[accession] = certify_model(
             sbml,
@@ -209,8 +212,51 @@ def certified_from_claims(
             gap_report=_artifact_gaps(sbml, accession),
             duration=float(entry["duration"]),
             steps=int(entry.get("steps", 480)),
+            curve_claims=curves,
         )
     return certificates
+
+
+def figure_claims(records: Sequence[Mapping[str, Any]], *, base_dir: Path | str) -> list[CurveClaim]:
+    """The curve claims an entry reads off its paper's figures, each joined to its reading.
+
+    A record names the digitization file (under ``base_dir``) and the series in it by claim id, and
+    states the window and sample count it is judged on. The values come only from the reading,
+    resampled onto that grid and never extrapolated, and the reference kind is always
+    ``digitized-figure``: a value read off a picture cannot be recorded as a printed number, so the
+    wider band it is judged in is not escapable from a claims file.
+    """
+    base = Path(base_dir)
+    claims = []
+    for record in records:
+        series = {
+            s.claim_id: s
+            for s in read_digitized_figure(
+                (base / record["digitization"]).read_text(encoding="utf-8")
+            )
+        }
+        reading = series.get(record["claim_id"])
+        if reading is None:
+            raise ValueError(
+                f"{record['claim_id']} names {record['digitization']}, which reads no series for "
+                f"that claim (it reads {', '.join(sorted(series))})"
+            )
+        duration, steps = float(record["duration"]), int(record["steps"])
+        overrides = record.get("parameter_overrides", {})
+        claims.append(CurveClaim(
+            claim_id=record["claim_id"],
+            quantity=record["quantity"],
+            species=record["species"],
+            reference=curve_reference(reading, duration=duration, steps=steps),
+            source_location=reading.source_line(window=(0.0, duration)),
+            duration=duration,
+            steps=steps,
+            reference_kind=ReferenceKind.DIGITIZED_FIGURE,
+            digitizer=reading.digitizer,
+            parameter_overrides=tuple((k, float(v)) for k, v in overrides.items()),
+            assumption_qualified=bool(record.get("assumption_qualified", False)),
+        ))
+    return claims
 
 
 def load_claims_dataset(path: Path | str) -> dict[str, Any]:
@@ -319,6 +365,7 @@ __all__ = [
     "advance_to_outcome",
     "blocked_certificate",
     "certified_from_claims",
+    "figure_claims",
     "load_claims_dataset",
     "require_same_paper",
     "run_test_set",

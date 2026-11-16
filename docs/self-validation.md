@@ -149,7 +149,7 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   logical               9 model(s) on cana, reprolith-logical, sympy-sat — all agree exactly
                           as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 339be2bfd62e), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 339be2bfd62e), sympy-sat 1.14.0
                           1 of 10 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
-  ode-pkpd            170 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
+  ode-pkpd            200 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   spatial               5 model(s) on reprolith-fd, scipy-lsoda — 4 of 5 engine-independent (front_speed differs by at most 1e-01)
                           as reprolith-fd explicit-forward-euler-finite-difference (rev 652b79ad3bee), scipy-lsoda 1.13.1
@@ -157,7 +157,7 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
                           as reprolith-ssa gillespie-direct-method (rev 0e0873ebe9ed), roadrunner-gillespie 2.7.0
                           1 of 5 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
 
-  overall: 6 of 6 classes re-run on a second engine — 170 claim(s), 32 model(s); 3 standing certificate(s) in those classes have none
+  overall: 6 of 6 classes re-run on a second engine — 200 claim(s), 32 model(s); 3 standing certificate(s) in those classes have none
 ```
 
 Four things about that output are deliberate.

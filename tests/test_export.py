@@ -480,8 +480,12 @@ def test_an_independent_sedml_library_reads_the_exported_bundle_without_error() 
     # dose arms is three modified models plus the base one, and four tasks. Written per claim it
     # was thirty of each, telling a reproducer to integrate the same model ten times to read ten
     # of its species.
-    arms = {step.parameter_overrides for step in bundle.recipe if not step.schedule}
-    assert document.getNumTasks() == len(arms)
+    # A run is a dose arm over a window and grid: the figure's curves are judged over 29, 30 and
+    # 39 hours where the table's numbers are read over 24, so one arm can be several runs.
+    plain = [step for step in bundle.recipe if not step.schedule]
+    runs = {(step.parameter_overrides, step.time_span, step.steps) for step in plain}
+    arms = {step.parameter_overrides for step in plain}
+    assert document.getNumTasks() == len(runs)
     assert document.getNumModels() == len(arms)
 
 
@@ -512,7 +516,14 @@ def test_the_exported_document_reproduces_the_published_number_when_run() -> Non
     ).read_text(encoding="utf-8")
 
     recipe = parse_sedml_recipes(build_bundle_sedml(bundle, model).sedml)
-    assert [r.task_id for r in recipe] == ["task1"]  # the 500 mg arm; the other carries overrides
+    # The 500 mg arm, which carries no overrides, over each window a claim on it is judged in; the
+    # first is the table's 24 hours, and the other arms are not adopted at all.
+    windows = {
+        step.time_span for step in bundle.recipe
+        if not step.schedule and not step.parameter_overrides
+    }
+    assert len(recipe) == len(windows)
+    assert recipe[0].task_id == "task1" and recipe[0].duration == 24.0
     _, values = simulate(
         model, recipe[0].observables[0], duration=recipe[0].duration, steps=recipe[0].steps
     )
@@ -539,8 +550,10 @@ def test_the_published_worked_example_archive_is_what_the_export_produces_today(
     # entry is accounted for, one way or the other — a claim in neither list would be dropped.
     claims = json.loads(
         (Path(__file__).parent.parent / "datasets/pkpd_claims.json").read_text(encoding="utf-8")
-    )["entries"]["BIOMD0000001028"]["claims"]
-    assert len(expressed) + len(unexpressed) == len(claims)
+    )["entries"]["BIOMD0000001028"]
+    # The table's numbers and the figure's curves: every claim on the certificate is either a run
+    # in the archive or listed with the reason it cannot be one.
+    assert len(expressed) + len(unexpressed) == len(claims["claims"]) + len(claims["figure_claims"])
     assert ARCHIVE.read_bytes() == archive, (
         "datasets/worked_examples/metformin_reconstruction.omex is stale; regenerate it with "
         "python scripts/export_worked_example_archive.py"

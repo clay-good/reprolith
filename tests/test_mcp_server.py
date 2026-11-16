@@ -213,7 +213,7 @@ def test_bundle_tool_serves_the_stored_reconstruction_bundle() -> None:
             encoding="utf-8"
         )
     )["entries"]["BIOMD0000001028"]
-    assert len(bundle["recipe"]) == len(_entry["claims"])
+    assert len(bundle["recipe"]) == len(_entry["claims"]) + len(_entry.get("figure_claims", []))
     assert bundle["assumptions"]  # the salt-form assumption travels
 
 

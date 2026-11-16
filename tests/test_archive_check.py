@@ -92,16 +92,31 @@ def test_the_report_says_what_the_archive_ships_and_what_can_be_adopted() -> Non
     pytest.importorskip("libsbml", reason="the optional 'engine' extra is not installed")
     found = archive_report(_ARCHIVE.read_bytes())["found"]
     assert {a["detected_format"] for a in found["files"]} == {"sbml", "sed-ml"}
-    # Exactly one task runs the base model; the rest carry a dose override, and an adopted recipe
-    # carries none. That stays one however many claims the entry grows, because the claims share
-    # a task per distinct dose arm.
-    assert found["adoptable_recipes"] == 1
+    # One task per window the base model is run over; the rest carry a dose override, and an
+    # adopted recipe carries none. It does not grow with the claims, because claims share a task
+    # per distinct run — but the figure's curves are judged over windows of their own (29, 30 and
+    # 39 hours beside the table's 24), and each is a run of the undosed arm.
+    import json
+
+    bundle = json.loads(
+        (_ARCHIVE.parent.parent / "milestone" / "bundles" / "BIOMD0000001028.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    windows = {
+        step["time_span"] for step in bundle["recipe"]
+        if not step.get("schedule") and not step.get("parameter_overrides")
+    }
+    assert found["adoptable_recipes"] == len(windows) == 4
     # Every output the exported document writes is a `report`, never a `plot`: re-reading it must
     # not manufacture published results the paper never staked. So the archive states no
     # targetable claim, and one non-targetable one per claim it expresses.
     assert found["claims"]["targetable"] == 0
     expressed = [c for c in _metformin_claims() if not c.schedule]
-    assert found["claims"]["not_targetable"] == len(expressed)
+    curves = json.loads(
+        (_ARCHIVE.parent.parent / "pkpd_claims.json").read_text(encoding="utf-8")
+    )["entries"]["BIOMD0000001028"]["figure_claims"]  # never scheduled, so every one is expressed
+    assert found["claims"]["not_targetable"] == len(expressed) + len(curves)
     # "runs 0 to 30" is thirty of something, and the document does not say — only the model does,
     # and a reproducer reading the deposit rather than the paper has nothing else to go on. This
     # deposit says a hundred hours: `multiplier="3600" scale="2"` is 360000 seconds, while its

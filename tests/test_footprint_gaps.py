@@ -22,6 +22,7 @@ import statistics
 from pathlib import Path
 
 from reprolith import (
+    ReferenceKind,
     claim_selection_pool,
     dossier_from_dict,
     jaccard,
@@ -62,7 +63,12 @@ def test_every_load_bearing_gap_in_this_corpus_is_the_models_not_a_claims() -> N
 def test_adding_the_gaps_raises_overlap_without_telling_two_claims_apart() -> None:
     dossier = _dossier()
     gaps = _load_bearing_gaps(dossier)
-    footprints = [c.footprint for c in dossier.claims if c.targetable and c.footprint]
+    # The table's claims, which is what these numbers were measured over; the figure's curves read
+    # the same ten species, so adding them repeats footprints rather than telling claims apart.
+    footprints = [
+        c.footprint for c in dossier.claims
+        if c.targetable and c.footprint and c.reference_kind is ReferenceKind.NUMERIC
+    ]
     assert len(footprints) == 93
 
     base = [jaccard(a, b) for a, b in itertools.combinations(footprints, 2)]

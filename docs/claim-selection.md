@@ -12,23 +12,23 @@ and this never pretends otherwise.
 
 ```
 $ reprolith select-claims BIOMD0000001028 --budget 3
-SELECTED 3 OF 93 TARGETABLE CLAIMS
-  AUC24-red-blood-cells-1000mg
-  Cmax-500mg
-  Cmax-stomach-500mg
-  independent evidential value: 2.746 (gross 3 less 0.254 overlap)
+SELECTED 3 OF 123 TARGETABLE CLAIMS
+  AUC24-500mg
+  Cmax-red-blood-cells-500mg
+  Cmax-stomach-1000mg
+  independent evidential value: 2.742 (gross 3 less 0.2581 overlap)
   spends 3 of a 3 budget
   witnesses 54 distinct model element(s) and 2 recorded assumption(s)
-  footprints: 0 curator-stated, 93 derived-from-model
+  footprints: 0 curator-stated, 123 derived-from-model
   ranking one at a time would have taken: AUC24-1000mg, AUC24-500mg, AUC24-adipose-1000mg
   and scored 1.648, witnessing 49 distinct model element(s) and 2 recorded assumption(s)
-  83 of 93 candidate(s) rest on a recorded assumption, charged as overlap like shared machinery
+  113 of 123 candidate(s) rest on a recorded assumption, charged as overlap like shared machinery
 ```
 
 The baseline line is the point. Reading down a ranking one claim at a time takes plasma twice over
 and one more tissue, all three of them areas resting on the same two readings of the deposit, and
 scores **1.648** once that overlap is charged. Choosing as a *set* takes three different tissues,
-only one of them an area, scores 2.746, and witnesses 54 model elements to the ranking's 49.
+only one of them an area, scores 2.742, and witnesses 54 model elements to the ranking's 49.
 Same budget, same candidates, same objective.
 
 The greedy ranking is reported beside the answer on purpose. A selection is a decision about what
@@ -134,7 +134,7 @@ run.** The reaction network, the compartment volumes, the function definitions, 
 units are needed by every claim alike, so adding them adds the same five elements to all
 ninety-three footprints.
 
-| over one paper's 93 claims | footprints as built | with the model's gaps added |
+| over one paper's 93 table claims | footprints as built | with the model's gaps added |
 | --- | --- | --- |
 | mean pairwise overlap | 0.265 | 0.399 |
 | spread between the most and least overlapping pair | 0.955 | 0.864 |

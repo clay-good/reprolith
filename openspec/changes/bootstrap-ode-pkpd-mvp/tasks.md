@@ -59,8 +59,8 @@ a phase done until its verification holds.
     reads no pixels. A curator's reading of one published figure is in the corpus now (2026-11-16):
     Figure 5 of the metformin paper, thirty curves read by `scripts/digitize_figure_panels.py`,
     checked against the peaks the paper's Table 6 prints (all within 2.2%) and reproduced by the
-    deposited model (`tests/test_figure_reading_zake2021.py`). It is judged in a test and not yet a
-    claim on the published certificate.
+    deposited model (`tests/test_figure_reading_zake2021.py`). All thirty are claims on the
+    BIOMD0000001028 certificate, stated as `figure_claims` in `datasets/pkpd_claims.json`.
 - [ ] 2.3 Record gaps and extraction-confidence; never fill gaps at this stage → verify: a paper with a missing parameter yields a gap, not a value
   - Partly done for the same reason. On the artifact path a symbol no declaration covers, an
     unstated unit, an unstated initial value, and a construct the dossier cannot represent are

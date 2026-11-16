@@ -1674,6 +1674,466 @@
     "overrides": {},
     "prior_administrations": []
   },
+  "BIOMD0000001028:fig5A-plasma-1000mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 779.9
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5A-plasma-1500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 1169.79
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5A-plasma-500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5B-liver-1000mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 779.9
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5B-liver-1500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 1169.79
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5B-liver-500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5E-muscle-1000mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 779.9
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5E-muscle-1500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 1169.79
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5E-muscle-500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5F-brain-1000mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 779.9
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5F-brain-1500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 1169.79
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5F-brain-500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5G-heart-1000mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 779.9
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5G-heart-1500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 1169.79
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5G-heart-500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5H-adipose-1000mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 779.9
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5H-adipose-1500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 1169.79
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5H-adipose-500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5I-stomach-1000mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 779.9
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5I-stomach-1500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 1169.79
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5I-stomach-500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5J-lungs-1000mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 779.9
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5J-lungs-1500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 1169.79
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5J-lungs-500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5K-remainder-1000mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 779.9
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5K-remainder-1500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 1169.79
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5K-remainder-500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5L-red-blood-cells-1000mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 779.9
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5L-red-blood-cells-1500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {
+      "Metformin_Dose_in_Lumen_in_mg": 1169.79
+    },
+    "prior_administrations": []
+  },
+  "BIOMD0000001028:fig5L-red-blood-cells-500mg": {
+    "distance_at_most": 1e-06,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
   "BIOMD0000001029:AUC24-1000mg-twice-daily": {
     "distance_at_most": 1e-06,
     "engine_independent": true,

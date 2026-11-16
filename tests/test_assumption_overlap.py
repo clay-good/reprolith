@@ -84,7 +84,8 @@ def test_the_committed_dossiers_carry_what_the_claims_file_records() -> None:
             (_DATASETS / "milestone" / "dossiers" / f"{accession}.json").read_text("utf-8")
         )
         assert {c["id"]: frozenset(c.get("rests_on_assumptions", ())) for c in stored["claims"]} == {
-            c["claim_id"]: frozenset(c.get("rests_on_assumptions", ())) for c in entry["claims"]
+            c["claim_id"]: frozenset(c.get("rests_on_assumptions", ()))
+            for c in entry["claims"] + entry.get("figure_claims", [])
         }, accession
 
 
