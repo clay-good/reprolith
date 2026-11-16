@@ -43,8 +43,9 @@ What remains uncovered, and is stated rather than fixed: between two read points
 a straight line, in the axis's own scale, and a claim judged on a grid far finer than the reading
 is being judged partly against that interpolation. The digitized-figure tolerance is what covers
 it, and :func:`series_resolution` reports the largest gap so the curator can see how much work it
-is doing. No published figure is in this corpus, so this reader is validated against series
-generated from known functions — mathematics, not a paper's picture.
+is doing. It is validated against series generated from known functions, and against one published
+figure: thirty curves read off Figure 5 of Zake et al. 2021, whose peaks agree with the paper's own
+Table 6 (`tests/test_figure_reading_zake2021.py`). The reading was a curator's, not this module's.
 """
 
 from __future__ import annotations

@@ -6441,3 +6441,55 @@ Rendering the new budgeted certificate turned up an older defect. The line that 
 partial headline with all-reproduced counts ("the only reason this is not a clean pass") ignored
 the budget. It printed on any budgeted certificate that attempted a qualified claim, while eleven
 unattempted claims were also a reason. It now requires that no claim went unattempted.
+
+## The first published figure, read and judged
+
+Every figure claim in this repository used to be judged against a series generated from a known
+function, because no reading of a real figure existed. Figure 5 of Zake et al. 2021 is read now
+(`datasets/figures/Zake2021_figure5/`). It shows the paper's own model simulations of metformin in
+twelve human tissues after single oral doses of 500, 1000 and 1500 mg, one colour per dose. Ten
+panels are read, which makes thirty curves. Kidney and intestine are left out for the same reason
+their Table 6 rows are not claimed: the model splits each organ across three compartments.
+
+The reading is a curator's act, kept in `scripts/digitize_figure_panels.py` so it can be re-derived
+from the image. The package still reads no pixels. The script finds each panel's frame and tick
+marks in the picture and fits the axis calibration through the ticks. It refuses ticks that are not
+evenly spaced to half a pixel. Only the tick labels are read by eye. Each line is traced by its
+colour, column by column.
+
+**The reading is checked against the paper before any model runs.** Table 6 prints the peak of
+every one of these thirty curves. Every read peak is within 2.2% of it, and 0.7% on average, while
+the table rounds to one decimal place. The first version of the tracer was not: a faint edge pixel
+of the blue line fitted "green over white" at a fifth of its strength, so the green and red curves
+carried one-column spikes, and their peaks read up to 9.5% high. Each pixel now goes only to the
+line colour it fits best. The table is what showed the defect. A reading that only looked smooth
+would have kept it.
+
+**Three things the picture forced, each a measurement and not a default:**
+
+| What | Why | How it is bounded |
+|---|---|---|
+| A line under a later line takes that line's position | ggplot draws 1500 mg last, so the lower doses vanish beneath it where they coincide | Only where both strokes are thin; on a steep stretch the column is skipped and interpolated across |
+| Every series starts from one measured origin at t=0 | On the opening rise the lower lines are hidden, so no reading began at 0 and the resampler extrapolates nothing | The value is measured from the stroke's lower end and lands within 0.4% of its axis from zero; the snap to the 0 tick is refused if the ink is more than 2 px from it |
+| Each panel is judged over the whole hours all its curves cover | The last columns sit against the frame, so readings end at 29.2–30.0 h | 0–29 h for nine panels and 0–39 h for red blood cells |
+
+**The deposited model reproduces all thirty curves.** Normalized distances run from 0.006 to 0.027
+against a 0.20 pass line. The worst single point is 0.24 of the curve's scale, on the 500 mg liver
+curve's opening rise, where the red line is hidden. `figure-check` reports what each reading's own
+straight lines cost, and the largest is 36% of the pass budget, at 0.59 h on the plasma curve.
+
+The passes are not a band too wide to miss. Run every curve at the 1500 mg arm and none of the
+twenty lower-dose curves passes. Read the model's clock as the deposit declares it, one hundred
+hours to the unit, and all thirty fail.
+
+That last check bears on an open question. One of the repository's standing verification items asks
+whether these deposits' time unit, declared as one hundred hours, is an error for one hour. The
+tables answered it by area and time to peak. The figure answers it by shape: the paper plots this
+model's output against hours, and the deposit matches all thirty curves point for point when its
+clock is read as hours. `figure-check` still prints UNITS DISAGREE for every series, as it should.
+The evidence is now stronger, but the question is an expert's to close, and the claims stay
+assumption-qualified.
+
+What is not done yet: these readings are judged in `tests/test_figure_reading_zake2021.py` and are
+not yet claims on the published certificate. Publishing them moves the corpus's headline counts,
+which a separate change should do on its own.

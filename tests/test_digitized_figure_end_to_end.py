@@ -8,9 +8,9 @@ verdict on it.
 
 Two things are deliberately synthetic, and neither is dressed up. The model is a one-line
 exponential decay written here, and the "digitization" is generated from that same decay rather
-than read off any published picture — **no published figure is in this corpus**, so the values a
-curator would supply have to come from somewhere, and inventing a paper to attribute them to would
-be the one thing this repository exists to prevent. What is genuine is the *path*: every stage is
+than read off any published picture — so its values are known exactly, and inventing a paper to
+attribute them to would be the one thing this repository exists to prevent. The walk over a real
+published figure is `test_figure_reading_zake2021.py`. What is genuine is the *path*: every stage is
 the shipped code, and the reference the certificate is judged against passes through the reader,
 the axis scale, and the resampler exactly as a real reading would.
 

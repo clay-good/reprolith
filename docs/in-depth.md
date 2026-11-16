@@ -181,9 +181,12 @@ the claim was judged on, because a reader who sees `[figure-reading]` and a
 band twice as wide could not otherwise tell whether the reading had already spent that band or none
 of it. And the **author** gets it back in the pre-submission report — named, with the one cheap fix
 only they can make, and deliberately not as something that blocks their submission: publishing
-results as figures is what papers do. No published figure is in this corpus, so it is
-validated against series generated from known functions — mathematics, not a paper's picture. See
-[`docs/figure-values.md`](figure-values.md).
+results as figures is what papers do. And it has met a real figure: Figure 5 of the metformin
+paper, thirty curves read off the published image (`datasets/figures/Zake2021_figure5/`), whose
+peaks agree with the paper's own Table 6 to within 2.2% before any model runs, and which the
+deposited model then reproduces at normalized distances of 0.006 to 0.027 against a 0.20 band.
+The same readings fail at the wrong dose and under the deposit's declared clock. They are judged
+in a test and not yet on a published certificate. See [`docs/figure-values.md`](figure-values.md).
 [`docs/findings-note.md`](findings-note.md) and [`openspec/`](../openspec/) say so in detail. Where a paper ships a **SED-ML** document, the half of that
 job the document already did is read from it: its plots say which curves the paper shows, and those
 become the dossier's claims. Their *values* are still not there, so such a claim is figure-referenced

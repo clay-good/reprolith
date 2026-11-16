@@ -377,8 +377,16 @@ ready" for it would tell almost every honest author their work is broken. See
 
 ## The limit that remains
 
-**No published figure is in this corpus.** This reader is validated against series generated from
-functions whose value at every point is known — the same fence the population simulator and the
-re-fitting engine carry: mathematics, not a paper's picture. What it needs next is a curator's
-digitization of a real figure from a paper this repository already carries, and the digitization
-itself is a human act this repository does not perform.
+**One published figure is in this corpus now, and none is on a published certificate yet.**
+Figure 5 of Zake et al. 2021 is read: thirty curves, the paper's own model simulations of ten
+tissues at three doses (`datasets/figures/Zake2021_figure5/`). The reading is a curator's, taken
+with `scripts/digitize_figure_panels.py`, which locates the frame, ticks and lines in the image and
+takes only the tick labels by eye. Nothing under `python/` reads a pixel. Before any model runs it
+is checked against the paper itself: every read peak is within 2.2% of the peak Table 6 prints for
+that curve. Then the deposited model reproduces all thirty, at normalized distances of 0.006 to
+0.027 against the 0.20 figure band. The same readings fail at the wrong dose and under the clock
+the deposit declares (`tests/test_figure_reading_zake2021.py`, and the findings note's
+"The first published figure, read and judged").
+
+What remains: these are judged in a test and are not yet claims on the entry's certificate, and the
+other papers whose results are only in figures are still unread.

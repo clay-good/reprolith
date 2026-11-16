@@ -218,9 +218,14 @@ a change under `openspec/changes/`.
   read at three points and said nothing about a PK curve read at ten, whose 11% gaps hide straight
   lines spending one and a half times the whole budget.
   Reprolith reads no pixels and this does not pretend to:
-  the reading is a human act. What it needs next is a curator's digitization of a figure from a paper
-  already in this corpus; none exists, so it is validated against series generated from known
-  functions, the same fence items 7 and 8 carry.
+  the reading is a human act. **The first curator's reading of a real figure landed 2026-11-16**
+  (`datasets/figures/Zake2021_figure5/`, taken with `scripts/digitize_figure_panels.py`): thirty
+  curves of the metformin paper's Figure 5, whose peaks agree with its Table 6 to within 2.2%, all
+  reproduced by the deposited model at normalized distances of 0.006 to 0.027, and all failing at the
+  wrong dose or under the deposit's declared clock. It is on a paper whose tables already reach the
+  corpus, so it widens what that entry checks — whole curves, not one number per curve — and moves
+  the 27 blocked entries by nothing yet. Those need the same act on the figure-only papers, and
+  this one shows the tooling holds against a paper's own printed numbers.
 
 ---
 

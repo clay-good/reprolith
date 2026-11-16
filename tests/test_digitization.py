@@ -6,9 +6,9 @@ reference: it is recovered on the run's own grid, it is never extrapolated, a mi
 reading is refused by name, and the widened figure tolerance it must be judged in cannot be
 escaped by attaching it.
 
-No published figure is in this corpus, so every series here is generated from a function whose
-value at each point is known. That is the same fence the population and estimation engines carry:
-the reader is validated against mathematics, not against a paper's picture.
+Every series here is generated from a function whose value at each point is known, so an error
+is measured exactly; the one published figure read so far is tested in
+`test_figure_reading_zake2021.py`.
 """
 
 from __future__ import annotations

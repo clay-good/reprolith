@@ -1,0 +1,459 @@
+{
+ "description": "Figure 5 of Zake et al. 2021 (PLOS ONE 16(4): e0249594, doi:10.1371/journal.pone.0249594, CC BY 4.0): the paper's own model simulations of metformin concentration in twelve tissues after single oral doses of 500, 1000 and 1500 mg metformin hydrochloride in humans, one colour per dose. Read by scripts/digitize_figure_panels.py: frame, ticks and lines are located in the image; the tick labels below are read by eye. Panels C (kidney) and D (intestine) are not read, for the reason their Table 6 rows are not claimed: the model splits each organ across three compartments, and which one the panel plots is a judgement about the paper. Every curve in a panel starts from one point (a single dose into a body holding no metformin), so that point's value is measured once, at the first column holding any line's ink, and begins each series at t=0 — the tick the lines are drawn from, which the digitizer refuses to snap to unless that ink is within 2 px of it: without it no reading would start at t=0, because on the opening rise the lower lines are hidden under the steeper ones drawn after them.",
+ "image": "pone.0249594.g005.png",
+ "source": "https://journals.plos.org/plosone/article/figure/image?size=large&id=10.1371/journal.pone.0249594.g005",
+ "defaults": {
+  "digitizer": "scripts/digitize_figure_panels.py (colour trace; tick labels read by eye)",
+  "x_unit": "h",
+  "y_unit": "nmol/mL",
+  "x_from": 0.0,
+  "common_origin": 0.0
+ },
+ "panels": [
+  {
+   "panel": "A",
+   "figure": "Zake et al. 2021, Fig 5A (plasma)",
+   "species": "mPlasmaVenous",
+   "crop": [
+    20,
+    15,
+    300,
+    272
+   ],
+   "x_ticks": [
+    0,
+    10,
+    20,
+    30
+   ],
+   "y_ticks": [
+    0,
+    5,
+    10,
+    15
+   ],
+   "reading": "fig5A.json",
+   "series": [
+    {
+     "claim": "fig5A-plasma-500mg",
+     "curve": "plasma, 500mg single PO dose (red line)",
+     "colour": "#F8766D",
+     "dose": "500mg"
+    },
+    {
+     "claim": "fig5A-plasma-1000mg",
+     "curve": "plasma, 1000mg single PO dose (green line)",
+     "colour": "#00BA38",
+     "dose": "1000mg"
+    },
+    {
+     "claim": "fig5A-plasma-1500mg",
+     "curve": "plasma, 1500mg single PO dose (blue line)",
+     "colour": "#619CFF",
+     "dose": "1500mg"
+    }
+   ]
+  },
+  {
+   "panel": "B",
+   "figure": "Zake et al. 2021, Fig 5B (liver)",
+   "species": "mLiver",
+   "crop": [
+    322,
+    15,
+    605,
+    272
+   ],
+   "x_ticks": [
+    0,
+    10,
+    20,
+    30
+   ],
+   "y_ticks": [
+    0,
+    50,
+    100,
+    150,
+    200
+   ],
+   "reading": "fig5B.json",
+   "series": [
+    {
+     "claim": "fig5B-liver-500mg",
+     "curve": "liver, 500mg single PO dose (red line)",
+     "colour": "#F8766D",
+     "dose": "500mg"
+    },
+    {
+     "claim": "fig5B-liver-1000mg",
+     "curve": "liver, 1000mg single PO dose (green line)",
+     "colour": "#00BA38",
+     "dose": "1000mg"
+    },
+    {
+     "claim": "fig5B-liver-1500mg",
+     "curve": "liver, 1500mg single PO dose (blue line)",
+     "colour": "#619CFF",
+     "dose": "1500mg"
+    }
+   ]
+  },
+  {
+   "panel": "E",
+   "figure": "Zake et al. 2021, Fig 5E (muscle)",
+   "species": "mMuscle",
+   "crop": [
+    20,
+    318,
+    300,
+    578
+   ],
+   "x_ticks": [
+    0,
+    10,
+    20,
+    30
+   ],
+   "y_ticks": [
+    0,
+    10,
+    20,
+    30,
+    40
+   ],
+   "reading": "fig5E.json",
+   "series": [
+    {
+     "claim": "fig5E-muscle-500mg",
+     "curve": "muscle, 500mg single PO dose (red line)",
+     "colour": "#F8766D",
+     "dose": "500mg"
+    },
+    {
+     "claim": "fig5E-muscle-1000mg",
+     "curve": "muscle, 1000mg single PO dose (green line)",
+     "colour": "#00BA38",
+     "dose": "1000mg"
+    },
+    {
+     "claim": "fig5E-muscle-1500mg",
+     "curve": "muscle, 1500mg single PO dose (blue line)",
+     "colour": "#619CFF",
+     "dose": "1500mg"
+    }
+   ]
+  },
+  {
+   "panel": "F",
+   "figure": "Zake et al. 2021, Fig 5F (brain)",
+   "species": "mBrain",
+   "crop": [
+    322,
+    318,
+    605,
+    578
+   ],
+   "x_ticks": [
+    0,
+    10,
+    20,
+    30
+   ],
+   "y_ticks": [
+    0,
+    5,
+    10
+   ],
+   "reading": "fig5F.json",
+   "series": [
+    {
+     "claim": "fig5F-brain-500mg",
+     "curve": "brain, 500mg single PO dose (red line)",
+     "colour": "#F8766D",
+     "dose": "500mg"
+    },
+    {
+     "claim": "fig5F-brain-1000mg",
+     "curve": "brain, 1000mg single PO dose (green line)",
+     "colour": "#00BA38",
+     "dose": "1000mg"
+    },
+    {
+     "claim": "fig5F-brain-1500mg",
+     "curve": "brain, 1500mg single PO dose (blue line)",
+     "colour": "#619CFF",
+     "dose": "1500mg"
+    }
+   ]
+  },
+  {
+   "panel": "G",
+   "figure": "Zake et al. 2021, Fig 5G (heart)",
+   "species": "mHeart",
+   "crop": [
+    625,
+    318,
+    910,
+    578
+   ],
+   "x_ticks": [
+    0,
+    10,
+    20,
+    30
+   ],
+   "y_ticks": [
+    0,
+    10,
+    20,
+    30,
+    40
+   ],
+   "reading": "fig5G.json",
+   "series": [
+    {
+     "claim": "fig5G-heart-500mg",
+     "curve": "heart, 500mg single PO dose (red line)",
+     "colour": "#F8766D",
+     "dose": "500mg"
+    },
+    {
+     "claim": "fig5G-heart-1000mg",
+     "curve": "heart, 1000mg single PO dose (green line)",
+     "colour": "#00BA38",
+     "dose": "1000mg"
+    },
+    {
+     "claim": "fig5G-heart-1500mg",
+     "curve": "heart, 1500mg single PO dose (blue line)",
+     "colour": "#619CFF",
+     "dose": "1500mg"
+    }
+   ]
+  },
+  {
+   "panel": "H",
+   "figure": "Zake et al. 2021, Fig 5H (adipose)",
+   "species": "mAdipose",
+   "crop": [
+    928,
+    318,
+    1200,
+    578
+   ],
+   "x_ticks": [
+    0,
+    10,
+    20,
+    30
+   ],
+   "y_ticks": [
+    0,
+    3,
+    6,
+    9
+   ],
+   "reading": "fig5H.json",
+   "series": [
+    {
+     "claim": "fig5H-adipose-500mg",
+     "curve": "adipose, 500mg single PO dose (red line)",
+     "colour": "#F8766D",
+     "dose": "500mg"
+    },
+    {
+     "claim": "fig5H-adipose-1000mg",
+     "curve": "adipose, 1000mg single PO dose (green line)",
+     "colour": "#00BA38",
+     "dose": "1000mg"
+    },
+    {
+     "claim": "fig5H-adipose-1500mg",
+     "curve": "adipose, 1500mg single PO dose (blue line)",
+     "colour": "#619CFF",
+     "dose": "1500mg"
+    }
+   ]
+  },
+  {
+   "panel": "I",
+   "figure": "Zake et al. 2021, Fig 5I (stomach)",
+   "species": "mStomach",
+   "crop": [
+    20,
+    615,
+    300,
+    882
+   ],
+   "x_ticks": [
+    0,
+    10,
+    20,
+    30
+   ],
+   "y_ticks": [
+    0,
+    10,
+    20,
+    30,
+    40,
+    50
+   ],
+   "reading": "fig5I.json",
+   "series": [
+    {
+     "claim": "fig5I-stomach-500mg",
+     "curve": "stomach, 500mg single PO dose (red line)",
+     "colour": "#F8766D",
+     "dose": "500mg"
+    },
+    {
+     "claim": "fig5I-stomach-1000mg",
+     "curve": "stomach, 1000mg single PO dose (green line)",
+     "colour": "#00BA38",
+     "dose": "1000mg"
+    },
+    {
+     "claim": "fig5I-stomach-1500mg",
+     "curve": "stomach, 1500mg single PO dose (blue line)",
+     "colour": "#619CFF",
+     "dose": "1500mg"
+    }
+   ]
+  },
+  {
+   "panel": "J",
+   "figure": "Zake et al. 2021, Fig 5J (lungs)",
+   "species": "mLung",
+   "crop": [
+    322,
+    615,
+    605,
+    882
+   ],
+   "x_ticks": [
+    0,
+    10,
+    20,
+    30
+   ],
+   "y_ticks": [
+    0,
+    10,
+    20,
+    30,
+    40,
+    50
+   ],
+   "reading": "fig5J.json",
+   "series": [
+    {
+     "claim": "fig5J-lungs-500mg",
+     "curve": "lungs, 500mg single PO dose (red line)",
+     "colour": "#F8766D",
+     "dose": "500mg"
+    },
+    {
+     "claim": "fig5J-lungs-1000mg",
+     "curve": "lungs, 1000mg single PO dose (green line)",
+     "colour": "#00BA38",
+     "dose": "1000mg"
+    },
+    {
+     "claim": "fig5J-lungs-1500mg",
+     "curve": "lungs, 1500mg single PO dose (blue line)",
+     "colour": "#619CFF",
+     "dose": "1500mg"
+    }
+   ]
+  },
+  {
+   "panel": "K",
+   "figure": "Zake et al. 2021, Fig 5K (remainder)",
+   "species": "mRemainder",
+   "crop": [
+    625,
+    615,
+    910,
+    882
+   ],
+   "x_ticks": [
+    0,
+    10,
+    20,
+    30
+   ],
+   "y_ticks": [
+    0,
+    5,
+    10
+   ],
+   "reading": "fig5K.json",
+   "series": [
+    {
+     "claim": "fig5K-remainder-500mg",
+     "curve": "remainder, 500mg single PO dose (red line)",
+     "colour": "#F8766D",
+     "dose": "500mg"
+    },
+    {
+     "claim": "fig5K-remainder-1000mg",
+     "curve": "remainder, 1000mg single PO dose (green line)",
+     "colour": "#00BA38",
+     "dose": "1000mg"
+    },
+    {
+     "claim": "fig5K-remainder-1500mg",
+     "curve": "remainder, 1500mg single PO dose (blue line)",
+     "colour": "#619CFF",
+     "dose": "1500mg"
+    }
+   ]
+  },
+  {
+   "panel": "L",
+   "figure": "Zake et al. 2021, Fig 5L (red blood cells)",
+   "species": "mRBC",
+   "crop": [
+    928,
+    615,
+    1200,
+    882
+   ],
+   "x_ticks": [
+    0,
+    10,
+    20,
+    30,
+    40
+   ],
+   "y_ticks": [
+    0,
+    1,
+    2
+   ],
+   "reading": "fig5L.json",
+   "series": [
+    {
+     "claim": "fig5L-red-blood-cells-500mg",
+     "curve": "red blood cells, 500mg single PO dose (red line)",
+     "colour": "#F8766D",
+     "dose": "500mg"
+    },
+    {
+     "claim": "fig5L-red-blood-cells-1000mg",
+     "curve": "red blood cells, 1000mg single PO dose (green line)",
+     "colour": "#00BA38",
+     "dose": "1000mg"
+    },
+    {
+     "claim": "fig5L-red-blood-cells-1500mg",
+     "curve": "red blood cells, 1500mg single PO dose (blue line)",
+     "colour": "#619CFF",
+     "dose": "1500mg"
+    }
+   ]
+  }
+ ]
+}

@@ -56,8 +56,11 @@ a phase done until its verification holds.
     *figure* claim now has a route too (`reprolith.digitization`): a curator's plot-digitizer
     output is checked as a reading — mis-calibration refused, no extrapolation — and resampled
     onto the run's own grid, so such a claim reaches a verdict instead of abstaining. Reprolith
-    reads no pixels, and no published figure is in this corpus, so it is validated against series
-    generated from known functions.
+    reads no pixels. A curator's reading of one published figure is in the corpus now (2026-11-16):
+    Figure 5 of the metformin paper, thirty curves read by `scripts/digitize_figure_panels.py`,
+    checked against the peaks the paper's Table 6 prints (all within 2.2%) and reproduced by the
+    deposited model (`tests/test_figure_reading_zake2021.py`). It is judged in a test and not yet a
+    claim on the published certificate.
 - [ ] 2.3 Record gaps and extraction-confidence; never fill gaps at this stage → verify: a paper with a missing parameter yields a gap, not a value
   - Partly done for the same reason. On the artifact path a symbol no declaration covers, an
     unstated unit, an unstated initial value, and a construct the dossier cannot represent are
