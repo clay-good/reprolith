@@ -16,7 +16,6 @@
         "BIOMD0000000536",
         "BIOMD0000000537",
         "BIOMD0000000608",
-        "BIOMD0000000619",
         "BIOMD0000000624",
         "BIOMD0000000673",
         "BIOMD0000000765",
@@ -35,7 +34,7 @@
       "basis": "observed",
       "stage": "ingest",
       "resolution": "explained",
-      "note": "27 of the thirty-one PK/PD entries disagree with their BioModels label because Reprolith returned blocked, not because it judged the paper wrong. Reprolith holds no extracted claims for these papers, so the run reports run.NO_CLAIMS_REASON and abstains without fetching or opening anything; a blocked verdict can never equal a reproduced or not-reproduced label, which is what holds the raw agreement to 0 of 31 \u2014 the four entries that are judged all come back stricter than their label, each for an assumption recorded in its own note. The reason text used to say the claims had not been extracted 'from the shipped model artifact', which named an inspection that never happened \u2014 no artifact is read on this path at all. Explained rather than fixed: the responsible stage is ingestion, and the missing input is each paper's targetable claims read from its manuscript, which is not automated.",
+      "note": "26 of the thirty-one PK/PD entries disagree with their BioModels label because Reprolith returned blocked, not because it judged the paper wrong. Reprolith holds no extracted claims for these papers, so the run reports run.NO_CLAIMS_REASON and abstains without fetching or opening anything; a blocked verdict can never equal a reproduced or not-reproduced label, which is what holds the raw agreement to 1 of 31 \u2014 the one match is BIOMD0000000619, whose paper's Figure 4 was read off the published image and reproduced, and the four metformin entries all come back stricter than their label, each for an assumption recorded in its own note. The reason text used to say the claims had not been extracted 'from the shipped model artifact', which named an inspection that never happened \u2014 no artifact is read on this path at all. Explained rather than fixed: the responsible stage is ingestion, and the missing input is each paper's targetable claims read from its manuscript, which is not automated.",
       "evidence": [
         {
           "path": "python/reprolith/run.py",

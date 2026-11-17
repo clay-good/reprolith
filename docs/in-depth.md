@@ -12,7 +12,7 @@ reproduced, partially, or not — for each result, with the reason.
 
 That is what it is *for*, and it is worth being exact about how much of it is done today.
 
-Of the thirty-nine published certificates, **four** check a reconstruction against numbers read
+Of the forty published certificates, **four** check a reconstruction against numbers read
 from one paper's own tables — one for each model that paper deposited. (Two more are checked
 against published numbers too, and the count below says which.) Between them they carry **two
 hundred claims**. One hundred and seventy are
@@ -26,6 +26,17 @@ three exposures. The other thirty are **whole curves read off the paper's Figure
 simulation of ten tissues at the three single human doses, judged point against point over
 29 hours (39 for red blood cells) rather than at one number per curve. Their reading agrees with the
 peaks Table 6 prints to within 2.2% before any model runs, and all thirty reproduce.
+
+**A fifth checks a model against a paper that prints no table of its results at all.** Sluka et
+al. 2016 show what their acetaminophen PBPK module does as one curve, Figure 4, over the clinical
+data it was built to match. That curve was read off the published image, and the deposit
+(BIOMD0000000619) reproduces it at a normalized distance of 0.0065 against a 0.20 band. It is the
+first entry this repository has taken off the blocked list since the metformin paper, and the first
+reproduced with no assumption behind it, so its certificate is a clean pass, marked
+`[figure-reading]`. Two things it says about itself: the figure is in µg/mL and the model in mol/L,
+so the claim converts by the model's own molar mass and states that it did; and the reading's
+straight lines spend 41% of the band, most of it on the first half hour, where the paper's own data
+markers sit on top of the line and hide it.
 
 **Not one of the four is a clean pass, and the reason is a unit.** All four of this paper's
 deposited models declare their time unit as 3600·10² seconds — one hundred hours. An area read off
@@ -92,8 +103,8 @@ model's maximal growth rate of **0.873922**, which the publication that distribu
 reports — that certificate also carries the **essential genes and reactions** of the same model,
 checked element for element against COBRApy's single-deletion answer — and the seven basin sizes
 Li et al. 2004 publish for the yeast cell-cycle network, how many initial states reach each of its
-steady states, all seven reproduced exactly. Six against a
-publication, then, and thirty-three against a tool or against mathematics — one certificate, the
+steady states, all seven reproduced exactly. Seven against a
+publication, then — counting the acetaminophen model's figure above — and thirty-three against a tool or against mathematics — one certificate, the
 E. coli core one, in both counts, because its growth rate is a publication's number and its two
 essential sets are COBRApy's answers for the same file —
 counted from the certificates themselves by `tests/test_reference_provenance.py`, because this
@@ -617,7 +628,7 @@ With the extra installed the full loop runs end to end: a dossier compiles to SB
 scope-flagged certificate. The blind PK/PD self-validation set lives in
 [`datasets/pkpd_test_set.json`](../datasets/pkpd_test_set.json), labelled from BioModels'
 curation status — which is also the accession prefix, so read that run as evidence of abstention
-discipline (27 abstentions, and four verdicts stricter than their label — a withheld pass, never
+discipline (26 abstentions, and four verdicts stricter than their label — a withheld pass, never
 a false one) rather than of blind classification skill; the dataset and
 [docs/self-validation.md](self-validation.md) both spell out why.
 
@@ -851,7 +862,7 @@ That last number is the ranking, so the value four published results rest on is 
 you see and not the twentieth.
 
 It says how much of the corpus each value reaches, because a count of unreviewed values read
-against the size of the repository is its own overstatement: three values under **4 of the 39**
+against the size of the repository is its own overstatement: three values under **4 of the 40**
 standing certificates, not under all of them.
 
 It prints in two parts, and the second is the one worth reading first. Five of the eight

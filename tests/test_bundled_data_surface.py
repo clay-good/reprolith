@@ -49,10 +49,18 @@ def test_every_committed_certificate_is_reachable_by_the_commands_that_read_one(
         assert run(["certificates-for", accession]) == 0, accession
         digests = capsys.readouterr().out.split()
         assert digests, accession
+        # A certificate that reproduced in full has nothing missing to report, and the read
+        # surface says so rather than printing an empty heading.
+        overall = json.loads(
+            (_DATASETS / "milestone" / "certificates" / f"{accession}.json").read_text(
+                encoding="utf-8"
+            )
+        )["overall"]
+        missing = "nothing was missing" if overall == "reproduced" else "WHAT WAS MISSING"
         for command, expected in (
             ("certificate", "REPRODUCTION CERTIFICATE"),
             ("verdict", "OVERALL:"),
-            ("gaps", "WHAT WAS MISSING"),
+            ("gaps", missing),
             ("presubmission", "PRE-SUBMISSION REPRODUCIBILITY CHECK"),
         ):
             assert run([command, digests[0]]) == 0, (accession, command)

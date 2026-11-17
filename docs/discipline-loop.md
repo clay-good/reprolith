@@ -27,13 +27,14 @@ Nineteen of the twenty catalogued failure modes are `spec`; the twentieth (engin
 `measured`, and what the measurement showed was its absence. That is the point of keeping the field:
 a category that exists because a spec demands it must not read as loop experience it does not have.
 
-## What the 31 disagreements say
+## What the 30 disagreements say
 
-Only the PK/PD run disagrees with its labels at all; the other five classes agree everywhere. None
-of its thirty-one entries matches: twenty-seven abstain, and the four that are judged all come back
+Only the PK/PD run disagrees with its labels at all; the other five classes agree everywhere. One
+of its thirty-one entries matches — the acetaminophen model, judged against a curve read off its
+paper's figure — twenty-six abstain, and the four metformin entries that are judged all come back
 stricter than their label.
 
-- **27 abstentions**, all one note, traced to **ingestion**: Reprolith holds no extracted claims
+- **26 abstentions**, all one note, traced to **ingestion**: Reprolith holds no extracted claims
   for these papers, so there was nothing to reproduce and no model was run — the run abstains, and a
   `blocked` verdict can never equal a `reproduced` label. (This said "the shipped artifact carries
   no machine-checkable claim" until a regression audit noticed the code had been corrected and its

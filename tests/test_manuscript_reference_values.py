@@ -34,7 +34,9 @@ def test_every_claimed_entry_has_its_cited_rows_committed() -> None:
     Written for one entry and now covering two, so the second was not allowed in without the
     thing the first turned out to be missing.
     """
-    for accession in _CLAIMS["entries"]:
+    # Entries claiming a table's numbers; one whose claims are all read off a figure carries the
+    # image instead, and test_figure_reading_* re-derives its reading from it.
+    for accession in [a for a, e in _CLAIMS["entries"].items() if e["claims"]]:
         path = _MANUSCRIPTS / f"{accession}_tables.json"
         assert path.is_file(), f"{accession} claims a paper's numbers with no rows committed"
 
@@ -43,7 +45,7 @@ def test_every_committed_claim_states_a_number_its_cited_table_prints() -> None:
     """The same check the `claims-check` capability makes, run over the whole corpus."""
     from reprolith import check_claim_values, unsupported_claims
 
-    for accession, entry in _CLAIMS["entries"].items():
+    for accession, entry in [(a, e) for a, e in _CLAIMS["entries"].items() if e["claims"]]:
         tables = json.loads(
             (_MANUSCRIPTS / f"{accession}_tables.json").read_text(encoding="utf-8")
         )["tables"]

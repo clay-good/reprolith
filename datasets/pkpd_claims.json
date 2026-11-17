@@ -3285,6 +3285,32 @@
           "closed_by": "correct the model's `time` unitDefinition \u2014 it needs multiplier=3600 scale=0 for an hour, and declares multiplier=3600 scale=2, which SBML reads as one hundred of them. Nothing in the paper's text can clear this; the file is what states it"
         }
       ]
+    },
+    "BIOMD0000000619": {
+      "model_file": "worked_examples/Sluka2016_APAP_PBPK.xml",
+      "paper": {
+        "title": "Sluka2016 - Acetaminophen PBPK",
+        "doi": "10.1371/journal.pone.0162428"
+      },
+      "duration": 20.0,
+      "steps": 400,
+      "claims": [],
+      "figure_claims": [
+        {
+          "claim_id": "fig4-venous-APAP",
+          "quantity": "venous acetaminophen concentration-time course after a 1.4 g oral dose (REFSIM)",
+          "species": "CVen",
+          "digitization": "figures/Sluka2016_figure4/fig4.json",
+          "duration": 20.0,
+          "steps": 400,
+          "reported_units": "ug/mL",
+          "value_scale": {
+            "factor": 6.613756613756614e-06,
+            "unit": "mol/L",
+            "basis": "ug/mL is mg/L; divided by the model's own APAP_MW of 151.2 g/mol and by 1000 mg/g"
+          }
+        }
+      ]
     }
   }
 }

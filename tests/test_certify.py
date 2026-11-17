@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
-from reprolith import Claim, ReferenceKind, load_claims_dataset
+from reprolith import Claim, ReferenceKind, figure_claims, load_claims_dataset
 from reprolith.certify import _metric
 from reprolith.engine import NonFiniteSimulation, require_finite
 
@@ -76,7 +76,11 @@ def test_claims_dataset_records_parse() -> None:
     for entry in data["entries"].values():
         assert entry["model_file"] and entry["paper"]["doi"]
         claims = [Claim.from_record(r) for r in entry["claims"]]
-        assert claims and all(c.source_location for c in claims)  # every claim cites its source
+        # A table's numbers, a figure's curves, or both: an entry with neither has nothing to run.
+        curves = figure_claims(entry.get("figure_claims", []), base_dir=_CLAIMS.parent)
+        assert claims or curves
+        # Every claim cites its source.
+        assert all(c.source_location for c in claims) and all(c.cited_source for c in curves)
 
 
 def test_certify_estimation_records_a_distinct_estimation_verdict() -> None:

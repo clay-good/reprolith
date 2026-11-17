@@ -60,7 +60,9 @@ a phase done until its verification holds.
     Figure 5 of the metformin paper, thirty curves read by `scripts/digitize_figure_panels.py`,
     checked against the peaks the paper's Table 6 prints (all within 2.2%) and reproduced by the
     deposited model (`tests/test_figure_reading_zake2021.py`). All thirty are claims on the
-    BIOMD0000001028 certificate, stated as `figure_claims` in `datasets/pkpd_claims.json`.
+    BIOMD0000001028 certificate, stated as `figure_claims` in `datasets/pkpd_claims.json`. A second
+    paper, one whose results are *only* a figure, followed: Sluka et al. 2016's Figure 4 is the whole
+    claim set of BIOMD0000000619, which reproduces it and is no longer blocked.
 - [ ] 2.3 Record gaps and extraction-confidence; never fill gaps at this stage → verify: a paper with a missing parameter yields a gap, not a value
   - Partly done for the same reason. On the artifact path a symbol no declaration covers, an
     unstated unit, an unstated initial value, and a construct the dossier cannot represent are

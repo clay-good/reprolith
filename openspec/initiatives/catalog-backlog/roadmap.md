@@ -224,9 +224,12 @@ a change under `openspec/changes/`.
   reproduced by the deposited model at normalized distances of 0.006 to 0.027, and all failing at the
   wrong dose or under the deposit's declared clock; all thirty are claims on that entry's published
   certificate (`figure_claims` in `datasets/pkpd_claims.json`). It is on a paper whose tables already reach the
-  corpus, so it widens what that entry checks — whole curves, not one number per curve — and moves
-  the 27 blocked entries by nothing yet. Those need the same act on the figure-only papers, and
-  this one shows the tooling holds against a paper's own printed numbers.
+  corpus, so it widens what that entry checks — whole curves, not one number per curve. **The first
+  figure-only paper followed the same day**: Sluka et al. 2016's Figure 4, read in the digitizer's
+  dark-line mode (a black line among black data markers), reproduced by BIOMD0000000619 at a
+  normalized distance of 0.0065 with no assumption — the corpus's first clean pass, and the first
+  entry off the blocked list since the metformin paper (27 blocked → 26; blind agreement 0/31 →
+  1/31). The other 26 need the same act on their own papers' figures.
 
 ---
 

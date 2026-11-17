@@ -173,9 +173,9 @@ The count travels in every report and both surfaces print it:
 A paper that mixes the two says so in its `limits`, naming how many of each, because a selection
 that spent one budget on two kinds of evidence under one name has not said what it did.
 
-Measured on this corpus: **80 of 80** claims across the four dossiers carry a footprint derived
+Measured on this corpus: **201 of 201** claims across the five dossiers carry a footprint derived
 from the model, and none is curator-stated. What that number does not say is the reach — those
-four are the only dossiers here, so the derivation covers 4 of the 31 seeded entries and none of
+five are the only dossiers here, so the derivation covers 5 of the 31 seeded entries and none of
 the other five classes.
 
 ## What it says when it cannot do the job

@@ -6495,3 +6495,35 @@ entry's certificate, through a new `figure_claims` list on its claims record. `c
 them with the same curve path `certify_curves` uses, now one shared function. The corpus carries 200
 claims where it carried 170, and 185 reproduce where 155 did. The certificate is still not a clean
 pass, for the reason every other claim on it is not: the clock.
+
+## A paper with no table, and the first clean pass
+
+The 27 blocked entries were all waiting on the same input: claims, which their papers state only in
+figures. Sluka et al. 2016 is the first of them read. Its acetaminophen PBPK module
+(BIOMD0000000619) is plotted once, Figure 4, as a black line over black clinical data squares.
+
+**Reading it needed a second mode of the digitizer.** Colour separates nothing here, so the line is
+followed by continuity from a column it has to itself. Every hollow square is found as two vertical
+sides of one height a side's width apart, joined top and bottom, and blanked, so a column through one
+is skipped rather than read off the square's edge. The first version jumped onto a square's top edge
+at 0.6 h, and the next lost the line behind a square at 12 h because two equal neighbours read as
+"flat". The slope is now taken over the last ten traced columns, and the tolerance grows with the
+gap.
+
+**The calibration checks itself against a label it did not use.** Grey ticks are counted up from
+the frame's 0, each one unit on, so the half of them hidden under the line cost nothing. Long ticks
+must land on multiples of five, which caught the first version scanning too short a band and
+taking every y tick for a labelled one. The frame's printed top label,
+20, is reached at 20.004. The ticks wobble by up to 1.8 px, a whole-pixel pattern from an image
+scaled up from a smaller original, so evenness is bounded as a share of a step (3%) and not in
+pixels.
+
+**It is the corpus's first clean pass.** The deposit reproduces the curve at a normalized distance
+of 0.0065, worst point 0.074 of scale, with no assumption: the figure is in µg/mL and the model in
+mol/L, and the claim converts by the model's own `APAP_MW` and prints the factor. Twice the dose
+does not pass, and the same comparison without the conversion fails. The reading spends 41% of the
+band on its own straight lines, most of it in the first half hour, where four data squares sit on
+the rising line. The certificate says so.
+
+Blocked entries go from 27 to 26, and blind agreement from 0/31 to 1/31: this entry's label is
+`reproduced`, and that is what it got.

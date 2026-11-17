@@ -61,7 +61,7 @@ def test_the_readme_shows_every_command_the_cli_has() -> None:
 _WORDED_COUNTS = {"thirty-one": 31, "thirty-two": 32, "thirty-three": 33,
                   "thirty-four": 34, "thirty-five": 35, "thirty-six": 36,
                   "thirty-seven": 37, "thirty-eight": 38,
-                  "thirty-nine": 39, "thirty": 30}
+                  "thirty-nine": 39, "forty": 40, "thirty": 30}
 
 #: What the counted sentence is *about*. The word alone is not unique in this README: the
 #: claim-selection section says a paper's "thirty-three published numbers" are not thirty-three
@@ -98,8 +98,18 @@ def test_the_front_pages_reproduction_split_is_the_certificates_split() -> None:
     """
     import json
 
+    # The sentence counts the certificates checked against one paper's tables — the four metformin
+    # deposits. The acetaminophen certificate, judged only against a figure, has its own paragraph.
+    tabled = {
+        accession for accession, entry in json.loads(
+            (_ROOT / "datasets" / "pkpd_claims.json").read_text(encoding="utf-8")
+        )["entries"].items() if entry["claims"]
+    }
+    assert len(tabled) == 4
     reproduced = missed = 0
     for path in _ROOT.glob("datasets/milestone/certificates/*.json"):
+        if path.stem not in tabled:
+            continue
         certificate = json.loads(path.read_text(encoding="utf-8"))
         for assessment in certificate["assessments"]:
             if assessment["verdict"] == "reproduced":

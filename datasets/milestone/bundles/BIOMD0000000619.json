@@ -1,0 +1,28 @@
+{
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": "deterministic-lsoda (judge rev f6e19f43470f)",
+    "engine": "copasi",
+    "version": "4.46.300 (Source)"
+  },
+  "entry": "BIOMD0000000619",
+  "mismatches": null,
+  "model": {
+    "detected_format": "sbml",
+    "filename": "worked_examples/Sluka2016_APAP_PBPK.xml",
+    "validates": true
+  },
+  "non_reconstructable": [],
+  "origin": "author-supplied",
+  "recipe": [
+    {
+      "claim_id": "fig4-venous-APAP",
+      "metric": "curve",
+      "output": "[CVen]",
+      "protocol": "Sluka et al. 2016, Fig 4 (venous APAP, REFSIM), venous APAP after a 1.4 g oral dose (APAP_sim line) (digitized from the figure with scripts/digitize_figure_panels.py (dark-line trace; axis labels read by eye); 1566 points, its own interpolation spending 41% of the pass budget); read in ug/mL and converted to mol/L by x6.61376e-06 (ug/mL is mg/L; divided by the model's own APAP_MW of 151.2 g/mol and by 1000 mg/g)",
+      "steps": 400,
+      "time_span": "0-20"
+    }
+  ],
+  "source_dossier": "BIOMD0000000619"
+}

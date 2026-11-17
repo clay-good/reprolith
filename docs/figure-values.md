@@ -377,7 +377,7 @@ ready" for it would tell almost every honest author their work is broken. See
 
 ## The limit that remains
 
-**One published figure is in this corpus now, and its curves are on a published certificate.**
+**Two published figures are in this corpus now, and both are on published certificates.**
 Figure 5 of Zake et al. 2021 is read: thirty curves, the paper's own model simulations of ten
 tissues at three doses (`datasets/figures/Zake2021_figure5/`). The reading is a curator's, taken
 with `scripts/digitize_figure_panels.py`, which locates the frame, ticks and lines in the image and
@@ -391,5 +391,20 @@ the deposit declares (`tests/test_figure_reading_zake2021.py`, and the findings 
 All thirty are claims on the BIOMD0000001028 certificate now, beside the table's numbers. An entry
 states them as `figure_claims` in `datasets/pkpd_claims.json`, each naming its digitization file
 and the window it is judged on, and `reprolith.figure_claims` turns one into a curve claim with
-`digitized-figure` pinned as its reference kind. What remains is the other papers whose results
-are only in figures, which are still unread.
+`digitized-figure` pinned as its reference kind.
+
+The second is the first that took an entry off the blocked list. Sluka et al. 2016 print no table
+of what their acetaminophen PBPK module does; Figure 4 is its one curve, drawn as a black line over
+black data squares (`datasets/figures/Sluka2016_figure4/`). Colour cannot separate those, so the
+digitizer's dark-line mode follows the line by continuity and blanks every square, skipping a column
+that runs through one rather than reading the square's edge as the line. Its calibration counts
+grey ticks up from the frame's 0, so ticks hidden under the line cost nothing, and it lands the
+frame's printed top label of 20 at 20.004 without having used it. The figure is in µg/mL and the
+model in mol/L: the claim states the factor that converts one to the other and where it comes from
+(the model's own molar mass), and the certificate prints it. The deposit reproduces the curve at a
+normalized distance of 0.0065 with no assumption, so this certificate is the corpus's first clean
+pass, marked `[figure-reading]`. The reading's own straight lines spend 41% of the band, most of it
+in the first half hour, where the data squares sit on the rising line and hide it.
+
+What remains is the other twenty-five blocked entries' papers, whose results are only in figures
+and still unread.

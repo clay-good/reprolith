@@ -1,0 +1,42 @@
+{
+ "description": "Figure 4 of Sluka et al. 2016 (PLOS ONE 11(9): e0162428, doi:10.1371/journal.pone.0162428, CC BY 4.0): a standalone simulation of the whole-body PBPK module with parameter set REFSIM, a 1.4 g oral acetaminophen (APAP) dose in a 70 kg male, venous APAP in ug/mL against time in hours. The line is the model output (APAP_sim); the open squares are in vivo data and are not read. Read by scripts/digitize_figure_panels.py in its dark-line mode: the frame and the grey ticks inside it are located in the image, and the line is followed by continuity from a column it has to itself. Read by eye: that each frame edge carries its axis's 0 label, that each tick is one unit (an hour, or 1 ug/mL) from the last, and that the labelled ticks fall every 5. The line leaves the plot's lower-left corner, its first sample, and is read from there.",
+ "image": "pone.0162428.g004.png",
+ "source": "https://journals.plos.org/plosone/article/figure/image?size=large&id=10.1371/journal.pone.0162428.g004",
+ "defaults": {
+  "digitizer": "scripts/digitize_figure_panels.py (dark-line trace; axis labels read by eye)",
+  "x_unit": "h",
+  "y_unit": "ug/mL",
+  "x_from": 0.0
+ },
+ "panels": [
+  {
+   "panel": "4",
+   "mode": "dark-line",
+   "figure": "Sluka et al. 2016, Fig 4 (venous APAP, REFSIM)",
+   "crop": [
+    0,
+    0,
+    2200,
+    1539
+   ],
+   "x_step": 1,
+   "x_major_every": 5,
+   "y_step": 1,
+   "y_major_every": 5,
+   "seed_x": 10.0,
+   "starts_at_frame_corner": true,
+   "corner_reach": 0.6,
+   "reading": "fig4.json",
+   "series": [
+    {
+     "claim": "fig4-venous-APAP",
+     "curve": "venous APAP after a 1.4 g oral dose (APAP_sim line)"
+    }
+   ],
+   "marker_px": [
+    20,
+    32
+   ]
+  }
+ ]
+}

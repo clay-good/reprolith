@@ -243,12 +243,32 @@ def figure_claims(records: Sequence[Mapping[str, Any]], *, base_dir: Path | str)
             )
         duration, steps = float(record["duration"]), int(record["steps"])
         overrides = record.get("parameter_overrides", {})
+        reference = curve_reference(reading, duration=duration, steps=steps)
+        source = reading.source_line(window=(0.0, duration))
+        scale = record.get("value_scale")
+        if scale is not None:
+            # A figure drawn in other units than the model reads its output in: the reading stays
+            # in the figure's units, as read, and the claim states the one factor that converts it
+            # and where that factor comes from, so the conversion is on the certificate and not
+            # hidden in a file of numbers already multiplied.
+            missing = sorted({"factor", "unit", "basis"} - set(scale))
+            if missing:
+                raise ValueError(
+                    f"{record['claim_id']}'s value_scale states no {', '.join(missing)}: a unit "
+                    "conversion is a factor, the unit it converts to, and where the factor is from"
+                )
+            factor = float(scale["factor"])
+            reference = tuple(value * factor for value in reference)
+            source = (
+                f"{source}; read in {reading.y_axis.unit} and converted to {scale['unit']} "
+                f"by x{factor:.6g} ({scale['basis']})"
+            )
         claims.append(CurveClaim(
             claim_id=record["claim_id"],
             quantity=record["quantity"],
             species=record["species"],
-            reference=curve_reference(reading, duration=duration, steps=steps),
-            source_location=reading.source_line(window=(0.0, duration)),
+            reference=reference,
+            source_location=source,
             duration=duration,
             steps=steps,
             reference_kind=ReferenceKind.DIGITIZED_FIGURE,
