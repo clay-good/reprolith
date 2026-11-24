@@ -6856,3 +6856,25 @@ of its own.
 A survivor is usually a missing test. It is sometimes a guard that cannot be the one that fires,
 and the difference is worth the five minutes it takes to find out — writing a test for a redundant
 guard would have left a test that passes whatever the code does.
+
+## Every module over two hundred lines now has a guard in the harness
+
+The count that started this is finished: `loop_notes.py` and `claims_template.py` were the last two
+modules over two hundred lines with no mutation entry, and both are honesty surfaces — one audits
+the record this repository keeps of its own defects, the other is what an author is handed.
+
+The template's three refusals were all already held. The record's were not: **a note that names no
+subject, and a note that cites no evidence, could both be constructed with the whole suite green.**
+Those are the first two lines of the thing that makes the loop record a record rather than a
+collection of assertions. A note with no subjects covers nothing and passes every audit it is put
+through, because the audit asks which subjects are *uncovered* and a note claiming none makes no
+claim to be wrong about.
+
+The better find is what happened next. The first version of the second test matched on "cites no
+evidence" — and passed with the refusal deleted, because the refusal one line further down says
+"cites no evidence it can be held to", and the first string is a prefix of the second. The harness
+caught it. *A quote that is not unique is a guard pointed at the wrong text* is a rule this
+repository already applies to its loop-note citations and to the harness's own anchors; it is just
+as true of a test's own pattern, and that was not written down anywhere until now.
+
+The list is at 249 entries and every module over two hundred lines has at least one.

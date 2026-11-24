@@ -62,6 +62,46 @@ def test_a_blank_explanation_is_refused() -> None:
         )
 
 
+def test_a_note_that_names_no_subject_is_refused() -> None:
+    """The record's first refusal, and nothing was holding it (mutation harness, 2026-11-24).
+
+    A note with no subjects covers nothing. It passes every audit it is put through — the audit
+    asks which subjects are uncovered, and a note claiming none makes no claim to be wrong about —
+    while sitting in the record as though the loop had explained something.
+    """
+    with pytest.raises(ValueError, match="explains nothing: no subjects"):
+        LoopNote(
+            id="n", kind=NoteKind.FAILURE_MODE, subjects=(), basis=NoteBasis.SPEC,
+            note="a written explanation",
+            evidence=(Citation("README.md", ("proof of whether the model reproduces",)),),
+        )
+
+
+def test_a_note_citing_nothing_is_refused() -> None:
+    """Its sibling: a note with nowhere to check it is an assertion, which is what this record
+    exists to replace. Both refusals were deletable with the whole suite green.
+
+    The pattern is anchored away from the *next* refusal on purpose. "cites no evidence" is a
+    prefix of "cites no evidence it can be held to", so the first version of this test passed with
+    the refusal deleted — the fallback message matched it — and the mutation harness said so. A
+    quote that is not unique is a guard pointed at the wrong text, which this repository already
+    refuses in its loop-note citations; it is just as true of a test's own pattern.
+    """
+    with pytest.raises(ValueError, match=r"cites no evidence(?! it can be held)"):
+        LoopNote(
+            id="n", kind=NoteKind.FAILURE_MODE, subjects=("uncategorized",),
+            basis=NoteBasis.SPEC, note="a written explanation", evidence=(),
+        )
+    # And evidence that cannot be held to its content is the same failure one step in: a citation
+    # with no quotes is satisfied by the path existing.
+    with pytest.raises(ValueError, match="cites no evidence it can be held to"):
+        LoopNote(
+            id="n", kind=NoteKind.FAILURE_MODE, subjects=("uncategorized",),
+            basis=NoteBasis.SPEC, note="a written explanation",
+            evidence=(Citation("README.md", ()),),
+        )
+
+
 def test_two_reports_disagreeing_on_one_entry_are_refused() -> None:
     """Entry ids are not unique across classes; a shared id must not borrow another class's note."""
     report = {"per_entry": [{"entry": "BIOMD0000001028", "agree": False}]}

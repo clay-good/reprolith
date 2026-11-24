@@ -1843,6 +1843,54 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          "        if False:\n            pass"),
         ["tests/test_estimation_refit.py", "tests/test_certify.py"],
     ),
+    # --- loop_notes.py and claims_template.py, the last two modules over two hundred lines with
+    # no entry at all (2026-11-24). Both are honesty surfaces: one audits the record this
+    # repository keeps of its own defects, the other is what an author is handed.
+    (
+        "a loop note's evidence may cite a line that exists only as a comment",
+        "loop_notes.py",
+        ("            text = \"\\n\".join(\n"
+         "                line for line in text.splitlines() if not line.lstrip().startswith(\"#\")\n"
+         "            )",
+         "            text = text"),
+        ["tests/test_loop_notes.py"],
+    ),
+    (
+        "a loop note may cite a file that is not there",
+        "loop_notes.py",
+        ("        if not target.exists():", "        if False:"),
+        ["tests/test_loop_notes.py"],
+    ),
+    (
+        "a loop note may explain nothing and name no subject",
+        "loop_notes.py",
+        ("        if not self.subjects:", "        if False:"),
+        ["tests/test_loop_notes.py"],
+    ),
+    (
+        "a loop note may cite no evidence at all",
+        "loop_notes.py",
+        ("        if not self.evidence:", "        if False:"),
+        ["tests/test_loop_notes.py"],
+    ),
+    (
+        "a claims template hands back a stub with no number in it and calls it filled",
+        "claims_template.py",
+        ('        if record.get("reported") is None:', "        if False:"),
+        ["tests/test_claims_template.py"],
+    ),
+    (
+        "a claims template accepts a claim that says nowhere in the paper it came from",
+        "claims_template.py",
+        ('        if not str(record.get("source_location") or "").strip():', "        if False:"),
+        ["tests/test_claims_template.py"],
+    ),
+    (
+        "a claims template accepts a claim naming no model output to read",
+        "claims_template.py",
+        ('        if not str(record.get("species") or "").strip():', "        if False:"),
+        ["tests/test_claims_template.py"],
+    ),
     (
         "a search that walked off the log scale ends in an overflow naming nothing",
         "estimation.py",
