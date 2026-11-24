@@ -1790,6 +1790,18 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_anonymous_outputs.py"],
     ),
     (
+        "a constant parameter is scored as an output, so a rate constant named k1 is reported",
+        "export.py",
+        ('        if kind == "parameter" and identifier not in driven:', "        if False:"),
+        ["tests/test_anonymous_outputs.py"],
+    ),
+    (
+        "only species are scored, so a model whose state is rule-driven parameters reports nothing",
+        "export.py",
+        ('_READABLE_KINDS = ("species", "parameter")', '_READABLE_KINDS = ("species",)'),
+        ["tests/test_anonymous_outputs.py"],
+    ),
+    (
         "a species the author did name is still reported as meaningless",
         "export.py",
         ("        if name and name != identifier:", "        if False:"),
@@ -1816,7 +1828,7 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
     (
         "the claims template lists anonymous outputs without saying they are anonymous",
         "claims_template.py",
-        ("    anonymous = _species_without_stated_meanings(root)", "    anonymous = ()"),
+        ("    anonymous = _outputs_without_stated_meanings(root)", "    anonymous = ()"),
         ["tests/test_anonymous_outputs.py"],
     ),
     (

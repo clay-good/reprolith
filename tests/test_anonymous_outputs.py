@@ -14,7 +14,14 @@ its model runs. What is missing is not the picture and not the engine: there is 
 a claim at. "Needs figure digitization" was the whole account of this entry, and it was wrong.
 
 The rule is narrow because the cost of being wrong is sending an author to repair a correct file,
-so it is swept over every model committed here: 277 species across twenty-one models, one reported.
+so it is swept over every model committed here, and four outputs in two files are reported across
+the twenty-one. Both are right: a boundary species fixed at zero that its file never explains, and
+the three rule-driven parameters that carry all of BioModels BIOMD0000000238's state.
+
+An **output** is a species, or a parameter a rate rule or assignment rule drives. Both halves were
+measured. Without the rules, BioModels BIOMD0000000238 — whose whole state is three rule-driven
+parameters called `X1`, `X2`, `X3` — reports nothing at all. Without the constancy, six of the
+models committed here are reported for calling a rate constant `k1`.
 """
 
 from __future__ import annotations
@@ -23,7 +30,7 @@ import json
 from pathlib import Path
 
 import pytest
-from reprolith import claims_template, species_without_stated_meanings
+from reprolith import claims_template, outputs_without_stated_meanings
 
 _FIXTURES = Path(__file__).parent / "fixtures"
 _DATASETS = Path(__file__).parent.parent / "datasets"
@@ -63,7 +70,7 @@ _ANONYMOUS = """<?xml version="1.0" encoding="UTF-8"?>
 
 def test_a_slot_number_with_no_meaning_beside_it_is_reported() -> None:
     """All three shapes of saying nothing: the name repeating the id, and the name absent."""
-    assert species_without_stated_meanings(_ANONYMOUS) == ("x_1", "x_2", "x_3")
+    assert outputs_without_stated_meanings(_ANONYMOUS) == ("x_1", "x_2", "x_3")
 
 
 def test_anything_the_file_says_about_a_quantity_takes_it_off_the_list() -> None:
@@ -73,17 +80,66 @@ def test_anything_the_file_says_about_a_quantity_takes_it_off_the_list() -> None
     report a model that names its species perfectly well in the author's own words.
     """
     named = _ANONYMOUS.replace('id="x_1" name="x_1"', 'id="x_1" name="naive CD4 T cells"')
-    assert species_without_stated_meanings(named) == ("x_2", "x_3")
+    assert outputs_without_stated_meanings(named) == ("x_2", "x_3")
 
     with_sbo = _ANONYMOUS.replace('id="x_2" name="x_2"', 'id="x_2" name="x_2" sboTerm="SBO:0000247"')
-    assert species_without_stated_meanings(with_sbo) == ("x_1", "x_3")
+    assert outputs_without_stated_meanings(with_sbo) == ("x_1", "x_3")
 
     annotated = _ANONYMOUS.replace(
         '<species id="x_3" compartment="c" initialConcentration="0"/>',
         '<species id="x_3" compartment="c" initialConcentration="0">'
         '<annotation><whatever xmlns="http://example.invalid/ns"/></annotation></species>',
     )
-    assert species_without_stated_meanings(annotated) == ("x_1", "x_2")
+    assert outputs_without_stated_meanings(annotated) == ("x_1", "x_2")
+
+
+#: The shape BioModels BIOMD0000000238 ships: the state is carried by parameters a rate rule
+#: drives, and the rate constant beside them is a constant called `k1`.
+_STATE_IN_PARAMETERS = """<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4">
+  <model id="m">
+    <listOfCompartments><compartment id="c" size="1"/></listOfCompartments>
+    <listOfParameters>
+      <parameter id="X1" value="1"/>
+      <parameter id="X2" name="X2" value="0"/>
+      <parameter id="M" name="Metabolic rate" value="0"/>
+      <parameter id="k1" value="0.5"/>
+    </listOfParameters>
+    <listOfRules>
+      <rateRule variable="X1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply><minus/><apply><times/><ci>k1</ci><ci>X1</ci></apply></apply></math>
+      </rateRule>
+      <rateRule variable="X2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply><times/><ci>k1</ci><ci>X1</ci></apply></math>
+      </rateRule>
+      <assignmentRule variable="M">
+        <math xmlns="http://www.w3.org/1998/Math/MathML"><ci>X2</ci></math>
+      </assignmentRule>
+    </listOfRules>
+  </model>
+</sbml>
+"""
+
+
+def test_a_parameter_is_an_output_only_when_a_rule_drives_it() -> None:
+    """Both halves of what "output" means here, each measured against the committed corpus.
+
+    `X1` and `X2` are this model's entire state, carried by parameters because it has no species
+    at all — the shape BioModels BIOMD0000000238 ships, and one a species-only check cannot see.
+    `k1` is a rate constant: nothing drives it, it is an input the author chose, and `k1` is what
+    a rate constant is conventionally called. Scoring every parameter instead would report `k1`,
+    `k3`, `V1`, `K1`, `r2` and `R5` across six of the models committed here, which is an
+    afternoon spent repairing files that are already right.
+    """
+    assert outputs_without_stated_meanings(_STATE_IN_PARAMETERS) == ("X1", "X2")
+
+    # Take the rules away and the same two parameters are settings, not outputs.
+    settings = _STATE_IN_PARAMETERS[: _STATE_IN_PARAMETERS.index("    <listOfRules>")] + (
+        "  </model>\n</sbml>\n"
+    )
+    assert outputs_without_stated_meanings(settings) == ()
 
 
 def test_an_id_that_reads_as_a_word_is_never_reported_however_terse() -> None:
@@ -95,16 +151,20 @@ def test_an_id_that_reads_as_a_word_is_never_reported_however_terse() -> None:
     """
     for identifier in ("Glucose", "ALDOB", "C1q", "pIRS1", "x", "APAP_gut", "S1P", "IL6", "IL10"):
         model = _ANONYMOUS.replace('id="x_1" name="x_1"', f'id="{identifier}" name="{identifier}"')
-        assert identifier not in species_without_stated_meanings(model), identifier
+        assert identifier not in outputs_without_stated_meanings(model), identifier
 
 
-def test_every_model_this_repository_ships_states_what_its_species_are() -> None:
+def test_every_model_this_repository_ships_states_what_its_outputs_are() -> None:
     """The sweep, for the same reason the rate-law check has one: a check whose false positive
     sends an author to repair a correct file has to be tried against the correct files first.
 
-    One species is reported, and it is reported rightly: `X1` in Sluka et al. 2016's metabolism
-    module, a boundary species fixed at zero that the file never explains. One of seven is a very
-    different report from fifty-two of fifty-two, and the count is what tells them apart."""
+    Two files are reported and both are reported rightly. `X1` in Sluka et al. 2016's metabolism
+    module is a boundary species fixed at zero that the file never explains. `X1`, `X2` and `X3`
+    in BioModels BIOMD0000000238 are the three rule-driven parameters that carry its entire state
+    — and they are *three of its twenty-seven* outputs, because the rest of that model names its
+    quantities properly ("Metabolic rate", "Bound Receptor"). Three of twenty-seven is a very
+    different report from a hundred and forty of a hundred and sixty-three, and the count is what
+    tells them apart, which is why the whole list is pinned rather than a boolean."""
     models = sorted(
         path for directory in (_FIXTURES, _DATASETS) for path in directory.rglob("*.xml")
     )
@@ -114,10 +174,13 @@ def test_every_model_this_repository_ships_states_what_its_species_are() -> None
         text = path.read_text(encoding="utf-8", errors="replace")
         if "<sbml" not in text:
             continue
-        found = species_without_stated_meanings(text)
+        found = outputs_without_stated_meanings(text)
         if found:
             reported[path.name] = found
-    assert reported == {"Sluka2016_APAP_metabolism.xml": ("X1",)}, reported
+    assert reported == {
+        "BIOMD0000000238.xml": ("X1", "X2", "X3"),
+        "Sluka2016_APAP_metabolism.xml": ("X1",),
+    }, reported
 
 
 def test_the_claims_template_says_so_where_the_author_will_read_it() -> None:
@@ -127,7 +190,7 @@ def test_the_claims_template_says_so_where_the_author_will_read_it() -> None:
     template = claims_template(_ANONYMOUS)
     (note,) = [n for n in template["notes"] if "identified only by position" in n]
     assert "x_1, x_2, x_3" in note
-    assert "3 of this model's species" in note
+    assert "3 of this model's outputs" in note
     # And the outputs it is about are still listed, because the author has to see both.
     assert {output["id"] for output in template["readable_outputs"]} >= {"x_1", "x_2", "x_3"}
     # A model that says what it means gets no such note at all.
@@ -202,7 +265,7 @@ def test_archive_check_reports_it_to_the_author_submitting_the_archive() -> None
     bytes_ = buffer.getvalue()
 
     report = archive_report(bytes_)
-    assert report["found"]["species_without_stated_meanings"] == ["x_1", "x_2", "x_3"]
+    assert report["found"]["outputs_without_stated_meanings"] == ["x_1", "x_2", "x_3"]
     (action,) = [item for item in report["fix_list"] if item["kind"] == "no-meaning"]
     assert "identified only by position" in action["issue"]
     assert "x_1, x_2, x_3" in action["issue"]

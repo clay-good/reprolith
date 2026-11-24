@@ -637,10 +637,10 @@ def archive_report(
     """
     from .export import (
         declarations_without_identifiers,
+        outputs_without_stated_meanings,
         packages_no_time_course_describes,
         reactions_without_rate_laws,
         sedml_declarations_without_identifiers,
-        species_without_stated_meanings,
         what_a_package_means,
     )
     from .manuscript import manuscript_mismatches
@@ -778,19 +778,19 @@ def archive_report(
         # above; this is the one with an id that is only a slot number, which every engine runs
         # and no reader can interpret — the failure arrives at the point where someone tries to
         # say which published curve a trajectory is.
-        meaningless = species_without_stated_meanings(sbml)
-        found["species_without_stated_meanings"] = list(meaningless)
+        meaningless = outputs_without_stated_meanings(sbml)
+        found["outputs_without_stated_meanings"] = list(meaningless)
         if meaningless:
             named = ", ".join(meaningless[:5]) + (" and others" if len(meaningless) > 5 else "")
             actions.append({
                 "priority": _ARCHIVE_NO_MEANING_PRIORITY, "kind": "no-meaning", "claim_id": None,
                 "quantity": None, "source_location": model,
-                "issue": f"{len(meaningless)} of your species are identified only by position "
+                "issue": f"{len(meaningless)} of your outputs are identified only by position "
                          f"({named}) — the id is a slot number, the name repeats it or is absent, "
                          "and there is no SBO term or annotation either; nothing refuses this and "
                          "nothing warns about it, because there is nothing wrong with the "
                          "mathematics: both engines import the file, integrate it to completion, "
-                         "and hand back one finite trajectory per species that no reader can "
+                         "and hand back one finite trajectory per output that no reader can "
                          "match to anything your paper plots",
                 "fix": "give each one a name, an sboTerm or an annotation saying what it is; a "
                        "reproducer who cannot tell which of your curves is which cannot check any "

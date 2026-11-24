@@ -45,8 +45,8 @@ from typing import Any
 from .export import (
     _elements_by_id,
     _model_root,
+    _outputs_without_stated_meanings,
     _packages_no_time_course_describes,
-    _species_without_stated_meanings,
     what_a_package_means,
 )
 from .manuscript import _determined_by_math, _leaf
@@ -287,11 +287,11 @@ def claims_template(
     # an author writing claims by hand reaches for the template first, and `readable_outputs`
     # below would otherwise hand them fifty-two rows reading `x_1` with nothing said about why
     # that is a problem rather than a style.
-    anonymous = _species_without_stated_meanings(root)
+    anonymous = _outputs_without_stated_meanings(root)
     if anonymous:
         shown = ", ".join(anonymous[:5]) + (" and others" if len(anonymous) > 5 else "")
         notes.append(
-            f"{len(anonymous)} of this model's species are identified only by position "
+            f"{len(anonymous)} of this model's outputs are identified only by position "
             f"({shown}): the id is a slot number, the name repeats it or is absent, and there is "
             "no SBO term or annotation either. The outputs listed below are what a claim's "
             "'species' field can name, so a reproducer reading your claims cannot tell which "

@@ -255,8 +255,7 @@ def _declarations_missing(root: ET.Element, required_by_kind: Mapping[str, str])
 #: An identifier that is a position in a list rather than a statement about a quantity: **one**
 #: letter and a number, with the optional leading and separating underscores SBML's `SId` allows.
 #: `x_1`, `S12`, `_s3`. Deliberately narrow — `Glucose`, `ALDOB`, `C1q` and `pIRS1` all have to
-#: pass it, and the corpus here says they do: one of the 277 species across the twenty-one models
-#: committed in this repository matches, and 52 of 52 in BioModels BIOMD0000000608 do.
+#: pass it.
 #:
 #: Two letters are *not* allowed, and the reason is the very domain this check was written on: a
 #: rule reading `[A-Za-z]{1,2}` reports `IL6` — an interleukin, a quantity an immune-response
@@ -264,45 +263,74 @@ def _declarations_missing(root: ET.Element, required_by_kind: Mapping[str, str])
 #: cheap; telling an author that `IL6` says nothing is the failure this check cannot afford.
 _PLACEHOLDER_ID = re.compile(r"^_?[A-Za-z]_?[0-9]+$")
 
+#: The elements a claim can read a value from, which is what makes this check's scope the right
+#: one rather than an arbitrary one: `reprolith.claims_template` lets a claim's `species` field
+#: name a species or a parameter and nothing else.
+_READABLE_KINDS = ("species", "parameter")
 
-def species_without_stated_meanings(model_sbml: str) -> tuple[str, ...]:
-    """The species this model gives a position but never a meaning, in document order.
+#: What makes a quantity vary, and therefore an output rather than an input. A constant parameter
+#: is a *setting* — `k1` and `V1` are what a rate constant is conventionally called, and an author
+#: naming one that way has said everything a rate constant needs to say. Measured: scoring every
+#: parameter would report `k1`, `k3`, `V1`, `K1`, `r2` and `R5` across six of the models committed
+#: here. Restricted to the ones a rule drives, it reports none of them.
+_RULES_THAT_DRIVE = ("rateRule", "assignmentRule")
 
-    A species whose id is a slot number — `x_1` — and whose `name` repeats that id or is absent,
+
+def outputs_without_stated_meanings(model_sbml: str) -> tuple[str, ...]:
+    """The outputs this model gives a position but never a meaning, in document order.
+
+    An output whose id is a slot number — `x_1` — and whose `name` repeats that id or is absent,
     carrying neither an `sboTerm` nor an annotation, is a quantity the file does not identify.
     Every reader can run it; none can say what it is. That is a different failure from the one
     :func:`declarations_without_identifiers` reports, and it fails later: the model imports
-    cleanly, integrates to completion, and produces 52 curves that cannot be matched to anything a
+    cleanly, integrates to completion, and produces curves that cannot be matched to anything a
     paper plots.
 
     Measured on BioModels BIOMD0000000608 (Palsson et al. 2013's fully-integrated immune response
-    model): it runs under this repository's own pin in under a second, and **all 52 of its species
-    are `x_1` through `x_52`** with no name, no SBO term and no annotation in the document. Its
-    paper's figures are 600-pixel BMC images with up to nine separable colours — readable, by this
-    repository's own measurements (`datasets/manuscripts/figure_survey.json`) — so what blocks a
-    claim on this entry is not the picture and not the engine. It is that there is no output to
-    point a claim at. Nothing else in the repository could say that: the model loads, runs, and
-    returns finite trajectories for every one of them.
+    model): it runs under this repository's own pin in under a second, and **140 of its 163
+    outputs are `x_1`, `c2`, and the like** — every one of its 52 species among them — with no
+    name, no SBO term and no annotation in the document. Its paper's figures are 600-pixel BMC
+    images with up to nine separable colours — readable, by this repository's own measurements
+    (`datasets/manuscripts/figure_survey.json`) — so what blocks a claim on this entry is not the
+    picture and not the engine. It is that there is no output to point a claim at. Nothing else in
+    the repository could say that: the model loads, runs, and returns finite trajectories for
+    every one of them.
+
+    **An output, not every declaration.** A species is always one. A parameter is one only when a
+    rate rule or an assignment rule drives it: BioModels BIOMD0000000238 carries its whole state
+    in three rule-driven parameters called `X1`, `X2` and `X3`, which a species-only check cannot
+    see, while a *constant* `k1` is an input whose conventional name says everything it needs to.
+    Both halves were measured against the committed corpus, and each is load-bearing: without the
+    rules, three real findings are missed; without the constancy, six of the models here are
+    reported for naming a rate constant `k1`.
 
     The rule is narrow on purpose, because the cost of a false positive is sending an author to
     repair a file that is already right. An id that reads as a word is never reported, however
-    terse — the models committed here hold 277 species between them and one is flagged, a boundary
-    species named `X1` and fixed at zero that its file never explains. An id that *is* a slot
-    number is not reported either if anything else in the element says what it means:
-    `sboTerm="SBO:0000247"` or an RDF annotation is a statement, and a `name` that differs from
-    the id is the author's own.
+    terse — across the twenty-one models committed here, one output is flagged: a boundary species
+    named `X1`, fixed at zero, that its file never explains. An id that *is* a slot number is not
+    reported either if anything else in the element says what it means: `sboTerm="SBO:0000247"` or
+    an RDF annotation is a statement, and a `name` that differs from the id is the author's own.
 
     Raises ``ValueError`` if the text is not parseable SBML.
     """
-    return _species_without_stated_meanings(_model_root(model_sbml))
+    return _outputs_without_stated_meanings(_model_root(model_sbml))
 
 
-def _species_without_stated_meanings(root: ET.Element) -> tuple[str, ...]:
+def _outputs_without_stated_meanings(root: ET.Element) -> tuple[str, ...]:
+    driven = {
+        element.get("variable")
+        for element in root.iter()
+        if _localname(element.tag) in _RULES_THAT_DRIVE and element.get("variable")
+    }
     anonymous: list[str] = []
     for element in root.iter():
-        if _localname(element.tag) != "species":
+        kind = _localname(element.tag)
+        if kind not in _READABLE_KINDS:
             continue
         identifier = element.get("id") or ""
+        # A parameter nothing drives is a setting the author chose, not a curve anybody reads.
+        if kind == "parameter" and identifier not in driven:
+            continue
         if not _PLACEHOLDER_ID.match(identifier):
             continue
         name = element.get("name") or ""
