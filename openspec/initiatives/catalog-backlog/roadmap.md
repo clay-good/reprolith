@@ -260,6 +260,20 @@ a change under `openspec/changes/`.
 
   **What counts as an output, and what the rule must not report, were both settled by measurement rather than taste.** An output is a species, or a parameter a rate rule or assignment rule drives. Scoring *every* parameter reports `k1`, `k3`, `V1`, `K1`, `r2` and `R5` across six of the models committed here — a rate constant named `k1` is an input the author chose and has said everything it needs to — so a constant is not scored. Scoring only *species* reports nothing at all for BIOMD0000000238, whose whole state is three rule-driven parameters called `X1`, `X2` and `X3`; that one is now a finding, and a proportionate one at three of its twenty-seven outputs, because the rest of that model names its quantities properly. The identifier rule is narrow in the same way: one letter and a number, so `IL6` is never reported. Its first version allowed two, and the test sweep caught it reporting exactly that — an interleukin is a quantity an immune-response model names `IL6`, and the check was being written on an immune-response paper. Swept over every model committed here, four outputs in two files are reported and both are right. The same sweep over the other twenty-three blocked entries found no third case, which is itself the answer to the obvious next question: this is Palsson's deposit, not a pattern in the backlog. Blocked for want of a *figure* and blocked for want of a *nameable output* are different facts about an entry, and until this the backlog could not tell them apart.
 
+  **And with both measurements in hand, every one of the ten entries the survey covers now has a named obstacle** — which is the first time this list has been anything other than "needs figure digitization" repeated ten times:
+
+  | Entries | Paper | What is actually in the way |
+  | --- | --- | --- |
+  | BIOMD0000000534-537 | Dwivedi et al. 2014 (IL-6 QSP) | **Nothing measured yet.** 5 of 8 figures hold a closed box and 3 of those carry 2+ separable colours. The strongest remaining candidate, and the largest single block in the backlog. |
+  | BIOMD0000000608 | Palsson et al. 2013 (FIRM) | 140 of 163 outputs are identified only by position, so there is nothing for a claim to name. The figures are the most readable in the set; that is not the problem. |
+  | BIOMD0000000490 | Demin et al. 2013 (5-LO PK/PD) | **0 of 6** figures hold a closed plotting box, so the colour trace has no panel to locate. |
+  | MODEL1711210003 | Sier et al. 2017 (estradiol) | 118 reactions, a rate law for none of them: reaction topology, not a runnable model (`reactions_without_rate_laws`). |
+  | MODEL2301090001 | Koeller et al. 2021 (ICG) | Readable by every property of the image, and still unreadable: the 2 mg/kg bolus puts 190 px of y range inside one pixel of x. Its figure-drawing code is published CC-BY. |
+  | MODEL2301090002 | Grzegorzewski et al. 2022 (DXM) | Its results figure is box plots, not curves — not a target for a curve claim. |
+  | MODEL2412270001 | Abbiati et al. 2021 (avadomide) | Ships an R script rather than SBML; 5 framed, coloured figures waiting behind that. |
+
+  Dwivedi is the one line in that table with no named obstacle, and that is the measurement's doing: the script's own docstring had recorded it as the frameless pair alongside Demin, from memory and before anything was measured. Demin's six figures do measure as frameless. Dwivedi's five framed ones do not, so a sentence written from memory had written off the backlog's biggest block — which is now a test (`test_the_prose_about_which_papers_are_frameless_is_held_to_the_measurement`) rather than a sentence.
+
 ---
 
 ## Tier 3 — Lift the deferred method fences

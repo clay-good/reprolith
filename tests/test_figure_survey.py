@@ -171,3 +171,33 @@ def test_the_notices_cover_this_file_and_say_what_it_does_not_store() -> None:
 
     assert plain(_SURVEY)
     assert all(len(str(figure["file"])) < 200 for figure in _measured())
+
+
+def test_the_prose_about_which_papers_are_frameless_is_held_to_the_measurement() -> None:
+    """The first thing the survey settled was that its own script's docstring was wrong.
+
+    That paragraph named Dwivedi et al. 2014 and Demin et al. 2013 as the pair whose figures are
+    drawn with L-shaped axes and therefore unreadable by a colour trace — from memory, before
+    anything was measured. Demin's six figures do measure as frameless, every one of them.
+    Dwivedi's do not: five of eight hold a closed box, and three of those are drawn in two or more
+    separable colours. That paper carries four blocked entries, the largest single block in the
+    backlog, so the wrong sentence was writing off the best remaining candidate.
+
+    Pinned here because a docstring is where that mistake lived and a docstring is not something
+    the next measurement re-checks on its own.
+    """
+    papers = {paper["pmcid"]: paper for paper in _SURVEY["papers"]}
+    demin = papers["PMC4026633"]["figures"]
+    assert demin, "the Demin paper's figures must actually be in the survey for this to say anything"
+    assert not [figure for figure in demin if figure["frame"]]
+
+    dwivedi = papers["PMC3910013"]
+    framed = [figure for figure in dwivedi["figures"] if figure["frame"]]
+    assert len(framed) >= 4, framed
+    assert len([f for f in framed if f["colours"] >= 2]) >= 3
+    assert len(dwivedi["entries"]) == 4, dwivedi["entries"]
+
+    # And the script no longer says what the data denies.
+    script = (_ROOT / "scripts" / "survey_published_figures.py").read_text(encoding="utf-8")
+    assert "Dwivedi's do not" in script
+    assert "Dwivedi et al. 2014, Demin et al. 2013 — has no such thing" not in script

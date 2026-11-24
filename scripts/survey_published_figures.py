@@ -14,8 +14,14 @@ script measures it on every figure of every blocked paper this corpus can fetch 
 ``frame``
     Whether the panel is drawn as a closed box. The colour trace locates the plotting area by
     finding two long horizontal and two long vertical runs of ink; a figure drawn with L-shaped
-    axes — Dwivedi et al. 2014, Demin et al. 2013 — has no such thing, and no amount of curator
-    patience substitutes for it. This is the obstacle most often mistaken for resolution.
+    axes has no such thing, and no amount of curator patience substitutes for it. This is the
+    obstacle most often mistaken for resolution — and the first thing this survey settled was that
+    an earlier version of this very paragraph had the wrong papers in it. It named Dwivedi et al.
+    2014 and Demin et al. 2013 as the frameless pair, from memory. Demin's six figures do measure
+    as frameless, every one. **Dwivedi's do not**: five of its eight hold a closed box and three of
+    those are drawn in two or more separable colours, which makes the four entries behind that one
+    paper — the largest single block in the backlog — the strongest remaining candidate rather than
+    the dead end the prose had recorded.
 
 ``colours``
     How many distinct saturated hues the image holds. A trace separates lines by colour, so this
