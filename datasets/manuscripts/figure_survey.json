@@ -5,13 +5,15 @@
   "A closed frame is necessary and not sufficient: the third obstacle is whether the curve is resolvable in the panel it is drawn in, which no property of the image shows. Koeller et al. 2021's bolus puts a hundred and ninety pixels of y range inside one pixel of x, and a figure like that measures as readable here. So a figure counted as framed and coloured is a candidate to open, never a certainty.",
   "Only figures the supplementary bundle carries are measured. A paper whose images are served only from a publisher's own CDN is recorded with the error that reached it.",
   "`license` is what Europe PMC states for the paper, and it decides how a figure is redistributed rather than whether it can be read: under a no-derivatives licence the image file is committed in the publisher's own bytes, un-re-encoded and un-cropped. An empty string means the service stated none, which is a question for the publisher's page and not a permission.",
-  "The bundle is not the same on two calls. Runs minutes apart returned 51 images, then 44, then none at all over the same seven papers, and one paper answered with a 500 in the first and eight figures in the second \u2014 so a figure count here is a floor on what the paper has, never a census, and the properties measured per figure are what this file is for. A paper that errored and had never been measured contributed nothing to the counts; one measured by an earlier run keeps those figures and says so in `carried_from`, so its numbers are an earlier build's."
+  "The bundle is not the same on two calls. Runs minutes apart returned 51 images, then 44, then none at all over the same seven papers, and one paper answered with a 500 in the first and eight figures in the second \u2014 so a figure count here is a floor on what the paper has, never a census, and the properties measured per figure are what this file is for. A paper that errored and had never been measured contributed nothing to the counts; one measured by an earlier run keeps those figures and says so in `carried_from`, so its numbers are an earlier build's. When any paper is carried, the counts in `summary` span builds: compare `measured` with `measured_in_this_run` before reading them as one measurement. That is not hypothetical \u2014 the frame test was corrected after this file was first written, and the run that applied the correction could re-reach only two of the seven papers."
  ],
  "papers": [
   {
+   "carried_from": "an earlier run; this one reached HTTP Error 500: Internal Server Error",
    "entries": [
     "BIOMD0000000608"
    ],
+   "error": "HTTP Error 500: Internal Server Error",
    "figures": [
     {
      "colours": 6,
@@ -119,7 +121,7 @@
     {
      "colours": 0,
      "file": "psp201364f1.jpg",
-     "frame": true,
+     "frame": false,
      "height": 813,
      "panels": 1,
      "pixels_per_panel": 609750,
@@ -128,7 +130,7 @@
     {
      "colours": 5,
      "file": "psp201364f2.jpg",
-     "frame": true,
+     "frame": false,
      "height": 694,
      "panels": 1,
      "pixels_per_panel": 539238,
@@ -137,7 +139,7 @@
     {
      "colours": 6,
      "file": "psp201364f3.jpg",
-     "frame": true,
+     "frame": false,
      "height": 1227,
      "panels": 1,
      "pixels_per_panel": 920250,
@@ -173,7 +175,7 @@
     {
      "colours": 1,
      "file": "psp201364i1.jpg",
-     "frame": true,
+     "frame": false,
      "height": 799,
      "panels": 1,
      "pixels_per_panel": 393108,
@@ -258,9 +260,11 @@
    "pmcid": "PMC4026633"
   },
   {
+   "carried_from": "an earlier run; this one reached HTTP Error 500: Internal Server Error",
    "entries": [
     "MODEL1711210003"
    ],
+   "error": "HTTP Error 500: Internal Server Error",
    "figures": [
     {
      "colours": 0,
@@ -331,9 +335,11 @@
    "pmcid": "PMC5732473"
   },
   {
+   "carried_from": "an earlier run; this one reached HTTP Error 503: Service Temporarily Unavailable",
    "entries": [
     "MODEL2412270001"
    ],
+   "error": "HTTP Error 503: Service Temporarily Unavailable",
    "figures": [
     {
      "colours": 8,
@@ -413,11 +419,11 @@
    "pmcid": "PMC8397660"
   },
   {
-   "carried_from": "an earlier run; this one reached HTTP Error 500: Internal Server Error",
+   "carried_from": "an earlier run; this one reached HTTP Error 503: Service Temporarily Unavailable",
    "entries": [
     "MODEL2301090001"
    ],
-   "error": "HTTP Error 500: Internal Server Error",
+   "error": "HTTP Error 503: Service Temporarily Unavailable",
    "figures": [
     {
      "colours": 12,
@@ -497,11 +503,11 @@
    "pmcid": "PMC8646028"
   },
   {
-   "carried_from": "an earlier run; this one reached HTTP Error 500: Internal Server Error",
+   "carried_from": "an earlier run; this one reached HTTP Error 503: Service Temporarily Unavailable",
    "entries": [
     "MODEL2301090002"
    ],
-   "error": "HTTP Error 500: Internal Server Error",
+   "error": "HTTP Error 503: Service Temporarily Unavailable",
    "figures": [
     {
      "colours": 8,
@@ -619,15 +625,22 @@
  ],
  "summary": {
   "carried_from_an_earlier_run": [
+   "PMC3853972",
+   "PMC5732473",
+   "PMC8397660",
    "PMC8646028",
    "PMC9637881"
   ],
-  "framed_and_separable_by_colour": 25,
+  "framed_and_separable_by_colour": 23,
   "measured": 59,
+  "measured_in_this_run": 14,
   "unreachable": [
+   "PMC3853972",
+   "PMC5732473",
+   "PMC8397660",
    "PMC8646028",
    "PMC9637881"
   ],
-  "with_closed_frame": 32
+  "with_closed_frame": 28
  }
 }

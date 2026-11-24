@@ -15,13 +15,17 @@ script measures it on every figure of every blocked paper this corpus can fetch 
     Whether the panel is drawn as a closed box. The colour trace locates the plotting area by
     finding two long horizontal and two long vertical runs of ink; a figure drawn with L-shaped
     axes has no such thing, and no amount of curator patience substitutes for it. This is the
-    obstacle most often mistaken for resolution — and the first thing this survey settled was that
-    an earlier version of this very paragraph had the wrong papers in it. It named Dwivedi et al.
-    2014 and Demin et al. 2013 as the frameless pair, from memory. Demin's six figures do measure
-    as frameless, every one. **Dwivedi's do not**: five of its eight hold a closed box and three of
-    those are drawn in two or more separable colours, which makes the four entries behind that one
-    paper — the largest single block in the backlog — the strongest remaining candidate rather than
-    the dead end the prose had recorded.
+    obstacle most often mistaken for resolution.
+
+    This paragraph named Dwivedi et al. 2014 and Demin et al. 2013 as the frameless pair, from
+    memory. The survey's first measurement appeared to refute it for Dwivedi — five of eight
+    figures framed — and the paragraph was rewritten to match. **The measurement was the thing
+    that was wrong.** `_closed_frame` counted inked *rows*, so one axis line drawn three pixels
+    thick counted as three, and Dwivedi's Figure 3 — two panels with L-shaped axes, one above the
+    other, sharing a y axis — measured as a closed box. Counting *lines* (see `_lines`), one of
+    its six figures holds a box, and the original pair stands. The parity this docstring claims
+    with the digitizer is now checked rather than asserted, in
+    `tests/test_frame_detection_parity.py`.
 
 ``colours``
     How many distinct saturated hues the image holds. A trace separates lines by colour, so this
@@ -122,17 +126,38 @@ def _ink(rgb: np.ndarray) -> np.ndarray:
     return np.where(colourless, (255.0 - grey) / 255.0, 0.0)
 
 
+def _lines(inked: np.ndarray) -> int:
+    """How many separate lines the inked rows (or columns) are, not how many of them there are.
+
+    One axis drawn two pixels thick is two inked rows and **one line**. Counting rows instead was
+    this script's own defect, and it was not academic: Dwivedi et al. 2014's Figure 3 is two
+    panels with L-shaped axes, one above the other. They share a y axis column, which
+    anti-aliasing spreads over three, and the two x axes give two rows — so a figure with no
+    closed box anywhere measured as framed, and the paper it belongs to was written up as the
+    backlog's best candidate on the strength of it. Adjacent indices are one line.
+    """
+    indices = np.flatnonzero(inked)
+    if indices.size == 0:
+        return 0
+    return 1 + int((np.diff(indices) > 1).sum())
+
+
 def _closed_frame(rgb: np.ndarray) -> bool:
-    """Whether the image holds two long horizontal and two long vertical runs of ink.
+    """Whether the image holds two long horizontal and two long vertical *lines* of ink.
 
     The same shape `scripts/digitize_figure_panels.py` looks for, asked of the whole image rather
     than of a stated crop: a figure with no such pair anywhere has no panel the colour trace can
     locate, whatever a curator does with it.
+
+    Separate lines, not separate rows — see :func:`_lines`. And still an upper bound for a
+    multi-panel image, because two panels stacked one above the other contribute two horizontal
+    lines between them whether or not either panel is closed; what this rules out is a figure with
+    no long runs at all.
     """
     ink = _ink(rgb)
     height, width = ink.shape
-    rows = int((ink.sum(axis=1) > _FRAME_SHARE * width * 0.5).sum())
-    columns = int((ink.sum(axis=0) > _FRAME_SHARE * height * 0.5).sum())
+    rows = _lines(ink.sum(axis=1) > _FRAME_SHARE * width * 0.5)
+    columns = _lines(ink.sum(axis=0) > _FRAME_SHARE * height * 0.5)
     return rows >= 2 and columns >= 2
 
 
@@ -163,8 +188,17 @@ def _summarise(entries: list[dict[str, Any]]) -> dict[str, Any]:
     """
     figures = [figure for entry in entries for figure in entry.get("figures", ())]
     framed = [figure for figure in figures if figure["frame"]]
+    fresh = [
+        figure for entry in entries if "carried_from" not in entry
+        for figure in entry.get("figures", ())
+    ]
     return {
         "measured": len(figures),
+        # How many of them this build measured. The counts below span builds whenever a paper
+        # errored and kept an earlier run's figures, and a headline that did not say so would be
+        # the quiet kind of wrong this file exists to avoid — it bit once already, when the frame
+        # test was corrected and only two of seven papers could be re-reached.
+        "measured_in_this_run": len(fresh),
         "with_closed_frame": len(framed),
         "framed_and_separable_by_colour": sum(1 for f in framed if f["colours"] >= 2),
         "unreachable": sorted(e["pmcid"] for e in entries if "error" in e),
@@ -251,7 +285,11 @@ def survey(
             "floor on what the paper has, never a census, and the properties measured per "
             "figure are what this file is for. A paper that errored and had never been measured "
             "contributed nothing to the counts; one measured by an earlier run keeps those "
-            "figures and says so in `carried_from`, so its numbers are an earlier build's.",
+            "figures and says so in `carried_from`, so its numbers are an earlier build's. When "
+            "any paper is carried, the counts in `summary` span builds: compare `measured` with "
+            "`measured_in_this_run` before reading them as one measurement. That is not "
+            "hypothetical — the frame test was corrected after this file was first written, and "
+            "the run that applied the correction could re-reach only two of the seven papers.",
         ],
         "summary": _summarise(entries),
         "papers": entries,
