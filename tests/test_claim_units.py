@@ -573,3 +573,68 @@ def test_every_metric_the_engine_computes_is_classified_once() -> None:
     # And the column vocabulary proposes only names the engine computes; "auc24" is a *heading*
     # spelling of one of them, which is what that mapping is for.
     assert set(_METRICS.values()) <= set(METRIC_DIMENSIONS)
+
+
+def test_a_level_2_model_states_its_units_the_level_2_way() -> None:
+    """Level 3 moved the model's default units onto the model element; Level 2 redefines a name.
+
+    Reading only the Level 3 attribute reported every Level 2 model as having stated nothing — and
+    most of this corpus's deposits are Level 2. Measured on the committed models, the cost was
+    every **timed** claim on one of them: an area's unit is its output's times the run's clock, and
+    with the clock unreadable the whole composition came back `unstated`, so no check could compare
+    it against anything. Both Sluka et al. 2016 deposits state a clock, in the two different units
+    their two figures are drawn against.
+    """
+    metabolism = (_DATASETS / "worked_examples" / "Sluka2016_APAP_metabolism.xml").read_text(
+        encoding="utf-8"
+    )
+    pbpk = (_DATASETS / "worked_examples" / "Sluka2016_APAP_PBPK.xml").read_text(encoding="utf-8")
+    assert claim_units(metabolism, "APAP", "auc") == "10^-3 mole * second / litre"
+    assert claim_units(pbpk, "CVen", "auc") == "mole * 3600*second / litre"
+    # And the clock alone, which is what a time to peak is read in.
+    assert claim_units(metabolism, "APAP", "tmax") == "second"
+    assert claim_units(pbpk, "CVen", "tmax") == "3600*second"
+
+
+def test_a_level_2_model_that_redefines_nothing_has_stated_nothing() -> None:
+    """The carve-out that keeps the above from being a machine for inventing disagreements.
+
+    Level 2 predefines `time` as the second and `substance` as the mole. Those are the
+    specification's defaults, not the author's statement, so a model that never redefined them is
+    read as silent — otherwise every Level 2 model in the catalogue would be in disagreement with
+    every figure not drawn in seconds, and this repository's rule is that a reported disagreement
+    has to be established rather than assumed.
+    """
+    from reprolith.manuscript_values import UNSTATED_UNIT, model_time_unit
+
+    silent = """<?xml version="1.0"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version4" level="2" version="4">
+  <model id="m">
+    <listOfCompartments><compartment id="c" size="1"/></listOfCompartments>
+    <listOfSpecies><species id="s" compartment="c" initialConcentration="1"/></listOfSpecies>
+  </model>
+</sbml>
+"""
+    assert model_time_unit(silent) == UNSTATED_UNIT
+    assert claim_units(silent, "s", "auc") == UNSTATED_UNIT
+    assert claim_units(silent, "s", "cmax") == UNSTATED_UNIT
+
+    # The same model, with the two names redefined: now it has said something, and both are read.
+    stated = silent.replace(
+        "<listOfCompartments>",
+        """<listOfUnitDefinitions>
+      <unitDefinition id="time"><listOfUnits>
+        <unit kind="second" multiplier="60"/>
+      </listOfUnits></unitDefinition>
+      <unitDefinition id="substance"><listOfUnits>
+        <unit kind="mole" scale="-6"/>
+      </listOfUnits></unitDefinition>
+      <unitDefinition id="volume"><listOfUnits>
+        <unit kind="litre" scale="-3"/>
+      </listOfUnits></unitDefinition>
+    </listOfUnitDefinitions>
+    <listOfCompartments>""",
+    )
+    assert model_time_unit(stated) == "60*second"
+    assert claim_units(stated, "s", "cmax") == "10^-6 mole / 10^-3 litre"
+    assert claim_units(stated, "s", "auc") == "10^-6 mole * 60*second / 10^-3 litre"

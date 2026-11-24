@@ -858,25 +858,52 @@ def _model_and_definitions(model_sbml: str) -> tuple[ET.Element, dict[str, str],
     return model, definitions, int(root.get("level") or 3)
 
 
+#: The model-level default units, by the Level 3 attribute that carries one and the Level 2
+#: predefined name a model redefines to say the same thing. Level 3 moved these from redefinable
+#: names onto the model element, and reading only the attribute reported every Level 2 model as
+#: having stated nothing — the deposits in this corpus are mostly Level 2, and eight of them state
+#: a clock that nothing here could see.
+_MODEL_DEFAULT_UNITS = {
+    "timeUnits": "time",
+    "substanceUnits": "substance",
+    "volumeUnits": "volume",
+    "areaUnits": "area",
+    "lengthUnits": "length",
+}
+
+
+def _model_default_unit(
+    model: Any, definitions: Mapping[str, str], level: int, attribute: str
+) -> str:
+    """A model-level default unit, stated either way a model may state it.
+
+    The Level 3 attribute if there is one; otherwise, for a Level 2 model, the predefined unit the
+    model *redefined*, which is how Level 2 says the same thing. The predefined unit's own default
+    is deliberately not consulted: `time` is the second and `substance` the mole by the
+    specification, not by the author, and taking the specification's word for a statement would put
+    every Level 2 model that never thought about units in disagreement with every figure not drawn
+    in seconds. An absence stays an absence.
+    """
+    declared = _resolve_unit(model.get(attribute) or "", definitions, level)
+    if declared != UNSTATED_UNIT or level != 2:
+        return declared
+    return definitions.get(_MODEL_DEFAULT_UNITS[attribute], UNSTATED_UNIT)
+
+
 def model_time_unit(model_sbml: str) -> str:
     """The unit the model's own time is in, resolved — or ``"unstated"``.
 
     Every time-course reference is on the model's clock: a figure read in minutes against a model
     running in hours produces values that are ordered, smooth, plausible and aligned to the wrong
     places. Raises ``ValueError`` if the model is not parseable SBML.
+
+    Sluka et al. 2016's metabolism deposit is why this reads both ways a model may state it: it
+    redefines the predefined `time` unit as the second, while the figure its own paper plots that
+    model over is drawn in minutes — the exact disagreement this is read for, and one nothing here
+    could see while only the Level 3 attribute was read.
     """
     model, definitions, level = _model_and_definitions(model_sbml)
-    declared = _resolve_unit(model.get("timeUnits") or "", definitions, level)
-    if declared != UNSTATED_UNIT or level != 2:
-        return declared
-    # A Level 2 model has no `timeUnits` attribute: it states its clock by *redefining* the
-    # predefined `time` unit, and reading only the attribute reported every such model as having
-    # stated nothing. Sluka et al. 2016's metabolism deposit is one — it redefines `time` as the
-    # second, while the figure that model's own paper plots is drawn over forty minutes, the exact
-    # disagreement this is read for. The predefined default is deliberately not consulted: it is
-    # the specification's, not the author's, and taking it for a statement would put every Level 2
-    # model in disagreement with every figure not drawn in seconds.
-    return definitions.get("time", UNSTATED_UNIT)
+    return _model_default_unit(model, definitions, level, "timeUnits")
 
 
 def _declared_output(model: Any, species: str) -> Any:
@@ -941,7 +968,7 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
         # whichever metric it reads — so this is resolved after the lookup below rather than
         # instead of it.
         _declared_output(model, species)
-        return _resolve_unit(model.get("timeUnits") or "", definitions, level)
+        return _model_default_unit(model, definitions, level, "timeUnits")
     element = next(
         (
             child
@@ -966,7 +993,7 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
         if parameter is None:
             raise ValueError(f"the model declares no species or parameter {species!r}")
         own = _resolve_unit(parameter.get("units") or "", definitions, level)
-        time = _resolve_unit(model.get("timeUnits") or "", definitions, level)
+        time = _model_default_unit(model, definitions, level, "timeUnits")
         if own == UNSTATED_UNIT or (metric in _AREA_METRICS and time == UNSTATED_UNIT):
             return UNSTATED_UNIT
         return f"{own} * {time}" if metric in _AREA_METRICS else own
@@ -982,17 +1009,15 @@ def claim_units(model_sbml: str, species: str, metric: str = "cmax") -> str:
     )
     # A model may state each unit once for the whole model and leave the elements silent; the
     # element's own attribute wins where it has one.
-    substance = _resolve_unit(
-        element.get("substanceUnits") or model.get("substanceUnits") or "", definitions, level
-    )
+    substance = _resolve_unit(element.get("substanceUnits") or "", definitions, level)
+    if substance == UNSTATED_UNIT:
+        substance = _model_default_unit(model, definitions, level, "substanceUnits")
     volume = _resolve_unit(
-        (compartment.get("units") if compartment is not None else "")
-        or model.get("volumeUnits")
-        or "",
-        definitions,
-        level,
+        (compartment.get("units") if compartment is not None else "") or "", definitions, level
     )
-    time = _resolve_unit(model.get("timeUnits") or "", definitions, level)  # the run's own clock
+    if volume == UNSTATED_UNIT:
+        volume = _model_default_unit(model, definitions, level, "volumeUnits")
+    time = _model_default_unit(model, definitions, level, "timeUnits")  # the run's own clock
     parts = (substance, volume) + ((time,) if metric in _AREA_METRICS else ())
     if UNSTATED_UNIT in parts:
         return UNSTATED_UNIT

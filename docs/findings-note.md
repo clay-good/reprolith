@@ -6581,3 +6581,25 @@ The other two edges stay the fit's, there being nothing stated about them.
 
 BIOMD0000000624 reproduces all three curves at normalized distances of 0.0015 to 0.0022 with no
 assumption. Blocked entries go from 26 to 25, and blind agreement from 1/31 to 2/31.
+
+## The same defect in four more places, and what it cost
+
+Reading a model's clock the Level 2 way was fixed above for one function. The shape of that defect
+— *Level 3 moved a unit from a redefinable name onto an attribute, and only the attribute was read*
+— was then swept across every reader of it, which is the habit this repository keeps because the
+same shape has turned up in three modules in one day before.
+
+It was in four more places, all inside `claim_units`, and the cost was measurable on the committed
+corpus: **every timed claim on a Level 2 model had no unit at all**. An area's unit is its output's
+times the run's clock and a time to peak *is* the clock, so with the clock unreadable the whole
+composition came back `unstated` and no check could compare it against anything. Eight of the
+deposits here are Level 2, and both Sluka ones state a clock — in the two different units their two
+figures are drawn against. The model-level **substance** and **volume** defaults are the same story
+in Level 2's other direction: a species that states no `substanceUnits` falls back to a model-level
+attribute Level 2 does not have, so the oscillator's concentrations were unreadable too.
+
+The carve-out is what keeps this from becoming a machine for inventing disagreements, and it is the
+same one as above: Level 2 predefines `time` as the second and `substance` as the mole, and those
+are the specification's defaults rather than the author's statement. Only a model that *redefined*
+the name has said anything. An absence stays an absence — three of the six kinetic deposits still
+report no unit after this, correctly, because they state none.
