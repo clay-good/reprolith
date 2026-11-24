@@ -264,7 +264,7 @@ a change under `openspec/changes/`.
 
   | Entries | Paper | What is actually in the way |
   | --- | --- | --- |
-  | BIOMD0000000534-537 | Dwivedi et al. 2014 (IL-6 QSP) | **Nothing measured yet.** 5 of 8 figures hold a closed box and 3 of those carry 2+ separable colours. The strongest remaining candidate, and the largest single block in the backlog. |
+  | BIOMD0000000534-537 | Dwivedi et al. 2014 (IL-6 QSP) | **Reachable, and the next thing to read.** All four deposits run in under a second and name every output. Fig 3a is three regimens of CRP over twelve weeks, three colours, closed frame — a curator's afternoon. Fig 5 is a dose–response in *% suppression against an undosed control*, which is a capability gap, not a reading. See below. |
   | BIOMD0000000608 | Palsson et al. 2013 (FIRM) | 140 of 163 outputs are identified only by position, so there is nothing for a claim to name. The figures are the most readable in the set; that is not the problem. |
   | BIOMD0000000490 | Demin et al. 2013 (5-LO PK/PD) | **0 of 6** figures hold a closed plotting box, so the colour trace has no panel to locate. |
   | MODEL1711210003 | Sier et al. 2017 (estradiol) | 118 reactions, a rate law for none of them: reaction topology, not a runnable model (`reactions_without_rate_laws`). |
@@ -273,6 +273,13 @@ a change under `openspec/changes/`.
   | MODEL2412270001 | Abbiati et al. 2021 (avadomide) | Ships an R script rather than SBML; 5 framed, coloured figures waiting behind that. |
 
   Dwivedi is the one line in that table with no named obstacle, and that is the measurement's doing: the script's own docstring had recorded it as the frameless pair alongside Demin, from memory and before anything was measured. Demin's six figures do measure as frameless. Dwivedi's five framed ones do not, so a sentence written from memory had written off the backlog's biggest block — which is now a test (`test_the_prose_about_which_papers_are_frameless_is_held_to_the_measurement`) rather than a sentence.
+
+  **So Dwivedi was opened, and it is reachable** (2026-11-24, scouted not read). All four deposits **run under this repository's own pin in under a second**, and all four name every output they have — `IL6`, `sgp130`, `CRP`, `sR_IL6_sgp130` — with nothing anonymous in any of them. What the figures need is more specific than "digitization", and the two that matter differ:
+
+  - **Figure 5 is a dose–response**, serum CRP suppression against antibody dose at seven discrete doses, three dissociation constants, solid and dashed. Every marker is a separate run, which the claim model already allows — but the published y is a *suppression percentage against an undosed control*, and nothing here expresses a claim whose reference is relative to another run of the same model. `value_scale` is a factor, not an affine transform, so this one is a capability gap and not a curator's afternoon. It is a very common shape in pharmacology figures, which makes it worth naming now.
+  - **Figure 3a is a time course and is reachable**: CRP over twelve weeks under three regimens, three separable colours, a closed frame. Its y axis is "% of baseline", which here is a normalization by a value the *deposit itself states* — CRP starts at 221.06 in the blood compartment and 158.33 in the other — so a curator can compute a fixed `value_scale` from the file rather than needing a second run. The regimens are not a settable dose: each deposit carries its schedule as **SBML events** (4, 3, 13 and 6 of them across the four), so the three curves are three deposits run as shipped, and picking which is which is the curator's judgment rather than an override.
+
+  That is the third distinct kind of obstacle this survey has separated out, after a resolution the journal does not serve and a deposit that names nothing: a figure whose quantity is defined against a run the certificate does not make.
 
 ---
 
