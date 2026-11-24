@@ -1808,6 +1808,47 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('    if stripped.startswith("[") and stripped.endswith("]"):', "    if False:"),
         ["tests/test_engine.py"],
     ),
+    # --- estimation.py had no entry either: the re-fitting engine behind roadmap item 8, whose
+    # refusals are the difference between an estimate and an optimizer's last guess (2026-11-24).
+    (
+        "a fit with fewer observations than unknowns is published as an estimate",
+        "estimation.py",
+        ("    if len(observations) < len(start):", "    if False:"),
+        ["tests/test_estimation_refit.py"],
+    ),
+    (
+        "a re-fit that never converged publishes wherever the optimizer stopped",
+        "estimation.py",
+        ("    raise ValueError(\n"
+         "        f\"the re-fit did not converge in {max_iterations} iterations",
+         "    return _estimates(names, simplex[0])  # mutation\n"
+         "    raise ValueError(\n"
+         "        f\"the re-fit did not converge in {max_iterations} iterations"),
+        ["tests/test_estimation_refit.py"],
+    ),
+    (
+        "a starting value the log scale cannot take is searched from anyway",
+        "estimation.py",
+        ("    if bad_start:", "    if False:"),
+        ["tests/test_estimation_refit.py"],
+    ),
+    (
+        # Not estimation.py's pre-check, which survived every test and should: it is redundant
+        # with the objective's own application of the same overrides, measured on 2026-11-24.
+        # This is the refusal that actually fires, wherever it is reached from.
+        "an override aimed at a parameter the model does not declare is applied anyway",
+        "certify.py",
+        ('        if parameter is None:\n            raise ValueError(f"parameter {name!r} is not '
+         'in the model")',
+         "        if False:\n            pass"),
+        ["tests/test_estimation_refit.py", "tests/test_certify.py"],
+    ),
+    (
+        "a search that walked off the log scale ends in an overflow naming nothing",
+        "estimation.py",
+        ("        if diverged:", "        if False:"),
+        ["tests/test_estimation_refit.py"],
+    ),
 ]
 
 

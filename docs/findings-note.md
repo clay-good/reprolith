@@ -6826,3 +6826,33 @@ The same pass turned up a **stale anchor**, which is the other half of what this
 the day's own change to the queue's engine-limit note moved the code a mutation was pointed at, and
 the checker said so rather than quietly checking one fewer thing. Re-anchored onto the invariant
 that replaced it — a note describing items when there are none.
+
+## Two more guards nobody held, and one that could not be held
+
+`estimation.py` — the re-fitting engine behind roadmap item 8 — had no mutation coverage either.
+Five guards added, and the pass separated three kinds of result, which is what makes this exercise
+worth repeating rather than a formality.
+
+**Killed outright, so already held:** a fit with fewer observations than unknowns, a re-fit that
+never converged publishing wherever the optimizer stopped, and a starting value the log scale
+cannot take.
+
+**Survived, so a real hole:** the divergence guard. A search that walks to e±300 around a positive
+value is not converging on anything, and without the refusal the fit ends in an `OverflowError`
+naming nothing — an obscure exception where a reader needs to be told which parameter left the
+range. It is reached in the test deterministically, by *starting* outside the range rather than by
+hoping an optimizer wanders there.
+
+**And one that survived and should have.** The re-fit validates its overrides once before the first
+objective evaluation, and the comment above that line said removing it "would let the optimizer
+wander freely over a number nothing reads and report its last guess". That was never true: the
+objective applies the same overrides on every evaluation, so an override that cannot reach the run
+is refused with the same message from the first one either way. Measured rather than argued — the
+line was removed and the identical `ValueError` came back. The line stays, because failing before
+any simulation runs is worth one call; the comment now says what it actually buys; and the mutation
+entry was re-aimed at the refusal that does the work, which lives in `certify.py` and had no entry
+of its own.
+
+A survivor is usually a missing test. It is sometimes a guard that cannot be the one that fires,
+and the difference is worth the five minutes it takes to find out — writing a test for a redundant
+guard would have left a test that passes whatever the code does.

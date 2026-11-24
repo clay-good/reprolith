@@ -195,3 +195,34 @@ def test_a_parameter_the_data_cannot_identify_is_refused_not_estimated() -> None
         refit_parameters(
             unidentifiable, "C", observations=_DATA, start=(("unused", 1.0),),
         )
+
+
+def test_a_parameter_the_run_never_reads_is_refused_before_the_fit_starts() -> None:
+    """Validated once, before the first objective evaluation — and nothing was holding it.
+
+    An override that cannot reach the run lets the optimizer wander freely over a number nothing
+    reads: every evaluation returns the same residual, the simplex contracts on noise, and what
+    gets published is wherever it happened to stop, under a protocol naming a parameter the run
+    never used. The mutation harness found the check deletable with the whole suite green
+    (2026-11-24).
+    """
+    observations = tuple((t, _C0 * math.exp(-_K * t)) for t in (1.0, 2.0, 4.0, 8.0))
+    with pytest.raises(ValueError, match="nosuch"):
+        refit_parameters(
+            _MODEL, "C", observations=observations, start=(("nosuch", 0.1),),
+        )
+
+
+def test_a_search_that_walks_off_the_log_scale_says_so_instead_of_overflowing() -> None:
+    """The other refusal nothing held: e±300 around a positive value is not a region to run in.
+
+    Without it the search reaches `math.exp` of a few thousand and the fit ends in an OverflowError
+    naming nothing — an obscure exception where a reader needs to be told which parameter left the
+    range and that the start was wrong. Reached deterministically here by starting outside it
+    rather than by hoping an optimizer wanders there.
+    """
+    observations = tuple((t, _C0 * math.exp(-_K * t)) for t in (1.0, 2.0, 4.0, 8.0))
+    with pytest.raises(ValueError, match="the re-fit diverged"):
+        refit_parameters(
+            _MODEL, "C", observations=observations, start=(("k", 1e200),),
+        )

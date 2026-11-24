@@ -147,8 +147,13 @@ def refit_parameters(
     horizon = max(time for time, _ in observations)
     if horizon <= 0.0:
         raise ValueError("every observation is at time zero, so no trajectory is being fitted")
-    # Validated once, before the first objective evaluation: an override that cannot reach the run
-    # would let the optimizer wander freely over a number nothing reads and report its last guess.
+    # Validated here so the refusal arrives before any simulation runs, naming the caller's own
+    # starting values. It is deliberately *redundant*: the objective applies the same overrides on
+    # every evaluation, so an override that cannot reach the run is refused with the same message
+    # from the first one either way — measured, not assumed (2026-11-24), which is why the mutation
+    # harness has no entry for this line and should not grow one. The sentence that used to be here
+    # said removing it "would let the optimizer wander freely over a number nothing reads", and
+    # that was never true.
     _apply_overrides(sbml, start)
 
     def objective(log_values: list[float]) -> float:
