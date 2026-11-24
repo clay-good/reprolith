@@ -74,6 +74,33 @@ def test_describe_changes_states_what_changed() -> None:
     assert "overall verdict: not-reproduced -> reproduced" in changes
 
 
+def test_a_re_issue_under_a_different_engine_says_which_engine() -> None:
+    """A different *version* of one engine was covered; a different engine was not.
+
+    It is the bigger change of the two and the one a reader most needs told: numbers that move
+    between COPASI and libRoadRunner moved because the solver did, and a lineage that reports the
+    verdict change without the engine change invites reading it as the model's. The mutation
+    harness found the line deletable with the whole suite green (2026-11-24) — the version check
+    one line below it was tested and the engine check above it was not.
+    """
+    prior = _cert("4.42")
+    moved = build_certificate(
+        paper=PaperIdentity(title="One-compartment PK model", doi="10.1/x"),
+        engine_pin=EnginePin(engine="biosimulators/roadrunner", version="4.42"),
+        assessments=[
+            ClaimAssessment(
+                claim_id="c1", quantity="AUC", verdict=Verdict.REPRODUCED,
+                source_location="Fig 1",
+            )
+        ],
+        supersedes=prior,
+    )
+    changes = describe_changes(prior, moved)
+    assert "engine: biosimulators/copasi -> biosimulators/roadrunner" in changes
+    # And it is the engine that is reported, not the version, which did not move.
+    assert not any(change.startswith("engine version:") for change in changes)
+
+
 def test_ledger_round_trips_with_its_supersession_chain() -> None:
     import json
 

@@ -6995,3 +6995,26 @@ the overstatement that capability exists to prevent. Returning `{}` for an artif
 model is silent, and nothing downstream can tell "nothing overlaps" from "nothing was read".
 
 Ten guards now, across eight modules, that a green suite said nothing about this morning.
+
+## Every module that can carry a guard now carries one
+
+The count that ran all day is finished. `revision.py`, `canonical.py`, `screening.py`, `seed.py`
+and `supersession.py` were the last modules with no mutation entry, and two of them are worth the
+trip on their own.
+
+`supersession.py` describes what changed when a certificate is re-issued, and it checks four
+things: the engine, its version, the algorithm, and the overall verdict. The **version** check was
+tested; the **engine** check, one line above it, was not — and it is the bigger change of the two.
+Numbers that move between COPASI and libRoadRunner moved because the solver did, and a lineage
+reporting the verdict change without the engine change invites reading it as the model's.
+
+Two modules will never have an entry, and that is now written down beside them rather than left to
+look like a gap. `determinism.py` is two one-line digests and `enums.py` a set of names: there is no
+branch a mutation could remove. And `supersession.chain`'s cycle break is excluded on purpose —
+remove it and the test that injects a cycle loops forever, stalling the checker instead of
+reporting anything. The invariant is real and tested; it is the *mutation* that is unusable.
+
+**290 entries, from 223 this morning. Eleven guards that a green suite said nothing about are
+held**, across the engine, the judge, the re-fit, the intake, the archive reader, the loop record,
+the population engine, the selection's footprints, the certificate's own vocabulary and its
+lineage.

@@ -2141,6 +2141,57 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          "        return {}"),
         ["tests/test_footprints.py", "tests/test_selection.py"],
     ),
+    # --- the last modules with no entry at all: a tracked revision, canonical serialization, and
+    # the screening gate that decides what becomes work (2026-11-24).
+    (
+        "a tracked revision may record no reason for the correction it makes",
+        "revision.py",
+        ("    if not rationale.strip():", "    if False:"),
+        ["tests/test_revision.py"],
+    ),
+    (
+        "a correction that changes nothing supersedes itself, and the lineage self-loops",
+        "revision.py",
+        ("    if dossier_digest(corrected) == dossier_digest(prior):", "    if False:"),
+        ["tests/test_revision.py"],
+    ),
+    (
+        "a non-finite number is canonicalized into a token no JSON reader accepts",
+        "canonical.py",
+        ("            allow_nan=False,", "            allow_nan=True,"),
+        ["tests/test_canonical.py"],
+    ),
+    (
+        "a candidate with a model and no targetable claim is accepted as work",
+        "screening.py",
+        ("    if not candidate.has_targetable_claim:", "    if False:"),
+        ["tests/test_screening.py"],
+    ),
+    # --- supersession.py tells a reader what changed when a certificate is re-issued. Its `chain`
+    # walk is the one guard this harness deliberately has no entry for: remove the cycle break and
+    # the test that injects a cycle loops forever, which stalls the checker instead of reporting.
+    # `determinism.py` and `enums.py` have no entry for the opposite reason — two one-line digests
+    # and a set of names, with no branch a mutation could remove (2026-11-24).
+    (
+        "a re-issued certificate whose verdict changed is described as unchanged",
+        "supersession.py",
+        ("    if prior.overall is not new.overall:", "    if False:"),
+        ["tests/test_supersession.py"],
+    ),
+    (
+        "a certificate re-issued under a different engine does not say so",
+        "supersession.py",
+        ("    if old.engine != cur.engine:", "    if False:"),
+        ["tests/test_supersession.py"],
+    ),
+    (
+        "a missing dataset is reported as a bare file error, with nothing to do about it",
+        "seed.py",
+        ('        raise FileNotFoundError(\n            f"no labelled test set at {path}',
+         '        raise FileNotFoundError(\n            f"missing: {path}"\n        ) from exc\n'
+         '        raise FileNotFoundError(\n            f"no labelled test set at {path}'),
+        ["tests/test_seed.py"],
+    ),
     (
         "a search that walked off the log scale ends in an overflow naming nothing",
         "estimation.py",
