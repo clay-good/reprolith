@@ -6945,8 +6945,11 @@ reason to read it. A file whose only purpose is to be hashed drifts silently —
 it is wrong, the cache just quietly stops being useful — so a test holds each marker to the
 `pip install` line in its own job, and refuses two jobs that key on the same files.
 
-Whether the compile actually disappears is a claim about the *next* run, and this one does not make
-it: the cache has to be written once under the new key before anything can hit it.
+Whether the compile actually disappears was a claim about the *next* run, and the next run made it:
+`engine (3.9)` went from **32 minutes to 8**, the same tests and the same coverage, with the
+twenty-three-minute build replaced by a cache restore. Two runs at 31 and 32 minutes sit either
+side of it in the history, which is the comparison worth keeping — a number quoted without the
+ones around it is a number nobody can check.
 
 ## The contracts the data structures are, held at last
 
