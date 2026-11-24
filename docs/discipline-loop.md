@@ -205,8 +205,14 @@ the other direction: it removes one guard at a time from a *copy* of the package
 named tests go red.
 
 ```bash
-python scripts/mutation_check.py
+python scripts/mutation_check.py                       # all of them, as the weekly job runs it
+python scripts/mutation_check.py --only "sampling"     # the ones whose meaning says 'sampling'
 ```
+
+The filter is for the half-hour after writing a guard, when the question is whether *that* one is
+held and running two hundred and thirty others to find out is the reason people skip asking. A
+filter matching nothing is an error rather than a clean run: a check that quietly checks less is
+the shape this harness exists to catch, and that applies to the harness too.
 
 Every entry is a defect this repository has already been wrong about once — a term silently
 dropped, a published schema nobody enforced, an attribute SBML makes inert read as a value — so the

@@ -6776,3 +6776,22 @@ digitization" was doing the work of three different statements, one of which is 
 question (three of the remaining papers are CC BY-NC-ND, where redistributing the figure image is
 the user's call and not a technical matter), one a resolution problem, and one simply a job nobody
 has done yet.
+
+## The day's own guards, put through the harness that breaks them
+
+Eight guards were added to the package over this session's commits, and none of them was in
+`mutation_check.py` — so the suite was green and nobody had asked whether it would go red. That is
+the exact question this repository keeps a mutation harness to answer, and the record says adding
+a day's guards to it has found them *unheld* twice before.
+
+Not this time: all eight are killed by the tests written beside them. The ones worth naming are the
+two that decide whether a certificate is qualified — `sampling_is_decisive` made always-false
+(every stochastic certificate goes back to carrying an assumption) and always-true (nothing is ever
+qualified again). Both are caught, in both directions, which is what makes the discharge rule
+something other than a switch somebody could flip.
+
+The harness gained a `--only <text>` filter in the same pass. Running two hundred and thirty-one
+mutations to learn whether *one* new guard is held is the reason people skip asking, and the
+weekly job still runs the whole list. A filter that matches nothing is an error rather than a clean
+run — a check that quietly checks less is the shape this harness exists to catch, and that applies
+to the harness itself.

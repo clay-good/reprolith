@@ -1705,15 +1705,89 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          "    if False:\n        return (\n            not_evaluable("),
         ["tests/test_stochastic_extinction_claim.py"],
     ),
+    # --- 2026-11-23/24: the day's new guards, each one a defect this session had or nearly had.
+    (
+        "a figure read in another unit than the model runs in is laid against it unconverted",
+        "run.py",
+        ("            reading = in_time_unit(\n"
+         "                reading, factor=float(clock[\"factor\"]), unit=str(clock[\"unit\"])\n"
+         "            )",
+         "            pass"),
+        ["tests/test_figure_reading_sluka2016_metabolism.py"],
+    ),
+    (
+        "a unit conversion can be stated with no basis, so nobody can check the factor",
+        "run.py",
+        ('    missing = sorted({"factor", "unit", "basis"} - set(scale))',
+         "    missing = []"),
+        ["tests/test_figure_reading_sluka2016_metabolism.py"],
+    ),
+    (
+        "a time conversion may reverse or collapse the axis it converts",
+        "digitization.py",
+        ("    if not math.isfinite(factor) or factor <= 0.0:",
+         "    if False:"),
+        ["tests/test_figure_reading_sluka2016_metabolism.py"],
+    ),
+    (
+        "a reading in another unit than its run is reported as one that does not cover it",
+        "digitization.py",
+        ("        if reading.claim_id in unconvertible:", "        if False:"),
+        ["tests/test_figure_reading_sluka2016_metabolism.py"],
+    ),
+    (
+        "a unit note states a finding and leaves the reader nothing to do about it",
+        "digitization.py",
+        ('    if ratio is None:\n        return (\n            f"the two are not commensurable',
+         '    if True:\n        return (\n            f"the two are not commensurable'),
+        ["tests/test_figure_reading_sluka2016_metabolism.py"],
+    ),
+    (
+        "a Level 2 model's own statement of its units is read as no statement at all",
+        "manuscript_values.py",
+        ("    return definitions.get(_MODEL_DEFAULT_UNITS[attribute], UNSTATED_UNIT)",
+         "    return UNSTATED_UNIT"),
+        ["tests/test_claim_units.py"],
+    ),
+    (
+        "a sample's draw is a load-bearing choice however small its own error bar",
+        "oracle.py",
+        ("    return relative_error_bar <= SAMPLING_MARGIN_BUDGET * tolerance.reproduced_within",
+         "    return False"),
+        ["tests/test_stochastic_sampling_discharge.py", "tests/test_stochastic_milestone.py"],
+    ),
+    (
+        "a draw decides its own verdict whatever its error bar is, so nothing is ever qualified",
+        "oracle.py",
+        ("def sampling_is_decisive(*, relative_error_bar: float, tolerance: Tolerance) -> bool:",
+         "def sampling_is_decisive(*, relative_error_bar: float, tolerance: Tolerance) -> bool:\n"
+         "    return True  # mutation"),
+        ["tests/test_stochastic_sampling_discharge.py", "tests/test_stochastic.py"],
+    ),
 ]
 
 
 def main() -> int:
+    # `--only <text>` runs the entries whose meaning contains that text. The weekly job runs all of
+    # them and must keep doing so; this is for the half-hour after writing a guard, when the
+    # question is whether *this* one is held and running two hundred others to find out is the
+    # reason people skip asking. A filter that matches nothing is an error rather than a clean run
+    # — the shape this checker exists to catch is a check that quietly checks less.
+    only = None
+    if len(sys.argv) > 1:
+        if sys.argv[1] != "--only" or len(sys.argv) != 3:
+            print("usage: mutation_check.py [--only <text in the mutation's meaning>]")
+            return 2
+        only = sys.argv[2]
+    selected = [m for m in MUTATIONS if only is None or only in m[0]]
+    if not selected:
+        print(f"no mutation's meaning contains {only!r}; nothing would have been checked")
+        return 2
     survivors: list[str] = []
     stale: list[str] = []
     ambiguous: list[str] = []
     with tempfile.TemporaryDirectory() as scratch:
-        for meaning, module, (anchor, replacement), tests in MUTATIONS:
+        for meaning, module, (anchor, replacement), tests in selected:
             package = Path(scratch) / "python"
             shutil.rmtree(package, ignore_errors=True)
             shutil.copytree(REPO / "python", package)
@@ -1765,7 +1839,7 @@ def main() -> int:
         for meaning in survivors:
             print(f"  - {meaning}")
     if not stale and not survivors and not ambiguous:
-        print(f"\nall {len(MUTATIONS)} guards are held by a test that fails without them")
+        print(f"\nall {len(selected)} guards are held by a test that fails without them")
     return 1 if (stale or survivors or ambiguous) else 0
 
 
