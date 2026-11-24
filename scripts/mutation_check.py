@@ -2075,6 +2075,36 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ("        if self.value < 0.0:", "        if False:"),
         ["tests/test_selection.py"],
     ),
+    # --- omex.py reads the archive a paper ships, which is the adopt-and-verify fast path: one
+    # guard for four hundred and fifty lines, and three of them decide what "the paper's run"
+    # means (2026-11-24).
+    (
+        "an archive member may expand to gigabytes and be read anyway",
+        "omex.py",
+        ("    if declared > _MAX_MEMBER_BYTES:", "    if False:"),
+        ["tests/test_omex.py"],
+    ),
+    (
+        "a zip of model files with no manifest is read as a COMBINE archive",
+        "omex.py",
+        ('        raise ValueError(\n            "not a COMBINE archive: no manifest.xml',
+         '        raise RuntimeError(\n            "not a COMBINE archive: no manifest.xml'),
+        ["tests/test_omex.py"],
+    ),
+    (
+        "an archive with several experiments has one guessed for it",
+        "omex.py",
+        ('    raise ValueError(\n        f"the archive does not single out one simulation experiment',
+         '    return ambiguous[0]  # mutation\n'
+         '    raise ValueError(\n        f"the archive does not single out one simulation experiment'),
+        ["tests/test_omex.py"],
+    ),
+    (
+        "an experiment running several models has one of them picked for it",
+        "omex.py",
+        ("        if len(resolved) != 1:", "        if False:"),
+        ["tests/test_omex.py"],
+    ),
     (
         "a search that walked off the log scale ends in an overflow naming nothing",
         "estimation.py",
