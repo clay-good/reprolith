@@ -6901,3 +6901,27 @@ instruction.
 
 A survivor is not always a missing refusal. Sometimes the refusal happens and says the wrong thing,
 and only a test that reads the message can tell.
+
+## The judge's own band, and a test that passed for the wrong reason
+
+`oracle.py` is named in every class's judge revision and carried five guards for thirteen hundred
+lines. Five more added; four were already held, and the survivor is the one that matters most,
+because it is the shape of the band every verdict is read against.
+
+`0 <= reproduced_within <= partial_within` could be deleted with the whole suite green — and there
+*was* a test for it. `test_invalid_tolerance_bounds_rejected` constructed `Tolerance(0.30, 0.10)`
+with source `CLASS_DEFAULT`, which is refused for a different reason entirely: `(0.30, 0.10)` is
+not one of the documented class defaults, so the thresholds guard raised and the ordering rule was
+never exercised. The test passed, the guard was unheld, and nothing could tell the difference.
+
+The consequence is not academic. A reviewer override of 0.4/0.2 is accepted with the guard gone,
+and `verdict_for(0.3)` then returns **reproduced** on a claim that is not even *partially*
+reproduced at that distance. The test now names the ordering in its match, uses a source that
+isolates it, and asserts the verdict the inverted band would have produced — because the distance
+between "a tolerance is ill-formed" and "a certificate says reproduced where it means the opposite"
+is exactly one comparison in a constructor.
+
+Three of the day's finds now share one shape: **a test that passes for a reason other than the one
+it is named for.** A quote that is a prefix of a longer message, a refusal that fires in place of
+its neighbour, a guard whose sibling raises first. None of them is visible in a green suite, and
+all three were found by the same question — *would this fail?*

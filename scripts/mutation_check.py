@@ -1951,6 +1951,86 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          "        pass"),
         ["tests/test_export.py"],
     ),
+    # --- the small honesty modules with no coverage at all: what a certificate's pin means, and
+    # what an expert decision has to say to be actionable by someone who was not there (2026-11-24).
+    (
+        "a revision may be taken of no modules at all, and reads as the revision of some code",
+        "pins.py",
+        ("    if not modules:", "    if False:"),
+        ["tests/test_pins.py"],
+    ),
+    (
+        "an expert decision may leave out the fields that make it actionable",
+        "decisions.py",
+        ("        if missing:", "        if False:"),
+        ["tests/test_verification_decisions.py"],
+    ),
+    (
+        "a decision may name a kind this repository has no meaning for",
+        "decisions.py",
+        ("        if kind not in KINDS:", "        if False:"),
+        ["tests/test_verification_decisions.py"],
+    ),
+    (
+        "a correction may supply no corrected value, so nothing can be re-issued against it",
+        "decisions.py",
+        ('        if kind == "correct" and not str(corrected or "").strip():', "        if False:"),
+        ["tests/test_verification_decisions.py"],
+    ),
+    # --- persistence.py: whether the pin a certificate carries names the path that actually ran.
+    (
+        "a pin may name both search paths, so the certificate records what was available",
+        "persistence.py",
+        ("    if names_sat and names_enumeration:", "    if False:"),
+        ["tests/test_persistence.py"],
+    ),
+    (
+        "a SAT search may be recorded with no solver named in the pin",
+        "persistence.py",
+        ('    if "SAT search" in protocol and not names_sat:', "    if False:"),
+        ["tests/test_persistence.py"],
+    ),
+    (
+        "an exhaustive enumeration may be recorded with a pin that does not say so",
+        "persistence.py",
+        ('    if "exhaustive enumeration of all" in protocol and not names_enumeration:',
+         "    if False:"),
+        ["tests/test_persistence.py"],
+    ),
+    # --- oracle.py is the judge, named in every class's revision, and carried five guards for
+    # thirteen hundred lines (2026-11-24).
+    (
+        "a tolerance may pass more widely than it partially passes",
+        "oracle.py",
+        ("        if not 0.0 <= self.reproduced_within <= self.partial_within:", "        if False:"),
+        ["tests/test_oracle.py"],
+    ),
+    (
+        "a tolerance that is not a class default may be used without stating why",
+        "oracle.py",
+        ("        if self.source is not ToleranceSource.CLASS_DEFAULT and not (self.rationale or \"\").strip():",
+         "        if False:"),
+        ["tests/test_oracle.py"],
+    ),
+    (
+        "a tolerance may call itself a class default while being any width at all",
+        "oracle.py",
+        ("        if self.source is ToleranceSource.CLASS_DEFAULT and thresholds not in _DEFAULT_THRESHOLDS:",
+         "        if False:"),
+        ["tests/test_oracle.py"],
+    ),
+    (
+        "a reported value of zero is judged against a magnitude nobody stated",
+        "oracle.py",
+        ("        if zero_scale is None or zero_scale == 0.0:", "        if False:"),
+        ["tests/test_oracle.py"],
+    ),
+    (
+        "a percentile band may be judged at a percentile outside the interval it lives in",
+        "oracle.py",
+        ("        if not 0.0 < self.percentile < 100.0:", "        if False:"),
+        ["tests/test_population.py"],
+    ),
     (
         "a search that walked off the log scale ends in an overflow naming nothing",
         "estimation.py",

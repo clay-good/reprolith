@@ -127,8 +127,36 @@ def test_override_without_rationale_is_rejected() -> None:
 
 
 def test_invalid_tolerance_bounds_rejected() -> None:
+    """A band that passes more widely than it *partially* passes is not a band.
+
+    The source matters, and that is what this test was missing. Written against a
+    CLASS_DEFAULT, it passed for the wrong reason — `(0.30, 0.10)` is not one of the documented
+    defaults, so the *other* guard raised and the ordering rule was never exercised. The mutation
+    harness found it deletable with the whole suite green (2026-11-24), and the consequence is not
+    academic: an override of 0.4/0.2 accepts a distance of 0.3 as `reproduced` on a claim that is
+    not even partially reproduced at it.
+    """
+    with pytest.raises(ValueError, match="reproduced_within <= partial_within"):
+        Tolerance(0.30, 0.10, ToleranceSource.REVIEWER_OVERRIDE, rationale="stated")
+    with pytest.raises(ValueError, match="reproduced_within <= partial_within"):
+        Tolerance(-0.1, 0.25, ToleranceSource.REVIEWER_OVERRIDE, rationale="stated")
+    # Still refused for a class default, which is where this started.
     with pytest.raises(ValueError):
         Tolerance(0.30, 0.10, ToleranceSource.CLASS_DEFAULT)  # reproduced > partial
+
+
+def test_an_inverted_band_would_have_passed_a_claim_its_own_partial_line_refuses() -> None:
+    """What the ordering rule is worth, measured on the verdict it would have produced.
+
+    Asserted rather than described because the guard is one comparison in a constructor, and the
+    distance between "a tolerance is ill-formed" and "a certificate says reproduced where it means
+    the opposite" is exactly this.
+    """
+    good = Tolerance(0.2, 0.4, ToleranceSource.REVIEWER_OVERRIDE, rationale="stated")
+    assert verdict_for(0.3, good) is Verdict.PARTIAL
+    # The same numbers the other way round are what the constructor refuses.
+    with pytest.raises(ValueError, match="reproduced_within <= partial_within"):
+        Tolerance(0.4, 0.2, ToleranceSource.REVIEWER_OVERRIDE, rationale="stated")
 
 
 # --- 4.3 not-evaluable abstention --------------------------------------------------
