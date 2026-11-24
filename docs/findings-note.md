@@ -6744,3 +6744,35 @@ every colour against the *darkest* surface the page uses — the conservative re
 lighter background would only flatter the numbers. Reverting one colour makes it fail with the
 number: `#3a3 is 2.80:1 on #f6f6f6, under 4.5`. A colour someone nudges later reads fine to the
 person who nudged it, which is the whole reason this is a test and not a note.
+
+## A blocked entry, opened and measured instead of attempted
+
+The twenty-five entries this repository still abstains on all carry one reason: no claim was
+extracted, because their papers state their results in figures. That sentence is true and it is
+not very useful — it says nothing about which of them is close and which is not reachable at all.
+One was opened to find out (MODEL2301090001, Koeller et al. 2021's ICG liver-function PBPK), and
+what came back was three separable facts where there had been one.
+
+**Its model runs, and responds to its paper's own doses.** The deposit downloads per file — the
+whole-archive download hands back zero-byte entries, which is worth knowing on its own — and under
+the pinned engine, 0.5 mg/kg into the model's 75 kg default peaks at 16.4 µmol/l where that paper's
+Figure 2G shows about 18. So this entry is blocked for want of a *claim*, not for want of a
+runnable model, and the blocked list could not previously tell those apart.
+
+**Its figure cannot be read at the resolution the publisher serves.** Figure 2 is twelve panels in
+one 1084-pixel image. Panel G's plotting area is 234 pixels wide for seventy minutes, and the
+2 mg/kg curve's entire rise — nought to 73.5 µmol/l, a hundred and ninety pixels of the y axis —
+happens inside **one pixel** of x. The peak is what a pharmacokinetic claim is usually about. A
+reading there would not be imprecise; it would have nothing to measure. The decay is coarse but
+readable: eleven pixels from the peak to half of it, thirty-eight to a tenth.
+
+**And there is a published alternative that is not a picture.** That paper's model and the code
+that draws its figures are CC-BY 4.0 on GitHub, and its clinical data is in PK-DB. So the obstacle
+is not a curator's afternoon; it is a resolution the journal does not serve, with a route around it
+that would make this a dataset rather than a digitization.
+
+Nothing was read and nothing was certified. The point of writing it down is that "needs figure
+digitization" was doing the work of three different statements, one of which is a licensing
+question (three of the remaining papers are CC BY-NC-ND, where redistributing the figure image is
+the user's call and not a technical matter), one a resolution problem, and one simply a job nobody
+has done yet.

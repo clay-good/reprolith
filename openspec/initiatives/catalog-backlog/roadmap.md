@@ -237,7 +237,24 @@ a change under `openspec/changes/`.
   seconds, so a claim may now state a `time_scale` as it already states a `value_scale`, and all
   three curves reproduce with it (0.0015 to 0.0022) and fail without it. BIOMD0000000624 is the
   corpus's second clean pass; blocked 26 → 25, blind agreement 1/31 → 2/31. The other 25 need the
-  same act on their own papers' figures.
+  same act on their own papers' figures. **One of them was opened and measured rather than
+  attempted** (2026-11-24, MODEL2301090001, Koeller et al. 2021's ICG liver-function PBPK). Three
+  facts, in the order they matter. Its deposit **runs and responds to its paper's own stated
+  doses**: 0.5 mg/kg into the model's 75 kg default peaks at 16.4 µmol/l where that paper's Figure
+  2G shows about 18, so this entry is blocked for want of a *claim* and not for want of a runnable
+  model — a distinction the blocked list could not previously make. Its figure, however, **cannot
+  be read at the resolution the publisher serves**: Figure 2 is twelve panels in one 1084-px image,
+  so panel G's plotting area is 234 px wide for seventy minutes, and the 2 mg/kg curve's entire
+  rise — nought to 73.5 µmol/l, a hundred and ninety pixels of the y axis — happens inside **one
+  pixel** of x. The peak is the quantity a pharmacokinetic claim is usually about, and at that
+  scale a reading can say nothing about it; the decay is coarse but readable, eleven pixels from
+  the peak to half of it. And the third fact is where a usable reference would come from instead:
+  that paper's model *and the code that draws its figures* are published under CC-BY 4.0
+  (github.com/matthiaskoenig/icg-model), and its data is in PK-DB — so the obstacle here is not a
+  curator's time but a resolution the journal does not serve, with a published alternative that is
+  a dataset rather than a picture. The other blocked papers are not all like this; three of the
+  remaining ones are CC BY-NC-ND, which is a licensing question about redistributing a figure image
+  rather than a technical one.
 
 ---
 
