@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
       # Every extra the mutated tests need: a mutation whose tests skip is a mutation that
       # survives, and a survivor is what this job exists to report.
       - name: Install with every extra the mutated tests need

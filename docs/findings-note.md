@@ -6686,3 +6686,20 @@ And one claim that was asserted and is now checked: `in_time_unit` says a positi
 constant shift on a log10 axis, so which points a reading is joined between does not change. True,
 and now tested — a log axis is the one a pharmacokinetic figure is most often drawn on, and a
 conversion that quietly re-shaped every reference read off one would be hard to see.
+
+## Twenty-four minutes of every run, compiling the same wheel
+
+Not a defect in the engine, and worth writing down anyway, because it was visible on every run for
+as long as anyone cared to look. CI's `engine` job takes six minutes on Python 3.11 and 3.12 and
+**thirty-two** on 3.9 — and the split is not the tests, which take seven minutes there. It is the
+install: twenty-four minutes of every single run compiling a dependency that ships no wheel for
+that interpreter, for a result byte-identical to the last run's.
+
+`actions/setup-python`'s pip cache keeps what pip downloads *and* what it builds, so the fix is two
+lines per job keyed on `pyproject.toml`. It is on every job in all three workflows rather than only
+the slow one: a cache that covers the job you noticed is a cache that stops covering the next one.
+Nothing about what CI checks changes.
+
+The reason it is in this file at all: the gates are how this repository knows anything, and a gate
+that costs half an hour is one a person runs less often than one that costs six minutes. The cost
+of a check is part of the check.
