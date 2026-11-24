@@ -6795,3 +6795,34 @@ mutations to learn whether *one* new guard is held is the reason people skip ask
 weekly job still runs the whole list. A filter that matches nothing is an error rather than a clean
 run — a check that quietly checks less is the shape this harness exists to catch, and that applies
 to the harness itself.
+
+## Counting the harness by module, and what engine.py was missing
+
+The mutation list has two hundred and thirty-one entries and had **none at all** for `engine.py` —
+the module that picks the grid, resolves the species column and decides whether a run happened,
+and the one named in every class's judge revision. A guard removed there changes every number this
+repository publishes. Counting guards by module is how the honesty invariants were found unheld
+once before; the same count run again found this.
+
+Six guards, and **four of them survived** — deletable with the entire suite green:
+
+* **A run that cannot advance.** `duration <= 0` returns the initial condition and nothing else,
+  and the metric layer reads that as the model's Cmax or its final value: a claim stated at its own
+  starting point judges `reproduced` at relative error 0.0000 against a trajectory that never
+  happened. Three classes refuse it at their own front ends; the one boundary they all pass through
+  had nothing holding it. Infinity and NaN with it, which `duration <= 0` does not catch.
+* **A time course with no steps**, whose grid is `duration * i / steps`.
+* **`require_finite`.** The abandoned-run check catches a run the engine says it stopped; this one
+  catches a run it says it finished where the numbers are not numbers — and the difference between
+  the two matters to the verdict, since an intractable model is *blocked* here and not failed.
+* **The bracketed spelling every published protocol uses.** Each certificate says `read=[CVen]`,
+  which is the string a stranger re-running a bundle hands straight back to the engine. The
+  acceptance of it was published on forty-one certificates and exercised by nothing. It is now
+  tested by reading the spelling *off a committed certificate* and replaying it, rather than by
+  spelling the species in the test — a test that wrote `[A]` itself would pass while the published
+  form had stopped working.
+
+The same pass turned up a **stale anchor**, which is the other half of what this harness is for:
+the day's own change to the queue's engine-limit note moved the code a mutation was pointed at, and
+the checker said so rather than quietly checking one fewer thing. Re-anchored onto the invariant
+that replaced it — a note describing items when there are none.

@@ -126,3 +126,106 @@ def test_a_run_the_engine_abandoned_is_refused_not_returned_as_a_full_course() -
     for duration in (2.0, 10.0):
         with pytest.raises(NonFiniteSimulation, match=r"it stopped at t=1\.0 of "):
             simulate(BLOWUP_SBML, "A", duration=duration, steps=20)
+
+
+@pytest.mark.parametrize("duration", [0.0, -1.0, float("inf"), float("nan")])
+def test_a_run_that_cannot_advance_is_refused_at_the_engine_boundary(duration: float) -> None:
+    """The guard every certified time course passes through, and nothing was holding it.
+
+    A run of zero duration returns the initial condition and nothing else, and the metric layer
+    reads that initial condition as the model's Cmax or its final value — so a claim stated at its
+    own starting point judges as `reproduced` at relative error 0.0000 against a trajectory that
+    never happened. Three classes refuse it at their own front ends; this is the one place all of
+    them share, and the mutation harness found both of its refusals deletable with the whole suite
+    still green (2026-11-24).
+
+    Infinity and NaN are here for the same reason and are not hypothetical: a duration computed
+    from a claim's own window — a last read point divided by a scale — arrives as either when the
+    scale is zero, and a run started on one is not refused by `duration <= 0`.
+    """
+    with pytest.raises(ValueError, match="positive finite number of time units"):
+        simulate(ONE_COMPARTMENT_SBML, "A", duration=duration, steps=10)
+
+
+@pytest.mark.parametrize("steps", [0, -1])
+def test_a_time_course_with_no_steps_is_refused_rather_than_dividing_by_zero(steps: int) -> None:
+    """Its sibling, and the arithmetic says why: the grid is `duration * i / steps`."""
+    with pytest.raises(ValueError, match="at least one step"):
+        simulate(ONE_COMPARTMENT_SBML, "A", duration=10.0, steps=steps)
+
+
+def test_the_refusal_is_what_stops_a_claim_passing_against_its_own_starting_point() -> None:
+    """Why the two above are worth their lines, measured on the model they would judge.
+
+    This is the comparison the guard prevents: over a window of zero every sample is A(0), so a
+    claim reporting the starting value reproduces exactly — on a model that could be arbitrarily
+    wrong everywhere else. Run over any real window the same claim misses by 39%.
+    """
+    _, values = simulate(ONE_COMPARTMENT_SBML, "A", duration=10.0, steps=10)
+    assert values[0] == pytest.approx(100.0)
+    # What a zero-duration run would have offered as the model's answer, had one been allowed.
+    assert abs(values[-1] - 100.0) / 100.0 > 0.39
+
+
+def test_the_bracketed_spelling_every_published_protocol_uses_resolves() -> None:
+    """A promise this repository makes on every certificate, and nothing checked it.
+
+    Each published protocol line names what was read as `read=[A]` — SBML's concentration
+    notation, and the accurate way to name what these functions return. A stranger re-running a
+    bundle strictly as published passes that string straight through to `simulate`, so it has to
+    resolve. The mutation harness found the acceptance of it deletable with the whole suite green
+    (2026-11-24): the spelling was published everywhere and exercised nowhere.
+    """
+    bare = simulate(ONE_COMPARTMENT_SBML, "A", duration=10.0, steps=10)
+    bracketed = simulate(ONE_COMPARTMENT_SBML, "[A]", duration=10.0, steps=10)
+    assert bracketed == bare
+    # Whitespace too: a protocol line read out of a certificate arrives with whatever is around it.
+    assert simulate(ONE_COMPARTMENT_SBML, " [A] ", duration=10.0, steps=10) == bare
+    # And it is still the species that has to exist: brackets are notation, not a wildcard.
+    with pytest.raises(ValueError, match="not an output of the model"):
+        simulate(ONE_COMPARTMENT_SBML, "[nosuch]", duration=10.0, steps=10)
+
+
+def test_a_published_protocol_line_can_be_replayed_as_it_is_written() -> None:
+    """The same promise, taken from a committed certificate rather than from this file.
+
+    The point is the round trip a reader makes: open a certificate, read `read=[CVen] curve` off
+    its protocol line, and hand that string back to the engine. A test that spelled the species
+    itself would pass while the published form had stopped working.
+    """
+    import json
+    import re
+    from pathlib import Path
+
+    certificate = json.loads(
+        (Path(__file__).parent.parent / "datasets" / "milestone" / "certificates"
+         / "BIOMD0000000624.json").read_text(encoding="utf-8")
+    )
+    (protocol,) = {
+        assessment["protocol"].split(" (")[0] for assessment in certificate["assessments"][:1]
+    }
+    read = re.search(r"read=(\[[^\]]+\])", protocol)
+    assert read is not None, protocol
+    model = (Path(__file__).parent.parent / "datasets" / "worked_examples"
+             / "Sluka2016_APAP_metabolism.xml").read_text(encoding="utf-8")
+    times, values = simulate(model, read.group(1), duration=2340.0, steps=390)
+    assert len(times) == 391 and values[0] == pytest.approx(0.1)
+
+
+def test_a_run_that_returns_a_non_finite_sample_is_refused_rather_than_published() -> None:
+    """The last of the engine's four refusals, and the one with nothing behind it.
+
+    A diverging or too-stiff model produces inf/nan, and signalling it lets the caller record the
+    entry as *blocked* (intractable) rather than `failed` — the distinction this repository exists
+    to keep. The abandoned-run check above catches the case where the engine says it stopped; this
+    one catches the case where it says it finished and the numbers are not numbers.
+    """
+    from reprolith.engine import NonFiniteSimulation, require_finite
+
+    assert require_finite((1.0, 2.0), "A") == (1.0, 2.0)
+    for broken in (float("inf"), float("-inf"), float("nan")):
+        with pytest.raises(NonFiniteSimulation, match="did not produce a finite result"):
+            require_finite((1.0, broken), "A")
+    # Named, because the message is what a reader is given in place of a verdict.
+    with pytest.raises(NonFiniteSimulation, match="diverged or too stiff"):
+        require_finite((float("nan"),), "A")

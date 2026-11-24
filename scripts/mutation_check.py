@@ -1477,10 +1477,14 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_spatial.py"],
     ),
     (
-        "the engine-limit half names an example that left it",
+        # Re-anchored 2026-11-24. It used to mutate the example the note gave — the note named the
+        # spatial wall for a day after that wall left this half — and the note gives no example
+        # now, because the half it describes is empty and the text says so. The invariant that
+        # replaced it is the one that can go wrong the same way: a note describing items when
+        # there are none.
+        "the empty half of the queue is described as though it still held something",
         "verification.py",
-        ('"left unsaid — the ensemble the stochastic class drew for itself — so no expert "',
-         '"left unsaid — the wall the spatial solver ran under — so no expert "'),
+        ("    if not engine_limits:", "    if False:"),
         ["tests/test_readme_claims.py"],
     ),
     # --- what would settle a sampled ensemble is a number, 2026-09-09 ---------------------------
@@ -1763,6 +1767,46 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
          "def sampling_is_decisive(*, relative_error_bar: float, tolerance: Tolerance) -> bool:\n"
          "    return True  # mutation"),
         ["tests/test_stochastic_sampling_discharge.py", "tests/test_stochastic.py"],
+    ),
+    # --- engine.py had no entry at all, and it is in every class's judge revision: a guard
+    # removed there changes every number this repository publishes (2026-11-24).
+    (
+        "a time course that cannot advance is run, and judged at its own initial condition",
+        "engine.py",
+        ("    if not math.isfinite(duration) or duration <= 0.0:", "    if False:"),
+        ["tests/test_engine.py"],
+    ),
+    (
+        "a time course with no steps is built, dividing by zero to make its grid",
+        "engine.py",
+        ("    if int(steps) < 1:", "    if False:"),
+        ["tests/test_engine.py"],
+    ),
+    (
+        "a run the engine abandoned is returned as a full course",
+        "engine.py",
+        ("        if not completed or recorded != int(steps) + 1:\n"
+         "            # The time the engine actually reached",
+         "        if False:\n            # The time the engine actually reached"),
+        ["tests/test_rate_laws.py"],
+    ),
+    (
+        "a diverged run's infinities are passed downstream as numbers",
+        "engine.py",
+        ("    if not all(math.isfinite(v) for v in values):", "    if False:"),
+        ["tests/test_engine.py"],
+    ),
+    (
+        "a species is resolved by display name first, so a reused name reads the wrong column",
+        "engine.py",
+        ("        if series.getSBMLId(i, datamodel) == name:", "        if False:"),
+        ["tests/test_engine.py"],
+    ),
+    (
+        "the concentration notation a published protocol uses stops resolving",
+        "engine.py",
+        ('    if stripped.startswith("[") and stripped.endswith("]"):', "    if False:"),
+        ["tests/test_engine.py"],
     ),
 ]
 
