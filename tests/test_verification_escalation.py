@@ -264,7 +264,14 @@ def test_the_committed_registry_page_carries_the_queue() -> None:
     # that disagreed with `reprolith verification-queue` about the count fails here.
     assert f"{report['pending_count']} load-bearing values" in page
     assert f"{report['standing_certificates']} standing certificates" in page
-    assert f"{report['engine_limits_count']} more load-bearing values" in page
+    if report["engine_limits_count"]:
+        assert f"{report['engine_limits_count']} more load-bearing values" in page
+    else:
+        # No section for a half with nothing in it: a heading over an empty list reads as a
+        # category this repository has, and it has none. It comes back with the item that earns it
+        # — the same rule the milestone README's verdict table is held to.
+        assert "more load-bearing values" not in page
+        assert "Resting on this engine" not in page
     # And how much of the corpus each half reaches. "3 values that 33 standing certificates rest
     # on" was the old sentence, and only 4 of those 33 carry one — a page-wide overstatement of
     # exactly the kind the rest of the page is written to avoid.

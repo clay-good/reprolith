@@ -63,21 +63,33 @@ _SYSTEMS = {
     "immigration_death_10": {
         "title": "Immigration-death process (k=10, γ=1) — Poisson stationary mean",
         "n_species": 1, "reactions": _immigration_death(10.0, 1.0), "initial": [0],
-        "species": 0, "reported_mean": 10.0, "duration": 40.0, "trajectories": 400, "seed": 20260807,
+        # 4,000 rather than 400: at 400 the ensemble's own standard error is 1.53% of the
+        # reported mean against a 5% pass threshold, and a draw whose bar is a third of the band
+        # is a choice the verdict rests on — so the certificate carried a sampling assumption and
+        # could never be clean. Ten times the ensemble brings the bar to 0.48%, a tenth of the
+        # band, where `sampling_is_decisive` discharges it. The count is the rule's own arithmetic
+        # (n x (bar / (0.1 x tolerance))^2), not a number picked to make the certificate read well.
+        "species": 0, "reported_mean": 10.0, "duration": 40.0, "trajectories": 4000, "seed": 20260807,
     },
     "immigration_death_4": {
         "title": "Immigration-death process (k=6, γ=1.5) — Poisson stationary mean",
         "n_species": 1, "reactions": _immigration_death(6.0, 1.5), "initial": [0],
-        # 1,600 rather than 400: a Poisson mean of 4 has the largest relative spread in this set, and
-        # at 400 trajectories the ensemble's standard error is 2.6% of the reported mean against a
-        # 5% pass threshold — noise of that size cannot tell a reproduction from a miss, so the
-        # class now abstains there rather than publishing either verdict. Four times the ensemble
-        # brings the standard error to 1.3% and costs two seconds.
-        "species": 0, "reported_mean": 4.0, "duration": 40.0, "trajectories": 1600, "seed": 11,
+        # A Poisson mean of 4 has the largest relative spread in this set: at 400 trajectories
+        # the ensemble's standard error is 2.6% of the reported mean against a 5% pass threshold,
+        # noise of a size that cannot tell a reproduction from a miss, and the class abstains
+        # there rather than publishing either verdict. 1,600 brought it to 1.26%, enough to judge;
+        # 11,000 brings it to 0.48%, a tenth of the band, where the draw stops being a choice the
+        # verdict rests on and the sampling assumption is discharged.
+        "species": 0, "reported_mean": 4.0, "duration": 40.0, "trajectories": 11000, "seed": 11,
     },
     "reversible_isomerization": {
         "title": "Reversible isomerization A<->B (N=50, kf=3, kr=1) — binomial equilibrium mean",
         "n_species": 2, "reactions": _reversible(3.0, 1.0), "initial": [50, 0],
+        # 400 is already enough here and nothing is bought by more: a binomial spread about 37.5
+        # leaves the ensemble's bar at 0.42% of the reported mean, inside the tenth of the pass
+        # band the discharge rule asks for. This entry is the one that showed the rule was worth
+        # writing — it had been `partially-reproduced` for a sampling choice that could not have
+        # moved its verdict.
         "species": 1, "reported_mean": 37.5, "duration": 30.0, "trajectories": 400, "seed": 1234,
     },
 }
@@ -96,7 +108,14 @@ def main() -> None:
             Identifiers(title=s["title"], accession=key),
             ModelClass.STOCHASTIC,
             ground_truth=GroundTruth(
-                expected=OverallVerdict.PARTIALLY_REPRODUCED,  # qualified by sampling -> never clean
+                # The closed form says the model reproduces this number, and that is what the
+                # label is about. It used to read `partially-reproduced`, with "qualified by
+                # sampling -> never clean" beside it — a label derived from how this engine
+                # happened to behave rather than from the mathematics, and wrong the day a draw
+                # could be large enough to stop being a choice. A verdict that still carries the
+                # sampling qualification now disagrees with its label in the stricter direction,
+                # which is what this class's siblings have always done.
+                expected=OverallVerdict.REPRODUCED,
                 source=f"closed-form mean {s['reported_mean']}",
             ),
         )
@@ -126,7 +145,7 @@ def main() -> None:
         ),
         ModelClass.STOCHASTIC,
         ground_truth=GroundTruth(
-            expected=OverallVerdict.PARTIALLY_REPRODUCED,  # qualified by sampling -> never clean
+            expected=OverallVerdict.REPRODUCED,
             source=f"closed-form mean first passage H(5)/k = {exact:.6f}",
         ),
     )
@@ -139,7 +158,10 @@ def main() -> None:
             reported_mean=exact, source_location="closed-form",
             # The cap is far above the mean on purpose: a trajectory that reaches it observed no
             # extinction, and the claim abstains rather than averaging the ones that finished.
-            trajectories=2000, seed=20260907, max_time=1e6,
+            # 12,000 rather than 2,000, for the reason the mean claims state: at 2,000 the
+            # ensemble's bar is 1.17% of the reported first-passage time against a 5% band, and
+            # the draw was a choice the verdict rested on.
+            trajectories=12000, seed=20260907, max_time=1e6,
         )],
     )
 
@@ -157,7 +179,7 @@ def main() -> None:
         ),
         ModelClass.STOCHASTIC,
         ground_truth=GroundTruth(
-            expected=OverallVerdict.PARTIALLY_REPRODUCED,  # qualified by sampling -> never clean
+            expected=OverallVerdict.REPRODUCED,
             source=f"closed-form Poisson Fano factor 1 and CV 1/sqrt({noise_mean:g})",
         ),
     )
@@ -172,18 +194,22 @@ def main() -> None:
                 claim_id=f"{noise_key}-fano", quantity="Fano factor of the stationary distribution",
                 species=0, statistic=NoiseStatistic.FANO_FACTOR, reported_value=1.0,
                 source_location="closed-form",
-                # Ten times the ensemble the *mean* of this same process is certified at, and the
-                # certificate says why in its own protocol line: a Fano factor's standard error is
-                # sqrt(2/n) of its value, so 400 trajectories leave it at 7% against a 5% pass
-                # threshold and the claim would be abstained on rather than judged. This is the
-                # cost of the quantity, measured, not a number picked to make it pass.
-                duration=40.0, trajectories=4000, seed=20260907,
+                # The most expensive ensemble in this repository, and the certificate says why
+                # in its own protocol line: a Fano factor's standard error is sqrt(2/n) of its
+                # value, so 400 trajectories leave it at 7% against a 5% pass threshold and the
+                # claim would be abstained on rather than judged; 4,000 brought it to 2.26%,
+                # enough to judge but still a half of what the verdict turns on. A tenth of the
+                # band costs 85,000 — sqrt(2/n) = 0.005 — and that is what a spread statistic
+                # costs to measure, not a number picked to make it pass. Three minutes.
+                duration=40.0, trajectories=85000, seed=20260907,
             ),
             NoiseClaim(
                 claim_id=f"{noise_key}-cv", quantity="coefficient of variation at stationarity",
                 species=0, statistic=NoiseStatistic.COEFFICIENT_OF_VARIATION,
                 reported_value=1.0 / math.sqrt(noise_mean), source_location="closed-form",
-                duration=40.0, trajectories=4000, seed=20260907,
+                # The same ensemble, so the two statistics are two readings of one draw rather
+                # than two draws. Its own bar lands at 0.25%, well inside the tenth.
+                duration=40.0, trajectories=85000, seed=20260907,
             ),
         ],
     )
@@ -212,7 +238,7 @@ def main() -> None:
     # the quantity this certificate rests on unchecked.
     corroboration[noise_key] = corroborate_ensemble_noise(
         ["S0"], _immigration_death(10.0, 1.0), [0],
-        observed=0, duration=40.0, trajectories=4000, seed=20260907,
+        observed=0, duration=40.0, trajectories=85000, seed=20260907,
     ).record()
 
     milestone = STO / "milestone"

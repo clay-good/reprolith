@@ -39,7 +39,7 @@ def test_every_committed_certificate_that_needs_the_reconciliation_carries_it() 
     A committed certificate whose headline is not `reproduced` while its counts show nothing but
     reproduced claims is exactly the artifact this line exists for.
     """
-    checked = 0
+    checked = []
     for path in _committed():
         text = path.read_text(encoding="utf-8")
         if "OVERALL: reproduced" in text:
@@ -52,11 +52,17 @@ def test_every_committed_certificate_that_needs_the_reconciliation_carries_it() 
             f"{verdict}=0" in counts for verdict in ("partial", "failed", "not-evaluable")
         ):
             continue
-        checked += 1
+        checked.append(path.name)
         assert _CLEAN_PASS in text, f"{path} leaves its headline unreconciled"
-    # The corpus does contain such certificates; a version of this test that checked nothing would
-    # pass just as quietly.
-    assert checked >= 6
+    # The corpus does contain such a certificate; a version of this test that checked nothing
+    # would pass just as quietly. It used to contain six, five of them the stochastic class's,
+    # whose certificates read `partially-reproduced` over nothing but reproduced claims because
+    # the ensemble was Reprolith's choice. Those ensembles were bought up to the size at which a
+    # draw stops being a choice the verdict rests on and the qualification was discharged. The one
+    # that remains cannot go the same way, and the difference is the point: a population envelope
+    # rests on a variability model Reprolith *reconstructed*, not only on how many subjects it
+    # drew, and no sample size makes a reconstruction stop being one.
+    assert checked == ["certificate.txt"], checked
 
 
 def test_a_genuine_partial_says_nothing_extra() -> None:

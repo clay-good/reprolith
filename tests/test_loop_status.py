@@ -249,12 +249,13 @@ def test_the_terminal_prints_the_reason_and_the_json_is_the_tool_object(capsys) 
     # and the three published profiles stopped asking, because their source states an *unbounded*
     # domain and the run now measures that this grid's walls could not have reached the profile.
     # A question answered by measurement leaves the queue rather than waiting for a person.
-    # And five engine limits, the newest being the noise entry's ensemble — the sampling is this
-    # engine's draw and no wording in a paper clears it. That entry certifies *two* claims off one
-    # ensemble and adds *one* item, which is the rule the queue states in its own report: one
-    # limitation asked twice is one question with two dependents. The counts are read off the same
-    # report the JSON below carries, so this pins the *line*, not the arithmetic.
-    assert "escalated: 3 awaiting an expert, 5 limits of this engine" in out
+    # And **no** engine limits: the stochastic ensembles were the last five, and they left the
+    # same way — drawn large enough that a draw's own error bar is within a tenth of the band its
+    # claim is judged in, where the sampling stops being a choice the verdict rests on. The line
+    # still prints the zero rather than dropping the clause, because "3 awaiting an expert" alone
+    # would read as the whole queue. The counts are read off the same report the JSON below
+    # carries, so this pins the *line*, not the arithmetic.
+    assert "escalated: 3 awaiting an expert, 0 limits of this engine" in out
 
     assert run(["loop-status", "--json"]) == 0
     printed = json.loads(capsys.readouterr().out)

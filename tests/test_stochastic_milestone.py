@@ -12,8 +12,10 @@ from pathlib import Path
 
 _MILESTONE = Path(__file__).parent.parent / "datasets" / "stochastic" / "milestone"
 #: The three summary-statistic entries and the first-passage one. Every certificate in this class
-#: is `partially-reproduced` for the same reason — the ensemble is Reprolith's, so no verdict here
-#: is unqualified — which is why the split matters less than it does for the spatial class.
+#: used to be `partially-reproduced` for the same reason — the ensemble was Reprolith's choice, so
+#: no verdict here was unqualified. Every one of them is now a clean `reproduced`: the ensembles
+#: were bought up to the size at which a draw's own error bar is within a tenth of the band the
+#: claim is judged in, where it stops being a choice the verdict rests on.
 _MEANS = {"immigration_death_10", "immigration_death_4", "reversible_isomerization"}
 _EXTINCTION = {"death_extinction_time"}
 #: The noise entry: the Fano factor and the coefficient of variation of the same Poisson process
@@ -28,21 +30,25 @@ def test_agreement_report_shows_a_blind_full_agreement() -> None:
     assert report["agreements"] == report["total"]
     assert report["agreement_rate"] == 1.0
     for entry in report["per_entry"]:
-        # The claim reproduces, but a stochastic verdict is sampling-qualified, so both the ground
-        # truth and the actual verdict are partially-reproduced — and they agree.
-        assert entry["expected"] == "partially-reproduced"
-        assert entry["actual"] == "partially-reproduced"
+        # The closed form says the model reproduces these numbers, and the run says so too. The
+        # expected label used to read `partially-reproduced`, which was a statement about how this
+        # engine behaved rather than about the mathematics it cites as its source.
+        assert entry["expected"] == "reproduced"
+        assert entry["actual"] == "reproduced"
         assert entry["agree"] is True
 
 
-def test_every_certificate_is_a_qualified_stochastic_reproduction() -> None:
+def test_every_certificate_is_an_unqualified_stochastic_reproduction() -> None:
+    """Clean passes, and the protocol line says why each one carries no sampling assumption."""
     for key in _EXPECTED:
         content = json.loads((_MILESTONE / "certificates" / f"{key}.json").read_text(encoding="utf-8"))
-        assert content["overall"] == "partially-reproduced"
+        assert content["overall"] == "reproduced"
         assert content["scope"]["machine"] == "reproducible-not-correct-not-clinical"
+        assert content["assumptions"] == []
         claim = content["assessments"][0]
-        assert claim["verdict"] == "reproduced" and claim["assumption_qualified"] is True
+        assert claim["verdict"] == "reproduced" and claim["assumption_qualified"] is False
         assert claim["method"] == "scalar-relative-error"
+        assert "not a choice the verdict rests on" in claim["protocol"]
 
 
 def test_the_catalog_recorded_every_entry_as_a_certified_stochastic_model() -> None:

@@ -81,8 +81,10 @@ def test_the_public_page_does_not_print_one_sentence_forty_three_times() -> None
     """And it never carried a claim id, so those bullets could not even be told apart."""
     page = (_ROOT / "datasets" / "registry.html").read_text(encoding="utf-8")
     assert "<li>43 claims: reproduced only under an assumption" in page
-    # Nine cards carry the sentence, one bullet each. This entry alone used to print it
-    # forty-three times, so the whole page now says it fewer times than one card once did.
-    assert page.count("reproduced only under an assumption Reprolith supplied") == 9
+    # Four cards carry the sentence, one bullet each. This entry alone used to print it
+    # forty-three times, so the whole page now says it fewer times than one card once did. It was
+    # nine cards until the stochastic class's five ensembles were bought up to the size at which a
+    # draw stops being a choice the verdict rests on, and their assumptions were discharged.
+    assert page.count("reproduced only under an assumption Reprolith supplied") == 4
     # The summary still counts what the certificate holds, not what the list shows.
     assert "what was missing (55)" in page

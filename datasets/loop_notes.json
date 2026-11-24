@@ -147,7 +147,7 @@
      "path": "datasets/stochastic/milestone/corroboration.json",
      "quotes": [
       "\"comparison\": \"monte-carlo-agreement\"",
-      "\"resolves_bias_above\": 0.065"
+      "\"resolves_bias_above\": 0.021"
      ]
     },
     {
@@ -261,7 +261,7 @@
     {
      "path": "datasets/stochastic/milestone/certificates/immigration_death_10.json",
      "quotes": [
-      "\"relative error 0.0227\"",
+      "\"relative error 0.0025\"",
       "\"root_cause\": null"
      ]
     }

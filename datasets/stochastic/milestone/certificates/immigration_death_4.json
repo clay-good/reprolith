@@ -1,14 +1,14 @@
 {
   "assessments": [
     {
-      "assumption_qualified": true,
+      "assumption_qualified": false,
       "claim_id": "immigration_death_4-mean",
-      "discrepancy": "relative error 0.0230",
+      "discrepancy": "relative error 0.0008",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "SSA ensemble: 1600 trajectories to t=40, seed 11, read=species[0] (sampling noise: the mean's standard error is 1.26% of the reported value, against a 5% pass threshold; this answer sits 2.70% from the nearest verdict line, so ~34,490 trajectories \u2014 22x this sample \u2014 would put the sampling error a tenth of the way to it)",
+      "protocol": "SSA ensemble: 11000 trajectories to t=40, seed 11, read=species[0] (sampling noise: the mean's standard error is 0.48% of the reported value, against a 5% pass threshold; that bar is within a tenth of the pass band, so this draw is not a choice the verdict rests on and nothing here is qualified for it)",
       "quantity": "mean copy number",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -18,29 +18,14 @@
       "verdict": "reproduced"
     }
   ],
-  "assumptions": [
-    {
-      "alternatives": [
-        "a different seed",
-        "a larger ensemble"
-      ],
-      "attributed_to": "reprolith",
-      "author_can_close": false,
-      "basis": "a finite ensemble's estimate differs from the model's true value by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this claim's protocol line reports that estimate's standard error as a share of the reported value, against the threshold it is judged at",
-      "chosen": "SSA ensemble: 1600 trajectories to t=40, seed 11, read=species[0]",
-      "description": "the mean judged here is the average of an ensemble Reprolith sampled, not a number the paper's own run produced",
-      "id": "ssa-sampling-immigration_death_4-mean",
-      "load_bearing": true,
-      "verification_item": null
-    }
-  ],
+  "assumptions": [],
   "engine_pin": {
-    "algorithm": "gillespie-direct-method (rev 0e0873ebe9ed)",
+    "algorithm": "gillespie-direct-method (rev 7c96a23d7945)",
     "engine": "reprolith-ssa",
     "version": "0.0.1"
   },
   "gap_report": [],
-  "overall": "partially-reproduced",
+  "overall": "reproduced",
   "paper": {
     "doi": "",
     "pubmed_id": null,

@@ -15,7 +15,7 @@
     }
   ],
   "engine_pin": {
-    "algorithm": "deterministic-lsoda (judge rev f6e19f43470f)",
+    "algorithm": "deterministic-lsoda (judge rev 098436815534)",
     "engine": "copasi",
     "version": "4.46.300 (Source)"
   },

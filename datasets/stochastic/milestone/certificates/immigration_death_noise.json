@@ -1,14 +1,14 @@
 {
   "assessments": [
     {
-      "assumption_qualified": true,
+      "assumption_qualified": false,
       "claim_id": "immigration_death_noise-fano",
-      "discrepancy": "relative error 0.0161",
+      "discrepancy": "relative error 0.0029",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "SSA ensemble: 4000 trajectories to t=40, seed 20260907, read=fano-factor of species[0] (sampling noise: the statistic's jackknife standard error is 2.26% of the reported value, against a 5% pass threshold; this answer sits 3.39% from the nearest verdict line, so ~177,498 trajectories \u2014 44x this sample \u2014 would put the sampling error a tenth of the way to it)",
+      "protocol": "SSA ensemble: 85000 trajectories to t=40, seed 20260907, read=fano-factor of species[0] (sampling noise: the statistic's jackknife standard error is 0.48% of the reported value, against a 5% pass threshold; that bar is within a tenth of the pass band, so this draw is not a choice the verdict rests on and nothing here is qualified for it)",
       "quantity": "Fano factor of the stationary distribution",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -18,14 +18,14 @@
       "verdict": "reproduced"
     },
     {
-      "assumption_qualified": true,
+      "assumption_qualified": false,
       "claim_id": "immigration_death_noise-cv",
-      "discrepancy": "relative error 0.0090",
+      "discrepancy": "relative error 0.0014",
       "fault_hypothesis": null,
       "implicated": null,
       "level": "simulation",
       "method": "scalar-relative-error",
-      "protocol": "SSA ensemble: 4000 trajectories to t=40, seed 20260907, read=coefficient-of-variation of species[0] (sampling noise: the statistic's jackknife standard error is 1.16% of the reported value, against a 5% pass threshold; this answer sits 4.10% from the nearest verdict line, so ~31,844 trajectories \u2014 8x this sample \u2014 would put the sampling error a tenth of the way to it)",
+      "protocol": "SSA ensemble: 85000 trajectories to t=40, seed 20260907, read=coefficient-of-variation of species[0] (sampling noise: the statistic's jackknife standard error is 0.25% of the reported value, against a 5% pass threshold; that bar is within a tenth of the pass band, so this draw is not a choice the verdict rests on and nothing here is qualified for it)",
       "quantity": "coefficient of variation at stationarity",
       "reference_kind": "numeric",
       "root_cause": null,
@@ -35,43 +35,14 @@
       "verdict": "reproduced"
     }
   ],
-  "assumptions": [
-    {
-      "alternatives": [
-        "a different seed",
-        "a larger ensemble"
-      ],
-      "attributed_to": "reprolith",
-      "author_can_close": false,
-      "basis": "a finite ensemble's estimate differs from the model's true value by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this claim's protocol line reports that estimate's standard error as a share of the reported value, against the threshold it is judged at",
-      "chosen": "SSA ensemble: 4000 trajectories to t=40, seed 20260907",
-      "description": "the noise statistic judged here is computed from an ensemble Reprolith sampled, not a number the paper's own run produced",
-      "id": "ssa-sampling-immigration_death_noise-fano",
-      "load_bearing": true,
-      "verification_item": null
-    },
-    {
-      "alternatives": [
-        "a different seed",
-        "a larger ensemble"
-      ],
-      "attributed_to": "reprolith",
-      "author_can_close": false,
-      "basis": "a finite ensemble's estimate differs from the model's true value by sampling noise of a size the trajectory count sets, so the verdict moves with the count and the seed; both are pinned here to make it byte-reproducible. How far it moves is measured rather than left as a caveat: this claim's protocol line reports that estimate's standard error as a share of the reported value, against the threshold it is judged at",
-      "chosen": "SSA ensemble: 4000 trajectories to t=40, seed 20260907",
-      "description": "the noise statistic judged here is computed from an ensemble Reprolith sampled, not a number the paper's own run produced",
-      "id": "ssa-sampling-immigration_death_noise-cv",
-      "load_bearing": true,
-      "verification_item": null
-    }
-  ],
+  "assumptions": [],
   "engine_pin": {
-    "algorithm": "gillespie-direct-method (rev 0e0873ebe9ed)",
+    "algorithm": "gillespie-direct-method (rev 7c96a23d7945)",
     "engine": "reprolith-ssa",
     "version": "0.0.1"
   },
   "gap_report": [],
-  "overall": "partially-reproduced",
+  "overall": "reproduced",
   "paper": {
     "doi": "",
     "pubmed_id": null,

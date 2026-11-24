@@ -11,20 +11,29 @@ follow end to end, all regenerable from the repository alone.
 | **Constraint-based (FBA)** | **8/8** blind agreement across bacteria, a pathogen, and a eukaryote | E. coli core's documented growth rate; COBRApy references for the genome-scale set | [`datasets/constraint_based/milestone/`](../datasets/constraint_based/milestone/) |
 | **Generic-kinetic (ODE)** | **7/7** blind agreement across six network types — six curves, and one oscillator's period and peak-to-trough | libRoadRunner (independent CVODE) reference trajectories, and the period read off one of them | [`datasets/kinetic/milestone/`](../datasets/kinetic/milestone/) |
 | **Logical (Boolean)** | **10/10** blind agreement (incl. three 44–60-node models at scale, and one entry judged against a paper's own published basin sizes) | CANA attractor signatures — how many attractors and the period of each, which is what the reference records; not the attractor states themselves (small models) + the SHA-256 of the fixed-point **set** an independent SAT solver found (the large signalling networks). Every certificate states the update scheme its numbers were computed under | [`datasets/logical/milestone/`](../datasets/logical/milestone/) |
-| **Stochastic (SSA)** | **5/5** blind agreement, every one `partially-reproduced` | Closed-form Poisson / binomial means, a pure death process's mean first passage `H(n₀)/k`, and the Poisson noise laws (Fano = 1, CV = 1/√mean) — all analytical | [`datasets/stochastic/milestone/`](../datasets/stochastic/milestone/) |
+| **Stochastic (SSA)** | **5/5** blind agreement, every one `reproduced` | Closed-form Poisson / binomial means, a pure death process's mean first passage `H(n₀)/k`, and the Poisson noise laws (Fano = 1, CV = 1/√mean) — all analytical | [`datasets/stochastic/milestone/`](../datasets/stochastic/milestone/) |
 | **Spatial (reaction-diffusion)** | **5/5** blind agreement — three profiles `partially-reproduced`, a decay length and a front speed `reproduced` | Closed-form Gaussian diffusion, λ = √(D/k), and the Fisher-KPP speed 2√(rD) (analytical) | [`datasets/spatial/milestone/`](../datasets/spatial/milestone/) |
 
-Several entries read `partially-reproduced` where the profile or the mean matches its analytical
-target exactly, and that is the point: the stochastic class samples an ensemble Reprolith chose,
-and the spatial class runs a profile claim that states no wall under a zero-flux boundary that is
-Reprolith's choice. The two spatial *scalars* are the counterpart — a gradient's walls are the
-model rather than a choice, so its certificate reads a clean `reproduced`, and a run that started
-qualifying it would show up here as a disagreement rather than as a safer number. Both are load-bearing assumptions, both are named on the
-certificate, and a class does not get to publish a clean pass for a result resting on its own
-choice. What each choice *costs* is measured and stated on the claim — the boundary moves the
-judged distance by 2e-10 to 2e-06 against a 1e-01 threshold, the ensembles carry a standard error
-of 1.53%, 1.26% and 0.42% against 5% — so the qualification says how much it is worth, not only
-that it exists.
+Three spatial entries read `partially-reproduced` where the profile matches its analytical target
+exactly, and that is the point: those claims state no wall, and they run under a zero-flux boundary
+that is Reprolith's choice. The two spatial *scalars* are the counterpart — a gradient's walls are
+the model rather than a choice, so its certificate reads a clean `reproduced`, and a run that
+started qualifying it would show up here as a disagreement rather than as a safer number. It is a
+load-bearing assumption, it is named on the certificate, and a class does not get to publish a
+clean pass for a result resting on its own choice. What the choice *costs* is measured and stated
+on the claim — the boundary moves the judged distance by 2e-10 to 2e-06 against a 1e-01 threshold
+— so the qualification says how much it is worth, not only that it exists.
+
+**The stochastic class was the other half of that paragraph until 2026-11-24**, and it is the
+example of what measuring a cost is *for*. Its five entries were qualified for the ensemble
+Reprolith drew, and the protocol lines had been reporting what each draw's own error bar was and
+how many more trajectories would make it small. Nobody had bought any. Once a draw's bar is within
+a tenth of the band the claim is judged in — the same tenth the spatial class holds a finite grid
+to for an unbounded domain — the draw cannot account for a tenth of what the verdict turns on, and
+the qualification goes. Four of the five ensembles were raised to meet that (400 → 4,000,
+1,600 → 11,000, 2,000 → 12,000, and the Fano factor's 4,000 → 85,000, which is what a spread
+statistic costs); the fifth was already there at 0.42% of a 5% band and had been qualified for a
+choice that could not have moved it. All five are clean passes now.
 
 `ingest_spatial_sbml` no longer refuses a file that states a Dirichlet wall. It refused one twice
 for reasons that each stopped being true — "this solver's boundaries are Neumann and nothing else",
@@ -142,19 +151,19 @@ $ reprolith corroboration
 CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   reported beside the verdicts, never gating them
   constraint-based      8 model(s) on cobrapy, scipy-linprog — all engine-independent to 1e-08
-                          as cobrapy 0.31.1, scipy-linprog highs (reprolith-fba rev df9807eb541a)
+                          as cobrapy 0.31.1, scipy-linprog highs (reprolith-fba rev 388ce41b0f8b)
   kinetic               6 model(s) on copasi, roadrunner — all engine-independent to 1e-03
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
                           1 of 7 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
   logical               9 model(s) on cana, reprolith-logical, sympy-sat — all agree exactly
-                          as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 339be2bfd62e), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 339be2bfd62e), sympy-sat 1.14.0
+                          as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 50e01de4668e), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 50e01de4668e), sympy-sat 1.14.0
                           1 of 10 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
   ode-pkpd            204 claim(s) on copasi, roadrunner — all engine-independent to 1e-05
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   spatial               5 model(s) on reprolith-fd, scipy-lsoda — 4 of 5 engine-independent (front_speed differs by at most 1e-01)
-                          as reprolith-fd explicit-forward-euler-finite-difference (rev 652b79ad3bee), scipy-lsoda 1.13.1
-  stochastic            4 model(s) on reprolith-ssa, roadrunner-gillespie — all engine-independent within 1.9 combined standard errors, resolving a bias above 9.6% of each quantity compared
-                          as reprolith-ssa gillespie-direct-method (rev 0e0873ebe9ed), roadrunner-gillespie 2.7.0
+                          as reprolith-fd explicit-forward-euler-finite-difference (rev 1bea2a9bf7e8), scipy-lsoda 1.13.1
+  stochastic            4 model(s) on reprolith-ssa, roadrunner-gillespie — all engine-independent within 1.0 combined standard errors, resolving a bias above 2.1% of each quantity compared
+                          as reprolith-ssa gillespie-direct-method (rev 7c96a23d7945), roadrunner-gillespie 2.7.0
                           1 of 5 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
 
   overall: 6 of 6 classes re-run on a second engine — 204 claim(s), 32 model(s); 3 standing certificate(s) in those classes have none
@@ -196,14 +205,18 @@ decision and a third comparison kind would have reached some of them and not oth
 
 That line also carries **what the agreement could not have seen**. Two ensembles agree at any
 criterion if they are small enough, so a bare "they agreed" is a claim whose strength is whatever
-the ensembles happened to be. Three standard errors of the Poisson-mean-10 network's 400
-trajectories is 6.5% of its mean — *wider than the 5% that class's own scalar verdict passes at*,
-so this corroboration is weaker than the verdict it stands beside and the record says so. The
-reversible-isomerization entry, whose equilibrium spread is much tighter, resolves 1.8%. The class
-line publishes the **weakest** of these, which is now the noise entry's 9.6% — and it is a bias in a
-*Fano factor*, not in a mean, which is why the sentence says "of each quantity compared": the class
-compares two kinds of sampled quantity, and naming one of them would put the other's blind spot
-under the wrong heading.
+the ensembles happened to be. For most of this class's life that number was the uncomfortable one:
+three standard errors of the Poisson-mean-10 network's 400 trajectories is 6.5% of its mean —
+*wider than the 5% that class's own scalar verdict passes at* — so the corroboration was weaker
+than the verdict it stood beside, and the record said so rather than reading as a clean
+confirmation. The ensembles have since been bought up to the size at which the sampling stops
+being a choice the verdict rests on, and this number came along: every row now resolves a bias
+**inside** that 5%, and the class line publishes the weakest of them, 2.1%. It is a bias in a
+*Fano factor* as much as in a mean, which is why the sentence says "of each quantity compared":
+the class compares two kinds of sampled quantity, and naming one of them would put the other's
+blind spot under the wrong heading. The agreement itself got closer rather than looser as the
+samples grew — 1.9 combined standard errors to 1.0 — which is the check that had to pass before
+paying for them: a real disagreement between the two implementations would have grown instead.
 
 The **spatial line's 1e-03 is not a distance from the truth**, and it is the number most likely to
 be quoted as one. scipy integrates the *semi-discrete* system essentially exactly, so what the two

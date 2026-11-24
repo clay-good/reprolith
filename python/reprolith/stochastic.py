@@ -40,6 +40,7 @@ from .oracle import (
     relative_error,
     resolving_sample_clause,
     sample_to_settle,
+    sampling_is_decisive,
     settling_sample_clause,
     spread_standard_error,
     spread_statistic,
@@ -490,7 +491,18 @@ def sampling_cost_clause(
         f" (sampling noise: the mean's standard error is {relative_sem:.2%} of the reported value, "
         f"against a {threshold:.0%} pass threshold"
     )
-    if observed is not None:
+    # Inside the shared formatter rather than at the certifying call, because the inline linter
+    # calls this one and the certificate calls it too: a discharge sentence added at the
+    # certificate's end would have made the two surfaces describe the same ensemble differently,
+    # which is the seam this clause was written to close in the first place.
+    #
+    # And it *replaces* the settling count rather than following it. The two answer the same
+    # reader's question — what would this ensemble have to be for the draw to stop mattering —
+    # and printing both says "buy N more trajectories" directly before "nothing here needs
+    # buying". One computation, one account of it.
+    if _draw_decides(relative_sem, tolerance):
+        clause += _DECISIVE_CLAUSE
+    elif observed is not None:
         clause += _settling_clause(
             reported=reported, observed=observed, relative_sem=relative_sem,
             trajectories=trajectories,
@@ -499,6 +511,48 @@ def sampling_cost_clause(
             ),
         )
     return clause + ")"
+
+
+#: What a certificate says when the draw behind it cannot account for a tenth of the band the
+#: claim is judged in. Written once, because three kinds of ensemble claim say it and the sentence
+#: *is* the discharge: a reader who sees it should be able to tell, without arithmetic, why this
+#: certificate carries no sampling assumption where its siblings do.
+_DECISIVE_CLAUSE = (
+    "; that bar is within a tenth of the pass band, so this draw is not a choice the verdict "
+    "rests on and nothing here is qualified for it"
+)
+
+
+def _draw_decides(
+    relative_bar: float | None, tolerance: Tolerance | None
+) -> bool:
+    """Whether this draw's own error bar is small enough to stop being a choice at all.
+
+    An ensemble is normally a qualification: a certificate reading `reproduced` off four hundred
+    trajectories is reading off *one* draw. But that is a statement about a size, and a size can
+    be bought — which is what the protocol line's settling count has been telling readers to buy.
+    Once bought, the qualification should go, and this is the rule that takes it off. The rule and
+    its arithmetic live in the oracle, shared with the population class, which draws samples for
+    the same reason and qualifies them the same way.
+    """
+    if relative_bar is None:
+        return False
+    return sampling_is_decisive(
+        relative_error_bar=relative_bar,
+        tolerance=tolerance or default_tolerance(
+            ComparisonMethod.SCALAR_RELATIVE_ERROR, ReferenceKind.NUMERIC
+        ),
+    )
+
+
+def _mean_error_bar(
+    *, reported: float, variance: float, trajectories: int, tolerance: Tolerance | None
+) -> float | None:
+    """This ensemble's relative standard error, or ``None`` where there is none to measure."""
+    measured = ensemble_headroom(
+        reported_mean=reported, variance=variance, trajectories=trajectories, tolerance=tolerance
+    )
+    return None if measured is None else measured[0]
 
 
 def _sampling_cost(
@@ -866,6 +920,13 @@ def certify_stochastic(
         if unresolvable is not None:
             assessments.append(replace(unresolvable, protocol=_protocol(claim)))
             continue
+        # Whether this ensemble is large enough that the draw stops being a choice — measured
+        # from the ensemble, and never from how close this claim happened to land.
+        bar = _mean_error_bar(
+            reported=claim.reported_mean, variance=variance,
+            trajectories=len(ensemble), tolerance=claim.tolerance,
+        )
+        decisive = _draw_decides(bar, claim.tolerance)
         assessment = judge_scalar(
             claim_id=claim.claim_id,
             quantity=claim.quantity,
@@ -883,19 +944,19 @@ def certify_stochastic(
             # defaults the way every other class front-end does; a caller who has actually
             # diagnosed finite-ensemble sampling still supplies it.
             attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
-            assumption_qualified=claim.assumption_qualified,
+            assumption_qualified=claim.assumption_qualified and not decisive,
         )
+        cost = _sampling_cost(claim, variance, len(ensemble), observed_mean=mean)
         assessments.append(
             replace(
                 assessment,
                 # The judged claims are the ones this was invisible on: the abstention rule reports
                 # the ensemble's noise only when it is too large to decide anything.
-                protocol=_protocol(claim) + _sampling_cost(
-                    claim, variance, len(ensemble), observed_mean=mean,
-                ),
+                protocol=_protocol(claim) + cost,
             )
         )
-        judged.append(claim)
+        if not decisive:
+            judged.append(claim)
     # Only the claims a verdict was drawn from: an abstention concluded nothing, so an assumption
     # saying its mean rests on this ensemble would describe a judgment that was never made — and,
     # being load-bearing, would downgrade the certificate on behalf of a claim nobody judged.
@@ -930,8 +991,20 @@ def certify_stochastic(
         # second formatter gave one number two roundings — 20.1% in the reason and 20.08% in the
         # protocol — which is this repository's "two accounts of one computation" in miniature.
         protocol = _extinction_protocol(extinction)
+        decisive = False
         if assessment.verdict is not Verdict.NOT_EVALUABLE:
+            decisive = _draw_decides(
+                _mean_error_bar(
+                    reported=extinction.reported_mean, variance=variance,
+                    trajectories=extinction.trajectories, tolerance=extinction.tolerance,
+                ),
+                extinction.tolerance,
+            )
+            # The cost clause now carries the discharge sentence itself, for the same reason the
+            # mean's does: one formatter, so no surface can describe this ensemble differently.
             protocol += _extinction_cost(extinction, variance, observed_mean=observed)
+        if decisive:
+            assessment = replace(assessment, assumption_qualified=False)
         assessments.append(replace(assessment, protocol=protocol))
         if assessment.assumption_qualified:
             extinction_sampling.append(
@@ -1019,7 +1092,9 @@ def _extinction_cost(
         f" (sampling noise: the mean's standard error is {relative_sem:.2%} of the reported "
         f"value, against a {threshold:.0%} pass threshold"
     )
-    if observed_mean is not None:
+    if _draw_decides(relative_sem, claim.tolerance):
+        clause += _DECISIVE_CLAUSE
+    elif observed_mean is not None:
         clause += _settling_clause(
             reported=claim.reported_mean, observed=observed_mean, relative_sem=relative_sem,
             trajectories=claim.trajectories,
@@ -1253,6 +1328,12 @@ def _judge_noise(
             ),
             protocol=protocol,
         )
+    # The statistic's own error bar against the band it is judged in — a jackknife here rather
+    # than sqrt(variance/n), the error on a ratio of moments not being a mean's, but the same
+    # question and the same rule as a mean count's.
+    decisive = standard_error is not None and _draw_decides(
+        abs(standard_error / claim.reported_value), claim.tolerance
+    )
     assessment = judge_scalar(
         claim_id=claim.claim_id,
         quantity=claim.quantity,
@@ -1261,7 +1342,7 @@ def _judge_noise(
         predicted=observed,
         tolerance=claim.tolerance,
         attribution=claim.shortfall or undetermined_shortfall(claim.quantity),
-        assumption_qualified=claim.assumption_qualified,
+        assumption_qualified=claim.assumption_qualified and not decisive,
     )
     if standard_error is not None:
         tol = claim.tolerance or default_tolerance(
@@ -1271,11 +1352,11 @@ def _judge_noise(
             f" (sampling noise: the statistic's jackknife standard error is "
             f"{standard_error / claim.reported_value:.2%} of the reported value, against a "
             f"{tol.reproduced_within:.0%} pass threshold"
-            + _settling_clause(
+            + (_DECISIVE_CLAUSE if decisive else _settling_clause(
                 reported=claim.reported_value, observed=observed,
                 relative_sem=abs(standard_error / claim.reported_value),
                 trajectories=len(values), tolerance=tol,
-            )
+            ))
             + ")"
         )
     return replace(assessment, protocol=protocol)

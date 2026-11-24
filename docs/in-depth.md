@@ -798,9 +798,10 @@ pure-Python finite-difference solver feeds the same curve oracle for a profile a
 comparison for a length, a speed or a wavelength, self-validated non-circularly against closed
 forms — a Gaussian whose variance grows by 2·D·t, `λ = √(D/k)`, and `c = 2√(rD)` — with a 5/5
 [milestone blind run](../datasets/spatial/milestone/). A claim that states no boundary is run under a
-wall Reprolith chose and is qualified for it — the same qualification the stochastic class carries
-for its ensemble — while a claim that *does* state its wall is run under it and can reach a clean
-pass, and so does a gradient, whose walls are the model rather than a choice.
+wall Reprolith chose and is qualified for it — the qualification the stochastic class used to
+carry for its ensemble, until the ensembles were bought big enough to stop being a choice — while
+a claim that *does* state its wall is run under it and can reach a clean pass, and so does a
+gradient, whose walls are the model rather than a choice.
 
 **The domain a closed form is derived in is free space, and that is now a domain a claim can
 state.** The three committed profile certificates read *partially* reproduced for a month, for a
@@ -826,10 +827,14 @@ Dirichlet (absorbing or held at a value), and periodic, each checked against the
 eigenmode satisfying it and against what it does to mass — so each certificate can report how far
 re-running its own discretization under the alternatives moves the judged distance. On these three
 profiles that is 2e-10 to 2e-06 against a pass threshold of 1e-01. The stochastic certificates say
-the same kind of thing about their ensembles: a standard error of 1.53%, 1.26% and 0.42% of the
-reported value against a 5% threshold, where the abstention line is half the threshold. Both
-qualifications stand — they are still this engine's choices — but a reader can now see what each
-one is worth instead of being told only that it matters.
+the same kind of thing about their ensembles — and theirs is the case where the measurement went
+all the way. Each reports its draw's own standard error against the 5% threshold it is judged at,
+and once that bar is within a tenth of the band, the draw cannot account for a tenth of what the
+verdict turns on and the qualification is discharged rather than carried. Four of the five
+ensembles were raised until it was (to 4,000, 11,000, 12,000, and 85,000 for the Fano factor); the
+fifth was already there. All five read a clean `reproduced` now, and the spatial profile wall is
+the one qualification of this kind still standing — a reader can see what it is worth instead of
+being told only that it matters.
 
 **The wavelength claim is the one whose wall decides what is measurable at all.** A profile's
 boundary shifts a judged distance; a pattern's decides which wavelengths exist — `2L/m` under zero
@@ -878,15 +883,14 @@ It says how much of the corpus each value reaches, because a count of unreviewed
 against the size of the repository is its own overstatement: three values under **4 of the 41**
 standing certificates, not under all of them.
 
-It prints in two parts, and the second is the one worth reading first. Five of the eight
-load-bearing assumptions on today's certificates are **this engine's** limits rather than
-anything a paper left out — the stochastic class judges an ensemble it drew itself — and no
-expert confirming anything closes one. They withhold a clean pass exactly as the others do; what
-they wait on is this engine, not a person, and they say so under their own heading. Three
-questions are actually open to you. That split moves as the engine changes rather than standing
-as a property of the work: it was six of eight until the spatial wall left this half, because a
-claim can now state its own boundary and a claim stating an unbounded domain is measured against
-the grid it ran on. It exists because a certificate could cite a queue item nobody had
+It prints in two parts, and the second is the one worth reading first — or it did. It is where
+the load-bearing assumptions that are **this engine's** limits rather than anything a paper left
+out are listed, the ones no expert confirming anything can close. That half is now **empty**: it
+held six of eight assumptions, then five when a spatial claim could state its own boundary, and
+then none when the stochastic ensembles were bought up to the size at which a draw stops being a
+choice the verdict rests on. The split moves as the engine changes rather than standing as a
+property of the work, which is the reason it is printed apart. All three questions on today's
+certificates are actually open to you. It exists because a certificate could cite a queue item nobody had
 built: four metformin certificates named `verify:time-unit-of-the-Zake2021-deposits`, and until
 this landed, following that citation found nothing. The queue is *derived* from the certificates
 on every call rather than stored beside them, so it cannot drift from what it describes, and a

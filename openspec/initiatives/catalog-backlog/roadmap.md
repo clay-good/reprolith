@@ -323,7 +323,18 @@ a change under `openspec/changes/`.
 
 - **Stochastic (SSA) simulation class** — *DONE*: landed as `stochastic-class`, a pure-Python
   Gillespie SSA reusing the distributional oracle, self-validated against closed-form
-  Poisson/binomial results. Now complete across the full class pattern: `stochastic_dossier` /
+  Poisson/binomial results. **And its five certificates are clean passes since 2026-11-24**, which
+  is the thing this class had never managed: every one of them read `partially-reproduced` for the
+  ensemble Reprolith drew, and all five were the "not waiting on anyone" half of the verification
+  queue. A draw stops being a choice the verdict rests on once its own error bar is within a tenth
+  of the band the claim is judged in — the tenth the spatial class holds a finite grid to, keyed on
+  the tolerance and never on the residual — and four of the five ensembles were simply bought up to
+  it (to 4,000, 11,000, 12,000, and 85,000 for the Fano factor, whose error bar is `sqrt(2/n)` of
+  its value). The fifth was already inside it and had been qualified for a choice that could not
+  have moved it. The cross-engine corroboration got *stronger* as the samples grew — 1.9 combined
+  standard errors to 1.0, resolving a bias above 2.1% where it could not have seen 6.5% — which is
+  the check that had to pass first: a real disagreement between the two implementations would have
+  grown instead. Now complete across the full class pattern: `stochastic_dossier` /
   `validate_stochastic` (unstated sampling protocol as a load-bearing gap), `certify_stochastic`,
   `ingest_stochastic_sbml`, the `lint_stochastic` inline linter, and a walkable 3/3 milestone.
 - **Spatial / PDE simulation class** — *DONE*: landed as `spatial-class`, a pure-Python 1-D/2-D

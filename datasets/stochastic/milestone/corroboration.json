@@ -1,38 +1,38 @@
 {
   "immigration_death_10": {
     "comparison": "monte-carlo-agreement",
-    "distance_at_most": 1.9,
+    "distance_at_most": 0.5,
     "engine_independent": true,
     "engine_versions": [
-      "gillespie-direct-method (rev 0e0873ebe9ed)",
+      "gillespie-direct-method (rev 7c96a23d7945)",
       "2.7.0"
     ],
     "engines": [
       "reprolith-ssa",
       "roadrunner-gillespie"
     ],
-    "resolves_bias_above": 0.065
+    "resolves_bias_above": 0.021
   },
   "immigration_death_4": {
     "comparison": "monte-carlo-agreement",
-    "distance_at_most": 1.6,
+    "distance_at_most": 1.0,
     "engine_independent": true,
     "engine_versions": [
-      "gillespie-direct-method (rev 0e0873ebe9ed)",
+      "gillespie-direct-method (rev 7c96a23d7945)",
       "2.7.0"
     ],
     "engines": [
       "reprolith-ssa",
       "roadrunner-gillespie"
     ],
-    "resolves_bias_above": 0.052
+    "resolves_bias_above": 0.021
   },
   "immigration_death_noise": {
     "comparison": "monte-carlo-agreement",
-    "distance_at_most": 0.4,
+    "distance_at_most": 0.9,
     "engine_independent": true,
     "engine_versions": [
-      "gillespie-direct-method (rev 0e0873ebe9ed)",
+      "gillespie-direct-method (rev 7c96a23d7945)",
       "2.7.0"
     ],
     "engines": [
@@ -40,14 +40,14 @@
       "roadrunner-gillespie"
     ],
     "resolution_of": "the Fano factor",
-    "resolves_bias_above": 0.096
+    "resolves_bias_above": 0.021
   },
   "reversible_isomerization": {
     "comparison": "monte-carlo-agreement",
     "distance_at_most": 1.0,
     "engine_independent": true,
     "engine_versions": [
-      "gillespie-direct-method (rev 0e0873ebe9ed)",
+      "gillespie-direct-method (rev 7c96a23d7945)",
       "2.7.0"
     ],
     "engines": [

@@ -6603,3 +6603,50 @@ same one as above: Level 2 predefines `time` as the second and `substance` as th
 are the specification's defaults rather than the author's statement. Only a model that *redefined*
 the name has said anything. An absence stays an absence — three of the six kinetic deposits still
 report no unit after this, correctly, because they state none.
+
+## The ensemble was a choice until somebody bought it
+
+Every stochastic certificate this repository had published read `partially-reproduced`, and all
+five said the same thing when asked why: *the mean judged here is the average of an ensemble
+Reprolith sampled, not a number the paper's own run produced*. Five of the eight items in the
+verification queue were that one sentence, filed under "not waiting on anyone" because no wording
+in any paper clears a draw this engine made.
+
+The queue's own note said what to look for: *what waits here can leave*. The spatial class's wall
+left it when the cost of the substitution turned out to be computable. A draw's cost has been
+computable here all along — the protocol line has reported the ensemble's own standard error for
+months, and has told its reader how many more trajectories would make that bar small. Nobody had
+bought any.
+
+**The rule.** A draw stops being a choice the verdict rests on once its own error bar is within a
+tenth of the band the claim is judged in — the same tenth the spatial class holds a finite grid
+to. It is keyed on the **tolerance** and never on the claim's residual, which is the trap the
+spatial class fell into first and the one that matters more here: a residual is partly *made of*
+the sampling noise being measured, so a bar compared against the distance from an answer to its
+verdict line would clear precisely when the draw was lucky.
+
+**The purchase.** Four of the five ensembles were too small by the rule's own arithmetic —
+`n × (bar / (0.1 × tolerance))²` — and were raised to meet it: 400 → 4,000, 1,600 → 11,000,
+2,000 → 12,000, and the Fano factor's 4,000 → 85,000, which is what a spread statistic costs to
+measure (its standard error is `sqrt(2/n)` of its value, so a tenth of a 5% band is eighty-five
+thousand trajectories and three minutes). The fifth needed nothing: the reversible isomerization's
+bar was already 0.42% of a 5% band, so that certificate had been qualified for a choice that could
+not have moved it.
+
+**All five now read `reproduced` with no assumption, and the engine-limit queue is empty.** The
+cross-engine corroboration got stronger rather than weaker, which was the thing worth checking
+before paying: at 400 trajectories the two Gillespie implementations agreed to 1.9 combined
+standard errors and could not have seen a bias under 6.5%; at the new counts they agree to 0.5–1.0
+and resolve a bias above 2.1%. A hidden disagreement would have grown with the sample; none did.
+
+**And a ground-truth label was wrong.** Each of these entries expected `partially-reproduced`, with
+`# qualified by sampling -> never clean` beside it — a label derived from how this engine happened
+to behave rather than from the closed-form mathematics it cites as its source. It was wrong the day
+a draw could be large enough to stop being a choice. The labels now say what the mathematics says,
+`reproduced`, and a verdict that still carried the qualification would disagree with its label in
+the stricter direction, which is what this class's siblings have always done.
+
+One last thing the certificates stopped doing: saying both. A decisive draw used to print the
+settling count — "~23,414 trajectories would put the sampling error a tenth of the way to the
+nearest verdict line" — directly before the sentence saying nothing here needs buying. They answer
+one reader's question, so now only one of them is printed.

@@ -1079,6 +1079,46 @@ def settling_sample_clause(
     )
 
 
+def sampling_is_decisive(*, relative_error_bar: float, tolerance: Tolerance) -> bool:
+    """Whether a sample's own error bar is small enough that the draw is not a load-bearing choice.
+
+    A sampled estimate is normally qualified: a certificate that reads `reproduced` off four
+    hundred trajectories is reading off *one* draw, and another seed would move it. But that is a
+    statement about a size, and a size can be bought. Once the estimate's error bar is at most
+    :data:`SAMPLING_MARGIN_BUDGET` of the band the claim is judged in, the draw cannot account for
+    a tenth of what the verdict turns on, and qualifying it says less than the protocol line
+    already does.
+
+    It is keyed on the **tolerance** and never on the claim's residual, which is the trap the
+    spatial class fell into first: a residual is partly made of the very sampling noise this is
+    measuring, so a lucky draw would clear a residual-keyed bar *because* it was lucky. The
+    distance from an answer to its nearest verdict line is the right thing to *report* — it is what
+    :func:`settling_sample_clause` quotes — and the wrong thing to discharge on.
+
+    The rule it states is the same one the spatial class holds a finite grid to for an unbounded
+    domain, and the same tenth: a bound that is a tenth of the band cannot be what decided the
+    verdict.
+    """
+    return relative_error_bar <= SAMPLING_MARGIN_BUDGET * tolerance.reproduced_within
+
+
+def sample_to_decide(
+    *, relative_error_bar: float, size: int, tolerance: Tolerance
+) -> int | None:
+    """How large a sample would make the draw itself stop mattering, or ``None`` if it already has.
+
+    The counterpart of :func:`sampling_is_decisive`, and the instruction that goes with it: a
+    standard error falls as 1/√n, so reaching ``SAMPLING_MARGIN_BUDGET × tolerance`` takes
+    ``n × (bar / target)²`` draws. Keyed on the tolerance for the same reason — this count is what
+    a claim needs whatever it happened to measure, so it does not move when a reseed moves the
+    residual.
+    """
+    target = SAMPLING_MARGIN_BUDGET * tolerance.reproduced_within
+    if size <= 0 or target <= 0.0 or relative_error_bar <= target:
+        return None
+    return math.ceil(size * (relative_error_bar / target) ** 2)
+
+
 def sample_to_resolve(
     *, relative_error_bar: float, size: int, pass_threshold: float
 ) -> int | None:

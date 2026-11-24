@@ -488,17 +488,7 @@ def queue_report(
         "engine_limits_certificates_affected": len(
             {d for i in engine_limits for d in i["depends_on"]}
         ),
-        "engine_limits_note": (
-            "they rest on a choice this engine had to make rather than on anything the paper "
-            "left unsaid — the ensemble the stochastic class drew for itself — so no expert "
-            "decision closes one. They withhold a clean pass exactly as the others do; what they "
-            "wait on is this engine, not a person, and each dependent certificate's protocol line "
-            "says how large an ensemble would put the sampling error out of its verdict's way — a "
-            "count rather than the \"a larger ensemble\" listed as the alternative, which is true "
-            "of every ensemble ever drawn. What waits here can leave: the wall the spatial solver "
-            "ran under was one of these until a claim could state its own boundary and a claim "
-            "stating an unbounded domain could be measured against the grid it ran on"
-        ),
+        "engine_limits_note": _engine_limits_note(engine_limits),
         "ranked_by": (
             "impact — the number of standing certificates resting on the value. Margin is not "
             "ranked on: a certificate states its discrepancy and tolerance as prose, and a "
@@ -517,6 +507,37 @@ def queue_report(
             sum(len(item.get("decisions", ())) for item in engine_limits),
         ),
     }
+
+
+def _engine_limits_note(engine_limits: list[dict[str, Any]]) -> str:
+    """What this half of the queue is, or — when it is empty — what used to be in it.
+
+    An empty half is the interesting case and the one a static sentence got wrong: it went on
+    describing the stochastic class's ensembles for as long as the string said so, while no item
+    rested on one. A reader who knows this half exists should be able to learn what happened to
+    it, and a reader who does not should not be told about a limitation the engine no longer has.
+    """
+    if not engine_limits:
+        return (
+            "this half is empty: no load-bearing assumption on a standing certificate is this "
+            "engine's own choice today. It is not a permanent property of the work in either "
+            "direction — it held six assumptions, then five when a spatial claim could state its "
+            "own boundary and a claim stating an unbounded domain could be measured against the "
+            "grid it ran on, and then none when the stochastic class's ensembles were drawn large "
+            "enough that a draw's own error bar is within a tenth of the band its claim is judged "
+            "in, where the sampling stops being a choice the verdict rests on. A new class, or a "
+            "new approximation, can fill it again"
+        )
+    return (
+        "they rest on a choice this engine had to make rather than on anything the paper "
+        "left unsaid, so no expert decision closes one. They withhold a clean pass exactly as "
+        "the others do; what they wait on is this engine, not a person, and each dependent "
+        "certificate's protocol line says what the choice costs and what would settle it — a "
+        "number rather than an alternative that is true of every run ever made. What waits here "
+        "can leave: the wall the spatial solver ran under was one of these until a claim could "
+        "state its own boundary, and the stochastic class's ensembles were these until they were "
+        "drawn large enough to stop being a choice"
+    )
 
 
 def _decisions_note(

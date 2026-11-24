@@ -38,11 +38,12 @@ _MILESTONE = Path(__file__).parent.parent / "datasets" / "stochastic" / "milesto
 #: The three networks the stochastic milestone certifies, at the protocol each was certified under.
 _SYSTEMS = {
     "immigration_death_10": (
-        ["S0"], [Reaction(10.0, (), ((0, 1),)), Reaction(1.0, ((0, 1),), ())], [0], 0, 40.0, 400,
+        ["S0"], [Reaction(10.0, (), ((0, 1),)), Reaction(1.0, ((0, 1),), ())], [0], 0, 40.0, 4000,
         20260807,
     ),
     "immigration_death_4": (
-        ["S0"], [Reaction(6.0, (), ((0, 1),)), Reaction(1.5, ((0, 1),), ())], [0], 0, 40.0, 1600, 11,
+        ["S0"], [Reaction(6.0, (), ((0, 1),)), Reaction(1.5, ((0, 1),), ())], [0], 0, 40.0, 11000,
+        11,
     ),
     "reversible_isomerization": (
         ["S0", "S1"],
@@ -113,12 +114,14 @@ def test_a_pass_carries_the_bias_it_could_not_have_seen() -> None:
     """Two ensembles agree at any criterion if they are small enough.
 
     So the honest number beside the agreement is the smallest true discrepancy it could have
-    resolved. On the Poisson-mean-10 network that is 6.5% of the mean, against the 5% the class's
-    own scalar verdict passes at — this corroboration is *weaker* than the verdict it stands
-    beside, and the record says so instead of reading as a clean confirmation.
+    resolved. On the Poisson-mean-10 network that used to be 6.5% of the mean, against the 5% the
+    class's own scalar verdict passes at — a corroboration *weaker* than the verdict it stood
+    beside, recorded as such rather than read as a clean confirmation. The ensembles were then
+    bought up to the size at which the sampling stops being a choice the verdict rests on, and this
+    number came along: every row now resolves a bias inside that 5%.
     """
     committed = _committed()
-    assert committed["immigration_death_10"]["resolves_bias_above"] > 0.05
+    assert all(row["resolves_bias_above"] < 0.05 for row in committed.values()), committed
     assert committed["reversible_isomerization"]["resolves_bias_above"] < 0.02
     summary = corroboration_summary({"stochastic": committed})["by_class"]["stochastic"]
     # The class's weakest resolution, not its best: a summary that quoted the 1.8% would say the

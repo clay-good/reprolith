@@ -40,6 +40,19 @@ sampling is pinned, not left to chance.
 - **AND** the sampling is also recorded as the load-bearing assumption the qualified verdict rests
   on, so the certificate's qualification names its cause instead of listing none
 
+#### Scenario: An ensemble large enough that the draw is not a choice
+
+- **WHEN** a judged estimate's own error bar is within a tenth of the band the claim is judged in
+- **THEN** the draw is not recorded as a load-bearing assumption and the verdict is not qualified
+  for it, since a bound that is a tenth of what a verdict turns on cannot be what turned it
+- **AND** the protocol line says so, so a reader can tell why this certificate carries no sampling
+  assumption where a smaller ensemble's does
+- **AND** the rule is keyed on the claim's **tolerance** and never on its residual, a residual
+  being partly made of the sampling noise under measurement — a bar compared against the distance
+  from an answer to its verdict line would clear precisely when the draw was lucky
+- **AND** an ensemble that does not reach it states the count that would, so the qualification is
+  a price rather than a permanent property of the class
+
 #### Scenario: An ensemble too small to resolve the claim abstains
 
 - **WHEN** the ensemble's standard error is comparable to the claim's pass threshold

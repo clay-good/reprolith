@@ -4,7 +4,7 @@
       "attempts": [],
       "difficulty": null,
       "ground_truth": {
-        "expected": "partially-reproduced",
+        "expected": "reproduced",
         "note": null,
         "source": "closed-form mean 10.0"
       },
@@ -74,7 +74,7 @@
       "attempts": [],
       "difficulty": null,
       "ground_truth": {
-        "expected": "partially-reproduced",
+        "expected": "reproduced",
         "note": null,
         "source": "closed-form mean 4.0"
       },
@@ -144,7 +144,7 @@
       "attempts": [],
       "difficulty": null,
       "ground_truth": {
-        "expected": "partially-reproduced",
+        "expected": "reproduced",
         "note": null,
         "source": "closed-form mean 37.5"
       },
@@ -214,7 +214,7 @@
       "attempts": [],
       "difficulty": null,
       "ground_truth": {
-        "expected": "partially-reproduced",
+        "expected": "reproduced",
         "note": null,
         "source": "closed-form mean first passage H(5)/k = 2.283333"
       },
@@ -284,7 +284,7 @@
       "attempts": [],
       "difficulty": null,
       "ground_truth": {
-        "expected": "partially-reproduced",
+        "expected": "reproduced",
         "note": null,
         "source": "closed-form Poisson Fano factor 1 and CV 1/sqrt(10)"
       },

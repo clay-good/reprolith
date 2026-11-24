@@ -140,23 +140,28 @@ def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
 _SCALAR_PASS = 0.05
 
 
-def test_the_ensemble_corroboration_is_weaker_than_the_verdict_it_stands_beside() -> None:
-    """The one class where "the second engine agreed" is not a comfortable statement.
+def test_the_ensemble_corroboration_now_resolves_inside_the_verdict_it_stands_beside() -> None:
+    """The one class where "the second engine agreed" was not a comfortable statement, until it was.
 
-    Every class above agrees three to eight orders inside its budget, so a pass there needs no
+    Every other class agrees three to eight orders inside its budget, so a pass there needs no
     caveat. Two Gillespie ensembles cannot do that: they agree only up to Monte Carlo error, and
-    what a pass is worth is the size of the bias it could have seen. On the Poisson-mean-10
-    network three combined standard errors is 6.5% of the mean — *wider* than the 5% the same
-    class's own scalar verdict passes at, so engine sensitivity is ruled out there only above a
-    discrepancy larger than the one the verdict itself would catch.
+    what a pass is worth is the size of the bias it could have seen. This test used to assert the
+    uncomfortable version of that — on the Poisson-mean-10 network three combined standard errors
+    was 6.5% of the mean, *wider* than the 5% the same class's own scalar verdict passes at, so
+    engine sensitivity was ruled out only above a discrepancy the verdict itself would have caught.
 
-    Asserted rather than written down, because the fix is not a tighter tolerance — it is more
-    trajectories, and this is the number that would show them arriving.
+    Its own docstring said what would change it: "the fix is not a tighter tolerance — it is more
+    trajectories, and this is the number that would show them arriving." They arrived. The
+    ensembles were bought up to the size at which the sampling stops being a choice the verdict
+    rests on, and the corroboration came along for the ride: every row now resolves a bias
+    *inside* the band its verdict passes at, which is what makes "the second engine agreed" worth
+    reading on this class's certificates.
     """
     record = _records()["stochastic"]
     resolutions = {key: float(row["resolves_bias_above"]) for key, row in record.items()}
-    assert resolutions["immigration_death_10"] > _SCALAR_PASS
-    assert resolutions["reversible_isomerization"] < _SCALAR_PASS
+    assert resolutions, "no ensemble corroboration rows; this check would pass vacuously"
+    for key, resolved in resolutions.items():
+        assert resolved < _SCALAR_PASS, (key, resolved)
     for key, row in record.items():
         # The comparison is a count of standard errors against a criterion of three, so a row that
         # passes is at most three — and a row published at, say, 2.9 is one re-seed from flipping.

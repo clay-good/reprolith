@@ -40,13 +40,48 @@ def test_no_standing_certificate_asks_for_the_same_fix_twice() -> None:
 
 
 def test_the_two_ids_for_one_ensemble_are_one_item_that_still_names_both_claims() -> None:
-    """Collapsing must not lose which claims rest on it — the roll-up row carries them."""
-    query = _query()
-    digest = next(
-        d for d, cert in query._ledger.items()  # noqa: SLF001
-        if any(_NOISE in a.claim_id for a in cert.assessments)
+    """Collapsing must not lose which claims rest on it — the roll-up row carries them.
+
+    Built here rather than read off the shipped noise certificate, which no longer carries the
+    assumption at all: its ensemble was bought up to the size at which the draw stops being a
+    choice the verdict rests on, and a check reading that artifact would now pass by having
+    nothing to collapse. The shape it guards is unchanged — two claims, one ensemble, two
+    assumption ids whose fix rows come out identical word for word — so it is reproduced on a
+    small ensemble, which is where the assumption still belongs.
+    """
+    import math
+
+    from reprolith import (
+        NoiseClaim,
+        NoiseStatistic,
+        PaperIdentity,
+        certify_stochastic,
+        presubmission_report,
     )
-    fixes = query.presubmission(digest)["fix_list"]
+    from reprolith.stochastic import Reaction, solver_pin
+
+    mean = 10.0
+    certificate = certify_stochastic(
+        paper=PaperIdentity(title="an immigration-death process"), engine_pin=solver_pin(),
+        n_species=1, reactions=[Reaction(mean, (), ((0, 1),)), Reaction(1.0, ((0, 1),), ())],
+        initial=[0],
+        noises=[
+            NoiseClaim(
+                claim_id=f"{_NOISE}-fano", quantity="Fano factor", species=0,
+                statistic=NoiseStatistic.FANO_FACTOR, reported_value=1.0,
+                source_location="closed-form", duration=40.0, trajectories=4000, seed=20260907,
+            ),
+            NoiseClaim(
+                claim_id=f"{_NOISE}-cv", quantity="coefficient of variation", species=0,
+                statistic=NoiseStatistic.COEFFICIENT_OF_VARIATION,
+                reported_value=1.0 / math.sqrt(mean),
+                source_location="closed-form", duration=40.0, trajectories=4000, seed=20260907,
+            ),
+        ],
+    )
+    # Two claims, one ensemble, and the assumption recorded once per claim that rests on it.
+    assert len(certificate.assumptions) == 2
+    fixes = presubmission_report(certificate)["fix_list"]
     ensembles = [f for f in fixes if f["kind"] == "assumption" and f["claim_id"] is None
                  and "ensemble Reprolith sampled" in (f["quantity"] or "")]
     assert len(ensembles) == 1, ensembles

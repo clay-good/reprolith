@@ -196,16 +196,20 @@ def test_the_front_pages_account_of_the_queue_is_the_queue() -> None:
         f"under **{report['certificates_affected']} of the {report['standing_certificates']}**"
         in _README
     )
-    assert f"{_WORDED[report['engine_limits_count']]} of the {_WORDED[total].lower()}" in _README
-    # And the example it gives is one of the items actually in that half today.
-    engine_classes = {item["question"] for item in report["engine_limits"]}
-    assert all("ensemble" in question or "sampled" in question for question in engine_classes), (
-        "the engine-limit half is no longer all about sampled ensembles; the README names that as "
-        "its example"
-    )
-    # The derived note gives an example too, and it named the spatial wall for a day after that
-    # wall stopped being one of these. Only the part describing *today's* items is checked: the
-    # note also says what left this half, which is the sentence that keeps a reader from taking it
-    # for a permanent property of the engine.
-    today, _, _ = report["engine_limits_note"].partition("What waits here can leave")
-    assert "ensemble" in today and "spatial" not in today
+    if report["engine_limits_count"] == 0:
+        # The half is empty, and the page says so rather than quietly dropping the sentence: a
+        # reader who knew that half existed should learn what happened to it, and one who did not
+        # should not be told about a limitation this engine no longer has.
+        assert "That half is now **empty**" in _README
+        assert not report["engine_limits"]
+        assert "this half is empty" in report["engine_limits_note"]
+    else:
+        assert f"{_WORDED[report['engine_limits_count']]} of the {_WORDED[total].lower()}" in _README
+        # And the example it gives is one of the items actually in that half today.
+        engine_classes = {item["question"] for item in report["engine_limits"]}
+        assert all(
+            "ensemble" in question or "sampled" in question for question in engine_classes
+        ), (
+            "the engine-limit half is no longer all about sampled ensembles; the README names "
+            "that as its example"
+        )

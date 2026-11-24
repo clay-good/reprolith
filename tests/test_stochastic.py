@@ -864,8 +864,21 @@ def test_every_kind_of_ensemble_claim_carries_the_settling_count() -> None:
         assert _SETTLES in assessment.protocol, assessment.claim_id
 
 
-def test_the_shipped_certificates_carry_it_too() -> None:
-    """And the artifacts a reader actually opens say it, which the live check above cannot show."""
+#: What a protocol line says instead, once the ensemble is large enough that the draw cannot
+#: account for a tenth of the band the claim is judged in.
+_DECIDED = "not a choice the verdict rests on"
+
+
+def test_the_shipped_certificates_answer_the_question_exactly_once() -> None:
+    """And the artifacts a reader actually opens say it, which the live check above cannot show.
+
+    Each judged ensemble carries one of the two sentences and never both: they answer one reader's
+    question — what would this ensemble have to be for the draw to stop mattering — and a line
+    saying "~23,414 trajectories would settle it" directly before "nothing here needs buying" is
+    this repository's "two accounts of one computation" in miniature. Every shipped certificate
+    carries the second now; the first is what a smaller ensemble gets, and the live check above
+    still exercises it.
+    """
     import json
     from pathlib import Path
 
@@ -875,4 +888,6 @@ def test_the_shipped_certificates_carry_it_too() -> None:
         judged = [a for a in content["assessments"] if a["verdict"] != "not-evaluable"]
         assert judged, name
         for assessment in judged:
-            assert _SETTLES in assessment["protocol"], (name, assessment["claim_id"])
+            protocol = assessment["protocol"]
+            assert (_SETTLES in protocol) != (_DECIDED in protocol), (name, assessment["claim_id"])
+            assert _DECIDED in protocol, (name, assessment["claim_id"])
