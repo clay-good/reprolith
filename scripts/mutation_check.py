@@ -2031,6 +2031,50 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ("        if not 0.0 < self.percentile < 100.0:", "        if False:"),
         ["tests/test_population.py"],
     ),
+    # --- the core data structures: what a dossier element must say to be one, and what the
+    # selection's arithmetic refuses before it bounds anything (2026-11-24).
+    (
+        "an extracted parameter may carry an unstated unit as though it were a value",
+        "dossier.py",
+        ('        if not self.unit.strip():\n            raise ValueError("a stated unit is required',
+         '        if False:\n            raise ValueError("a stated unit is required'),
+        ["tests/test_dossier.py"],
+    ),
+    (
+        "an extracted parameter may cite nowhere in the paper it came from",
+        "dossier.py",
+        ('            raise ValueError("a stated unit is required; an unstated unit is a Gap, not '
+         'a value")\n        if not self.source_location.strip():',
+         '            raise ValueError("a stated unit is required; an unstated unit is a Gap, not '
+         'a value")\n        if False:'),
+        ["tests/test_dossier.py"],
+    ),
+    (
+        "an engine pin may name an engine with no version, or a version with no engine",
+        "model.py",
+        ("        if not self.engine.strip() or not self.version.strip():", "        if False:"),
+        ["tests/test_model.py", "tests/test_certify.py"],
+    ),
+    (
+        "an unattempted claim may have no id, so nobody can ask about it",
+        "model.py",
+        ("        if not self.claim_id.strip():\n"
+         '            raise ValueError("an unattempted claim needs an id',
+         '        if False:\n            raise ValueError("an unattempted claim needs an id'),
+        ["tests/test_model.py"],
+    ),
+    (
+        "an evidence item may cost nothing, so a budget bounds nothing",
+        "selection.py",
+        ("        if self.cost <= 0.0:", "        if False:"),
+        ["tests/test_selection.py"],
+    ),
+    (
+        "an evidence item may be worth a negative amount of evidence",
+        "selection.py",
+        ("        if self.value < 0.0:", "        if False:"),
+        ["tests/test_selection.py"],
+    ),
     (
         "a search that walked off the log scale ends in an overflow naming nothing",
         "estimation.py",

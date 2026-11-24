@@ -6947,3 +6947,26 @@ it is wrong, the cache just quietly stops being useful — so a test holds each 
 
 Whether the compile actually disappears is a claim about the *next* run, and this one does not make
 it: the cache has to be written once under the new key before anything can hit it.
+
+## The contracts the data structures are, held at last
+
+The last batch of the coverage count reached the modules that define what a dossier element, a pin
+and an evidence item *are*: `dossier.py` had one guard for four hundred and eighty lines,
+`model.py` one for three hundred, `selection.py` two for five hundred. Six entries, one survivor,
+and one anchor that matched two places — which the harness refuses as loudly as a survivor, because
+mutating the first match silently stops checking whichever entry owns the second.
+
+The survivor is small and exact: **an unattempted claim with no id**. A budgeted certificate lists
+the claims it chose against, deliberately not as assessments carrying a spare verdict — `not-
+evaluable` means Reprolith ran the claim and established nothing, while this one was never run, and
+keeping the two shapes apart is what stops a counter or a badge turning "we did not look" into "we
+looked and found nothing". That distinction is only usable if each row can be *named*. An anonymous
+one tells a reader a claim was skipped and gives them no way to ask which.
+
+Everything else in the batch was already held: an unstated unit presented as a value, an element
+citing nowhere in the paper, a pin naming an engine with no version, an evidence item costing
+nothing (so a budget bounds nothing) or worth a negative amount of evidence.
+
+The list stands at 274 entries, up from 223 this morning. Eight guards that could be deleted with
+the whole suite green are now held, across the engine, the judge, the re-fit, the intake, the loop
+record and the certificate's own vocabulary.
