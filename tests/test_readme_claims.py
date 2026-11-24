@@ -61,7 +61,9 @@ def test_the_readme_shows_every_command_the_cli_has() -> None:
 _WORDED_COUNTS = {"thirty-one": 31, "thirty-two": 32, "thirty-three": 33,
                   "thirty-four": 34, "thirty-five": 35, "thirty-six": 36,
                   "thirty-seven": 37, "thirty-eight": 38,
-                  "thirty-nine": 39, "forty": 40, "thirty": 30}
+                  "thirty-nine": 39, "forty-one": 41, "forty-two": 42,
+                  "forty-three": 43, "forty-four": 44, "forty-five": 45,
+                  "forty": 40, "thirty": 30}
 
 #: What the counted sentence is *about*. The word alone is not unique in this README: the
 #: claim-selection section says a paper's "thirty-three published numbers" are not thirty-three

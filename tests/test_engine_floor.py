@@ -69,9 +69,12 @@ def test_every_class_carries_a_second_engine() -> None:
 def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
     """The result worth publishing: the tolerances are not absorbing solver disagreement.
 
-    PK/PD's eighty claims are re-run at the dose each was certified at and agree to a published
-    bound of 1e-06 — a *thousandth* of a percent of the curve pass budget. The kinetic class's six
-    models agree to 1e-03, which is 1% of it: three orders looser than PK/PD and still two orders
+    PK/PD's claims are re-run at the dose each was certified at, and all but three agree to a
+    published bound of 1e-06 — a *thousandth* of a percent of the curve pass budget. The three
+    curves of Sluka et al. 2016's Figure 6 set the class's worst at 1e-05, one decade looser and
+    still a hundredth of a percent of it: they are the only PK/PD claims judged on a metabolism
+    model's own fast transient rather than on a whole-body distribution curve. The kinetic class's
+    six models agree to 1e-03, which is 1% of it: two orders looser again and still two orders
     inside the budget. Neither is anywhere near the tolerance, so a numeric verdict is a statement
     about the model and not about COPASI.
     """
@@ -79,7 +82,7 @@ def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
         model_class: max(float(row["distance_at_most"]) for row in record.values())
         for model_class, record in _records().items()
     }
-    assert worst["ode-pkpd"] == pytest.approx(1e-06)
+    assert worst["ode-pkpd"] == pytest.approx(1e-05)
     assert worst["kinetic"] == pytest.approx(1e-03)
     # The constraint-based pair is not a curve comparison and is not judged against the curve
     # budget: it is the relative difference between two LP optima. All eight publish 1e-08, which
@@ -105,7 +108,7 @@ def test_the_engine_itself_spends_almost_none_of_the_curve_budget() -> None:
     worst["spatial"] = max(float(row["distance_at_most"]) for row in profiles.values())
 
     shares = {name: bound / _CURVE_PASS for name, bound in worst.items()}
-    assert shares["ode-pkpd"] < 1e-04       # a hundredth of a percent of the budget
+    assert shares["ode-pkpd"] <= 1e-04      # a hundredth of a percent of the budget
     assert shares["kinetic"] == pytest.approx(0.01, rel=1e-6)  # one percent of it
 
     # And every single record, not only the worst — with the one exception this repository

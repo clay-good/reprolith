@@ -237,6 +237,22 @@ curator's statements.
   certificate can see how much of the widened band the reading had already spent before the model
   was consulted, which the figure-reading marker alone does not say
 
+#### Scenario: A figure drawn in units the model does not run in
+
+- **WHEN** a claim's reading was taken against an axis in a different unit from the one the model
+  states for that axis — a curve in µg/mL against a model reading mol/L, or an x axis in minutes
+  against a model whose clock is seconds
+- **THEN** the claim MAY state the conversion for either axis, and it SHALL state the factor, the
+  unit it converts to, and where the factor comes from; a conversion missing any of the three is
+  refused, a factor with no basis being a number nobody can check that reads on a certificate as
+  one somebody justified
+- **AND** the reading is kept in the units it was read in, the conversion being the claim's
+  statement rather than an edit to the measurement
+- **AND** the conversion appears in the claim's source location, so the certificate carries it
+  rather than publishing a reference of numbers already multiplied
+- **AND** a time conversion SHALL be a positive factor, an axis being neither reversible nor
+  collapsible onto a point by a change of unit
+
 ### Requirement: Artifact intake and typing
 
 Ingestion SHALL accept whatever the paper ships and classify it, so reconstruction knows

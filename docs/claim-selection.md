@@ -173,9 +173,9 @@ The count travels in every report and both surfaces print it:
 A paper that mixes the two says so in its `limits`, naming how many of each, because a selection
 that spent one budget on two kinds of evidence under one name has not said what it did.
 
-Measured on this corpus: **201 of 201** claims across the five dossiers carry a footprint derived
+Measured on this corpus: **204 of 204** claims across the six dossiers carry a footprint derived
 from the model, and none is curator-stated. What that number does not say is the reach — those
-five are the only dossiers here, so the derivation covers 5 of the 31 seeded entries and none of
+six are the only dossiers here, so the derivation covers 6 of the 31 seeded entries and none of
 the other five classes.
 
 ## What it says when it cannot do the job
@@ -253,8 +253,9 @@ it is true. Here it would be false: eleven claims chose against are a reason of 
 
 ## What it reaches today
 
-Four papers — the metformin entries, which are the only ones in this repository with dossiers at
-all. The other five model classes ship certificates and agreement reports but no dossiers, so
+Two papers — the four metformin entries and the two acetaminophen ones, which are the only
+entries in this repository with dossiers at all. The other five model classes ship certificates and
+agreement reports but no dossiers, so
 there is nothing for a selection to read there. That is a gap in what has been ingested, not in
 this capability, and `select-claims` on an accession with no dossier says so rather than returning
 an empty plan.

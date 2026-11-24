@@ -45,7 +45,7 @@ def _split() -> tuple[int, int, int]:
 
 def test_the_page_states_the_counts_the_committed_report_holds() -> None:
     matched, abstained, other = _split()
-    assert (matched, abstained, other) == (1, 26, 4), "regenerate the milestone, then this page"
+    assert (matched, abstained, other) == (2, 25, 4), "regenerate the milestone, then this page"
     assert f"{abstained} honest abstentions" in _PAGE
     assert f"{other} verdicts stricter than the label" in _PAGE
     assert f"abstained on {abstained} of {matched + abstained + other} entries" in _PAGE
@@ -84,9 +84,10 @@ def test_the_loop_record_states_the_same_split_as_the_report() -> None:
     assert f"## What the {abstained + other} disagreements say" in _LOOP
     assert f"**{abstained} abstentions**" in _LOOP
     assert f"**{other} more-careful verdicts**" in _LOOP
-    # One entry matches its label now, the acetaminophen model judged against its paper's figure,
-    # and a record of the disagreements has to say which entry is not among them.
-    assert matched == 1 and "acetaminophen" in _LOOP
+    # Two entries match their labels now — both acetaminophen models, judged against curves read
+    # off their paper's figures — and a record of the disagreements has to say which are not among
+    # them.
+    assert matched == 2 and "acetaminophen" in _LOOP
 
 
 def test_the_milestone_readme_states_the_same_split_as_the_report_beside_it() -> None:
@@ -108,7 +109,7 @@ def test_the_milestone_readme_states_the_same_split_as_the_report_beside_it() ->
     assert ("| `reproduced` |" in _MILESTONE) is (matched > 0)
     # And the count of published certificates the page promises a reader they will find.
     certificates = list((_ROOT / "datasets" / "milestone" / "certificates").glob("*.json"))
-    assert len(certificates) == matched + other == 5
+    assert len(certificates) == matched + other == 6
 
 
 def test_the_committed_data_states_the_split_its_own_report_holds() -> None:

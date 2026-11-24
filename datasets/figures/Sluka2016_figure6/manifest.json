@@ -1,0 +1,46 @@
+{
+ "description": "Figure 6 of Sluka et al. 2016 (PLOS ONE 11(9): e0162428, doi:10.1371/journal.pone.0162428, CC BY 4.0): the standalone run of the sub-cellular metabolism module with parameter set REFSIM, from an initial acetaminophen concentration of 0.1 mM. Three black lines over 40 minutes — APAP falling, its glucuronide (APAPG) and its sulfate (APAPS) rising — and no data markers. Colour cannot separate them, so they are followed by continuity together: each line predicts where it is heading, and the two columns where two lines cross are read as neither. Read by scripts/digitize_figure_panels.py in its dark-lines mode. Read by eye: that the frame's left and bottom edges carry each axis's 0, that each grey tick inside the frame is one minute or 0.01 mmol/L from the last, that the labelled ticks fall every five minutes and every 0.02 mmol/L, and which curve of the three each legend entry names.",
+ "image": "pone.0162428.g006.png",
+ "source": "https://journals.plos.org/plosone/article/figure/image?size=large&id=10.1371/journal.pone.0162428.g006",
+ "defaults": {
+  "digitizer": "scripts/digitize_figure_panels.py (dark-lines trace; axis labels read by eye)",
+  "x_unit": "min",
+  "y_unit": "mmol/L"
+ },
+ "panels": [
+  {
+   "panel": "6",
+   "mode": "dark-lines",
+   "figure": "Sluka et al. 2016, Fig 6 (sub-cellular metabolism, REFSIM)",
+   "crop": [0, 0, 2200, 1552],
+   "x_step": 1,
+   "x_major_every": 5,
+   "y_step": 0.01,
+   "y_major_every": 0.02,
+   "line_ink": 0.55,
+   "seed_x": 5.0,
+   "corner_reach": 1.0,
+   "reading": "fig6.json",
+   "series": [
+    {
+     "claim": "fig6-APAP",
+     "curve": "APAP, the thick solid line",
+     "seed_y": 0.0626,
+     "starts_at": "upper-left"
+    },
+    {
+     "claim": "fig6-APAPG",
+     "curve": "APAPG, the thin solid line",
+     "seed_y": 0.0221,
+     "starts_at": "lower-left"
+    },
+    {
+     "claim": "fig6-APAPS",
+     "curve": "APAPS, the thick dashed line",
+     "seed_y": 0.0149,
+     "starts_at": "lower-left"
+    }
+   ]
+  }
+ ]
+}

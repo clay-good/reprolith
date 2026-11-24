@@ -22,7 +22,7 @@ from .agreement import AgreementReport, build_agreement_report
 from .catalog import CatalogEntry
 from .certificate import build_certificate
 from .certify import Claim, CurveClaim, certify_model
-from .digitization import curve_reference, read_digitized_figure
+from .digitization import curve_reference, in_time_unit, read_digitized_figure
 from .enums import LifecycleState, OverallVerdict
 from .model import Assumption, Certificate, EnginePin, PaperIdentity
 from .oracle import ReferenceKind
@@ -217,6 +217,21 @@ def certified_from_claims(
     return certificates
 
 
+def _states_a_conversion(claim_id: str, scale: Mapping[str, Any], *, field: str) -> None:
+    """Refuse a unit conversion that does not say what it is: the factor, the unit, and its basis.
+
+    Both axes of a figure can need one, and a half-stated conversion is the worse failure of the
+    two: a factor with no basis multiplies the reference by a number nobody can check, and reads
+    on the certificate as a conversion that was justified.
+    """
+    missing = sorted({"factor", "unit", "basis"} - set(scale))
+    if missing:
+        raise ValueError(
+            f"{claim_id}'s {field} states no {', '.join(missing)}: a unit conversion is a "
+            "factor, the unit it converts to, and where the factor is from"
+        )
+
+
 def figure_claims(records: Sequence[Mapping[str, Any]], *, base_dir: Path | str) -> list[CurveClaim]:
     """The curve claims an entry reads off its paper's figures, each joined to its reading.
 
@@ -243,20 +258,33 @@ def figure_claims(records: Sequence[Mapping[str, Any]], *, base_dir: Path | str)
             )
         duration, steps = float(record["duration"]), int(record["steps"])
         overrides = record.get("parameter_overrides", {})
+        clock = record.get("time_scale")
+        read_in = reading.x_axis.unit
+        if clock is not None:
+            # A figure drawn over a clock the model does not run on: the metabolism module of
+            # Sluka et al. 2016 is plotted over forty minutes and deposited in seconds. The
+            # reading stays in the figure's own unit, as read, and the claim states the one factor
+            # that carries its x axis onto the run's — the same discipline `value_scale` applies
+            # to the other axis, and for the same reason: unconverted, the two are laid against
+            # each other sixtyfold apart and what is compared is the wrong places.
+            _states_a_conversion(record["claim_id"], clock, field="time_scale")
+            reading = in_time_unit(
+                reading, factor=float(clock["factor"]), unit=str(clock["unit"])
+            )
         reference = curve_reference(reading, duration=duration, steps=steps)
         source = reading.source_line(window=(0.0, duration))
+        if clock is not None:
+            source = (
+                f"{source}; read over an x axis in {read_in} and placed on the run's clock in "
+                f"{clock['unit']} by x{float(clock['factor']):.6g} ({clock['basis']})"
+            )
         scale = record.get("value_scale")
         if scale is not None:
             # A figure drawn in other units than the model reads its output in: the reading stays
             # in the figure's units, as read, and the claim states the one factor that converts it
             # and where that factor comes from, so the conversion is on the certificate and not
             # hidden in a file of numbers already multiplied.
-            missing = sorted({"factor", "unit", "basis"} - set(scale))
-            if missing:
-                raise ValueError(
-                    f"{record['claim_id']}'s value_scale states no {', '.join(missing)}: a unit "
-                    "conversion is a factor, the unit it converts to, and where the factor is from"
-                )
+            _states_a_conversion(record["claim_id"], scale, field="value_scale")
             factor = float(scale["factor"])
             reference = tuple(value * factor for value in reference)
             source = (

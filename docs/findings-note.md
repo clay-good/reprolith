@@ -6527,3 +6527,57 @@ the rising line. The certificate says so.
 
 Blocked entries go from 27 to 26, and blind agreement from 0/31 to 1/31: this entry's label is
 `reproduced`, and that is what it got.
+
+## Three lines crossing, and the clock nobody checked
+
+The same paper deposited a second model, and the figure that reads it is the other way a model's
+curves are drawn. Figure 6 of Sluka et al. 2016 shows the sub-cellular metabolism module as three
+black lines on white — acetaminophen falling, its glucuronide and its sulfate rising — crossing
+each other twice, with no data markers at all.
+
+**Followed one at a time, two of the three read the wrong curve.** The first version traced each
+line on its own, and it worked until a crossing: where two lines meet, one stroke is both of them,
+and a tracer that takes it inherits the other line's slope. The glucuronide left its crossing with
+acetaminophen on acetaminophen's branch and reported its values to the end of the window — a
+reading that is ordered, smooth, plausible and belongs to another curve. Tightening the search
+radius fixed that one and left the sulfate doing the same thing eight minutes later. What fixes it
+is not a tolerance: the three are followed **together**, each predicting where it is heading, and a
+stroke that two of them both reach for is read as neither. Their traces resume on the far side and
+the reading interpolates across the few columns a crossing costs — which is what the colour mode
+already does for a line drawn under another.
+
+**The thin line is never as black as the thick ones.** It peaks at 0.60 of full ink where the
+others saturate, so the panel states the ink its lines are read at (0.55) rather than taking the
+mode's default. That threshold is a hazard of its own: the axis ticks here are grey, inside the
+frame, and a threshold low enough to catch them would hand a trace near the foot of the frame a
+lattice of short strokes to follow. So the separation is measured instead of assumed — the darkest
+pixel of any tick the calibration counted is reported beside the threshold (0.514 against 0.55),
+and a panel that states a threshold below it is refused by name.
+
+**The second half of it was a clock.** The figure is plotted over forty **minutes** and the deposit
+states its time in **seconds**, so the reading and the run are sixtyfold apart. Nothing catches
+that on its own: the window check compares numbers, and a reading that runs 0-40 covers a window of
+0-39. A claim may now state a `time_scale` beside its `value_scale` — the factor, the unit it
+converts to, and where the factor comes from — and the certificate prints it. All three curves
+reproduce with it and all three fail without it.
+
+**The check that should have caught it could not fire.** `time_unit_notes` compares a reading's x
+axis against the model's own declared clock, and it said nothing here. A Level 2 model has no
+`timeUnits` attribute: it states its clock by *redefining* the predefined `time` unit, which this
+deposit does, and Reprolith read only the attribute — so every Level 2 model in the corpus was
+reported as having stated nothing. It is read now, and deliberately only when the author redefined
+the unit: Level 2's predefined default is the specification's statement and not the author's, and
+taking it for one would put every Level 2 model in disagreement with every figure not drawn in
+seconds.
+
+**A reading has to reach the run's own start.** No column of pixels can: the leftmost one's centre
+is already inside the frame. Figure 4's reading covered t=0 by luck — its least-squares calibration
+happened to put the frame edge a pixel *before* zero. Here it landed a quarter of a pixel after,
+and the claim could not be judged from the start of its own run. The two edges the ticks are
+counted from carry their axis's zero — that is the statement the calibration is built on, read off
+the picture rather than fitted — so on those two edges the statement is taken over the fit's
+residual, and both numbers are printed so the gap is visible (0.00512 min and 0.0002 mmol/L here).
+The other two edges stay the fit's, there being nothing stated about them.
+
+BIOMD0000000624 reproduces all three curves at normalized distances of 0.0015 to 0.0022 with no
+assumption. Blocked entries go from 26 to 25, and blind agreement from 1/31 to 2/31.

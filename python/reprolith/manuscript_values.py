@@ -866,7 +866,17 @@ def model_time_unit(model_sbml: str) -> str:
     places. Raises ``ValueError`` if the model is not parseable SBML.
     """
     model, definitions, level = _model_and_definitions(model_sbml)
-    return _resolve_unit(model.get("timeUnits") or "", definitions, level)
+    declared = _resolve_unit(model.get("timeUnits") or "", definitions, level)
+    if declared != UNSTATED_UNIT or level != 2:
+        return declared
+    # A Level 2 model has no `timeUnits` attribute: it states its clock by *redefining* the
+    # predefined `time` unit, and reading only the attribute reported every such model as having
+    # stated nothing. Sluka et al. 2016's metabolism deposit is one — it redefines `time` as the
+    # second, while the figure that model's own paper plots is drawn over forty minutes, the exact
+    # disagreement this is read for. The predefined default is deliberately not consulted: it is
+    # the specification's, not the author's, and taking it for a statement would put every Level 2
+    # model in disagreement with every figure not drawn in seconds.
+    return definitions.get("time", UNSTATED_UNIT)
 
 
 def _declared_output(model: Any, species: str) -> Any:

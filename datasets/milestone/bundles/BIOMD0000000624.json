@@ -1,0 +1,44 @@
+{
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": "deterministic-lsoda (judge rev f6e19f43470f)",
+    "engine": "copasi",
+    "version": "4.46.300 (Source)"
+  },
+  "entry": "BIOMD0000000624",
+  "mismatches": null,
+  "model": {
+    "detected_format": "sbml",
+    "filename": "worked_examples/Sluka2016_APAP_metabolism.xml",
+    "validates": true
+  },
+  "non_reconstructable": [],
+  "origin": "author-supplied",
+  "recipe": [
+    {
+      "claim_id": "fig6-APAP",
+      "metric": "curve",
+      "output": "[APAP]",
+      "protocol": "Sluka et al. 2016, Fig 6 (sub-cellular metabolism, REFSIM), APAP, the thick solid line (digitized from the figure with scripts/digitize_figure_panels.py (dark-lines trace; axis labels read by eye); 1800 points, its own interpolation spending 0% of the pass budget); read over an x axis in min and placed on the run's clock in s by x60 (the figure's x axis is minutes and the deposit states its time in seconds (unit kind second, multiplier 1); 60 s to the minute)",
+      "steps": 390,
+      "time_span": "0-2340"
+    },
+    {
+      "claim_id": "fig6-APAPG",
+      "metric": "curve",
+      "output": "[APAPconj_Glu]",
+      "protocol": "Sluka et al. 2016, Fig 6 (sub-cellular metabolism, REFSIM), APAPG, the thin solid line (digitized from the figure with scripts/digitize_figure_panels.py (dark-lines trace; axis labels read by eye); 1823 points, its own interpolation spending 1% of the pass budget); read over an x axis in min and placed on the run's clock in s by x60 (the figure's x axis is minutes and the deposit states its time in seconds (unit kind second, multiplier 1); 60 s to the minute)",
+      "steps": 390,
+      "time_span": "0-2340"
+    },
+    {
+      "claim_id": "fig6-APAPS",
+      "metric": "curve",
+      "output": "[APAPconj_Sul]",
+      "protocol": "Sluka et al. 2016, Fig 6 (sub-cellular metabolism, REFSIM), APAPS, the thick dashed line (digitized from the figure with scripts/digitize_figure_panels.py (dark-lines trace; axis labels read by eye); 1346 points, its own interpolation spending 1% of the pass budget); read over an x axis in min and placed on the run's clock in s by x60 (the figure's x axis is minutes and the deposit states its time in seconds (unit kind second, multiplier 1); 60 s to the minute)",
+      "steps": 390,
+      "time_span": "0-2340"
+    }
+  ],
+  "source_dossier": "BIOMD0000000624"
+}

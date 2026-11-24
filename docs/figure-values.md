@@ -406,5 +406,29 @@ normalized distance of 0.0065 with no assumption, so this certificate is the cor
 pass, marked `[figure-reading]`. The reading's own straight lines spend 41% of the band, most of it
 in the first half hour, where the data squares sit on the rising line and hide it.
 
+The third is the other deposit of that same paper, and the figure that reads it is the other way
+three curves get drawn: **three black lines on white, crossing twice, with no markers at all**
+(`datasets/figures/Sluka2016_figure6/`). Colour cannot separate them and continuity alone cannot
+either — where two lines meet, one stroke is both of them, and a tracer that takes it inherits the
+other line's slope and leaves on the wrong branch. That is not a hypothetical: traced one at a
+time, two of these three ended up on the acetaminophen curve, reading its values under their own
+names. The digitizer's dark-lines mode follows them **together** instead: every line predicts where
+it is heading, a stroke two lines both reach for is read as neither, and the reading interpolates
+across the few columns a crossing costs — the same thing the colour mode does for a line drawn
+under another. The thin curve of the three never reaches the ink the thick ones are read at, so the
+panel states its own threshold, and a threshold low enough to swallow the axis ticks is refused by
+measuring them rather than assuming the separation.
+
+That figure also needs the **other** axis converted, and it is the axis a reader is least likely to
+check. It is plotted over forty minutes and the deposit states its time in seconds, so reading and
+run are sixtyfold apart until something says so — and the window check cannot see it, because a
+reading that runs 0-40 does cover a window of 0-39 as numbers. A claim may state a `time_scale`
+beside its `value_scale`: the factor, the unit it converts to, and where the factor comes from,
+printed on the certificate. All three curves reproduce with it (normalized distances 0.0015 to
+0.0022) and all three fail without it, which is what the conversion is worth. The check that would
+have caught the mistake unaided fires now too: a Level 2 model states its clock by redefining the
+predefined `time` unit rather than through a `timeUnits` attribute, and until this entry Reprolith
+read only the attribute — so every Level 2 model was reported as having stated nothing.
+
 What remains is the other twenty-five blocked entries' papers, whose results are only in figures
 and still unread.

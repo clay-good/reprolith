@@ -13,6 +13,48 @@
     "overrides": {},
     "prior_administrations": []
   },
+  "BIOMD0000000624:fig6-APAP": {
+    "distance_at_most": 1e-05,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000000624:fig6-APAPG": {
+    "distance_at_most": 1e-05,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
+  "BIOMD0000000624:fig6-APAPS": {
+    "distance_at_most": 1e-05,
+    "engine_independent": true,
+    "engine_versions": [
+      "4.46.300 (Source)",
+      "2.7.0"
+    ],
+    "engines": [
+      "copasi",
+      "roadrunner"
+    ],
+    "overrides": {},
+    "prior_administrations": []
+  },
   "BIOMD0000001027:AUC24-adipose": {
     "distance_at_most": 1e-06,
     "engine_independent": true,

@@ -66,7 +66,7 @@ def test_an_unblocked_backlog_reports_nothing_blocking_it() -> None:
 
 
 def test_the_committed_backlog_is_one_capability_deep() -> None:
-    """Read off the shipped catalog: 0 claimable, 26 blocked, and all 26 on one missing input.
+    """Read off the shipped catalog: 0 claimable, 25 blocked, and all 25 on one missing input.
 
     The number in `Catalog.backlog_health`'s own docstring used to be written by hand here and had
     gone stale by three; this derives it, so the next entry that blocks on something else shows up
@@ -100,4 +100,4 @@ def test_a_refusal_to_hand_out_work_says_what_the_backlog_is_waiting_on() -> Non
     refusal = claim_work(catalog, {"requester": "an-agent"}, at=1e9)
     assert refusal["claimed"] is False
     assert refusal["blocked_on"] == catalog.backlog_health(1e9)["blocked_on"]
-    assert refusal["blocked_on"][0]["entries"] == 26
+    assert refusal["blocked_on"][0]["entries"] == 25

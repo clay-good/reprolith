@@ -53,7 +53,7 @@ from __future__ import annotations
 import json
 import math
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Any
 
@@ -559,6 +559,45 @@ def curve_reference(series: DigitizedSeries, *, duration: float, steps: int) -> 
             "and a comparison over it passes whatever the model does"
         )
     return resample_series(series, [duration * i / steps for i in range(steps + 1)])
+
+
+def in_time_unit(series: DigitizedSeries, *, factor: float, unit: str) -> DigitizedSeries:
+    """The same reading with its x axis carried into the unit a model's own clock runs in.
+
+    A figure is drawn in the unit its readers think in and a model runs in the unit its author
+    declared, and those are routinely not the same: Sluka et al. 2016 plot their metabolism module
+    over forty **minutes** and the deposit of it states its time in **seconds**. The reading is
+    placed on a run's grid by its x numbers, so without this the two are laid against each other
+    sixty-fold apart — a reference that is ordered, smooth, plausible and aligned to the wrong
+    places, which is the failure :func:`time_unit_notes` exists to report.
+
+    What converts is the axis, not the curve: every x is multiplied, the axis bounds with them,
+    and the y values are untouched. On a log10 axis a positive factor is a constant shift in the
+    scale the reading is joined in, so which points join to which is unchanged there too.
+
+    The factor is the caller's, and a claim that states one publishes it — see
+    :func:`reprolith.figure_claims`, whose ``time_scale`` states the factor, the unit it converts
+    to, and where the factor comes from, so the conversion is on the certificate rather than
+    hidden in a file of numbers already multiplied.
+    """
+    if not math.isfinite(factor) or factor <= 0.0:
+        raise ValueError(
+            f"a time conversion is a positive factor, not {factor}: an axis cannot be reversed or "
+            "collapsed onto a point by a change of unit"
+        )
+    if not unit.strip():
+        raise ValueError("a converted axis must state the unit it is now in")
+    axis = series.x_axis
+    return replace(
+        series,
+        x_axis=Axis(
+            minimum=axis.minimum * factor,
+            maximum=axis.maximum * factor,
+            unit=unit,
+            scale=axis.scale,
+        ),
+        points=tuple((x * factor, y) for x, y in series.points),
+    )
 
 
 def pairing_faults(

@@ -229,7 +229,15 @@ a change under `openspec/changes/`.
   dark-line mode (a black line among black data markers), reproduced by BIOMD0000000619 at a
   normalized distance of 0.0065 with no assumption — the corpus's first clean pass, and the first
   entry off the blocked list since the metformin paper (27 blocked → 26; blind agreement 0/31 →
-  1/31). The other 26 need the same act on their own papers' figures.
+  1/31). **And the second deposit of that same paper followed** (2026-11-23): Figure 6, the
+  standalone run of its sub-cellular metabolism module, is three black lines crossing twice with no
+  markers at all, which needed the digitizer to follow lines *together* — traced one at a time, two
+  of the three leave a crossing on the acetaminophen curve and read its values under their own
+  names. It also needed the x axis converted: the figure is in minutes and the deposit's clock is
+  seconds, so a claim may now state a `time_scale` as it already states a `value_scale`, and all
+  three curves reproduce with it (0.0015 to 0.0022) and fail without it. BIOMD0000000624 is the
+  corpus's second clean pass; blocked 26 → 25, blind agreement 1/31 → 2/31. The other 25 need the
+  same act on their own papers' figures.
 
 ---
 

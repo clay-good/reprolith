@@ -468,24 +468,70 @@ def _hollow_squares(dark: np.ndarray, size: tuple[int, int]) -> list[tuple[int, 
     return boxes
 
 
-def read_line_panel(image: np.ndarray, panel: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
-    """One dark line read off a panel whose markers share its colour."""
-    x0, y0, x1, y1 = panel["crop"]
-    crop = image[y0:y1, x0:x1].astype(float)
-    ink = _ink(crop)
+def _grey_tick_ink(band: np.ndarray) -> float:
+    """The darkest pixel the tick finder counted in ``band`` — a tick's own grey, not a line's.
+
+    What it is for: a figure whose thinnest curve never reaches the ink a thick one is read at
+    needs its own threshold, and a threshold low enough to catch a hairline can be low enough to
+    catch the ticks as well — which would hand a trace near the bottom of the frame a lattice of
+    short vertical strokes to follow. The separation is measured here rather than assumed, and
+    the reading is refused when there is none.
+    """
+    grey = (band >= _GREY[0]) & (band <= _GREY[1])
+    darkest = 0.0
+    for j in range(band.shape[1]):
+        depth = 0
+        while depth < band.shape[0] and grey[depth, j]:
+            depth += 1
+        if depth >= 3:  # the same run the tick finder counts
+            darkest = max(darkest, float(band[:depth, j].max()))
+    return darkest
+
+
+def _grey_tick_calibration(
+    ink: np.ndarray, panel: dict[str, Any]
+) -> tuple[tuple[float, ...], tuple[int, ...], tuple[float, ...], dict[str, Any]]:
+    """The frame, the plotting area inside it, and the value map its inner grey ticks give.
+
+    Shared by the two modes that read a figure drawn in black on white: one dark line among dark
+    markers, and several dark lines crossing each other. The calibration is the same act in both —
+    count the ticks up from the frame edge that carries the axis's 0.
+    """
     top, bottom, left, right = _frame(ink)
     thickness = int(panel.get("frame_px", 4))
-
     inner_top, inner_bottom = int(round(top)) + thickness, int(round(bottom)) - thickness
     inner_left, inner_right = int(round(left)) + thickness, int(round(right)) - thickness
     below = ink[inner_bottom - _TICK_REACH_PX + 1:inner_bottom + 1][::-1]
-    x_ticks = _grey_ticks(below[:, inner_left:inner_right], inner_left)
+    x_band = below[:, inner_left:inner_right]
+    x_ticks = _grey_ticks(x_band, inner_left)
     beside = ink[inner_top:inner_bottom, inner_left:inner_left + _TICK_REACH_PX].T
     y_ticks = _grey_ticks(beside, inner_top)
     xa, xb = _calibrate_from_frame(
         x_ticks, left, panel["x_step"], panel["x_major_every"], "x", 1)
     ya, yb = _calibrate_from_frame(
         y_ticks, bottom, panel["y_step"], panel["y_major_every"], "y", -1)
+    measured = {
+        "x_ticks": len(x_ticks), "y_ticks": len(y_ticks),
+        "tick_ink": round(max(_grey_tick_ink(x_band), _grey_tick_ink(beside)), 3),
+    }
+    return (
+        (top, bottom, left, right),
+        (inner_top, inner_bottom, inner_left, inner_right),
+        (xa, xb, ya, yb),
+        measured,
+    )
+
+
+def read_line_panel(image: np.ndarray, panel: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """One dark line read off a panel whose markers share its colour."""
+    x0, y0, x1, y1 = panel["crop"]
+    crop = image[y0:y1, x0:x1].astype(float)
+    ink = _ink(crop)
+    frame, inner, scale, measured = _grey_tick_calibration(ink, panel)
+    top, bottom, left, right = frame
+    inner_top, inner_bottom, inner_left, inner_right = inner
+    xa, xb, ya, yb = scale
+    x_ticks, y_ticks = measured["x_ticks"], measured["y_ticks"]
 
     area = ink[inner_top:inner_bottom, inner_left:inner_right] >= _BLACK
     boxes = _hollow_squares(area, tuple(panel["marker_px"])) if "marker_px" in panel else []
@@ -522,9 +568,157 @@ def read_line_panel(image: np.ndarray, panel: dict[str, Any]) -> tuple[dict[str,
         "series": [{"claim": series["claim"], "curve": series["curve"], "points": points}],
     }
     report = {"panel": panel["panel"], "frame_px": [top, bottom, left, right],
-              "x_ticks": len(x_ticks), "y_ticks": len(y_ticks),
+              "x_ticks": x_ticks, "y_ticks": y_ticks,
               "columns": inner_right - inner_left, "traced": len(trace), "origin": origin,
               "markers_blanked": len({(box[0], box[2]) for box in boxes})}
+    return reading, report
+
+
+# ---------------------------------------------------------------------------------------------
+# Several dark lines on a white field, crossing each other: a figure that plots a species and its
+# metabolites together. Colour cannot separate them and continuity alone cannot either — where two
+# lines meet, one stroke is both of them, and a tracer that takes it inherits the other line's
+# slope and leaves on the wrong branch. So they are followed *together*: every line predicts where
+# it is heading, and a stroke two lines both reach for is read as neither.
+
+#: A line this far from where it is heading is not it. Grows with the gap since the line was last
+#: seen — a dashed line is lost for a dash's length — but slowly, so a lost trace stops rather
+#: than finding its way onto a neighbour.
+_REACH_PX = 4.0
+#: Columns a line may go unseen before its trace stops. A dash gap, not a journey.
+_DASH_PX = 40
+
+
+def _trace_together(
+    dark: np.ndarray, seed: int, rows: list[float], lost: int = _DASH_PX
+) -> list[dict[int, float]]:
+    """Follow several lines from one column they are separate in: [{column: centre row}].
+
+    Each line is seeded on the run nearest the row the curator read it at, and the stroke widths
+    those seeds give are what each line's own strokes are measured against afterwards. In every
+    column each line reaches for the run nearest where it is heading; a run that two lines both
+    reach for is where they cross, and neither is given a value there — their traces resume on the
+    far side and the reading interpolates across, exactly as the colour mode does for a line drawn
+    under another.
+    """
+    runs = _dark_runs(dark[:, seed])
+    if not runs:
+        raise ValueError("the seed column holds no dark pixels")
+    seeds = []
+    for row in rows:
+        distance, centre, length = min((abs(c - row), c, n) for c, n in runs)
+        if distance > _THIN_PX:
+            raise ValueError(
+                f"a line is seeded at row {row:.0f}, {distance:.0f} px from the nearest stroke in "
+                "the seed column — read the seed off the figure again"
+            )
+        seeds.append((centre, length))
+    if len({centre for centre, _ in seeds}) < len(seeds):
+        raise ValueError(
+            "two lines are seeded on one stroke; seed them in a column they are drawn apart in"
+        )
+    traced: list[dict[int, float]] = [{seed: centre} for centre, _ in seeds]
+    for direction in (1, -1):
+        paths = [[(seed, centre)] for centre, _ in seeds]
+        j = seed + direction
+        while 0 <= j < dark.shape[1]:
+            column = _dark_runs(dark[:, j])
+            reached: list[int | None] = []
+            for path, (_, stroke) in zip(paths, seeds):
+                (j1, r1) = path[-1]
+                (j0, r0) = path[max(0, len(path) - 10)]
+                slope = (r1 - r0) / (j1 - j0) if j1 != j0 else 0.0
+                predicted, gap = r1 + slope * (j - j1), abs(j - j1)
+                candidates = [
+                    (abs(centre - predicted), index)
+                    for index, (centre, length) in enumerate(column)
+                    if abs(centre - predicted) <= stroke + _REACH_PX + 0.5 * gap
+                    and length <= stroke + 2 + 2 * abs(slope)
+                ]
+                reached.append(min(candidates)[1] if candidates else None)
+            taken = [index for index in reached if index is not None]
+            crossing = {index for index in taken if taken.count(index) > 1}
+            for line, index in enumerate(reached):
+                if index is None or index in crossing:
+                    continue
+                paths[line].append((j, column[index][0]))
+                traced[line][j] = column[index][0]
+            if all(abs(j - path[-1][0]) > lost for path in paths):
+                break
+            j += direction
+    return traced
+
+
+def read_lines_panel(
+    image: np.ndarray, panel: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Several dark lines read off one panel, each followed by continuity and jointly at crossings."""
+    x0, y0, x1, y1 = panel["crop"]
+    ink = _ink(image[y0:y1, x0:x1].astype(float))
+    frame, inner, scale, measured = _grey_tick_calibration(ink, panel)
+    top, bottom, left, right = frame
+    inner_top, inner_bottom, inner_left, inner_right = inner
+    xa, xb, ya, yb = scale
+
+    threshold = float(panel.get("line_ink", _BLACK))
+    if threshold <= measured["tick_ink"]:
+        raise ValueError(
+            f"the lines are read at ink {threshold:g} and the axis ticks reach "
+            f"{measured['tick_ink']:g}: at that threshold a trace can follow a tick"
+        )
+    area = ink[inner_top:inner_bottom, inner_left:inner_right] >= threshold
+    seed_column = int(round((panel["seed_x"] - xa) / xb)) - inner_left
+    seed_rows = [(series["seed_y"] - ya) / yb - inner_top for series in panel["series"]]
+    traces = _trace_together(area, seed_column, seed_rows)
+
+    # The two edges the ticks are counted from carry their axis's zero — that is the statement the
+    # calibration is built on, and it is read off the picture rather than fitted. The least-squares
+    # line through the ticks lands a fraction of a pixel from it either way; on those two edges the
+    # statement is taken over the residual, and both numbers are reported so the gap is visible.
+    # The other two edges are the fit's, there being nothing stated about them.
+    fitted_zero = (xa + xb * left, ya + yb * bottom)
+    corners = {
+        "upper-left": (0.0, round(ya + yb * top, 4)),
+        "lower-left": (0.0, 0.0),
+    }
+    series_out, counts = [], []
+    for series, trace in zip(panel["series"], traces):
+        points = [
+            [round(xa + xb * (inner_left + j + 0.5), 4), round(ya + yb * (inner_top + trace[j]), 5)]
+            for j in sorted(trace)
+        ]
+        corner = series.get("starts_at")
+        if corner is not None:
+            # The line is drawn from its first sample, which sits on the frame corner the curator
+            # names — the only point of it the trace cannot reach, because there the line runs into
+            # the frame. It is read off the calibration, and only if the trace arrives within reach
+            # of it; otherwise the snap is refused rather than moving a point the picture places
+            # elsewhere.
+            if corner not in corners:
+                raise ValueError(f"'{corner}' is not a corner of the frame: {sorted(corners)}")
+            x_corner, y_corner = corners[corner]
+            if points[0][0] - x_corner > float(panel["corner_reach"]):
+                raise ValueError(
+                    f"'{series['curve']}' is traced from x={points[0][0]:g}, too far from the "
+                    f"{corner} corner at x={x_corner:g} to join it"
+                )
+            points.insert(0, [x_corner, y_corner])
+        series_out.append({"claim": series["claim"], "curve": series["curve"], "points": points})
+        counts.append({"curve": series["curve"], "points": len(points),
+                       "columns_read": len(trace), "starts_at": corner})
+    reading = {
+        "figure": panel["figure"],
+        "digitizer": panel["digitizer"],
+        "x_axis": {"minimum": 0.0, "maximum": round(xa + xb * right, 4),
+                   "unit": panel["x_unit"]},
+        "y_axis": {"minimum": 0.0, "maximum": round(ya + yb * top, 4),
+                   "unit": panel["y_unit"]},
+        "series": series_out,
+    }
+    report = {"panel": panel["panel"], "frame_px": [top, bottom, left, right],
+              "columns": inner_right - inner_left, "line_ink": threshold,
+              "fitted_zero": [round(value, 5) for value in fitted_zero],
+              **measured, "series": counts}
     return reading, report
 
 
@@ -543,7 +737,9 @@ def main() -> None:
     image = _pixels(folder / manifest["image"])
     for panel in manifest["panels"]:
         settings = {**manifest["defaults"], **panel}
-        reader = read_line_panel if settings.get("mode") == "dark-line" else read_panel
+        reader = {
+            "dark-line": read_line_panel, "dark-lines": read_lines_panel,
+        }.get(settings.get("mode", ""), read_panel)
         reading, report = reader(image, settings)
         (folder / panel["reading"]).write_text(
             json.dumps(reading, indent=1) + "\n", encoding="utf-8"

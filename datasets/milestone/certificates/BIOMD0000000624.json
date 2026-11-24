@@ -1,0 +1,73 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": false,
+      "claim_id": "fig6-APAP",
+      "discrepancy": "normalized distance 0.0015, worst point 0.0032 of reference scale (pass budget 0.4000)",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "curve-normalized-distance",
+      "protocol": "duration=2340.0, steps=390, read=[APAP] curve",
+      "quantity": "hepatocyte acetaminophen over 39 of the 40 minutes Figure 6 plots, from an initial 0.1 mM acetaminophen (REFSIM)",
+      "reference_kind": "digitized-figure",
+      "root_cause": null,
+      "source_location": "Sluka et al. 2016, Fig 6 (sub-cellular metabolism, REFSIM), APAP, the thick solid line (digitized from the figure with scripts/digitize_figure_panels.py (dark-lines trace; axis labels read by eye); 1800 points, its own interpolation spending 0% of the pass budget); read over an x axis in min and placed on the run's clock in s by x60 (the figure's x axis is minutes and the deposit states its time in seconds (unit kind second, multiplier 1); 60 s to the minute)",
+      "tolerance": "reproduced<=0.2, partial<=0.4 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "fig6-APAPG",
+      "discrepancy": "normalized distance 0.0015, worst point 0.0038 of reference scale (pass budget 0.4000)",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "curve-normalized-distance",
+      "protocol": "duration=2340.0, steps=390, read=[APAPconj_Glu] curve",
+      "quantity": "the hepatocyte glucuronide conjugate APAPG over 39 of the 40 minutes Figure 6 plots, from an initial 0.1 mM acetaminophen (REFSIM)",
+      "reference_kind": "digitized-figure",
+      "root_cause": null,
+      "source_location": "Sluka et al. 2016, Fig 6 (sub-cellular metabolism, REFSIM), APAPG, the thin solid line (digitized from the figure with scripts/digitize_figure_panels.py (dark-lines trace; axis labels read by eye); 1823 points, its own interpolation spending 1% of the pass budget); read over an x axis in min and placed on the run's clock in s by x60 (the figure's x axis is minutes and the deposit states its time in seconds (unit kind second, multiplier 1); 60 s to the minute)",
+      "tolerance": "reproduced<=0.2, partial<=0.4 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "fig6-APAPS",
+      "discrepancy": "normalized distance 0.0022, worst point 0.0084 of reference scale (pass budget 0.4000)",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "curve-normalized-distance",
+      "protocol": "duration=2340.0, steps=390, read=[APAPconj_Sul] curve",
+      "quantity": "the hepatocyte sulfate conjugate APAPS over 39 of the 40 minutes Figure 6 plots, from an initial 0.1 mM acetaminophen (REFSIM)",
+      "reference_kind": "digitized-figure",
+      "root_cause": null,
+      "source_location": "Sluka et al. 2016, Fig 6 (sub-cellular metabolism, REFSIM), APAPS, the thick dashed line (digitized from the figure with scripts/digitize_figure_panels.py (dark-lines trace; axis labels read by eye); 1346 points, its own interpolation spending 1% of the pass budget); read over an x axis in min and placed on the run's clock in s by x60 (the figure's x axis is minutes and the deposit states its time in seconds (unit kind second, multiplier 1); 60 s to the minute)",
+      "tolerance": "reproduced<=0.2, partial<=0.4 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [],
+  "engine_pin": {
+    "algorithm": "deterministic-lsoda (judge rev f6e19f43470f)",
+    "engine": "copasi",
+    "version": "4.46.300 (Source)"
+  },
+  "gap_report": [],
+  "overall": "reproduced",
+  "paper": {
+    "doi": "10.1371/journal.pone.0162428",
+    "pubmed_id": null,
+    "title": "Sluka2016 - Acetaminophen metabolism"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

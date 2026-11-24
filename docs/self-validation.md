@@ -7,7 +7,7 @@ follow end to end, all regenerable from the repository alone.
 
 | Class | Blind agreement | Independent ground truth | Milestone |
 |---|---|---|---|
-| **PK/PD (ODE)** | **1 match**, 26 honest abstentions + **4 verdicts stricter than the label**, over 31 BioModels entries; no false pass | BioModels manual-curation status; the metformin claim read from the paper | [`datasets/milestone/`](../datasets/milestone/) |
+| **PK/PD (ODE)** | **2 matches**, 25 honest abstentions + **4 verdicts stricter than the label**, over 31 BioModels entries; no false pass | BioModels manual-curation status; the metformin claim read from the paper, and both acetaminophen models read off their paper's figures | [`datasets/milestone/`](../datasets/milestone/) |
 | **Constraint-based (FBA)** | **8/8** blind agreement across bacteria, a pathogen, and a eukaryote | E. coli core's documented growth rate; COBRApy references for the genome-scale set | [`datasets/constraint_based/milestone/`](../datasets/constraint_based/milestone/) |
 | **Generic-kinetic (ODE)** | **7/7** blind agreement across six network types — six curves, and one oscillator's period and peak-to-trough | libRoadRunner (independent CVODE) reference trajectories, and the period read off one of them | [`datasets/kinetic/milestone/`](../datasets/kinetic/milestone/) |
 | **Logical (Boolean)** | **10/10** blind agreement (incl. three 44–60-node models at scale, and one entry judged against a paper's own published basin sizes) | CANA attractor signatures — how many attractors and the period of each, which is what the reference records; not the attractor states themselves (small models) + the SHA-256 of the fixed-point **set** an independent SAT solver found (the large signalling networks). Every certificate states the update scheme its numbers were computed under | [`datasets/logical/milestone/`](../datasets/logical/milestone/) |
@@ -99,8 +99,8 @@ $ reprolith self-validation
   class               matched  abstained  other  of total
   constraint-based          8          0      0  / 8
   ...
-  ode-pkpd                  1         26      4  / 31
-  overall: 36 matched, 26 honest abstentions, 4 other, over 66 labelled entries across 6 classes
+  ode-pkpd                  2         25      4  / 31
+  overall: 37 matched, 25 honest abstentions, 4 other, over 66 labelled entries across 6 classes
   (an abstention is a 'blocked' verdict — insufficient information — not a wrong verdict)
   ode-pkpd: 4 labelled 'reproduced' came back 'partially-reproduced' — stricter than the label
 ```
@@ -149,7 +149,7 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
   logical               9 model(s) on cana, reprolith-logical, sympy-sat — all agree exactly
                           as cana 1.0.0, reprolith-logical synchronous-update, exhaustive-state-enumeration (rev 339be2bfd62e), reprolith-logical synchronous-update, sat-fixed-points (z3 5.0.0) (rev 339be2bfd62e), sympy-sat 1.14.0
                           1 of 10 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
-  ode-pkpd            201 claim(s) on copasi, roadrunner — all engine-independent to 1e-06
+  ode-pkpd            204 claim(s) on copasi, roadrunner — all engine-independent to 1e-05
                           as copasi 4.46.300 (Source), roadrunner 2.7.0
   spatial               5 model(s) on reprolith-fd, scipy-lsoda — 4 of 5 engine-independent (front_speed differs by at most 1e-01)
                           as reprolith-fd explicit-forward-euler-finite-difference (rev 652b79ad3bee), scipy-lsoda 1.13.1
@@ -157,7 +157,7 @@ CROSS-ENGINE CORROBORATION (a second, independent simulator on the same runs)
                           as reprolith-ssa gillespie-direct-method (rev 0e0873ebe9ed), roadrunner-gillespie 2.7.0
                           1 of 5 standing certificate(s) in this class have no second engine behind them — an absence, not a pass
 
-  overall: 6 of 6 classes re-run on a second engine — 201 claim(s), 32 model(s); 3 standing certificate(s) in those classes have none
+  overall: 6 of 6 classes re-run on a second engine — 204 claim(s), 32 model(s); 3 standing certificate(s) in those classes have none
 ```
 
 Four things about that output are deliberate.
@@ -242,8 +242,8 @@ Read them as evidence about **abstention discipline**, not classification skill.
 - The PK/PD labels are BioModels curation status, and curation status *is* the accession prefix —
   so "starts with `BIOMD` → reproduced" scores 31/31 on that set. The accession travels with the
   blind entry, so an agent guessing from the prefix would outscore honest work. What the PK/PD run
-  shows is that Reprolith abstained on 26 of 31 entries, matched the label on one — the
-  acetaminophen model, judged against a curve read off its paper's figure — and disagreed with the
+  shows is that Reprolith abstained on 25 of 31 entries, matched the label on two — both
+  acetaminophen models, judged against curves read off their paper's figures — and disagreed with the
   label on the other four — every disagreement in the **stricter** direction, a label of `reproduced`
   against a blind `partially-reproduced`. That is a withheld pass, not a false one, and the
   distinction is the whole of what this row is worth: the failure this project exists not to commit

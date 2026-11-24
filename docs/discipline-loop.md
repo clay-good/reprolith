@@ -27,14 +27,14 @@ Nineteen of the twenty catalogued failure modes are `spec`; the twentieth (engin
 `measured`, and what the measurement showed was its absence. That is the point of keeping the field:
 a category that exists because a spec demands it must not read as loop experience it does not have.
 
-## What the 30 disagreements say
+## What the 29 disagreements say
 
-Only the PK/PD run disagrees with its labels at all; the other five classes agree everywhere. One
-of its thirty-one entries matches — the acetaminophen model, judged against a curve read off its
-paper's figure — twenty-six abstain, and the four metformin entries that are judged all come back
-stricter than their label.
+Only the PK/PD run disagrees with its labels at all; the other five classes agree everywhere. Two
+of its thirty-one entries match — both acetaminophen models Sluka et al. 2016 deposited, each
+judged against curves read off that paper's figures — twenty-five abstain, and the four metformin entries that are
+judged all come back stricter than their label.
 
-- **26 abstentions**, all one note, traced to **ingestion**: Reprolith holds no extracted claims
+- **25 abstentions**, all one note, traced to **ingestion**: Reprolith holds no extracted claims
   for these papers, so there was nothing to reproduce and no model was run — the run abstains, and a
   `blocked` verdict can never equal a `reproduced` label. (This said "the shipped artifact carries
   no machine-checkable claim" until a regression audit noticed the code had been corrected and its
@@ -116,8 +116,9 @@ practitioner can act on.
   and it was already computed and published — just never expressed in the units the verdict is in.
   Cross-engine corroboration re-runs a certified result under a second independent simulator and
   publishes the normalized distance between the two curves, which is the *same statistic*
-  `judge_curve` compares against the pass budget. PK/PD's eighty claims, each re-run at the dose it
-  was certified at, agree to 1e-06 — a hundredth of a percent of the 0.10 curve budget, and for
+  `judge_curve` compares against the pass budget. PK/PD's claims, each re-run at the dose it
+  was certified at, agree to 1e-06 but for three — the metabolism module's own figure, which bounds
+  at 1e-05 — so a hundredth of a percent of the 0.10 curve budget at worst, and for
   this class that number is now a **floor** rather than a measurement: below 1e-07 the raw
   distance is the two engines' last places, it moves 13% between consecutive COPASI calls in
   one process, and three measurements of one claim on CI published two different decades with
