@@ -6703,3 +6703,21 @@ Nothing about what CI checks changes.
 The reason it is in this file at all: the gates are how this repository knows anything, and a gate
 that costs half an hour is one a person runs less often than one that costs six minutes. The cost
 of a check is part of the check.
+
+## The note that told a curator their file was wrong
+
+Both unit notes — the x axis against the model's clock, the y axis against the unit the model
+reads that curve in — ended with the same sentence: *so one of the two files is naming the wrong
+unit*. It was true when nothing could convert a reading. It stopped being true the day a claim
+could state the conversion, which was the same day the second of those notes started firing on
+this corpus: Sluka et al. 2016 draw their acetaminophen curve in µg/mL against a model reading
+mol/L, and their metabolism figure over forty minutes against a deposit whose clock is seconds.
+Neither file is wrong in either case. A curator told one of them is goes and changes something
+that was right.
+
+So the notes name the remedy, and where the two units are commensurable they name the **factor** —
+"state the conversion as the claim's `time_scale`, whose factor is 60", which is exactly what the
+shipped claims state. Where they are not, the note says what the conversion needs instead of
+inventing one: µg/mL against a molar concentration takes a quantity neither file carries, and
+saying "a molar mass, say" is the difference between a finding and an instruction. The same
+distinction this repository already drew for every "too few" abstention.

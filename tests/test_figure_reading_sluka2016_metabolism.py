@@ -310,3 +310,57 @@ def test_converting_a_log_axis_moves_the_axis_and_not_which_points_join() -> Non
     before = resample_series(series, [0.2, 2.0, 20.0, 50.0])
     after = resample_series(converted, [x * _TO_SECONDS for x in (0.2, 2.0, 20.0, 50.0)])
     assert after == pytest.approx(before)
+
+
+def test_the_unit_note_names_the_factor_the_claim_should_state() -> None:
+    """An abstention that states a finding and leaves the reader nothing to do is half a check.
+
+    This note used to end "so one of the two files is naming the wrong unit" — true when nothing
+    could convert a reading, and false the day a claim could state the conversion. Both of this
+    paper's figures are drawn in units their deposits do not use, and neither file is wrong. Told
+    one of them is, a curator goes and changes something that was right. So it names the remedy,
+    and where the two units are commensurable it names the **factor**: 60, which is exactly what
+    the shipped claims state.
+    """
+    sbml = (_DATASETS / _ENTRY["model_file"]).read_text(encoding="utf-8")
+    (note, *_) = time_unit_notes(_readings().values(), sbml, carrier="your model")
+    assert "time_scale, whose factor is 60" in note
+    assert "wrong unit" not in note
+    # And the factor it names is the one the committed claim states.
+    stated = {record["time_scale"]["factor"] for record in _ENTRY["figure_claims"]}
+    assert stated == {_TO_SECONDS}
+
+
+def test_a_conversion_that_needs_a_quantity_neither_file_states_says_so() -> None:
+    """The other half: µg/mL against mol/L is not a factor either file carries.
+
+    Figure 4 of the same paper is that case, and its claim states the molar mass it converts by.
+    A note that named a factor here would be inventing one; it names what the conversion needs
+    instead, which is the instruction a curator can act on.
+    """
+    from reprolith import value_unit_notes
+
+    entry = json.loads((_DATASETS / "pkpd_claims.json").read_text(encoding="utf-8"))["entries"][
+        "BIOMD0000000619"
+    ]
+    (record,) = entry["figure_claims"]
+    assert record["value_scale"]["unit"] == "mol/L"
+    assert record["reported_units"] == "ug/mL"
+
+    # Printed on the surface a curator actually sees, not only inside the formatter: a reading in
+    # the figure's own µg/mL against a document curve this model reads as a molar concentration.
+    worked = _DATASETS / "worked_examples"
+    sedml = (worked / "Zake2021_metformin_human_single_PO.sedml").read_text(encoding="utf-8")
+    model = (worked / "Zake2021_metformin_human_single_PO.xml").read_text(encoding="utf-8")
+    reading = read_digitized_figure(json.dumps({
+        "figure": "Figure 3A", "digitizer": "WebPlotDigitizer 4.7",
+        "x_axis": {"minimum": 0, "maximum": 24, "unit": "h"},
+        "y_axis": {"minimum": 0, "maximum": 30, "unit": "ug/mL"},
+        "series": [{"claim": "p2_curve_17_task2", "curve": "venous plasma",
+                    "points": [[0, 0.0], [1, 20.0], [24, 2.0]]}],
+    }))
+    (note,) = value_unit_notes(reading, sedml, model, carrier="your model")
+    assert "not commensurable" in note and "molar mass" in note
+    assert "value_scale" in note and "wrong unit" not in note
+    # No factor is invented where the two units do not carry one.
+    assert "whose factor is" not in note

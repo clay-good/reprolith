@@ -762,6 +762,36 @@ def window_faults(
     return tuple(faults)
 
 
+def _conversion_instruction(ratio: float | None, field: str) -> str:
+    """What to do about two files in different units, which is not always "fix one of them".
+
+    These notes used to end by saying one of the two files names the wrong unit. That was true
+    when nothing could convert a reading, and it stopped being true the day a claim could state
+    the conversion: Sluka et al. 2016 draw their acetaminophen curve in µg/mL against a model
+    reading mol/L, and their metabolism figure over minutes against a deposit whose clock is
+    seconds, and in neither case is any file wrong. Told the file is wrong, a curator goes and
+    changes something that was right.
+
+    So the note names the remedy instead, and names the **factor** where the two units are
+    commensurable — a figure in minutes against a run in seconds needs 60, and saying so is the
+    difference between a finding and an instruction. Where they are not — a mass per volume
+    against a molar concentration — the conversion needs a quantity neither file states, and that
+    is what it says.
+    """
+    if ratio is None:
+        return (
+            f"the two are not commensurable, so the conversion needs a quantity neither file "
+            f"states (a molar mass, say): state it as the claim's {field} — the factor, the unit "
+            "it converts to, and where the factor comes from — or re-read the figure against the "
+            "unit the model uses"
+        )
+    return (
+        f"state the conversion as the claim's {field}, whose factor is {1 / ratio:g}, or re-read "
+        "the figure against the unit the model uses; neither file is necessarily wrong, and the "
+        "comparison is made in the figure's numbers until one of the two happens"
+    )
+
+
 def time_unit_notes(
     series: Iterable[DigitizedSeries], model_sbml: str, *, carrier: str = "this model"
 ) -> tuple[str, ...]:
@@ -800,8 +830,8 @@ def time_unit_notes(
             f"series '{reading.claim_id}' was read against an x axis in {stated}, and {carrier} "
             f"states its time in {declared}"
             + (f", which is {ratio:g} times as large" if ratio is not None else "")
-            + ": the reading is placed on the run's grid by those numbers, so one of the two "
-            "files is naming the wrong unit"
+            + ": the reading is placed on the run's grid by those numbers, so "
+            + _conversion_instruction(ratio, "time_scale")
         )
     return tuple(notes)
 
@@ -849,8 +879,8 @@ def value_unit_notes(
             f"series '{reading.claim_id}' was read against a y axis in {stated}, and {carrier} "
             f"reads '{reads[0]}' in {declared}"
             + (f", which is {ratio:g} times as large" if ratio is not None else "")
-            + ": the reading becomes that claim's reference values as they stand, so one of the "
-            "two files is naming the wrong unit"
+            + ": the reading becomes that claim's reference values as they stand, so "
+            + _conversion_instruction(ratio, "value_scale")
         )
     return tuple(notes)
 
