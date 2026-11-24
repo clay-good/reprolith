@@ -69,8 +69,13 @@ def test_every_committed_certificate_is_reachable_by_the_commands_that_read_one(
 
 @pytest.mark.parametrize("command", ["dossier", "bundle"])
 def test_the_ingested_and_reconstructed_views_load_for_a_certified_entry(command, capsys) -> None:
+    # The first certified entry that *has* one. An artifact this engine cannot re-extract is
+    # certified by running the file as shipped and has no dossier or bundle at all — the first
+    # entry alphabetically is one of those, and a check that took it would be asserting the
+    # absence rather than the surface.
     accession = sorted(
         path.stem for path in (_DATASETS / "milestone" / "certificates").glob("*.json")
+        if (_DATASETS / "milestone" / "dossiers" / f"{path.stem}.json").exists()
     )[0]
     assert run([command, accession]) == 0
     assert capsys.readouterr().out.strip()

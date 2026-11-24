@@ -110,7 +110,17 @@ def main() -> None:
     bundle_dir.mkdir(exist_ok=True)
     for accession, entry in claims["entries"].items():
         sbml = (DATASETS / entry["model_file"]).read_text(encoding="utf-8")
-        dossier = ingest_sbml(sbml, entry=accession, source_label=f"BioModels {accession}")
+        try:
+            dossier = ingest_sbml(sbml, entry=accession, source_label=f"BioModels {accession}")
+        except ValueError as refusal:
+            # An artifact this engine cannot re-extract gets no dossier, no bundle and no
+            # footprints — Benson et al. 2014's deposit states brain concentrations in a 1.45 L
+            # compartment and the rebuild is amount-based. Its *certificate* is unaffected: the
+            # claims are judged by running the file as shipped, which is the adopt-and-verify
+            # path, and `reprolith.artifact_limits` states the limit on the certificate as this
+            # engine's rather than as the author's omission.
+            print(f"  no dossier for {accession}: {refusal}")
+            continue
         # The paper's own claims, joined onto the structure ingested from its model file. A model
         # states no claims — it says what *can* be read, never what the paper showed — so an
         # SBML-only dossier records none, and every dossier in this repository recorded zero.

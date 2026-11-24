@@ -377,7 +377,7 @@ ready" for it would tell almost every honest author their work is broken. See
 
 ## The limit that remains
 
-**Two published figures are in this corpus now, and both are on published certificates.**
+**Four published figures are in this corpus now, and all four are on published certificates.**
 Figure 5 of Zake et al. 2021 is read: thirty curves, the paper's own model simulations of ten
 tissues at three doses (`datasets/figures/Zake2021_figure5/`). The reading is a curator's, taken
 with `scripts/digitize_figure_panels.py`, which locates the frame, ticks and lines in the image and
@@ -437,5 +437,24 @@ is already right. Where the model says the two files are in different units, the
 the unit question instead of a short reading — and still reports it, since a curator who does
 nothing has a claim that cannot be judged.
 
-What remains is the other twenty-five blocked entries' papers, whose results are only in figures
+**The third is seven curves in seven colours, and the first under a licence more restrictive than
+CC BY.** Benson et al. 2014 plot brain CB1 receptor occupancy at seven single oral doses
+(`datasets/figures/Benson2014_figure5/`), with no measured data on the panel at all. Three things
+it needed. Its **legend sits inside the frame**, drawn in the curves' own colours, so a `blank`
+rectangle paints it out and the report says how many pixels of each colour went with it. Its
+**0.1 mg curve is read and not claimed**: near-black, it cannot be told from the dark edge of a
+saturated line — its own interpolation cost says 185% of the pass budget against 11–90% for the
+six that are claimed — but *removing* it from the manifest is worse than leaving it, because every
+pixel goes to the colour it fits best among those listed and its ink would move its neighbours
+instead. And the image is **JPEG**, kept in the publisher's own bytes: re-encoding it to suit a
+PNG-only reader is the one thing a no-derivatives licence forbids.
+
+Four of the six claimed curves reproduce and two are partial — both on the steep descent, where
+the worst *point* crosses the band while the distance over the whole curve is a twentieth of it.
+That model also runs without being rebuildable: its species state concentrations in a 1.45 L
+compartment and this engine's reconstruction is amount-based, so the certificate carries a stated
+limit of its own and no gap report, because being unable to re-extract an artifact is not the
+author's omission.
+
+What remains is the other twenty-four blocked entries' papers, whose results are only in figures
 and still unread.

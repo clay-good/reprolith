@@ -175,8 +175,8 @@ def test_standing_counts_what_is_published_and_says_it_is_not_a_record_of_a_run(
 
     query, _ = load_repository(default_data_dir(), aggregate=True)
     status = query.loop_status()
-    assert status["standing"]["certificates"] == 41
-    assert sum(status["standing"]["by_class"].values()) == 41
+    assert status["standing"]["certificates"] == 42
+    assert sum(status["standing"]["by_class"].values()) == 42
     assert "not what any one run produced" in status["standing_note"]
 
 
@@ -243,7 +243,7 @@ def test_the_terminal_prints_the_reason_and_the_json_is_the_tool_object(capsys) 
     assert run(["loop-status"]) == 0
     out = capsys.readouterr().out
     assert "NO PUBLISHABLE WORK" in out
-    assert "25 entries blocked" in out
+    assert "24 entries blocked" in out
     # Three for an expert, down from four: the spatial wall was one of them — a claim carries the
     # boundary its source names, so somebody who knows which wall a paper used could settle it —
     # and the three published profiles stopped asking, because their source states an *unbounded*

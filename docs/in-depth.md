@@ -12,7 +12,7 @@ reproduced, partially, or not — for each result, with the reason.
 
 That is what it is *for*, and it is worth being exact about how much of it is done today.
 
-Of the forty-one published certificates, **four** check a reconstruction against numbers read
+Of the forty-two published certificates, **four** check a reconstruction against numbers read
 from one paper's own tables — one for each model that paper deposited. (Two more are checked
 against published numbers too, and the count below says which.) Between them they carry **two
 hundred claims**. One hundred and seventy are
@@ -116,8 +116,8 @@ model's maximal growth rate of **0.873922**, which the publication that distribu
 reports — that certificate also carries the **essential genes and reactions** of the same model,
 checked element for element against COBRApy's single-deletion answer — and the seven basin sizes
 Li et al. 2004 publish for the yeast cell-cycle network, how many initial states reach each of its
-steady states, all seven reproduced exactly. Eight against a
-publication, then — counting the two acetaminophen models' figures above — and thirty-three against a tool or against mathematics — one certificate, the
+steady states, all seven reproduced exactly. Nine against a
+publication, then — counting the two acetaminophen models' figures and the FAAH inhibitor's — and thirty-three against a tool or against mathematics — one certificate, the
 E. coli core one, in both counts, because its growth rate is a publication's number and its two
 essential sets are COBRApy's answers for the same file —
 counted from the certificates themselves by `tests/test_reference_provenance.py`, because this
@@ -641,7 +641,7 @@ With the extra installed the full loop runs end to end: a dossier compiles to SB
 scope-flagged certificate. The blind PK/PD self-validation set lives in
 [`datasets/pkpd_test_set.json`](../datasets/pkpd_test_set.json), labelled from BioModels'
 curation status — which is also the accession prefix, so read that run as evidence of abstention
-discipline (25 abstentions, and four verdicts stricter than their label — a withheld pass, never
+discipline (24 abstentions, and five verdicts stricter than their label — a withheld pass, never
 a false one) rather than of blind classification skill; the dataset and
 [docs/self-validation.md](self-validation.md) both spell out why.
 
@@ -880,7 +880,7 @@ That last number is the ranking, so the value four published results rest on is 
 you see and not the twentieth.
 
 It says how much of the corpus each value reaches, because a count of unreviewed values read
-against the size of the repository is its own overstatement: three values under **4 of the 41**
+against the size of the repository is its own overstatement: three values under **4 of the 42**
 standing certificates, not under all of them.
 
 It prints in two parts, and the second is the one worth reading first — or it did. It is where

@@ -45,7 +45,7 @@ def _split() -> tuple[int, int, int]:
 
 def test_the_page_states_the_counts_the_committed_report_holds() -> None:
     matched, abstained, other = _split()
-    assert (matched, abstained, other) == (2, 25, 4), "regenerate the milestone, then this page"
+    assert (matched, abstained, other) == (2, 24, 5), "regenerate the milestone, then this page"
     assert f"{abstained} honest abstentions" in _PAGE
     assert f"{other} verdicts stricter than the label" in _PAGE
     assert f"abstained on {abstained} of {matched + abstained + other} entries" in _PAGE
@@ -68,7 +68,7 @@ def test_the_page_does_not_claim_a_clean_sheet_it_no_longer_has() -> None:
     # The README states the same split in one line, and two places holding one number is how this
     # drifted in the first place.
     assert f"({abstained} abstentions" in _README
-    assert "four verdicts stricter than their label" in _README and other == 4
+    assert "five verdicts stricter than their label" in _README and other == 5
 
 
 def test_the_loop_record_states_the_same_split_as_the_report() -> None:
@@ -109,7 +109,7 @@ def test_the_milestone_readme_states_the_same_split_as_the_report_beside_it() ->
     assert ("| `reproduced` |" in _MILESTONE) is (matched > 0)
     # And the count of published certificates the page promises a reader they will find.
     certificates = list((_ROOT / "datasets" / "milestone" / "certificates").glob("*.json"))
-    assert len(certificates) == matched + other == 6
+    assert len(certificates) == matched + other == 7
 
 
 def test_the_committed_data_states_the_split_its_own_report_holds() -> None:

@@ -165,6 +165,42 @@ def blocked_certificate(
     )
 
 
+def artifact_limits(sbml: str, accession: str) -> tuple[Assumption, ...]:
+    """What this engine could not do with the artifact, as its own statement rather than a gap.
+
+    Today there is one: a model whose species state concentrations in a compartment that is not
+    unit-sized cannot be re-extracted into a dossier, because the rebuild is amount-based. Nothing
+    about the verdict rests on it — the claims are judged by running the file the author shipped —
+    so it is recorded **not load-bearing**, which keeps it off the verification queue and out of
+    the overall verdict while still appearing on the certificate. `author_can_close` is false for
+    the reason it is false everywhere else here: no wording in any paper clears it.
+    """
+    from .ingest import ingest_sbml
+
+    try:
+        ingest_sbml(sbml, entry=accession)
+    except ValueError as refusal:
+        return (
+            Assumption(
+                id="artifact-not-re-extractable",
+                description=(
+                    "this engine could not re-extract the shipped model into a dossier, so no "
+                    "gap report is derived from it and nothing here is rebuilt from its parts"
+                ),
+                chosen=f"the artifact is run as shipped: {refusal}",
+                basis=(
+                    "the claims are judged by running the author's own file under the pin, which "
+                    "is the adopt-and-verify path and needs no rebuild; what is lost is the "
+                    "independent extraction, and with it the gap report and the footprints a "
+                    "budgeted selection would read"
+                ),
+                load_bearing=False,
+                author_can_close=False,
+            ),
+        )
+    return ()
+
+
 def _artifact_gaps(sbml: str, accession: str) -> tuple[str, ...]:
     """What the artifact itself leaves out, as the certificate's "what was missing" report.
 
@@ -176,7 +212,17 @@ def _artifact_gaps(sbml: str, accession: str) -> tuple[str, ...]:
     """
     from .ingest import ingest_sbml
 
-    dossier = ingest_sbml(sbml, entry=accession)
+    try:
+        dossier = ingest_sbml(sbml, entry=accession)
+    except ValueError:
+        # A model this engine cannot re-extract has no gap report, and that is **not** the
+        # author's omission: Benson et al. 2014's deposit states its brain concentrations in a
+        # compartment of 1.45 L, and the rebuild is amount-based in a unit compartment. The
+        # certificate rests on running the file as shipped, so the verdict is unaffected — but the
+        # gap report reaches an author under the heading *fix before you submit*, and a line there
+        # saying Reprolith could not rebuild their model would read as something for them to fix.
+        # It goes to `artifact_limits` instead, which states it as this engine's.
+        return ()
     return tuple(
         f"{gap.kind.value} not stated by the artifact: {gap.element} — {gap.detail}"
         for gap in dossier.load_bearing_gaps()
@@ -203,6 +249,7 @@ def certified_from_claims(
         claims = [Claim.from_record(record) for record in entry["claims"]]
         curves = figure_claims(entry.get("figure_claims", ()), base_dir=base)
         assumptions = [Assumption(**record) for record in entry.get("assumptions", [])]
+        assumptions.extend(artifact_limits(sbml, accession))
         certificates[accession] = certify_model(
             sbml,
             paper=PaperIdentity(**entry["paper"]),

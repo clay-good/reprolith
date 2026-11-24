@@ -67,7 +67,7 @@ def test_every_certificate_is_checked_against_a_tool_mathematics_or_a_publicatio
 
     # One certificate is in two buckets, so the buckets hold one more name than there are
     # certificates — counted rather than assumed, because that is the arithmetic the README states.
-    assert len(sum(by_kind.values(), [])) == 41 + len(_MIXED)
+    assert len(sum(by_kind.values(), [])) == 42 + len(_MIXED)
     # COBRApy 7 + libRoadRunner 7 (six curves and one oscillator's period) + CANA 9, plus E. coli
     # core's two essential sets, which are COBRApy's answers on a certificate whose growth rate is
     # a publication's.
@@ -81,9 +81,9 @@ def test_every_certificate_is_checked_against_a_tool_mathematics_or_a_publicatio
     # distributing publication reports, and the seven basin sizes Li et al. 2004 print for the
     # yeast cell-cycle network — the one logical entry whose reference is a paper's number rather
     # than CANA's.
-    assert len(by_kind["publication"]) == 8, sorted(by_kind["publication"])
+    assert len(by_kind["publication"]) == 9, sorted(by_kind["publication"])
     assert sorted(Path(name).stem for name in by_kind["publication"]) == [
-        "BIOMD0000000619", "BIOMD0000000624",
+        "BIOMD0000000512", "BIOMD0000000619", "BIOMD0000000624",
         "BIOMD0000001027", "BIOMD0000001028", "BIOMD0000001029", "BIOMD0000001039",
         "budding_yeast_basins", "e_coli_core",
     ]

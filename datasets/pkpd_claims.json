@@ -3365,6 +3365,120 @@
      }
     }
    ]
+  },
+  "BIOMD0000000512": {
+   "model_file": "worked_examples/Benson2014_FAAH_inhibitor.xml",
+   "paper": {
+    "title": "Benson2014 - FAAH inhibitors for the treatment of osteoarthritic pain",
+    "doi": "10.1038/psp.2013.72"
+   },
+   "duration": 330.0,
+   "steps": 330,
+   "claims": [],
+   "figure_claims": [
+    {
+     "claim_id": "fig5-occupancy-0.3mg",
+     "quantity": "brain CB1 receptor occupancy over 330 h after a single 0.3 mg oral dose",
+     "species": "CB1_b",
+     "digitization": "figures/Benson2014_figure5/fig5.json",
+     "duration": 330.0,
+     "steps": 330,
+     "reported_units": "%",
+     "parameter_overrides": {
+      "Dose": 0.3
+     },
+     "value_scale": {
+      "factor": 0.01,
+      "unit": "fraction",
+      "basis": "the figure's y axis is a percentage and the model's CB1_b is the bound fraction its assignment rule computes, between 0 and 1; 1% is 0.01"
+     }
+    },
+    {
+     "claim_id": "fig5-occupancy-1mg",
+     "quantity": "brain CB1 receptor occupancy over 330 h after a single 1 mg oral dose",
+     "species": "CB1_b",
+     "digitization": "figures/Benson2014_figure5/fig5.json",
+     "duration": 330.0,
+     "steps": 330,
+     "reported_units": "%",
+     "parameter_overrides": {
+      "Dose": 1.0
+     },
+     "value_scale": {
+      "factor": 0.01,
+      "unit": "fraction",
+      "basis": "the figure's y axis is a percentage and the model's CB1_b is the bound fraction its assignment rule computes, between 0 and 1; 1% is 0.01"
+     }
+    },
+    {
+     "claim_id": "fig5-occupancy-3mg",
+     "quantity": "brain CB1 receptor occupancy over 330 h after a single 3 mg oral dose",
+     "species": "CB1_b",
+     "digitization": "figures/Benson2014_figure5/fig5.json",
+     "duration": 330.0,
+     "steps": 330,
+     "reported_units": "%",
+     "parameter_overrides": {
+      "Dose": 3.0
+     },
+     "value_scale": {
+      "factor": 0.01,
+      "unit": "fraction",
+      "basis": "the figure's y axis is a percentage and the model's CB1_b is the bound fraction its assignment rule computes, between 0 and 1; 1% is 0.01"
+     }
+    },
+    {
+     "claim_id": "fig5-occupancy-10mg",
+     "quantity": "brain CB1 receptor occupancy over 330 h after a single 10 mg oral dose",
+     "species": "CB1_b",
+     "digitization": "figures/Benson2014_figure5/fig5.json",
+     "duration": 330.0,
+     "steps": 330,
+     "reported_units": "%",
+     "parameter_overrides": {
+      "Dose": 10.0
+     },
+     "value_scale": {
+      "factor": 0.01,
+      "unit": "fraction",
+      "basis": "the figure's y axis is a percentage and the model's CB1_b is the bound fraction its assignment rule computes, between 0 and 1; 1% is 0.01"
+     }
+    },
+    {
+     "claim_id": "fig5-occupancy-20mg",
+     "quantity": "brain CB1 receptor occupancy over 330 h after a single 20 mg oral dose",
+     "species": "CB1_b",
+     "digitization": "figures/Benson2014_figure5/fig5.json",
+     "duration": 330.0,
+     "steps": 330,
+     "reported_units": "%",
+     "parameter_overrides": {
+      "Dose": 20.0
+     },
+     "value_scale": {
+      "factor": 0.01,
+      "unit": "fraction",
+      "basis": "the figure's y axis is a percentage and the model's CB1_b is the bound fraction its assignment rule computes, between 0 and 1; 1% is 0.01"
+     }
+    },
+    {
+     "claim_id": "fig5-occupancy-40mg",
+     "quantity": "brain CB1 receptor occupancy over 330 h after a single 40 mg oral dose",
+     "species": "CB1_b",
+     "digitization": "figures/Benson2014_figure5/fig5.json",
+     "duration": 330.0,
+     "steps": 330,
+     "reported_units": "%",
+     "parameter_overrides": {
+      "Dose": 40.0
+     },
+     "value_scale": {
+      "factor": 0.01,
+      "unit": "fraction",
+      "basis": "the figure's y axis is a percentage and the model's CB1_b is the bound fraction its assignment rule computes, between 0 and 1; 1% is 0.01"
+     }
+    }
+   ]
   }
  }
 }

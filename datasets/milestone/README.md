@@ -19,16 +19,16 @@ this file fails rather than shipping a quietly one-engine verdict.
 
 ## The result in one line
 
-**Every one of the 31 entries yielded a verdict, and none of them is a false pass** — six
-certified reproductions, two of them unqualified, and twenty-five honest abstentions recorded as `blocked` in the agreement
+**Every one of the 31 entries yielded a verdict, and none of them is a false pass** — seven
+certified reproductions, two of them unqualified, and twenty-four honest abstentions recorded as `blocked` in the agreement
 report rather than published as certificates. Only the certified entries have files under
-`certificates/`, so `reprolith certificates-for` returns nothing for the other twenty-five.
+`certificates/`, so `reprolith certificates-for` returns nothing for the other twenty-four.
 
 | Outcome | Count | What it means |
 |---|---|---|
-| `partially-reproduced` | 4 | Every model this paper deposited — claims extracted and verified, and 102 of the 110 reproduced, but not one certificate is unqualified. The three orally-dosed human models each carry a load-bearing salt-form assumption; every entry carrying an AUC claim also carries the deposit's declared time unit, which is one hundred hours where the paper's tables print hours, so an area read off the model is qualified by which reading Reprolith took. The mouse oral-dose entry was this class's one clean pass until that was found. |
+| `partially-reproduced` | 5 | Every model this paper deposited — claims extracted and verified, and 102 of the 110 reproduced, but not one certificate is unqualified. The three orally-dosed human models each carry a load-bearing salt-form assumption; every entry carrying an AUC claim also carries the deposit's declared time unit, which is one hundred hours where the paper's tables print hours, so an area read off the model is qualified by which reading Reprolith took. The mouse oral-dose entry was this class's one clean pass until that was found. |
 | `reproduced` | 2 | Both models Sluka et al. 2016 deposited, and their paper prints a table of neither. The whole-body PBPK module (BIOMD0000000619) is one curve, Figure 4, read off the published image (`../figures/Sluka2016_figure4/`). The sub-cellular metabolism module (BIOMD0000000624) is the three crossing curves of Figure 6 (`../figures/Sluka2016_figure6/`), read over forty minutes against a deposit whose clock is seconds — the claims state that conversion. Both reproduce with no assumption, so both certificates are clean, and both are marked as judged against a figure reading. |
-| `blocked` | 25 | Reprolith **abstained** — Reprolith holds no extracted claims for these papers, so there was nothing to reproduce and no model was run. Not a failure to reproduce; a recorded missing input. |
+| `blocked` | 24 | Reprolith **abstained** — Reprolith holds no extracted claims for these papers, so there was nothing to reproduce and no model was run. Not a failure to reproduce; a recorded missing input. |
 
 Raw agreement with the ground-truth labels is 2/31 — and that number is the honest one, not a bad
 one. Read on.
@@ -39,7 +39,7 @@ The agreement metric does an exact match of Reprolith's verdict against the BioM
 matches are the acetaminophen models above. Two things account for the twenty-nine that do not
 match, and neither is a false pass:
 
-1. **25 abstentions.** For 25 entries no claims were extracted from the manuscript, so Reprolith
+1. **24 abstentions.** For 24 entries no claims were extracted from the manuscript, so Reprolith
    returned `blocked` rather than guess. A `blocked` never matches a `reproduced` or
    `not-reproduced` label — by design. This is Design Goal 2 in action: *a confidently wrong
    verdict is worse than an honest blocked.*
@@ -53,14 +53,14 @@ match, and neither is a false pass:
 
 So the run demonstrates exactly what the milestone set out to show: given a claim, the pipeline
 produces a trustworthy, qualified verdict — and, on the two models that needed no assumption, an
-unqualified one; given no claim, it abstains instead of guessing (the other 25).
+unqualified one; given no claim, it abstains instead of guessing (the other 24).
 
 ## What the run establishes and what it does not
 
 - **Establishes:** the full pathway runs blind over a real labelled set and yields a certificate
   for every entry; the engine, determinism, and honesty invariants hold on real data.
 - **Does not yet establish:** verdict accuracy across the set. That needs the one input the run
-  names 25 times — each paper's targetable claims, extracted from the manuscript or read off its
+  names 24 times — each paper's targetable claims, extracted from the manuscript or read off its
   figures. The four metformin entries and the two acetaminophen ones show the rest of the pipeline
   delivers once a claim is in hand.
 

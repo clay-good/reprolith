@@ -305,6 +305,7 @@ from .render import (
 from .revision import DossierHistory, DossierRevision, dossier_digest, revise
 from .run import (
     advance_to_outcome,
+    artifact_limits,
     blocked_certificate,
     certified_from_claims,
     figure_claims,
@@ -436,6 +437,7 @@ __all__ = [
     "assess_match",
     "Assumption",
     "AmbiguousPanel",
+    "artifact_limits",
     "attach_digitized_values",
     "Attribution",
     "audit_loop_notes",

@@ -1,0 +1,88 @@
+{
+ "description": "Figure 5 of Benson et al. 2014 (CPT: Pharmacometrics & Systems Pharmacology 3(1): e91, doi:10.1038/psp.2013.72, CC BY-NC-ND 3.0): the paper's own simulation of percentage CB1 receptor occupancy in the brain after single oral doses of a FAAH inhibitor, one colour per dose and no measured data on the panel at all. The image is redistributed unmodified, which is what that licence permits; the readings beside it are measurements of it. Read by scripts/digitize_figure_panels.py in its colour mode: the frame and the ticks are located in the image and each line is followed by its own colour. Read by eye: the tick labels, and which dose each legend entry names. The legend sits inside the frame and is drawn in the same seven colours as the curves, so it is painted out before the trace \u2014 checked first, by measuring that in every column right of the legend's swatches there is no saturated pixel above row 285 while every curve there runs at row 493 or below. Every curve starts from the same point \u2014 no drug has been given, so occupancy is zero at t=0 for every dose \u2014 and on the opening rise the lower curves are hidden under the steeper ones drawn after them, so no series can be traced back to it. That point is measured once, at the first column holding any line's ink, and begins each series at t=0; the digitizer refuses the snap unless that ink is within 2 px of the tick. The 0.1 mg curve is read but not claimed, and the distinction matters: every pixel goes to the line it fits best *among the colours listed*, so dropping a line from the list does not leave its pixels alone \u2014 it gives them to whichever remaining colour fits next, and the neighbouring curves' readings move. Listed, it absorbs its own ink; unclaimed, nothing is certified from it. It is drawn in near-black, and a colour trace gives every pixel to the line it fits best \u2014 the dark anti-aliased edge of a saturated line fits 'black over white' better than its own colour does, so the black trace is captured by whichever curve it passes under. Measured rather than suspected: read, it reaches 11.1% where that curve never exceeds 1.4%, and its own interpolation cost is 185% of the pass budget, where the six that are read cost 11% to 90%. The six saturated curves are the claims.",
+ "image": "psp201372f5.jpg",
+ "source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC3910012/supplementaryFiles",
+ "defaults": {
+  "digitizer": "scripts/digitize_figure_panels.py (colour trace; tick labels read by eye)",
+  "x_unit": "h",
+  "y_unit": "%",
+  "x_from": 0.0,
+  "common_origin": 0.0
+ },
+ "panels": [
+  {
+   "panel": "5",
+   "figure": "Benson et al. 2014, Fig 5 (brain CB1 receptor occupancy)",
+   "crop": [
+    0,
+    0,
+    750,
+    560
+   ],
+   "x_ticks": [
+    0,
+    50,
+    100,
+    150,
+    200,
+    250,
+    300,
+    350
+   ],
+   "y_ticks": [
+    0,
+    5,
+    10,
+    15,
+    20,
+    25
+   ],
+   "blank": [
+    [
+     525,
+     0,
+     745,
+     285
+    ]
+   ],
+   "reading": "fig5.json",
+   "series": [
+    {
+     "claim": "fig5-occupancy-0.1mg",
+     "curve": "CB1 occupancy, 0.1 mg (black line) \u2014 read so its pixels are not given to another line, not claimed",
+     "colour": "#262425"
+    },
+    {
+     "claim": "fig5-occupancy-0.3mg",
+     "curve": "CB1 occupancy, 0.3 mg (red line)",
+     "colour": "#D4232B"
+    },
+    {
+     "claim": "fig5-occupancy-1mg",
+     "curve": "CB1 occupancy, 1 mg (green line)",
+     "colour": "#1B7A40"
+    },
+    {
+     "claim": "fig5-occupancy-3mg",
+     "curve": "CB1 occupancy, 3 mg (navy line)",
+     "colour": "#323083"
+    },
+    {
+     "claim": "fig5-occupancy-10mg",
+     "curve": "CB1 occupancy, 10 mg (light blue line)",
+     "colour": "#26A1DC"
+    },
+    {
+     "claim": "fig5-occupancy-20mg",
+     "curve": "CB1 occupancy, 20 mg (magenta line)",
+     "colour": "#C5197D"
+    },
+    {
+     "claim": "fig5-occupancy-40mg",
+     "curve": "CB1 occupancy, 40 mg (yellow line)",
+     "colour": "#F8EE2D"
+    }
+   ]
+  }
+ ]
+}

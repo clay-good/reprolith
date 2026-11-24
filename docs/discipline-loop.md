@@ -31,16 +31,18 @@ a category that exists because a spec demands it must not read as loop experienc
 
 Only the PK/PD run disagrees with its labels at all; the other five classes agree everywhere. Two
 of its thirty-one entries match — both acetaminophen models Sluka et al. 2016 deposited, each
-judged against curves read off that paper's figures — twenty-five abstain, and the four metformin entries that are
-judged all come back stricter than their label.
+judged against curves read off that paper's figures — twenty-four abstain, and five entries that are judged come back
+stricter than their label.
 
-- **25 abstentions**, all one note, traced to **ingestion**: Reprolith holds no extracted claims
+- **24 abstentions**, all one note, traced to **ingestion**: Reprolith holds no extracted claims
   for these papers, so there was nothing to reproduce and no model was run — the run abstains, and a
   `blocked` verdict can never equal a `reproduced` label. (This said "the shipped artifact carries
   no machine-checkable claim" until a regression audit noticed the code had been corrected and its
   two explanatory documents had not: nothing is fetched or opened on that path.) Recorded as *explained*, not fixed — closing them needs each paper's claims
   read from the manuscript (tasks 2.1–2.3), not a tolerance or oracle change.
-- **4 more-careful verdicts** — every metformin model this paper deposited — traced in two notes.
+- **5 more-careful verdicts** — every metformin model that paper deposited, and Benson et al.
+  2014's FAAH-inhibitor model, whose six read curves include two the worst point of a steep
+  descent puts outside the band — traced in two notes.
   Three to the **oracle**: the human-dosed models' claims matched well inside tolerance, but rest
   on a load-bearing salt-form assumption, so the overall verdict is `partially-reproduced` against
   a binary `reproduced` label. The fourth, and part of the other three, to **ingestion**: all four

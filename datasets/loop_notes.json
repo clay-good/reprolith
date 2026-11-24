@@ -10,7 +10,6 @@
     "BIOMD0000000321",
     "BIOMD0000000490",
     "BIOMD0000000494",
-    "BIOMD0000000512",
     "BIOMD0000000534",
     "BIOMD0000000535",
     "BIOMD0000000536",
@@ -33,7 +32,7 @@
    "basis": "observed",
    "stage": "ingest",
    "resolution": "explained",
-   "note": "25 of the thirty-one PK/PD entries disagree with their BioModels label because Reprolith returned blocked, not because it judged the paper wrong. Reprolith holds no extracted claims for these papers, so the run reports run.NO_CLAIMS_REASON and abstains without fetching or opening anything; a blocked verdict can never equal a reproduced or not-reproduced label, which is what holds the raw agreement to 2 of 31 \u2014 the two matches are BIOMD0000000619 and BIOMD0000000624, the two models Sluka et al. 2016 deposited, whose Figures 4 and 6 were read off the published images and reproduced, and the four metformin entries all come back stricter than their label, each for an assumption recorded in its own note. The reason text used to say the claims had not been extracted 'from the shipped model artifact', which named an inspection that never happened \u2014 no artifact is read on this path at all. Explained rather than fixed: the responsible stage is ingestion, and the missing input is each paper's targetable claims read from its manuscript, which is not automated.",
+   "note": "24 of the thirty-one PK/PD entries disagree with their BioModels label because Reprolith returned blocked, not because it judged the paper wrong. Reprolith holds no extracted claims for these papers, so the run reports run.NO_CLAIMS_REASON and abstains without fetching or opening anything; a blocked verdict can never equal a reproduced or not-reproduced label, which is what holds the raw agreement to 2 of 31 \u2014 the two matches are BIOMD0000000619 and BIOMD0000000624, the two models Sluka et al. 2016 deposited, whose Figures 4 and 6 were read off the published images and reproduced, and five entries come back stricter than their label, each for an assumption recorded in its own note. The reason text used to say the claims had not been extracted 'from the shipped model artifact', which named an inspection that never happened \u2014 no artifact is read on this path at all. Explained rather than fixed: the responsible stage is ingestion, and the missing input is each paper's targetable claims read from its manuscript, which is not automated.",
    "evidence": [
     {
      "path": "python/reprolith/run.py",
@@ -532,6 +531,33 @@
      ]
     },
     "tests/test_claim_units.py"
+   ]
+  },
+  {
+   "id": "pkpd-benson-worst-point-on-a-steep-descent",
+   "kind": "disagreement",
+   "subjects": [
+    "BIOMD0000000512"
+   ],
+   "basis": "observed",
+   "stage": "oracle",
+   "resolution": "explained",
+   "note": "Benson et al. 2014's FAAH-inhibitor model is labelled 'reproduced' by BioModels curation and comes back 'partially-reproduced' here, which is this class's usual direction: stricter than the label, never looser. Six of the seven curves its Figure 5 plots are claimed \u2014 brain CB1 receptor occupancy at six single oral doses \u2014 and four reproduce. The two that do not, 3 mg and 20 mg, miss on their worst *point* (0.4277 and 0.4050 of reference scale against a 0.40 band) while their distance over the whole curve is a twentieth of it (0.0549 and 0.0506). Both misses sit on the steep descent, where occupancy falls twenty-three points in a few hours: the plateau height and the shape agree and the transition sits a little early or late, so a reading one pixel out in time is a large error in value at that instant and nowhere else. Explained rather than fixed, and deliberately not by widening a band \u2014 the worst-point check exists so that a curve matching on average cannot hide a doubled peak, and a tolerance loosened to absorb a timing difference would stop catching that. The seventh curve, 0.1 mg, is read but not claimed: it is drawn in near-black and a colour trace cannot separate it from the dark edges of the six saturated ones, which its own interpolation cost reports at 185% of the pass budget.",
+   "evidence": [
+    {
+     "path": "datasets/milestone/certificates/BIOMD0000000512.json",
+     "quotes": [
+      "\"overall\": \"partially-reproduced\"",
+      "\"fig5-occupancy-3mg\"",
+      "\"digitized-figure\""
+     ]
+    },
+    {
+     "path": "datasets/figures/Benson2014_figure5/manifest.json",
+     "quotes": [
+      "read but not claimed"
+     ]
+    }
    ]
   }
  ]

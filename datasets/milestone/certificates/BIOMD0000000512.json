@@ -1,0 +1,136 @@
+{
+  "assessments": [
+    {
+      "assumption_qualified": false,
+      "claim_id": "fig5-occupancy-0.3mg",
+      "discrepancy": "normalized distance 0.0203, worst point 0.2248 of reference scale (pass budget 0.4000)",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "curve-normalized-distance",
+      "protocol": "duration=330.0, steps=330, read=[CB1_b] curve, overrides: Dose=0.3",
+      "quantity": "brain CB1 receptor occupancy over 330 h after a single 0.3 mg oral dose",
+      "reference_kind": "digitized-figure",
+      "root_cause": null,
+      "source_location": "Benson et al. 2014, Fig 5 (brain CB1 receptor occupancy), CB1 occupancy, 0.3 mg (red line) (digitized from the figure with scripts/digitize_figure_panels.py (colour trace; tick labels read by eye); 385 points, its own interpolation spending 21% of the pass budget); read in % and converted to fraction by x0.01 (the figure's y axis is a percentage and the model's CB1_b is the bound fraction its assignment rule computes, between 0 and 1; 1% is 0.01)",
+      "tolerance": "reproduced<=0.2, partial<=0.4 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "fig5-occupancy-1mg",
+      "discrepancy": "normalized distance 0.0243, worst point 0.2413 of reference scale (pass budget 0.4000)",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "curve-normalized-distance",
+      "protocol": "duration=330.0, steps=330, read=[CB1_b] curve, overrides: Dose=1.0",
+      "quantity": "brain CB1 receptor occupancy over 330 h after a single 1 mg oral dose",
+      "reference_kind": "digitized-figure",
+      "root_cause": null,
+      "source_location": "Benson et al. 2014, Fig 5 (brain CB1 receptor occupancy), CB1 occupancy, 1 mg (green line) (digitized from the figure with scripts/digitize_figure_panels.py (colour trace; tick labels read by eye); 500 points, its own interpolation spending 11% of the pass budget); read in % and converted to fraction by x0.01 (the figure's y axis is a percentage and the model's CB1_b is the bound fraction its assignment rule computes, between 0 and 1; 1% is 0.01)",
+      "tolerance": "reproduced<=0.2, partial<=0.4 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "fig5-occupancy-3mg",
+      "discrepancy": "normalized distance 0.0549, worst point 0.4277 of reference scale (pass budget 0.4000)",
+      "fault_hypothesis": "reconstruction",
+      "implicated": "brain CB1 receptor occupancy over 330 h after a single 3 mg oral dose",
+      "level": "simulation",
+      "method": "curve-normalized-distance",
+      "protocol": "duration=330.0, steps=330, read=[CB1_b] curve, overrides: Dose=3.0",
+      "quantity": "brain CB1 receptor occupancy over 330 h after a single 3 mg oral dose",
+      "reference_kind": "digitized-figure",
+      "root_cause": "uncategorized",
+      "source_location": "Benson et al. 2014, Fig 5 (brain CB1 receptor occupancy), CB1 occupancy, 3 mg (navy line) (digitized from the figure with scripts/digitize_figure_panels.py (colour trace; tick labels read by eye); 478 points, its own interpolation spending 11% of the pass budget); read in % and converted to fraction by x0.01 (the figure's y axis is a percentage and the model's CB1_b is the bound fraction its assignment rule computes, between 0 and 1; 1% is 0.01)",
+      "tolerance": "reproduced<=0.2, partial<=0.4 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "partial"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "fig5-occupancy-10mg",
+      "discrepancy": "normalized distance 0.0410, worst point 0.3541 of reference scale (pass budget 0.4000)",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "curve-normalized-distance",
+      "protocol": "duration=330.0, steps=330, read=[CB1_b] curve, overrides: Dose=10.0",
+      "quantity": "brain CB1 receptor occupancy over 330 h after a single 10 mg oral dose",
+      "reference_kind": "digitized-figure",
+      "root_cause": null,
+      "source_location": "Benson et al. 2014, Fig 5 (brain CB1 receptor occupancy), CB1 occupancy, 10 mg (light blue line) (digitized from the figure with scripts/digitize_figure_panels.py (colour trace; tick labels read by eye); 562 points, its own interpolation spending 90% of the pass budget); read in % and converted to fraction by x0.01 (the figure's y axis is a percentage and the model's CB1_b is the bound fraction its assignment rule computes, between 0 and 1; 1% is 0.01)",
+      "tolerance": "reproduced<=0.2, partial<=0.4 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "fig5-occupancy-20mg",
+      "discrepancy": "normalized distance 0.0506, worst point 0.4050 of reference scale (pass budget 0.4000)",
+      "fault_hypothesis": "reconstruction",
+      "implicated": "brain CB1 receptor occupancy over 330 h after a single 20 mg oral dose",
+      "level": "simulation",
+      "method": "curve-normalized-distance",
+      "protocol": "duration=330.0, steps=330, read=[CB1_b] curve, overrides: Dose=20.0",
+      "quantity": "brain CB1 receptor occupancy over 330 h after a single 20 mg oral dose",
+      "reference_kind": "digitized-figure",
+      "root_cause": "uncategorized",
+      "source_location": "Benson et al. 2014, Fig 5 (brain CB1 receptor occupancy), CB1 occupancy, 20 mg (magenta line) (digitized from the figure with scripts/digitize_figure_panels.py (colour trace; tick labels read by eye); 573 points, its own interpolation spending 12% of the pass budget); read in % and converted to fraction by x0.01 (the figure's y axis is a percentage and the model's CB1_b is the bound fraction its assignment rule computes, between 0 and 1; 1% is 0.01)",
+      "tolerance": "reproduced<=0.2, partial<=0.4 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "partial"
+    },
+    {
+      "assumption_qualified": false,
+      "claim_id": "fig5-occupancy-40mg",
+      "discrepancy": "normalized distance 0.0081, worst point 0.1019 of reference scale (pass budget 0.4000)",
+      "fault_hypothesis": null,
+      "implicated": null,
+      "level": "simulation",
+      "method": "curve-normalized-distance",
+      "protocol": "duration=330.0, steps=330, read=[CB1_b] curve, overrides: Dose=40.0",
+      "quantity": "brain CB1 receptor occupancy over 330 h after a single 40 mg oral dose",
+      "reference_kind": "digitized-figure",
+      "root_cause": null,
+      "source_location": "Benson et al. 2014, Fig 5 (brain CB1 receptor occupancy), CB1 occupancy, 40 mg (yellow line) (digitized from the figure with scripts/digitize_figure_panels.py (colour trace; tick labels read by eye); 593 points, its own interpolation spending 32% of the pass budget); read in % and converted to fraction by x0.01 (the figure's y axis is a percentage and the model's CB1_b is the bound fraction its assignment rule computes, between 0 and 1; 1% is 0.01)",
+      "tolerance": "reproduced<=0.2, partial<=0.4 (class-default)",
+      "tolerance_source": "class-default",
+      "verdict": "reproduced"
+    }
+  ],
+  "assumptions": [
+    {
+      "alternatives": [],
+      "attributed_to": "reprolith",
+      "author_can_close": false,
+      "basis": "the claims are judged by running the author's own file under the pin, which is the adopt-and-verify path and needs no rebuild; what is lost is the independent extraction, and with it the gap report and the footprints a budgeted selection would read",
+      "chosen": "the artifact is run as shipped: species 'A_b' states an initial concentration in compartment 'BRAIN' of size 1.45000004768372; reconstruction is amount-based in a unit compartment and cannot represent this model without rewriting its equations",
+      "description": "this engine could not re-extract the shipped model into a dossier, so no gap report is derived from it and nothing here is rebuilt from its parts",
+      "id": "artifact-not-re-extractable",
+      "load_bearing": false,
+      "verification_item": null
+    }
+  ],
+  "engine_pin": {
+    "algorithm": "deterministic-lsoda (judge rev 9ac794124d8a)",
+    "engine": "copasi",
+    "version": "4.46.300 (Source)"
+  },
+  "gap_report": [],
+  "overall": "partially-reproduced",
+  "paper": {
+    "doi": "10.1038/psp.2013.72",
+    "pubmed_id": null,
+    "title": "Benson2014 - FAAH inhibitors for the treatment of osteoarthritic pain"
+  },
+  "scope": {
+    "human": "This certificate attests only to the computational reproducibility of the paper's own results. It makes no claim about biological correctness, model appropriateness, or fitness for any clinical or therapeutic decision.",
+    "machine": "reproducible-not-correct-not-clinical"
+  },
+  "supersedes": null
+}

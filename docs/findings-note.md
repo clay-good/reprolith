@@ -7018,3 +7018,49 @@ reporting anything. The invariant is real and tested; it is the *mutation* that 
 held**, across the engine, the judge, the re-fit, the intake, the archive reader, the loop record,
 the population engine, the selection's footprints, the certificate's own vocabulary and its
 lineage.
+
+## A third kind of figure, a licence this corpus had not met, and a model that runs but cannot be rebuilt
+
+Benson et al. 2014 plot one thing their FAAH-inhibitor model does: brain CB1 receptor occupancy
+after seven single oral doses, seven colours on one panel, no measured data anywhere on it. The
+deposit (BIOMD0000000512) runs under the pin and its `Dose` parameter defaults to 10 — the figure's
+own middle curve. Four of the six claimed curves reproduce, two are partial, and the entry comes off
+the blocked list: 25 to 24.
+
+**The licence was treated as a blocker and should not have been.** This paper is CC BY-NC-ND 3.0,
+and that was reported as a question for the user. It is not one: this repository already
+redistributes content under terms more restrictive than its own — the BiGG genome-scale models are
+academic and non-profit use only — and carries each source's terms in its notices rather than
+relicensing anything. An unmodified figure image, in the publisher's own bytes, is what BY-NC-ND
+permits. What the licence *does* decide is a technical detail: the image is served as JPEG and must
+stay that way, because re-encoding it to suit a PNG-only reader would be the one thing a
+no-derivatives licence forbids. The reader takes JPEG now, and says why.
+
+**The legend sits inside the frame**, drawn in the same seven colours as the curves, so every
+column under it offered each curve a second place to be. A `blank` rectangle paints it out, and the
+report says how many pixels of each colour went with it — checked first by measuring that no
+saturated pixel sits above row 285 in any column right of the swatches, while every curve there
+runs at row 493 or below.
+
+**One curve is read and not claimed, and the distinction is not bookkeeping.** The 0.1 mg line is
+near-black, and a colour trace gives each pixel to the line it fits best *among those listed* — so
+the dark edge of a saturated curve fits "black over white" better than its own colour, and the
+black trace is captured by whatever it passes under. Read, it reaches 11.1% where that curve never
+exceeds 1.4%, and its own interpolation cost is 185% of the pass budget against 11–90% for the six
+that are claimed. But dropping it from the manifest is *worse than leaving it*: its ink then goes
+to the next-best colour and moves its neighbours — measured, the 3 mg curve's worst point goes from
+0.43 to 0.73 of scale. Listed, it absorbs its own ink; unclaimed, nothing is certified from it.
+
+**And the model runs but cannot be rebuilt.** Its species state concentrations in a 1.45 L brain
+compartment, and this engine's reconstruction is amount-based in a unit compartment — the refusal
+tested this morning, met in the wild the same day. Nothing about the verdict rests on it: the
+claims are judged by running the file the author shipped, which is the adopt-and-verify path. What
+is lost is the independent extraction, and with it the gap report and the footprints a budgeted
+selection would read. That is **not** an author's omission, and it does not go in the gap report,
+which reaches them under the heading *fix before you submit*; it goes on the certificate as this
+engine's own limit — not load-bearing, so it withholds nothing and joins no queue, and
+`author_can_close` false, because no wording in any paper clears it.
+
+Two guards earned their keep here within hours of being written: the interpolation cost identified
+the unreadable curve before any model was consulted, and the ingester's refusal said exactly which
+compartment and why.

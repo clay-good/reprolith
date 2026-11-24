@@ -254,7 +254,7 @@ a change under `openspec/changes/`.
   curator's time but a resolution the journal does not serve, with a published alternative that is
   a dataset rather than a picture. The other blocked papers are not all like this; three of the
   remaining ones are CC BY-NC-ND, which is a licensing question about redistributing a figure image
-  rather than a technical one.
+  rather than a technical one. **One of those three was then read** (2026-11-24, BIOMD0000000512, Benson et al. 2014's FAAH-inhibitor model): the licensing question answered itself, since this repository already redistributes content under terms more restrictive than its own — the BiGG models are academic and non-profit use only — and carries each source's terms in its notices rather than relicensing anything. An unmodified figure image in the publisher's own bytes is what CC BY-NC-ND permits, and what it decides is technical: the file stays JPEG, because re-encoding it would be the derivative that licence forbids. Figure 5 plots brain CB1 receptor occupancy at seven doses in seven colours with no data on the panel; six are claimed and four reproduce, the two partials missing only at the worst point of a steep descent. The seventh is read but not claimed, being near-black and inseparable from the dark edges of the saturated six. Blocked 25 → 24. The model also runs **without being rebuildable** — its concentrations are stated in a 1.45 L compartment and the reconstruction is amount-based — which is the first entry here certified purely by adopt-and-verify, with that limit stated on the certificate as this engine's rather than as the paper's.
 
 ---
 

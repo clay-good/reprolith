@@ -52,8 +52,9 @@ from PIL.Image import open as decode_image
 _DARK = 0.35
 #: A frame line crosses most of its panel; text and ticks do not.
 _FRAME_SHARE = 0.6
-#: Ticks evenly spaced to within this many pixels, or the calibration is refused.
-_TICK_RESIDUAL_PX = 0.5
+#: How far a tick may sit from an even spacing, as a share of one step. Shared by both
+#: calibrations: see :func:`_calibrate` for why it is a share and not a count of pixels.
+_TICK_RESIDUAL_SHARE = 0.03
 #: How much of the line's colour a pixel must hold to count as part of the line.
 _MIN_COVERAGE = 0.2
 #: How far a pixel may sit from "the line's colour over white" and still be that line. A faint
@@ -101,7 +102,16 @@ def _frame(ink: np.ndarray) -> tuple[float, float, float, float]:
 
 
 def _calibrate(ticks: list[float], labels: list[float], axis: str) -> tuple[float, float]:
-    """Least-squares value = a + b * pixel through the ticks, refusing an uneven or miscounted set."""
+    """Least-squares value = a + b * pixel through the ticks, refusing an uneven or miscounted set.
+
+    Evenness is bounded as a **share of one tick step**, which is the rule the grey-tick
+    calibration below has always used and the reason it gives: a figure re-rendered or scaled from
+    the size it was drawn at carries the original's whole-pixel tick positions, a pixel or two
+    either way, and an absolute bound in pixels calls that a mis-calibration on a wide axis while
+    letting a genuinely crooked narrow one through. The two calibrations held one measurement to
+    two different rules until 2026-11-24; they hold it to the same one now, and the number lives
+    in one place.
+    """
     if len(ticks) != len(labels):
         raise ValueError(
             f"{axis}: {len(ticks)} tick marks found in the image and {len(labels)} labels stated"
@@ -109,8 +119,13 @@ def _calibrate(ticks: list[float], labels: list[float], axis: str) -> tuple[floa
     pixels, values = np.array(ticks), np.array(labels, dtype=float)
     slope, intercept = np.polyfit(pixels, values, 1)
     residual_px = np.abs((intercept + slope * pixels - values) / slope).max()
-    if residual_px > _TICK_RESIDUAL_PX:
-        raise ValueError(f"{axis}: ticks are {residual_px:.2f} px from evenly spaced")
+    spacing = float(np.median(np.diff(np.sort(pixels)))) if len(pixels) > 1 else 0.0
+    if spacing <= 0.0 or residual_px > _TICK_RESIDUAL_SHARE * spacing:
+        raise ValueError(
+            f"{axis}: ticks are {residual_px:.2f} px from evenly spaced, "
+            f"{residual_px / spacing:.1%} of a step" if spacing > 0.0
+            else f"{axis}: the ticks found share one position, so they state no scale"
+        )
     return float(intercept), float(slope)
 
 
@@ -145,6 +160,10 @@ _TOUCHING_PX = 2
 _ORIGIN_STROKE_PX = 2
 #: How far the first column of ink may sit from the tick the lines are said to start at.
 _ORIGIN_REACH_PX = 2.0
+#: A column inked over this share of the panel's height is the frame rather than a line. A steep
+#: opening rise is the closest a line comes: on the figures here it reaches 83% of the height,
+#: while a frame edge reaches 95% and over.
+_FRAME_COLUMN_SHARE = 0.9
 #: A stroke no taller than this in one column is a flat stretch of line, a few pixels wide; a
 #: taller one is a steep stretch, and a line hidden under it could be anywhere along it.
 _THIN_PX = 6
@@ -190,6 +209,25 @@ def _column(
     return _centre(rows, shared), "shared"
 
 
+def _stroke_width(coverage: dict[str, np.ndarray]) -> float:
+    """The median vertical extent of a line's own ink, in pixels, across this panel.
+
+    What it is for: an allowance stated in pixels is really an allowance in *stroke widths*, and
+    the two stop agreeing the moment a figure is drawn at a different weight. Taken over every
+    column of every colour, so a panel is measured by its own lines.
+    """
+    extents: list[int] = []
+    for share in coverage.values():
+        for column in range(share.shape[1]):
+            own = share[:, column]
+            if own.sum() >= 0.5:
+                extents.append(_extent(own))
+    if not extents:
+        return 1.0
+    extents.sort()
+    return float(extents[len(extents) // 2])
+
+
 def _origin(rows: np.ndarray, area: np.ndarray) -> tuple[int, float]:
     """(column, row) of the point every line in the panel starts from.
 
@@ -202,13 +240,61 @@ def _origin(rows: np.ndarray, area: np.ndarray) -> tuple[int, float]:
     """
     ink = (255.0 - area.min(axis=2)) / 255.0
     ink = np.where(ink >= 0.1, ink, 0.0)
-    first = int(np.nonzero(ink.sum(axis=0) >= 0.5)[0][0])
+    # A column inked down most of the panel is the frame, not a line. Its own anti-aliased edge
+    # survives inside the plotting area whenever the frame is drawn thicker than the pixel and a
+    # half the crop allows for, and the origin was then measured from it: on Benson et al. 2014
+    # the first three columns of the area carry five hundred dark pixels each — out of five
+    # hundred and thirty-one rows — and the origin came out twenty-one pixels from the tick the
+    # curves visibly leave. Nothing else here is changed by this: a line's column is inked over a
+    # stroke's width and a steep rise's over part of the range, never over nearly all of it.
+    rows_count = ink.shape[0]
+    inked = [
+        column for column in range(ink.shape[1])
+        if ink[:, column].sum() >= 0.5
+        and int((ink[:, column] > 0).sum()) < _FRAME_COLUMN_SHARE * rows_count
+    ]
+    if not inked:
+        raise ValueError(
+            "every inked column in the plotting area runs its full height, so there is no line "
+            "here to take a common origin from"
+        )
+    first = int(inked[0])
     column = ink[:, first]
     lowest = int(np.nonzero(column)[0].max())
     # The opening rise is nearly vertical, so that column holds a tall stroke; the start is its
     # lower end, about a stroke's half-width above its lowest inked pixel.
     stroke = np.where(np.arange(column.size) >= lowest - _ORIGIN_STROKE_PX, column, 0.0)
     return first, _centre(rows, stroke)
+
+
+def _blank_regions(
+    area: np.ndarray, regions: Any, *, origin: tuple[int, int], colours: list[str]
+) -> list[dict[str, Any]]:
+    """Paint ``regions`` white in ``area``, and report what each one removed.
+
+    ``regions`` are ``[x0, y0, x1, y1]`` rectangles in *crop* pixels, which is what a curator reads
+    off the image. A rectangle entirely outside the plotting area is refused rather than ignored:
+    it means the curator measured it against something other than this panel, and a blank that
+    silently does nothing is worse than no blank at all.
+    """
+    r_lo, c_lo = origin
+    removed: list[dict[str, Any]] = []
+    for x0, y0, x1, y1 in regions:
+        rows = slice(max(int(y0) - r_lo, 0), max(int(y1) - r_lo, 0))
+        cols = slice(max(int(x0) - c_lo, 0), max(int(x1) - c_lo, 0))
+        patch = area[rows, cols]
+        if patch.size == 0:
+            raise ValueError(
+                f"the blank region [{x0}, {y0}, {x1}, {y1}] covers none of the plotting area "
+                f"(rows {r_lo}+, columns {c_lo}+): it is measured against a different picture"
+            )
+        counts = {
+            colour: int((share > _MIN_COVERAGE).sum())
+            for colour, share in _coverage(patch, colours).items()
+        }
+        area[rows, cols] = 255.0
+        removed.append({"region": [int(x0), int(y0), int(x1), int(y1)], "pixels": counts})
+    return removed
 
 
 def read_panel(image: np.ndarray, panel: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -235,11 +321,19 @@ def read_panel(image: np.ndarray, panel: dict[str, Any]) -> tuple[dict[str, Any]
     rows = np.arange(r_lo, r_hi, dtype=float) + 0.5
 
     order = [series["colour"] for series in panel["series"]]
+    # A legend drawn *inside* the frame is a row of short segments in exactly the line colours this
+    # separates by, so every column under it reports two places for one curve and the weighted
+    # centre lands between them. The curator states where the legend is and it is painted out —
+    # which is a statement about the picture, like the tick labels, and is recorded as one: the
+    # report says how many pixels of each colour went with it, so a rectangle that swallowed part
+    # of a curve is visible rather than silent.
+    blanked = _blank_regions(area, panel.get("blank", ()), origin=(r_lo, c_lo), colours=order)
     coverage = _coverage(area, order)
     origin = _origin(rows, area) if "common_origin" in panel else None
 
     series_out, report = [], {"panel": panel["panel"], "frame_px": [top, bottom, left, right],
-                              "x_ticks_px": x_ticks, "y_ticks_px": y_ticks, "series": []}
+                              "x_ticks_px": x_ticks, "y_ticks_px": y_ticks,
+                              "blanked": blanked, "series": []}
     for index, series in enumerate(panel["series"]):
         colour = series["colour"]
         own = coverage[colour]
@@ -269,7 +363,12 @@ def read_panel(image: np.ndarray, panel: dict[str, Any]) -> tuple[dict[str, Any]
             j0, row0 = origin
             x_start = float(panel["common_origin"])
             reach = abs(c_lo + j0 + 0.5 - (x_start - xa) / xb)
-            if reach > _ORIGIN_REACH_PX:
+            # Half a stroke, plus one pixel for the encoder. A line of width w drawn *from* the
+            # tick puts its leftmost ink half a width before it, so a fixed allowance in pixels
+            # calls a thick-lined figure mis-drawn and lets a hairline one off: Benson et al. 2014
+            # draws at four pixels and its ink begins 2.4 px early, which is exactly half a stroke
+            # and a little JPEG bleed. Measured from this panel's own lines rather than stated.
+            if reach > _stroke_width(coverage) / 2.0 + 1.0:
                 raise ValueError(
                     f"panel {panel['panel']}: the lines' first ink is {reach:.1f} px from the tick "
                     f"at {x_start:g}, not where a curve starting there would begin"
@@ -307,8 +406,6 @@ _TICK_REACH_PX = 30
 _MIN_TICK_PX = 7
 #: A tick this much longer than the axis's typical one is a major (labelled) one.
 _MAJOR_TICK_RATIO = 1.15
-#: How far a tick may sit from an even spacing, as a share of one step.
-_TICK_RESIDUAL_SHARE = 0.03
 #: Columns the line may go unseen — behind a marker, say — before the trace stops.
 _LOST_PX = 120
 #: Fewer ticks than this on an even spacing, and the calibration is refused.
@@ -723,8 +820,16 @@ def read_lines_panel(
 
 
 def _pixels(path: Path) -> np.ndarray:
-    """The image's RGB pixels, decoded from its bytes: an image has no text encoding to choose."""
-    with decode_image(io.BytesIO(path.read_bytes()), formats=["PNG"]) as picture:
+    """The image's RGB pixels, decoded from its bytes: an image has no text encoding to choose.
+
+    The format list is explicit so an unexpected file still fails loudly, and it holds **JPEG as
+    well as PNG** for a licensing reason rather than a technical one: a figure under a no-
+    derivatives licence is redistributed in the bytes its publisher served, and re-encoding it to
+    suit this reader would be the one thing that licence forbids. JPEG costs something in return —
+    its ringing puts off-colour pixels along every edge — which the colour separation already has
+    a tolerance for, and which the reading's own interpolation cost reports if it ever matters.
+    """
+    with decode_image(io.BytesIO(path.read_bytes()), formats=["PNG", "JPEG"]) as picture:
         return np.asarray(picture.convert("RGB"))
 
 

@@ -76,10 +76,32 @@ def test_the_salt_form_is_rested_on_exactly_where_the_claim_converts_a_dose() ->
         assert (_SALT in rests_on) is converts, (accession, claim["claim_id"])
 
 
+def _has_no_dossier(accession: str) -> bool:
+    """Whether this entry's certificate says why it has no dossier, rather than merely lacking one.
+
+    An artifact this engine cannot re-extract is certified by running the file as shipped and gets
+    no dossier, no bundle and no footprints. That is a real state, not an oversight — and the
+    difference between the two is the `artifact-not-re-extractable` assumption the certificate
+    carries, so a missing dossier with no such assumption is still a failure here.
+    """
+    certificate = json.loads(
+        (_DATASETS / "milestone" / "certificates" / f"{accession}.json").read_text("utf-8")
+    )
+    stated = any(a["id"] == "artifact-not-re-extractable" for a in certificate["assumptions"])
+    exists = (_DATASETS / "milestone" / "dossiers" / f"{accession}.json").exists()
+    assert stated != exists, (
+        f"{accession}: a dossier and a statement that one could not be built are the two "
+        "possibilities, and it has neither or both"
+    )
+    return stated
+
+
 def test_the_committed_dossiers_carry_what_the_claims_file_records() -> None:
     # The selector reads the dossier, not the claims file; a join that dropped the field would
     # leave every check above true and the selection blind to all of it.
     for accession, entry in _ENTRIES.items():
+        if _has_no_dossier(accession):
+            continue
         stored = json.loads(
             (_DATASETS / "milestone" / "dossiers" / f"{accession}.json").read_text("utf-8")
         )
