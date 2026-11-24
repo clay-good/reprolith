@@ -1,0 +1,47 @@
+{
+ "PMC3853972": {
+  "entries": [
+   "BIOMD0000000608"
+  ],
+  "paper": "Palsson et al. 2013 \u2014 fully-integrated immune response model"
+ },
+ "PMC3910013": {
+  "entries": [
+   "BIOMD0000000534",
+   "BIOMD0000000535",
+   "BIOMD0000000536",
+   "BIOMD0000000537"
+  ],
+  "paper": "Dwivedi et al. 2014 \u2014 multiscale IL-6 model (Crohn's disease)"
+ },
+ "PMC4026633": {
+  "entries": [
+   "BIOMD0000000490"
+  ],
+  "paper": "Demin et al. 2013 \u2014 5-lipoxygenase inhibitor PK/PD"
+ },
+ "PMC5732473": {
+  "entries": [
+   "MODEL1711210003"
+  ],
+  "paper": "Sier et al. 2017 \u2014 estradiol PBPK / genome-scale"
+ },
+ "PMC8397660": {
+  "entries": [
+   "MODEL2412270001"
+  ],
+  "paper": "Abbiati et al. 2021 \u2014 avadomide-induced neutropenia (R, not SBML)"
+ },
+ "PMC8646028": {
+  "entries": [
+   "MODEL2301090001"
+  ],
+  "paper": "Koeller et al. 2021 \u2014 ICG liver function PBPK"
+ },
+ "PMC9637881": {
+  "entries": [
+   "MODEL2301090002"
+  ],
+  "paper": "Grzegorzewski et al. 2022 \u2014 dextromethorphan PBPK"
+ }
+}

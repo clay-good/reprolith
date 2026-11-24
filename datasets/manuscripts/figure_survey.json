@@ -1,0 +1,633 @@
+{
+ "description": "What the blocked entries' figures are, as published. Regenerate with scripts/survey_published_figures.py. `frame` is whether the image holds a closed plotting box, which is what the colour trace locates a panel by; `colours` is how many saturated hues it holds, which is a ceiling on how many series can be told apart; `pixels_per_panel` is reported so the common belief that size is the obstacle can be checked against the figures already read.",
+ "limits": [
+  "Panel counts are the paper's own labels where this file states them and 1 otherwise, so `pixels_per_panel` is an upper bound for a multi-panel image nobody has counted.",
+  "A closed frame is necessary and not sufficient: the third obstacle is whether the curve is resolvable in the panel it is drawn in, which no property of the image shows. Koeller et al. 2021's bolus puts a hundred and ninety pixels of y range inside one pixel of x, and a figure like that measures as readable here. So a figure counted as framed and coloured is a candidate to open, never a certainty.",
+  "Only figures the supplementary bundle carries are measured. A paper whose images are served only from a publisher's own CDN is recorded with the error that reached it.",
+  "`license` is what Europe PMC states for the paper, and it decides how a figure is redistributed rather than whether it can be read: under a no-derivatives licence the image file is committed in the publisher's own bytes, un-re-encoded and un-cropped. An empty string means the service stated none, which is a question for the publisher's page and not a permission.",
+  "The bundle is not the same on two calls. Runs minutes apart returned 51 images, then 44, then none at all over the same seven papers, and one paper answered with a 500 in the first and eight figures in the second \u2014 so a figure count here is a floor on what the paper has, never a census, and the properties measured per figure are what this file is for. A paper that errored and had never been measured contributed nothing to the counts; one measured by an earlier run keeps those figures and says so in `carried_from`, so its numbers are an earlier build's."
+ ],
+ "papers": [
+  {
+   "entries": [
+    "BIOMD0000000608"
+   ],
+   "figures": [
+    {
+     "colours": 6,
+     "file": "1752-0509-7-95-1.jpg",
+     "frame": false,
+     "height": 441,
+     "panels": 1,
+     "pixels_per_panel": 264600,
+     "width": 600
+    },
+    {
+     "colours": 4,
+     "file": "1752-0509-7-95-10.jpg",
+     "frame": true,
+     "height": 374,
+     "panels": 1,
+     "pixels_per_panel": 224400,
+     "width": 600
+    },
+    {
+     "colours": 9,
+     "file": "1752-0509-7-95-2.jpg",
+     "frame": true,
+     "height": 444,
+     "panels": 1,
+     "pixels_per_panel": 266400,
+     "width": 600
+    },
+    {
+     "colours": 7,
+     "file": "1752-0509-7-95-3.jpg",
+     "frame": true,
+     "height": 439,
+     "panels": 1,
+     "pixels_per_panel": 263400,
+     "width": 600
+    },
+    {
+     "colours": 8,
+     "file": "1752-0509-7-95-4.jpg",
+     "frame": false,
+     "height": 734,
+     "panels": 1,
+     "pixels_per_panel": 440400,
+     "width": 600
+    },
+    {
+     "colours": 4,
+     "file": "1752-0509-7-95-5.jpg",
+     "frame": false,
+     "height": 253,
+     "panels": 1,
+     "pixels_per_panel": 151800,
+     "width": 600
+    },
+    {
+     "colours": 6,
+     "file": "1752-0509-7-95-6.jpg",
+     "frame": false,
+     "height": 533,
+     "panels": 1,
+     "pixels_per_panel": 319800,
+     "width": 600
+    },
+    {
+     "colours": 5,
+     "file": "1752-0509-7-95-7.jpg",
+     "frame": false,
+     "height": 354,
+     "panels": 1,
+     "pixels_per_panel": 212400,
+     "width": 600
+    },
+    {
+     "colours": 4,
+     "file": "1752-0509-7-95-8.jpg",
+     "frame": false,
+     "height": 528,
+     "panels": 1,
+     "pixels_per_panel": 316800,
+     "width": 600
+    },
+    {
+     "colours": 4,
+     "file": "1752-0509-7-95-9.jpg",
+     "frame": false,
+     "height": 365,
+     "panels": 1,
+     "pixels_per_panel": 219000,
+     "width": 600
+    }
+   ],
+   "license": "cc by",
+   "paper": "Palsson et al. 2013 \u2014 fully-integrated immune response model",
+   "pmcid": "PMC3853972"
+  },
+  {
+   "entries": [
+    "BIOMD0000000534",
+    "BIOMD0000000535",
+    "BIOMD0000000536",
+    "BIOMD0000000537"
+   ],
+   "figures": [
+    {
+     "colours": 0,
+     "file": "psp201364f1.jpg",
+     "frame": true,
+     "height": 813,
+     "panels": 1,
+     "pixels_per_panel": 609750,
+     "width": 750
+    },
+    {
+     "colours": 5,
+     "file": "psp201364f2.jpg",
+     "frame": true,
+     "height": 694,
+     "panels": 1,
+     "pixels_per_panel": 539238,
+     "width": 777
+    },
+    {
+     "colours": 6,
+     "file": "psp201364f3.jpg",
+     "frame": true,
+     "height": 1227,
+     "panels": 1,
+     "pixels_per_panel": 920250,
+     "width": 750
+    },
+    {
+     "colours": 2,
+     "file": "psp201364f4.jpg",
+     "frame": false,
+     "height": 427,
+     "panels": 1,
+     "pixels_per_panel": 331779,
+     "width": 777
+    },
+    {
+     "colours": 5,
+     "file": "psp201364f5.jpg",
+     "frame": true,
+     "height": 1228,
+     "panels": 1,
+     "pixels_per_panel": 921000,
+     "width": 750
+    },
+    {
+     "colours": 5,
+     "file": "psp201364f6.jpg",
+     "frame": false,
+     "height": 1325,
+     "panels": 1,
+     "pixels_per_panel": 993750,
+     "width": 750
+    },
+    {
+     "colours": 1,
+     "file": "psp201364i1.jpg",
+     "frame": true,
+     "height": 799,
+     "panels": 1,
+     "pixels_per_panel": 393108,
+     "width": 492
+    },
+    {
+     "colours": 0,
+     "file": "psp201364t1.jpg",
+     "frame": false,
+     "height": 912,
+     "panels": 1,
+     "pixels_per_panel": 1094400,
+     "width": 1200
+    }
+   ],
+   "license": "cc by-nc-nd",
+   "paper": "Dwivedi et al. 2014 \u2014 multiscale IL-6 model (Crohn's disease)",
+   "pmcid": "PMC3910013"
+  },
+  {
+   "entries": [
+    "BIOMD0000000490"
+   ],
+   "figures": [
+    {
+     "colours": 5,
+     "file": "psp201349f1.jpg",
+     "frame": false,
+     "height": 400,
+     "panels": 1,
+     "pixels_per_panel": 310800,
+     "width": 777
+    },
+    {
+     "colours": 8,
+     "file": "psp201349f2.jpg",
+     "frame": false,
+     "height": 918,
+     "panels": 1,
+     "pixels_per_panel": 713286,
+     "width": 777
+    },
+    {
+     "colours": 6,
+     "file": "psp201349f3.jpg",
+     "frame": false,
+     "height": 450,
+     "panels": 1,
+     "pixels_per_panel": 349650,
+     "width": 777
+    },
+    {
+     "colours": 1,
+     "file": "psp201349i1.jpg",
+     "frame": false,
+     "height": 799,
+     "panels": 1,
+     "pixels_per_panel": 381922,
+     "width": 478
+    },
+    {
+     "colours": 0,
+     "file": "psp201349t1.jpg",
+     "frame": false,
+     "height": 570,
+     "panels": 1,
+     "pixels_per_panel": 684000,
+     "width": 1200
+    },
+    {
+     "colours": 0,
+     "file": "psp201349t2.jpg",
+     "frame": false,
+     "height": 1540,
+     "panels": 1,
+     "pixels_per_panel": 1848000,
+     "width": 1200
+    }
+   ],
+   "license": "cc by-nc-nd",
+   "paper": "Demin et al. 2013 \u2014 5-lipoxygenase inhibitor PK/PD",
+   "pmcid": "PMC4026633"
+  },
+  {
+   "entries": [
+    "MODEL1711210003"
+   ],
+   "figures": [
+    {
+     "colours": 0,
+     "file": "12918_2017_520_Fig1_HTML.jpg",
+     "frame": true,
+     "height": 498,
+     "panels": 1,
+     "pixels_per_panel": 178284,
+     "width": 358
+    },
+    {
+     "colours": 0,
+     "file": "12918_2017_520_Fig2_HTML.jpg",
+     "frame": true,
+     "height": 536,
+     "panels": 1,
+     "pixels_per_panel": 191888,
+     "width": 358
+    },
+    {
+     "colours": 0,
+     "file": "12918_2017_520_Fig3_HTML.jpg",
+     "frame": true,
+     "height": 635,
+     "panels": 1,
+     "pixels_per_panel": 360045,
+     "width": 567
+    },
+    {
+     "colours": 8,
+     "file": "12918_2017_520_Fig4_HTML.jpg",
+     "frame": true,
+     "height": 772,
+     "panels": 1,
+     "pixels_per_panel": 437724,
+     "width": 567
+    },
+    {
+     "colours": 0,
+     "file": "12918_2017_520_Fig5_HTML.jpg",
+     "frame": false,
+     "height": 751,
+     "panels": 1,
+     "pixels_per_panel": 354472,
+     "width": 472
+    },
+    {
+     "colours": 0,
+     "file": "12918_2017_520_Fig6_HTML.jpg",
+     "frame": true,
+     "height": 612,
+     "panels": 1,
+     "pixels_per_panel": 476136,
+     "width": 778
+    },
+    {
+     "colours": 0,
+     "file": "12918_2017_520_Fig7_HTML.jpg",
+     "frame": true,
+     "height": 667,
+     "panels": 1,
+     "pixels_per_panel": 518926,
+     "width": 778
+    }
+   ],
+   "license": "cc by",
+   "paper": "Sier et al. 2017 \u2014 estradiol PBPK / genome-scale",
+   "pmcid": "PMC5732473"
+  },
+  {
+   "entries": [
+    "MODEL2412270001"
+   ],
+   "figures": [
+    {
+     "colours": 8,
+     "file": "12248_2021_623_Fig1_HTML.jpg",
+     "frame": false,
+     "height": 292,
+     "panels": 1,
+     "pixels_per_panel": 195640,
+     "width": 670
+    },
+    {
+     "colours": 2,
+     "file": "12248_2021_623_Fig2_HTML.jpg",
+     "frame": true,
+     "height": 656,
+     "panels": 1,
+     "pixels_per_panel": 464448,
+     "width": 708
+    },
+    {
+     "colours": 2,
+     "file": "12248_2021_623_Fig3_HTML.jpg",
+     "frame": true,
+     "height": 289,
+     "panels": 1,
+     "pixels_per_panel": 196520,
+     "width": 680
+    },
+    {
+     "colours": 4,
+     "file": "12248_2021_623_Fig4_HTML.jpg",
+     "frame": true,
+     "height": 232,
+     "panels": 1,
+     "pixels_per_panel": 157528,
+     "width": 679
+    },
+    {
+     "colours": 2,
+     "file": "12248_2021_623_Fig5_HTML.jpg",
+     "frame": true,
+     "height": 658,
+     "panels": 1,
+     "pixels_per_panel": 438886,
+     "width": 667
+    },
+    {
+     "colours": 3,
+     "file": "12248_2021_623_Fig6_HTML.jpg",
+     "frame": false,
+     "height": 277,
+     "panels": 1,
+     "pixels_per_panel": 196116,
+     "width": 708
+    },
+    {
+     "colours": 8,
+     "file": "12248_2021_623_Fig7_HTML.jpg",
+     "frame": true,
+     "height": 409,
+     "panels": 1,
+     "pixels_per_panel": 274439,
+     "width": 671
+    },
+    {
+     "colours": 7,
+     "file": "12248_2021_623_Fig8_HTML.jpg",
+     "frame": false,
+     "height": 435,
+     "panels": 1,
+     "pixels_per_panel": 345825,
+     "width": 795
+    }
+   ],
+   "license": "cc by",
+   "paper": "Abbiati et al. 2021 \u2014 avadomide-induced neutropenia (R, not SBML)",
+   "pmcid": "PMC8397660"
+  },
+  {
+   "carried_from": "an earlier run; this one reached HTTP Error 500: Internal Server Error",
+   "entries": [
+    "MODEL2301090001"
+   ],
+   "error": "HTTP Error 500: Internal Server Error",
+   "figures": [
+    {
+     "colours": 12,
+     "file": "fphys-12-730418-g0001.jpg",
+     "frame": true,
+     "height": 594,
+     "panels": 1,
+     "pixels_per_panel": 455598,
+     "width": 767
+    },
+    {
+     "colours": 7,
+     "file": "fphys-12-730418-g0002.jpg",
+     "frame": true,
+     "height": 505,
+     "panels": 1,
+     "pixels_per_panel": 357540,
+     "width": 708
+    },
+    {
+     "colours": 6,
+     "file": "fphys-12-730418-g0003.jpg",
+     "frame": false,
+     "height": 332,
+     "panels": 1,
+     "pixels_per_panel": 235056,
+     "width": 708
+    },
+    {
+     "colours": 8,
+     "file": "fphys-12-730418-g0004.jpg",
+     "frame": true,
+     "height": 340,
+     "panels": 1,
+     "pixels_per_panel": 240720,
+     "width": 708
+    },
+    {
+     "colours": 6,
+     "file": "fphys-12-730418-g0005.jpg",
+     "frame": false,
+     "height": 334,
+     "panels": 1,
+     "pixels_per_panel": 236472,
+     "width": 708
+    },
+    {
+     "colours": 7,
+     "file": "fphys-12-730418-g0006.jpg",
+     "frame": false,
+     "height": 338,
+     "panels": 1,
+     "pixels_per_panel": 239304,
+     "width": 708
+    },
+    {
+     "colours": 6,
+     "file": "fphys-12-730418-g0007.jpg",
+     "frame": true,
+     "height": 350,
+     "panels": 1,
+     "pixels_per_panel": 247800,
+     "width": 708
+    },
+    {
+     "colours": 8,
+     "file": "fphys-12-730418-g0008.jpg",
+     "frame": true,
+     "height": 440,
+     "panels": 1,
+     "pixels_per_panel": 311520,
+     "width": 708
+    }
+   ],
+   "license": "cc by",
+   "paper": "Koeller et al. 2021 \u2014 ICG liver function PBPK",
+   "pmcid": "PMC8646028"
+  },
+  {
+   "carried_from": "an earlier run; this one reached HTTP Error 500: Internal Server Error",
+   "entries": [
+    "MODEL2301090002"
+   ],
+   "error": "HTTP Error 500: Internal Server Error",
+   "figures": [
+    {
+     "colours": 8,
+     "file": "fphar-13-1029073-g001.jpg",
+     "frame": true,
+     "height": 764,
+     "panels": 1,
+     "pixels_per_panel": 540912,
+     "width": 708
+    },
+    {
+     "colours": 9,
+     "file": "fphar-13-1029073-g002.jpg",
+     "frame": true,
+     "height": 887,
+     "panels": 1,
+     "pixels_per_panel": 708713,
+     "width": 799
+    },
+    {
+     "colours": 10,
+     "file": "fphar-13-1029073-g003.jpg",
+     "frame": true,
+     "height": 795,
+     "panels": 1,
+     "pixels_per_panel": 562860,
+     "width": 708
+    },
+    {
+     "colours": 6,
+     "file": "fphar-13-1029073-g004.jpg",
+     "frame": true,
+     "height": 908,
+     "panels": 1,
+     "pixels_per_panel": 642864,
+     "width": 708
+    },
+    {
+     "colours": 7,
+     "file": "fphar-13-1029073-g005.jpg",
+     "frame": false,
+     "height": 548,
+     "panels": 1,
+     "pixels_per_panel": 387984,
+     "width": 708
+    },
+    {
+     "colours": 6,
+     "file": "fphar-13-1029073-g006.jpg",
+     "frame": false,
+     "height": 545,
+     "panels": 1,
+     "pixels_per_panel": 385860,
+     "width": 708
+    },
+    {
+     "colours": 6,
+     "file": "fphar-13-1029073-g007.jpg",
+     "frame": true,
+     "height": 370,
+     "panels": 1,
+     "pixels_per_panel": 261960,
+     "width": 708
+    },
+    {
+     "colours": 5,
+     "file": "fphar-13-1029073-g008.jpg",
+     "frame": false,
+     "height": 370,
+     "panels": 1,
+     "pixels_per_panel": 261960,
+     "width": 708
+    },
+    {
+     "colours": 6,
+     "file": "fphar-13-1029073-g009.jpg",
+     "frame": true,
+     "height": 725,
+     "panels": 1,
+     "pixels_per_panel": 513300,
+     "width": 708
+    },
+    {
+     "colours": 10,
+     "file": "fphar-13-1029073-g010.jpg",
+     "frame": false,
+     "height": 613,
+     "panels": 1,
+     "pixels_per_panel": 434004,
+     "width": 708
+    },
+    {
+     "colours": 10,
+     "file": "fphar-13-1029073-g011.jpg",
+     "frame": true,
+     "height": 596,
+     "panels": 1,
+     "pixels_per_panel": 396340,
+     "width": 665
+    },
+    {
+     "colours": 10,
+     "file": "fphar-13-1029073-g012.jpg",
+     "frame": true,
+     "height": 465,
+     "panels": 1,
+     "pixels_per_panel": 329220,
+     "width": 708
+    }
+   ],
+   "license": "cc by",
+   "paper": "Grzegorzewski et al. 2022 \u2014 dextromethorphan PBPK",
+   "pmcid": "PMC9637881"
+  }
+ ],
+ "summary": {
+  "carried_from_an_earlier_run": [
+   "PMC8646028",
+   "PMC9637881"
+  ],
+  "framed_and_separable_by_colour": 25,
+  "measured": 59,
+  "unreachable": [
+   "PMC8646028",
+   "PMC9637881"
+  ],
+  "with_closed_frame": 32
+ }
+}

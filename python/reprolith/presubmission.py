@@ -526,6 +526,14 @@ def render_presubmission_human(cert: Certificate) -> str:
 #: is not a model with a problem in it. One engine refuses the file and the other runs a different
 #: model to completion, so nothing below this is worth an author's attention until it is fixed.
 _ARCHIVE_UNNAMED_PRIORITY = -1
+#: Below an element with no identifier at all, and in the same tier as a missing rate law. Below,
+#: because an unnamed element makes the two engines disagree about what was shipped and this does
+#: not. In the same tier, because the two are the same size of problem from the author's side:
+#: each leaves a reproducer unable to check anything, and neither is visible in a run that looks
+#: perfectly healthy. Sharing a tier means document order decides between them, and this is
+#: reported first because a model whose quantities have no meanings cannot be repaired by adding
+#: rate laws to it.
+_ARCHIVE_NO_MEANING_PRIORITY = 0
 _ARCHIVE_NO_RATE_LAW_PRIORITY = 0
 _ARCHIVE_MISMATCH_PRIORITY = 1
 #: Shares the top tier with an experiment/model mismatch, because they fail the same way: the run
@@ -632,6 +640,7 @@ def archive_report(
         packages_no_time_course_describes,
         reactions_without_rate_laws,
         sedml_declarations_without_identifiers,
+        species_without_stated_meanings,
         what_a_package_means,
     )
     from .manuscript import manuscript_mismatches
@@ -763,6 +772,30 @@ def archive_report(
                          "the file to completion having invented a binding for each anonymous "
                          "element, and prints nothing",
                 "fix": _UNNAMED_FIX,
+            })
+
+        # And whether the quantities it does name mean anything. An element with no id is caught
+        # above; this is the one with an id that is only a slot number, which every engine runs
+        # and no reader can interpret — the failure arrives at the point where someone tries to
+        # say which published curve a trajectory is.
+        meaningless = species_without_stated_meanings(sbml)
+        found["species_without_stated_meanings"] = list(meaningless)
+        if meaningless:
+            named = ", ".join(meaningless[:5]) + (" and others" if len(meaningless) > 5 else "")
+            actions.append({
+                "priority": _ARCHIVE_NO_MEANING_PRIORITY, "kind": "no-meaning", "claim_id": None,
+                "quantity": None, "source_location": model,
+                "issue": f"{len(meaningless)} of your species are identified only by position "
+                         f"({named}) — the id is a slot number, the name repeats it or is absent, "
+                         "and there is no SBO term or annotation either; nothing refuses this and "
+                         "nothing warns about it, because there is nothing wrong with the "
+                         "mathematics: both engines import the file, integrate it to completion, "
+                         "and hand back one finite trajectory per species that no reader can "
+                         "match to anything your paper plots",
+                "fix": "give each one a name, an sboTerm or an annotation saying what it is; a "
+                       "reproducer who cannot tell which of your curves is which cannot check any "
+                       "of them, and a figure of yours that is otherwise perfectly readable "
+                       "becomes unusable for want of a label in the file",
             })
 
         not_a_time_course = packages_no_time_course_describes(sbml)

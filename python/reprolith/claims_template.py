@@ -46,6 +46,7 @@ from .export import (
     _elements_by_id,
     _model_root,
     _packages_no_time_course_describes,
+    _species_without_stated_meanings,
     what_a_package_means,
 )
 from .manuscript import _determined_by_math, _leaf
@@ -279,6 +280,23 @@ def claims_template(
             "no simulation document was given, so no claim was written: a model says what can be "
             "read, never what your paper showed. Write one stub per published number, or pass "
             "--sedml to start from the curves your document plots"
+        )
+
+    # The author reading this file has to put a model output on every stub, and this is where
+    # finding out that none of them says what it is belongs: `archive-check` reports it too, but
+    # an author writing claims by hand reaches for the template first, and `readable_outputs`
+    # below would otherwise hand them fifty-two rows reading `x_1` with nothing said about why
+    # that is a problem rather than a style.
+    anonymous = _species_without_stated_meanings(root)
+    if anonymous:
+        shown = ", ".join(anonymous[:5]) + (" and others" if len(anonymous) > 5 else "")
+        notes.append(
+            f"{len(anonymous)} of this model's species are identified only by position "
+            f"({shown}): the id is a slot number, the name repeats it or is absent, and there is "
+            "no SBO term or annotation either. The outputs listed below are what a claim's "
+            "'species' field can name, so a reproducer reading your claims cannot tell which "
+            "published curve each one is — give them names, sboTerms or annotations in the model "
+            "first, because no amount of care in this file substitutes for it"
         )
 
     settable, model_determines = _settable_parameters(root)

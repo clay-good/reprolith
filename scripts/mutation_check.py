@@ -1783,6 +1783,43 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ["tests/test_engine.py"],
     ),
     (
+        "an id that reads as a word is reported as a slot number, so IL6 says nothing",
+        "export.py",
+        ('_PLACEHOLDER_ID = re.compile(r"^_?[A-Za-z]_?[0-9]+$")',
+         '_PLACEHOLDER_ID = re.compile(r"^_?[A-Za-z]{1,2}_?[0-9]+$")'),
+        ["tests/test_anonymous_outputs.py"],
+    ),
+    (
+        "a species the author did name is still reported as meaningless",
+        "export.py",
+        ("        if name and name != identifier:", "        if False:"),
+        ["tests/test_anonymous_outputs.py"],
+    ),
+    (
+        "an SBO term saying what a species is no longer answers the check",
+        "export.py",
+        ('        if element.get("sboTerm"):\n'
+         '            continue\n'
+         '        if any(_localname(child.tag) == "annotation" for child in element):',
+         '        if False:\n'
+         '            continue\n'
+         '        if any(_localname(child.tag) == "annotation" for child in element):'),
+        ["tests/test_anonymous_outputs.py"],
+    ),
+    (
+        "an annotation saying what a species is no longer answers the check",
+        "export.py",
+        ('        if any(_localname(child.tag) == "annotation" for child in element):',
+         "        if False:"),
+        ["tests/test_anonymous_outputs.py"],
+    ),
+    (
+        "the claims template lists anonymous outputs without saying they are anonymous",
+        "claims_template.py",
+        ("    anonymous = _species_without_stated_meanings(root)", "    anonymous = ()"),
+        ["tests/test_anonymous_outputs.py"],
+    ),
+    (
         "a run the engine abandoned is returned as a full course",
         "engine.py",
         ("        if not completed or recorded != int(steps) + 1:\n"

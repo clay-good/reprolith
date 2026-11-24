@@ -51,6 +51,23 @@ states its molar mass. BIOMD0000000624 reproduces all three curves at normalized
 which is the point of stating it: the window check cannot see a clock, because a reading that runs
 0-40 covers a window of 0-39 as numbers.
 
+**A seventh is a figure with nothing measured on it at all.** Benson et al. 2014 plot one thing
+their FAAH-inhibitor model does: brain CB1 receptor occupancy after single oral doses, seven doses
+on one panel in seven colours, no data. Six are claimed and read off the published image, and
+BIOMD0000000512 reproduces four of them at normalized distances of 0.008 to 0.041; the other two
+are partial, missing the 0.40 band at one point of a descent that falls twenty-three points in a
+few hours while the distance over the whole curve is a twentieth of the band. Three things it says
+about itself. The seventh curve is **read and not claimed** — it is near-black, inseparable from
+the dark edges of the six saturated lines, and its own interpolation cost says so at 185% of the
+budget against 11-90% for the six — but it stays in the manifest, because every pixel goes to the
+colour it fits best among those listed and an unlisted line hands its ink to its neighbours. The
+image is under a **no-derivatives licence**, so it is committed in the publisher's own bytes,
+un-re-encoded: what that licence decides here is technical, not whether the figure can be read.
+And the model **runs without being rebuildable** — it states its concentrations in a 1.45 L
+compartment where the reconstruction is amount-based — so this is the first entry certified purely
+by adopt-and-verify, with that limit on the certificate as this engine's rather than as the
+paper's, and deliberately not in the gap report an author reads under "fix before you submit".
+
 **Not one of the four is a clean pass, and the reason is a unit.** All four of this paper's
 deposited models declare their time unit as 3600·10² seconds — one hundred hours. An area read off
 such a model is, by the model's own units, in nmol·(100 h)/mL, where every table the paper prints

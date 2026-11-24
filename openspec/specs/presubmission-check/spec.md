@@ -135,6 +135,18 @@ find in it, since a file that cannot be read or states no result never reaches a
   to check and nothing established that
 - **AND** everything that still applies is still checked and reported
 
+#### Scenario: A model whose quantities have positions but no meanings
+
+- **WHEN** the archive's model declares a species whose identifier is a slot number, whose name
+  repeats that identifier or is absent, and which carries neither an SBO term nor an annotation
+- **THEN** it is reported as a quantity the file does not identify, below an element with no
+  identifier at all and ahead of a missing rate law in the fix list
+- **AND** the finding states that no engine reports it, because nothing is wrong with the
+  mathematics — such a model imports, integrates to completion, and returns one finite trajectory
+  per anonymous species, which no reader can match to a published curve
+- **AND** the rule is narrow enough that an identifier reading as a word is never reported, since
+  telling an author that a tersely named protein says nothing is worse than saying nothing
+
 #### Scenario: The check does not speak as a certificate
 
 - **WHEN** the archive check is rendered

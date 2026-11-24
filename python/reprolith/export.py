@@ -252,6 +252,70 @@ def _declarations_missing(root: ET.Element, required_by_kind: Mapping[str, str])
 
 
 
+#: An identifier that is a position in a list rather than a statement about a quantity: **one**
+#: letter and a number, with the optional leading and separating underscores SBML's `SId` allows.
+#: `x_1`, `S12`, `_s3`. Deliberately narrow — `Glucose`, `ALDOB`, `C1q` and `pIRS1` all have to
+#: pass it, and the corpus here says they do: one of the 277 species across the twenty-one models
+#: committed in this repository matches, and 52 of 52 in BioModels BIOMD0000000608 do.
+#:
+#: Two letters are *not* allowed, and the reason is the very domain this check was written on: a
+#: rule reading `[A-Za-z]{1,2}` reports `IL6` — an interleukin, a quantity an immune-response
+#: model names exactly that way and the author is entitled to leave at that. Missing a `sp1` is
+#: cheap; telling an author that `IL6` says nothing is the failure this check cannot afford.
+_PLACEHOLDER_ID = re.compile(r"^_?[A-Za-z]_?[0-9]+$")
+
+
+def species_without_stated_meanings(model_sbml: str) -> tuple[str, ...]:
+    """The species this model gives a position but never a meaning, in document order.
+
+    A species whose id is a slot number — `x_1` — and whose `name` repeats that id or is absent,
+    carrying neither an `sboTerm` nor an annotation, is a quantity the file does not identify.
+    Every reader can run it; none can say what it is. That is a different failure from the one
+    :func:`declarations_without_identifiers` reports, and it fails later: the model imports
+    cleanly, integrates to completion, and produces 52 curves that cannot be matched to anything a
+    paper plots.
+
+    Measured on BioModels BIOMD0000000608 (Palsson et al. 2013's fully-integrated immune response
+    model): it runs under this repository's own pin in under a second, and **all 52 of its species
+    are `x_1` through `x_52`** with no name, no SBO term and no annotation in the document. Its
+    paper's figures are 600-pixel BMC images with up to nine separable colours — readable, by this
+    repository's own measurements (`datasets/manuscripts/figure_survey.json`) — so what blocks a
+    claim on this entry is not the picture and not the engine. It is that there is no output to
+    point a claim at. Nothing else in the repository could say that: the model loads, runs, and
+    returns finite trajectories for every one of them.
+
+    The rule is narrow on purpose, because the cost of a false positive is sending an author to
+    repair a file that is already right. An id that reads as a word is never reported, however
+    terse — the models committed here hold 277 species between them and one is flagged, a boundary
+    species named `X1` and fixed at zero that its file never explains. An id that *is* a slot
+    number is not reported either if anything else in the element says what it means:
+    `sboTerm="SBO:0000247"` or an RDF annotation is a statement, and a `name` that differs from
+    the id is the author's own.
+
+    Raises ``ValueError`` if the text is not parseable SBML.
+    """
+    return _species_without_stated_meanings(_model_root(model_sbml))
+
+
+def _species_without_stated_meanings(root: ET.Element) -> tuple[str, ...]:
+    anonymous: list[str] = []
+    for element in root.iter():
+        if _localname(element.tag) != "species":
+            continue
+        identifier = element.get("id") or ""
+        if not _PLACEHOLDER_ID.match(identifier):
+            continue
+        name = element.get("name") or ""
+        if name and name != identifier:
+            continue
+        if element.get("sboTerm"):
+            continue
+        if any(_localname(child.tag) == "annotation" for child in element):
+            continue
+        anonymous.append(identifier)
+    return tuple(anonymous)
+
+
 #: The SED-ML elements that must name themselves, and what names them. A document's tasks, its
 #: simulations, its data generators and its outputs are all referred to *by id* from elsewhere in
 #: the same document, so one that states none is unreachable rather than merely untidy.
