@@ -6925,3 +6925,25 @@ Three of the day's finds now share one shape: **a test that passes for a reason 
 it is named for.** A quote that is a prefix of a longer message, a refusal that fires in place of
 its neighbour, a guard whose sibling raises first. None of them is visible in a green suite, and
 all three were found by the same question — *would this fail?*
+
+## The cache that could not have worked
+
+The pip cache added earlier today did not help: `engine (3.9)` still spent twenty-three minutes of
+its thirty-two compiling `python-copasi`, which publishes an sdist and no 3.9 wheel. The log says
+why, and it is a better defect than the one it was meant to fix.
+
+`actions/setup-python` keys its pip cache on the interpreter version and the hash of the files in
+`cache-dependency-path`, and on nothing else. Every job here installs from one `pyproject.toml`, so
+naming only that file gave **every job the same key** while they install different extras.
+`python (3.9)` installs `[dev]` and finishes in four minutes; it saved its cache first, and
+`engine (3.9)` then got a hit — on a cache with none of the wheels it needed. "Cache hit occurred
+on the primary key" also means nothing new is saved, so the compile was always going to repeat.
+
+Each job now names a file whose content is its own extras, so the hash differs. The content is also
+the only place the extras each job installs are written down in one line, which is the second
+reason to read it. A file whose only purpose is to be hashed drifts silently — nothing fails when
+it is wrong, the cache just quietly stops being useful — so a test holds each marker to the
+`pip install` line in its own job, and refuses two jobs that key on the same files.
+
+Whether the compile actually disappears is a claim about the *next* run, and this one does not make
+it: the cache has to be written once under the new key before anything can hit it.

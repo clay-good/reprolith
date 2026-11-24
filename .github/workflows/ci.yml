@@ -25,11 +25,18 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          # Caches pip's downloads *and* the wheels it builds. The engine job's 3.9 leg spent
-          # 24 minutes of every run compiling a dependency that ships no wheel for it, which is
-          # four times what the job's own tests take; a cache hit makes that a download.
+          # Caches pip's downloads *and* the wheels it builds. The engine job's 3.9 leg spends
+          # 23 minutes of every run compiling python-copasi, which publishes an sdist and no 3.9
+          # wheel — four times what that job's own tests take.
+          #
+          # The key is the interpreter version plus the hash of these files, and nothing else, so
+          # naming only pyproject.toml gave every job the *same* key while they install different
+          # extras: this job saved a `[dev]`-only cache first and the engine job then got a hit it
+          # could not use. The per-job file names the extras and makes the key differ.
           cache: pip
-          cache-dependency-path: pyproject.toml
+          cache-dependency-path: |
+            pyproject.toml
+            .github/cache-keys/python.txt
 
       - name: Install
         run: |
@@ -64,7 +71,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: pyproject.toml
+          cache-dependency-path: |
+            pyproject.toml
+            .github/cache-keys/engine.txt
       - name: Install with the engine, fba, sat, and validate extras
         run: |
           python -m pip install --upgrade pip
@@ -85,7 +94,9 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: pyproject.toml
+          cache-dependency-path: |
+            pyproject.toml
+            .github/cache-keys/corroborate.txt
       - name: Install with the engine, fba, sat and corroborate extras
         run: |
           python -m pip install --upgrade pip
