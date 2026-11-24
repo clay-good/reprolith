@@ -166,3 +166,22 @@ def test_the_corpus_wide_origin_count_the_documents_publish_is_the_one_measured(
     # recording what was measured that day, and is left as it was.
     text = (repo / "docs" / "claim-selection.md").read_text(encoding="utf-8")
     assert f"**{derived} of {derived}** claims across the six dossiers" in text
+
+
+def test_an_artifact_with_no_model_is_refused_rather_than_given_empty_footprints() -> None:
+    """What a budgeted selection does with a footprint it could not derive, if nobody stops it.
+
+    A footprint is what a claim's value is computed from, and overlap between footprints is how
+    `select-claims` knows two claims are one piece of evidence shown twice. Hand it empty sets and
+    every claim looks independent of every other — so a budget that buys three overlapping claims
+    is reported as buying three separate ones, which is the single thing this capability exists to
+    prevent. The mutation harness found the refusal deletable with the whole suite green
+    (2026-11-24): returning `{}` for a model-less artifact is silent, and the selection downstream
+    cannot tell "nothing overlaps" from "nothing was read".
+    """
+    empty = '<?xml version="1.0"?><sbml xmlns="http://www.sbml.org/sbml/level3/version2/core" ' \
+            'level="3" version="2"/>'
+    with pytest.raises(ValueError, match="holds no model"):
+        derive_footprints(empty, ["X"])
+    # A model that *is* there still answers, so the refusal is about the artifact and not the target.
+    assert derive_footprints(_SBML, _TARGETS[:1])

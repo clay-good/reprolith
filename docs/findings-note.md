@@ -6973,3 +6973,25 @@ nothing (so a budget bounds nothing) or worth a negative amount of evidence.
 The list stands at 274 entries, up from 223 this morning. Eight guards that could be deleted with
 the whole suite green are now held, across the engine, the judge, the re-fit, the intake, the loop
 record and the certificate's own vocabulary.
+
+## Two that would have published a spread that was not there
+
+`population.py` is roadmap item 7's own engine and carried two guards for three hundred and
+seventy-five lines; `footprints.py` is what claim-selection measures overlap with and carried one
+for a hundred and eighty-four. Five entries, two survivors, and both are the same kind of mistake:
+a thing that is *absent* being reported as a thing that is *zero*.
+
+**A parameter that does not vary.** `simulate_population` refuses an empty variability list —
+nothing varies, so every subject is the same run and that is a trajectory, not a population. A list
+of entries whose CV is zero is the same population described a different way, and the refusal that
+catches it could be deleted with the whole suite green. Without it the percentile bands come out as
+a line and the certificate reports a spread the model does not have.
+
+**A footprint nobody could derive.** A footprint is what a claim's value is computed from, and
+overlap between footprints is the whole of how `select-claims` knows that three claims are one
+piece of evidence shown three times. Hand it empty sets and every claim looks independent: a budget
+that buys three overlapping claims is reported as buying three separate ones, which is precisely
+the overstatement that capability exists to prevent. Returning `{}` for an artifact holding no
+model is silent, and nothing downstream can tell "nothing overlaps" from "nothing was read".
+
+Ten guards now, across eight modules, that a green suite said nothing about this morning.

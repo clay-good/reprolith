@@ -2105,6 +2105,42 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ("        if len(resolved) != 1:", "        if False:"),
         ["tests/test_omex.py"],
     ),
+    # --- population.py is roadmap item 7's own engine, and carried two guards for 375 lines. Its
+    # refusals are what keep a single trajectory from being published as a spread (2026-11-24).
+    (
+        "a population with no varying parameter is published as a spread it does not have",
+        "population.py",
+        ("    if not variability:", "    if False:"),
+        ["tests/test_population_simulation.py", "tests/test_population.py"],
+    ),
+    (
+        "a population run may report no percentile band at all",
+        "population.py",
+        ("    if not percentiles:", "    if False:"),
+        ["tests/test_population_simulation.py", "tests/test_population.py"],
+    ),
+    (
+        "a variability model may vary a parameter by nothing and still be one",
+        "population.py",
+        ("        if not math.isfinite(self.cv) or self.cv <= 0.0:", "        if False:"),
+        ["tests/test_population_simulation.py", "tests/test_population.py"],
+    ),
+    (
+        "an ensemble of one subject is run, and its own spread reported as the population's",
+        "population.py",
+        ("    if subjects < 2:\n        raise ValueError(\n"
+         '            f"a population needs at least two subjects to have an envelope',
+         '    if False:\n        raise ValueError(\n'
+         '            f"a population needs at least two subjects to have an envelope'),
+        ["tests/test_population_simulation.py", "tests/test_population.py"],
+    ),
+    (
+        "a footprint is derived from an artifact that holds no model at all",
+        "footprints.py",
+        ('        raise ValueError("this artifact holds no model, so nothing states what a claim rests on")',
+         "        return {}"),
+        ["tests/test_footprints.py", "tests/test_selection.py"],
+    ),
     (
         "a search that walked off the log scale ends in an overflow naming nothing",
         "estimation.py",

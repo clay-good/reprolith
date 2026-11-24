@@ -281,3 +281,26 @@ def test_a_parameter_with_no_stated_value_has_no_median_to_vary_around() -> None
             valueless, "C", duration=6.0, steps=6,
             variability=(SubjectVariability(parameter="F", cv=0.3),), subjects=10, seed=1,
         )
+
+
+def test_a_parameter_that_does_not_vary_is_not_a_source_of_variability() -> None:
+    """The refusal that keeps a single trajectory from being published as a spread.
+
+    `simulate_population` already refuses an *empty* variability list — no parameter varies, so
+    every subject is the same run. A list of entries whose CV is zero is the same population
+    described a different way, and the mutation harness found the refusal that catches it deletable
+    with the whole suite green (2026-11-24). Without it the bands come out as a line and a
+    certificate reports a spread the model does not have.
+    """
+    import math
+
+    import pytest
+    from reprolith import SubjectVariability
+
+    for cv in (0.0, -0.3, float("nan"), float("inf")):
+        with pytest.raises(ValueError, match="positive coefficient of variation"):
+            SubjectVariability(parameter="V", cv=cv)
+    # The message says what the value is instead, because that is the author's next question.
+    with pytest.raises(ValueError, match="it is a fixed value"):
+        SubjectVariability(parameter="V", cv=0.0)
+    assert math.isclose(SubjectVariability(parameter="V", cv=0.3).cv, 0.3)
