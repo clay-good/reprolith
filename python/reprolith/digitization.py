@@ -52,7 +52,7 @@ from __future__ import annotations
 
 import json
 import math
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Container, Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Any
@@ -710,6 +710,7 @@ def window_faults(
     windows: Sequence[tuple[float, float]],
     *,
     carrier: str = "this dossier",
+    unconvertible: Container[str] = (),
 ) -> tuple[str, ...]:
     """Every reading that does not cover a window the document actually runs.
 
@@ -728,6 +729,15 @@ def window_faults(
     run of 0-24 hours numerically, and lands every value in the wrong place. What the two files say
     about their units is compared by :func:`time_unit_notes`, which is the only thing that can see
     it.
+
+    ``unconvertible`` names the series whose reading is in a unit the run is *known* not to be in —
+    the ids :func:`time_unit_notes` spoke about. A number compared across two units is evidence of
+    nothing, so those are not reported as short readings: Sluka et al. 2016 plot their metabolism
+    module over forty minutes and the deposit of it runs in seconds, and calling that reading too
+    narrow for its run would send a curator back to re-read a figure that is already right. They
+    are still reported, because a curator who does nothing gets a claim that cannot be judged —
+    but as the unit question they are, pointing at the conversion a claim can state rather than at
+    the reading.
     """
     faults = []
     stated = ", ".join(f"{start:g}-{end:g}" for start, end in windows)
@@ -735,6 +745,14 @@ def window_faults(
         xs = [x for x, _ in reading.points]
         low, high = min(xs), max(xs)
         if any(low <= start and high >= end for start, end in windows):
+            continue
+        if reading.claim_id in unconvertible:
+            faults.append(
+                f"series '{reading.claim_id}' was read over {low:g}-{high:g} "
+                f"{reading.x_axis.unit} and {carrier} runs {stated} in another unit, so whether it "
+                "covers the run is not a question these two numbers answer: state the conversion "
+                "on the claim, or re-read the figure against the run's own clock"
+            )
             continue
         faults.append(
             f"series '{reading.claim_id}' was read over {low:g}-{high:g} "

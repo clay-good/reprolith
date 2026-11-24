@@ -430,5 +430,12 @@ have caught the mistake unaided fires now too: a Level 2 model states its clock 
 predefined `time` unit rather than through a `timeUnits` attribute, and until this entry Reprolith
 read only the attribute — so every Level 2 model was reported as having stated nothing.
 
+One thing the conversion needed on the *curator's* side, because `figure-check` runs before any
+claim exists and cannot know a factor is coming: a reading in minutes against a run in seconds
+looks far too narrow for it, and being told so would send a curator back to re-read a figure that
+is already right. Where the model says the two files are in different units, the command reports
+the unit question instead of a short reading — and still reports it, since a curator who does
+nothing has a claim that cannot be judged.
+
 What remains is the other twenty-five blocked entries' papers, whose results are only in figures
 and still unread.

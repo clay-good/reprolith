@@ -259,3 +259,54 @@ def test_the_verdict_is_not_vacuous() -> None:
         for record in _ENTRY["figure_claims"]
     ]
     assert verdicts(unconverted) == [Verdict.FAILED] * 3
+
+
+def test_a_reading_in_another_unit_is_not_reported_as_a_short_one() -> None:
+    """The hole the clock conversion opened, and the check that was on the wrong side of it.
+
+    `figure-check` runs before any claim exists, so it cannot know a claim will state a factor. It
+    compares the reading's span against the document's run as numbers — and against a run in
+    seconds a perfectly good reading in minutes looks far too narrow. Told it is short, a curator
+    goes back and re-reads a figure that was already right. Where the model says the two files are
+    in different units, the shortfall is not a shortfall: it is the unit question, and the message
+    is the conversion rather than the reading.
+    """
+    readings = list(_readings().values())
+    run = [(0.0, float(_ENTRY["duration"]))]
+    blamed = window_faults(readings, run, carrier="your document")
+    assert blamed and all("needs values outside what was read" in fault for fault in blamed)
+
+    excused = window_faults(
+        readings, run, carrier="your document",
+        unconvertible={reading.claim_id for reading in readings},
+    )
+    assert len(excused) == len(blamed)
+    for fault in excused:
+        assert "in another unit" in fault and "state the conversion on the claim" in fault
+        assert "needs values outside what was read" not in fault
+    # And it is still reported: a curator who does nothing has a claim that cannot be judged.
+    assert excused
+
+
+def test_converting_a_log_axis_moves_the_axis_and_not_which_points_join() -> None:
+    """The claim `in_time_unit` makes about a log10 x axis, checked rather than asserted.
+
+    A positive factor is a constant shift in log space, so the joins a reading is interpolated
+    along are the same ones before and after. If it were not true, a conversion would quietly
+    re-shape every reference read off a log axis — the axis figures in this field are most often
+    drawn on.
+    """
+    from reprolith import Axis, AxisScale, DigitizedSeries, resample_series
+
+    series = DigitizedSeries(
+        claim_id="c", figure="Figure 1", curve="plasma", digitizer="WebPlotDigitizer 4.7",
+        x_axis=Axis(minimum=0.1, maximum=100.0, unit="min", scale=AxisScale.LOG10),
+        y_axis=Axis(minimum=0.0, maximum=10.0, unit="mg/L"),
+        points=((0.1, 1.0), (1.0, 5.0), (10.0, 3.0), (100.0, 0.5)),
+    )
+    converted = in_time_unit(series, factor=_TO_SECONDS, unit="s")
+    assert converted.x_axis.scale is AxisScale.LOG10
+    # Sampled at the same places in the curve's own coordinates, the values are identical.
+    before = resample_series(series, [0.2, 2.0, 20.0, 50.0])
+    after = resample_series(converted, [x * _TO_SECONDS for x in (0.2, 2.0, 20.0, 50.0)])
+    assert after == pytest.approx(before)

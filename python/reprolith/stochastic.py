@@ -896,7 +896,7 @@ def certify_stochastic(
     ensemble is Reprolith's choice, and the verdict moves with it.
     """
     claims = tuple(claims)
-    judged: list[StochasticClaim] = []
+    qualified: list[StochasticClaim] = []
     assessments = []
     for claim in claims:
         # A run that does not advance is not evidence about the model: the ensemble comes back as
@@ -956,10 +956,12 @@ def certify_stochastic(
             )
         )
         if not decisive:
-            judged.append(claim)
-    # Only the claims a verdict was drawn from: an abstention concluded nothing, so an assumption
-    # saying its mean rests on this ensemble would describe a judgment that was never made — and,
-    # being load-bearing, would downgrade the certificate on behalf of a claim nobody judged.
+            qualified.append(claim)
+    # Only the claims a verdict was drawn from *and* whose draw was a choice. An abstention
+    # concluded nothing, so an assumption saying its mean rests on this ensemble would describe a
+    # judgment that was never made — and, being load-bearing, would downgrade the certificate on
+    # behalf of a claim nobody judged. A decisive draw is the other exclusion: its own error bar
+    # cannot account for a tenth of the band, so there is nothing for the certificate to qualify.
     sampling = tuple(
         Assumption(
             id=f"ssa-sampling-{claim.claim_id}",
@@ -975,7 +977,7 @@ def certify_stochastic(
             # left out, so nothing the author writes clears it.
             author_can_close=False,
         )
-        for claim in judged
+        for claim in qualified
         if claim.assumption_qualified
     )
     # The first-passage claims, judged by the same rules and carrying the same assumption: the

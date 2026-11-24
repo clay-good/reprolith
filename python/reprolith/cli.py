@@ -1705,9 +1705,10 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
     # written by hand or by an older template can still do it. Once the axis ranges are filled in
     # there is nothing left to notice.
     faults += panel_faults(series, panels, carrier="your document")
-    # A reading that does not span the run is refused at the join, in Python, long after the
-    # curator has finished — and both numbers that say so are on disk while they are still here.
-    short = window_faults(series, windows, carrier="your document") if windows else ()
+    # Deferred until the model has been read: whether a reading covers its run is not a question
+    # two numbers in different units answer, and the model is the only file that says which unit
+    # the run is in. Computed below, once `notes` knows.
+    short: tuple[str, ...] = ()
     # A curator reads one panel at a time, so a document whose other curves are unread is the
     # ordinary case and not a fault. It is said, because "checked clean" over one of nine curves
     # reads as nine.
@@ -1729,6 +1730,19 @@ def _cmd_figure_check(query: ReprolithQuery, args: argparse.Namespace) -> int:
         print(f"cannot read the model: {unusable}", file=sys.stderr)
         return 1
     notes = time_unit_notes(series, clock, carrier="your model") if clock is not None else ()
+    # A reading that does not span the run is refused at the join, in Python, long after the
+    # curator has finished — and both numbers that say so are on disk while they are still here.
+    # The ids the clock comparison spoke about are excluded from that judgment and reported as the
+    # unit question they are: a figure in minutes against a run in seconds is not a short reading,
+    # and telling a curator it is sends them back to a figure they read correctly.
+    if windows:
+        short = window_faults(
+            series, windows, carrier="your document",
+            unconvertible={
+                reading.claim_id for reading in series
+                if any(f"series '{reading.claim_id}'" in note for note in notes)
+            },
+        )
     # The y axis needs the document too: only it says which output a given curve reads, and the
     # unit is the model's for *that* element. This paper plots the same tissue twice, in mg on one
     # panel and in nmol on another, so a reading paired with the other panel's curve is a file that

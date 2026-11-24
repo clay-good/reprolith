@@ -6650,3 +6650,39 @@ One last thing the certificates stopped doing: saying both. A decisive draw used
 settling count — "~23,414 trajectories would put the sampling error a tenth of the way to the
 nearest verdict line" — directly before the sentence saying nothing here needs buying. They answer
 one reader's question, so now only one of them is printed.
+
+## Re-reading the day's own diffs
+
+Three things, all of them in work committed within the hour, which is the rate this repository's
+record says to expect from re-reading a diff rather than trusting it.
+
+**A function nothing called.** The discharge rule shipped with a companion, `sample_to_decide`,
+that computed how large an ensemble would have to be to earn the discharge. Nothing in the package
+called it; only its own test did. The question it answers is a good one, and it turned out to have
+a better answer: the settling count the protocol line *already* advertises is conservative with
+respect to the discharge rule. That count targets a tenth of the margin from the answer to its
+nearest verdict line, and for a claim inside its band the margin is at most the band — so the
+sample it names always brings the bar under a tenth of the tolerance too. A reader who buys the
+advertised number gets the discharge. That is now an invariant with a test across the shape of
+claim this class publishes, which is worth more than the function was: a line advertising a
+smaller number than the rule needs would sell one thing and deliver another.
+
+**A list whose name had stopped being true.** The stochastic front end collected `judged` claims to
+build their assumptions from. A decisive draw is still judged and no longer collected, so the name
+described the wrong set — the comment above it still said "only the claims a verdict was drawn
+from". Renamed to what it holds.
+
+**A check on the wrong side of a hole the day's other change opened.** `figure-check` runs before
+any claim exists, so it cannot know that a claim will state a clock conversion. It compares the
+reading's span against the document's run as numbers, and against a run in seconds a perfectly good
+reading in minutes looks far too narrow — so the command told a curator their reading does not
+cover the run, which would send them back to re-read a figure that was already right. The model is
+the only file that says which unit the run is in, and the command already reads it for the clock
+comparison. Where that comparison says the two files differ, a window shortfall is not a
+shortfall: it is the unit question, and it now says so and names the conversion. It is still
+reported, because a curator who does nothing has a claim that cannot be judged.
+
+And one claim that was asserted and is now checked: `in_time_unit` says a positive factor is a
+constant shift on a log10 axis, so which points a reading is joined between does not change. True,
+and now tested — a log axis is the one a pharmacokinetic figure is most often drawn on, and a
+conversion that quietly re-shaped every reference read off one would be hard to see.

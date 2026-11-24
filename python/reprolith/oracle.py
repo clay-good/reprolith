@@ -1098,25 +1098,16 @@ def sampling_is_decisive(*, relative_error_bar: float, tolerance: Tolerance) -> 
     The rule it states is the same one the spatial class holds a finite grid to for an unbounded
     domain, and the same tenth: a bound that is a tenth of the band cannot be what decided the
     verdict.
+
+    **No second count is published for it**, and that is a fact rather than an omission: the
+    settling count :func:`settling_sample_clause` already advertises is *conservative* with
+    respect to this rule. It targets a tenth of the margin from the answer to its nearest verdict
+    line, and for a claim inside its band that margin is at most the band itself — so the sample
+    it names always brings the bar under a tenth of the tolerance as well. A reader who buys the
+    number on the protocol line gets the discharge; a line that advertised a smaller number would
+    sell one and deliver the other.
     """
     return relative_error_bar <= SAMPLING_MARGIN_BUDGET * tolerance.reproduced_within
-
-
-def sample_to_decide(
-    *, relative_error_bar: float, size: int, tolerance: Tolerance
-) -> int | None:
-    """How large a sample would make the draw itself stop mattering, or ``None`` if it already has.
-
-    The counterpart of :func:`sampling_is_decisive`, and the instruction that goes with it: a
-    standard error falls as 1/√n, so reaching ``SAMPLING_MARGIN_BUDGET × tolerance`` takes
-    ``n × (bar / target)²`` draws. Keyed on the tolerance for the same reason — this count is what
-    a claim needs whatever it happened to measure, so it does not move when a reseed moves the
-    residual.
-    """
-    target = SAMPLING_MARGIN_BUDGET * tolerance.reproduced_within
-    if size <= 0 or target <= 0.0 or relative_error_bar <= target:
-        return None
-    return math.ceil(size * (relative_error_bar / target) ** 2)
 
 
 def sample_to_resolve(

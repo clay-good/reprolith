@@ -21,7 +21,7 @@ from reprolith.oracle import (
     ComparisonMethod,
     ReferenceKind,
     default_tolerance,
-    sample_to_decide,
+    sample_to_settle,
     sampling_is_decisive,
 )
 from reprolith.stochastic import (
@@ -54,14 +54,27 @@ def test_the_rule_is_keyed_on_the_band_and_not_on_the_residual() -> None:
         )
 
 
-def test_the_count_that_buys_it_is_the_rules_own_arithmetic() -> None:
-    """n x (bar / target)^2, and `None` once there is nothing left to buy."""
-    target = SAMPLING_MARGIN_BUDGET * _TOLERANCE.reproduced_within
-    assert sample_to_decide(relative_error_bar=target, size=400, tolerance=_TOLERANCE) is None
-    needed = sample_to_decide(relative_error_bar=2 * target, size=400, tolerance=_TOLERANCE)
-    assert needed == 1600
-    # A bar falls as 1/sqrt(n), so the count it names does bring the bar to the target.
-    assert 2 * target / math.sqrt(needed / 400) == pytest.approx(target)
+def test_the_count_the_certificate_advertises_always_buys_the_discharge() -> None:
+    """The invariant that lets the protocol line publish one count instead of two.
+
+    A certificate tells its reader how many trajectories would put the sampling error a tenth of
+    the way to the nearest verdict line. The rule that *discharges* the qualification asks for a
+    tenth of the whole band instead — a different number, and a reader who bought the advertised
+    one and found the assumption still standing would have been sold one thing and given another.
+    It cannot happen in that direction: for a claim inside its band the margin is at most the band,
+    so the advertised count is the larger of the two. Checked across the shape of claim this class
+    publishes rather than asserted from the algebra.
+    """
+    size, bar = 400, 0.02
+    for residual in (0.0, 0.001, 0.01, 0.02, 0.049):
+        settle = sample_to_settle(
+            relative_error=residual, relative_error_bar=bar, size=size, tolerance=_TOLERANCE
+        )
+        assert settle is not None, residual
+        advertised, _margin = settle
+        # The bar falls as 1/sqrt(n): this is what buying the advertised count leaves it at.
+        bought = bar / math.sqrt(advertised / size)
+        assert sampling_is_decisive(relative_error_bar=bought, tolerance=_TOLERANCE), residual
 
 
 def test_an_ensemble_large_enough_drops_the_qualification_and_a_smaller_one_keeps_it() -> None:
