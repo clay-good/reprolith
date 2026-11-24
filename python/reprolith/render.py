@@ -940,22 +940,33 @@ def render_registry(
         return f'<div class="filter" data-group="{name}">' \
                f'<button data-filter="{name}" data-value="all" class="on">all</button>{chips}</div>'
 
+    # Contrast is measured against this page's white background rather than chosen by eye: every
+    # colour here clears WCAG AA's 4.5:1 for body text. The verdict colours were the ones that did
+    # not — a green at 3.03:1, an amber at 3.37:1 — and they are the page's most-read words, the
+    # ones a reader scans a hundred cards for. Darkened to the nearest shade that passes while
+    # staying recognisably green, amber, red and grey; the `blocked` grey was 4.48:1, which is the
+    # kind of near-miss nobody notices and everybody squints at.
+    #
+    # The heading sizes are stated rather than left to the browser for the other half of the same
+    # problem: the defaults put h3 at 1.17x body, so the step from a card's title to its text was
+    # too small to read as a step at all. Each role is now at least 1.25x the one below it.
     style = (
-        "body{font-family:system-ui,sans-serif;margin:2rem;color:#222}"
+        "body{font-family:system-ui,sans-serif;margin:2rem;color:#222;line-height:1.5}"
+        "h1{font-size:2.25rem;margin-bottom:.25rem}h2{font-size:1.6rem}h3{font-size:1.25rem}"
         ".intro{max-width:60em;color:#333}"
-        "h1{margin-bottom:.25rem}.disclaimer{color:#555;max-width:48rem}"
+        ".disclaimer{color:#555;max-width:48rem}"
         ".filters{margin:1rem 0}.filter{display:inline-block;margin-right:1rem}"
         ".filter button{margin:.1rem;padding:.2rem .5rem;cursor:pointer}"
         ".filter button.on{background:#222;color:#fff}"
         ".entry{border:1px solid #ddd;border-radius:8px;padding:1rem;margin:.5rem 0}"
         ".entry h3{margin:.4rem 0}.meta{color:#666;font-size:.9rem;margin:.2rem 0}"
-        ".verdict{font-weight:600}.v-reproduced{color:#3a3}.v-partially-reproduced{color:#a80}"
-        ".v-not-reproduced{color:#c33}.v-blocked{color:#777}.counts{color:#444;font-size:.9rem}"
+        ".verdict{font-weight:600}.v-reproduced{color:#1d7a1d}.v-partially-reproduced{color:#8a6500}"
+        ".v-not-reproduced{color:#c33}.v-blocked{color:#6b6b6b}.counts{color:#444;font-size:.9rem}"
         ".claims{margin:.4rem 0;font-size:.9rem}.claims summary{cursor:pointer;color:#456}"
         ".claims ul{margin:.3rem 0 .3rem 1.2rem;color:#444}"
-        ".gaps{margin:.4rem 0;font-size:.9rem}.gaps summary{cursor:pointer;color:#a80}"
+        ".gaps{margin:.4rem 0;font-size:.9rem}.gaps summary{cursor:pointer;color:#8a6500}"
         ".gaps ul{margin:.3rem 0 .3rem 1.2rem;color:#444}"
-        ".digest{margin:.3rem 0 0;font-size:.75rem;color:#888;word-break:break-all}"
+        ".digest{margin:.3rem 0 0;font-size:.75rem;color:#6e6e6e;word-break:break-all}"
         ".entry.superseded{border-color:#c33;background:#fff8f8;opacity:.85}"
         ".superseded{margin:0 0 .4rem;color:#c33;font-weight:600;font-size:.9rem}"
         ".superseded code{font-weight:400;word-break:break-all}"

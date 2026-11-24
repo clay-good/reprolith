@@ -6721,3 +6721,26 @@ shipped claims state. Where they are not, the note says what the conversion need
 inventing one: µg/mL against a molar concentration takes a quantity neither file carries, and
 saying "a molar mass, say" is the difference between a finding and an instruction. The same
 distinction this repository already drew for every "too few" abstention.
+
+## The page nobody measured
+
+`datasets/registry.html` is the one artifact here written to be *looked at*: the public list of
+what reproduced and what did not. Its colours had never been measured against anything.
+
+Four of them fail WCAG AA's 4.5:1 for body text, and they are not the decorative ones. The
+`reproduced` green is **3.03:1**, the `partially-reproduced` amber **3.37:1**, the digest line
+3.54:1, and the `blocked` grey 4.48:1 — the near-miss nobody notices and everybody squints at. The
+first two are the most-read words on the page, repeated once per card for forty-one cards, and the
+single thing a reader came for. Darkened to the nearest shade that passes while staying
+recognisably green, amber and grey; the red was already at 5.14:1 and is unchanged.
+
+The other half was the type scale. Left to the browser, `h3` is 1.17x body — so a card's title and
+the sentence under it were the same size to within a sixth, which on a page of forty cards is the
+difference between scanning and reading. Each role now steps at least 1.25x over the one below it.
+
+Both are held by a test (`tests/test_registry_is_readable.py`) that computes relative luminance
+from the generated page's own stylesheet rather than trusting the renderer's source, and measures
+every colour against the *darkest* surface the page uses — the conservative reading, since a
+lighter background would only flatter the numbers. Reverting one colour makes it fail with the
+number: `#3a3 is 2.80:1 on #f6f6f6, under 4.5`. A colour someone nudges later reads fine to the
+person who nudged it, which is the whole reason this is a test and not a note.
