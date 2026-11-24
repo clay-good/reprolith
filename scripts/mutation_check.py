@@ -1891,6 +1891,66 @@ MUTATIONS: list[tuple[str, str, tuple[str, str], list[str]]] = [
         ('        if not str(record.get("species") or "").strip():', "        if False:"),
         ["tests/test_claims_template.py"],
     ),
+    # --- mcp_server.py is the agent-facing surface — three guards for eighteen hundred lines, and
+    # its caller acts on the answer immediately rather than reading it (2026-11-24).
+    (
+        "a lint request's reference and its sample count may disagree, after the run",
+        "mcp_server.py",
+        ("        if len(reference) != steps + 1:", "        if False:"),
+        ["tests/test_mcp_server.py"],
+    ),
+    (
+        "a tool call may name no paper by any identifier",
+        "mcp_server.py",
+        ("    if not named:", "    if False:"),
+        ["tests/test_mcp_server.py"],
+    ),
+    (
+        "a tool argument of the wrong JSON type is passed through to the engine",
+        "mcp_server.py",
+        ("        if not isinstance(value, expected):", "        if False:"),
+        ["tests/test_mcp_server.py"],
+    ),
+    # --- ingest.py had one guard for eight hundred lines, and it is the way *in*: what a paper's
+    # artifact becomes before anything is judged (2026-11-24).
+    (
+        "a concentration in a compartment of unknown size is read as an amount",
+        "ingest.py",
+        ("    if size is None:\n        raise ValueError(\n"
+         "            f\"species {species.getId()!r} states an initial concentration but its "
+         "compartment \"",
+         "    if False:\n        raise ValueError(\n"
+         "            f\"species {species.getId()!r} states an initial concentration but its "
+         "compartment \""),
+        ["tests/test_ingest.py"],
+    ),
+    (
+        "a concentration in a compartment that is not unit-sized is read as an amount",
+        "ingest.py",
+        ("    if size != 1.0:\n        raise ValueError(\n"
+         "            f\"species {species.getId()!r} states an initial concentration in "
+         "compartment \"",
+         "    if False:\n        raise ValueError(\n"
+         "            f\"species {species.getId()!r} states an initial concentration in "
+         "compartment \""),
+        ["tests/test_ingest.py"],
+    ),
+    # --- export.py writes the archive a stranger re-runs, and had two guards for nine hundred
+    # lines: a run it emits with no duration is a document that runs nothing.
+    (
+        "an exported run may carry no duration",
+        "export.py",
+        ('        raise ValueError(f"a run needs a positive duration; got {duration}")',
+         "        pass"),
+        ["tests/test_export.py"],
+    ),
+    (
+        "an exported run may carry no steps",
+        "export.py",
+        ('        raise ValueError(f"a run needs a positive number of steps; got {steps}")',
+         "        pass"),
+        ["tests/test_export.py"],
+    ),
     (
         "a search that walked off the log scale ends in an overflow naming nothing",
         "estimation.py",

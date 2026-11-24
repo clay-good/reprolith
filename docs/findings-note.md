@@ -6878,3 +6878,26 @@ repository already applies to its loop-note citations and to the harness's own a
 as true of a test's own pattern, and that was not written down anywhere until now.
 
 The list is at 249 entries and every module over two hundred lines has at least one.
+
+## The surfaces an agent and an author meet, counted the same way
+
+Having covered every module over two hundred lines, the same count by *density* says where to look
+next: `mcp_server.py` carried three guards for eighteen hundred lines and `ingest.py` one for eight
+hundred. One is what an agent acts on immediately; the other is what a paper's artifact becomes
+before anything is judged.
+
+The agent surface came back clean — the length check that caps a lint request before it simulates,
+the refusal of a call naming no paper, and the JSON-type check are all held. Worth knowing, and
+worth the entries: a guard with a test today is a guard somebody can see is load-bearing tomorrow.
+
+`ingest.py` had one survivor, and it is the distinction this repository works hardest to keep. Two
+refusals sit one line apart: a concentration in a compartment of **unknown** size, and one in a
+compartment that is not **unit**-sized. The first is a gap the author closes by stating a volume.
+The second is this engine's limit — the rebuild is amount-based, and reading 4 mM in a 2 L
+compartment as an amount of 4 would describe a different model. Delete the first and the second
+fires in its place, because `None != 1.0` — so an author who had merely left a volume unstated was
+told their model cannot be represented at all. Same exception type, same place, entirely different
+instruction.
+
+A survivor is not always a missing refusal. Sometimes the refusal happens and says the wrong thing,
+and only a test that reads the message can tell.

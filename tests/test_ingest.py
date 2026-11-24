@@ -150,6 +150,26 @@ def test_a_concentration_in_a_non_unit_compartment_is_refused() -> None:
         ingest_sbml(_concentration_model("2"), entry="10.1/x")
 
 
+def test_a_compartment_with_no_size_is_refused_for_the_size_and_not_for_this_engine() -> None:
+    """Two refusals one line apart, and only one of them tells the author something they can act on.
+
+    A concentration in a compartment of *unknown* size is a gap the author closes by stating the
+    volume. A concentration in a compartment of non-unit size is this engine's limit — the rebuild
+    is amount-based, and reading 4 mM in a 2 L compartment as an amount of 4 would silently
+    describe a different model. The mutation harness found the first refusal deletable with the
+    whole suite green (2026-11-24): deleted, the *second* one fires instead, because `None != 1.0`
+    — so an author who had merely left a volume unstated was told their model cannot be
+    represented at all, which is the one distinction this repository works hardest to keep.
+    """
+    unsized = _concentration_model("1").replace(' size="1"', "")
+    with pytest.raises(ValueError, match="states no size"):
+        ingest_sbml(unsized, entry="10.1/x")
+    # And it is not the other refusal wearing a different name.
+    with pytest.raises(ValueError) as refusal:
+        ingest_sbml(unsized, entry="10.1/x")
+    assert "unit compartment" not in str(refusal.value)
+
+
 def test_constructs_the_dossier_cannot_represent_are_recorded_as_load_bearing_gaps() -> None:
     """An event is the most common PK/PD construct there is, and it was dropped without a trace.
 
